@@ -349,7 +349,7 @@
       /**
        * Implements attribute value inheritance by child elements.
        *
-       * @param {array} list
+       * @param {Array} list
        *        An array of (to-element-selector, to-attr) pairs.
        * @param {string} attr
        *        An attribute to propagate.

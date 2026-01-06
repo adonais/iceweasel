@@ -139,8 +139,8 @@ bool nsStyleUtil::ValueIncludes(const nsAString& aValueList,
   return false;
 }
 
-void nsStyleUtil::AppendEscapedCSSString(const nsACString& aString,
-                                         nsACString& aReturn, char aQuoteChar) {
+void nsStyleUtil::AppendQuotedCSSString(const nsACString& aString,
+                                        nsACString& aReturn, char aQuoteChar) {
   MOZ_ASSERT(aQuoteChar == '\'' || aQuoteChar == '"',
              "CSS strings must be quoted with ' or \"");
 
@@ -149,19 +149,14 @@ void nsStyleUtil::AppendEscapedCSSString(const nsACString& aString,
   const char* in = aString.BeginReading();
   const char* const end = aString.EndReading();
   for (; in != end; in++) {
-    if (*in < 0x20 || *in == 0x7F) {
-      // Escape U+0000 through U+001F and U+007F numerically.
-      aReturn.AppendPrintf("\\%x ", *in);
-    } else {
-      if (*in == '"' || *in == '\'' || *in == '\\') {
-        // Escape backslash and quote characters symbolically.
-        // It's not technically necessary to escape the quote
-        // character that isn't being used to delimit the string,
-        // but we do it anyway because that makes testing simpler.
-        aReturn.Append('\\');
-      }
-      aReturn.Append(*in);
+    if (*in == '\\' || *in == aQuoteChar) {
+      // Escape backslash and quote characters symbolically.
+      // It's not technically necessary to escape the quote
+      // character that isn't being used to delimit the string,
+      // but we do it anyway because that makes testing simpler.
+      aReturn.Append('\\');
     }
+    aReturn.Append(*in);
   }
   aReturn.Append(aQuoteChar);
 }

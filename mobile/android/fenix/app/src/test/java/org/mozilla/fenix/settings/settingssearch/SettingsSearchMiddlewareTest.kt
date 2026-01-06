@@ -15,9 +15,10 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.After
@@ -48,34 +49,27 @@ class SettingsSearchMiddlewareTest {
         every { fragment.viewLifecycleOwner } returns lifecycleOwner
     }
 
-    private fun buildMiddleware(): SettingsSearchMiddleware {
-        return SettingsSearchMiddleware(
-            fenixSettingsIndexer = TestSettingsIndexer(),
-            dispatcher = coroutineRule.testDispatcher,
-        )
-    }
+    private fun buildMiddleware(
+        fenixSettingsIndexer: SettingsIndexer = TestSettingsIndexer(),
+        navController: NavController = this.navController,
+        recentSettingsSearchesRepository: RecentSettingsSearchesRepository = this.recentSearchesRepository,
+        scope: CoroutineScope = coroutineRule.scope,
+        dispatcher: CoroutineDispatcher = coroutineRule.testDispatcher,
+    ) = SettingsSearchMiddleware(
+        fenixSettingsIndexer = fenixSettingsIndexer,
+        navController = navController,
+        recentSettingsSearchesRepository = recentSettingsSearchesRepository,
+        scope = scope,
+        dispatcher = dispatcher,
+    )
 
     @Test
     fun `WHEN the settings search query is updated and results are not found THEN the state is updated`() {
-        val middleware = SettingsSearchMiddleware(
-            fenixSettingsIndexer = EmptyTestSettingsIndexer(),
-            dispatcher = coroutineRule.testDispatcher,
-        )
+        val middleware = buildMiddleware(EmptyTestSettingsIndexer())
         val query = "longSample"
         val store = SettingsSearchStore(middleware = listOf(middleware))
-        store.dispatch(
-            SettingsSearchAction.EnvironmentRehydrated(
-                environment = SettingsSearchEnvironment(
-                    fragment = fragment,
-                    navController = navController,
-                    context = testContext,
-                    recentSettingsSearchesRepository = recentSearchesRepository,
-                ),
-            ),
-        )
-        store.waitUntilIdle()
         store.dispatch(SettingsSearchAction.SearchQueryUpdated(query))
-        store.waitUntilIdle()
+        assert(store.state is SettingsSearchState.NoSearchResults)
         assert(store.state.searchQuery == query)
         assert(store.state.searchResults.isEmpty())
     }
@@ -86,18 +80,7 @@ class SettingsSearchMiddlewareTest {
         val query = "a"
         val store = SettingsSearchStore(middleware = listOf(middleware))
         store.dispatch(SettingsSearchAction.Init)
-        store.dispatch(
-            SettingsSearchAction.EnvironmentRehydrated(
-                environment = SettingsSearchEnvironment(
-                    fragment = fragment,
-                    navController = navController,
-                    context = testContext,
-                    recentSettingsSearchesRepository = recentSearchesRepository,
-                ),
-            ),
-        )
         store.dispatch(SettingsSearchAction.SearchQueryUpdated(query))
-        store.waitUntilIdle()
         assert(store.state is SettingsSearchState.SearchInProgress)
         assert(store.state.searchQuery == query)
     }
@@ -109,19 +92,8 @@ class SettingsSearchMiddlewareTest {
         val testItem = testList.first()
 
         store.dispatch(SettingsSearchAction.Init)
-        store.dispatch(
-            SettingsSearchAction.EnvironmentRehydrated(
-                environment = SettingsSearchEnvironment(
-                    fragment = fragment,
-                    navController = navController,
-                    context = testContext,
-                    recentSettingsSearchesRepository = recentSearchesRepository,
-                ),
-            ),
-        )
 
         store.dispatch(SettingsSearchAction.ResultItemClicked(testItem))
-        store.waitUntilIdle()
 
         coVerify { recentSearchesRepository.addRecentSearchItem(testItem) }
         verify { navController.navigate(testItem.preferenceFileInformation.fragmentId, any()) }
@@ -132,19 +104,8 @@ class SettingsSearchMiddlewareTest {
         val middleware = buildMiddleware()
         val store = SettingsSearchStore(middleware = listOf(middleware))
         val updatedRecents = listOf(testList.first())
-        store.dispatch(
-            SettingsSearchAction.EnvironmentRehydrated(
-                environment = SettingsSearchEnvironment(
-                    fragment = fragment,
-                    navController = navController,
-                    context = testContext,
-                    recentSettingsSearchesRepository = recentSearchesRepository,
-                ),
-            ),
-        )
 
         store.dispatch(SettingsSearchAction.RecentSearchesUpdated(updatedRecents))
-        store.waitUntilIdle()
 
         assert(store.state.recentSearches == updatedRecents)
     }
@@ -153,19 +114,8 @@ class SettingsSearchMiddlewareTest {
     fun `WHEN ClearRecentSearchesClicked is dispatched THEN store state is updated correctly`() {
         val middleware = buildMiddleware()
         val store = SettingsSearchStore(middleware = listOf(middleware))
-        store.dispatch(
-            SettingsSearchAction.EnvironmentRehydrated(
-                environment = SettingsSearchEnvironment(
-                    fragment = fragment,
-                    navController = navController,
-                    context = testContext,
-                    recentSettingsSearchesRepository = recentSearchesRepository,
-                ),
-            ),
-        )
 
         store.dispatch(SettingsSearchAction.ClearRecentSearchesClicked)
-        store.waitUntilIdle()
 
         assert(store.state.recentSearches.isEmpty())
     }
@@ -181,21 +131,21 @@ val testList = listOf(
         title = "Search Engine",
         summary = "Set your preferred search engine for browsing.",
         preferenceKey = "search_engine_main",
-        breadcrumbs = listOf("Search", "Default Search Engine"),
+        categoryHeader = "General",
         preferenceFileInformation = PreferenceFileInformation.SearchSettingsPreferences,
     ),
     SettingsSearchItem(
         title = "Advanced Settings",
         summary = "", // Empty or blank summary
         preferenceKey = "advanced_stuff",
-        breadcrumbs = listOf("Developer", "Experiments"),
+        categoryHeader = "Advanced",
         preferenceFileInformation = PreferenceFileInformation.GeneralPreferences,
     ),
     SettingsSearchItem(
         title = "Do not collect usage data",
         summary = "", // Empty or blank summary
         preferenceKey = "do_not_collect_data",
-        breadcrumbs = listOf("Privacy", "Usage Data"),
+        categoryHeader = "Privacy",
         preferenceFileInformation = PreferenceFileInformation.GeneralPreferences,
     ),
 )

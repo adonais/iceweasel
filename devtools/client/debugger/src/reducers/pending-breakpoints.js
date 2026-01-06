@@ -84,7 +84,7 @@ function removePendingBreakpoint(state, pendingBreakpoint) {
  * using its original location, or for pretty-printed sources,
  * its generated location.
  *
- * @param {Object} breakpoint
+ * @param {object} breakpoint
  */
 function makeIdFromBreakpoint(breakpoint) {
   const location = breakpoint.location.source.isPrettyPrinted

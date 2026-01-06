@@ -611,7 +611,7 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolveStartingStyle(
 
 already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePositionTry(
     dom::Element& aElement, ComputedStyle& aStyle,
-    const StyleDashedIdentAndOrTryTactic& aFallback) {
+    const StylePositionTryFallbacksItem& aFallback) {
   return Servo_ComputedValues_GetForPositionTry(mRawData.get(), &aStyle,
                                                 &aElement, &aFallback)
       .Consume();
@@ -1184,6 +1184,10 @@ already_AddRefed<StyleAnimationValue> ServoStyleSet::ComputeAnimationValue(
 
 bool ServoStyleSet::UsesFontMetrics() const {
   return Servo_StyleSet_UsesFontMetrics(mRawData.get());
+}
+
+bool ServoStyleSet::UsesRootFontMetrics() const {
+  return Servo_StyleSet_UsesRootFontMetrics(mRawData.get());
 }
 
 bool ServoStyleSet::EnsureUniqueInnerOnCSSSheets() {

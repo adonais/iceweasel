@@ -729,10 +729,10 @@ class NavigationDelegateTest : BaseSessionTest() {
         mainSession.waitForPageStop()
 
         // load insecure subdomain url to see if it gets upgraded to https
-        val http_uri = "http://test1.example.com/"
-        val https_uri = "https://test1.example.com/"
+        val httpUri = "http://test1.example.com/"
+        val httpsUri = "https://test1.example.com/"
 
-        mainSession.loadUri(http_uri)
+        mainSession.loadUri(httpUri)
         mainSession.waitForPageStop()
 
         mainSession.forCallbacksDuringWait(object : NavigationDelegate {
@@ -744,15 +744,15 @@ class NavigationDelegateTest : BaseSessionTest() {
                 assertThat(
                     "URI should be HTTP then redirected to HTTPS",
                     request.uri,
-                    equalTo(forEachCall(http_uri, https_uri)),
+                    equalTo(forEachCall(httpUri, httpsUri)),
                 )
                 return null
             }
         })
 
         // load subdomain that will trigger the cert error
-        val no_cert_uri = "https://nocert.example.com/"
-        mainSession.loadUri(no_cert_uri)
+        val noCertUri = "https://nocert.example.com/"
+        mainSession.loadUri(noCertUri)
         mainSession.waitForPageStop()
 
         mainSession.forCallbacksDuringWait(object : NavigationDelegate {

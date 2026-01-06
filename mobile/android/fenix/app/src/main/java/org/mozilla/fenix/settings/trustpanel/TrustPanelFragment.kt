@@ -111,7 +111,7 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
             }
         }
 
-    @Suppress("LongMethod", "MagicNumber")
+    @Suppress("LongMethod", "MagicNumber", "CognitiveComplexMethod")
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -195,6 +195,7 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                 val websitePermissions by store.observeAsState(initialValue = listOf()) { state ->
                     state.websitePermissionsState.values
                 }
+                val isGlobalTrackingProtectionEnabled = settings.shouldUseTrackingProtection
 
                 permissionsCallback = { isGranted: Map<String, Boolean> ->
                     if (isGranted.values.all { it }) {
@@ -261,6 +262,7 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                                 websiteInfoState = store.state.websiteInfoState,
                                 icon = sessionState?.content?.icon,
                                 isTrackingProtectionEnabled = isTrackingProtectionEnabled,
+                                isGlobalTrackingProtectionEnabled = isGlobalTrackingProtectionEnabled,
                                 isLocalPdf = args.isLocalPdf,
                                 numberOfTrackersBlocked = numberOfTrackersBlocked,
                                 websitePermissions = websitePermissions.filter { it.isVisible },
@@ -306,7 +308,6 @@ class TrustPanelFragment : BottomSheetDialogFragment() {
                         Route.TrackerCategoryDetailsPanel -> {
                             TrackerCategoryDetailsPanel(
                                 title = args.title,
-                                isTotalCookieProtectionEnabled = components.settings.enabledTotalCookieProtection,
                                 detailedTrackerCategory = detailedTrackerCategory,
                                 bucketedTrackers = bucketedTrackers,
                                 onBackButtonClick = {

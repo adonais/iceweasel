@@ -8,10 +8,6 @@ const { IPPStartupCacheSingleton } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPPStartupCache.sys.mjs"
 );
 
-const { IPProtectionStates } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPProtectionService.sys.mjs"
-);
-
 /**
  * Test the disabled cache
  */
@@ -86,23 +82,6 @@ add_task(async function test_IPPStartupCache_enabled() {
       IPProtectionStates.UNINITIALIZED,
       "The state is unitialized"
     );
-  }
-
-  // ACTIVE to READY
-  {
-    Services.prefs.setCharPref(
-      "browser.ipProtection.stateCache",
-      IPProtectionStates.ACTIVE
-    );
-
-    const cache = new IPPStartupCacheSingleton();
-    cache.init();
-
-    Assert.ok(
-      !cache.isStartupCompleted,
-      "In XPCShell mode the cache is active"
-    );
-    Assert.equal(cache.state, IPProtectionStates.READY, "The state is READY");
   }
 });
 

@@ -61,6 +61,8 @@
   <string name="tab_manager_empty_synced_tabs_page_description">Intră în cont ca să îți gestionezi filele sincronizate de pe toate dispozitivele.</string>
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
   <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">Intră în cont</string>
+  <!-- Text for the button used to show all stories -->
+  <string name="homepage_all_stories">Toate articolele</string>
   <!--
     Home - Bookmarks
 
@@ -237,7 +239,7 @@
   <!-- Browser menu toggle that requests a desktop site -->
   <string name="browser_menu_desktop_site">Versiune site de desktop</string>
   <!-- Browser menu button that reopens a private tab as a regular tab -->
-  <string name="browser_menu_open_in_regular_tab">Deschide într-o filă nouă</string>
+  <string name="browser_menu_open_in_regular_tab">Deschide într-o filă normală</string>
   <!-- Browser menu toggle that adds a shortcut to the site on the device home screen. -->
   <string name="browser_menu_add_to_homescreen">Adaugă în ecranul de pornire</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
@@ -552,7 +554,7 @@
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Gestionează</string>
   <!-- Terms of use (ToU) onboarding redesign title. -->
-  <string name="onboarding_redesign_tou_title">Lansează browserul Android în ultima versiune</string>
+  <string name="onboarding_redesign_tou_title">Lansează ultima versiune a browserului Android</string>
   <!-- Terms of use (ToU) first subheader. -->
   <string name="onboarding_redesign_tou_subheader_one">Încarcă site-urile extrem de repede</string>
   <!-- Terms of use (ToU) second subheader. -->
@@ -622,6 +624,10 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Partajează cu partenerii de marketing Mozilla cum ai descoperit Firefox și că îl folosești. Aceste date nu sunt niciodată vândute.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Sunt de acord și încep navigarea</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Alege plasarea barei de instrumente</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -648,7 +654,7 @@
   <!-- Onboarding theme selection card label for 'dark' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_dark_option">Întunecată</string>
   <!-- Onboarding theme selection card label for 'light' option, used by Nimbus experiments. -->
-  <string name="onboarding_customize_theme_light_option">Deschisă</string>
+  <string name="onboarding_customize_theme_light_option">Luminoasă</string>
   <!-- Onboarding theme selection card label for 'System auto' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_theme_system_option">Sistem automat</string>
   <!-- Onboarding theme selection card content description for the main image. -->
@@ -820,8 +826,6 @@
   <string name="preferences_gestures">Gesturi</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Personalizare</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Intră în cont ca să îți sincronizezi filele, marcajele, parolele și mai multe.</string>
   <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
   <string name="preferences_sign_in_description">Sincronizează filele, marcajele, parolele și multe altele.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
@@ -1008,7 +1012,7 @@
   -->
   <string name="alternative_app_icon_option_default">Implicit</string>
   <!-- Title for the "Light" alternative app icon variant in the icon picker screen. -->
-  <string name="alternative_app_icon_option_light">Deschisă</string>
+  <string name="alternative_app_icon_option_light">Luminoasă</string>
   <!-- Title for the "Dark" alternative app icon variant in the icon picker screen. -->
   <string name="alternative_app_icon_option_dark">Întunecată</string>
   <!-- Title for the "Red" alternative app icon variant in the icon picker screen. -->
@@ -1034,7 +1038,7 @@
   <!-- Title for the "Midnight" gradient alternative app icon variant in the icon picker screen. The app icon features a dark gradient background, resembling the deep tones of the night sky. -->
   <string name="alternative_app_icon_option_gradient_midnight">Miezul nopții</string>
   <!-- Title for the "Northern Lights" gradient alternative app icon variant in the icon picker screen. The app icon has a dynamic green, blue, and purple gradient background, resembling the aurora borealis. -->
-  <string name="alternative_app_icon_option_gradient_northern_lights">Luminile nordului</string>
+  <string name="alternative_app_icon_option_gradient_northern_lights">Aurora boreală</string>
   <!-- Title for the "Retro 2004" themed alternative app icon variant in the icon picker screen. This app icon uses the classic Firefox logo from 2004. -->
   <string name="alternative_app_icon_option_retro_2004">Retro 2004</string>
   <!-- Title for the "Pixelated" themed alternative app icon variant in the icon picker screen. This app icon features a pixel-art style, resembling retro 8-bit graphics. -->
@@ -1217,10 +1221,8 @@
   <!--
     Turn On Sync Preferences
 
-    Header of the Sync and save your data preference view
+    Header of the Sign in preference view
   -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Sincronizează și salvează-ți datele</string>
-  <!-- Header of the Sign in preference view -->
   <string name="preferences_sign_in">Intră în cont</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Intră în cont pentru reconectare</string>
@@ -1269,7 +1271,7 @@
 
     Preference for using light theme
   -->
-  <string name="preference_light_theme">Deschisă</string>
+  <string name="preference_light_theme">Luminoasă</string>
   <!-- Preference for using dark theme -->
   <string name="preference_dark_theme">Întunecată</string>
   <!-- Preference for using using dark or light theme automatically set by battery -->
@@ -1373,7 +1375,7 @@
   <!-- Title of preference that allows a user to auto close tabs after a specified amount of time -->
   <string name="preferences_close_tabs">Închide filele</string>
   <!-- Option for auto closing tabs that will never auto close tabs, always allows user to manually close tabs -->
-  <string name="close_tabs_manually">Manual</string>
+  <string name="close_tabs_manually">Niciodată</string>
   <!-- Option for auto closing tabs that will auto close tabs after one day -->
   <string name="close_tabs_after_one_day">După o zi</string>
   <!-- Option for auto closing tabs that will auto close tabs after one week -->
@@ -1469,6 +1471,8 @@
   <string name="tab_drawer_fab_content">Privată</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
   <string name="tab_drawer_fab_sync">Sincronizare</string>
+  <!-- Text for the tab search bar placeholder -->
+  <string name="tab_manager_search_bar_placeholder">Caută în file</string>
   <!-- Text shown in the menu for sharing all tabs -->
   <string name="tab_tray_menu_item_share">Partajează toate filele</string>
   <!-- Text shown in the menu to view recently closed tabs -->
@@ -1481,6 +1485,14 @@
   <string name="tab_tray_menu_tab_settings">Setări file</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Închide toate filele</string>
+  <!-- Text shown as the title of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_title">Închizi toate filele?</string>
+  <!-- Text shown in the body of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_body">Va închide toate filele deschise.</string>
+  <!-- Text shown on the confirm button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_confirm">Închide filele</string>
+  <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_cancel">Anulează</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
   <string name="tab_tray_multiselect_menu_item_bookmark">Marchează</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
@@ -1499,8 +1511,6 @@
   <string name="tab_tray_multiselect_menu_content_description">Meniul filelor selectate</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
   <string name="tab_tray_homepage_tab">Pagină de start</string>
-  <!-- Title text displayed for a homepage tab in the tabs tray. %s is a placeholder that will be replaced by app name. -->
-  <string name="tab_tray_homepage_tab_2" tools:ignore="UnusedResources" moz:removedIn="145">pagină de start %s</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">Elimină fila din colecție</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -1511,6 +1521,8 @@
   <string name="close_tab_title">Închide fila %s</string>
   <!-- Content description (not visible, for screen readers etc.): Opens the open tabs menu when pressed -->
   <string name="open_tabs_menu">Meniu de file deschise</string>
+  <!-- Content description (not visible, for screen readers etc.): Return to tab manager -->
+  <string name="tab_manager_search_bar_back_content_description">Înapoi la managerul de file</string>
   <!-- Open tabs menu item to save tabs to collection -->
   <string name="tabs_menu_save_to_collection1">Salvează filele în colecție</string>
   <!-- Text for the menu button to delete a collection -->
@@ -1527,6 +1539,8 @@
   <string name="delete_from_history">Șterge din istoric</string>
   <!-- Postfix for private WebApp titles. %1$s is the name of the app (for example "Firefox"). -->
   <string name="pwa_site_controls_title_private">%1$s (mod privat)</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
+  <string name="tab_manager_open_tab_search">Deschide căutarea de file</string>
   <!--
     History
 
@@ -2101,8 +2115,6 @@
   <string name="toast_copy_link_to_clipboard">Copiat în clipboard</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Intră în cont pentru sincronizare</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Sincronizează și salvează datele</string>
   <!-- An option from the three dot menu to sign in -->
   <string name="sync_menu_sign_in">Intră în cont</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
@@ -2223,7 +2235,7 @@
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">Dimensiunea fontului</string>
   <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
-  <string name="a11y_preference_accessibility_font_size_percentage">%d %%.</string>
+  <string name="a11y_preference_accessibility_font_size_percentage" tools:ignore="UnusedResources" moz:removedIn="148">%d %%.</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">Dimensionare automată pentru fonturi</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
@@ -2416,7 +2428,7 @@
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
   <string name="preference_enhanced_tracking_protection_custom_cryptominers">Criptomineri</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
-  <string name="preference_enhanced_tracking_protection_custom_known_fingerprinters">Amprente digitale cunoscute</string>
+  <string name="preference_enhanced_tracking_protection_custom_known_fingerprinters">Detectoare cunoscute de amprente digitale</string>
   <!-- Button label for navigating to the Enhanced Tracking Protection details -->
   <string name="enhanced_tracking_protection_details">Detalii</string>
   <!-- Header for categories that are being being blocked by current Enhanced Tracking Protection settings -->
@@ -2468,11 +2480,11 @@
   <!-- Description of redirect tracker cookies that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_redirect_trackers_description">Șterge cookie-urile setate de redirecționări către site-uri web de urmărire cunoscute.</string>
   <!-- Preference for fingerprinting protection for the custom protection settings -->
-  <string name="etp_suspected_fingerprinters_title">Amprente digitale suspectate</string>
+  <string name="etp_suspected_fingerprinters_title">Detectoare suspecte de amprente digitale</string>
   <!-- Description of fingerprinters that can be blocked by fingerprinting protection -->
-  <string name="etp_suspected_fingerprinters_description">Activează protecția prin amprente digitale pentru a opri suspecții de amprentare.</string>
+  <string name="etp_suspected_fingerprinters_description">Activează protecția împotriva amprentării digitale pentru a opri detectoarele suspecte de amprente digitale.</string>
   <!-- Category of trackers (fingerprinters) that can be blocked by Enhanced Tracking Protection -->
-  <string name="etp_known_fingerprinters_title">Amprente digitale cunoscute</string>
+  <string name="etp_known_fingerprinters_title">Detectoare cunoscute de amprente digitale</string>
   <!--
     Description of the SmartBlock Enhanced Tracking Protection feature. The * symbol is intentionally hardcoded here,
     as we use it on the UI to indicate which trackers have been partially unblocked.
@@ -2691,6 +2703,10 @@
   <string name="edit_login_navigate_back_button_content_description">Navighează înapoi</string>
   <!-- Content description, used by tools like screenreaders, to press on the edit login button. -->
   <string name="edit_login_button_content_description">Editează autentificarea</string>
+  <!-- Content description, used by tools like screenreaders, to press on the add new login button. -->
+  <string name="saved_logins_add_new_login_button_content_description">Adaugă date noi de autentificare</string>
+  <!-- Content description, used by tools like screenreaders, to press on the clear search text button. -->
+  <string name="saved_logins_clear_search_text_button_content_description">Șterge textul căutat</string>
   <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
   <string name="saved_login_open_site">Deschide site-ul în browser</string>
   <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
@@ -2840,7 +2856,7 @@
   <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Island field, used in places like the Cayman Islands and the Bahamas if an address is located on a specific island. -->
   <string name="addresses_island" tools:ignore="UnusedResources">Insulă</string>
   <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Townland field, specific to Ireland is a specific type of land division used in rural areas. -->
-  <string name="addresses_townland" tools:ignore="UnusedResources">Municipiu</string>
+  <string name="addresses_townland" tools:ignore="UnusedResources">Comună</string>
   <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is used as secondary address information (below the country level, e.g. county) in Honk Kong, Sudan, Syria, Türkiye, and as sublocality (civil entity below a locality, e.g. district) in Korea. -->
   <string name="addresses_district" tools:ignore="UnusedResources">Raion</string>
   <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Used in the United Kingdom, Norway and Sweden -->
@@ -3627,7 +3643,7 @@
   -->
   <string name="debug_drawer_addresses_title">Adrese</string>
   <!-- The title of the section header for the list of debug locales that can be enabled and disabled. -->
-  <string name="debug_drawer_addresses_debug_locales_header">Depanează setările regionale pentru a activa</string>
+  <string name="debug_drawer_addresses_debug_locales_header">Depanează setările regionale pentru activare</string>
   <!-- The title of the header for the section for managing addresses. -->
   <string name="debug_drawer_addresses_management_header">Gestionează adresele</string>
   <!-- The title of the button in the debug drawer for adding a new address. -->
@@ -3815,7 +3831,7 @@
   <!-- The title of the explore extensions task for the setup checklist -->
   <string name="setup_checklist_task_explore_extensions">Explorează extensiile</string>
   <!-- The title of the search widget task for the setup checklist -->
-  <string name="setup_checklist_task_search_widget_2">Widgetul de căutare Explorează</string>
+  <string name="setup_checklist_task_search_widget_2">Descoperă widgeturi de căutare</string>
   <!--
     ===== Setup checklist feature: Group titles =====
 
@@ -3893,7 +3909,7 @@
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Nicio căutare recentă</string>
   <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message">A apărut o eroare</string>
+  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">A apărut o eroare</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Șterge tot</string>
   <!-- Section header for recent search results -->
@@ -3902,11 +3918,9 @@
   <string name="settings_search_no_results_title">Nu a apărut nimic</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">Poate încerci o altă căutare?</string>
-  <!--
-    Terms of use pop up prompt
+  <!-- ==== Terms of use pop up prompt ==== -->
 
-    Title for the pop up prompt
-  -->
+  <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">Avem o actualizare</string>
   <!--
     Message for the terms of use pop up prompt
@@ -3930,4 +3944,20 @@
   <string name="terms_of_use_prompt_accept">Acceptă</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Amintește-mi mai târziu</string>
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
+
+  <!--
+    Privacy notice homepage banner
+
+    A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link using privacy_notice_updated_homepage_message_privacy_notice as text (Privacy Notice)
+    %2$s is replaced by an active link using privacy_notice_updated_homepage_message_learn_more as text (Learn more)
+  -->
+  <string name="privacy_notice_updated_homepage_message" tools:ignore="BrandUsage,UnusedResources">Am actualizat pagina noastră %1$s pentru a reflecta cele mai recente funcții din Firefox. %2$s</string>
+  <!-- The first active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Notificare privind confidențialitatea</string>
+  <!-- The second active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Află mai multe</string>
 </resources>

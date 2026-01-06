@@ -526,6 +526,10 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Sparti comu scupristi e chi usi Firefox câ squatra dâ pubblicità di Mozilla. Sti dati nun vennu mai vinnuti.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Accetta e accumincia a navicari</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Scarta a pusizzioni dâ barra dî stigghi</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -718,8 +722,6 @@
   <string name="preferences_gestures">Muvimenti</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Pirsunalizza</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Trasi pi sincrunizzari schedi, nzingalibbra, chiavi e autru.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Cuntu Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -1094,12 +1096,6 @@
   <string name="preference_experiments_2">Studi</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">Pirmetti a Mozilla di nzitari e abbiari studi</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Sincrunizza e sarba i dati</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Trasi pi cullijàriti arrè</string>
   <!-- Preference for removing FxA account -->
@@ -1913,8 +1909,6 @@
   <string name="toast_copy_link_to_clipboard">Cupiatu nnô pitazzu</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Trasi nne Sync</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Sincrunizza e sarba i dati</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Manna a tutti i dispusitivi</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2031,7 +2025,7 @@
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">Grannizza dû caràttiri</string>
   <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
-  <string name="a11y_preference_accessibility_font_size_percentage">%d %%.</string>
+  <string name="a11y_preference_accessibility_font_size_percentage" tools:ignore="UnusedResources" moz:removedIn="148">%d %%.</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">Grannizza autumàtica dî caràttiri</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
@@ -3577,11 +3571,9 @@
   <string name="review_prompt_feedback_header">Ni dispiaci chi stai avennu mpidugghi. Fanni sapiri comu putemu fari megghiu %1$s.</string>
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">Lassa un cummentu</string>
-  <!--
-    Terms of use pop up prompt
+  <!-- ==== Terms of use pop up prompt ==== -->
 
-    Title for the pop up prompt
-  -->
+  <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">Cc’è n’attualizzu</string>
   <!--
     Message for the terms of use pop up prompt
@@ -3605,4 +3597,7 @@
   <string name="terms_of_use_prompt_accept">Accetta</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Ricurdamillu cchiù tardu</string>
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

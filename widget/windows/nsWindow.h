@@ -237,8 +237,6 @@ class nsWindow final : public nsIWidget {
   void SetIcon(const nsAString& aIconSpec) override;
   LayoutDeviceIntPoint WidgetToScreenOffset() override;
   LayoutDeviceIntMargin NormalSizeModeClientToWindowMargin() override;
-  nsresult DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
-                         nsEventStatus& aStatus) override;
   void EnableDragDrop(bool aEnable) override;
   void CaptureMouse(bool aCapture);
   void CaptureRollupEvents(bool aDoCapture) override;
@@ -336,6 +334,8 @@ class nsWindow final : public nsIWidget {
   }
 
   bool IsRTL() const { return mIsRTL; }
+
+  bool ShouldAssociateWithWinAppSDK() const;
 
   /**
    * AssociateDefaultIMC() associates or disassociates the default IMC for
@@ -643,7 +643,6 @@ class nsWindow final : public nsIWidget {
   static HWND WindowAtMouse();
   static bool IsTopLevelMouseExit(HWND aWnd);
   LayoutDeviceIntRegion GetRegionToPaint(const PAINTSTRUCT& ps, HDC aDC) const;
-  nsIWidgetListener* GetPaintListener();
 
   void CreateCompositor() override;
   void DestroyCompositor() override;
@@ -852,9 +851,6 @@ class nsWindow final : public nsIWidget {
 
   // Whether we're in the process of sending a WM_SETTEXT ourselves
   bool mSendingSetText = false;
-
-  // Whether we're a PIP window.
-  bool mPIPWindow : 1;
 
   // Whether we are asked to render a mica backdrop.
   bool mMicaBackdrop : 1;

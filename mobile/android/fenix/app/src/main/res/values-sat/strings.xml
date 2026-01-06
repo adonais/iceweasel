@@ -61,6 +61,8 @@
   <string name="tab_manager_empty_synced_tabs_page_description">ᱟᱢᱟᱜ ᱡᱷᱚᱛᱚ ᱥᱟᱫᱷᱚᱱ ᱠᱷᱚᱱ ᱥᱤᱱᱠᱮᱰ ᱴᱮᱵᱽ ᱪᱟᱞᱟᱣ ᱞᱟᱹᱜᱤᱫ ᱥᱩᱦᱤ ᱮᱢ ᱢᱮ ᱾</string>
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
   <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">ᱵᱚᱞᱚᱱ ᱥᱩᱦᱤ</string>
+  <!-- Text for the button used to show all stories -->
+  <string name="homepage_all_stories">ᱡᱚᱛᱚ ᱠᱟᱹᱦᱱᱤ</string>
   <!--
     Home - Bookmarks
 
@@ -622,6 +624,86 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ ᱧᱟᱢ ᱠᱮᱫᱟ, ᱟᱨ ᱚᱱᱟ ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ, Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱾</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">ᱨᱮᱵᱮᱱ ᱢᱮ ᱟᱨ ᱵᱽᱨᱟᱣᱩᱡᱽ ᱮᱦᱚᱵ ᱢᱮ</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- "Continue" onboarding button. -->
+  <string name="nova_onboarding_continue_button" tools:ignore="UnusedResources">ᱞᱮᱛᱟᱲ</string>
+  <!-- "Not now" onboarding button. -->
+  <string name="nova_onboarding_negative_button" tools:ignore="UnusedResources">ᱱᱤᱛᱚᱜ ᱫᱚ ᱵᱟᱝᱟ</string>
+  <!-- Terms of use (ToU) onboarding title. -->
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">ᱯᱷᱨᱤ ᱫᱟᱹᱲ ᱞᱟᱹᱜᱤᱫ ᱥᱟᱯᱲᱟᱣ ᱛᱟᱦᱮᱱ ᱢᱮ</string>
+  <!-- Terms of use (ToU) onboarding subtitle. -->
+  <string name="nova_onboarding_tou_subtitle" tools:ignore="UnusedResources">ᱞᱚᱜᱚᱱ, ᱨᱚᱯᱟ ᱨᱮ, ᱟᱨ ᱟᱢ ᱵᱟᱦᱨᱮ ᱵᱟᱝ ᱟᱠᱨᱤᱧ ᱢᱮᱭᱟᱭ ᱾\nᱵᱽᱨᱟᱣᱩᱡᱤᱝ ᱫᱚ ᱱᱤᱛ ᱜᱮ ᱵᱮᱥ ᱮᱱᱟ ᱾</string>
+  <!--
+    Terms of use (ToU) onboarding body line one.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
+  -->
+  <string name="nova_onboarding_tou_body_line_1" tools:ignore="UnusedResources">ᱞᱟᱦᱟᱜ ᱠᱟᱛᱮ, ᱟᱢ %1$s ᱨᱮᱢ ᱦᱮᱸᱥᱮᱨᱤᱭᱟᱹ ᱮᱫᱟ ᱾</string>
+  <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage,UnusedResources">Firefox ᱵᱮᱵᱷᱟᱨ ᱨᱮᱭᱟᱜ ᱥᱚᱨᱛᱚ</string>
+  <!--
+    Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
+  -->
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage,UnusedResources">Firefox ᱟᱢᱟᱜ ᱯᱨᱟᱭᱣᱮᱥᱤ ᱵᱟᱵᱚᱛ ᱡᱚᱛᱚᱱ ᱤᱫᱤᱭᱟᱭ ᱾ ᱟᱞᱮᱭᱟᱜ %1$s ᱨᱮ ᱵᱟᱹᱲᱛᱤ ᱵᱟᱲᱟᱭ ᱢᱮ ᱾</string>
+  <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
+  <string name="nova_onboarding_tou_body_line_2_link_text" tools:ignore="UnusedResources">ᱫᱟᱱᱟᱝ ᱠᱷᱚᱵᱚᱨ</string>
+  <!--
+    Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
+  -->
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage,UnusedResources">ᱵᱽᱨᱟᱣᱩᱡᱟᱨ ᱥᱩᱫᱷᱨᱟᱹᱣ ᱜᱚᱲᱚ ᱞᱟᱹᱜᱤᱫ, Firefox ᱫᱚ Mozilla ᱴᱷᱮᱱ ᱰᱟᱭᱜᱽᱱᱚᱥᱴᱤᱠ ᱟᱨ ᱜᱟᱯᱟᱞᱢᱟᱨᱟᱣ ᱰᱟᱴᱟ ᱠᱩᱞᱟ ᱾ %1$s</string>
+  <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
+  <string name="nova_onboarding_tou_body_line_3_link_text" tools:ignore="UnusedResources">ᱥᱟᱡᱟᱣ ᱠᱚ ᱢᱮᱱᱮᱡᱽ ᱢᱮ</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">ᱵᱚᱛᱚᱨᱟᱱ ᱴᱨᱮᱠᱟᱨ ᱠᱚ ᱵᱤᱫᱟᱹ ᱢᱮᱱ ᱢᱮ</string>
+  <!-- "Set to default" onboarding subtitle. -->
+  <string name="nova_onboarding_set_to_default_subtitle" tools:ignore="UnusedResources">ᱟᱞᱮ ᱟᱢᱟᱜ ᱰᱟᱴᱟ ᱞᱮ ᱨᱩᱠᱷᱤᱭᱟᱹᱭᱟ ᱟᱨ ᱟᱢᱟᱜ ᱠᱞᱤᱠ ᱨᱮ ᱡᱟᱹᱥᱛᱤ ᱠᱷᱚᱱ ᱠᱚᱢᱯᱟᱱᱤ ᱠᱚ ᱟᱡ ᱛᱮ ᱵᱚᱱ ᱵᱚᱱᱫᱚ ᱠᱚᱣᱟ᱾</string>
+  <!-- "Set to default" onboarding button. -->
+  <string name="nova_onboarding_set_to_default_button" tools:ignore="UnusedResources">ᱢᱩᱞ ᱵᱽᱨᱟᱣᱩᱡᱟᱹᱨ ᱞᱮᱠᱷᱟ ᱥᱟᱡᱟᱣ ᱢᱮ</string>
+  <!-- Toolbar selection onboarding title. -->
+  <string name="nova_onboarding_toolbar_selection_title" tools:ignore="UnusedResources">ᱟᱢᱟᱜ ᱴᱷᱤᱠᱟᱹᱱᱟ ᱵᱟᱨ ᱵᱟᱪᱷᱟᱣ ᱢᱮ</string>
+  <!-- Toolbar selection onboarding "top" option label. -->
+  <string name="nova_onboarding_toolbar_selection_top_label" tools:ignore="UnusedResources">ᱪᱮᱛᱟᱱ</string>
+  <!-- Toolbar selection onboarding "bottom" option label. -->
+  <string name="nova_onboarding_toolbar_selection_bottom_label" tools:ignore="UnusedResources">ᱞᱟᱛᱟᱨ</string>
+  <!-- Theme selection onboarding title. -->
+  <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">ᱟᱢᱟᱜ ᱛᱷᱤᱢ ᱵᱟᱪᱷᱟᱣ ᱢᱮ</string>
+  <!-- Theme selection onboarding "automatic" option label. -->
+  <string name="nova_onboarding_theme_selection_automatic_label" tools:ignore="UnusedResources">ᱟᱡ ᱛᱮ</string>
+  <!-- Theme selection onboarding "light" option label. -->
+  <string name="nova_onboarding_theme_selection_light_label" tools:ignore="UnusedResources">ᱢᱟᱨᱥᱟᱞ</string>
+  <!-- Theme selection onboarding "dark" option label. -->
+  <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">ᱧᱩᱛ</string>
+  <!-- Sync onboarding title. -->
+  <string name="nova_onboarding_sync_title" tools:ignore="UnusedResources">ᱞᱚᱜᱚᱱ ᱪᱟᱞᱟᱜ ᱢᱮ ᱡᱟᱦᱟᱸ ᱨᱮ ᱢᱟᱲᱟᱝ ᱛᱟᱦᱮᱸ ᱠᱟᱱᱟᱢ</string>
+  <!-- Sync onboarding subtitle. -->
+  <string name="nova_onboarding_sync_subtitle" tools:ignore="UnusedResources">ᱢᱤᱫ ᱥᱱᱮᱯ ᱨᱮ ᱡᱟᱦᱟᱱ ᱥᱟᱫᱷᱚᱱ ᱨᱮ ᱵᱩᱠᱢᱟᱨᱠ, ᱯᱟᱥᱣᱟᱨᱰ ᱟᱨ ᱟᱭᱢᱟ ᱥᱟᱵ ᱢᱮ ᱾ ᱟᱢᱟᱜ ᱯᱚᱨᱥᱚᱱᱟᱞ ᱰᱟᱴᱟ ᱮᱱᱠᱨᱤᱯᱥᱚᱱ ᱥᱟᱶ ᱨᱚᱯᱟ ᱟᱨ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱛᱟᱦᱮᱱᱟ ᱾</string>
+  <!-- Sync onboarding button. -->
+  <string name="nova_onboarding_sync_button" tools:ignore="UnusedResources">ᱥᱤᱱᱠᱤᱝ ᱮᱦᱚᱵ ᱢᱮ</string>
+  <!-- Marketing onboarding title. -->
+  <string name="nova_onboarding_marketing_title" tools:ignore="UnusedResources">ᱟᱞᱮ ᱵᱮᱥ ᱤᱱᱴᱟᱨᱱᱮᱴ ᱵᱮᱱᱟᱣ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱞᱮᱢ</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">ᱟᱢ ᱪᱮᱫ ᱞᱮᱠᱟ Firefox ᱮᱢ ᱧᱟᱢ ᱠᱮᱫᱟ, ᱟᱨ ᱚᱱᱟ ᱮᱢ ᱵᱮᱵᱷᱟᱨ ᱮᱫᱟ, Mozilla ᱨᱮᱱ ᱢᱟᱨᱠᱮᱴᱤᱝ ᱵᱷᱟᱜᱫᱟᱨ ᱠᱚ ᱥᱟᱶ ᱦᱟᱹᱴᱤᱧ ᱢᱮ ᱾ ᱱᱚᱶᱟ ᱰᱟᱴᱟ ᱫᱚ ᱛᱤᱥ ᱦᱚᱸ ᱵᱟᱝ ᱟᱠᱷᱨᱤᱧ ᱟᱠᱟᱱᱟ ᱾%1$s</string>
+  <!-- Marketing onboarding body link text. -->
+  <string name="nova_onboarding_marketing_body_link_text" tools:ignore="UnusedResources">ᱟᱵᱚ ᱰᱟᱴᱟ ᱪᱮᱫ ᱞᱮᱠᱟ ᱵᱚᱱ ᱵᱮᱵᱷᱟᱨᱮᱫᱟ</string>
+  <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Firefox ᱮᱛᱞᱟᱤᱭᱟᱹ ᱥᱟᱞᱟᱜ ᱟᱢ ᱴᱷᱤᱠ ᱨᱮ ᱫᱚᱦᱚᱢᱮ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢᱚᱜᱼᱟᱭ</string>
+  <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_notifications_subtitle" tools:ignore="BrandUsage,UnusedResources">Firefox ᱨᱮ ᱱᱟᱶᱟ ᱯᱨᱟᱭᱣᱮᱥᱤ ᱯᱷᱤᱪᱟᱨ ᱠᱚ ᱯᱟᱱᱛᱮ ᱢᱮ ᱡᱮᱢᱚᱱ ᱟᱢ ᱥᱟᱨᱟ ᱜᱷᱟᱹᱲᱤᱡ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱛᱟᱦᱮᱱ ᱞᱟᱹᱜᱤᱫ ᱱᱟᱦᱟᱜ ᱛᱮ ᱛᱟᱦᱮᱱ ᱢᱮ᱾</string>
+  <!-- Notifications onboarding button. -->
+  <string name="nova_onboarding_notifications_button" tools:ignore="UnusedResources">ᱠᱷᱚᱵᱚᱨ ᱠᱚ ᱦᱮᱡ ᱪᱷᱚᱭ ᱢᱮ</string>
+  <!-- "Add search widget" onboarding title. -->
+  <string name="nova_onboarding_add_search_widget_title" tools:ignore="UnusedResources">ᱥᱟᱱᱟᱢ ᱥᱮᱸᱫᱽᱨᱟ ᱟᱨᱦᱚᱸ ᱯᱨᱟᱭᱣᱮᱴ ᱢᱮ</string>
+  <!-- "Add search widget" onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage,UnusedResources">ᱟᱢᱟᱜ ᱯᱷᱚᱱ ᱨᱮᱭᱟᱜ ᱦᱚᱢ ᱥᱠᱨᱤᱱ ᱠᱷᱚᱱ ᱥᱟᱱᱟᱢ ᱥᱮᱸᱫᱽᱨᱟ ᱮᱦᱚᱵ ᱢᱮ ᱟᱨ ᱵᱟᱲᱟᱭ ᱢᱮ Firefox ᱨᱮᱭᱟᱜ ᱟᱡ ᱛᱮ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱟᱢᱟᱜ ᱫᱮᱭᱟ ᱨᱮ ᱢᱮᱱᱟᱜᱼᱟ ᱾</string>
+  <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage,UnusedResources">Firefox ᱣᱤᱡᱮᱴ ᱥᱮᱞᱮᱫ ᱢᱮ</string>
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">ᱢᱤᱫᱴᱟᱹᱝ ᱴᱩᱞᱵᱟᱨ ᱯᱞᱮᱥᱢᱮᱱᱴ ᱨᱟᱠᱟᱵᱽ ᱢᱮ</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -820,8 +902,6 @@
   <string name="preferences_gestures">ᱪᱤᱱᱦᱟᱹ ᱠᱚ</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">ᱠᱩᱥᱤᱭᱟᱜ ᱛᱮᱭᱟᱨ</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">ᱟᱢᱟᱜ ᱴᱮᱵᱽ ᱠᱚ, ᱵᱩᱠᱢᱟᱨᱠ ᱠᱚ, ᱫᱟᱱᱟᱝ ᱥᱟᱵᱟᱫᱽ ᱠᱚ ᱟᱨ ᱵᱟᱹᱲᱛᱤ ᱠᱚ ᱛᱚᱞ ᱡᱚᱠᱷᱟᱭ ᱞᱟᱹᱜᱤᱫ ᱥᱩᱦᱤ ᱮᱢ ᱢᱮ ᱾</string>
   <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
   <string name="preferences_sign_in_description">ᱴᱮᱵ ᱠᱚ, ᱵᱩᱠᱢᱟᱨᱠ ᱠᱚ, ᱫᱟᱱᱟᱲ ᱥᱟᱵᱟᱫᱽ ᱠᱚ ᱟᱨ ᱵᱚᱲᱛᱤ ᱠᱚ ᱛᱚᱞ ᱡᱚᱠᱷᱟᱭ ᱢᱮ ᱾</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
@@ -1059,14 +1139,20 @@
   <string name="alternative_app_icon_group_gradients">ᱜᱽᱨᱮᱰᱤᱭᱮᱱᱴᱥ</string>
   <!-- Title for the "Other" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
   <string name="alternative_app_icon_group_other" tools:ignore="UnusedResources" moz:removedIn="146">ᱮᱴᱟᱜᱽ-ᱟᱜ</string>
+  <!-- Title for the "Featured" group of alternative app icon variants in the icon picker screen. This group includes retro, pixel art, themed, and artist-created icons. -->
+  <string name="alternative_app_icon_group_featured">ᱥᱚᱫᱚᱨ ᱟᱠᱟᱱ</string>
   <!-- Title to show in alert when user selects an alternative app icon -->
   <string name="restart_warning_dialog_title">ᱮᱯ ᱪᱤᱱᱦᱟᱹ ᱵᱚᱫᱚᱞ ᱢᱮ?</string>
   <!-- Message to warn users that applying an alternative app icon may require an app restart. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
   <string name="restart_warning_dialog_body_2">ᱮᱯ ᱫᱚ ᱵᱚᱱᱫᱚ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ ᱾ %1$s ᱫᱚᱦᱲᱟ ᱡᱷᱤᱡᱽ ᱞᱟᱹᱜᱤᱫ ᱟᱢᱟᱜ ᱡᱷᱟᱞᱠᱟᱣᱜ ᱱᱟᱶᱟ ᱟᱭᱠᱚᱱ ᱨᱮ ᱞᱤᱱ ᱢᱮ ᱾</string>
+  <!-- Message to warn users that applying an alternative app icon may require an app restart and will remove existing shortcuts because of the OS limitations. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="restart_and_shortcuts_removal_warning_dialog_body">ᱟᱭᱤᱠᱚᱱ ᱵᱚᱫᱚᱞ ᱞᱮᱠᱷᱟᱱ ᱟᱢᱟᱜ ᱦᱳᱢ ᱥᱠᱨᱤᱱ ᱨᱮᱢ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱟᱠᱟᱫ ᱡᱟᱦᱟᱸᱱ ᱥᱟᱭᱤᱴ ᱟᱨ ᱥᱚᱨᱴᱼᱠᱳᱴ ᱠᱚ ᱚᱪᱚᱜᱚᱜᱼᱟ᱾ %1$s ᱵᱚᱸᱫᱽ ᱫᱟᱲᱮᱭᱟᱜᱼᱟ᱾ ᱫᱚᱲᱦᱟ ᱡᱷᱤᱡ ᱞᱟᱹᱜᱤᱫ ᱱᱟᱶᱟ ᱟᱭᱤᱠᱚᱱ ᱨᱮ ᱞᱤᱱ ᱢᱮ᱾</string>
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
   <string name="restart_warning_dialog_button_positive_2">ᱟᱭᱠᱚᱱ ᱵᱚᱫᱚᱞ ᱢᱮ</string>
   <!-- Dialog button text for cancelling app icon change -->
   <string name="restart_warning_dialog_button_negative">ᱵᱟᱹᱰᱨᱟᱹ</string>
+  <!-- Error message snackbar shown after the user tried to apply the new icon but the Android OS threw an error while updating existing app shortcuts (e.g. private mode shortcut) -->
+  <string name="shortcuts_update_error">ᱟᱯᱯ ᱨᱮᱱᱟᱜ ᱟᱭᱤᱠᱚᱱ ᱟᱹᱨᱩ ᱵᱟᱭ ᱜᱟᱱ ᱞᱮᱱᱟ ᱾ ᱢᱮᱱᱟᱜᱟᱜ ᱥᱚᱨᱴᱼᱠᱳᱴ ᱚᱪᱚᱜᱽ ᱢᱮ ᱟᱨ ᱫᱚᱲᱦᱟ ᱵᱤᱰᱟᱹᱣ ᱢᱮ ᱾</string>
   <!--
     Add-ons general availability nimbus message
 
@@ -1211,10 +1297,8 @@
   <!--
     Turn On Sync Preferences
 
-    Header of the Sync and save your data preference view
+    Header of the Sign in preference view
   -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">ᱥᱭᱝᱠᱢᱮ ᱟᱨ ᱟᱢᱟᱜ ᱰᱟᱴᱟ ᱥᱟᱺᱪᱟᱣ ᱛᱟᱢ</string>
-  <!-- Header of the Sign in preference view -->
   <string name="preferences_sign_in">ᱵᱚᱞᱚᱱ ᱥᱩᱦᱤ</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">ᱫᱩᱲᱟᱹ ᱡᱚᱲᱟᱣ ᱞᱟᱹᱜᱤᱫ ᱛᱮ ᱵᱚᱞᱚᱱ ᱥᱩᱦᱤ ᱢᱮ</string>
@@ -1463,6 +1547,8 @@
   <string name="tab_drawer_fab_content">ᱯᱨᱭᱣᱮᱴ</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
   <string name="tab_drawer_fab_sync">ᱥᱭᱝᱠ</string>
+  <!-- Text for the tab search bar placeholder -->
+  <string name="tab_manager_search_bar_placeholder">ᱟᱢᱟᱜ ᱴᱮᱵᱽ ᱠᱚ ᱥᱮᱸᱫᱽᱨᱟᱭ ᱢᱮ</string>
   <!-- Text shown in the menu for sharing all tabs -->
   <string name="tab_tray_menu_item_share">ᱡᱷᱚᱛᱚ ᱴᱮᱵᱽ ᱠᱚ ᱦᱟᱹᱴᱧ ᱢᱮ</string>
   <!-- Text shown in the menu to view recently closed tabs -->
@@ -1475,6 +1561,14 @@
   <string name="tab_tray_menu_tab_settings">ᱴᱮᱵᱽ ᱨᱮᱭᱟᱜ ᱥᱟᱡᱟᱣ ᱠᱚ</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">ᱡᱷᱚᱛᱚ ᱴᱮᱵᱽ ᱠᱚ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
+  <!-- Text shown as the title of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_title">ᱡᱷᱚᱛᱚ ᱴᱮᱵᱽ ᱵᱚᱸᱫᱚᱭᱟᱢ?</string>
+  <!-- Text shown in the body of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_body">ᱱᱚᱶᱟ ᱫᱚ ᱡᱷᱚᱛᱚ ᱡᱷᱤᱡ ᱴᱮᱵᱽ ᱠᱚ ᱵᱚᱸᱫᱚᱭᱟᱭ᱾</string>
+  <!-- Text shown on the confirm button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_confirm">ᱴᱮᱵᱽ ᱠᱚ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
+  <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_cancel">ᱵᱟᱹᱰᱨᱟᱹ</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
   <string name="tab_tray_multiselect_menu_item_bookmark">ᱵᱩᱻᱠᱢᱟᱨᱠ</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
@@ -1493,18 +1587,22 @@
   <string name="tab_tray_multiselect_menu_content_description">ᱵᱟᱪᱷᱟᱣ ᱟᱠᱟᱱ ᱴᱮᱵᱽ ᱢᱮᱱᱭᱩ ᱠᱚ</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
   <string name="tab_tray_homepage_tab">ᱚᱲᱟᱜ ᱥᱟᱦᱴᱟ</string>
-  <!-- Title text displayed for a homepage tab in the tabs tray. %s is a placeholder that will be replaced by app name. -->
-  <string name="tab_tray_homepage_tab_2" tools:ignore="UnusedResources" moz:removedIn="145">%s ᱚᱲᱟᱜ ᱥᱟᱦᱴᱟ</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">ᱴᱮᱵᱽ ᱛᱩᱢᱟᱹᱞ ᱠᱷᱚᱱ ᱚᱪᱚᱜ ᱢᱮ</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
   <string name="tabs_tray_select_tabs">ᱴᱮᱵᱽ ᱠᱚ ᱵᱟᱪᱷᱟᱣ ᱢᱮ</string>
+  <!-- Text for tab manager search page when there are no results. -->
+  <string name="tab_manager_no_search_results">ᱪᱮᱫ ᱢᱮᱲᱟᱣ ᱵᱟᱭ ᱧᱟᱢ ᱞᱮᱱᱟ ᱾</string>
+  <!-- Additional text for tab manager search page when there are no results. -->
+  <string name="tab_manager_no_search_results_additional_text">ᱮᱴᱟᱜ ᱥᱮᱸᱫᱽᱨᱟ ᱪᱮᱥᱴᱟᱭ ᱢᱮ!</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button. Closes the current session when pressed -->
   <string name="close_tab">ᱴᱮᱵᱽ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab <title> button. %s is the tab title -->
   <string name="close_tab_title">%s ᱴᱮᱵᱽ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
   <!-- Content description (not visible, for screen readers etc.): Opens the open tabs menu when pressed -->
   <string name="open_tabs_menu">ᱴᱮᱵᱽ ᱢᱮᱱᱭᱩ ᱡᱷᱤᱡᱽ ᱢᱮ</string>
+  <!-- Content description (not visible, for screen readers etc.): Return to tab manager -->
+  <string name="tab_manager_search_bar_back_content_description">ᱴᱮᱵᱽ ᱪᱟᱪᱞᱟᱣᱤᱭᱟᱹ ᱛᱮ ᱨᱩᱣᱟᱹᱲ ᱢᱮ</string>
   <!-- Open tabs menu item to save tabs to collection -->
   <string name="tabs_menu_save_to_collection1">ᱴᱮᱵᱽ ᱠᱚ ᱛᱩᱢᱟᱹᱞ ᱨᱮ ᱥᱟᱺᱪᱟᱣ ᱢᱮ</string>
   <!-- Text for the menu button to delete a collection -->
@@ -1521,6 +1619,8 @@
   <string name="delete_from_history">ᱱᱟᱜᱟᱢ ᱠᱷᱚᱱ ᱢᱮᱴᱟᱣ ᱢᱮ</string>
   <!-- Postfix for private WebApp titles. %1$s is the name of the app (for example "Firefox"). -->
   <string name="pwa_site_controls_title_private">%1$s (ᱯᱨᱭᱣᱮᱴ ᱢᱳᱰ)</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
+  <string name="tab_manager_open_tab_search">ᱴᱮᱵᱽ ᱥᱮᱸᱫᱽᱨᱟ ᱡᱷᱤᱡᱽ ᱢᱮ</string>
   <!--
     History
 
@@ -1894,12 +1994,16 @@
   <string name="bookmark_delete_folder_content_description">ᱯᱚᱴᱚᱢ ᱢᱮᱴᱟᱣ ᱢᱮ</string>
   <!-- Content description for bookmark search floating action button -->
   <string name="bookmark_search_button_content_description">ᱵᱩᱠᱢᱟᱨᱠ ᱠᱚ ᱥᱮᱸᱫᱽᱨᱟᱭ ᱢᱮ</string>
+  <!-- Content description for select folder screen search action button ("search" is a verb) -->
+  <string name="select_bookmark_search_button_content_description">ᱯᱚᱴᱚᱢᱠᱚ ᱥᱮᱸᱫᱽᱨᱟᱭ ᱢᱮ</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">%s ᱞᱟᱹᱜᱤᱫ ᱡᱤᱱᱤᱥ ᱢᱮᱱᱩ</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">ᱵᱩᱩᱠᱢᱟᱨᱠᱠᱚ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
   <!-- Title for the bookmark list empty state -->
   <string name="bookmark_empty_list_title">ᱵᱩᱠᱢᱟᱨᱠ ᱠᱚ ᱱᱚᱰᱮ ᱵᱚᱱᱩᱜ-ᱟ</string>
+  <!-- Bookmark screen folder description. %s is the count of bookmark folder children -->
+  <string name="bookmarks_folder_description">ᱯᱚᱴᱚᱢ ᱨᱮ ᱵᱩᱠᱢᱟᱨᱠ ᱢᱮ : %s</string>
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
   <string name="bookmark_empty_list_guest_description">ᱵᱽᱨᱟᱣᱡᱽ ᱛᱮᱜᱮ ᱥᱟᱭᱤᱴ ᱥᱟᱧᱪᱟᱣ ᱢᱮ ᱾ ᱮᱴᱟᱜ ᱟᱹᱭᱩᱨ ᱢᱤᱫ ᱥᱟᱫᱷᱚᱱ ᱠᱷᱚᱱ ᱵᱩᱠᱢᱟᱨᱠᱠᱚ ᱦᱟᱛᱟᱣ ᱞᱟᱹᱜᱤᱫ ᱥᱩᱦᱤ ᱮᱢ ᱢᱮ ᱾</string>
   <!-- Text for the button to navigate to sync authentication -->
@@ -1910,6 +2014,8 @@
   <string name="bookmark_empty_list_folder_description">ᱵᱽᱨᱟᱹᱡᱽ ᱠᱟᱛᱮ ᱵᱩᱠᱢᱟᱨᱠ ᱥᱮᱞᱮᱫ ᱢᱮ ᱢᱮᱱᱠᱷᱟᱱ ᱟᱞᱮ ᱫᱚ ᱟᱢᱟᱜ ᱠᱩᱥᱤ ᱥᱟᱭᱤᱴ ᱛᱟᱭᱚᱢᱛᱮ ᱯᱟᱱᱛᱮ ᱫᱟᱲᱮᱭᱟᱜ ᱛᱟᱢᱟ ᱾</string>
   <!-- Description for the add new folder button when selecting a folder. -->
   <string name="bookmark_select_folder_new_folder_button_title">ᱱᱚᱶᱟ ᱯᱚᱴᱚᱢ</string>
+  <!-- Bookmark snackbar message for moving a single item. %1$s is the title of the item being moved and %2$s is the new parent folder of the bookmark -->
+  <string name="bookmark_moved_single_item">%1$s ᱠᱷᱚᱱ %2$s ᱨᱮ ᱩᱪᱟᱹᱲ ᱮᱱᱟ</string>
   <!--
     Site Permissions
 
@@ -2044,6 +2150,10 @@
     %d is a placeholder for the number of tabs selected.
   -->
   <string name="create_collection_save_to_collection_tab_selected">%d ᱴᱮᱵᱽ ᱵᱟᱪᱷᱟᱣ ᱟᱠᱟᱱᱟ</string>
+  <!-- Text shown in snackbar when one or multiple tabs have been saved in a new collection -->
+  <string name="create_collection_tabs_saved_new_collection_2">ᱛᱩᱢᱟᱹᱞ ᱥᱟᱧᱪᱟᱣᱮᱱᱟ</string>
+  <!-- Text shown in snackbar when one tab has been saved in a collection -->
+  <string name="create_collection_tab_saved_2">ᱴᱮᱵᱽ ᱥᱟᱧᱪᱟᱣᱮᱱᱟ</string>
   <!-- Content description (not visible, for screen readers etc.): button to close the collection creator -->
   <string name="create_collection_close">ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
   <!-- Button to save currently selected tabs in the "select tabs" step of the collection creator -->
@@ -2089,8 +2199,8 @@
   <string name="toast_copy_link_to_clipboard">ᱨᱮᱴᱚᱯ ᱵᱳᱨᱰ ᱨᱮ ᱱᱚᱠᱚᱞᱮᱱᱟ</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">ᱥᱭᱝᱠ ᱞᱟᱹᱜᱤᱫ ᱵᱚᱞᱚᱱ ᱥᱩᱦᱤ ᱢᱮ</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">ᱥᱭᱝᱠ ᱟᱨ ᱰᱟᱴᱟ ᱥᱟᱺᱪᱟᱣ</string>
+  <!-- An option from the three dot menu to sign in -->
+  <string name="sync_menu_sign_in">ᱵᱚᱞᱚᱱ ᱥᱩᱦᱤ</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">ᱡᱚᱛᱚ ᱥᱟᱫᱷᱚᱱ ᱛᱮ ᱵᱷᱮᱡᱟᱭᱢᱮ</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2177,6 +2287,8 @@
   <string name="snackbar_tabs_closed">ᱴᱮᱵᱽ ᱠᱚ ᱵᱚᱸᱫᱚᱭᱮᱱᱟ</string>
   <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
   <string name="snackbar_num_tabs_closed">ᱛᱮᱵᱽ ᱵᱚᱸᱫ ᱟᱠᱟᱱᱟ: %1$s</string>
+  <!-- Text shown in snackbar when user bookmarks a list of tabs. %s is the name of the folder the bookmark was saved into. -->
+  <string name="snackbar_message_bookmarks_saved_in_2">ᱵᱩᱠᱢᱟᱨᱠ ᱫᱚ “%s” ᱨᱮ ᱥᱟᱧᱪᱟᱣ ᱟᱠᱟᱱᱟ</string>
   <!-- Text shown in snackbar when user adds a site to shortcuts -->
   <string name="snackbar_added_to_shortcuts">!ᱠᱷᱟᱴᱚᱢᱟᱪᱷᱟ ᱛᱮ ᱥᱮᱞᱮᱫᱽ ᱮᱱᱟ!</string>
   <!-- Text shown in snackbar when user closes a private tab -->
@@ -2207,7 +2319,7 @@
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">ᱪᱤᱠᱤ ᱨᱮᱭᱟᱜ ᱢᱟᱯ</string>
   <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
-  <string name="a11y_preference_accessibility_font_size_percentage">%d %% ᱾</string>
+  <string name="a11y_preference_accessibility_font_size_percentage" tools:ignore="UnusedResources" moz:removedIn="148">%d %% ᱾</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">ᱟᱡ ᱛᱮ ᱪᱤᱠᱤ ᱥᱟᱡᱟᱣ</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
@@ -2283,6 +2395,14 @@
     text to display in the snackbar once account is signed-in
   -->
   <string name="onboarding_firefox_account_sync_is_on">ᱥᱭᱝᱠ ᱪᱟᱹᱞᱩ ᱢᱮᱱᱟᱜ-ᱟ</string>
+  <!--
+    Onboarding theme
+
+    Text shown in snackbar when multiple tabs have been sent to device
+  -->
+  <string name="sync_sent_tabs_snackbar_2">ᱴᱮᱵᱽ ᱠᱚ ᱠᱳᱞ ᱦᱩᱭᱮᱱᱟ</string>
+  <!-- Text shown in snackbar when one tab has been sent to device -->
+  <string name="sync_sent_tab_snackbar_2">ᱴᱮᱵᱽ ᱠᱳᱞ ᱦᱩᱭᱮᱱᱟ</string>
   <!-- Text shown in snackbar when sharing tabs failed -->
   <string name="sync_sent_tab_error_snackbar">ᱵᱟᱝ ᱠᱩᱞ ᱫᱟᱲᱮᱞᱟᱱᱟ</string>
   <!-- Text shown in snackbar for the "retry" action that the user has after sharing tabs failed -->
@@ -2335,6 +2455,28 @@
   <string name="preference_enhanced_tracking_protection_allow_list_baseline" tools:ignore="UnusedResources" moz:removedIn="144">ᱢᱟᱨᱟᱝ ᱣᱮᱵᱽᱥᱟᱭᱤᱴ ᱨᱟᱹᱯᱩᱫ ᱠᱷᱚᱱ ᱥᱟᱦᱟᱜ ᱞᱟᱹᱜᱤᱫ ᱞᱟᱹᱠᱛᱤᱭᱟᱱ ᱵᱷᱮᱜᱟᱨ ᱠᱚ ᱟᱡ ᱛᱮ ᱞᱟᱹᱜᱩ ᱞᱟᱹᱜᱤᱫ %1$s ᱟᱫᱮᱨ ᱮᱢᱚᱜ ᱢᱮ ᱾</string>
   <!-- Preference description for the checkbox setting for "convenience" exceptions (a set of content blocking exceptions applied to fix convenience site features). -->
   <string name="preference_enhanced_tracking_protection_allow_list_convenience" tools:ignore="UnusedResources" moz:removedIn="144">ᱟᱨᱦᱚᱸ ᱟᱡ ᱛᱮ ᱩᱞᱴᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱩᱭ ᱢᱮ ᱚᱠᱟ ᱠᱚ ᱫᱚ ᱥᱩᱢᱩᱝ ᱠᱟᱹᱴᱤᱡ ᱮᱴᱠᱮᱴᱚᱬᱮ ᱠᱚ ᱴᱷᱤᱠ ᱟᱨ ᱥᱩᱵᱤᱫᱟ ᱯᱷᱤᱪᱟᱨ ᱠᱚ ᱧᱟᱢ ᱞᱟᱹᱜᱤᱫ ᱞᱟᱹᱠᱛᱤᱭᱟᱱᱟ ᱾</string>
+  <!-- Preference label for the enhanced tracking protection option to fix major site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_baseline_2">ᱥᱟᱭᱤᱴ ᱨᱮᱱᱟᱜ ᱢᱟᱨᱟᱝ ᱮᱴᱠᱮᱴᱚᱬᱮ ᱠᱚ ᱡᱩᱛ ᱢᱮ (ᱥᱚᱞᱦᱟ ᱟᱠᱟᱱᱟ)</string>
+  <!-- Preference label for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience_label">ᱥᱟᱭᱤᱴ ᱨᱮᱱᱟᱜ ᱦᱩᱰᱤᱧ ᱮᱴᱠᱮᱴᱚᱬᱮ ᱠᱚ ᱡᱩᱛ ᱢᱮ</string>
+  <!-- Preference description for the enhanced tracking protection option to fix minor site issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_convenience_description">ᱢᱟᱨᱟᱝ ᱮᱠᱴᱮᱴᱚᱬᱮ ᱠᱚ ᱡᱩᱛ ᱠᱟᱛᱮ ᱵᱮᱵᱷᱟᱨ ᱞᱟᱹᱠᱛᱤ᱾</string>
+  <!-- Preference sub header for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_subheader">ᱥᱟᱭᱤᱴ ᱨᱮᱱᱟᱜ ᱮᱴᱠᱮᱴᱚᱬᱮ ᱠᱚ ᱡᱩᱛ ᱢᱮ</string>
+  <!-- Learn more text for the enhanced tracking protection options to fix issues caused by tracker blocking -->
+  <string name="preference_enhanced_tracking_protection_allow_list_learn_more">ᱵᱟᱹᱲᱛᱤ ᱵᱟᱰᱟᱭ ᱢᱮ</string>
+  <!--
+    Dialog that appears after user tries to uncheck the baseline exceptions preference under Strict or Custom tracking protection
+
+    Title for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection
+  -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_title">ᱟᱢ ᱡᱩᱛ ᱠᱚ ᱵᱚᱸᱫᱚ ᱥᱟᱱᱟᱢ ᱠᱟᱱᱟ?</string>
+  <!-- Message for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. %1$s is the name of the application (e.g. Fenix). -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_message">ᱱᱚᱶᱟ ᱥᱟᱡᱟᱣ ᱫᱚ ᱡᱟᱹᱥᱛᱤᱜᱟᱱ ᱥᱟᱫᱷᱟᱨᱚᱱ ᱥᱟᱭᱤᱴ ᱮᱴᱠᱮᱴᱚᱬᱮ ᱠᱚ ᱡᱩᱛ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢᱚᱜᱼᱟᱭ᱾ ᱡᱩᱫᱤ ᱟᱢ ᱵᱚᱸᱫᱚᱭᱟᱢ, ᱠᱤᱪᱷᱩᱜᱟᱱ ᱥᱟᱭᱤᱴ ᱵᱟᱭ ᱪᱟᱹᱞᱩ ᱡᱟᱦᱟᱸᱱᱚᱜᱼᱟ, ᱟᱨ %1$s ᱫᱚ ᱚᱱᱟ ᱮᱴᱠᱮᱴᱚᱬᱮ ᱠᱚ ᱥᱩᱫᱷᱟᱹᱨ ᱞᱟᱹᱜᱤᱫ ᱵᱟᱭ ᱜᱚᱲᱚ ᱫᱟᱲᱮᱭᱟᱢᱟ᱾</string>
+  <!-- Confirmation button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_confirm">ᱡᱩᱛ ᱠᱚ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
+  <!-- Cancel button text for the dialog that appears after disabling the baseline exceptions preference under Strict or Custom tracking protection. This dismisses the dialog and re-enables the preference. -->
+  <string name="preference_enhanced_tracking_protection_allow_list_dialog_cancel">ᱡᱩᱛᱨᱟᱹᱣ ᱫᱚᱦᱚ ᱠᱟᱜ ᱢᱮ</string>
   <!-- Accessibility text for the Strict protection information icon -->
   <string name="preference_enhanced_tracking_protection_strict_info_button">ᱴᱷᱤᱴ ᱜᱷᱮᱨ ᱮᱥᱮᱫ ᱨᱩᱠᱷᱭᱟ ᱫᱚ ᱪᱮᱫ ᱵᱞᱚᱠ ᱠᱮᱜᱼᱟᱭ</string>
   <!-- Preference for enhanced tracking protection for the custom protection settings -->
@@ -2645,6 +2787,10 @@
   <string name="edit_login_navigate_back_button_content_description">ᱯᱟᱹᱪᱷᱞᱟᱹᱥᱮᱱ ᱪᱟᱞᱟᱜ ᱢᱮ</string>
   <!-- Content description, used by tools like screenreaders, to press on the edit login button. -->
   <string name="edit_login_button_content_description">ᱞᱚᱜᱽ ᱥᱟᱯᱲᱟᱣ ᱢᱮ</string>
+  <!-- Content description, used by tools like screenreaders, to press on the add new login button. -->
+  <string name="saved_logins_add_new_login_button_content_description">ᱱᱟᱶᱟ ᱵᱚᱞᱚ ᱥᱮᱞᱮᱫᱽ ᱢᱮ</string>
+  <!-- Content description, used by tools like screenreaders, to press on the clear search text button. -->
+  <string name="saved_logins_clear_search_text_button_content_description">ᱥᱮᱫᱽᱨᱟ ᱚᱞ ᱥᱟᱯᱷᱟᱭ ᱢᱮ</string>
   <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
   <string name="saved_login_open_site">ᱥᱟᱭᱤᱴ ᱵᱽᱨᱟᱣᱩᱡᱚᱨ ᱨᱮ ᱡᱷᱤᱡᱽ ᱢᱮ</string>
   <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
@@ -2653,6 +2799,10 @@
   <string name="saved_login_hide_password">ᱫᱟᱱᱟᱝ ᱥᱟᱵᱟᱫᱽ ᱩᱠᱩ</string>
   <!-- Message displayed in biometric prompt displayed for authentication before allowing users to view their passwords -->
   <string name="logins_biometric_prompt_message_2">ᱥᱟᱧᱪᱟᱣᱟᱠᱟᱱ ᱠᱟᱰ ᱠᱚ ᱧᱮᱞ ᱞᱟᱹᱜᱤᱫ ᱠᱷᱩᱞᱟᱹᱭ ᱢᱮ</string>
+  <!-- Button for unlocking logins on the biometric lock screen -->
+  <string name="logins_biometric_unlock_button">ᱡᱷᱤᱡ</string>
+  <!-- Button for leaving logins on the biometric lock screen -->
+  <string name="logins_biometric_leave_button">ᱵᱟᱹᱜᱤ ᱢᱮ</string>
   <!-- Title of warning dialog if users have no device authentication set up -->
   <string name="logins_warning_dialog_title_2">ᱟᱢᱟᱜ ᱫᱟᱱᱟᱝ ᱥᱟᱵᱟᱫᱽ ᱠᱚ ᱨᱩᱠᱷᱤᱭᱟᱹᱭ ᱢᱮ</string>
   <!-- Message of warning dialog if users have no device authentication set up -->
@@ -2707,8 +2857,12 @@
   <string name="preferences_addresses_sync_addresses_across_devices">ᱥᱟᱱᱟᱢ ᱥᱟᱫᱷᱚᱱ ᱠᱚ ᱨᱮ ᱴᱷᱤᱠᱬᱟᱹᱠᱚ ᱟᱹᱭᱩᱨᱢᱤᱫ ᱢᱮ</string>
   <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
   <string name="preferences_addresses_sync_addresses">ᱴᱷᱤᱠᱬᱟᱹᱠᱚ ᱟᱹᱭᱩᱨᱢᱤᱫ ᱢᱮ</string>
+  <!-- Content description navigating back from autofill settings screen. -->
+  <string name="autofill_settings_navigate_back_button_content_description">ᱯᱟᱹᱪᱷᱟᱞᱟᱹ</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">ᱠᱟᱰ ᱥᱮᱞᱮᱫᱽ ᱢᱮ</string>
+  <!-- Content description for the "credit card feature" top bar back button -->
+  <string name="credit_cards_navigate_back_button_content_description">ᱯᱟᱹᱪᱷᱞᱟᱹᱥᱮᱱ ᱪᱟᱞᱟᱜ ᱢᱮ</string>
   <!-- Title of the "Edit card" screen -->
   <string name="credit_cards_edit_card">ᱠᱟᱰ ᱥᱟᱯᱲᱟᱣ ᱢᱮ</string>
   <!-- The header for the card number of a credit card -->
@@ -2761,6 +2915,8 @@
   <string name="addresses_manage_addresses">ᱴᱷᱤᱠᱬᱟᱹᱤᱭᱟᱹ ᱡᱚᱛᱚᱱ ᱮᱢ</string>
   <!-- The header for the name of an address. Name represents a person's full name, typically made up of a first, middle and last name, e.g. John Joe Doe. -->
   <string name="addresses_name">ᱧᱩᱛᱩᱢ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The organization's name related to the address helps in distinguishing addresses used for business or personal purposes. -->
+  <string name="addresses_organization" tools:ignore="UnusedResources">ᱜᱟᱶᱛᱟ</string>
   <!-- The header for the street address of an address -->
   <string name="addresses_street_address">ᱥᱚᱰᱚᱠ ᱴᱷᱤᱠᱬᱟᱹ</string>
   <!-- The header for the city of an address -->
@@ -2777,6 +2933,44 @@
   <string name="addresses_phone">ᱯᱷᱚᱱ</string>
   <!-- The header for the email of an address -->
   <string name="addresses_email">ᱤᱢᱮᱞ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is used for addresses in Iran, Mexico. -->
+  <string name="addresses_neighborhood" tools:ignore="UnusedResources">ᱥᱩᱨᱥᱩᱨᱦᱚᱲ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Village or Township field, specific to Malaysia is crucial for addresses in rural areas. -->
+  <string name="addresses_village_township" tools:ignore="UnusedResources">ᱟᱹᱛᱩ ᱟᱨᱵᱟᱝ ᱴᱚᱞᱟ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Island field, used in places like the Cayman Islands and the Bahamas if an address is located on a specific island. -->
+  <string name="addresses_island" tools:ignore="UnusedResources">ᱟᱭᱞᱮᱱᱰ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The Townland field, specific to Ireland is a specific type of land division used in rural areas. -->
+  <string name="addresses_townland" tools:ignore="UnusedResources">ᱴᱟᱣᱱᱞᱮᱱᱰ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is used as secondary address information (below the country level, e.g. county) in Honk Kong, Sudan, Syria, Türkiye, and as sublocality (civil entity below a locality, e.g. district) in Korea. -->
+  <string name="addresses_district" tools:ignore="UnusedResources">ᱦᱚᱱᱚᱛ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Used in the United Kingdom, Norway and Sweden -->
+  <string name="addresses_post_town" tools:ignore="UnusedResources">ᱯᱚᱥᱴ ᱴᱚᱣᱩᱱ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is used as a tertiary address information (below the state level, e.g. Tasmania in Australia -->
+  <string name="addresses_suburb" tools:ignore="UnusedResources">ᱦᱩᱰᱤᱧ ᱱᱟᱜᱟᱨ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. This specific field is crucial for addressing in regions where county lines play a key role in postal services. -->
+  <string name="addresses_county" tools:ignore="UnusedResources">ᱫᱤᱥᱚᱢ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Significant in places where parishes are used for local administration and addressing. Ensures users can specify parish details for better autofill accuracy. Used in Barbados and Jamaica. -->
+  <string name="addresses_parish" tools:ignore="UnusedResources">ᱴᱚᱴᱷᱟ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Essential for addresses in countries like Japan where prefectures are a major administrative division. -->
+  <string name="addresses_prefecture" tools:ignore="UnusedResources">ᱯᱨᱤᱯᱷᱮᱠᱪᱚᱨ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Allowing users to specify a particular area within a city or region. Used in Hong Kong -->
+  <string name="addresses_area" tools:ignore="UnusedResources">ᱡᱟᱭᱜᱟ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The header for the Do/Si of the address. Do/Si refers to provincial level divisions, pertinent to addresses in South Korea. -->
+  <string name="addresses_do_si" tools:ignore="UnusedResources">ᱰᱚ/ᱥᱤ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Used in countries like Nicaragua and Colombia where departments are a key administrative division. -->
+  <string name="addresses_department" tools:ignore="UnusedResources">ᱛᱷᱚᱱᱚᱛ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Essential for addresses in the United Arab Emirates. -->
+  <string name="addresses_emirate" tools:ignore="UnusedResources">ᱮᱢᱤᱨᱮᱴ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Relevant for addresses in countries like Russia and Ukraine. -->
+  <string name="addresses_oblast" tools:ignore="UnusedResources">ᱚᱵᱽᱞᱟᱥᱴ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The PIN (Postal Index Number) field, used in India is a code representing a specific area. -->
+  <string name="addresses_pin" tools:ignore="UnusedResources">ᱯᱤᱱ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. The postal code field is universally used in address forms to specify the area code for mail sorting. -->
+  <string name="addresses_postal_code" tools:ignore="UnusedResources">ᱯᱚᱥᱴ ᱠᱳᱰ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. the Eircode field, specific to Ireland is a unique postal code system that helps in precise location identification. -->
+  <string name="addresses_eircode" tools:ignore="UnusedResources">ᱤᱭᱮᱨᱠᱳᱰ</string>
+  <!-- Label for an address field (e.g. mailing address) used as part of the form autofill feature. Used in cases we want to only display the word "Country" over "Country or Region". -->
+  <string name="addresses_country_only" tools:ignore="UnusedResources">ᱫᱤᱥᱚᱢ</string>
   <!-- The text for the "Save" button for saving an address -->
   <string name="addresses_save_button">ᱥᱟᱧᱪᱟᱣ</string>
   <!-- The text for the "Cancel" button for cancelling adding, updating or deleting an address -->
@@ -2979,6 +3173,11 @@
     Title text displayed in the tabs tray when a tab has been unused for 14 days.
   -->
   <string name="inactive_tabs_title">ᱵᱟᱝ ᱩᱥᱨᱟᱹᱣ ᱴᱮᱵᱽᱥ</string>
+  <!--
+    Text displayed in the tabs tray, indicating the number of inactive tabs.
+    %d is the number of inactive tabs.
+  -->
+  <string name="inactive_tabs_num_items">ᱡᱤᱱᱤᱥ ᱠᱚ: %d</string>
   <!-- Content description for closing all inactive tabs -->
   <string name="inactive_tabs_delete_all">ᱵᱟᱝ ᱮᱠᱴᱤᱵᱷ ᱴᱮᱵᱽ ᱠᱚ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
   <!-- Content description for expanding the inactive tabs section. -->
@@ -3034,6 +3233,13 @@
     Header text for a section on the home screen.
   -->
   <string name="pocket_stories_header_2">ᱠᱟᱹᱦᱱᱤᱠᱚ</string>
+  <!--
+    Context description text for the "Discover more" button in the stories home screen section
+    which navigates the user to a screen displaying more stories.
+  -->
+  <string name="stories_discover_more_content_description">ᱰᱷᱮᱨ ᱠᱟᱹᱦᱱᱤ ᱠᱚ ᱯᱟᱱᱛᱮ ᱢᱮ</string>
+  <!-- Content description for the "Navigate back" button on the top app bar of the Stories screen. -->
+  <string name="stories_back_button_content_description">ᱯᱟᱹᱪᱷᱞᱟᱹᱥᱮᱱ ᱪᱟᱞᱟᱜ ᱢᱮ</string>
   <!-- Text indicating that the Pocket story that also displays this text is a sponsored story by other 3rd party entity. -->
   <string name="pocket_stories_sponsor_indication">ᱠᱟᱹᱢᱤᱼᱤᱭᱟᱹ</string>
   <!-- Snackbar message for enrolling in a Nimbus experiment from the secret settings when Studies preference is Off. -->
@@ -3349,6 +3555,8 @@
   <string name="protection_panel_num_trackers_blocked">ᱴᱨᱮᱠᱟᱨ ᱠᱚ ᱵᱞᱚᱠ ᱮᱱᱟ: %d</string>
   <!-- Text for when no trackers have been blocked. -->
   <string name="protection_panel_no_trackers_blocked">ᱯᱟᱧᱡᱟᱠᱩᱜ ᱵᱟᱠᱚ ᱧᱟᱢ ᱞᱮᱱᱟ</string>
+  <!-- Text for when tracking protection is disabled and no trackers are blocked. -->
+  <string name="protection_panel_etp_disabled_no_trackers_blocked">ᱴᱨᱮᱠᱟᱨ ᱠᱚ ᱵᱟᱠᱚ ᱮᱥᱮᱫ ᱟᱠᱟᱱᱟ</string>
   <!-- Link text to navigate to privacy and security settings from the protection panel. -->
   <string name="protection_panel_privacy_and_security_settings_2">ᱯᱨᱟᱭᱣᱮᱥᱤ ᱥᱮᱴᱤᱝ</string>
   <!-- Title text for the protection panel permissions section. -->
@@ -3377,6 +3585,8 @@
   <string name="connection_security_panel_secure">ᱡᱟᱹᱯᱛᱤ ᱡᱚᱱᱚᱲᱟᱣ</string>
   <!-- Text for the connection security panel when the site is not secure. -->
   <string name="connection_security_panel_not_secure">ᱡᱩᱲᱟᱹᱣ ᱵᱟᱭ ᱨᱩᱠᱷᱤᱭᱟᱹ ᱜᱮᱭᱟ</string>
+  <!-- Text for the connection security panel when accessed from local PDF. -->
+  <string name="connection_security_panel_local_pdf">ᱱᱚᱶᱟ ᱥᱟᱦᱴᱟ ᱫᱚ ᱟᱢᱟᱜ ᱰᱤᱵᱷᱟᱭᱤᱥ ᱨᱮ ᱡᱚᱜᱟᱣᱮᱱᱟ</string>
   <!--
     Text for the connection security panel to indicate who the certificate was verified by.
     %s is a placeholder for the name of the certificate authority that issued the certificate.
@@ -3496,6 +3706,8 @@
   <string name="microsurvey_close_handle_content_description">ᱥᱚᱨᱵᱷᱮ ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
   <!-- Content description for "X" button that is closing microsurvey. -->
   <string name="microsurvey_close_button_content_description">ᱵᱚᱸᱫᱚᱭ ᱢᱮ</string>
+  <!-- The title of the autofill tab in the Debug Drawer. -->
+  <string name="debug_drawer_autofill_title">ᱟᱡᱛᱮ ᱯᱮᱨᱮᱡᱚᱜ ᱥᱟᱢᱟᱱ ᱠᱚ</string>
   <!--
     Debug drawer logins
 
@@ -3522,6 +3734,16 @@
   <string name="debug_drawer_add_new_address">ᱵᱟᱪᱷᱟᱣ ᱟᱠᱟᱱ ᱴᱷᱟᱶ ᱞᱟᱹᱜᱤᱫ ᱱᱟᱶᱟ ᱴᱷᱤᱠᱬᱟ. ᱥᱮᱞᱮᱫ ᱢᱮ</string>
   <!-- The title of the button for deleting in the debug drawer all addresses. -->
   <string name="debug_drawer_delete_all_addresses">ᱡᱷᱚᱛᱚ ᱴᱷᱤᱠᱬᱟᱹ ᱢᱮᱴᱟᱣ ᱢᱮ</string>
+  <!--
+    Debug drawer credit cards
+
+    The title of the credit cards feature in the Debug Drawer.
+  -->
+  <string name="debug_drawer_credit_cards_title">ᱠᱨᱮᱰᱤᱴ ᱠᱟᱰ</string>
+  <!-- The title of the button in the debug drawer for adding a new credit card -->
+  <string name="debug_drawer_add_new_credit_card">ᱱᱟᱶᱟ ᱠᱨᱮᱰᱤᱴ ᱠᱟᱰ ᱥᱮᱞᱮᱫᱽ ᱢᱮ</string>
+  <!-- The title of the button for deleting in the debug drawer all addresses. -->
+  <string name="debug_drawer_delete_all_credit_cards">ᱡᱷᱚᱛᱚ ᱠᱨᱮᱰᱤᱴ ᱠᱟᱰ ᱜᱮᱫᱽ ᱢᱮ</string>
   <!--
     Debug drawer "contextual feature recommendation" (CFR) tools
 
@@ -3759,10 +3981,30 @@
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">ᱟᱢᱟᱜ ᱦᱩᱫᱤᱥ</string>
   <!--
-    Terms of use pop up prompt
+    Settings Search Strings
 
-    Title for the pop up prompt
+    Title of Settings Search. "Search" is a verb here
   -->
+  <string name="settings_search_title">ᱥᱮᱸᱫᱽᱨᱟ ᱥᱟᱡᱟᱣ ᱠᱚ</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to clear the search field for settings search -->
+  <string name="content_description_settings_search_clear_search">ᱯᱟᱱᱛᱮ ᱯᱷᱟᱨᱪᱟ</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to navigate back to the Settings page from the Settings Search screen. -->
+  <string name="content_description_settings_search_navigate_back">ᱯᱟᱹᱪᱷᱞᱟᱹᱥᱮᱱ ᱪᱟᱞᱟᱜ ᱢᱮ</string>
+  <!-- Message displayed when the search field in the Settings Search screen is empty -->
+  <string name="settings_search_empty_query_placeholder">ᱨᱚᱠᱟ ᱥᱮᱫᱽᱨᱟ ᱠᱚ ᱵᱟᱹᱱᱩᱜᱼᱟ</string>
+  <!-- Message when error happens with Settings Search -->
+  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">ᱢᱤᱫᱴᱟᱝ ᱦᱩᱲᱟᱹᱜ ᱦᱩᱭᱮᱱᱟ :</string>
+  <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
+  <string name="settings_search_clear_recent_searches_message">ᱡᱷᱚᱛᱚ ᱯᱷᱟᱨᱪᱟᱭ ᱢᱮ</string>
+  <!-- Section header for recent search results -->
+  <string name="settings_search_recent_searches_section_header">ᱨᱚᱠᱟ ᱥᱮᱫᱽᱨᱟ ᱚᱨᱡᱚ ᱠᱚ</string>
+  <!-- Message displayed when the search field is not empty but search results is empty. -->
+  <string name="settings_search_no_results_title">ᱪᱮᱫ ᱦᱚᱸ ᱵᱟᱭ ᱧᱟᱢ ᱞᱮᱱᱟ</string>
+  <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
+  <string name="settings_search_no_results_message">ᱮᱴᱟᱜᱟᱜ ᱥᱮᱸᱫᱽᱨᱟ ᱵᱤᱰᱟᱹᱣ ᱢᱮ</string>
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">ᱟᱞᱮ ᱢᱤᱫ ᱦᱟᱹᱞᱤᱭᱟᱹᱠ ᱞᱮ ᱧᱟᱢ ᱠᱮᱫᱟ</string>
   <!--
     Message for the terms of use pop up prompt
@@ -3786,4 +4028,34 @@
   <string name="terms_of_use_prompt_accept">ᱦᱮᱸᱥᱮᱨᱤᱭᱟᱹ</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">ᱛᱟᱭᱚᱢ ᱛᱮ ᱵᱟᱛᱟᱣ ᱤᱧ ᱢᱮ</string>
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- A title for the popup prompt. -->
+  <string name="terms_of_use_prompt_title_option_a" tools:ignore="UnusedResources">ᱵᱮᱵᱷᱟᱨ ᱨᱮᱭᱟᱜ ᱥᱚᱨᱛᱚ</string>
+  <!--
+    A title for the popup prompt.
+    %1$s is the product name "Firefox"
+  -->
+  <string name="terms_of_use_prompt_title_option_b" tools:ignore="UnusedResources">%1$s ᱠᱷᱚᱱ ᱢᱤᱫ ᱱᱚᱴ</string>
+  <!--
+    Copy for the Terms of Use popup prompt body line two.
+    %1$s is the string terms_of_use_prompt_body_line_two_alternative_link ("here") that is a link to the Terms of Use
+  -->
+  <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">ᱟᱢ ᱵᱟᱹᱲᱛᱤ ᱪᱮᱫ ᱫᱟᱲᱮᱭᱟᱜᱼᱟᱢ %1$s᱾</string>
+  <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
+  <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">ᱱᱚᱰᱮ</string>
+  <!-- ==== End of Terms of use popup prompt. ==== -->
+
+  <!--
+    Privacy notice homepage banner
+
+    A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link using privacy_notice_updated_homepage_message_privacy_notice as text (Privacy Notice)
+    %2$s is replaced by an active link using privacy_notice_updated_homepage_message_learn_more as text (Learn more)
+  -->
+  <string name="privacy_notice_updated_homepage_message" tools:ignore="BrandUsage,UnusedResources">ᱯᱷᱟᱭᱟᱨᱯᱷᱚᱠᱥ ᱨᱮ ᱱᱟᱶᱟ ᱯᱷᱤᱪᱚᱨ ᱠᱚ ᱩᱫᱩᱜ ᱞᱟᱹᱜᱤᱫ ᱟᱞᱮᱭᱟᱜ %1$s ᱟᱹᱨᱩ ᱠᱮᱫᱟᱞᱮ᱾ %2$s</string>
+  <!-- The first active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">ᱫᱟᱱᱟᱝ ᱧᱮᱛᱮᱞ</string>
+  <!-- The second active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">ᱵᱟᱹᱲᱛᱤ ᱵᱟᱰᱟᱭ ᱢᱮ</string>
 </resources>

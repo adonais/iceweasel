@@ -327,5 +327,4 @@ class TabDescriptorFront extends DescriptorMixin(
   }
 }
 
-exports.TabDescriptorFront = TabDescriptorFront;
 registerFront(TabDescriptorFront);

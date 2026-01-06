@@ -420,7 +420,6 @@ static void MoveChildTo(nsIFrame* aChild, LogicalPoint aOrigin, WritingMode aWM,
   }
 
   aChild->SetPosition(aWM, aOrigin, aContainerSize);
-  nsContainerFrame::PlaceFrameView(aChild);
 }
 
 nscoord nsColumnSetFrame::IntrinsicISize(const IntrinsicSizeInput& input,

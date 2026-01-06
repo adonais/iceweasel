@@ -33,6 +33,11 @@
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Aliri viajn datumojn en aliaj nomregnoj</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
   <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">Aliri viajn datumojn por retejoj en la %1$d nomregnoj</string>
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
+    <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
+    <item quantity="one">Aliri viajn datumojn por retejoj en %1$d nomregno</item>
+    <item quantity="other">Aliri viajn datumojn por retejoj en %1$d nomregnoj</item>
+  </plurals>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d el %3$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -375,6 +380,8 @@
   <string name="mozac_feature_addons_admin_install_only">%1$s ne povis esti instalita ĉar ĝin oni nur povas instali en organizo kiu uzas entreprenajn politikojn, kiuj ne estas subtenataj en tiu ĉi platformo.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s malobservas politikojn de Mozilla kaj ne povas esti instalita en %2$s.</string>
+  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_soft_blocked_2">%1$s estas limigita kaj ne povas esti instalita en %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Malsukcesa aktivigo de %1$s</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -421,8 +428,12 @@
   <string name="mozac_feature_addons_status_blocklisted_1">Tiu ĉi etendaĵo estis blokita pro malobservo de la politikoj de Mozilla kaj ĝi estis do malaktivigita.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Tiu ĉi etendaĵo estis blokita pro malobservo de la politikoj de Mozilla kaj ĝi estis do malaktivigita. Vi povas reaktivigi ĝin, sed tio povus esti riska.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
+  <string name="mozac_feature_addons_status_softblocked_2">Tiu ĉi etendaĵo estas limigita kaj ĝi estis do malaktivigita. Vi povas reaktivigi ĝin, sed tio povus esti riska.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Tiu ĉi etendaĵo malobservas la politikojn de Mozilla. Uzi ĝin povas esti riske.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
+  <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Tiu ĉi etendaĵo estas limigita. Uzi ĝin povus esti riske.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">Ne eblis konfirmi ke %1$s estas sekura kaj ĝi estis do malaktivigita.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

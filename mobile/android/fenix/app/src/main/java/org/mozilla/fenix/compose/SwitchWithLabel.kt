@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.compose
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,7 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.SwitchDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.TextStyle
@@ -31,8 +30,6 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.theme.FirefoxTheme
 import androidx.compose.material3.Switch as MaterialSwitch
-
-private const val DISABLED_ALPHA = 0.5f
 
 /**
  * UI for a switch with label that can be on or off.
@@ -53,7 +50,7 @@ fun SwitchWithLabel(
     modifier: Modifier = Modifier,
     description: String? = null,
     enabled: Boolean = true,
-    labelStyle: TextStyle = FirefoxTheme.typography.subtitle1,
+    labelStyle: TextStyle = FirefoxTheme.typography.body1,
     onCheckedChange: ((Boolean) -> Unit),
 ) {
     Row(
@@ -79,9 +76,9 @@ fun SwitchWithLabel(
                     .defaultMinSize(minHeight = 24.dp)
                     .wrapContentHeight(),
                 color = if (enabled) {
-                    FirefoxTheme.colors.textPrimary
+                    MaterialTheme.colorScheme.onSurface
                 } else {
-                    FirefoxTheme.colors.textDisabled
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                 },
                 style = labelStyle,
             )
@@ -93,9 +90,9 @@ fun SwitchWithLabel(
                         .defaultMinSize(minHeight = 20.dp)
                         .wrapContentHeight(),
                     color = if (enabled) {
-                        FirefoxTheme.colors.textSecondary
+                        MaterialTheme.colorScheme.onSurfaceVariant
                     } else {
-                        FirefoxTheme.colors.textDisabled
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                     },
                     style = FirefoxTheme.typography.body2,
                 )
@@ -132,20 +129,6 @@ private fun Switch(
         onCheckedChange = onCheckedChange,
         modifier = modifier,
         enabled = enabled,
-        colors = SwitchDefaults.colors(
-            uncheckedThumbColor = FirefoxTheme.colors.formOff,
-            uncheckedTrackColor = FirefoxTheme.colors.formSurface,
-            checkedThumbColor = FirefoxTheme.colors.formOn,
-            checkedTrackColor = FirefoxTheme.colors.formSurface,
-            disabledUncheckedThumbColor = FirefoxTheme.colors.formOff
-                .copy(alpha = DISABLED_ALPHA)
-                .compositeOver(FirefoxTheme.colors.formSurface),
-            disabledUncheckedTrackColor = FirefoxTheme.colors.formSurface.copy(alpha = DISABLED_ALPHA),
-            disabledCheckedThumbColor = FirefoxTheme.colors.formOn
-                .copy(alpha = DISABLED_ALPHA)
-                .compositeOver(FirefoxTheme.colors.formSurface),
-            disabledCheckedTrackColor = FirefoxTheme.colors.formSurface.copy(alpha = DISABLED_ALPHA),
-        ),
     )
 }
 
@@ -153,66 +136,63 @@ private fun Switch(
 @Composable
 private fun SwitchWithLabelPreview() {
     FirefoxTheme {
-        Column(
-            modifier = Modifier
-                .background(FirefoxTheme.colors.layer1)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = "Enabled",
-                style = FirefoxTheme.typography.headline7,
-                color = FirefoxTheme.colors.textPrimary,
-            )
+        Surface {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = "Enabled",
+                    style = FirefoxTheme.typography.headline7,
+                )
 
-            Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(8.dp))
 
-            var enabledSwitchState by remember { mutableStateOf(false) }
-            SwitchWithLabel(
-                label = if (enabledSwitchState) "On" else "Off",
-                checked = enabledSwitchState,
-                description = "Description text",
-            ) { enabledSwitchState = it }
-
-            Text(
-                text = "Disabled",
-                style = FirefoxTheme.typography.headline7,
-                color = FirefoxTheme.colors.textPrimary,
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            var disabledSwitchStateOff by remember { mutableStateOf(false) }
-            SwitchWithLabel(
-                label = "Off",
-                checked = disabledSwitchStateOff,
-                enabled = false,
-            ) { disabledSwitchStateOff = it }
-
-            var disabledSwitchStateOn by remember { mutableStateOf(true) }
-            SwitchWithLabel(
-                label = "On",
-                checked = disabledSwitchStateOn,
-                enabled = false,
-            ) { disabledSwitchStateOn = it }
-
-            Text(
-                text = "Nested",
-                style = FirefoxTheme.typography.headline7,
-                color = FirefoxTheme.colors.textPrimary,
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            Row {
-                Spacer(Modifier.weight(1f))
-
-                var nestedSwitchState by remember { mutableStateOf(false) }
+                var enabledSwitchState by remember { mutableStateOf(false) }
                 SwitchWithLabel(
-                    label = "Nested",
-                    checked = nestedSwitchState,
-                    modifier = Modifier.weight(1f),
-                ) { nestedSwitchState = it }
+                    label = if (enabledSwitchState) "On" else "Off",
+                    checked = enabledSwitchState,
+                    description = "Description text",
+                ) { enabledSwitchState = it }
+
+                Text(
+                    text = "Disabled",
+                    style = FirefoxTheme.typography.headline7,
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                var disabledSwitchStateOff by remember { mutableStateOf(false) }
+                SwitchWithLabel(
+                    label = "Off",
+                    checked = disabledSwitchStateOff,
+                    enabled = false,
+                ) { disabledSwitchStateOff = it }
+
+                var disabledSwitchStateOn by remember { mutableStateOf(true) }
+                SwitchWithLabel(
+                    label = "On",
+                    checked = disabledSwitchStateOn,
+                    enabled = false,
+                ) { disabledSwitchStateOn = it }
+
+                Text(
+                    text = "Nested",
+                    style = FirefoxTheme.typography.headline7,
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Row {
+                    Spacer(Modifier.weight(1f))
+
+                    var nestedSwitchState by remember { mutableStateOf(false) }
+                    SwitchWithLabel(
+                        label = "Nested",
+                        checked = nestedSwitchState,
+                        modifier = Modifier.weight(1f),
+                    ) { nestedSwitchState = it }
+                }
             }
         }
     }

@@ -283,7 +283,7 @@ private fun TabGrid(
     }
 }
 
-@Suppress("LongParameterList", "LongMethod")
+@Suppress("LongParameterList", "LongMethod", "CognitiveComplexMethod")
 @Composable
 private fun TabList(
     tabs: List<TabSessionState>,
@@ -335,7 +335,6 @@ private fun TabList(
                 .padding(
                     start = TabListPadding,
                     end = TabListPadding,
-                    top = TabListPadding,
                 )
                 .clip(TabListCornerShape)
                 .background(MaterialTheme.colorScheme.surface)

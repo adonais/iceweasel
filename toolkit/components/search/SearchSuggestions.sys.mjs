@@ -5,6 +5,8 @@
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
+  DEFAULT_FORM_HISTORY_PARAM:
+    "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   SearchSuggestionController:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
@@ -296,7 +298,6 @@ class SearchHistoryResult {
 class SuggestAutoComplete {
   constructor() {
     this.#suggestionController = new lazy.SearchSuggestionController();
-    this.#suggestionController.maxLocalResults = this.#historyLimit;
   }
 
   /**
@@ -384,13 +385,6 @@ class SuggestAutoComplete {
     this.#suggestionController.stop();
   }
 
-  /**
-   * Handles the session being reset.
-   */
-  resetSession() {
-    this.#suggestionController?.resetSession();
-  }
-
   #suggestionController;
 
   /**
@@ -430,6 +424,7 @@ class SuggestAutoComplete {
       searchString,
       inPrivateBrowsing,
       engine: Services.search.defaultEngine,
+      maxLocalResults: this.#historyLimit,
     });
 
     let formHistoryEntries = (results?.formHistoryResults ?? []).map(
@@ -442,7 +437,7 @@ class SuggestAutoComplete {
       })
     );
     let autoCompleteResult = new SearchHistoryResult(
-      this.#suggestionController.formHistoryParam,
+      lazy.DEFAULT_FORM_HISTORY_PARAM,
       searchString,
       formHistoryEntries
     );

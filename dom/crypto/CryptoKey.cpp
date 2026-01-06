@@ -8,9 +8,7 @@
 
 #include <cstddef>
 #include <cstring>
-#include <memory>
 #include <new>
-#include <utility>
 
 #include "blapit.h"
 #include "certt.h"

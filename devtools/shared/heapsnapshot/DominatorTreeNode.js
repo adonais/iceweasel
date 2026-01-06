@@ -141,7 +141,7 @@ LabelAndShallowSizeVisitor.prototype.count = function (breakdown, report) {
 /**
  * Get the generated label structure accumulated by this visitor.
  *
- * @returns {Object}
+ * @returns {object}
  */
 LabelAndShallowSizeVisitor.prototype.label = function () {
   return this._label;
@@ -150,7 +150,7 @@ LabelAndShallowSizeVisitor.prototype.label = function () {
 /**
  * Get the shallow size of the node this visitor visited.
  *
- * @returns {Number}
+ * @returns {number}
  */
 LabelAndShallowSizeVisitor.prototype.shallowSize = function () {
   return this._shallowSize;
@@ -165,11 +165,11 @@ LabelAndShallowSizeVisitor.prototype.shallowSize = function () {
  * report has only one count leaf that is non-zero. The label structure is the
  * path in this report from the root to the non-zero count leaf.
  *
- * @param {Number} nodeId
+ * @param {number} nodeId
  * @param {HeapSnapshot} snapshot
- * @param {Object} breakdown
+ * @param {object} breakdown
  *
- * @returns {Object}
+ * @returns {object}
  *          An object with the following properties:
  *          - {Number} shallowSize
  *          - {Object} label
@@ -201,9 +201,9 @@ DominatorTreeNode.getLabelAndShallowSize = function (
  *
  * @param {DominatorTree} dominatorTree
  * @param {HeapSnapshot} snapshot
- * @param {Object} breakdown
- * @param {Number} maxDepth
- * @param {Number} maxSiblings
+ * @param {object} breakdown
+ * @param {number} maxDepth
+ * @param {number} maxSiblings
  *
  * @returns {DominatorTreeNode}
  */
@@ -256,7 +256,7 @@ DominatorTreeNode.partialTraversal = function (
  * @param {DominatorTreeNode} tree
  * @param {Array<NodeId>} path
  * @param {Array<DominatorTreeNode>} newChildren
- * @param {Boolean} moreChildrenAvailable
+ * @param {boolean} moreChildrenAvailable
  *
  * @returns {DominatorTreeNode}
  */
@@ -332,10 +332,10 @@ DominatorTreeNode.getNodeByIdAlongPath = function (id, tree, path) {
  * and populate each node's `shortestPaths` property with them in place.
  *
  * @param {HeapSnapshot} snapshot
- * @param {Object} breakdown
+ * @param {object} breakdown
  * @param {NodeId} start
  * @param {Array<DominatorTreeNode>} treeNodes
- * @param {Number} maxNumPaths
+ * @param {number} maxNumPaths
  */
 DominatorTreeNode.attachShortestPaths = function (
   snapshot,

@@ -4,6 +4,7 @@
 
 /**
  * Utils for Jest
+ *
  * @module utils/test-head
  */
 

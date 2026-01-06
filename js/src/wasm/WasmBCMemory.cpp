@@ -420,11 +420,11 @@ void BaseCompiler::prepareMemoryAccess(MemoryAccessDesc* access,
 #ifdef JS_64BIT
     // The checking depends on how many bits are in the pointer and how many
     // bits are in the bound.
-    static_assert(0x100000000 % PageSize == 0);
-    if (!codeMeta_.memories[access->memoryIndex()].boundsCheckLimitIs32Bits() &&
-        MaxMemoryPages(
+    if (!codeMeta_.memories[access->memoryIndex()]
+             .boundsCheckLimitIsAlways32Bits() &&
+        MaxMemoryBytes(
             codeMeta_.memories[access->memoryIndex()].addressType()) >=
-            Pages(0x100000000 / PageSize)) {
+            0x100000000) {
       boundsCheck4GBOrLargerAccess(access->memoryIndex(), instance, ptr, &ok);
     } else {
       boundsCheckBelow4GBAccess(access->memoryIndex(), instance, ptr, &ok);

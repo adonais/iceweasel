@@ -2,4 +2,5 @@
 // searchbar becomes a exportable module.
 interface MozSearchbar extends MozXULElement {
   select(): void;
+  get inputField(): HTMLInputElement;
 }

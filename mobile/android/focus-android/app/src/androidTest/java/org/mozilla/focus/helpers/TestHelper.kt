@@ -38,7 +38,7 @@ import androidx.test.platform.app.InstrumentationRegistry.getInstrumentation
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
 import junit.framework.AssertionFailedError
-import mozilla.components.support.utils.ext.getApplicationInfoCompat
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import okio.Buffer
 import org.hamcrest.Matchers
 import org.hamcrest.Matchers.allOf
@@ -101,7 +101,7 @@ object TestHelper {
 
     fun isPackageInstalled(packageName: String): Boolean {
         return try {
-            val packageManager = getInstrumentation().context.packageManager
+            val packageManager = getInstrumentation().context.packageManagerCompatHelper
             packageManager.getApplicationInfoCompat(packageName, 0).enabled
         } catch (exception: PackageManager.NameNotFoundException) {
             Log.d("TestLog", exception.message.toString())

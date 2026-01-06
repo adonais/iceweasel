@@ -79,7 +79,7 @@ The rest of the pane shows you the page's HTML as a tree (this UI is also called
 
 Moving the mouse over a node in the tree highlights that element in the page.
 
-Nodes that are not visible are shown faded/desaturated. This can happen for different reasons such as using `display: none <https://developer.mozilla.org/en-US/docs/Web/CSS/display>`_ or that the element doesn't have any dimensions.
+Nodes that are not visible are shown faded/desaturated. This can happen for different reasons such as using `display: none <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/display>`_ or that the element doesn't have any dimensions.
 
 .. |image1| image:: child-node-indicator.png
   :width: 20
@@ -102,22 +102,22 @@ Markers ("badges") are displayed to the right of some nodes. The table below exp
     - The element has one or several event listeners attached to it. Clicking the marker opens a tooltip listing the event listeners and allows you for each listener to switch to the line of JavaScript code in the :doc:`Debugger <../../../debugger/index>` where the listener is defined.
 
   * - ``scroll``
-    - The element is a `scroll container <https://developer.mozilla.org/en-US/docs/Glossary/Scroll_container>`_, i.e. it has either ``overflow: scroll`` applied, or ``overflow: auto`` and sufficient content to cause `scrollable overflow <https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Overflow>`_. |br| |br| If preference ``devtools.overflow.debugging.enabled`` is ``true``, toggling the ``scroll`` badge will highlight any elements causing the overflow, and these nodes will additionally display the ``overflow`` badge.
+    - The element is a `scroll container <https://developer.mozilla.org/en-US/docs/Glossary/Scroll_container>`_, i.e. it has either ``overflow: scroll`` applied, or ``overflow: auto`` and sufficient content to cause `scrollable overflow <https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Overflow>`_. |br| |br| If preference ``devtools.overflow.debugging.enabled`` is ``true``, toggling the ``scroll`` badge will highlight any elements causing the overflow, and these nodes will additionally display the ``overflow`` badge.
 
   * - ``overflow``
-    - The element is causing `scrollable overflow <https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Overflow>`_ in a `scroll container <https://developer.mozilla.org/en-US/docs/Glossary/Scroll_container>`_ (either the current node or a parent node—the affected nodewill display the ``scroll`` badge).
+    - The element is causing `scrollable overflow <https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Overflow>`_ in a `scroll container <https://developer.mozilla.org/en-US/docs/Glossary/Scroll_container>`_ (either the current node or a parent node—the affected nodewill display the ``scroll`` badge).
 
   * - ``grid``
-    - The element is a `grid container <https://developer.mozilla.org/en-US/docs/Glossary/Grid_Container>`_, i.e. it has `display: grid <https://developer.mozilla.org/en-US/docs/Web/CSS/display>`_ applied to it. Clicking the marker enables the grid highlighter.
+    - The element is a `grid container <https://developer.mozilla.org/en-US/docs/Glossary/Grid_Container>`_, i.e. it has `display: grid <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/display>`_ applied to it. Clicking the marker enables the grid highlighter.
 
   * - ``flex``
-    - The element is a `flex container <https://developer.mozilla.org/en-US/docs/Glossary/Flex_Container>`_, i.e. it has `display: flex <https://developer.mozilla.org/en-US/docs/Web/CSS/display>`_ applied to it. Clicking the marker enables the flexbox highlighter.
+    - The element is a `flex container <https://developer.mozilla.org/en-US/docs/Glossary/Flex_Container>`_, i.e. it has `display: flex <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/display>`_ applied to it. Clicking the marker enables the flexbox highlighter.
 
   * - ``inline-grid``
-    - The element is an inline grid container, i.e. it has `display: inline-grid <https://developer.mozilla.org/en-US/docs/Web/CSS/display>`_ or ``display: inline grid`` applied to it. Clicking the marker enables the grid highlighter.
+    - The element is an inline grid container, i.e. it has `display: inline-grid <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/display>`_ or ``display: inline grid`` applied to it. Clicking the marker enables the grid highlighter.
 
   * - ``inline-flex``
-    - The element is an inline flex container, i.e. it has `display: inline-flex <https://developer.mozilla.org/en-US/docs/Web/CSS/display>`_ or ``display: inline flex`` applied to it. Clicking the marker enables the flexbox highlighter.
+    - The element is an inline flex container, i.e. it has `display: inline-flex <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/display>`_ or ``display: inline flex`` applied to it. Clicking the marker enables the flexbox highlighter.
 
   * - ``custom…``
     - The element is a custom element. Clicking the marker switches to the line of JavaScript code in the Debugger where the custom element got defined.
@@ -131,7 +131,7 @@ Markers ("badges") are displayed to the right of some nodes. The table below exp
 ::before and ::after
 --------------------
 
-You can inspect pseudo-elements added using `::before <https://developer.mozilla.org/en-US/docs/Web/CSS/::before>`_ and `::after <https://developer.mozilla.org/en-US/docs/Web/CSS/::after>`_
+You can inspect pseudo-elements added using `::before <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/::before>`_ and `::after <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/::after>`_
 
 .. raw:: html
 
@@ -167,7 +167,7 @@ Web developers don’t write all their code in just one line of text. They use w
 
 Usually this white space seems to have no effect and no visual output, but in fact, when a browser parses HTML it will automatically generate anonymous text nodes for elements not contained in a node. This includes white space (which is after all a type of text).
 
-If these auto generated text nodes are `inline level <https://developer.mozilla.org/en-US/docs/Web/CSS/Visual_formatting_model#inline-level_elements_and_inline_boxes>`_, browsers will give them a non-zero width and height. Then you will find strange gaps between elements, even if you haven’t set any margin or padding on them.
+If these auto generated text nodes are `inline level <https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Display/Visual_formatting_model#inline-level_elements_and_inline_boxes>`_, browsers will give them a non-zero width and height. Then you will find strange gaps between elements, even if you haven’t set any margin or padding on them.
 
 .. |image2| image:: new-whitespace-text-indicator.png
   :width: 20
@@ -378,19 +378,19 @@ Context menu reference
     - (only when invoked over a URL) Copy the URL.
 
   * - (Change Pseudo-class) hover
-    - Set the `:hover <https://developer.mozilla.org/en-US/docs/Web/CSS/:hover>`_ CSS pseudo-class.
+    - Set the `:hover <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:hover>`_ CSS pseudo-class.
 
   * - (Change Pseudo-class) active
-    - Set the `:active <https://developer.mozilla.org/en-US/docs/Web/CSS/:active>`_ CSS pseudo-class.
+    - Set the `:active <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:active>`_ CSS pseudo-class.
 
   * - (Change Pseudo-class) focus
-    - Set the `:focus <https://developer.mozilla.org/en-US/docs/Web/CSS/:focus>`_ CSS pseudo-class.
+    - Set the `:focus <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:focus>`_ CSS pseudo-class.
 
   * - (Change Pseudo-class) focus-visible
-    - Set the `:focus-visible <https://developer.mozilla.org/en-US/docs/Web/CSS/:focus-visible>`_ CSS pseudo-class.
+    - Set the `:focus-visible <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:focus-visible>`_ CSS pseudo-class.
 
   * - (Change Pseudo-class) focus-within
-    - Set the `:focus-within <https://developer.mozilla.org/en-US/docs/Web/CSS/:focus-within>`_ CSS pseudo-class.
+    - Set the `:focus-within <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/:focus-within>`_ CSS pseudo-class.
 
   * - (Change Pseudo-class) visited
     - Set the :visited CSS pseudo-class.

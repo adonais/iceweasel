@@ -52,7 +52,7 @@ export function isKnownPublicSuffix(siteOrigin) {
 /**
  * ⚠️ This should be only used for testing purpose ⚠️
  *
- * @param {Array<String>} permissionTypes
+ * @param {Array<string>} permissionTypes
  * @throws if not called from xpcshell test
  */
 export function addGatedPermissionTypesForXpcShellTests(permissionTypes) {
@@ -65,7 +65,7 @@ export function addGatedPermissionTypesForXpcShellTests(permissionTypes) {
 
 /**
  * @param {nsIPrincipal} principal
- * @returns {Boolean}
+ * @returns {boolean}
  */
 export function isPrincipalInSitePermissionsBlocklist(principal) {
   return lazy.blocklistedOriginsSet.has(principal.baseDomain);

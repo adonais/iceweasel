@@ -16,6 +16,7 @@ let testBackupPath;
 add_setup(async function () {
   setupProfile();
 
+  bs = new BackupService({ FakeBackupResource1 });
   let sandbox = sinon.createSandbox();
   let fakeManifestEntry = { fake: "test" };
   sandbox

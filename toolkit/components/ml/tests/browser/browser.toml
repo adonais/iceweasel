@@ -22,14 +22,16 @@ support-files = [
 
 ["browser_ml_engine_rs_hub.js"]
 
+["browser_ml_engine_security.js"]
+
 ["browser_ml_native.js"]
 skip-if = [
-  "os == 'android'",
-  "bits == 32",
+  "arch == 'x86'",
   "asan",
-  "tsan",
   "debug",
-  "verify"
+  "os == 'android'",
+  "tsan",
+  "verify",
 ]
 
 ["browser_ml_nlp_utils.js"]
@@ -45,7 +47,9 @@ skip-if = [
 ["browser_ml_static_embeddings.js"]
 
 ["browser_ml_telemetry.js"]
-skip-if = [ "verify" ]
+skip-if = [
+  "verify",
+]
 
 ["browser_ml_thompson_sample.js"]
 

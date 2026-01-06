@@ -254,8 +254,6 @@ FontFaceSetLoadStatus FontFaceSetImpl::Status() {
 
 bool FontFaceSetImpl::Add(FontFaceImpl* aFontFace, ErrorResult& aRv) {
   RecursiveMutexAutoLock lock(mMutex);
-  FlushUserFontSet();
-
   if (aFontFace->IsInFontFaceSet(this)) {
     return false;
   }
@@ -288,8 +286,6 @@ bool FontFaceSetImpl::Add(FontFaceImpl* aFontFace, ErrorResult& aRv) {
 
 void FontFaceSetImpl::Clear() {
   RecursiveMutexAutoLock lock(mMutex);
-  FlushUserFontSet();
-
   if (mNonRuleFaces.IsEmpty()) {
     return;
   }
@@ -308,8 +304,6 @@ void FontFaceSetImpl::Clear() {
 
 bool FontFaceSetImpl::Delete(FontFaceImpl* aFontFace) {
   RecursiveMutexAutoLock lock(mMutex);
-  FlushUserFontSet();
-
   if (aFontFace->HasRule()) {
     return false;
   }

@@ -94,46 +94,6 @@ fn write_gpu_gradient_stops_header_and_colors(
     is_opaque
 }
 
-/// Builds the gpu representation for common gradient parameters and
-/// returns whether the gradient is fully opaque.
-///
-/// The format is:
-///
-/// ```ascii
-///
-/// [count, extend_mode, <padding>, color0.r, color0.g, color0.b, color0.a, ..., offset0, offset1, ..., <padding>]
-/// |_____________________________| |__________________________________________| |_______________________________|
-///        header: vec4                        colors: [vec4; n]                     offsets: [vec4; ceil(n/4)]
-/// ```
-///
-/// Packed contiguously such that each portion is 4-floats aligned to facilitate
-/// reading them from the gpu buffer.
-fn write_gpu_gradient_stops_linear(
-    stops: &[GradientStop],
-    kind: GradientKind,
-    extend_mode: ExtendMode,
-    writer: &mut GpuBufferWriterF,
-) -> bool {
-    let is_opaque = write_gpu_gradient_stops_header_and_colors(
-        stops,
-        kind,
-        extend_mode,
-        writer
-    );
-
-    for chunk in stops.chunks(4) {
-        let mut block = [0.0; 4];
-        let mut i = 0;
-        for stop in chunk {
-            block[i] = stop.offset;
-            i += 1;
-        }
-        writer.push_one(block);
-    }
-
-    is_opaque
-}
-
 // Push stop offsets in rearranged order so that the search can be carried
 // out as an implicit tree traversal.
 //
@@ -245,30 +205,24 @@ fn write_gpu_gradient_stops_tree(
     return is_opaque;
 }
 
-fn gpu_gradient_stops_blocks(num_stops: usize, tree_traversal: bool) -> usize {
+fn gpu_gradient_stops_blocks(num_stops: usize) -> usize {
     let header_blocks = 1;
     let color_blocks = num_stops;
 
-    // When using a linear traversal we need 1/4th of the number of offsets,
-    // rounded up (since we store 4 stop offsets per block).
-    let mut offset_blocks = (num_stops + 3) / 4;
-
-    if tree_traversal {
-        // If this is changed, matching changes should be made to the
-        // equivalent code in write_gpu_gradient_stops_tree.
-        let mut num_blocks_for_level = 1;
-        offset_blocks = 1;
-        while offset_blocks * 4 < num_stops {
-            num_blocks_for_level *= 5;
-            offset_blocks += num_blocks_for_level;
-        }
-
-        // Fix the capacity up to account for the fact that we don't
-        // store the entirety of the last level;
-        let num_blocks_for_last_level = num_blocks_for_level.min(num_stops / 5 + 1);
-        offset_blocks -= num_blocks_for_level;
-        offset_blocks += num_blocks_for_last_level;
+    // If this is changed, matching changes should be made to the
+    // equivalent code in write_gpu_gradient_stops_tree.
+    let mut num_blocks_for_level = 1;
+    let mut offset_blocks = 1;
+    while offset_blocks * 4 < num_stops {
+        num_blocks_for_level *= 5;
+        offset_blocks += num_blocks_for_level;
     }
+
+    // Fix the capacity up to account for the fact that we don't
+    // store the entirety of the last level;
+    let num_blocks_for_last_level = num_blocks_for_level.min(num_stops / 5 + 1);
+    offset_blocks -= num_blocks_for_level;
+    offset_blocks += num_blocks_for_last_level;
 
     header_blocks + color_blocks + offset_blocks
 }

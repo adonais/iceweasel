@@ -388,7 +388,7 @@ Http3TransportLayer::GetSecurityCallbacks(
 NS_IMETHODIMP
 Http3TransportLayer::SetSecurityCallbacks(
     nsIInterfaceRequestor* aSecurityCallbacks) {
-  return NS_ERROR_NOT_IMPLEMENTED;
+  return NS_OK;
 }
 
 NS_IMETHODIMP

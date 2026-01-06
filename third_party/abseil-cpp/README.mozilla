@@ -64,6 +64,7 @@ hg status -nu | xargs hg add
   --branch mozpatches \
   --target-branch-head `tail -1 $BASE_COMMIT_FILE` \
   --patch-path $DEST_PATH/moz-patch-stack \
+  --no-pre-stack \
   --skip-startup-sanity \
   --separate-commit-bug-number 1234
 
@@ -75,6 +76,7 @@ hg status -nu | xargs hg add
   --branch mozpatches \
   --target-branch-head `tail -1 $BASE_COMMIT_FILE` \
   --patch-path $DEST_PATH/moz-patch-stack \
+  --no-pre-stack \
   --skip-startup-sanity
 
 

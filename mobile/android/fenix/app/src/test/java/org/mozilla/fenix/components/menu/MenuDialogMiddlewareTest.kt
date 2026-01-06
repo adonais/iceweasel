@@ -24,7 +24,6 @@ import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesUseCases
 import mozilla.components.support.test.any
 import mozilla.components.support.test.eq
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
@@ -374,7 +373,6 @@ class MenuDialogMiddlewareTest {
         assertTrue(store.state.browserMenuState!!.bookmarkState.isBookmarked)
 
         store.dispatch(MenuAction.AddBookmark)
-        store.waitUntilIdle()
 
         verify(addBookmarkUseCase, never()).invoke(url = url, title = title)
         captureMiddleware.assertNotDispatched(BookmarkAction.BookmarkAdded::class)
@@ -502,7 +500,6 @@ class MenuDialogMiddlewareTest {
         assertTrue(store.state.browserMenuState!!.isPinned)
 
         store.dispatch(MenuAction.AddShortcut)
-        store.waitUntilIdle()
 
         verify(addPinnedSiteUseCase, never()).invoke(url = url, title = title)
         verify(appStore, never()).dispatch(

@@ -24,6 +24,7 @@ import kotlinx.coroutines.test.runTest
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.state.action.CustomTabListAction
 import mozilla.components.browser.state.action.ShareResourceAction
+import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.ReaderState
 import mozilla.components.browser.state.state.TabSessionState
@@ -43,7 +44,6 @@ import mozilla.components.feature.top.sites.DefaultTopSitesStorage
 import mozilla.components.feature.top.sites.PinnedSiteStorage
 import mozilla.components.feature.top.sites.TopSitesUseCases
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.rule.runTestOnMain
@@ -156,11 +156,14 @@ class DefaultBrowserToolbarMenuControllerTest {
         every { browserAnimator.captureEngineViewAndDrawStatically(any(), capture(onComplete)) } answers { onComplete.captured.invoke(true) }
 
         selectedTab = createTab("https://www.mozilla.org", id = "1")
+
+        val engineMiddleware = EngineMiddleware.create(mockk(), coroutinesTestRule.scope)
         browserStore = BrowserStore(
             initialState = BrowserState(
                 tabs = listOf(selectedTab),
                 selectedTabId = selectedTab.id,
             ),
+            engineMiddleware,
         )
     }
 
@@ -238,7 +241,7 @@ class DefaultBrowserToolbarMenuControllerTest {
     @Test
     fun `WHEN open in Fenix menu item is pressed THEN menu item is handled correctly`() = runTest {
         val customTab = createCustomTab("https://mozilla.org")
-        browserStore.dispatch(CustomTabListAction.AddCustomTabAction(customTab)).joinBlocking()
+        browserStore.dispatch(CustomTabListAction.AddCustomTabAction(customTab))
         val controller = createController(
             scope = this,
             store = browserStore,

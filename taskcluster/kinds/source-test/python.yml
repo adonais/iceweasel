@@ -540,19 +540,18 @@ condprof:
             - 'testing/condprofile/condprof**'
             - 'testing/condprofile/setup.py'
 
-skip-fails:
-    description: testing/skip-fails unit tests
+manifest:
+    description: testing/manifest unit tests
     always-target: false
     use-python: "3.11"
     treeherder:
-        symbol: sf
+        symbol: mf
     run:
         using: python-test
-        subsuite: skip-fails
+        subsuite: manifest
     when:
         files-changed:
-            - 'testing/skipfails.py'
-            - 'testing/test/**'
+            - 'testing/manifest/**'
 
 talos:
     description: testing/talos unit tests

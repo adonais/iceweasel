@@ -6,8 +6,6 @@
 
 #include "ConnectionWorker.h"
 
-#include <limits>
-
 #include "mozilla/Hal.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"

@@ -32,7 +32,7 @@
 #sanitizeEverythingWarningBox {
   /* Fallback colors are used when the dialog is open outside of in-content prefs */
   background-color: var(--background-color-box);
-  border: 1px solid var(--in-content-box-border-color, ThreeDDarkShadow);
+  border: 1px solid var(--border-color, ThreeDDarkShadow);
   border-radius: var(--border-radius-small);
   padding: 16px;
   margin-block: 6px;

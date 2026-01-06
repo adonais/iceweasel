@@ -30,9 +30,11 @@ function checkForPrompt(prefVal) {
       return doc.defaultView.CONFIRM_RESTART_PROMPT_RESTART_NOW;
     };
     // Tick the checkbox and pretend the user did it:
-    let checkbox = doc.getElementById("privateBrowsingAutoStart");
-    checkbox.checked = prefVal;
-    checkbox.doCommand();
+    await updateCheckBox(
+      gBrowser.contentWindow,
+      "privateBrowsingAutoStart",
+      prefVal
+    );
 
     // Now the prompt should have shown.
     ok(

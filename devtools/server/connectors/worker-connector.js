@@ -18,10 +18,10 @@ loader.lazyRequireGetter(
  *
  * @params {DevToolsConnection} connection
  * @params {WorkerDebugger} dbg: The WorkerDebugger we want to create a target actor for.
- * @params {String} forwardingPrefix: The prefix that will be used to forward messages
+ * @params {string} forwardingPrefix: The prefix that will be used to forward messages
  *                  to the DevToolsServer on the worker thread.
- * @params {Object} options: An option object that will be passed with the "connect" packet.
- * @params {Object} options.sessionData: The sessionData object that will be passed to the
+ * @params {object} options: An option object that will be passed with the "connect" packet.
+ * @params {object} options.sessionData: The sessionData object that will be passed to the
  *                  worker target actor.
  */
 function connectToWorker(connection, dbg, forwardingPrefix, options) {

@@ -33,7 +33,7 @@ async function runEventPopupTests(url, tests) {
  * Generator function that takes a selector and expected results and returns
  * the event info.
  *
- * @param {Object} test
+ * @param {object} test
  *  A test object should contain the following properties:
  *        - selector {String} a css selector targeting the node to edit
  *        - expected {Array} array of expected event objects
@@ -261,11 +261,11 @@ function getDocMarkupEventsJQueryLoadHandlerText() {
 /**
  * Create diff of two strings.
  *
- * @param  {String} text1
+ * @param  {string} text1
  *         String to compare with text2.
- * @param  {String} text2 [description]
+ * @param  {string} text2 [description]
  *         String to compare with text1.
- * @param  {String} msg
+ * @param  {string} msg
  *         Message to display on failure. A diff will be displayed after this
  *         message.
  */

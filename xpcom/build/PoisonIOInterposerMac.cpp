@@ -21,9 +21,6 @@
 #include "nsTraceRefcnt.h"
 #include "prio.h"
 
-#include <algorithm>
-#include <vector>
-
 #include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/socket.h>

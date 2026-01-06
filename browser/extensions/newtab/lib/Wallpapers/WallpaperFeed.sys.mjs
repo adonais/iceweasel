@@ -177,7 +177,9 @@ export class WallpaperFeed {
                 wallpaperUrl: `${baseAttachmentURL}${record.attachment.location}`,
               }
             : {}),
+          background_position: record.background_position || "center",
           category: record.category || "",
+          order: record.order || 0,
         };
       }),
     ];

@@ -2,7 +2,9 @@
 https_first_disabled = true
 tags = "devtools"
 subsuite = "devtools"
-skip-if = ["http3"]
+skip-if = [
+  "http3",
+]
 support-files = [
   "../head.js",
   "../file_ws_backend_wsh.py",
@@ -11,6 +13,11 @@ support-files = [
   "html_ws-test-page.html",
   "html_ws-sse-test-page.html",
   "js_websocket-worker-test.js",
+]
+
+["browser_net-ws-filter-freetext.js"]
+skip-if = [
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt", # Bug 1767662
 ]
 
 ["browser_net_ws-basic.js"]
@@ -48,6 +55,3 @@ support-files = [
 ["browser_net_ws-stacks.js"]
 
 ["browser_net_ws-stomp-payload.js"]
-
-["browser_net-ws-filter-freetext.js"]
-skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64' && opt"] # Bug 1767662

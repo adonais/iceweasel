@@ -8,7 +8,7 @@
 
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
-  <string name="mozac_browser_errorpages_page_refresh">Eha’ãjey</string>
+  <string name="mozac_browser_errorpages_page_refresh">Eha’ã jey</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">Ndaikatúi ojejapopa mba’ejerure</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->
@@ -42,15 +42,15 @@
   <!-- The document title and heading of the error page shown when the user's network connection is interrupted while connecting to a website. -->
   <string name="mozac_browser_errorpages_net_interrupt_title">Pe jeike ojejokóma</string>
   <!-- The error message shown when the user's network connection is interrupted while connecting to a website. -->
-  <string name="mozac_browser_errorpages_net_interrupt_message"><![CDATA[<p>Pe kundahára oike hekopete, hákatu osẽ ñandutígui ombahasakuévo marandu. Eha’ãjey.</p>\n<ul>\n<li>Pe tenda ikatu ndoikói sapy’ami térã ojeporueterei. Eha’ãjey ag̃amieve.</li>\n<li>Ndaikatúiramo emyanyhẽ kuatiarogue, ehecha oikópa nde wifi térã mba’ekuaarã ne pumbyry pegua.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_net_interrupt_message"><![CDATA[<p>Pe kundahára oike hekopete, hákatu osẽ ñandutígui ombahasakuévo marandu. Eha’ã jey.</p>\n<ul>\n<li>Pe tenda ikatu ndoikói sapy’ami térã ojeporueterei. Eha’ã jey ag̃amieve.</li>\n<li>Ndaikatúiramo emyanyhẽ kuatiarogue, ehecha oikópa nde wifi térã mba’ekuaarã ne pumbyry pegua.</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when a website takes too long to load. -->
   <string name="mozac_browser_errorpages_net_timeout_title">Pe jeike ndoikovéima</string>
   <!-- The error message shown when a website took long to load. -->
-  <string name="mozac_browser_errorpages_net_timeout_message"><![CDATA[<p>Tenda ejeruréva nombohovái pe jerure jeike rehegua ha kundahára noha’ãrõvéima ñembohovái.</p>\n<ul>\n<li>¿Ikatu mohendahavusu ojeporueterei térã peteĩ ñekytĩ ndahi’aréitava? Eha’ãjey ag̃amieve.</li>\n<li>Ndaikatúi eikundaha ambue tenda rupi? Ehechajey ne mohendaha oĩpa ñandutípe.</li>\n<li>Ne ñanduti térã ne mohendaha omo’ã chupe firewall térã proxy? Peteĩ ñemboheko oiko’ỹva ikatu omboykese ne ñeikundaha ñandutípe.</li>\n<li>Oĩ gueteri apañuái? Eporandu ne ñanduti ñangarekohára térã ne ñanduti me’ẽhárape nepytyvõ hag̃ua.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_net_timeout_message"><![CDATA[<p>Tenda ejeruréva nombohovái pe jerure jeike rehegua ha kundahára noha’ãrõvéima ñembohovái.</p>\n<ul>\n<li>¿Ikatu mohendahavusu ojeporueterei térã peteĩ ñekytĩ ndahi’aréitava? Eha’ã jey ag̃amieve.</li>\n<li>Ndaikatúi eikundaha ambue tenda rupi? Ehechajey ne mohendaha oĩpa ñandutípe.</li>\n<li>Ne ñanduti térã ne mohendaha omo’ã chupe firewall térã proxy? Peteĩ ñemboheko oiko’ỹva ikatu omboykese ne ñeikundaha ñandutípe.</li>\n<li>Oĩ gueteri apañuái? Eporandu ne ñanduti ñangarekohára térã ne ñanduti me’ẽhárape nepytyvõ hag̃ua.</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when a website could not be reached. -->
   <string name="mozac_browser_errorpages_connection_failure_title">Ndaikatúi eike</string>
   <!-- The error message shown when a website could not be reached. -->
-  <string name="mozac_browser_errorpages_connection_failure_message"><![CDATA[<ul>\n<li>Tenda ikatu ndoikói sapy’ami térã ojeporueterei. Eha’ãjey ag̃ave.</li>\n<li>Ndaikatúiramo emyanyhẽ mavave kuatiarogue, ehechajey oĩpa wifi térã mba’ekuaarã ne mba’e’oka oku’éva rehegua.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_connection_failure_message"><![CDATA[<ul>\n<li>Tenda ikatu ndoikói sapy’ami térã ojeporueterei. Eha’ã jey ag̃ave.</li>\n<li>Ndaikatúiramo emyanyhẽ mavave kuatiarogue, ehechajey oĩpa wifi térã mba’ekuaarã ne mba’e’oka oku’éva rehegua.</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when a website responds in an unexpected way and the browser cannot continue. -->
   <string name="mozac_browser_errorpages_unknown_socket_type_title">Mbohovái eha’ãrõ’ỹva mohendahavusúgui</string>
   <!-- The error message shown when a website responds in an unexpected way and the browser cannot continue. -->
@@ -70,7 +70,7 @@
   <!-- The document title and heading of the error page shown when the Internet connection is disrupted while loading a website. -->
   <string name="mozac_browser_errorpages_net_reset_title">Pe jeike oñepyrũjeýma</string>
   <!-- The error message shown when the Internet connection is disrupted while loading a website. -->
-  <string name="mozac_browser_errorpages_net_reset_message"><![CDATA[<p>Pe juajuha ñandutigua ndoikói oñeñe’ẽ aja jeikerã rehe. Eha’ãjey ag̃ave.</p>\n<ul>\n<li>Pe tenda ikatu ndoikói hína sapy’ami térã ojeporueterei. Eha’ãjey ag̃amieve.</li>\n<li>Ndaikatúiramo emyanyhẽ mavave kuatiarogue, ehecha oikópa nde Wi-Fi térã mba’ekuaarã ne pumbyry pegua.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_net_reset_message"><![CDATA[<p>Pe juajuha ñandutigua ndoikói oñeñe’ẽ aja jeikerã rehe. Eha’ã jey ag̃ave.</p>\n<ul>\n<li>Pe tenda ikatu ndoikói hína sapy’ami térã ojeporueterei. Eha’ã jey ag̃amieve.</li>\n<li>Ndaikatúiramo emyanyhẽ mavave kuatiarogue, ehecha oikópa nde Wi-Fi térã mba’ekuaarã ne pumbyry pegua.</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when the browser refuses to load a type of file that is considered unsafe. -->
   <string name="mozac_browser_errorpages_unsafe_content_type_title">Marandurenda hekorosã’ỹva</string>
   <!-- The error message shown when the browser refuses to load a type of file that is considered unsafe. -->
@@ -99,7 +99,7 @@
   <string name="mozac_browser_errorpages_no_internet_refresh_button">Myanyhẽjey</string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_malformed_uri_title">Kundaharape ndoikói</string>
-  <string name="mozac_browser_errorpages_malformed_uri_message"><![CDATA[<p>Kundaharape me’ẽmbyre noĩri peteĩ ysaja ojekuaávape. Ehechajey oĩpa jejavy kundaharape rendápe ha eha’ãjey.</p>]]></string>
+  <string name="mozac_browser_errorpages_malformed_uri_message"><![CDATA[<p>Kundaharape me’ẽmbyre noĩri peteĩ ysaja ojekuaávape. Ehechajey oĩpa jejavy kundaharape rendápe ha eha’ã jey.</p>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_malformed_uri_title_alternative">Pe kundaharape ndoikói</string>
   <!-- This string contains markup. The URL should not be localized. -->
@@ -115,10 +115,10 @@
   <string name="mozac_browser_errorpages_file_access_denied_message"><![CDATA[<ul>\n<li>Ikatúmakuri oñemboguete térã oñemongu’e, térã marandurenda ñemoneĩ omboyke pe jeike.</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_proxy_connection_refused_title">Mohendahavusu proxy ombotove jeike</string>
-  <string name="mozac_browser_errorpages_proxy_connection_refused_message"><![CDATA[<p>Ko kundahára oñemboheko oiporu hag̃ua mohendahavusu proxy, hákatu pe proxy omboyke jeike.</p>\n<ul>\n<li>Oĩporãpa proxy ñemboheko kundahárape. Ehechajey ñemboheko ha eha’ãjey.</li>\n<li>¿Omoneĩpa proxy mba’eporu jeike ko ñanduti guive?</li>\n<li>Oguereko gueteri apañuái? Eporandu ñanduti ñangarekoha térã ñanduti me’ẽhárape pytyvõrã aporekoguáva rehe.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_proxy_connection_refused_message"><![CDATA[<p>Ko kundahára oñemboheko oiporu hag̃ua mohendahavusu proxy, hákatu pe proxy omboyke jeike.</p>\n<ul>\n<li>Oĩporãpa proxy ñemboheko kundahárape. Ehechajey ñemboheko ha eha’ã jey.</li>\n<li>¿Omoneĩpa proxy mba’eporu jeike ko ñanduti guive?</li>\n<li>Oguereko gueteri apañuái? Eporandu ñanduti ñangarekoha térã ñanduti me’ẽhárape pytyvõrã aporekoguáva rehe.</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_unknown_proxy_host_title">Ndojejuhúi mohendahavusu proxy</string>
-  <string name="mozac_browser_errorpages_unknown_proxy_host_message"><![CDATA[<p>Ko kundahára oñemboheko oiporu hag̃ua mohendahavusu proxy, hákatu ndojejuhúi mohendahavusu proxy?</p>\n<ul>\n<li>Oĩporã proxy kundahára ñemboheko? Ehechajey ñemboheko ha eha’ãjey.</li>\n<li>¿Pe mohendaha ojoajuhína ñanduti oikóvare?</li>\n<li>Oguereko gueteri apañuái? Eporandu ñanduti ñangarekoha térã ñanduti me’ẽhárape pytyvõrã aporekoguávare.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_unknown_proxy_host_message"><![CDATA[<p>Ko kundahára oñemboheko oiporu hag̃ua mohendahavusu proxy, hákatu ndojejuhúi mohendahavusu proxy?</p>\n<ul>\n<li>Oĩporã proxy kundahára ñemboheko? Ehechajey ñemboheko ha eha’ã jey.</li>\n<li>¿Pe mohendaha ojoajuhína ñanduti oikóvare?</li>\n<li>Oguereko gueteri apañuái? Eporandu ñanduti ñangarekoha térã ñanduti me’ẽhárape pytyvõrã aporekoguávare.</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_safe_browsing_malware_uri_title">Apañuái malware rendápe</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Apañuái tenda ijapúvape</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Ko ñanduti renda %1$s ojehechakuaa ha’eha tenda ivaíva ha upévare ojejokóma, ohechakuaávo ne nekorosã erohoryvéva.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Tenda ojejokóva ne rekorosãrã</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Ko ñanduti rogue %1$s-pegua ojejoko peteĩva umi ne moĩmbaha ombojurujase. Ko tenda ikatu ojeporu oñemonda hag̃ua ne marandu, taha’e ñe’ẽñemi térã kuatia’atã ñemurã papapy.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Ndaipóri tenda hekorosãva</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

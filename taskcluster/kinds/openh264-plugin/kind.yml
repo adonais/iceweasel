@@ -33,7 +33,7 @@ tasks:
             build_type: opt
         treeherder:
             platform: linux32/opt
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             max-run-time: 1800
             artifacts:
@@ -58,7 +58,7 @@ tasks:
             build_type: opt
         treeherder:
             platform: linux64/opt
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             max-run-time: 1800
             artifacts:
@@ -83,7 +83,7 @@ tasks:
             build_type: opt
         treeherder:
             platform: linux64-aarch64/opt
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             max-run-time: 1800
             artifacts:
@@ -108,7 +108,7 @@ tasks:
             build_type: opt
         treeherder:
             platform: macosx64/opt
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             max-run-time: 1800
             artifacts:
@@ -133,7 +133,7 @@ tasks:
             build_type: opt
         treeherder:
             platform: macosx64-aarch64/opt
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             max-run-time: 1800
             artifacts:

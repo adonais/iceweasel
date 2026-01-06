@@ -30,10 +30,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ee566d1bfb654d36e
  12 files changed, 70 insertions(+), 8 deletions(-)
 
 diff --git a/api/video/frame_buffer.cc b/api/video/frame_buffer.cc
-index 17a030b2c4..251b464f37 100644
+index 78426db4f6..467ceaa42d 100644
 --- a/api/video/frame_buffer.cc
 +++ b/api/video/frame_buffer.cc
-@@ -149,14 +149,29 @@ void FrameBuffer::DropNextDecodableTemporalUnit() {
+@@ -150,14 +150,29 @@ void FrameBuffer::DropNextDecodableTemporalUnit() {
    }
  
    auto end_it = std::next(next_decodable_temporal_unit_->last_frame);
@@ -66,7 +66,7 @@ index 17a030b2c4..251b464f37 100644
  std::optional<int64_t> FrameBuffer::LastContinuousFrameId() const {
    return last_continuous_frame_id_;
  }
-@@ -176,6 +191,9 @@ int FrameBuffer::GetTotalNumberOfContinuousTemporalUnits() const {
+@@ -177,6 +192,9 @@ int FrameBuffer::GetTotalNumberOfContinuousTemporalUnits() const {
  int FrameBuffer::GetTotalNumberOfDroppedFrames() const {
    return num_dropped_frames_;
  }
@@ -76,7 +76,7 @@ index 17a030b2c4..251b464f37 100644
  
  size_t FrameBuffer::CurrentSize() const {
    return frames_.size();
-@@ -278,6 +296,7 @@ void FrameBuffer::FindNextAndLastDecodableTemporalUnit() {
+@@ -280,6 +298,7 @@ void FrameBuffer::FindNextAndLastDecodableTemporalUnit() {
  }
  
  void FrameBuffer::Clear() {
@@ -186,10 +186,10 @@ index f17b00efb1..e205032fa6 100644
  
    void ForceSpsPpsIdrIsH264Keyframe();
 diff --git a/video/receive_statistics_proxy.cc b/video/receive_statistics_proxy.cc
-index 1ce49cad5f..861f14d578 100644
+index bce7093e94..152e5f8e05 100644
 --- a/video/receive_statistics_proxy.cc
 +++ b/video/receive_statistics_proxy.cc
-@@ -817,6 +817,11 @@ void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
+@@ -820,6 +820,11 @@ void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
        }));
  }
  
@@ -202,10 +202,10 @@ index 1ce49cad5f..861f14d578 100644
    RTC_DCHECK_RUN_ON(&main_thread_);
    last_codec_type_ = codec_type;
 diff --git a/video/receive_statistics_proxy.h b/video/receive_statistics_proxy.h
-index 111b7f3c45..fb411d4bbf 100644
+index b72ed92160..82b5e54db2 100644
 --- a/video/receive_statistics_proxy.h
 +++ b/video/receive_statistics_proxy.h
-@@ -106,6 +106,7 @@ class ReceiveStatisticsProxy : public VideoStreamBufferControllerStatsObserver,
+@@ -105,6 +105,7 @@ class ReceiveStatisticsProxy : public VideoStreamBufferControllerStatsObserver,
    void OnDecodableFrame(TimeDelta jitter_buffer_delay,
                          TimeDelta target_delay,
                          TimeDelta minimum_delay) override;
@@ -214,10 +214,10 @@ index 111b7f3c45..fb411d4bbf 100644
                                     int current_delay_ms,
                                     int target_delay_ms,
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 687ff8cf1c..f3e6ae91f9 100644
+index 022099a780..7f2537ac18 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
-@@ -286,6 +286,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
+@@ -284,6 +284,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
      RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
      RtcpCnameCallback* rtcp_cname_callback,
      NackPeriodicProcessor* nack_periodic_processor,
@@ -225,7 +225,7 @@ index 687ff8cf1c..f3e6ae91f9 100644
      OnCompleteFrameCallback* complete_frame_callback,
      scoped_refptr<FrameDecryptorInterface> frame_decryptor,
      scoped_refptr<FrameTransformerInterface> frame_transformer)
-@@ -329,6 +330,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
+@@ -327,6 +328,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
                                              config_.rtp.nack,
                                              &rtcp_feedback_buffer_,
                                              &rtcp_feedback_buffer_)),
@@ -233,7 +233,7 @@ index 687ff8cf1c..f3e6ae91f9 100644
        packet_buffer_(kPacketBufferStartSize,
                       PacketBufferMaxSize(env_.field_trials())),
        reference_finder_(std::make_unique<RtpFrameReferenceFinder>()),
-@@ -1402,7 +1404,8 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
+@@ -1357,7 +1359,8 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
      int64_t unwrapped_rtp_seq_num = rtp_seq_num_unwrapper_.Unwrap(seq_num);
      packet_infos_.erase(packet_infos_.begin(),
                          packet_infos_.upper_bound(unwrapped_rtp_seq_num));
@@ -244,10 +244,10 @@ index 687ff8cf1c..f3e6ae91f9 100644
    }
  }
 diff --git a/video/rtp_video_stream_receiver2.h b/video/rtp_video_stream_receiver2.h
-index 05498bd640..e35711dc8b 100644
+index 1acb0ac70e..272f83ccba 100644
 --- a/video/rtp_video_stream_receiver2.h
 +++ b/video/rtp_video_stream_receiver2.h
-@@ -69,6 +69,7 @@
+@@ -68,6 +68,7 @@
  #include "rtc_base/thread_annotations.h"
  #include "video/buffered_frame_decryptor.h"
  #include "video/unique_timestamp_counter.h"
@@ -255,7 +255,7 @@ index 05498bd640..e35711dc8b 100644
  
  namespace webrtc {
  
-@@ -111,6 +112,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
+@@ -110,6 +111,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
        RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
        RtcpCnameCallback* rtcp_cname_callback,
        NackPeriodicProcessor* nack_periodic_processor,
@@ -263,7 +263,7 @@ index 05498bd640..e35711dc8b 100644
        // The KeyFrameRequestSender is optional; if not provided, key frame
        // requests are sent via the internal RtpRtcp module.
        OnCompleteFrameCallback* complete_frame_callback,
-@@ -395,6 +397,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
+@@ -390,6 +392,7 @@ class RtpVideoStreamReceiver2 : public LossNotificationSender,
    std::unique_ptr<LossNotificationController> loss_notification_controller_
        RTC_GUARDED_BY(packet_sequence_checker_);
  
@@ -272,7 +272,7 @@ index 05498bd640..e35711dc8b 100644
        RTC_GUARDED_BY(packet_sequence_checker_);
    // h26x_packet_buffer_ is applicable to H.264 and H.265. For H.265 it is
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index 293c0f58e0..0c5d0b8e83 100644
+index 517ef80f2f..4705d95d0a 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
 @@ -256,6 +256,7 @@ VideoReceiveStream2::VideoReceiveStream2(

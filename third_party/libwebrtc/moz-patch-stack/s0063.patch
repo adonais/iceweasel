@@ -18,7 +18,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/c8606497de1f461a6
  1 file changed, 28 insertions(+), 2 deletions(-)
 
 diff --git a/modules/desktop_capture/linux/wayland/egl_dmabuf.cc b/modules/desktop_capture/linux/wayland/egl_dmabuf.cc
-index b580717bf4..821fdfb487 100644
+index cf5b4da824..50de04a0d4 100644
 --- a/modules/desktop_capture/linux/wayland/egl_dmabuf.cc
 +++ b/modules/desktop_capture/linux/wayland/egl_dmabuf.cc
 @@ -19,6 +19,7 @@
@@ -27,7 +27,7 @@ index b580717bf4..821fdfb487 100644
  #include <gbm.h>
 +#include <gdk/gdk.h>
  #include <libdrm/drm_fourcc.h>
- #include <spa/param/video/format-utils.h>
+ #include <spa/param/video/raw.h>
  #include <unistd.h>
 @@ -230,6 +231,26 @@ static void CloseLibrary(void* library) {
    }

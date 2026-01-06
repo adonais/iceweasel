@@ -21,7 +21,6 @@ add_heuristic_tests(
           ],
         },
         {
-          invalid: true,
           fields: [
             {
               fieldName: "street-address",

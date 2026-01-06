@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.map
 import mozilla.components.browser.state.state.recover.RecoverableTab
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.ext.flowScoped
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.BrowserDirection
@@ -28,7 +29,6 @@ import org.mozilla.fenix.GleanMetrics.RecentlyClosedTabs
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
-import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.databinding.FragmentRecentlyClosedTabsBinding
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.setTextColor
@@ -106,14 +106,12 @@ class RecentlyClosedFragment :
         savedInstanceState: Bundle?,
     ): View {
         val binding = FragmentRecentlyClosedTabsBinding.inflate(inflater, container, false)
-        recentlyClosedFragmentStore = StoreProvider.get(this) {
-            RecentlyClosedFragmentStore(
-                RecentlyClosedFragmentState(
-                    items = listOf(),
-                    selectedTabs = emptySet(),
-                ),
-            )
-        }
+        recentlyClosedFragmentStore = fragmentStore(
+            RecentlyClosedFragmentState(
+                items = listOf(),
+                selectedTabs = emptySet(),
+            ),
+        ) { RecentlyClosedFragmentStore(it) }.value
         recentlyClosedController = DefaultRecentlyClosedController(
             navController = findNavController(),
             browserStore = requireComponents.core.store,

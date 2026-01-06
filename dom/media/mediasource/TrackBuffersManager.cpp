@@ -6,8 +6,6 @@
 
 #include "TrackBuffersManager.h"
 
-#include <limits>
-
 #include "ContainerParser.h"
 #include "MP4Demuxer.h"
 #include "MediaInfo.h"

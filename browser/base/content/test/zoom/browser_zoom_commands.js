@@ -10,7 +10,7 @@ const TEST_PAGE_URL =
  * Waits for the zoom commands in the window to have the expected enabled
  * state.
  *
- * @param {Object} expectedState
+ * @param {object} expectedState
  *   An object where each key represents one of the zoom commands,
  *   and the value is a boolean that is true if the command should
  *   be enabled, and false if it should be disabled.

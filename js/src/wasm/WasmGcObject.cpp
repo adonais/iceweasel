@@ -6,8 +6,6 @@
 
 #include "wasm/WasmGcObject-inl.h"
 
-#include <algorithm>
-
 #include "gc/Tracer.h"
 #include "js/CharacterEncoding.h"
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*

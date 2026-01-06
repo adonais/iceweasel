@@ -82,7 +82,7 @@ class ChangesActor extends Actor {
    *
    * TODO: Clear changes made within sources in iframes when they navigate. Bug 1513940
    *
-   * @param {Object} eventData
+   * @param {object} eventData
    *        Event data with these properties:
    *        {
    *          window: Object      // Window DOM object of the event source page

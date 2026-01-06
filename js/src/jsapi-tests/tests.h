@@ -10,7 +10,6 @@
 #include "mozilla/Sprintf.h"
 
 #include <errno.h>
-#include <iterator>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -195,6 +195,7 @@ VariablesView.prototype = {
 
   /**
    * Specifies if this view may be emptied lazily.
+   *
    * @see VariablesView.prototype.empty
    */
   lazyEmpty: false,
@@ -225,6 +226,7 @@ VariablesView.prototype = {
   /**
    * Specifies if enumerable properties and variables should be displayed.
    * These variables and properties are visible by default.
+   *
    * @param boolean aFlag
    */
   set enumVisible(aFlag) {
@@ -238,6 +240,7 @@ VariablesView.prototype = {
   /**
    * Specifies if non-enumerable properties and variables should be displayed.
    * These variables and properties are visible by default.
+   *
    * @param boolean aFlag
    */
   set nonEnumVisible(aFlag) {
@@ -251,6 +254,7 @@ VariablesView.prototype = {
   /**
    * Specifies if only enumerable properties and variables should be displayed.
    * Both types of these variables and properties are visible by default.
+   *
    * @param boolean aFlag
    */
   set onlyEnumVisible(aFlag) {
@@ -265,6 +269,7 @@ VariablesView.prototype = {
 
   /**
    * Sets if the variable and property searching is enabled.
+   *
    * @param boolean aFlag
    */
   set searchEnabled(aFlag) {
@@ -273,6 +278,7 @@ VariablesView.prototype = {
 
   /**
    * Gets if the variable and property searching is enabled.
+   *
    * @return boolean
    */
   get searchEnabled() {
@@ -737,6 +743,7 @@ VariablesView.prototype = {
 
   /**
    * Sets the text displayed in this container when there are no available items.
+   *
    * @param string aValue
    */
   set emptyText(aValue) {
@@ -777,6 +784,7 @@ VariablesView.prototype = {
 
   /**
    * Gets if all values should be aligned together.
+   *
    * @return boolean
    */
   get alignedValues() {
@@ -785,6 +793,7 @@ VariablesView.prototype = {
 
   /**
    * Sets if all values should be aligned together.
+   *
    * @param boolean aFlag
    */
   set alignedValues(aFlag) {
@@ -799,6 +808,7 @@ VariablesView.prototype = {
   /**
    * Gets if action buttons (like delete) should be placed at the beginning or
    * end of a line.
+   *
    * @return boolean
    */
   get actionsFirst() {
@@ -808,6 +818,7 @@ VariablesView.prototype = {
   /**
    * Sets if action buttons (like delete) should be placed at the beginning or
    * end of a line.
+   *
    * @param boolean aFlag
    */
   set actionsFirst(aFlag) {
@@ -821,6 +832,7 @@ VariablesView.prototype = {
 
   /**
    * Gets the parent node holding this view.
+   *
    * @return Node
    */
   get parentNode() {
@@ -829,6 +841,7 @@ VariablesView.prototype = {
 
   /**
    * Gets the owner document holding this view.
+   *
    * @return HTMLDocument
    */
   get document() {
@@ -837,6 +850,7 @@ VariablesView.prototype = {
 
   /**
    * Gets the default window holding this view.
+   *
    * @return nsIDOMWindow
    */
   get window() {
@@ -1270,6 +1284,7 @@ Scope.prototype = {
 
   /**
    * Gets the visibility state.
+   *
    * @return boolean
    */
   get visible() {
@@ -1278,6 +1293,7 @@ Scope.prototype = {
 
   /**
    * Gets the expanded state.
+   *
    * @return boolean
    */
   get expanded() {
@@ -1286,6 +1302,7 @@ Scope.prototype = {
 
   /**
    * Gets the header visibility state.
+   *
    * @return boolean
    */
   get header() {
@@ -1294,6 +1311,7 @@ Scope.prototype = {
 
   /**
    * Gets the twisty visibility state.
+   *
    * @return boolean
    */
   get twisty() {
@@ -1301,6 +1319,7 @@ Scope.prototype = {
   },
   /**
    * Sets the visibility state.
+   *
    * @param boolean aFlag
    */
   set visible(aFlag) {
@@ -1309,6 +1328,7 @@ Scope.prototype = {
 
   /**
    * Sets the expanded state.
+   *
    * @param boolean aFlag
    */
   set expanded(aFlag) {
@@ -1317,6 +1337,7 @@ Scope.prototype = {
 
   /**
    * Sets the header visibility state.
+   *
    * @param boolean aFlag
    */
   set header(aFlag) {
@@ -1325,6 +1346,7 @@ Scope.prototype = {
 
   /**
    * Sets the twisty visibility state.
+   *
    * @param boolean aFlag
    */
   set twisty(aFlag) {
@@ -1333,6 +1355,7 @@ Scope.prototype = {
 
   /**
    * Specifies if this target node may be focused.
+   *
    * @return boolean
    */
   get focusable() {
@@ -1366,6 +1389,7 @@ Scope.prototype = {
 
   /**
    * Adds an event listener for a certain event on this scope's title.
+   *
    * @param string aName
    * @param function aCallback
    * @param boolean aCapture
@@ -1376,6 +1400,7 @@ Scope.prototype = {
 
   /**
    * Removes an event listener for a certain event on this scope's title.
+   *
    * @param string aName
    * @param function aCallback
    * @param boolean aCapture
@@ -1386,6 +1411,7 @@ Scope.prototype = {
 
   /**
    * Gets the id associated with this item.
+   *
    * @return string
    */
   get id() {
@@ -1394,6 +1420,7 @@ Scope.prototype = {
 
   /**
    * Gets the name associated with this item.
+   *
    * @return string
    */
   get name() {
@@ -1402,6 +1429,7 @@ Scope.prototype = {
 
   /**
    * Gets the displayed value for this item.
+   *
    * @return string
    */
   get displayValue() {
@@ -1410,6 +1438,7 @@ Scope.prototype = {
 
   /**
    * Gets the class names used for the displayed value.
+   *
    * @return string
    */
   get displayValueClassName() {
@@ -1418,6 +1447,7 @@ Scope.prototype = {
 
   /**
    * Gets the element associated with this item.
+   *
    * @return Node
    */
   get target() {
@@ -1527,6 +1557,7 @@ Scope.prototype = {
 
   /**
    * Specifies if enumerable properties and variables should be displayed.
+   *
    * @param boolean aFlag
    */
   set _enumVisible(aFlag) {
@@ -1546,6 +1577,7 @@ Scope.prototype = {
 
   /**
    * Specifies if non-enumerable properties and variables should be displayed.
+   *
    * @param boolean aFlag
    */
   set _nonEnumVisible(aFlag) {
@@ -1615,6 +1647,7 @@ Scope.prototype = {
 
   /**
    * Sets if this object instance is a matched or non-matched item.
+   *
    * @param boolean aStatus
    */
   set _matched(aStatus) {
@@ -1715,6 +1748,7 @@ Scope.prototype = {
 
   /**
    * Gets top level variables view instance.
+   *
    * @return VariablesView
    */
   get _variablesView() {
@@ -1734,6 +1768,7 @@ Scope.prototype = {
 
   /**
    * Gets the parent node holding this scope.
+   *
    * @return Node
    */
   get parentNode() {
@@ -1742,6 +1777,7 @@ Scope.prototype = {
 
   /**
    * Gets the owner document holding this scope.
+   *
    * @return HTMLDocument
    */
   get document() {
@@ -1750,6 +1786,7 @@ Scope.prototype = {
 
   /**
    * Gets the default window holding this scope.
+   *
    * @return nsIDOMWindow
    */
   get window() {
@@ -1987,6 +2024,7 @@ Variable.prototype = extend(Scope.prototype, {
    * Gets this variable's path to the topmost scope in the form of a string
    * meant for use via eval() or a similar approach.
    * For example, a symbolic name may look like "arguments['0']['foo']['bar']".
+   *
    * @return string
    */
   get symbolicName() {
@@ -1995,6 +2033,7 @@ Variable.prototype = extend(Scope.prototype, {
 
   /**
    * Gets full path to this variable, including name of the scope.
+   *
    * @return string
    */
   get absoluteName() {
@@ -2009,6 +2048,7 @@ Variable.prototype = extend(Scope.prototype, {
 
   /**
    * Gets this variable's symbolic path to the topmost scope.
+   *
    * @return array
    * @see Variable._buildSymbolicPath
    */
@@ -2024,6 +2064,7 @@ Variable.prototype = extend(Scope.prototype, {
    * Build this variable's path to the topmost scope in form of an array of
    * strings, one for each segment of the path.
    * For example, a symbolic path may look like ["0", "foo", "bar"].
+   *
    * @return array
    */
   _buildSymbolicPath(path = []) {
@@ -2038,6 +2079,7 @@ Variable.prototype = extend(Scope.prototype, {
 
   /**
    * Returns this variable's value from the descriptor if available.
+   *
    * @return any
    */
   get value() {
@@ -2046,6 +2088,7 @@ Variable.prototype = extend(Scope.prototype, {
 
   /**
    * Returns this variable's getter from the descriptor if available.
+   *
    * @return object
    */
   get getter() {
@@ -2054,6 +2097,7 @@ Variable.prototype = extend(Scope.prototype, {
 
   /**
    * Returns this variable's getter from the descriptor if available.
+   *
    * @return object
    */
   get setter() {

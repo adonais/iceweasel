@@ -21,6 +21,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -42,6 +44,7 @@ import org.mozilla.fenix.compose.list.FaviconListItem
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.browser.storage.sync.Tab as SyncTab
+import mozilla.components.ui.icons.R as iconsR
 
 private const val EXPANDED_BY_DEFAULT = true
 
@@ -62,7 +65,7 @@ typealias OnTabCloseClick = (deviceId: String, tab: SyncTab) -> Unit
  * @param onTabClick The lambda for handling clicks on synced tabs.
  * @param onTabCloseClick The lambda for handling clicks on a synced tab's close button.
  */
-@SuppressWarnings("LongMethod")
+@SuppressWarnings("LongMethod", "CognitiveComplexMethod")
 @Composable
 fun SyncedTabsList(
     syncedTabs: List<SyncedTabsListItem>,
@@ -103,7 +106,7 @@ fun SyncedTabsList(
                                         description = syncedTab.displayURL,
                                         onClick = { onTabClick(syncedTab.tab) },
                                         iconDescription = stringResource(R.string.close_tab),
-                                        iconPainter = painterResource(R.drawable.ic_close),
+                                        iconPainter = painterResource(iconsR.drawable.mozac_ic_cross_24),
                                         onIconClick = { onTabCloseClick(syncedTab.action.deviceId, syncedTab.tab) },
                                     )
                                     is SyncedTabsListItem.Tab.Action.None -> FaviconListItem(
@@ -158,7 +161,7 @@ fun SyncedTabsSectionHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(FirefoxTheme.colors.layer1),
+            .background(MaterialTheme.colorScheme.surface),
     ) {
         ExpandableListHeader(
             headerText = headerText,
@@ -188,7 +191,7 @@ fun SyncedTabsErrorItem(
             .padding(all = 8.dp)
             .height(IntrinsicSize.Min)
             .dashedBorder(
-                color = FirefoxTheme.colors.borderPrimary,
+                color = MaterialTheme.colorScheme.outlineVariant,
                 cornerRadius = 8.dp,
                 dashHeight = 2.dp,
                 dashWidth = 4.dp,
@@ -201,7 +204,7 @@ fun SyncedTabsErrorItem(
         ) {
             Text(
                 text = errorText,
-                color = FirefoxTheme.colors.textPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.fillMaxWidth(),
                 fontSize = 14.sp,
             )
@@ -212,7 +215,7 @@ fun SyncedTabsErrorItem(
                 FilledButton(
                     text = it.buttonText,
                     modifier = Modifier.fillMaxWidth(),
-                    icon = painterResource(R.drawable.ic_sign_in),
+                    icon = painterResource(iconsR.drawable.mozac_ic_avatar_circle_fill_24),
                     onClick = it.onClick,
                 )
             }
@@ -227,7 +230,7 @@ fun SyncedTabsErrorItem(
 fun SyncedTabsNoTabsItem() {
     Text(
         text = stringResource(R.string.synced_tabs_no_open_tabs),
-        color = FirefoxTheme.colors.textSecondary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .fillMaxWidth(),
@@ -240,7 +243,7 @@ fun SyncedTabsNoTabsItem() {
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 private fun SyncedTabsListItemsPreview() {
     FirefoxTheme {
-        Column(Modifier.background(FirefoxTheme.colors.layer1)) {
+        Surface {
             SyncedTabsSectionHeader(headerText = "Google Pixel Pro Max +Ultra 5000")
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -276,7 +279,7 @@ private fun SyncedTabsListItemsPreview() {
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 private fun SyncedTabsErrorPreview() {
     FirefoxTheme {
-        Box(Modifier.background(FirefoxTheme.colors.layer1)) {
+        Surface {
             SyncedTabsErrorItem(
                 errorText = stringResource(R.string.synced_tabs_no_tabs),
                 errorButton = SyncedTabsListItem.ErrorButton(
@@ -293,7 +296,7 @@ private fun SyncedTabsErrorPreview() {
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
 private fun SyncedTabsListPreview() {
     FirefoxTheme {
-        Box(Modifier.background(FirefoxTheme.colors.layer1)) {
+        Surface {
             SyncedTabsList(
                 syncedTabs = getFakeSyncedTabList(),
                 onTabClick = { println("Tab clicked") },

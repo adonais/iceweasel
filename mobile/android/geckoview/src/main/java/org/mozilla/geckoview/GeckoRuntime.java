@@ -356,16 +356,10 @@ public final class GeckoRuntime implements Parcelable {
                           return null;
                         });
           } else if ("GeckoView:ChildCrashReport".equals(event) && crashHandler != null) {
-            final Context context = GeckoAppShell.getApplicationContext();
-            final Intent i = new Intent(ACTION_CRASHED, null, context, crashHandler);
-            i.putExtra(EXTRA_MINIDUMP_PATH, message.getString(EXTRA_MINIDUMP_PATH));
-            i.putExtra(EXTRA_EXTRAS_PATH, message.getString(EXTRA_EXTRAS_PATH));
-            i.putExtra(
-                EXTRA_CRASH_PROCESS_VISIBILITY, message.getString(EXTRA_CRASH_PROCESS_VISIBILITY));
-            i.putExtra(EXTRA_CRASH_PROCESS_TYPE, message.getString(EXTRA_CRASH_PROCESS_TYPE));
-            i.putExtra(EXTRA_CRASH_REMOTE_TYPE, message.getString(EXTRA_CRASH_REMOTE_TYPE));
-
-            context.startForegroundService(i);
+            CrashHandler.launchCrashReporter(
+                crashHandler, GeckoAppShell.getApplicationContext(), message);
+            // TODO(m_kato):
+            // If returning false, we cannot send crash data, should we re-try it later?
           } else if ("GeckoView:ServiceWorkerOpenWindow".equals(event)) {
             final String url = message.getString("url", "about:blank");
             serviceWorkerOpenWindow(url)

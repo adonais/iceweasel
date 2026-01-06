@@ -317,7 +317,7 @@ a.hidden,
 }
 
 .card .card-body {
-  border-block-start: 1px solid var(--in-content-border-color);
+  border-block-start: 1px solid var(--border-color);
   grid-column: span 2;
   grid-row: 2;
   position: relative;
@@ -349,7 +349,7 @@ a.hidden,
 }
 
 #private-window-message {
-  border: 1px solid var(--in-content-border-color);
+  border: 1px solid var(--border-color);
   grid-area: 1 / 2 / 1 / 7;
   background-color: var(--background-color-box-info);
   padding: 13px 45px;
@@ -767,7 +767,7 @@ label[for="tab-cryptominer"]:hover ~ #highlight-hover {
 }
 
 .progress-bar::-moz-progress-bar {
-  background: #ffffff;
+  background: white;
   border-radius: 0 var(--border-radius-small) var(--border-radius-small) 0;
 }
 

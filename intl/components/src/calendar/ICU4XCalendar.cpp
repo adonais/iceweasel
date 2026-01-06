@@ -211,29 +211,7 @@ UniqueICU4XDate ICU4XCalendar::createICU4XDate(const ISODate& date,
   return dt;
 }
 
-UniqueICU4XDate ICU4XCalendar::createICU4XDate(const CalendarDate& date,
-                                               UErrorCode& status) const {
-  MOZ_ASSERT(U_SUCCESS(status));
-
-  auto* calendar = getICU4XCalendar(status);
-  if (U_FAILURE(status)) {
-    return nullptr;
-  }
-
-  auto era = eraName(date.year);
-
-  auto dt =
-      CreateDateFromCodes(calendar, era, date.year, date.monthCode, date.day);
-  if (!dt) {
-    status = U_INTERNAL_PROGRAM_ERROR;
-  }
-  return dt;
-}
-
-MonthCode ICU4XCalendar::monthCodeFrom(const icu4x::capi::Date* date,
-                                       UErrorCode& status) {
-  MOZ_ASSERT(U_SUCCESS(status));
-
+MonthCode ICU4XCalendar::monthCodeFrom(const icu4x::capi::Date* date) {
   // Storage for the largest valid month code and the terminating NUL-character.
   // DiplomatWrite doesn't have std::span version.
   // https://github.com/rust-diplomat/diplomat/issues/866
@@ -399,11 +377,7 @@ int32_t ICU4XCalendar::internalGetMonth(UErrorCode& status) const {
       return 0;
     }
 
-    MonthCode monthCode = monthCodeFrom(date.get(), status);
-    if (U_FAILURE(status)) {
-      return 0;
-    }
-
+    MonthCode monthCode = monthCodeFrom(date.get());
     month = monthCode.ordinal() - 1;
     isLeapMonth = monthCode.isLeapMonth();
   }

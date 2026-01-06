@@ -21,7 +21,11 @@ XPCOMUtils.defineLazyPreferenceGetter(
 const EVENT_STATS_KEY = "event_stats";
 const CACHE_KEY = "newtab_content_event_stats";
 
-const EVENT_STATS_PERIOD_MS = 60 * 60 * 24 * 1000;
+const CLICK_EVENT_ID = "click";
+
+const EVENT_STATS_DAILY_PERIOD_MS = 60 * 60 * 24 * 1000;
+const EVENT_STATS_WEEKLY_PERIOD_MS = 7 * 60 * 60 * 24 * 1000;
+
 const MAX_UINT32 = 0xffffffff;
 
 export class NewTabContentPing {
@@ -29,19 +33,42 @@ export class NewTabContentPing {
   #deferredTask = null;
   #lastDelaySelection = 0;
   #maxDailyEvents = 0;
+  #maxDailyClickEvents = 0;
+  #maxWeeklyClickEvents = 0;
   #curInstanceEventsSent = 0; // Used for tests
 
   constructor() {
     this.#maxDailyEvents = 0;
+    this.#maxDailyClickEvents = 0;
+    this.#maxWeeklyClickEvents = 0;
     this.cache = this.PersistentCache(CACHE_KEY, true);
   }
 
   /**
    * Set the maximum number of events to send in a 24 hour period
+   *
    * @param {int} maxEvents
    */
   setMaxEventsPerDay(maxEvents) {
     this.#maxDailyEvents = maxEvents || 0;
+  }
+
+  /**
+   * Set the maximum number of events to send in a 24 hour period
+   *
+   * @param {int} maxEvents
+   */
+  setMaxClickEventsPerDay(maxEvents) {
+    this.#maxDailyClickEvents = maxEvents || 0;
+  }
+
+  /**
+   * Set the maximum number of events to send in a 24 hour period
+   *
+   * @param {int} maxEvents
+   */
+  setMaxClickEventsPerWeek(maxEvents) {
+    this.#maxWeeklyClickEvents = maxEvents || 0;
   }
 
   /**
@@ -95,17 +122,38 @@ export class NewTabContentPing {
   /**
    * Resets the impression stats object of the Newtab_content ping and returns it.
    */
-  async resetStats() {
-    const eventStats = {
-      count: 0,
-      lastUpdated: this.Date().now(),
+  async resetDailyStats(eventStats = {}) {
+    const stats = {
+      ...eventStats,
+      dailyCount: 0,
+      lastUpdatedDaily: this.Date().now(),
+      dailyClickCount: 0,
     };
-    await this.cache.set(EVENT_STATS_KEY, eventStats);
-    return eventStats;
+    await this.cache.set(EVENT_STATS_KEY, stats);
+    return stats;
+  }
+
+  async resetWeeklyStats(eventStats = {}) {
+    const stats = {
+      ...eventStats,
+      lastUpdatedWeekly: this.Date().now(),
+      weeklyClickCount: 0,
+    };
+    await this.cache.set(EVENT_STATS_KEY, stats);
+    return stats;
+  }
+
+  /**
+   * Resets all stats for testing purposes.
+   */
+  async test_only_resetAllStats() {
+    let eventStats = await this.resetDailyStats();
+    await this.resetWeeklyStats(eventStats);
   }
 
   /**
    * Randomly shuffles the elements of an array in place using the Fisher–Yates algorithm.
+   *
    * @param {Array} array - The array to shuffle. This array will be modified.
    * @returns {Array} The same array instance, shuffled randomly.
    */
@@ -123,26 +171,73 @@ export class NewTabContentPing {
    * after calling scheduleSubmission.
    */
   async #flushEventsAndSubmit() {
+    const isOrganicClickEvent = (event, data) => {
+      return event === CLICK_EVENT_ID && !data.is_sponsored;
+    };
+
     this.#deferredTask = null;
 
     // See if we have no event stats or the stats period has cycled
     let eventStats = await this.cache.get(EVENT_STATS_KEY, {});
+
     if (
-      !eventStats?.lastUpdated ||
-      !(this.Date().now() - eventStats.lastUpdated < EVENT_STATS_PERIOD_MS)
+      !eventStats?.lastUpdatedDaily ||
+      !(
+        this.Date().now() - eventStats.lastUpdatedDaily <
+        EVENT_STATS_DAILY_PERIOD_MS
+      )
     ) {
-      eventStats = await this.resetStats();
+      eventStats = await this.resetDailyStats(eventStats);
+    }
+
+    if (
+      !eventStats?.lastUpdatedWeekly ||
+      !(
+        this.Date().now() - eventStats.lastUpdatedWeekly <
+        EVENT_STATS_WEEKLY_PERIOD_MS
+      )
+    ) {
+      eventStats = await this.resetWeeklyStats(eventStats);
     }
 
     let events = this.#eventBuffer;
     this.#eventBuffer = [];
     if (this.#maxDailyEvents > 0) {
-      if (eventStats?.count >= this.#maxDailyEvents) {
-        // Drop the events. Don't send.
+      if (eventStats?.dailyCount >= this.#maxDailyEvents) {
+        // Drop all events. Don't send
         return;
       }
     }
-    eventStats.count += events.length;
+    let clickEvents = events.filter(([eventName, data]) =>
+      isOrganicClickEvent(eventName, data)
+    );
+    let numOriginalClickEvents = clickEvents.length;
+    // Check if we need to cap organic click events
+    if (
+      numOriginalClickEvents > 0 &&
+      (this.#maxDailyClickEvents > 0 || this.#maxWeeklyClickEvents > 0)
+    ) {
+      if (this.#maxDailyClickEvents > 0) {
+        clickEvents = clickEvents.slice(
+          0,
+          Math.max(0, this.#maxDailyClickEvents - eventStats?.dailyClickCount)
+        );
+      }
+      if (this.#maxWeeklyClickEvents > 0) {
+        clickEvents = clickEvents.slice(
+          0,
+          Math.max(0, this.#maxWeeklyClickEvents - eventStats?.weeklyClickCount)
+        );
+      }
+      events = events
+        .filter(([eventName, data]) => !isOrganicClickEvent(eventName, data))
+        .concat(clickEvents);
+    }
+
+    eventStats.dailyCount += events.length;
+    eventStats.weeklyClickCount += clickEvents.length;
+    eventStats.dailyClickCount += clickEvents.length;
+
     await this.cache.set(EVENT_STATS_KEY, eventStats);
 
     for (let [eventName, data] of NewTabContentPing.shuffleArray(events)) {
@@ -229,6 +324,7 @@ export class NewTabContentPing {
 
   /**
    * Returns a secure random number between 0 and range
+   *
    * @param {int} range Integer value range
    * @returns {int} Random value between 0 and range non-inclusive
    */
@@ -252,8 +348,10 @@ export class NewTabContentPing {
 
   /**
    * Returns true or false with a certain proability specified
-   * @param {Number} prob Probability
-   * @returns {boolean} Random boolean result of probability prob
+   *
+   * @param {number} prob Probability
+   * @returns {boolean} Random boolean result of probability prob. A higher prob
+   *   increases the chance of true being returned.
    */
   static decideWithProbability(prob) {
     if (prob <= 0) {

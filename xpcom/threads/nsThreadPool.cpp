@@ -138,12 +138,6 @@ void nsThreadPool::DebugLogPoolStatus(MutexAutoLock& aProofOfLock,
 }
 #endif
 
-nsresult nsThreadPool::PutEvent(nsIRunnable* aEvent,
-                                MutexAutoLock& aProofOfLock) {
-  nsCOMPtr<nsIRunnable> event(aEvent);
-  return PutEvent(event.forget(), NS_DISPATCH_NORMAL, aProofOfLock);
-}
-
 nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
                                 DispatchFlags aFlags,
                                 MutexAutoLock& aProofOfLock) {
@@ -220,6 +214,7 @@ nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
 
   mThreads.AppendObject(thread);
   if (mThreads.Count() >= (int32_t)mThreadLimit) {
+    MOZ_ASSERT(mMRUIdleThreads.isEmpty());
     mIsAPoolThreadFree = false;
   }
 
@@ -232,16 +227,12 @@ nsresult nsThreadPool::PutEvent(already_AddRefed<nsIRunnable> aEvent,
 void nsThreadPool::ShutdownThread(nsIThread* aThread) {
   LOG(("THRD-P(%p) shutdown async [%p]\n", this, aThread));
 
-  // This is either called by a threadpool thread that is out of work, or
-  // a thread that attempted to create a threadpool thread and raced in
-  // such a way that the newly created thread is no longer necessary.
-  // In the first case, we must go to another thread to shut aThread down
-  // (because it is the current thread).  In the second case, we cannot
-  // synchronously shut down the current thread (because then Dispatch() would
-  // spin the event loop, and that could blow up the world), and asynchronous
-  // shutdown requires this thread have an event loop (and it may not, see bug
-  // 10204784).  The simplest way to cover all cases is to asynchronously
-  // shutdown aThread from the main thread.
+  // This is called by a threadpool thread that is out of work and exceeded
+  // its idle timeout. The thread has already been unregistered from the pool's
+  // bookkeeping and will go idle right after this call. We must go to another
+  // thread to shut it down completely (because it is the current thread).
+  // The simplest way to cover that case is to asynchronously shutdown aThread
+  // from the main thread.
   // NOTE: If this fails, it's OK, as XPCOM shutdown will already have destroyed
   // the nsThread for us.
   SchedulerGroup::Dispatch(
@@ -393,10 +384,11 @@ nsThreadPool::Run() {
           DebugOnly<bool> found = mThreads.RemoveObject(current);
           MOZ_ASSERT(found || (mShutdown && mThreads.IsEmpty()));
 
-          // Keep track if there are threads available to start. If we are
-          // shutting down, no new threads can start.
+          // Keep track if there are threads available. If we are shutting
+          // down, no new threads can start.
           mIsAPoolThreadFree =
-              !mShutdown && (mThreads.Count() < (int32_t)mThreadLimit);
+              !mMRUIdleThreads.isEmpty() ||
+              (!mShutdown && mThreads.Count() < (int32_t)mThreadLimit);
         } else {
           current->SetRunningEventDelay(TimeDuration(), TimeStamp());
 
@@ -564,7 +556,7 @@ nsThreadPool::ShutdownWithTimeout(int32_t aTimeoutMs) {
     // join each thread.
     name = mName;
     mShutdown = true;
-    mIsAPoolThreadFree = false;
+    mIsAPoolThreadFree = !mMRUIdleThreads.isEmpty();
     NotifyChangeToAllIdleThreads();
 
     // From now on we do not allow the creation of new threads, and threads

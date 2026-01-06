@@ -64,6 +64,7 @@ class FxaDeviceConstellation(
     }
 
     @Throws(FxaPanicException::class)
+    @Suppress("CognitiveComplexMethod")
     override suspend fun finalizeDevice(
         authType: AuthType,
         config: DeviceConfig,

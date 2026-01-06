@@ -57,7 +57,7 @@ class BrowserToolbarView(
     private val lifecycleOwner: LifecycleOwner,
     private val tabStripContent: @Composable () -> Unit,
 ) : FenixBrowserToolbarView(
-    context = context,
+    parent = container,
     settings = settings,
     customTabSession = customTabSession,
 ) {

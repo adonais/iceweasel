@@ -58,7 +58,7 @@ export function closeTabsForSources(sources) {
 /**
  * Compute the potential new source to select while closing tabs for a given set of sources.
  *
- * @param {Object} state
+ * @param {object} state
  *        Redux state object.
  * @param {Array<Source>} closedSources
  *        Ordered list of sources which should be closed.

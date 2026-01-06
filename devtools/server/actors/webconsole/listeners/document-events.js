@@ -109,6 +109,12 @@ DocumentEventsListener.prototype = {
       return;
     }
 
+    if (!window.docShell) {
+      // Bail out if the window is being destroyed and the docShell cannot be
+      // retrieved anymore.
+      return;
+    }
+
     const time = this._getPerformanceTiming(window, "navigationStart");
 
     this.emit("dom-loading", {

@@ -556,8 +556,10 @@ static bool EnumerationIntoList(JSContext* cx, Enumeration values,
  * |Intl.supportedValuesOf()|.
  */
 static constexpr auto UnsupportedCalendars() {
-  // No calendar values are currently unsupported.
-  return std::array<const char*, 0>{};
+  return std::array{
+      "islamic",
+      "islamic-rgsa",
+  };
 }
 
 // Defined outside of the function to workaround bugs in GCC<9.

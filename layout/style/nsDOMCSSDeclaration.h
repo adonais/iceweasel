@@ -67,7 +67,7 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
    * Method analogous to CSSStyleDeclaration::GetPropertyValue,
    * which obeys all the same restrictions.
    */
-  virtual void GetPropertyValue(const nsCSSPropertyID aPropID,
+  virtual void GetPropertyValue(const NonCustomCSSPropertyId aPropId,
                                 nsACString& aValue);
 
   /**
@@ -75,7 +75,7 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
    * method does NOT allow setting a priority (the priority will
    * always be set to default priority).
    */
-  virtual void SetPropertyValue(const nsCSSPropertyID aPropID,
+  virtual void SetPropertyValue(const NonCustomCSSPropertyId aPropId,
                                 const nsACString& aValue,
                                 nsIPrincipal* aSubjectPrincipal,
                                 mozilla::ErrorResult& aRv);
@@ -161,7 +161,7 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
   static ParsingEnvironment GetParsingEnvironmentForRule(
       const mozilla::css::Rule* aRule, mozilla::StyleCssRuleType);
 
-  nsresult ParsePropertyValue(const nsCSSPropertyID aPropID,
+  nsresult ParsePropertyValue(const NonCustomCSSPropertyId aPropId,
                               const nsACString& aPropValue, bool aIsImportant,
                               nsIPrincipal* aSubjectPrincipal);
 
@@ -170,7 +170,7 @@ class nsDOMCSSDeclaration : public nsICSSDeclaration {
                                     bool aIsImportant,
                                     nsIPrincipal* aSubjectPrincipal);
 
-  void RemovePropertyInternal(nsCSSPropertyID aPropID,
+  void RemovePropertyInternal(NonCustomCSSPropertyId aPropId,
                               mozilla::ErrorResult& aRv);
   void RemovePropertyInternal(const nsACString& aPropert,
                               mozilla::ErrorResult& aRv);

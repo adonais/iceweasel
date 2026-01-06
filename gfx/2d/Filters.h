@@ -12,7 +12,6 @@
 
 #include "Point.h"
 #include "Matrix.h"
-#include <vector>
 
 namespace mozilla {
 namespace gfx {

@@ -244,13 +244,13 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
    *
    * @param  {Window} window
    *         The top level browser window from which the key shortcut is pressed.
-   * @param  {Object} key
+   * @param  {object} key
    *         Key object describing the key shortcut being pressed. It comes
    *         from devtools-startup.js's KeyShortcuts array. The useful fields here
    *         are:
    *         - `toolId` used to identify a toolbox's panel like inspector or webconsole,
    *         - `id` used to identify any other key shortcuts like about:debugging
-   * @param {Number} startTime
+   * @param {number} startTime
    *        Optional, indicates the time at which the key event fired. This is a
    *        `ChromeUtils.now()` timing.
    */
@@ -490,7 +490,6 @@ var gDevToolsBrowser = (exports.gDevToolsBrowser = {
    *        The chrome window containing about:devtools-toolbox. Will match
    *        toolbox.topWindow.
    * @return {Toolbox} The toolbox instance loaded in about:devtools-toolbox
-   *
    */
   _getAboutDevtoolsToolbox(win) {
     if (!gDevToolsBrowser._isAboutDevtoolsToolbox(win)) {

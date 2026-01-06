@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Problemo kun trompa retejo</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Tiu ĉi paĝo ĉe %1$s estis denuncita kiel trompa retejo, kaj ĝi estis blokita surbaze de viaj sekurecaj preferoj.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Retejo blokita por via sekureco</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>La retpaĝo ĉe %1$s estis blokita ĉar unu el viaj aldonaĵoj klopodis malfermi ĝin. Tiu ĉi retejo povus esti uzi por ŝteli viajn datumojn — kiel pasvortojn aŭ numerojn de kreditkartoj.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Sekura retejo ne disponebla</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

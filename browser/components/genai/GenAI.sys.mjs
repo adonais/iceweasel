@@ -108,6 +108,12 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "sidebarTools",
   "sidebar.main.tools"
 );
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "shortcutMouseoverCount",
+  "browser.ml.chat.shortcut.onboardingMouseoverCount",
+  0
+);
 
 export const GenAI = {
   // Cache of potentially localized prompt
@@ -448,12 +454,8 @@ export const GenAI = {
       return mozMessageBarEl;
     };
 
-    // Detect hover to build and open the popup
-    aiActionButton.addEventListener("mouseover", async () => {
-      if (chatShortcutsOptionsPanel.state != "closed") {
-        return;
-      }
-
+    // build the ask popup
+    const buildPopup = async () => {
       aiActionButton.setAttribute("type", buttonActiveState);
       const vbox = chatShortcutsOptionsPanel.querySelector("vbox");
       vbox.innerHTML = "";
@@ -551,6 +553,35 @@ export const GenAI = {
         provider: this.getProviderId(),
         warning: showWarning,
       });
+    };
+
+    // ask popup shows on mouseover only in the first two times
+    const hasMouseoverOnPopup = () => {
+      const mouseoverCounter = lazy.shortcutMouseoverCount;
+      const maxMouseoverCount = 2;
+
+      if (mouseoverCounter >= maxMouseoverCount) {
+        return;
+      }
+
+      if (chatShortcutsOptionsPanel.state == "closed") {
+        Services.prefs.setIntPref(
+          "browser.ml.chat.shortcut.onboardingMouseoverCount",
+          mouseoverCounter + 1
+        );
+        buildPopup();
+      }
+    };
+
+    aiActionButton.addEventListener("mouseover", hasMouseoverOnPopup);
+
+    // Detect click to build and toggle the popup
+    aiActionButton.addEventListener("click", async () => {
+      if (chatShortcutsOptionsPanel.state != "closed") {
+        chatShortcutsOptionsPanel.hidePopup();
+        return;
+      }
+      buildPopup();
     });
   },
 

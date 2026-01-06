@@ -590,7 +590,8 @@ void ScreenCapturerSck::StartWithFilter(SCContentFilter* __strong filter) {
         // this handler.
         permanent_error_ = true;
         RTC_LOG(LS_ERROR) << "ScreenCapturerSck " << this
-                          << " Starting failed.";
+                          << " Starting failed with error code " << error.code
+                          << ".";
       } else {
         RTC_LOG(LS_INFO) << "ScreenCapturerSck " << this << " Capture started.";
       }

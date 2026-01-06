@@ -224,11 +224,11 @@ function waitForMessagesByType({ hud, messages }) {
 /**
  * Wait for a message with the provided text and showing the provided repeat count.
  *
- * @param {Object} hud : the webconsole
- * @param {String} text : text included in .message-body
- * @param {String} typeSelector : A part of selector for the message, to
+ * @param {object} hud : the webconsole
+ * @param {string} text : text included in .message-body
+ * @param {string} typeSelector : A part of selector for the message, to
  *                                specify the message type.
- * @param {Number} repeat : expected repeat count in .message-repeats
+ * @param {number} repeat : expected repeat count in .message-repeats
  */
 function waitForRepeatedMessageByType(hud, text, typeSelector, repeat) {
   return waitFor(() => {
@@ -252,9 +252,9 @@ function waitForRepeatedMessageByType(hud, text, typeSelector, repeat) {
  * Wait for a single message with given message type in the web console output,
  * resolving with the first message that matches the query once it is received.
  *
- * @param {Object} hud : the webconsole
- * @param {String} text : text included in .message-body
- * @param {String} typeSelector : A part of selector for the message, to
+ * @param {object} hud : the webconsole
+ * @param {string} text : text included in .message-body
+ * @param {string} typeSelector : A part of selector for the message, to
  *                                specify the message type.
  * @return promise
  *         A promise that is resolved to the message node
@@ -270,7 +270,7 @@ async function waitForMessageByType(hud, text, typeSelector) {
 /**
  * Wait for the Source editor to be available.
  *
- * @param {Object} panel
+ * @param {object} panel
  * @returns
  */
 async function waitForSourceEditor(panel) {
@@ -282,8 +282,8 @@ async function waitForSourceEditor(panel) {
 /**
  * Execute an input expression.
  *
- * @param {Object} hud : The webconsole.
- * @param {String} input : The input expression to execute.
+ * @param {object} hud : The webconsole.
+ * @param {string} input : The input expression to execute.
  */
 function execute(hud, input) {
   return hud.ui.wrapper.dispatchEvaluateExpression(input);
@@ -293,10 +293,10 @@ function execute(hud, input) {
  * Execute an input expression and wait for a message with the expected text
  * with given message type to be displayed in the output.
  *
- * @param {Object} hud : The webconsole.
- * @param {String} input : The input expression to execute.
- * @param {String} matchingText : A string that should match the message body content.
- * @param {String} typeSelector : A part of selector for the message, to
+ * @param {object} hud : The webconsole.
+ * @param {string} input : The input expression to execute.
+ * @param {string} matchingText : A string that should match the message body content.
+ * @param {string} typeSelector : A part of selector for the message, to
  *                                specify the message type.
  */
 function executeAndWaitForMessageByType(
@@ -313,9 +313,9 @@ function executeAndWaitForMessageByType(
 /**
  * Type-specific wrappers for executeAndWaitForMessageByType
  *
- * @param {Object} hud : The webconsole.
- * @param {String} input : The input expression to execute.
- * @param {String} matchingText : A string that should match the message body
+ * @param {object} hud : The webconsole.
+ * @param {string} input : The input expression to execute.
+ * @param {string} matchingText : A string that should match the message body
  *                                content.
  */
 function executeAndWaitForResultMessage(hud, input, matchingText) {
@@ -331,11 +331,11 @@ function executeAndWaitForErrorMessage(hud, input, matchingText) {
  * depending on if the console is in editor mode or not, and wait for a message
  * with the expected text with given message type to be displayed in the output.
  *
- * @param {Object} hud : The webconsole.
- * @param {String} input : The input expression to execute.
- * @param {String} matchingText : A string that should match the message body
+ * @param {object} hud : The webconsole.
+ * @param {string} input : The input expression to execute.
+ * @param {string} matchingText : A string that should match the message body
  *                                content.
- * @param {String} typeSelector : A part of selector for the message, to
+ * @param {string} typeSelector : A part of selector for the message, to
  *                                specify the message type.
  */
 function keyboardExecuteAndWaitForMessageByType(
@@ -360,9 +360,9 @@ function keyboardExecuteAndWaitForMessageByType(
 /**
  * Type-specific wrappers for keyboardExecuteAndWaitForMessageByType
  *
- * @param {Object} hud : The webconsole.
- * @param {String} input : The input expression to execute.
- * @param {String} matchingText : A string that should match the message body
+ * @param {object} hud : The webconsole.
+ * @param {string} input : The input expression to execute.
+ * @param {string} matchingText : A string that should match the message body
  *                                content.
  */
 function keyboardExecuteAndWaitForResultMessage(hud, input, matchingText) {
@@ -503,7 +503,7 @@ function checkConsoleSettingState(hud, selector, enabled) {
  * according to the passed configuration.
  *
  * @param {Node} node - The node to observe mutations on.
- * @param {Object} observeConfig - A configuration object for MutationObserver.observe.
+ * @param {object} observeConfig - A configuration object for MutationObserver.observe.
  * @returns {Promise}
  */
 function waitForNodeMutation(node, observeConfig = {}) {
@@ -522,9 +522,9 @@ function waitForNodeMutation(node, observeConfig = {}) {
  * the corresponding URL. If the message was generated by a logpoint,
  * check if the corresponding logpoint editing panel is opened.
  *
- * @param {Object} hud
+ * @param {object} hud
  *        The webconsole
- * @param {Object} options
+ * @param {object} options
  *        - text: {String} The text to search for. This should be contained in
  *                         the message. The searching is done with
  *                         @see findMessageByType.
@@ -567,7 +567,7 @@ function hasFocus(node) {
  * Get the value of the console input .
  *
  * @param {WebConsole} hud: The webconsole
- * @returns {String}: The value of the console input.
+ * @returns {string}: The value of the console input.
  */
 function getInputValue(hud) {
   return hud.jsterm._getValue();
@@ -577,7 +577,7 @@ function getInputValue(hud) {
  * Set the value of the console input .
  *
  * @param {WebConsole} hud: The webconsole
- * @param {String} value : The value to set the console input to.
+ * @param {string} value : The value to set the console input to.
  */
 function setInputValue(hud, value) {
   const onValueSet = hud.jsterm.once("set-input-value");
@@ -590,7 +590,7 @@ function setInputValue(hud, value) {
  * autocompletion to be updated.
  *
  * @param {WebConsole} hud: The webconsole
- * @param {String} value : The value to set the jsterm to.
+ * @param {string} value : The value to set the jsterm to.
  * @param {Integer} caretPosition : The index where to place the cursor. A negative
  *                  number will place the caret at (value.length - offset) position.
  *                  Default to value.length (caret set at the end).
@@ -638,7 +638,7 @@ async function setInputValueForAutocompletion(
  *
  * @param {Toolbox} toolbox
  * @param {WebConsole} hud
- * @param {String} value : The value to set the jsterm to.
+ * @param {string} value : The value to set the jsterm to.
  *                  Default to value.length (caret set at the end).
  * @returns {Promise<HTMLElement>} resolves with dialog element when it is opened.
  */
@@ -653,8 +653,8 @@ async function setInputValueForGetterConfirmDialog(toolbox, hud, value) {
  * Checks if the console input has the expected completion value.
  *
  * @param {WebConsole} hud
- * @param {String} expectedValue
- * @param {String} assertionInfo: Description of the assertion passed to `is`.
+ * @param {string} expectedValue
+ * @param {string} assertionInfo: Description of the assertion passed to `is`.
  */
 function checkInputCompletionValue(hud, expectedValue, assertionInfo) {
   const completionValue = getInputCompletionValue(hud);
@@ -671,7 +671,7 @@ function checkInputCompletionValue(hud, expectedValue, assertionInfo) {
  *
  * @param {WebConsole} hud
  * @param {Integer} expectedCursorIndex
- * @param {String} assertionInfo: Description of the assertion passed to `is`.
+ * @param {string} assertionInfo: Description of the assertion passed to `is`.
  */
 function checkInputCursorPosition(hud, expectedCursorIndex, assertionInfo) {
   const { jsterm } = hud;
@@ -683,12 +683,12 @@ function checkInputCursorPosition(hud, expectedCursorIndex, assertionInfo) {
  * containing a "|" to indicate the expected cursor position.
  *
  * @param {WebConsole} hud
- * @param {String} expectedStringWithCursor:
+ * @param {string} expectedStringWithCursor:
  *                  String with a "|" to indicate the expected cursor position.
  *                  For example, this is how you assert an empty value with the focus "|",
  *                  and this indicates the value should be "test" and the cursor at the
  *                  end of the input: "test|".
- * @param {String} assertionInfo: Description of the assertion passed to `is`.
+ * @param {string} assertionInfo: Description of the assertion passed to `is`.
  */
 function checkInputValueAndCursorPosition(
   hud,
@@ -718,7 +718,7 @@ function checkInputValueAndCursorPosition(
  * Returns the console input completion value.
  *
  * @param {WebConsole} hud
- * @returns {String}
+ * @returns {string}
  */
 function getInputCompletionValue(hud) {
   const { jsterm } = hud;
@@ -742,7 +742,7 @@ function closeAutocompletePopup(hud) {
  * Returns a boolean indicating if the console input is focused.
  *
  * @param {WebConsole} hud
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function isInputFocused(hud) {
   const { jsterm } = hud;
@@ -859,11 +859,11 @@ async function closeConsole(tab = gBrowser.selectedTab) {
 /**
  * Open a network request logged in the webconsole in the netmonitor panel.
  *
- * @param {Object} toolbox
- * @param {Object} hud
- * @param {String} url
+ * @param {object} toolbox
+ * @param {object} hud
+ * @param {string} url
  *        URL of the request as logged in the netmonitor.
- * @param {String} urlInConsole
+ * @param {string} urlInConsole
  *        (optional) Use if the logged URL in webconsole is different from the real URL.
  */
 async function openMessageInNetmonitor(toolbox, hud, url, urlInConsole) {
@@ -952,7 +952,7 @@ async function waitForBrowserConsole() {
 /**
  * Get the state of a console filter.
  *
- * @param {Object} hud
+ * @param {object} hud
  */
 async function getFilterState(hud) {
   const { outputNode } = hud.ui;
@@ -971,7 +971,7 @@ async function getFilterState(hud) {
 /**
  * Return the filter input element.
  *
- * @param {Object} hud
+ * @param {object} hud
  * @return {HTMLInputElement}
  */
 function getFilterInput(hud) {
@@ -981,8 +981,8 @@ function getFilterInput(hud) {
 /**
  * Set the state of a console filter.
  *
- * @param {Object} hud
- * @param {Object} settings
+ * @param {object} hud
+ * @param {object} settings
  *        Category settings in the following format:
  *          {
  *            error: true,
@@ -1053,7 +1053,7 @@ async function setFilterState(hud, settings) {
  *
  * The css, netxhr and net filters are disabled by default.
  *
- * @param {Object} hud
+ * @param {object} hud
  */
 async function resetFilters(hud) {
   info("Resetting filters to their default state");
@@ -1065,7 +1065,7 @@ async function resetFilters(hud) {
 /**
  * Open the reverse search input by simulating the appropriate keyboard shortcut.
  *
- * @param {Object} hud
+ * @param {object} hud
  * @returns {DOMNode} The reverse search dom node.
  */
 async function openReverseSearch(hud) {
@@ -1100,7 +1100,7 @@ function getReverseSearchInfoElement(hud) {
  * Returns a boolean indicating if the reverse search input is focused.
  *
  * @param {WebConsole} hud
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function isReverseSearchInputFocused(hud) {
   const { outputNode } = hud.ui;
@@ -1144,8 +1144,8 @@ async function waitForNoEagerEvaluationResult(hud) {
 /**
  * Selects a node in the inspector.
  *
- * @param {Object} toolbox
- * @param {String} selector: The selector for the node we want to select.
+ * @param {object} toolbox
+ * @param {string} selector: The selector for the node we want to select.
  */
 async function selectNodeWithPicker(toolbox, selector) {
   const inspector = toolbox.getPanel("inspector");
@@ -1236,7 +1236,7 @@ function getObjectInspectorNodeArrow(node) {
  * Check if a single object inspector node is expandable.
  *
  * @param {HTMLElement} node: Object inspector node (.tree-node)
- * @return {Boolean} true if the node can be expanded
+ * @return {boolean} true if the node can be expanded
  */
 function isObjectInspectorNodeExpandable(node) {
   return !!getObjectInspectorNodeArrow(node);
@@ -1292,7 +1292,7 @@ function getObjectInspectorInvokeGetterButton(node) {
  * element.
  *
  * @param {HTMLElement} oi: Object inspector element
- * @param {String} nodeLabel: label of the searched node
+ * @param {string} nodeLabel: label of the searched node
  * @return {HTMLElement|null} the Object inspector node with the matching label
  */
 function findObjectInspectorNode(oi, nodeLabel) {
@@ -1309,7 +1309,7 @@ function findObjectInspectorNode(oi, nodeLabel) {
  * Return an array of the label of the autocomplete popup items.
  *
  * @param {AutocompletPopup} popup
- * @returns {Array<String>}
+ * @returns {Array<string>}
  */
 function getAutocompletePopupLabels(popup) {
   return popup.getItems().map(item => item.label);
@@ -1320,7 +1320,7 @@ function getAutocompletePopupLabels(popup) {
  * includes all of the expected labels.
  *
  * @param {AutocompletPopup} popup
- * @param {Array<String>} expected the array of expected labels
+ * @param {Array<string>} expected the array of expected labels
  */
 function hasExactPopupLabels(popup, expected) {
   return hasPopupLabels(popup, expected, true);
@@ -1331,7 +1331,7 @@ function hasExactPopupLabels(popup, expected) {
  * of the specific popup.
  *
  * @param {AutocompletPopup} popup
- * @param {String} label the label to check
+ * @param {string} label the label to check
  */
 function hasPopupLabel(popup, label) {
   return hasPopupLabels(popup, [label]);
@@ -1341,8 +1341,8 @@ function hasPopupLabel(popup, label) {
  * Validate the expected labels against the autocomplete labels.
  *
  * @param {AutocompletPopup} popup
- * @param {Array<String>} expectedLabels
- * @param {Boolean} checkAll
+ * @param {Array<string>} expectedLabels
+ * @param {boolean} checkAll
  */
 function hasPopupLabels(popup, expectedLabels, checkAll = false) {
   const autocompleteLabels = getAutocompletePopupLabels(popup);
@@ -1372,8 +1372,9 @@ function getConfirmDialog(toolbox) {
 
 /**
  * Returns true if the Confirm Dialog is opened.
+ *
  * @param toolbox
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function isConfirmDialogOpened(toolbox) {
   const tooltip = getConfirmDialog(toolbox);
@@ -1401,8 +1402,9 @@ async function pauseDebugger(dbg, options) {
 
 /**
  * Check that the passed HTMLElement vertically overflows.
+ *
  * @param {HTMLElement} container
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function hasVerticalOverflow(container) {
   return container.scrollHeight > container.clientHeight;
@@ -1410,8 +1412,9 @@ function hasVerticalOverflow(container) {
 
 /**
  * Check that the passed HTMLElement is scrolled to the bottom.
+ *
  * @param {HTMLElement} container
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function isScrolledToBottom(container) {
   if (!container.lastChild) {
@@ -1427,7 +1430,7 @@ function isScrolledToBottom(container) {
 /**
  *
  * @param {WebConsole} hud
- * @param {Array<String>} expectedMessages: An array of string representing the messages
+ * @param {Array<string>} expectedMessages: An array of string representing the messages
  *                        from the output. This can only be a part of the string of the
  *                        message.
  *                        Start the string with "▶︎⚠ " or "▼⚠ " to indicate that the
@@ -1547,6 +1550,7 @@ async function checkConsoleOutputForWarningGroup(hud, expectedMessages) {
 /**
  * Check that there is a message with the specified text that has the specified
  * stack information.  Self-hosted frames are ignored.
+ *
  * @param {WebConsole} hud
  * @param {string} text
  *        message substring to look for
@@ -1600,6 +1604,7 @@ async function checkMessageStack(hud, text, expectedFrameLines) {
 
 /**
  * Reload the content page.
+ *
  * @returns {Promise} A promise that will return when the page is fully loaded (i.e., the
  *                    `load` event was fired).
  */
@@ -1619,7 +1624,7 @@ function reloadPage() {
  * Check if the editor mode is enabled (i.e. .webconsole-app has the expected class).
  *
  * @param {WebConsole} hud
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function isEditorModeEnabled(hud) {
   const { outputNode } = hud.ui;
@@ -1663,7 +1668,7 @@ async function waitForLazyRequests(toolbox) {
  * Clear the console output and wait for eventual object actors to be released.
  *
  * @param {WebConsole} hud
- * @param {Object} An options object with the following properties:
+ * @param {object} An options object with the following properties:
  *                 - {Boolean} keepStorage: true to prevent clearing the messages storage.
  */
 async function clearOutput(hud, { keepStorage = false } = {}) {
@@ -1699,7 +1704,7 @@ function getContextSelectorItems(hud) {
  * state.
  *
  * @param {WebConsole} hud
- * @param {Array<Object>} expected: An array of object (see checkContextSelectorMenuItemAt
+ * @param {Array<object>} expected: An array of object (see checkContextSelectorMenuItemAt
  *                        for expected properties)
  */
 function checkContextSelectorMenu(hud, expected) {
@@ -1720,13 +1725,13 @@ function checkContextSelectorMenu(hud, expected) {
  * Check that the evaluation context selector menu has the expected item at the specified index.
  *
  * @param {WebConsole} hud
- * @param {Number} index
- * @param {Object} expected
- * @param {String} expected.label: The label of the target
- * @param {String} expected.tooltip: The tooltip of the target element in the menu
- * @param {Boolean} expected.checked: if the target should be selected or not
- * @param {Boolean} expected.separator: if the element is a simple separator
- * @param {Boolean} expected.indented: if the element is indented
+ * @param {number} index
+ * @param {object} expected
+ * @param {string} expected.label: The label of the target
+ * @param {string} expected.tooltip: The tooltip of the target element in the menu
+ * @param {boolean} expected.checked: if the target should be selected or not
+ * @param {boolean} expected.separator: if the element is a simple separator
+ * @param {boolean} expected.indented: if the element is indented
  */
 function checkContextSelectorMenuItemAt(hud, index, expected) {
   const el = getContextSelectorItems(hud).at(index);
@@ -1759,7 +1764,7 @@ function checkContextSelectorMenuItemAt(hud, index, expected) {
  * Select a target in the context selector.
  *
  * @param {WebConsole} hud
- * @param {String} targetLabel: The label of the target to select.
+ * @param {string} targetLabel: The label of the target to select.
  */
 function selectTargetInContextSelector(hud, targetLabel) {
   const items = getContextSelectorItems(hud);
@@ -1777,6 +1782,7 @@ function selectTargetInContextSelector(hud, targetLabel) {
 /**
  * A helper that returns the size of the image that was just put into the clipboard by the
  * :screenshot command.
+ *
  * @return The {width, height} dimension object.
  */
 async function getImageSizeFromClipboard() {

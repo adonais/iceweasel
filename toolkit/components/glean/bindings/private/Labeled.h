@@ -11,6 +11,8 @@
 #include "nsWrapperCache.h"
 #include "mozilla/ResultVariant.h"
 #include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/dom/GleanBinding.h"
+#include "mozilla/dom/Record.h"
 #include "mozilla/glean/bindings/Boolean.h"
 #include "mozilla/glean/bindings/Counter.h"
 #include "mozilla/glean/bindings/CustomDistribution.h"
@@ -312,6 +314,9 @@ class Labeled {
 
 }  // namespace impl
 
+using GleanLabeledTestValue =
+    dom::OwningBooleanOrUnsignedLongLongOrUTF8StringOrGleanDistributionData;
+
 class GleanLabeled final : public GleanMetric {
  public:
   explicit GleanLabeled(uint32_t aId, uint32_t aTypeId, nsISupports* aParent)
@@ -324,6 +329,11 @@ class GleanLabeled final : public GleanMetric {
                                             bool& aFound);
   bool NameIsEnumerable(const nsAString& aName);
   void GetSupportedNames(nsTArray<nsString>& aNames);
+
+  void TestGetValue(
+      const nsACString& aPingName,
+      dom::Nullable<dom::Record<nsCString, GleanLabeledTestValue>>& aResult,
+      ErrorResult& aRv);
 
  private:
   virtual ~GleanLabeled() = default;

@@ -1,4 +1,5 @@
 // Copyright 2021 Google LLC
+// Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
 // SPDX-License-Identifier: Apache-2.0
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -389,9 +390,18 @@ HWY_API svbool_t PFalse() { return svpfalse_b(); }
 //
 // This is used in functions that load/store memory; other functions (e.g.
 // arithmetic) can ignore d and use PTrue instead.
+//
+// Always use FirstN(N) for HWY_TARGET == HWY_SVE2_128 to avoid vector length
+// information loss when using PTrue(d) predicates in memory intrinsics.
+//
+// SVE2_256 is untested due to unavailable hardware and cannot assume
+// equal minimum and maximum vector lengths as SVE2_128 can.
 template <class D>
 svbool_t MakeMask(D d) {
-  return IsFull(d) ? PTrue(d) : FirstN(d, Lanes(d));
+#if HWY_TARGET != HWY_SVE2_128
+  HWY_IF_CONSTEXPR(IsFull(d)) { return PTrue(d); }
+#endif
+  return FirstN(d, Lanes(d));
 }
 
 }  // namespace detail
@@ -405,6 +415,20 @@ svbool_t MakeMask(D d) {
 template <class D>
 HWY_API svbool_t MaskFalse(const D /*d*/) {
   return detail::PFalse();
+}
+
+#ifdef HWY_NATIVE_SET_MASK
+#undef HWY_NATIVE_SET_MASK
+#else
+#define HWY_NATIVE_SET_MASK
+#endif
+
+template <class D>
+HWY_API svbool_t SetMask(D d, bool val) {
+  // The SVE svdup_n_b* intrinsics are equivalent to the FirstN op below if
+  // detail::IsFull(d) is true since svdup_n_b* is simply a wrapper around the
+  // SVE whilelo instruction.
+  return FirstN(d, size_t{0} - static_cast<size_t>(val));
 }
 
 // ================================================== INIT
@@ -5304,7 +5328,7 @@ HWY_API V AverageRound(const V a, const V b) {
 // `p` points to at least 8 readable bytes, not all of which need be valid.
 template <class D, HWY_IF_T_SIZE_D(D, 1)>
 HWY_INLINE svbool_t LoadMaskBits(D d, const uint8_t* HWY_RESTRICT bits) {
-#if HWY_COMPILER_CLANG >= 1901 || HWY_COMPILER_GCC_ACTUAL >= 1200
+#if HWY_COMPILER_CLANG >= 2200 || HWY_COMPILER_GCC_ACTUAL >= 1200
   typedef svbool_t UnalignedSveMaskT
       __attribute__((__aligned__(1), __may_alias__));
   (void)d;
@@ -6531,9 +6555,10 @@ HWY_API VFromD<DU32> SumOfMulQuadAccumulate(DU32 /*du32*/, svuint8_t a,
 template <class DI32, HWY_IF_I32_D(DI32)>
 HWY_API VFromD<DI32> SumOfMulQuadAccumulate(DI32 di32, svuint8_t a_u,
                                             svint8_t b_i, svint32_t sum) {
-  // TODO: use svusdot_u32 on SVE targets that require support for both SVE2
-  // and SVE I8MM.
-
+#if HWY_SVE_HAVE_2
+  (void)di32;
+  return svusdot_s32(sum, a_u, b_i);
+#else
   const RebindToUnsigned<decltype(di32)> du32;
   const Repartition<uint8_t, decltype(di32)> du8;
 
@@ -6543,6 +6568,7 @@ HWY_API VFromD<DI32> SumOfMulQuadAccumulate(DI32 di32, svuint8_t a_u,
       ShiftLeft<8>(svdot_u32(Zero(du32), a_u, ShiftRight<7>(b_u)));
 
   return BitCast(di32, Sub(result_sum0, result_sum1));
+#endif
 }
 
 #ifdef HWY_NATIVE_I16_I16_SUMOFMULQUADACCUMULATE

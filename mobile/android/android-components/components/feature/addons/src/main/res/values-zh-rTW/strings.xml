@@ -33,7 +33,7 @@
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">存取您在其他網域中的資料</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
   <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">存取您在 %1$d 個網域中的網站資料</string>
-  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2" tools:ignore="MissingQuantity">
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
     <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
     <item quantity="other">存取您在 %1$d 個網域中的網站資料</item>
   </plurals>
@@ -260,7 +260,7 @@
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the installed section. -->
   <string name="mozac_feature_addons_installed_section">已安裝</string>
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the recommended section. -->
-  <string name="mozac_feature_addons_recommended_section">推薦項目</string>
+  <string name="mozac_feature_addons_recommended_section">推薦</string>
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the not yet supported section. -->
   <string name="mozac_feature_addons_unsupported_section">尚未支援</string>
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the not yet available section. -->

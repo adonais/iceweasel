@@ -67,14 +67,14 @@ fn open_read_fast_fail(path: &Path) -> io::Result<File> {
 /// Allocates an nsACString that contains a ISO 639 language list
 /// notated with HTTP "q" values for output with an HTTP Accept-Language
 /// header. Previous q values will be stripped because the order of
-/// the langs implies the q value. The q values are calculated by dividing
-/// 1.0 amongst the number of languages present.
+/// the langs implies the q value. q-values decrease by 0.1 for each subsequent language,
+/// with a minimum value of 0.1.
 ///
 /// Ex: passing: "en, ja"
-///     returns: "en,ja;q=0.5"
+///     returns: "en,ja;q=0.9"
 ///
 ///     passing: "en, ja, fr_CA"
-///     returns: "en,ja;q=0.7,fr_CA;q=0.3"
+///     returns: "en,ja;q=0.9,fr_CA;q=0.8"
 pub extern "C" fn rust_prepare_accept_languages(
     i_accept_languages: &nsACString,
     o_accept_languages: &mut nsACString,
@@ -90,8 +90,6 @@ pub extern "C" fn rust_prepare_accept_languages(
             .filter(|token| !token.is_empty())
     };
 
-    let n = make_tokens().count();
-
     for (count_n, i_token) in make_tokens().enumerate() {
         // delimiter if not first item
         if count_n != 0 {
@@ -106,23 +104,14 @@ pub extern "C" fn rust_prepare_accept_languages(
             canonicalize_language_tag(&mut o_token[token_pos..]);
         }
 
-        // Divide the quality-values evenly among the languages.
-        let q = 1.0 - count_n as f32 / n as f32;
+        //Since we need to emulate chrome behavior i.e languages should get q=1.0,0.9,0.8 and so on...
+        let q_val_max = 10;
+        let weight_of_decrement = 1;
+        let step = std::cmp::min(10, count_n); //if num_language > 10, q_val_max - curr_cnt*weight_of_decrement underflows
+        let q_val = std::cmp::max(q_val_max - step * weight_of_decrement, 1); //q-weight shouldn't go below 0.1
 
-        let u: u32 = ((q + 0.005) * 100.0) as u32;
-        // Only display q-value if less than 1.00.
-        if u < 100 {
-            // With a small number of languages, one decimal place is
-            // enough to prevent duplicate q-values.
-            // Also, trailing zeroes do not add any information, so
-            // they can be removed.
-            if n < 10 || u % 10 == 0 {
-                let u = (u + 5) / 10;
-                o_accept_languages.append(&format!(";q=0.{}", u));
-            } else {
-                // Values below 10 require zero padding.
-                o_accept_languages.append(&format!(";q=0.{:02}", u));
-            }
+        if count_n > 0 && q_val < 10 {
+            o_accept_languages.append(&format!(";q=0.{}", q_val));
         }
     }
 

@@ -7,8 +7,6 @@
 #ifndef jit_x86_Assembler_x86_h
 #define jit_x86_Assembler_x86_h
 
-#include <iterator>
-
 #include "jit/CompactBuffer.h"
 #include "jit/JitCode.h"
 #include "jit/shared/Assembler-shared.h"

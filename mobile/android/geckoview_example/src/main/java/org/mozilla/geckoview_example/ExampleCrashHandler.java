@@ -49,6 +49,13 @@ public class ExampleCrashHandler extends Service {
           LOGTAG,
           "Process Visibility: "
               + mCrashIntent.getStringExtra(GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY));
+      Log.d(
+          LOGTAG,
+          "Process Type: " + mCrashIntent.getStringExtra(GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE));
+      final String remoteType = mCrashIntent.getStringExtra(GeckoRuntime.EXTRA_CRASH_REMOTE_TYPE);
+      if (remoteType != null) {
+        Log.d(LOGTAG, "Remote Type: " + remoteType);
+      }
 
       String id = createNotificationChannel();
 

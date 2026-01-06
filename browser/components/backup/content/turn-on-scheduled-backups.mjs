@@ -417,13 +417,16 @@ export default class TurnOnScheduledBackups extends MozLitElement {
   }
 
   contentTemplate() {
+    const hasEmbeddedPersistentData =
+      this.embeddedFxBackupOptIn &&
+      this.backupServiceState?.embeddedComponentPersistentData?.path;
     // All the situations where we want to disable submit:
     // - passwords don't match
     // - there's no destination folder
     // - other unknown errors
     if (
       (this._showPasswordOptions && !this._passwordsMatch) ||
-      (!this._newPath && !this.defaultLabel) ||
+      (!this._newPath && !this.defaultLabel && !hasEmbeddedPersistentData) ||
       this.enableBackupErrorCode != ERRORS.NONE
     ) {
       this.disableSubmit = true;

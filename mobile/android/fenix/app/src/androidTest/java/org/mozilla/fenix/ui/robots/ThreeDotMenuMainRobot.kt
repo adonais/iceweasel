@@ -178,7 +178,6 @@ class ThreeDotMenuMainRobot {
             desktopSiteButton(),
             reportSiteIssueButton(),
             desktopSiteToggle(isRequestDesktopSiteEnabled),
-
         )
         // Swipe to second part of menu
         expandMenu()

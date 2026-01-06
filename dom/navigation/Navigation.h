@@ -186,8 +186,7 @@ class Navigation final : public DOMEventTargetHelper {
 
   MOZ_CAN_RUN_SCRIPT
   void AbortNavigateEvent(JSContext* aCx, NavigateEvent* aEvent,
-                          JS::Handle<JS::Value> aReason,
-                          bool aIsCalledFromNavigateFiringFailureSteps);
+                          JS::Handle<JS::Value> aReason);
 
   MOZ_CAN_RUN_SCRIPT
   void InformAboutChildNavigableDestruction(JSContext* aCx);

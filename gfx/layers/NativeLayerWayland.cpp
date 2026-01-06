@@ -606,7 +606,7 @@ RefPtr<WaylandBuffer> NativeLayerRootWayland::BorrowExternalBuffer(
 NativeLayerWayland::NativeLayerWayland(NativeLayerRootWayland* aRootLayer,
                                        const IntSize& aSize, bool aIsOpaque)
     : mRootLayer(aRootLayer), mIsOpaque(aIsOpaque), mSize(aSize) {
-  mSurface = new WaylandSurface(mRootLayer->GetRootWaylandSurface(), mSize);
+  mSurface = new WaylandSurface(mRootLayer->GetRootWaylandSurface());
 #ifdef MOZ_LOGGING
   mSurface->SetLoggingWidget(this);
 #endif
@@ -794,10 +794,13 @@ void NativeLayerWayland::UpdateLayerPlacementLocked(
 
   mSurface->SetTransformFlippedLocked(aProofOfLock, transform2D._11 < 0.0,
                                       transform2D._22 < 0.0);
+
+  // TODO! Downscale introduces rounding errors here.
   auto unscaledRect =
       gfx::RoundedToInt(surfaceRectClipped / UnknownScaleFactor(mScale));
-  mSurface->MoveLocked(aProofOfLock, unscaledRect.TopLeft());
-  mSurface->SetViewPortDestLocked(aProofOfLock, unscaledRect.Size());
+  auto rect = DesktopIntRect::FromUnknownRect(unscaledRect);
+  mSurface->MoveLocked(aProofOfLock, rect.TopLeft());
+  mSurface->SetViewPortDestLocked(aProofOfLock, rect.Size());
 
   auto transform2DInversed = transform2D.Inverse();
   Rect bufferClip = transform2DInversed.TransformBounds(surfaceRectClipped);
@@ -864,7 +867,7 @@ bool NativeLayerWayland::Map(WaylandSurfaceLock* aParentWaylandSurfaceLock) {
   MOZ_DIAGNOSTIC_ASSERT(mNeedsMainThreadUpdate != MainThreadUpdate::Map);
 
   if (!mSurface->MapLocked(surfaceLock, aParentWaylandSurfaceLock,
-                           gfx::IntPoint(0, 0))) {
+                           DesktopIntPoint())) {
     gfxCriticalError() << "NativeLayerWayland::Map() failed!";
     return false;
   }
@@ -947,6 +950,7 @@ void NativeLayerWayland::Unmap() {
   mState.mMutatedVisibility = true;
   mState.mIsRendered = false;
   mState.mIsVisible = false;
+  DiscardBackbuffersLocked(surfaceLock);
   mNeedsMainThreadUpdate = MainThreadUpdate::Unmap;
 }
 

@@ -49,8 +49,7 @@ class JSWindowActorParent final : public JSActor {
   CanonicalBrowsingContext* GetBrowsingContext(ErrorResult& aRv);
 
  protected:
-  void SendRawMessage(const JSActorMessageMeta& aMeta,
-                      UniquePtr<ipc::StructuredCloneData> aData,
+  void SendRawMessage(const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
                       UniquePtr<ipc::StructuredCloneData> aStack,
                       ErrorResult& aRv) override;
 

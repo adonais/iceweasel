@@ -27,7 +27,6 @@ import mozilla.components.feature.downloads.fake.FakeFileSizeFormatter
 import mozilla.components.feature.downloads.fake.FakePackageNameProvider
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.test.any
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.grantPermission
 import mozilla.components.support.test.robolectric.testContext
@@ -91,7 +90,6 @@ class FetchDownloadManagerTest {
 
         assertTrue(store.state.downloads.isEmpty())
         val id = downloadManager.download(download)!!
-        store.waitUntilIdle()
         assertEquals(download, store.state.downloads[download.id])
 
         notifyDownloadCompleted(id)
@@ -110,7 +108,6 @@ class FetchDownloadManagerTest {
 
         assertTrue(store.state.downloads.isEmpty())
         val id = downloadManager.download(download)!!
-        store.waitUntilIdle()
         assertEquals(download, store.state.downloads[download.id])
 
         // Excluding the EXTRA_DOWNLOAD_STATUS
@@ -140,7 +137,6 @@ class FetchDownloadManagerTest {
         grantPermissions()
 
         val id = downloadManager.download(download)!!
-        store.waitUntilIdle()
         notifyDownloadFailed(id)
         shadowOf(getMainLooper()).idle()
         assertTrue(downloadStopped)
@@ -238,7 +234,6 @@ class FetchDownloadManagerTest {
             downloadWithFileName,
             cookie = "yummy_cookie=choco",
         )!!
-        store.waitUntilIdle()
 
         notifyDownloadCompleted(id)
         shadowOf(getMainLooper()).idle()
@@ -261,13 +256,11 @@ class FetchDownloadManagerTest {
             downloadWithFileName,
             cookie = "yummy_cookie=choco",
         )!!
-        store.waitUntilIdle()
         assertEquals(downloadWithFileName, store.state.downloads[downloadWithFileName.id])
 
         notifyDownloadCompleted(id)
         shadowOf(getMainLooper()).idle()
 
-        store.waitUntilIdle()
         assertEquals(DownloadState.Status.COMPLETED, downloadStatus)
     }
 
@@ -289,7 +282,6 @@ class FetchDownloadManagerTest {
         }
 
         val id = downloadManager.download(downloadWithFileName)!!
-        store.waitUntilIdle()
         notifyDownloadCompleted(id)
         shadowOf(getMainLooper()).idle()
 

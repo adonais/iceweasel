@@ -5,9 +5,7 @@ support-files = [
 ]
 prefs = [
     # Ignoring the blocklist is necessary to run tests in CI on old Mesa versions
-    # (https://bugzilla.mozilla.org/show_bug.cgi?id=1985348) or against beta and
-    # release builds on old MacOS versions
-    # (https://bugzilla.mozilla.org/show_bug.cgi?id=1993341).
+    # (https://bugzilla.mozilla.org/show_bug.cgi?id=1985348).
     "gfx.webgpu.ignore-blocklist=true",
 ]
 
@@ -22,7 +20,9 @@ disabled = "Disabled as we want to run this only as perftest, not regular CI"
 
 ["browser_ml_llama_summarizer_perf.js"]
 disabled = "Disabled as we want to run this only as perftest, not regular CI"
-skip-if = ["true"] #  Bug 1952456
+skip-if = [
+  "true", #  Bug 1952456
+]
 
 ["browser_ml_semantic_history_search_perf.js"]
 disabled = "Disabled as we want to run this only as perftest, not regular CI"

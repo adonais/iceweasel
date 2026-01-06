@@ -47,7 +47,7 @@ an indication that the product is getting worse not better. They should,
 best-case, never hit release but be fixed in beta.
 
 -  All new S1 and sec-critical bugs should get the full attention of anyone that
-   can reasonably help
+   can reasonably help. They should be assigned within 2 business days.
 -  All new S2 and sec-high bugs should be assigned (with caveats) and monitored
    closely (weekly team meeting)
 -  Tracked bugs should be monitored closely (weekly team meeting)
@@ -160,6 +160,10 @@ are:
    been modified in five days
 -  All bugs with reviewed, but unlanded patches in your components
 -  All bugs with a needinfo request unanswered for more than 10 days
+
+Note: For bugs filed or reproduced by QA, the QA team will set an initial bug severity.
+
+Changing a bug's severity requires a comment explaining the rationale.
 
 There’s a tool with these queries to help you find bugs
 https://bugdash.moz.tools/ and the source is at

@@ -5,7 +5,6 @@
 package org.mozilla.fenix.settings.logins.ui
 
 import mozilla.components.lib.state.State
-import kotlin.collections.List
 
 /**
  * Represents the state of the Logins list screen and its various subscreens.
@@ -13,7 +12,6 @@ import kotlin.collections.List
  * @property loginItems Login items to be displayed in the current list screen.
  * @property searchText The text to filter login items.
  * @property sortOrder The order to display the login items.
- * @property biometricAuthenticationState State representing the biometric authentication state.
  * @property loginsListState State representing the list login subscreen, if visible.
  * @property loginsAddLoginState State representing the add login subscreen, if visible.
  * @property loginsEditLoginState State representing the edit login subscreen, if visible.
@@ -25,7 +23,6 @@ internal data class LoginsState(
     val loginItems: List<LoginItem>,
     val searchText: String?,
     val sortOrder: LoginsSortOrder,
-    val biometricAuthenticationState: BiometricAuthenticationState,
     val loginsListState: LoginsListState?,
     val loginsAddLoginState: LoginsAddLoginState?,
     val loginsEditLoginState: LoginsEditLoginState?,
@@ -38,7 +35,6 @@ internal data class LoginsState(
             loginItems = listOf(),
             searchText = null,
             sortOrder = LoginsSortOrder.default,
-            biometricAuthenticationState = BiometricAuthenticationState.Inert,
             loginsListState = null,
             loginsAddLoginState = null,
             loginsEditLoginState = null,
@@ -47,20 +43,6 @@ internal data class LoginsState(
             newLoginState = NewLoginState.None,
         )
     }
-}
-
-internal sealed class BiometricAuthenticationState {
-    data object Inert : BiometricAuthenticationState()
-    data object ReadyToLock : BiometricAuthenticationState()
-    data object InProgress : BiometricAuthenticationState()
-    data object Authorized : BiometricAuthenticationState()
-    data object Failed : BiometricAuthenticationState()
-
-    val isAuthorized: Boolean
-        get() = this is Authorized
-
-    val isReadyToLock: Boolean
-        get() = this is ReadyToLock
 }
 
 internal sealed class NewLoginState {

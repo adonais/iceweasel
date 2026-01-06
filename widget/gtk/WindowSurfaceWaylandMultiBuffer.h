@@ -73,10 +73,6 @@ class WindowSurfaceWaylandMB : public WindowSurface {
   nsTArray<RefPtr<WaylandBufferSHM>> mInUseBuffers;
   nsTArray<RefPtr<WaylandBufferSHM>> mPendingBuffers;
   nsTArray<RefPtr<WaylandBufferSHM>> mAvailableBuffers;
-
-  // delayed commits
-  bool mFrameInProcess;
-  bool mCallbackRequested;
 };
 
 }  // namespace mozilla::widget

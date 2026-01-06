@@ -10,9 +10,9 @@
 use crate::values::animated::{Animate, Procedure};
 use crate::values::computed::angle::Angle;
 use crate::values::computed::url::ComputedUrl;
-use crate::values::computed::{Image, LengthPercentage, NonNegativeLengthPercentage, Position};
+use crate::values::computed::{Image, LengthPercentage, Position};
 use crate::values::generics::basic_shape as generic;
-use crate::values::generics::position::Position as GenericPosition;
+use crate::values::generics::basic_shape::ShapePosition;
 use crate::values::specified::svg_path::{CoordPair, PathCommand};
 use crate::values::CSSFloat;
 
@@ -26,46 +26,44 @@ pub type ClipPath = generic::GenericClipPath<BasicShape, ComputedUrl>;
 pub type ShapeOutside = generic::GenericShapeOutside<BasicShape, Image>;
 
 /// A computed basic shape.
-pub type BasicShape = generic::GenericBasicShape<
-    Angle,
-    Position,
-    LengthPercentage,
-    NonNegativeLengthPercentage,
-    InsetRect,
->;
+pub type BasicShape = generic::GenericBasicShape<Angle, Position, LengthPercentage, InsetRect>;
 
 /// The computed value of `inset()`.
-pub type InsetRect = generic::GenericInsetRect<LengthPercentage, NonNegativeLengthPercentage>;
+pub type InsetRect = generic::GenericInsetRect<LengthPercentage>;
 
 /// A computed circle.
-pub type Circle = generic::Circle<Position, NonNegativeLengthPercentage>;
+pub type Circle = generic::Circle<LengthPercentage>;
 
 /// A computed ellipse.
-pub type Ellipse = generic::Ellipse<Position, NonNegativeLengthPercentage>;
+pub type Ellipse = generic::Ellipse<LengthPercentage>;
 
 /// The computed value of `ShapeRadius`.
-pub type ShapeRadius = generic::GenericShapeRadius<NonNegativeLengthPercentage>;
+pub type ShapeRadius = generic::GenericShapeRadius<LengthPercentage>;
 
 /// The computed value of `shape()`.
-pub type Shape = generic::Shape<Angle, LengthPercentage>;
+pub type Shape = generic::Shape<Angle, Position, LengthPercentage>;
 
 /// The computed value of `ShapeCommand`.
-pub type ShapeCommand = generic::GenericShapeCommand<Angle, LengthPercentage>;
+pub type ShapeCommand = generic::GenericShapeCommand<Angle, Position, LengthPercentage>;
 
 /// The computed value of `PathOrShapeFunction`.
-pub type PathOrShapeFunction = generic::GenericPathOrShapeFunction<Angle, LengthPercentage>;
+pub type PathOrShapeFunction =
+    generic::GenericPathOrShapeFunction<Angle, Position, LengthPercentage>;
 
 /// The computed value of `CoordinatePair`.
 pub type CoordinatePair = generic::CoordinatePair<LengthPercentage>;
 
 /// The computed value of 'ControlPoint'.
-pub type ControlPoint = generic::ControlPoint<LengthPercentage>;
+pub type ControlPoint = generic::ControlPoint<Position, LengthPercentage>;
 
 /// The computed value of 'RelativeControlPoint'.
 pub type RelativeControlPoint = generic::RelativeControlPoint<LengthPercentage>;
 
 /// The computed value of 'CommandEndPoint'.
-pub type CommandEndPoint = generic::CommandEndPoint<LengthPercentage>;
+pub type CommandEndPoint = generic::CommandEndPoint<Position, LengthPercentage>;
+
+/// The computed value of hline and vline's endpoint.
+pub type AxisEndPoint = generic::AxisEndPoint<LengthPercentage>;
 
 /// Animate from `Shape` to `Path`, and vice versa.
 macro_rules! animate_shape {
@@ -149,7 +147,6 @@ impl Animate for PathOrShapeFunction {
 impl From<&PathCommand> for ShapeCommand {
     #[inline]
     fn from(path: &PathCommand) -> Self {
-        use crate::values::computed::CSSPixelLength;
         match path {
             &PathCommand::Close => Self::Close,
             &PathCommand::Move { ref point } => Self::Move {
@@ -158,14 +155,8 @@ impl From<&PathCommand> for ShapeCommand {
             &PathCommand::Line { ref point } => Self::Move {
                 point: point.into(),
             },
-            &PathCommand::HLine { by_to, x } => Self::HLine {
-                by_to,
-                x: LengthPercentage::new_length(CSSPixelLength::new(x)),
-            },
-            &PathCommand::VLine { by_to, y } => Self::VLine {
-                by_to,
-                y: LengthPercentage::new_length(CSSPixelLength::new(y)),
-            },
+            &PathCommand::HLine { ref x } => Self::HLine { x: x.into() },
+            &PathCommand::VLine { ref y } => Self::VLine { y: y.into() },
             &PathCommand::CubicCurve {
                 ref point,
                 ref control1,
@@ -220,9 +211,9 @@ impl From<&CoordPair> for CoordinatePair {
     }
 }
 
-impl From<&GenericPosition<CSSFloat, CSSFloat>> for Position {
+impl From<&ShapePosition<CSSFloat>> for Position {
     #[inline]
-    fn from(p: &GenericPosition<CSSFloat, CSSFloat>) -> Self {
+    fn from(p: &ShapePosition<CSSFloat>) -> Self {
         use crate::values::computed::CSSPixelLength;
         Self::new(
             LengthPercentage::new_length(CSSPixelLength::new(p.horizontal)),
@@ -231,9 +222,9 @@ impl From<&GenericPosition<CSSFloat, CSSFloat>> for Position {
     }
 }
 
-impl From<&generic::CommandEndPoint<CSSFloat>> for CommandEndPoint {
+impl From<&generic::CommandEndPoint<ShapePosition<CSSFloat>, CSSFloat>> for CommandEndPoint {
     #[inline]
-    fn from(p: &generic::CommandEndPoint<CSSFloat>) -> Self {
+    fn from(p: &generic::CommandEndPoint<ShapePosition<CSSFloat>, CSSFloat>) -> Self {
         match p {
             generic::CommandEndPoint::ToPosition(pos) => Self::ToPosition(pos.into()),
             generic::CommandEndPoint::ByCoordinate(coord) => Self::ByCoordinate(coord.into()),
@@ -241,15 +232,47 @@ impl From<&generic::CommandEndPoint<CSSFloat>> for CommandEndPoint {
     }
 }
 
-impl From<&generic::ControlPoint<CSSFloat>> for ControlPoint {
+impl From<&generic::AxisEndPoint<CSSFloat>> for AxisEndPoint {
     #[inline]
-    fn from(p: &generic::ControlPoint<CSSFloat>) -> Self {
+    fn from(p: &generic::AxisEndPoint<CSSFloat>) -> Self {
+        use crate::values::computed::CSSPixelLength;
+        use generic::AxisPosition;
         match p {
-            generic::ControlPoint::Position(pos) => Self::Position(pos.into()),
+            generic::AxisEndPoint::ToPosition(AxisPosition::LengthPercent(lp)) => Self::ToPosition(
+                AxisPosition::LengthPercent(LengthPercentage::new_length(CSSPixelLength::new(*lp))),
+            ),
+            generic::AxisEndPoint::ToPosition(AxisPosition::Keyword(_)) => {
+                unreachable!("Invalid state: SVG path commands cannot contain a keyword.")
+            },
+            generic::AxisEndPoint::ByCoordinate(pos) => {
+                Self::ByCoordinate(LengthPercentage::new_length(CSSPixelLength::new(*pos)))
+            },
+        }
+    }
+}
+
+impl From<&generic::ControlPoint<ShapePosition<CSSFloat>, CSSFloat>> for ControlPoint {
+    #[inline]
+    fn from(p: &generic::ControlPoint<ShapePosition<CSSFloat>, CSSFloat>) -> Self {
+        match p {
+            generic::ControlPoint::Absolute(pos) => Self::Absolute(pos.into()),
             generic::ControlPoint::Relative(point) => Self::Relative(RelativeControlPoint {
                 coord: CoordinatePair::from(&point.coord),
                 reference: point.reference,
             }),
+        }
+    }
+}
+
+impl From<&generic::ArcRadii<CSSFloat>> for generic::ArcRadii<LengthPercentage> {
+    #[inline]
+    fn from(p: &generic::ArcRadii<CSSFloat>) -> Self {
+        use crate::values::computed::CSSPixelLength;
+        Self {
+            rx: LengthPercentage::new_length(CSSPixelLength::new(p.rx)),
+            ry: p
+                .ry
+                .map(|v| LengthPercentage::new_length(CSSPixelLength::new(v))),
         }
     }
 }

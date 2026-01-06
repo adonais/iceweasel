@@ -99,7 +99,7 @@ var GeoProp = {
  * non-positioned itself, we just return null to let consumers know the node is
  * actually positioned relative to the viewport.
  *
- * @return {Object}
+ * @return {object}
  */
 function getOffsetParent(node) {
   const win = node.ownerGlobal;

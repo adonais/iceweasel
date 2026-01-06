@@ -7,6 +7,7 @@
 #ifndef mozilla_EffectCompositor_h
 #define mozilla_EffectCompositor_h
 
+#include "NonCustomCSSPropertyId.h"
 #include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/AnimationTarget.h"
 #include "mozilla/EnumeratedArray.h"
@@ -17,7 +18,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoTypes.h"
 #include "mozilla/dom/EndpointBehavior.h"
-#include "nsCSSPropertyID.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"

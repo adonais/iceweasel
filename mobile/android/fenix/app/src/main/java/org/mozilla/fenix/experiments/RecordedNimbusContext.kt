@@ -9,7 +9,7 @@ import android.os.Build
 import androidx.annotation.VisibleForTesting
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.locale.LocaleManager.getSystemDefault
-import mozilla.components.support.utils.ext.getPackageInfoCompat
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.json.JSONArray
 import org.json.JSONObject
 import org.mozilla.experiments.nimbus.NIMBUS_DATA_DIR
@@ -186,7 +186,8 @@ class RecordedNimbusContext(
                 langTag,
             )
 
-            val packageInfo = context.packageManager.getPackageInfoCompat(context.packageName, 0)
+            val packageInfo =
+                context.packageManagerCompatHelper.getPackageInfoCompat(context.packageName, 0)
             val deviceInfo = NimbusDeviceInfo.default()
             val db = File(context.applicationInfo.dataDir, NIMBUS_DATA_DIR)
             val calculatedAttributes = getCalculatedAttributes(

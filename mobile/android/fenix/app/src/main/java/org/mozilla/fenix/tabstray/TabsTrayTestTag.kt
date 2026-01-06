@@ -45,4 +45,7 @@ internal object TabsTrayTestTag {
     const val TAB_ITEM_ROOT = "$TABS_TRAY.tabItem"
     const val TAB_ITEM_CLOSE = "$TAB_ITEM_ROOT.close"
     const val TAB_ITEM_THUMBNAIL = "$TAB_ITEM_ROOT.thumbnail"
+
+    // Bottom app bar
+    const val TAB_SEARCH_ICON = "$TABS_TRAY.tabSearchIcon"
 }

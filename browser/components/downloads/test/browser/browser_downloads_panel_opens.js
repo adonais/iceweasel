@@ -27,6 +27,7 @@ async function checkPanelOpens() {
 /**
  * Start a download and check that the downloads panel opens correctly according
  * to the download parameter, openDownloadsListOnStart
+ *
  * @param {boolean} [openDownloadsListOnStart]
  *        true (default) - open downloads panel when download starts
  *        false - no downloads panel; update indicator attention state
@@ -95,6 +96,7 @@ function clickCheckbox(checkbox) {
  * we should get a file picker dialog. If preferredAction is alwaysAsk, we
  * should get an unknown content type dialog. If neither of those is true, we
  * should get no dialog at all, and expect the downloads panel to open.
+ *
  * @param {boolean} [expectPanelToOpen] true - fail if panel doesn't open
  *                                      false (default) - fail if it opens
  * @param {number}  [preferredAction]   Default download action:

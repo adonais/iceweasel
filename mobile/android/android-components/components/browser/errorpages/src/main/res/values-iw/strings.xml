@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">בעיה עם אתר מטעה</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>הדף בכתובת %1$s דווח כאתר מטעה ונחסם בהתאם להעדפות האבטחה שלך.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">האתר נחסם למען ביטחונך</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>דף אינטרנט זה בכתובת %1$s נחסם מכיוון שאחת מהתוספות שלך ניסתה לפתוח אותו. אתר זה עלול לשמש לגניבת המידע שלך - כמו ססמאות או מספרי כרטיסי אשראי.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">אתר מאובטח אינו זמין</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

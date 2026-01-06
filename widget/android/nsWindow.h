@@ -177,9 +177,6 @@ class nsWindow final : public nsIWidget {
   LayoutDeviceIntRect GetScreenBounds() override;
   LayoutDeviceIntRect GetBounds() override { return mBounds; }
   LayoutDeviceIntPoint WidgetToScreenOffset() override;
-  nsresult DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
-                         nsEventStatus& aStatus) override;
-  nsEventStatus DispatchEvent(mozilla::WidgetGUIEvent* aEvent);
   nsresult MakeFullScreen(bool aFullScreen) override;
   void SetCursor(const Cursor& aDefaultCursor) override;
   void* GetNativeData(uint32_t aDataType) override;

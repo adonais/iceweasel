@@ -85,7 +85,6 @@ class nsHttpChannelAuthProvider final : public nsIHttpChannelAuthProvider,
                                            uint32_t authFlags,
                                            nsHttpAuthIdentity&);
 
-  bool ConfirmAuth(const char* bundleKey, bool doYesNoPrompt);
   void SetAuthorizationHeader(nsHttpAuthCache*, const nsHttpAtom& header,
                               const nsACString& scheme, const nsACString& host,
                               int32_t port, const nsACString& path,
@@ -167,7 +166,6 @@ class nsHttpChannelAuthProvider final : public nsIHttpChannelAuthProvider,
   uint32_t mProxyAuth : 1;
   uint32_t mTriedProxyAuth : 1;
   uint32_t mTriedHostAuth : 1;
-  uint32_t mSuppressDefensiveAuth : 1;
 
   // If a cross-origin sub-resource is being loaded, this flag will be set.
   // In that case, the prompt text will be different to warn users.

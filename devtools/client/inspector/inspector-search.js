@@ -460,7 +460,7 @@ class SelectorAutocompleter extends EventEmitter {
    * Populates the suggestions list and show the suggestion popup.
    *
    * @param {Array} suggestions: List of suggestions
-   * @param {String|null} popupState: One of SelectorAutocompleter.States
+   * @param {string | null} popupState: One of SelectorAutocompleter.States
    * @return {Promise} promise that will resolve when the autocomplete popup is fully
    * displayed or hidden.
    */

@@ -44,6 +44,110 @@ struct nsHtml5FastestPolicySIMD {
     return mozilla::htmlaccel::AccelerateDataFastest(buf + pos, buf + endPos);
   }
 
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementRawtext(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    // We need to check bounds for the `buf[pos]` access below to be OK.
+    // Instead of just checking that `pos` isn't equal to `endPos`, let's
+    // check that have at least one SIMD stride of data in the same branch,
+    // since if we don't have at least one SIMD stride of data, we don't
+    // need to proceed.
+    if (endPos - pos < 16) {
+      return 0;
+    }
+    if (buf[pos] == '<') {
+      // Quickly handle the <iframe></iframe> case.
+      return 0;
+    }
+    return mozilla::htmlaccel::AccelerateRawtextFastest(buf + pos,
+                                                        buf + endPos);
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementScriptDataEscaped(nsHtml5Tokenizer* aTokenizer,
+                                         char16_t* buf, int32_t pos,
+                                         int32_t endPos) {
+    // This state shares the SIMD part with the comment state, but this
+    // wrapper needs to differ!
+    return mozilla::htmlaccel::AccelerateCommentFastest(buf + pos,
+                                                        buf + endPos);
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementComment(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    int32_t len = endPos - pos;
+    int32_t strBufAvailable = aTokenizer->strBuf.length - aTokenizer->strBufLen;
+    if (len > strBufAvailable) {
+      MOZ_DIAGNOSTIC_ASSERT(false, "strBuf has not been extended correctly.");
+      len = strBufAvailable;
+    }
+    int32_t advance = mozilla::htmlaccel::AccelerateCommentFastest(
+        buf + pos, buf + pos + len);
+    // States that on the non-SIMD path copy characters to strBuf also
+    // need to do that in the SIMD case.
+    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
+                                aTokenizer->strBufLen, advance);
+    aTokenizer->strBufLen += advance;
+    return advance;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementAttributeValueSingleQuoted(nsHtml5Tokenizer* aTokenizer,
+                                                  char16_t* buf, int32_t pos,
+                                                  int32_t endPos) {
+    int32_t len = endPos - pos;
+    int32_t strBufAvailable = aTokenizer->strBuf.length - aTokenizer->strBufLen;
+    if (len > strBufAvailable) {
+      MOZ_DIAGNOSTIC_ASSERT(false, "strBuf has not been extended correctly.");
+      len = strBufAvailable;
+    }
+    int32_t advance =
+        mozilla::htmlaccel::AccelerateAttributeValueSingleQuotedFastest(
+            buf + pos, buf + pos + len);
+    // States that on the non-SIMD path copy characters to strBuf also
+    // need to do that in the SIMD case.
+    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
+                                aTokenizer->strBufLen, advance);
+    aTokenizer->strBufLen += advance;
+    return advance;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementAttributeValueDoubleQuoted(nsHtml5Tokenizer* aTokenizer,
+                                                  char16_t* buf, int32_t pos,
+                                                  int32_t endPos) {
+    int32_t len = endPos - pos;
+    int32_t strBufAvailable = aTokenizer->strBuf.length - aTokenizer->strBufLen;
+    if (len > strBufAvailable) {
+      MOZ_DIAGNOSTIC_ASSERT(false, "strBuf has not been extended correctly.");
+      len = strBufAvailable;
+    }
+    int32_t advance =
+        mozilla::htmlaccel::AccelerateAttributeValueDoubleQuotedFastest(
+            buf + pos, buf + pos + len);
+    // States that on the non-SIMD path copy characters to strBuf also
+    // need to do that in the SIMD case.
+    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
+                                aTokenizer->strBufLen, advance);
+    aTokenizer->strBufLen += advance;
+    return advance;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementCdataSection(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return mozilla::htmlaccel::AccelerateCdataSectionFastest(buf + pos,
+                                                             buf + endPos);
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementPlaintext(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return mozilla::htmlaccel::AcceleratePlaintextFastest(buf + pos,
+                                                          buf + endPos);
+  }
+
   MOZ_ALWAYS_INLINE_EVEN_DEBUG static char16_t checkChar(
       nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos) {
     return buf[pos];
@@ -94,6 +198,223 @@ struct nsHtml5LineColPolicySIMD {
     }
     int32_t advance =
         mozilla::htmlaccel::AccelerateDataLineCol(buf + pos, buf + endPos);
+    if (!advance) {
+      // When the SIMD advance is zero, don't touch the line and col tracking.
+      return 0;
+    }
+    if (MOZ_UNLIKELY(aTokenizer->nextCharOnNewLine)) {
+      // By changing the line and column here instead
+      // of doing so eagerly when seeing the line break
+      // causes the line break itself to be considered
+      // column-wise at the end of a line.
+      aTokenizer->line++;
+      aTokenizer->col = advance;
+      aTokenizer->nextCharOnNewLine = false;
+    } else {
+      aTokenizer->col += advance;
+    }
+    return advance;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementRawtext(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    // We need to check bounds for the `buf[pos]` access below to be OK.
+    // Instead of just checking that `pos` isn't equal to `endPos`, let's
+    // check that have at least one SIMD stride of data in the same branch,
+    // since if we don't have at least one SIMD stride of data, we don't
+    // need to proceed.
+    if (endPos - pos < 16) {
+      return 0;
+    }
+    char16_t c = buf[pos];
+    if (c == '<' || c == '\n') {
+      // Quickly handle the case where there is one tag immediately
+      // after another and the very first thing in the data is a
+      // less-than sign and the case where a tag is immediately followed
+      // by a line feed.
+      return 0;
+    }
+    int32_t advance =
+        mozilla::htmlaccel::AccelerateRawtextLineCol(buf + pos, buf + endPos);
+    if (!advance) {
+      // When the SIMD advance is zero, don't touch the line and col tracking.
+      return 0;
+    }
+    if (MOZ_UNLIKELY(aTokenizer->nextCharOnNewLine)) {
+      // By changing the line and column here instead
+      // of doing so eagerly when seeing the line break
+      // causes the line break itself to be considered
+      // column-wise at the end of a line.
+      aTokenizer->line++;
+      aTokenizer->col = advance;
+      aTokenizer->nextCharOnNewLine = false;
+    } else {
+      aTokenizer->col += advance;
+    }
+    return advance;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementScriptDataEscaped(nsHtml5Tokenizer* aTokenizer,
+                                         char16_t* buf, int32_t pos,
+                                         int32_t endPos) {
+    // This state shares the SIMD part with the comment state, but this
+    // wrapper needs to differ!
+    int32_t advance =
+        mozilla::htmlaccel::AccelerateCommentLineCol(buf + pos, buf + endPos);
+    if (!advance) {
+      // When the SIMD advance is zero, don't touch the line and col tracking.
+      return 0;
+    }
+    if (MOZ_UNLIKELY(aTokenizer->nextCharOnNewLine)) {
+      // By changing the line and column here instead
+      // of doing so eagerly when seeing the line break
+      // causes the line break itself to be considered
+      // column-wise at the end of a line.
+      aTokenizer->line++;
+      aTokenizer->col = advance;
+      aTokenizer->nextCharOnNewLine = false;
+    } else {
+      aTokenizer->col += advance;
+    }
+    return advance;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementComment(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    int32_t len = endPos - pos;
+    int32_t strBufAvailable = aTokenizer->strBuf.length - aTokenizer->strBufLen;
+    if (len > strBufAvailable) {
+      MOZ_DIAGNOSTIC_ASSERT(false, "strBuf has not been extended correctly.");
+      len = strBufAvailable;
+    }
+    int32_t advance = mozilla::htmlaccel::AccelerateCommentLineCol(
+        buf + pos, buf + pos + len);
+    if (!advance) {
+      // When the SIMD advance is zero, don't touch the line and col tracking.
+      return 0;
+    }
+    if (MOZ_UNLIKELY(aTokenizer->nextCharOnNewLine)) {
+      // By changing the line and column here instead
+      // of doing so eagerly when seeing the line break
+      // causes the line break itself to be considered
+      // column-wise at the end of a line.
+      aTokenizer->line++;
+      aTokenizer->col = advance;
+      aTokenizer->nextCharOnNewLine = false;
+    } else {
+      aTokenizer->col += advance;
+    }
+    // States that on the non-SIMD path copy characters to strBuf also
+    // need to do that in the SIMD case.
+    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
+                                aTokenizer->strBufLen, advance);
+    aTokenizer->strBufLen += advance;
+    return advance;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementAttributeValueSingleQuoted(nsHtml5Tokenizer* aTokenizer,
+                                                  char16_t* buf, int32_t pos,
+                                                  int32_t endPos) {
+    int32_t len = endPos - pos;
+    int32_t strBufAvailable = aTokenizer->strBuf.length - aTokenizer->strBufLen;
+    if (len > strBufAvailable) {
+      MOZ_DIAGNOSTIC_ASSERT(false, "strBuf has not been extended correctly.");
+      len = strBufAvailable;
+    }
+    int32_t advance =
+        mozilla::htmlaccel::AccelerateAttributeValueSingleQuotedLineCol(
+            buf + pos, buf + pos + len);
+    if (!advance) {
+      // When the SIMD advance is zero, don't touch the line and col tracking.
+      return 0;
+    }
+    if (MOZ_UNLIKELY(aTokenizer->nextCharOnNewLine)) {
+      // By changing the line and column here instead
+      // of doing so eagerly when seeing the line break
+      // causes the line break itself to be considered
+      // column-wise at the end of a line.
+      aTokenizer->line++;
+      aTokenizer->col = advance;
+      aTokenizer->nextCharOnNewLine = false;
+    } else {
+      aTokenizer->col += advance;
+    }
+    // States that on the non-SIMD path copy characters to strBuf also
+    // need to do that in the SIMD case.
+    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
+                                aTokenizer->strBufLen, advance);
+    aTokenizer->strBufLen += advance;
+    return advance;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementAttributeValueDoubleQuoted(nsHtml5Tokenizer* aTokenizer,
+                                                  char16_t* buf, int32_t pos,
+                                                  int32_t endPos) {
+    int32_t len = endPos - pos;
+    int32_t strBufAvailable = aTokenizer->strBuf.length - aTokenizer->strBufLen;
+    if (len > strBufAvailable) {
+      MOZ_DIAGNOSTIC_ASSERT(false, "strBuf has not been extended correctly.");
+      len = strBufAvailable;
+    }
+    int32_t advance =
+        mozilla::htmlaccel::AccelerateAttributeValueDoubleQuotedLineCol(
+            buf + pos, buf + pos + len);
+    if (!advance) {
+      // When the SIMD advance is zero, don't touch the line and col tracking.
+      return 0;
+    }
+    if (MOZ_UNLIKELY(aTokenizer->nextCharOnNewLine)) {
+      // By changing the line and column here instead
+      // of doing so eagerly when seeing the line break
+      // causes the line break itself to be considered
+      // column-wise at the end of a line.
+      aTokenizer->line++;
+      aTokenizer->col = advance;
+      aTokenizer->nextCharOnNewLine = false;
+    } else {
+      aTokenizer->col += advance;
+    }
+    // States that on the non-SIMD path copy characters to strBuf also
+    // need to do that in the SIMD case.
+    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
+                                aTokenizer->strBufLen, advance);
+    aTokenizer->strBufLen += advance;
+    return advance;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementCdataSection(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    int32_t advance = mozilla::htmlaccel::AccelerateCdataSectionLineCol(
+        buf + pos, buf + endPos);
+    if (!advance) {
+      // When the SIMD advance is zero, don't touch the line and col tracking.
+      return 0;
+    }
+    if (MOZ_UNLIKELY(aTokenizer->nextCharOnNewLine)) {
+      // By changing the line and column here instead
+      // of doing so eagerly when seeing the line break
+      // causes the line break itself to be considered
+      // column-wise at the end of a line.
+      aTokenizer->line++;
+      aTokenizer->col = advance;
+      aTokenizer->nextCharOnNewLine = false;
+    } else {
+      aTokenizer->col += advance;
+    }
+    return advance;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementPlaintext(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    int32_t advance =
+        mozilla::htmlaccel::AcceleratePlaintextLineCol(buf + pos, buf + endPos);
     if (!advance) {
       // When the SIMD advance is zero, don't touch the line and col tracking.
       return 0;
@@ -197,6 +518,114 @@ struct nsHtml5ViewSourcePolicySIMD {
     }
     return mozilla::htmlaccel::AccelerateDataViewSource(buf + pos,
                                                         buf + endPos);
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementRawtext(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    // We need to check bounds for the `buf[pos]` access below to be OK.
+    // Instead of just checking that `pos` isn't equal to `endPos`, let's
+    // check that have at least one SIMD stride of data in the same branch,
+    // since if we don't have at least one SIMD stride of data, we don't
+    // need to proceed.
+    if (endPos - pos < 16) {
+      return 0;
+    }
+    char16_t c = buf[pos];
+    if (c == '<' || c == '\n') {
+      // Quickly handle the case where there is one tag immediately
+      // after another and the very first thing in the state is a
+      // less-than sign and the case where a tag is immediately followed
+      // by a line feed.
+      return 0;
+    }
+    return mozilla::htmlaccel::AccelerateRawtextViewSource(buf + pos,
+                                                           buf + endPos);
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementScriptDataEscaped(nsHtml5Tokenizer* aTokenizer,
+                                         char16_t* buf, int32_t pos,
+                                         int32_t endPos) {
+    // This state shares the SIMD part with the comment state, but this
+    // wrapper needs to differ!
+    return mozilla::htmlaccel::AccelerateCommentViewSource(buf + pos,
+                                                           buf + endPos);
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementComment(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    int32_t len = endPos - pos;
+    int32_t strBufAvailable = aTokenizer->strBuf.length - aTokenizer->strBufLen;
+    if (len > strBufAvailable) {
+      MOZ_DIAGNOSTIC_ASSERT(false, "strBuf has not been extended correctly.");
+      len = strBufAvailable;
+    }
+    int32_t advance = mozilla::htmlaccel::AccelerateCommentViewSource(
+        buf + pos, buf + pos + len);
+    // States that on the non-SIMD path copy characters to strBuf also
+    // need to do that in the SIMD case.
+    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
+                                aTokenizer->strBufLen, advance);
+    aTokenizer->strBufLen += advance;
+    return advance;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementAttributeValueSingleQuoted(nsHtml5Tokenizer* aTokenizer,
+                                                  char16_t* buf, int32_t pos,
+                                                  int32_t endPos) {
+    int32_t len = endPos - pos;
+    int32_t strBufAvailable = aTokenizer->strBuf.length - aTokenizer->strBufLen;
+    if (len > strBufAvailable) {
+      MOZ_DIAGNOSTIC_ASSERT(false, "strBuf has not been extended correctly.");
+      len = strBufAvailable;
+    }
+    int32_t advance =
+        mozilla::htmlaccel::AccelerateAttributeValueSingleQuotedViewSource(
+            buf + pos, buf + pos + len);
+    // States that on the non-SIMD path copy characters to strBuf also
+    // need to do that in the SIMD case.
+    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
+                                aTokenizer->strBufLen, advance);
+    aTokenizer->strBufLen += advance;
+    return advance;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementAttributeValueDoubleQuoted(nsHtml5Tokenizer* aTokenizer,
+                                                  char16_t* buf, int32_t pos,
+                                                  int32_t endPos) {
+    int32_t len = endPos - pos;
+    int32_t strBufAvailable = aTokenizer->strBuf.length - aTokenizer->strBufLen;
+    if (len > strBufAvailable) {
+      MOZ_DIAGNOSTIC_ASSERT(false, "strBuf has not been extended correctly.");
+      len = strBufAvailable;
+    }
+    int32_t advance =
+        mozilla::htmlaccel::AccelerateAttributeValueDoubleQuotedViewSource(
+            buf + pos, buf + pos + len);
+    // States that on the non-SIMD path copy characters to strBuf also
+    // need to do that in the SIMD case.
+    nsHtml5ArrayCopy::arraycopy(buf, pos, aTokenizer->strBuf,
+                                aTokenizer->strBufLen, advance);
+    aTokenizer->strBufLen += advance;
+    return advance;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementCdataSection(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return mozilla::htmlaccel::AccelerateCdataSectionViewSource(buf + pos,
+                                                                buf + endPos);
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementPlaintext(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return mozilla::htmlaccel::AcceleratePlaintextViewSource(buf + pos,
+                                                             buf + endPos);
   }
 
   MOZ_ALWAYS_INLINE_EVEN_DEBUG static char16_t checkChar(

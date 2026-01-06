@@ -11,7 +11,6 @@
 #include "chrome/common/ipc_message.h"
 
 #include <atomic>
-#include <string>
 
 #include "base/message_loop.h"
 #include "base/process.h"

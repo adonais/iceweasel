@@ -8,15 +8,15 @@ import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Canvas
 import android.view.View
+import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.createBitmap
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.thumbnails.HomepageThumbnails
 import mozilla.components.browser.thumbnails.RequestHomepageScreenshot
-import mozilla.components.compose.base.theme.AcornColors
-import mozilla.components.compose.base.theme.darkColorPalette
-import mozilla.components.compose.base.theme.lightColorPalette
-import mozilla.components.compose.base.theme.privateColorPalette
+import mozilla.components.compose.base.theme.acornDarkColorScheme
+import mozilla.components.compose.base.theme.acornLightColorScheme
+import mozilla.components.compose.base.theme.acornPrivateColorScheme
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
@@ -47,7 +47,7 @@ class HomepageThumbnailIntegration(
     private var backgroundColor: Int = 0
 
     override fun start() {
-        backgroundColor = getColor(context, appStore.state.mode).layer1.toArgb()
+        backgroundColor = getColor(context, appStore.state.mode).surface.toArgb()
         feature.start()
     }
 
@@ -72,14 +72,14 @@ class HomepageThumbnailIntegration(
      * directly because those functions are annotated to be Composable and refactoring that can be
      * done in a follow-up when needed.
      */
-    private fun getColor(context: Context, mode: BrowsingMode): AcornColors {
+    private fun getColor(context: Context, mode: BrowsingMode): ColorScheme {
         val isDarkMode = context.resources?.configuration?.uiMode?.and(Configuration.UI_MODE_NIGHT_MASK)
         return if (mode == BrowsingMode.Private) {
-            privateColorPalette
+            acornPrivateColorScheme()
         } else if (isDarkMode == Configuration.UI_MODE_NIGHT_YES) {
-            darkColorPalette
+            acornDarkColorScheme()
         } else {
-            lightColorPalette
+            acornLightColorScheme()
         }
     }
 }

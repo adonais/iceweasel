@@ -39,6 +39,9 @@ support-files = [
 ["browser_translations_select_panel_flip_lexical_shortlist.js"]
 
 ["browser_translations_select_panel_init_failure.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov",
+]
 
 ["browser_translations_select_panel_modify_available_language_models.js"]
 
@@ -51,8 +54,14 @@ support-files = [
 ["browser_translations_select_panel_retranslate_on_change_language_from_dropdown_menu.js"]
 
 ["browser_translations_select_panel_script_tags.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov",
+]
 
 ["browser_translations_select_panel_select_current_language_directly.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov",
+]
 
 ["browser_translations_select_panel_select_current_language_from_dropdown_menu.js"]
 

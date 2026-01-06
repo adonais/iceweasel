@@ -1394,7 +1394,6 @@ BufferOffset AssemblerMIPSShared::as_truncws(FloatRegister fd,
 BufferOffset AssemblerMIPSShared::as_truncls(FloatRegister fd,
                                              FloatRegister fs) {
   spew("trunc.l.s%3s,%3s", fd.name(), fs.name());
-  MOZ_ASSERT(hasR2());
   return writeInst(
       InstReg(op_cop1, rs_s, zero, fs, fd, ff_trunc_l_fmt).encode());
 }
@@ -1451,14 +1450,12 @@ BufferOffset AssemblerMIPSShared::as_truncwd(FloatRegister fd,
 BufferOffset AssemblerMIPSShared::as_truncld(FloatRegister fd,
                                              FloatRegister fs) {
   spew("trunc.l.d%3s,%3s", fd.name(), fs.name());
-  MOZ_ASSERT(hasR2());
   return writeInst(
       InstReg(op_cop1, rs_d, zero, fs, fd, ff_trunc_l_fmt).encode());
 }
 
 BufferOffset AssemblerMIPSShared::as_cvtdl(FloatRegister fd, FloatRegister fs) {
   spew("cvt.d.l%3s,%3s", fd.name(), fs.name());
-  MOZ_ASSERT(hasR2());
   return writeInst(InstReg(op_cop1, rs_l, zero, fs, fd, ff_cvt_d_fmt).encode());
 }
 
@@ -1479,7 +1476,6 @@ BufferOffset AssemblerMIPSShared::as_cvtsd(FloatRegister fd, FloatRegister fs) {
 
 BufferOffset AssemblerMIPSShared::as_cvtsl(FloatRegister fd, FloatRegister fs) {
   spew("cvt.s.l%3s,%3s", fd.name(), fs.name());
-  MOZ_ASSERT(hasR2());
   return writeInst(InstReg(op_cop1, rs_l, zero, fs, fd, ff_cvt_s_fmt).encode());
 }
 

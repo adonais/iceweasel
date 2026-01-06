@@ -86,10 +86,11 @@ TLSTransportLayer::InputStreamWrapper::Read(char* buf, uint32_t count,
     // If reading from the socket succeeded (NS_SUCCEEDED(mStatus)),
     // but the nss layer encountered an error remember the error.
     if (NS_SUCCEEDED(mStatus)) {
-      mStatus = ErrorAccordingToNSPR(code);
-      LOG(("TLSTransportLayer::InputStreamWrapper::Read %p nss error %" PRIx32
-           ".\n",
-           this, static_cast<uint32_t>(mStatus)));
+      mStatus = mTransport->mInputStatus;
+      LOG((
+          "TLSTransportLayer::InputStreamWrapper::Read %p socket error %" PRIx32
+          ".\n",
+          this, static_cast<uint32_t>(mStatus)));
     }
   }
 
@@ -129,6 +130,7 @@ TLSTransportLayer::InputStreamWrapper::CloseWithStatus(nsresult reason) {
       ("TLSTransportLayer::InputStreamWrapper::CloseWithStatus [this=%p "
        "reason=%" PRIx32 "]\n",
        this, static_cast<uint32_t>(reason)));
+  mStatus = reason;
   return mSocketIn->CloseWithStatus(reason);
 }
 
@@ -226,10 +228,8 @@ TLSTransportLayer::OutputStreamWrapper::Write(const char* buf, uint32_t count,
   }
 
   int32_t written = PR_Write(mTransport->mFD, buf, count);
-  LOG(
-      ("TLSTransportLayer::OutputStreamWrapper::Write %p PRWrite(%d) = %d "
-       "%d\n",
-       this, count, written, PR_GetError() == PR_WOULD_BLOCK_ERROR));
+  LOG(("TLSTransportLayer::OutputStreamWrapper::Write %p PRWrite(%d) = %d",
+       this, count, written));
 
   if (written > 0) {
     *countWritten = written;
@@ -245,7 +245,11 @@ TLSTransportLayer::OutputStreamWrapper::Write(const char* buf, uint32_t count,
 
     // Writing to the socket succeeded, but failed in nss layer.
     if (NS_SUCCEEDED(mStatus)) {
-      mStatus = ErrorAccordingToNSPR(code);
+      mStatus = mTransport->mOutputStatus;
+      LOG(
+          ("TLSTransportLayer:::OutputStreamWrapper::Write %p socket error "
+           "%" PRIx32 " code=%d\n",
+           this, static_cast<uint32_t>(mStatus), code));
     }
   }
 
@@ -284,6 +288,7 @@ NS_IMETHODIMP
 TLSTransportLayer::OutputStreamWrapper::CloseWithStatus(nsresult reason) {
   LOG(("OutputStreamWrapper::CloseWithStatus [this=%p reason=%" PRIx32 "]\n",
        this, static_cast<uint32_t>(reason)));
+  mStatus = reason;
   return mSocketOut->CloseWithStatus(reason);
 }
 
@@ -518,7 +523,9 @@ TLSTransportLayer::Close(nsresult aReason) {
     mSocketTransport = nullptr;
   }
   mSocketInWrapper.AsyncWait(nullptr, 0, 0, nullptr);
+  mSocketInWrapper.CloseWithStatus(aReason);
   mSocketOutWrapper.AsyncWait(nullptr, 0, 0, nullptr);
+  mSocketOutWrapper.CloseWithStatus(aReason);
 
   if (mOwner) {
     RefPtr<TLSTransportLayer> self = this;
@@ -757,9 +764,10 @@ int32_t TLSTransportLayer::OutputInternal(const char* aBuf, int32_t aAmount) {
   LOG(("TLSTransportLayer::OutputInternal %p %d", this, aAmount));
 
   uint32_t outCountWrite = 0;
-  nsresult rv = mSocketOutWrapper.WriteDirectly(aBuf, aAmount, &outCountWrite);
-  if (NS_FAILED(rv)) {
-    if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
+  mOutputStatus =
+      mSocketOutWrapper.WriteDirectly(aBuf, aAmount, &outCountWrite);
+  if (NS_FAILED(mOutputStatus)) {
+    if (mOutputStatus == NS_BASE_STREAM_WOULD_BLOCK) {
       PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
     } else {
       PR_SetError(PR_UNKNOWN_ERROR, 0);
@@ -774,9 +782,9 @@ int32_t TLSTransportLayer::InputInternal(char* aBuf, int32_t aAmount) {
   LOG(("TLSTransportLayer::InputInternal aAmount=%d\n", aAmount));
 
   uint32_t outCountRead = 0;
-  nsresult rv = mSocketInWrapper.ReadDirectly(aBuf, aAmount, &outCountRead);
-  if (NS_FAILED(rv)) {
-    if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
+  mInputStatus = mSocketInWrapper.ReadDirectly(aBuf, aAmount, &outCountRead);
+  if (NS_FAILED(mInputStatus)) {
+    if (mInputStatus == NS_BASE_STREAM_WOULD_BLOCK) {
       PR_SetError(PR_WOULD_BLOCK_ERROR, 0);
     } else {
       PR_SetError(PR_UNKNOWN_ERROR, 0);

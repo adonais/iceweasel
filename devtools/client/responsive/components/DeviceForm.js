@@ -110,9 +110,9 @@ class DeviceForm extends PureComponent {
   /**
    * Validates the name field's value.
    *
-   * @param  {String} value
+   * @param  {string} value
    *         The input field value for the device name.
-   * @return {Boolean} true if device name is valid, false otherwise.
+   * @return {boolean} true if device name is valid, false otherwise.
    */
   validateNameField(value) {
     const nameFieldValue = value.trim();

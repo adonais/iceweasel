@@ -31,6 +31,8 @@
   <string name="mozac_browser_errorpages_security_bad_cert_accept_temporary">இடரை ஏற்றுத் தொடருங்கள்</string>
   <!-- The document title and heading of the error page shown when a website uses HSTS. -->
   <string name="mozac_browser_errorpages_security_bad_hsts_cert_title">இந்த இணையத் தளத்திற்குப் பாதுகாப்பான இணைப்பு தேவை.</string>
+  <!-- The error message shown when a website uses HSTS. -->
+  <string name="mozac_browser_errorpages_security_bad_hsts_cert_message"><![CDATA[<ul>\n<li>இந்த வலைத்தளத்திற்கு பாதுகாப்பான பிணைப்பு தேவைப்படுவதால் நீங்கள் பார்க்க முயற்சிக்கும் பக்கத்தைக் காட்ட முடியாது.</li>\n<li>சிக்கல் பெரும்பாலும் வலைத்தளத்தில்தான் இருக்கும், அதைத் தீர்க்க நீங்கள் எதுவும் செய்ய முடியாது.</li>\n<li>நீங்கள் வலைத்தளத்தின் நிர்வாகியிடம் சிக்கலைப் பற்றித் தெரிவிக்கலாம்.</li>\n</ul>]]></string>
   <!-- The text shown inside the advanced button used to expand the advanced options. It's only shown when a website uses HSTS. -->
   <string name="mozac_browser_errorpages_security_bad_hsts_cert_advanced">மேம்பட்டது…</string>
   <!-- The text shown inside the advanced options button used to go back. It's only shown if the user has expanded the advanced options. -->

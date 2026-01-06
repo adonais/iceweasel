@@ -12,7 +12,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.toolbar.Toolbar
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
@@ -78,7 +77,7 @@ class ContainerToolbarFeatureTest {
             ),
         )
         val containerToolbarFeature = getContainerToolbarFeature(toolbar, store)
-        store.dispatch(TabListAction.SelectTabAction("tab2")).joinBlocking()
+        store.dispatch(TabListAction.SelectTabAction("tab2"))
         coroutinesTestRule.testDispatcher.scheduler.advanceUntilIdle()
 
         verify(store).observeManually(any())

@@ -644,7 +644,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
              will set as the frame on the content.  Guaranteed non-null.
   */
   using FrameFullConstructor =
-      nsIFrame* (nsCSSFrameConstructor::*)(nsFrameConstructorState& aState,
+      nsIFrame* (nsCSSFrameConstructor::*)(nsFrameConstructorState & aState,
                                            FrameConstructionItem& aItem,
                                            nsContainerFrame* aParentFrame,
                                            const nsStyleDisplay* aStyleDisplay,
@@ -928,9 +928,8 @@ class nsCSSFrameConstructor final : public nsFrameManager {
         MOZ_ASSERT(&mList == &aOther.mList, "Iterators for different lists?");
         return mCurrent == aOther.mCurrent;
       }
-      bool operator!=(const Iterator& aOther) const {
-        return !(*this == aOther);
-      }
+      bool operator!=(const Iterator& aOther) const = default;
+
       Iterator& operator=(const Iterator& aOther) {
         MOZ_ASSERT(&mList == &aOther.mList, "Iterators for different lists?");
         mCurrent = aOther.mCurrent;

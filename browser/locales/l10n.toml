@@ -129,10 +129,6 @@ locales = [
     l10n = "{l}browser/**"
 
 [[paths]]
-    reference = "browser/locales-preview/**"
-    l10n = "{l}browser/locales-preview/**"
-
-[[paths]]
     reference = "browser/branding/official/locales/en-US/**"
     l10n = "{l}browser/branding/iceweasel/**"
 

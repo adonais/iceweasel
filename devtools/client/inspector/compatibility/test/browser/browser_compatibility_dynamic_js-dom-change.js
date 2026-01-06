@@ -17,7 +17,7 @@ const {
 const ISSUE_DEPRECATED = {
   type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
   property: "-moz-user-focus",
-  url: "https://developer.mozilla.org/docs/Web/CSS/-moz-user-focus",
+  url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/-moz-user-focus",
   deprecated: true,
   experimental: false,
 };
@@ -25,7 +25,7 @@ const ISSUE_DEPRECATED = {
 const ISSUE_SCROLLBAR_COLOR = {
   type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
   property: "scrollbar-color",
-  url: "https://developer.mozilla.org/docs/Web/CSS/scrollbar-color",
+  url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scrollbar-color",
   deprecated: false,
   experimental: false,
 };

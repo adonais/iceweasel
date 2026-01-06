@@ -2,16 +2,14 @@
 subsuite = "webgpu"
 run-if = [
   "early_beta_or_earlier",
-  "os == 'win'",
   "os == 'mac' && arch == 'aarch64'",
+  "os == 'win'",
 ]
 prefs = [
   "dom.webgpu.enabled=true",
   "dom.webgpu.service-workers.enabled=true",
   # Ignoring the blocklist is necessary to run tests in CI on old Mesa versions
-  # (https://bugzilla.mozilla.org/show_bug.cgi?id=1985348) or against beta and
-  # release builds on old MacOS versions
-  # (https://bugzilla.mozilla.org/show_bug.cgi?id=1993341).
+  # (https://bugzilla.mozilla.org/show_bug.cgi?id=1985348).
   "gfx.webgpu.ignore-blocklist=true",
   "privacy.fingerprintingProtection=true",
   "privacy.fingerprintingProtection.overrides='-AllTargets,+WebGPULimits'",

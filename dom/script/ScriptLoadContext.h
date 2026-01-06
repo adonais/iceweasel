@@ -20,16 +20,12 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CORSMode.h"
-#include "mozilla/LinkedList.h"
-#include "mozilla/Maybe.h"
-#include "mozilla/MaybeOneOf.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/PreloaderBase.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/TaskController.h"  // mozilla::Task
 #include "mozilla/Utf8.h"            // mozilla::Utf8Unit
-#include "mozilla/Variant.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsCOMPtr.h"

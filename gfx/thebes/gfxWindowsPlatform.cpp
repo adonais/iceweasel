@@ -20,6 +20,7 @@
 
 #include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
+#include "mozilla/ProfilerMarkers.h"
 #include "mozilla/ProfilerThreadSleep.h"
 #include "mozilla/Components.h"
 #include "mozilla/Sprintf.h"
@@ -50,8 +51,6 @@
 #include "gfxUserFontSet.h"
 #include "nsWindowsHelpers.h"
 #include "gfx2DGlue.h"
-
-#include <string>
 
 #include <d3d10_1.h>
 
@@ -605,6 +604,7 @@ void gfxWindowsPlatform::GetCommonFallbackFonts(
       // in future if we get better at handling things like `lang=zh-Hant`, not
       // just resolving based on the Unicode text.
     case Script::TRADITIONAL_HAN:
+    case Script::TRADITIONAL_HAN_WITH_LATIN:
       aFontList.AppendElement("MingLiU");
       if (aCh > 0xFFFF) {
         aFontList.AppendElement("MingLiU-ExtB");
@@ -965,6 +965,7 @@ void gfxWindowsPlatform::GetCommonFallbackFonts(
 
     case Script::AFAKA:
     case Script::ANATOLIAN_HIEROGLYPHS:
+    case Script::BERIA_ERFE:
     case Script::BLISSYMBOLS:
     case Script::BOOK_PAHLAVI:
     case Script::CHORASMIAN:
@@ -1004,14 +1005,17 @@ void gfxWindowsPlatform::GetCommonFallbackFonts(
     case Script::OLD_UYGHUR:
     case Script::RONGORONGO:
     case Script::SARATI:
+    case Script::SIDETIC:
     case Script::SIGNWRITING:
     case Script::SOGDIAN:
     case Script::SOYOMBO:
     case Script::SUNUWAR:
+    case Script::TAI_YO:
     case Script::TANGSA:
     case Script::TANGUT:
     case Script::TENGWAR:
     case Script::TODHRI:
+    case Script::TOLONG_SIKI:
     case Script::TOTO:
     case Script::TULU_TIGALARI:
     case Script::UNKNOWN:
@@ -1655,6 +1659,7 @@ class D3DVsyncSource final : public VsyncSource {
           const TimeStamp vblank_begin_wait = TimeStamp::Now();
           {
             AUTO_PROFILER_THREAD_SLEEP;
+            AUTO_PROFILER_MARKER_UNTYPED("WaitForVBlank", GRAPHICS_VSync, {});
             hr = mWaitVBlankOutput->WaitForVBlank();
           }
           if (SUCCEEDED(hr)) {
@@ -1672,10 +1677,12 @@ class D3DVsyncSource final : public VsyncSource {
         // To mitigate bug 1924932 we only want to use DwmFlush if WaitForVBlank
         // is disabled, WaitForVBlank is the standard since Vista so we should
         // probably remove this option entirely.
+        AUTO_PROFILER_MARKER_UNTYPED("DwmFlush", GRAPHICS_VSync, {});
         hr = DwmFlush();
       }
       if (!SUCCEEDED(hr)) {
         // DWMFlush isn't working, fallback to software vsync.
+        AUTO_PROFILER_MARKER_UNTYPED("SoftwareVsync", GRAPHICS_VSync, {});
         ScheduleSoftwareVsync(TimeStamp::Now());
         return;
       }
@@ -1685,6 +1692,7 @@ class D3DVsyncSource final : public VsyncSource {
       flushTime = now;
       if ((flushDiff > longVBlank) || mPrevVsync.IsNull()) {
         // Our vblank took longer than 2 intervals, readjust our timestamps
+        PROFILER_MARKER_UNTYPED("LongVBlank", GRAPHICS_VSync);
         vsync = GetVBlankTime();
         mPrevVsync = vsync;
       } else {
@@ -1696,16 +1704,19 @@ class D3DVsyncSource final : public VsyncSource {
         vsync = mPrevVsync + mVsyncRate;
         if (vsync > now) {
           // DWMFlush woke up very early, so readjust our times again
+          PROFILER_MARKER_UNTYPED("EarlyWake", GRAPHICS_VSync);
           vsync = GetVBlankTime();
         }
 
         if (vsync <= mPrevVsync) {
+          PROFILER_MARKER_UNTYPED("TimeSteppedBack", GRAPHICS_VSync);
           vsync = TimeStamp::Now();
         }
 
         if ((now - vsync).ToMilliseconds() > 2.0) {
           // Account for time drift here where vsync never quite catches up to
           // Now and we'd fall ever so slightly further behind Now().
+          PROFILER_MARKER_UNTYPED("TimeFellBehind2ms", GRAPHICS_VSync);
           vsync = GetVBlankTime();
         }
 

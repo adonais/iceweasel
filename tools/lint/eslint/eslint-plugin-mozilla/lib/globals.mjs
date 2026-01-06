@@ -708,7 +708,7 @@ let globalUtils = {
    *         The ESLint parsing context.
    */
   getESLintGlobalParser(context) {
-    let filename = context.getFilename();
+    let filename = context.filename;
 
     return {
       Program: node => {

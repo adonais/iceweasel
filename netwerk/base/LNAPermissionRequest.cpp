@@ -132,13 +132,25 @@ nsresult LNAPermissionRequest::RequestPermission() {
 
   // Record telemetry for permission prompts shown to users
   if (mType.Equals(LOCAL_HOST_PERMISSION_KEY)) {
-    mozilla::glean::networking::local_network_access_prompts_shown
-        .Get("localhost"_ns)
-        .Add(1);
+    if (mIsRequestDelegatedToUnsafeThirdParty) {
+      mozilla::glean::networking::local_network_access_prompts_shown
+          .Get("localhost_cross_site"_ns)
+          .Add(1);
+    } else {
+      mozilla::glean::networking::local_network_access_prompts_shown
+          .Get("localhost"_ns)
+          .Add(1);
+    }
   } else if (mType.Equals(LOCAL_NETWORK_PERMISSION_KEY)) {
-    mozilla::glean::networking::local_network_access_prompts_shown
-        .Get("local_network"_ns)
-        .Add(1);
+    if (mIsRequestDelegatedToUnsafeThirdParty) {
+      mozilla::glean::networking::local_network_access_prompts_shown
+          .Get("local_network_cross_site"_ns)
+          .Add(1);
+    } else {
+      mozilla::glean::networking::local_network_access_prompts_shown
+          .Get("local_network"_ns)
+          .Add(1);
+    }
   }
 
   if (NS_SUCCEEDED(

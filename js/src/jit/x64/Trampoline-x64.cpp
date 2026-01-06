@@ -545,8 +545,7 @@ uint32_t JitRuntime::generatePreBarrier(JSContext* cx, MacroAssembler& masm,
   masm.push(temp3);
 
   Label noBarrier;
-  masm.emitPreBarrierFastPath(cx->runtime(), type, temp1, temp2, temp3,
-                              &noBarrier);
+  masm.emitPreBarrierFastPath(type, temp1, temp2, temp3, &noBarrier);
 
   // Call into C++ to mark this GC thing.
   masm.pop(temp3);

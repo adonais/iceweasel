@@ -6,9 +6,6 @@
 
 #include "HTMLEditor.h"
 
-#include <algorithm>
-#include <utility>
-
 #include "AutoClonedRangeArray.h"
 #include "CSSEditUtils.h"
 #include "EditAction.h"

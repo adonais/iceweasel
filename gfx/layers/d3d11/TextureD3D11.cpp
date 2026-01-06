@@ -454,13 +454,6 @@ D3D11TextureData* D3D11TextureData::Create(IntSize aSize, SurfaceFormat aFormat,
   return Create(aSize, aFormat, nullptr, aFlags, aDevice);
 }
 
-D3D11TextureData* D3D11TextureData::Create(SourceSurface* aSurface,
-                                           TextureAllocationFlags aFlags,
-                                           ID3D11Device* aDevice) {
-  return Create(aSurface->GetSize(), aSurface->GetFormat(), aSurface, aFlags,
-                aDevice);
-}
-
 D3D11TextureData* D3D11TextureData::Create(IntSize aSize, SurfaceFormat aFormat,
                                            SourceSurface* aSurface,
                                            TextureAllocationFlags aFlags,

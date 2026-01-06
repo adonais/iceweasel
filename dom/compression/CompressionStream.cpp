@@ -6,6 +6,7 @@
 
 #include "mozilla/dom/CompressionStream.h"
 
+#include "FormatBrotli.h"
 #include "FormatZlib.h"
 #include "js/TypeDecls.h"
 #include "mozilla/dom/CompressionStreamBinding.h"
@@ -27,6 +28,23 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(CompressionStream)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
+
+/*
+ * Constructs either a ZLibDecompressionStreamAlgorithms or a
+ * BrotliDecompressionStreamAlgorithms, based on the CompressionFormat.
+ */
+static Result<already_AddRefed<CompressionStreamAlgorithms>, nsresult>
+CreateCompressionStreamAlgorithms(CompressionFormat aFormat) {
+  if (aFormat == CompressionFormat::Brotli) {
+    RefPtr<CompressionStreamAlgorithms> brotliAlgos =
+        MOZ_TRY(BrotliCompressionStreamAlgorithms::Create());
+    return brotliAlgos.forget();
+  }
+
+  RefPtr<CompressionStreamAlgorithms> zlibAlgos =
+      MOZ_TRY(ZLibCompressionStreamAlgorithms::Create(aFormat));
+  return zlibAlgos.forget();
+}
 
 CompressionStream::CompressionStream(nsISupports* aGlobal,
                                      TransformStream& aStream)
@@ -60,7 +78,7 @@ already_AddRefed<CompressionStream> CompressionStream::Constructor(
   // Step 6: Set up this's transform with transformAlgorithm set to
   // transformAlgorithm and flushAlgorithm set to flushAlgorithm.
   Result<already_AddRefed<CompressionStreamAlgorithms>, nsresult> algorithms =
-      ZLibCompressionStreamAlgorithms::Create(aFormat);
+      CreateCompressionStreamAlgorithms(aFormat);
   if (algorithms.isErr()) {
     aRv.ThrowUnknownError("Not enough memory");
     return nullptr;

@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Шахрайський сайт</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Сайт %1$s відомий, як шахрайський, і був заблокований згідно з вашими налаштуваннями безпеки.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Сайт заблоковано для вашої безпеки</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Сторінку за адресою %1$s заблоковано, оскільки один з ваших додатків намагався її відкрити. Цей сайт може використовуватись для крадіжки вашої інформації, як-от паролів або номерів кредитних карток.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Захищений сайт недоступний</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

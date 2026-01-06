@@ -67,6 +67,7 @@ async function checkRules(view) {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -99,6 +100,7 @@ async function clearSearchAndCheckRules(view) {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {

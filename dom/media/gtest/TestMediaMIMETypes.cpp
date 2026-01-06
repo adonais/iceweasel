@@ -281,4 +281,23 @@ TEST(MediaMIMETypes, MediaExtendedMIMEType)
   EXPECT_EQ(60, *type->GetFramerate());
   EXPECT_TRUE(!!type->GetBitrate());
   EXPECT_EQ(100000, *type->GetBitrate());
+  EXPECT_EQ(5ul, type->GetParameterCount());
+
+  // Test parameter count variations
+  type = MakeMediaExtendedMIMEType("video/mp4");
+  EXPECT_EQ(0ul, type->GetParameterCount());
+
+  type = MakeMediaExtendedMIMEType("video/mp4; codecs=\"a,b\"");
+  EXPECT_EQ(1ul, type->GetParameterCount());
+
+  type = MakeMediaExtendedMIMEType("video/mp4; codecs=\"a,b\"; width=1024");
+  EXPECT_EQ(2ul, type->GetParameterCount());
+
+  type = MakeMediaExtendedMIMEType(
+      "video/mp4; codecs=\"a,b\"; width=1024; Height=768");
+  EXPECT_EQ(3ul, type->GetParameterCount());
+
+  type = MakeMediaExtendedMIMEType(
+      "video/mp4; codecs=\"a,b\"; width=1024; Height=768; FrameRate=60");
+  EXPECT_EQ(4ul, type->GetParameterCount());
 }

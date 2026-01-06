@@ -9,7 +9,11 @@ const { EventEmitter } = ChromeUtils.importESModule(
 );
 
 /**
- * @typedef {object} PreferenceConfigInfo
+ * @typedef {string | boolean | number | nsIFile | void} PreferenceValue
+ */
+
+/**
+ * @typedef {object} PreferenceConfig
  * @property {string} id
  * @property {string} type
  * @property {boolean} [inverted]
@@ -29,12 +33,12 @@ function getElementsByAttribute(name, value) {
 
 export class Preference extends EventEmitter {
   /**
-   * @type {string | undefined | null}
+   * @type {PreferenceValue}
    */
   _value;
 
   /**
-   * @param {PreferenceConfigInfo} configInfo
+   * @param {PreferenceConfig} configInfo
    */
   constructor({ id, type, inverted }) {
     super();
@@ -89,7 +93,7 @@ export class Preference extends EventEmitter {
     }
     if (aElement.labels?.length) {
       for (let label of aElement.labels) {
-        label.toggleAttribute("disabled", this.locked);
+        /** @type {Element} */ (label).toggleAttribute("disabled", this.locked);
       }
     }
 
@@ -117,9 +121,14 @@ export class Preference extends EventEmitter {
      * the property setter does not yet exist by setting the same attribute
      * on the XUL element using DOM apis and assuming the element's
      * constructor or property getters appropriately handle this state.
+     *
+     * @param {Element} element
+     * @param {string} attribute
+     * @param {string} value
      */
     function setValue(element, attribute, value) {
       if (attribute in element) {
+        // @ts-expect-error The property might not be writable...
         element[attribute] = value;
       } else if (attribute === "checked" || attribute === "pressed") {
         // The "checked" attribute can't simply be set to the specified value;
@@ -151,7 +160,7 @@ export class Preference extends EventEmitter {
 
   /**
    * @param {HTMLElement} aElement
-   * @returns {string}
+   * @returns {PreferenceValue}
    */
   getElementValue(aElement) {
     if (Preferences._syncToPrefListeners.has(aElement)) {
@@ -170,10 +179,14 @@ export class Preference extends EventEmitter {
      * attribute is a property on the element's node API. If the property
      * is not present in the API, then assume its value is contained in
      * an attribute, as is the case before a binding has been attached.
+     *
+     * @param {Element} element
+     * @param {string} attribute
+     * @returns {any}
      */
     function getValue(element, attribute) {
       if (attribute in element) {
-        return element[attribute];
+        return element[/** @type {keyof typeof element} */ (attribute)];
       }
       return element.getAttribute(attribute);
     }
@@ -181,7 +194,8 @@ export class Preference extends EventEmitter {
     if (
       aElement.localName == "checkbox" ||
       aElement.localName == "moz-checkbox" ||
-      (aElement.localName == "input" && aElement.type == "checkbox")
+      (aElement.localName == "input" &&
+        /** @type {HTMLInputElement} */ (aElement).type == "checkbox")
     ) {
       value = getValue(aElement, "checked");
     } else if (aElement.localName == "moz-toggle") {
@@ -201,7 +215,6 @@ export class Preference extends EventEmitter {
 
   /**
    * @param {HTMLElement} aElement
-   * @returns {boolean}
    */
   isElementEditable(aElement) {
     switch (aElement.localName) {
@@ -241,14 +254,14 @@ export class Preference extends EventEmitter {
   }
 
   /**
-   * @type {Preference['_value']}
+   * @type {PreferenceValue}
    */
   get value() {
     return this._value;
   }
 
   /**
-   * @param {string} val
+   * @param {PreferenceValue} val
    */
   set value(val) {
     if (this.value !== val) {
@@ -293,6 +306,7 @@ export class Preference extends EventEmitter {
     return Services.prefs.prefHasUserValue(this.id) && this.value !== undefined;
   }
 
+  /** @returns {PreferenceValue} */
   get defaultValue() {
     this._useDefault = true;
     const val = this.valueFromPreferences;
@@ -305,7 +319,7 @@ export class Preference extends EventEmitter {
   }
 
   /**
-   * @type {string}
+   * @type {PreferenceValue}
    */
   get valueFromPreferences() {
     try {
@@ -344,7 +358,7 @@ export class Preference extends EventEmitter {
   }
 
   /**
-   * @param {string} val
+   * @param {PreferenceValue} val
    */
   set valueFromPreferences(val) {
     // Exit early if nothing to do.
@@ -361,23 +375,23 @@ export class Preference extends EventEmitter {
     // Force a resync of preferences with value.
     switch (this.type) {
       case "int":
-        Services.prefs.setIntPref(this.id, val);
+        Services.prefs.setIntPref(this.id, /** @type {number} */ (val));
         break;
       case "bool":
-        Services.prefs.setBoolPref(this.id, this.inverted ? !val : val);
+        Services.prefs.setBoolPref(this.id, this.inverted ? !val : !!val);
         break;
       case "wstring": {
         const pls = Cc["@mozilla.org/pref-localizedstring;1"].createInstance(
           Ci.nsIPrefLocalizedString
         );
-        pls.data = val;
+        pls.data = /** @type {string} */ (val);
         Services.prefs.setComplexValue(this.id, Ci.nsIPrefLocalizedString, pls);
         break;
       }
       case "string":
       case "unichar":
       case "fontname":
-        Services.prefs.setStringPref(this.id, val);
+        Services.prefs.setStringPref(this.id, /** @type {string} */ (val));
         break;
       case "file": {
         let lf;
@@ -388,7 +402,7 @@ export class Preference extends EventEmitter {
             lf.initWithPath(val);
           }
         } else {
-          lf = val.QueryInterface(Ci.nsIFile);
+          lf = /** @type {nsIFile} */ (val).QueryInterface(Ci.nsIFile);
         }
         Services.prefs.setComplexValue(this.id, Ci.nsIFile, lf);
         break;

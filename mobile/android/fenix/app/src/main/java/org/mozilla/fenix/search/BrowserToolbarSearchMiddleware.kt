@@ -4,16 +4,15 @@
 
 package org.mozilla.fenix.search
 
+import android.content.Context
 import android.content.Intent
 import android.content.res.Resources
 import android.speech.RecognizerIntent
 import androidx.annotation.VisibleForTesting
 import androidx.core.graphics.drawable.toDrawable
-import androidx.lifecycle.Lifecycle.State.RESUMED
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -44,6 +43,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.CommitUrl
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.EnterEditMode
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ExitEditMode
+import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.Init
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarMenu
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem
@@ -51,8 +51,6 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.B
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarMenuItem.BrowserToolbarMenuDivider
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarState
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
-import mozilla.components.compose.browser.toolbar.store.EnvironmentCleared
-import mozilla.components.compose.browser.toolbar.store.EnvironmentRehydrated
 import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.toolbar.AutocompleteProvider
@@ -70,7 +68,7 @@ import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.BrowserFragmentDirections
-import org.mozilla.fenix.browser.browsingmode.BrowsingMode.Private
+import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.appstate.AppAction
@@ -84,7 +82,6 @@ import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.components.search.BOOKMARKS_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.HISTORY_SEARCH_ENGINE_ID
 import org.mozilla.fenix.components.search.TABS_SEARCH_ENGINE_ID
-import org.mozilla.fenix.components.toolbar.BrowserToolbarEnvironment
 import org.mozilla.fenix.ext.toolbarHintRes
 import org.mozilla.fenix.search.EditPageEndActionsInteractions.ClearSearchClicked
 import org.mozilla.fenix.search.EditPageEndActionsInteractions.QrScannerClicked
@@ -138,21 +135,28 @@ internal sealed class EditPageEndActionsInteractions : BrowserToolbarEvent {
  * [BrowserToolbarStore] middleware handling the configuration of the composable toolbar
  * while in edit mode.
  *
+ * @param uiContext [Context] used for various system interactions.
  * @param appStore [AppStore] used for querying and updating application state.
  * @param browserStore [BrowserStore] used for querying and updating browser state.
  * @param components [Components] for accessing other functionalities of the application.
+ * @param navController [NavController] to use for navigating to other in-app destinations.
+ * @param browsingModeManager [BrowsingModeManager] for querying the current browsing mode.
  * @param settings [Settings] for accessing application settings.
+ * @param scope [CoroutineScope] used for running long running operations in background.
  * @param autocompleteDispatcher [CoroutineContext] used for querying autocomplete suggestions.
  */
+@Suppress("LongParameterList")
 class BrowserToolbarSearchMiddleware(
+    private val uiContext: Context,
     private val appStore: AppStore,
     private val browserStore: BrowserStore,
     private val components: Components,
+    private val navController: NavController,
+    private val browsingModeManager: BrowsingModeManager,
     private val settings: Settings,
+    private val scope: CoroutineScope,
     private val autocompleteDispatcher: CoroutineContext = defaultAutocompleteDispatcher,
 ) : Middleware<BrowserToolbarState, BrowserToolbarAction> {
-    @VisibleForTesting
-    internal var environment: BrowserToolbarEnvironment? = null
     private var syncCurrentSearchEngineJob: Job? = null
     private var syncAvailableSearchEnginesJob: Job? = null
     private var observeQRScannerInputJob: Job? = null
@@ -170,16 +174,10 @@ class BrowserToolbarSearchMiddleware(
         }
 
         when (action) {
-            is EnvironmentRehydrated -> {
-                environment = action.environment as? BrowserToolbarEnvironment
-
+            is Init -> {
                 if (context.state.isEditMode()) {
                     syncCurrentSearchEngine(context)
                 }
-            }
-
-            is EnvironmentCleared -> {
-                environment = null
             }
 
             is EnterEditMode -> {
@@ -217,7 +215,7 @@ class BrowserToolbarSearchMiddleware(
                 context.dispatch(SearchQueryUpdated(BrowserToolbarQuery("")))
                 appStore.dispatch(SearchEnded)
                 browserStore.dispatch(EngagementFinished(abandoned = true))
-                environment?.navController?.navigate(
+                navController.navigate(
                     BrowserFragmentDirections.actionGlobalSearchEngineFragment(),
                 )
             }
@@ -234,8 +232,6 @@ class BrowserToolbarSearchMiddleware(
                 if (reconcileSelectedEngine()?.type == SearchEngine.Type.APPLICATION) {
                     return
                 }
-
-                val navController = environment?.navController ?: return
 
                 when (action.text) {
                     "about:crashes" -> {
@@ -322,7 +318,7 @@ class BrowserToolbarSearchMiddleware(
             searchTermOrURL = text,
             newTab = newTab,
             forceSearch = !isDefaultEngine,
-            private = environment?.browsingModeManager?.mode == Private,
+            private = browsingModeManager.mode.isPrivate,
             searchEngine = searchEngine,
         )
 
@@ -371,10 +367,10 @@ class BrowserToolbarSearchMiddleware(
         selectedSearchEngine: SearchEngine?,
         searchEngineShortcuts: List<SearchEngine>,
     ) {
-        val environment = environment ?: return
-
         val searchSelector = buildSearchSelector(
-            selectedSearchEngine, searchEngineShortcuts, environment.context.resources,
+            selectedSearchEngine,
+            searchEngineShortcuts,
+            uiContext.resources,
         )
         context.dispatch(
             SearchActionsStartUpdated(
@@ -426,7 +422,7 @@ class BrowserToolbarSearchMiddleware(
         val isBackspacing = query.previous?.startsWith(query.current) == true &&
                 query.previous?.length == query.current.length + 1
         if (shouldCheckForSuggestions && !isBackspacing) {
-            updateAutocompleteJob = environment?.fragment?.viewLifecycleOwner?.lifecycleScope?.launch {
+            updateAutocompleteJob = scope.launch {
                 context.dispatch(
                     BrowserEditToolbarAction.AutocompleteSuggestionUpdated(
                         withContext(autocompleteDispatcher) {
@@ -551,9 +547,9 @@ class BrowserToolbarSearchMiddleware(
                             searchTermOrURL = it.qrScannerState.lastScanData,
                             newTab = appStore.state.searchState.sourceTabId == null,
                             flags = EngineSession.LoadUrlFlags.external(),
-                            private = environment?.browsingModeManager?.mode == Private,
+                            private = browsingModeManager.mode.isPrivate,
                         )
-                        environment?.navController?.navigate(R.id.action_global_browser)
+                        navController.navigate(R.id.action_global_browser)
                     }
                 }
         }
@@ -581,20 +577,13 @@ class BrowserToolbarSearchMiddleware(
     }
 
     @VisibleForTesting
-    internal fun isSpeechRecognitionAvailable() = environment?.context?.let {
+    internal fun isSpeechRecognitionAvailable() =
         Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-            .resolveActivity(it.packageManager) != null
-    } ?: false
+            .resolveActivity(uiContext.packageManager) != null
 
     private inline fun <S : State, A : MVIAction> Store<S, A>.observeWhileActive(
         crossinline observe: suspend (Flow<S>.() -> Unit),
-    ): Job? = environment?.fragment?.viewLifecycleOwner?.run {
-        lifecycleScope.launch {
-            repeatOnLifecycle(RESUMED) {
-                flow().observe()
-            }
-        }
-    }
+    ): Job = scope.launch { flow().observe() }
 
     /**
      * Static functionalities of the [BrowserToolbarSearchMiddleware].

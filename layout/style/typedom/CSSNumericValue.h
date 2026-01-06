@@ -34,6 +34,8 @@ class CSSNumericValue : public CSSStyleValue {
  public:
   explicit CSSNumericValue(nsCOMPtr<nsISupports> aParent);
 
+  CSSNumericValue(nsCOMPtr<nsISupports> aParent, ValueType aValueType);
+
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 

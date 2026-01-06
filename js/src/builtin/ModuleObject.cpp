@@ -1698,13 +1698,17 @@ bool ModuleBuilder::buildTables(frontend::StencilModuleMetadata& metadata) {
           return false;
         }
       } else {
+        // All names should have already been marked as used-by-stencil.
         if (!importEntry->importName) {
-          if (!metadata.localExportEntries.append(exp)) {
+          // This is a re-export of an imported module namespace object.
+          auto entry = frontend::StencilModuleEntry::exportNamespaceFromEntry(
+              importEntry->moduleRequest, exp.exportName, exp.lineno,
+              exp.column);
+          if (!metadata.indirectExportEntries.append(entry)) {
             js::ReportOutOfMemory(fc_);
             return false;
           }
         } else {
-          // All names should have already been marked as used-by-stencil.
           auto entry = frontend::StencilModuleEntry::exportFromEntry(
               importEntry->moduleRequest, importEntry->importName,
               exp.exportName, exp.lineno, exp.column);

@@ -500,7 +500,7 @@ class XPCShellTestsTests(unittest.TestCase):
 
     def writeManifest(self, tests, prefs=[]):
         """
-        Write an xpcshell.ini in the temp directory and set
+        Write an xpcshell.toml in the temp directory and set
         self.manifest to its pathname. |tests| is a list containing
         either strings (for test names), or tuples with a test name
         as the first element and manifest conditions as the following

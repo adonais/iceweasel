@@ -230,7 +230,7 @@ async function copyMessageContent(hud, messageEl) {
  * using the Selection API.
  *
  * @param {HTMLElement} el
- * @returns {String} the text representation of the element.
+ * @returns {string} the text representation of the element.
  */
 function getSelectionTextFromElement(el) {
   const doc = el.ownerDocument;

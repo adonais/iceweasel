@@ -33,9 +33,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.state.state.CustomTabMenuItem
+import mozilla.components.feature.addons.Addon
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_OFF
 import org.mozilla.fenix.components.menu.MenuDialogTestTag.DESKTOP_SITE_ON
+import org.mozilla.fenix.components.menu.store.WebExtensionMenuItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
@@ -50,6 +53,13 @@ import mozilla.components.ui.icons.R as iconsR
  * @param isPdf Whether or not the current custom tab is a PDF.
  * @param isDesktopMode Whether or not the current site is in desktop mode.
  * @param isSandboxCustomTab Whether or not the current custom tab is sandboxed.
+ * @param isPrivate Whether or not the current custom tab is in a private browsing session.
+ * @param isExtensionsExpanded Whether or not the extensions submenu is expanded.
+ * @param isExtensionsProcessDisabled Whether or not the extensions process is disabled due to extension errors.
+ * @param isAllWebExtensionsDisabled Whether or not all web extensions are disabled.
+ * @param shouldShowExtensionsMenu Whether or not the extensions menu item should be shown.
+ * @param webExtensionMenuCount The number of web extensions.
+ * @param extensionsMenuDescription The description to be shown below the extensions menu item.
  * @param customTabMenuItems Additional [CustomTabMenuItem]s to be displayed to the custom tab menu.
  * @param onCustomMenuItemClick Invoked when the user clicks on [CustomTabMenuItem]s.
  * @param scrollState The [ScrollState] used for vertical scrolling.
@@ -62,8 +72,10 @@ import mozilla.components.ui.icons.R as iconsR
  * @param onRefreshButtonClick Invoked when the user clicks on the refresh button.
  * @param onStopButtonClick Invoked when the user clicks on the stop button.
  * @param onShareButtonClick Invoked when the user clicks on the share button.
+ * @param onExtensionsMenuClick Invoked when the user clicks on the extensions menu item.
+ * @param extensionSubmenu The submenu content to be shown when the extensions menu item is expanded
  */
-@Suppress("LongParameterList", "LongMethod", "CyclomaticComplexMethod")
+@Suppress("LongParameterList", "LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
 internal fun CustomTabMenu(
     canGoBack: Boolean,
@@ -73,6 +85,13 @@ internal fun CustomTabMenu(
     isPdf: Boolean,
     isDesktopMode: Boolean,
     isSandboxCustomTab: Boolean,
+    isPrivate: Boolean,
+    isExtensionsExpanded: Boolean,
+    isExtensionsProcessDisabled: Boolean,
+    isAllWebExtensionsDisabled: Boolean,
+    shouldShowExtensionsMenu: Boolean,
+    webExtensionMenuCount: Int,
+    extensionsMenuDescription: String?,
     customTabMenuItems: List<CustomTabMenuItem>?,
     onCustomMenuItemClick: (PendingIntent) -> Unit,
     scrollState: ScrollState,
@@ -84,6 +103,8 @@ internal fun CustomTabMenu(
     onRefreshButtonClick: (longPress: Boolean) -> Unit,
     onStopButtonClick: () -> Unit,
     onShareButtonClick: () -> Unit,
+    onExtensionsMenuClick: () -> Unit,
+    extensionSubmenu: @Composable () -> Unit,
 ) {
     MenuFrame(
         contentModifier = Modifier
@@ -199,6 +220,20 @@ internal fun CustomTabMenu(
                     badgeBackgroundColor = badgeBackgroundColor,
                 )
             }
+
+            if (shouldShowExtensionsMenu) {
+                ExtensionsMenuItem(
+                    inCustomTab = true,
+                    isPrivate = isPrivate,
+                    isExtensionsProcessDisabled = isExtensionsProcessDisabled,
+                    isExtensionsExpanded = isExtensionsExpanded,
+                    isAllWebExtensionsDisabled = isAllWebExtensionsDisabled,
+                    webExtensionMenuCount = webExtensionMenuCount,
+                    extensionsMenuItemDescription = extensionsMenuDescription,
+                    onExtensionsMenuClick = onExtensionsMenuClick,
+                    extensionSubmenu = extensionSubmenu,
+                )
+            }
         }
 
         if (!customTabMenuItems.isNullOrEmpty()) {
@@ -215,6 +250,25 @@ internal fun CustomTabMenu(
         if (!isBottomToolbar) {
             PoweredByFirefoxItem(
                 modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+    }
+}
+
+@Composable
+internal fun CustomTabAddons(
+    webExtensionMenuItems: Map<WebExtensionMenuItem, Addon?>,
+    onWebExtensionMenuItemClick: () -> Unit,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        if (webExtensionMenuItems.isNotEmpty()) {
+            WebExtensionMenuItems(
+                accessPoint = MenuAccessPoint.External,
+                webExtensionMenuItems = webExtensionMenuItems,
+                onWebExtensionMenuItemClick = onWebExtensionMenuItemClick,
+                onWebExtensionMenuItemSettingsClick = {},
             )
         }
     }
@@ -269,6 +323,13 @@ private fun CustomTabMenuPreview() {
                 isPdf = false,
                 isDesktopMode = false,
                 isSandboxCustomTab = false,
+                isPrivate = false,
+                isExtensionsExpanded = false,
+                isExtensionsProcessDisabled = false,
+                isAllWebExtensionsDisabled = false,
+                shouldShowExtensionsMenu = true,
+                webExtensionMenuCount = 2,
+                extensionsMenuDescription = "Extension 1, Extension 2",
                 customTabMenuItems = null,
                 onCustomMenuItemClick = { _: PendingIntent -> },
                 scrollState = rememberScrollState(),
@@ -280,6 +341,8 @@ private fun CustomTabMenuPreview() {
                 onRefreshButtonClick = {},
                 onStopButtonClick = {},
                 onShareButtonClick = {},
+                onExtensionsMenuClick = {},
+                extensionSubmenu = {},
             )
         }
     }
@@ -302,6 +365,13 @@ private fun CustomTabMenuPrivatePreview() {
                 isPdf = true,
                 isDesktopMode = false,
                 isSandboxCustomTab = false,
+                isPrivate = true,
+                isExtensionsExpanded = true,
+                isExtensionsProcessDisabled = true,
+                isAllWebExtensionsDisabled = true,
+                shouldShowExtensionsMenu = true,
+                webExtensionMenuCount = 0,
+                extensionsMenuDescription = "Temporarily disabled",
                 customTabMenuItems = null,
                 onCustomMenuItemClick = { _: PendingIntent -> },
                 scrollState = rememberScrollState(),
@@ -313,6 +383,8 @@ private fun CustomTabMenuPrivatePreview() {
                 onRefreshButtonClick = {},
                 onStopButtonClick = {},
                 onShareButtonClick = {},
+                onExtensionsMenuClick = {},
+                extensionSubmenu = {},
             )
         }
     }

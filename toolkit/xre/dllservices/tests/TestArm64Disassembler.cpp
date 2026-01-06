@@ -139,6 +139,33 @@ bool TestCheckForPCRelBr() {
   return true;
 }
 
+bool TestCheckForAbsB() {
+  // b 0x400
+  Result<LoadOrBranch, PCRelCheckError> result =
+      CheckForPCRel(kExamplePCValue, 0x14000100);
+  if (result.isErr()) {
+    auto error = result.unwrapErr();
+    TEST_FAILED("Failed to decode b, got PCRelCheckError %d.\n", error);
+  }
+
+  auto loadOrBranch = result.unwrap();
+  if (loadOrBranch.mType != LoadOrBranch::Type::Branch) {
+    TEST_FAILED("Computed an incorrect LoadOrBranch::Type for b, got %d.\n",
+                loadOrBranch.mType);
+  }
+  if (loadOrBranch.mAbsAddress != (kExamplePCValue + 0x400)) {
+    TEST_FAILED("Computed a wrong absolute address for b, got address %p.\n",
+                loadOrBranch.mAbsAddress);
+  }
+  if (loadOrBranch.mCond != IntegerConditionCode::AL) {
+    TEST_FAILED("Computed a wrong condition code for b, got %d.\n",
+                static_cast<int32_t>(loadOrBranch.mCond));
+  }
+
+  TEST_PASS("Properly decoded b.\n");
+  return true;
+}
+
 int wmain(int argc, wchar_t* argv[]) {
   if (!TestCheckForPCRelAdrp() || !TestCheckForPCRelAdr() ||
       !TestCheckForPCRelBlr() || !TestCheckForPCRelBr()) {

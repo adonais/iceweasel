@@ -235,7 +235,7 @@ function InitializeDurationFormat(durationFormat, locales, options) {
   }
 
   // Step 8.
-  var opt = new_Record();
+  var opt = NEW_RECORD();
   opt.localeMatcher = matcher;
   opt.nu = numberingSystem;
 

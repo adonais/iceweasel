@@ -15,8 +15,6 @@ import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.browser.toolbar.display.DisplayToolbar.Indicators
-import mozilla.components.support.test.ext.joinBlocking
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.whenever
@@ -209,14 +207,12 @@ class BrowserToolbarIntegrationTest {
                 ),
             ),
         )
-
-        store.waitUntilIdle()
     }
 
     private fun updateTabUrl(url: String) {
         store.dispatch(
             ContentAction.UpdateUrlAction(selectedTab.id, url),
-        ).joinBlocking()
+        )
     }
 
     private fun createSecureTab(): TabSessionState {

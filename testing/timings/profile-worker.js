@@ -7,6 +7,13 @@ const fs = require("fs");
 const path = require("path");
 const zlib = require("zlib");
 
+// Normalize failure messages to remove task-specific and time-specific information
+function normalizeMessage(message) {
+  return message
+    ?.replace(/task_\d+/g, "task_id")
+    .replace(/\nRejection date: [^\n]+/g, "");
+}
+
 // Extract parallel execution time ranges from markers
 function extractParallelRanges(markers) {
   const parallelRanges = [];
@@ -150,6 +157,34 @@ function extractTestTimings(profile) {
     });
   }
 
+  // Extract TestStatus markers (FAIL, ERROR) for failure messages
+  const failStringId = stringArray.indexOf("FAIL");
+  const errorStringId = stringArray.indexOf("ERROR");
+  const testStatusMarkers = [];
+
+  for (let i = 0; i < markers.length; i++) {
+    const nameId = markers.name[i];
+    if (nameId !== failStringId && nameId !== errorStringId) {
+      continue;
+    }
+    const data = markers.data[i];
+    if (!data || data.type !== "TestStatus" || !data.test) {
+      continue;
+    }
+
+    testStatusMarkers.push({
+      test: data.test,
+      nameId,
+      time: markers.startTime[i],
+      message: normalizeMessage(data.message),
+    });
+  }
+
+  // Sort TestStatus markers by test and then time for efficient lookup
+  testStatusMarkers.sort(
+    (a, b) => a.test.localeCompare(b.test) || a.time - b.time
+  );
+
   const testStringId = stringArray.indexOf("test");
   const timings = [];
 
@@ -170,10 +205,13 @@ function extractTestTimings(profile) {
     // Handle both structured and plain text logs
     if (data.type === "Test") {
       // Structured log format
-      testPath = data.test || data.name;
+      const fullTestId = data.test || data.name;
+      testPath = fullTestId;
       status = data.status || "UNKNOWN";
-      // Normalize line breaks in message (convert \r\n to \n)
-      message = data.message ? data.message.replace(/\r\n/g, "\n") : null;
+      // Normalize line breaks in message (convert \r\n to \n) and apply normalizations
+      message = normalizeMessage(
+        data.message ? data.message.replace(/\r\n/g, "\n") : null
+      );
 
       // Check if this is an expected failure (FAIL status but green color)
       if (status === "FAIL" && data.color === "green") {
@@ -193,6 +231,17 @@ function extractTestTimings(profile) {
           : "-SEQUENTIAL";
       }
       // Keep other statuses as-is
+
+      // For failure statuses, look up the message from TestStatus markers
+      if (status.startsWith("FAIL")) {
+        const testStartTime = markers.startTime[i];
+        const statusMarker = testStatusMarkers.find(
+          m => m.test === fullTestId && m.time >= testStartTime
+        );
+        if (statusMarker && statusMarker.message) {
+          message = statusMarker.message;
+        }
+      }
 
       // Extract the actual test file path from the test field
       // Format: "xpcshell-parent-process.toml:dom/indexedDB/test/unit/test_fileListUpgrade.js"

@@ -69,19 +69,24 @@ add_task(async function () {
   let cps2 = Cc["@mozilla.org/content-pref/service;1"].getService(
     Ci.nsIContentPrefService2
   );
-  let { promise, resolve, reject } = Promise.withResolvers();
-  cps2.setGlobal(FullZoom.name, defaultZoom, context, {
-    handleError(error) {
-      reject(error);
-    },
-    handleCompletion() {
-      resolve();
-    },
-  });
-  await promise;
+  let promisifyCps2 = async f => {
+    let { promise, resolve, reject } = Promise.withResolvers();
+    f({
+      handleError(error) {
+        reject(error);
+      },
+      handleCompletion() {
+        resolve();
+      },
+    });
+    await promise;
+  };
+  await promisifyCps2(cb =>
+    cps2.setGlobal(FullZoom.name, defaultZoom, context, cb)
+  );
   try {
     await runTest(defaultZoom);
   } finally {
-    cps2.removeGlobal(FullZoom.name, context);
+    await promisifyCps2(cb => cps2.removeGlobal(FullZoom.name, context, cb));
   }
 });

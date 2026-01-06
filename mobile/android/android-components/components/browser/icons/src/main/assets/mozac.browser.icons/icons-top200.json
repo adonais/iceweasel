@@ -633,6 +633,12 @@
         ]
     },
     {
+        "image_url": "https://kagi.com/apple-touch-icon.png",
+        "domains": [
+            "kagi.com"
+        ]
+    },
+    {
         "image_url": "https://m.kiddle.co/icon-kiddle.png",
         "domains": [
             "kiddle.co"

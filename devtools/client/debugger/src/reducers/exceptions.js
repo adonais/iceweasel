@@ -4,6 +4,7 @@
 
 /**
  * Exceptions reducer
+ *
  * @module reducers/exceptionss
  */
 

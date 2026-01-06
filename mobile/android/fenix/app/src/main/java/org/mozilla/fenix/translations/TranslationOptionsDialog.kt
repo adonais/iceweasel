@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.translations
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +17,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,6 +26,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.concept.engine.translate.TranslationError
@@ -35,6 +36,7 @@ import org.mozilla.fenix.compose.InfoType
 import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import java.util.Locale
 import mozilla.components.ui.icons.R as iconsR
 
@@ -64,53 +66,48 @@ fun TranslationOptionsDialog(
     }
 
     translationOptionsList.forEach { item: TranslationSwitchItem ->
-        Column {
-            val translationSwitchItem = TranslationSwitchItem(
-                type = item.type,
-                textLabel = item.textLabel,
-                isChecked = item.isChecked,
-                isEnabled = item.isEnabled,
-                onStateChange = { translationPageSettingsOption, checked ->
-                    item.onStateChange.invoke(translationPageSettingsOption, checked)
-                },
-            )
-            TranslationOptions(
-                translationSwitchItem = translationSwitchItem,
-            )
-        }
+        val translationSwitchItem = TranslationSwitchItem(
+            type = item.type,
+            textLabel = item.textLabel,
+            isChecked = item.isChecked,
+            isEnabled = item.isEnabled,
+            onStateChange = { translationPageSettingsOption, checked ->
+                item.onStateChange.invoke(translationPageSettingsOption, checked)
+            },
+        )
+
+        TranslationOptions(
+            translationSwitchItem = translationSwitchItem,
+        )
     }
 
     if (showGlobalSettings) {
-        Column {
-            TextListItem(
-                label = stringResource(id = R.string.translation_option_bottom_sheet_translation_settings),
-                modifier = Modifier
-                    .padding(start = 56.dp)
-                    .defaultMinSize(minHeight = 56.dp)
-                    .wrapContentHeight(),
-                onClick = {
-                    onTranslationSettingsClicked()
-                },
-            )
-        }
-    }
-
-    Column {
         TextListItem(
-            label = stringResource(
-                id = R.string.translation_option_bottom_sheet_about_translations,
-                formatArgs = arrayOf(stringResource(R.string.firefox)),
-            ),
+            label = stringResource(id = R.string.translation_option_bottom_sheet_translation_settings),
             modifier = Modifier
-                .fillMaxWidth()
                 .padding(start = 56.dp)
                 .defaultMinSize(minHeight = 56.dp)
                 .wrapContentHeight(),
-            onClick = { aboutTranslationClicked() },
+            onClick = {
+                onTranslationSettingsClicked()
+            },
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
     }
+
+    TextListItem(
+        label = stringResource(
+            id = R.string.translation_option_bottom_sheet_about_translations,
+            formatArgs = arrayOf(stringResource(R.string.firefox)),
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 56.dp)
+            .defaultMinSize(minHeight = 56.dp)
+            .wrapContentHeight(),
+        onClick = { aboutTranslationClicked() },
+    )
+
+    Spacer(modifier = Modifier.height(16.dp))
 }
 
 @Composable
@@ -176,7 +173,6 @@ private fun TranslationOptionsDialogHeader(
             Icon(
                 painter = painterResource(id = iconsR.drawable.mozac_ic_back_24),
                 contentDescription = stringResource(R.string.etp_back_button_content_description),
-                tint = FirefoxTheme.colors.iconPrimary,
             )
         }
 
@@ -187,7 +183,6 @@ private fun TranslationOptionsDialogHeader(
             modifier = Modifier
                 .weight(1f)
                 .semantics { heading() },
-            color = FirefoxTheme.colors.textPrimary,
             style = FirefoxTheme.typography.headline7,
         )
     }
@@ -248,18 +243,34 @@ fun getTranslationOptionsList(): List<TranslationSwitchItem> {
 @PreviewLightDark
 private fun TranslationSettingsPreview() {
     FirefoxTheme {
-        Column(
-            modifier = Modifier.background(
-                color = FirefoxTheme.colors.layer1,
-            ),
-        ) {
-            TranslationOptionsDialog(
-                translationOptionsList = getTranslationOptionsList(),
-                showGlobalSettings = true,
-                onBackClicked = {},
-                onTranslationSettingsClicked = {},
-                aboutTranslationClicked = {},
-            )
+        Surface {
+            Column {
+                TranslationOptionsDialog(
+                    translationOptionsList = getTranslationOptionsList(),
+                    showGlobalSettings = true,
+                    onBackClicked = {},
+                    onTranslationSettingsClicked = {},
+                    aboutTranslationClicked = {},
+                )
+            }
+        }
+    }
+}
+
+@Composable
+@Preview
+private fun TranslationSettingsPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        Surface {
+            Column {
+                TranslationOptionsDialog(
+                    translationOptionsList = getTranslationOptionsList(),
+                    showGlobalSettings = true,
+                    onBackClicked = {},
+                    onTranslationSettingsClicked = {},
+                    aboutTranslationClicked = {},
+                )
+            }
         }
     }
 }

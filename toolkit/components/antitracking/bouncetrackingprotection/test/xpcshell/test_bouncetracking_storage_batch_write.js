@@ -13,6 +13,7 @@ let databasePath;
 
 /**
  * Count the number of entries in the database.
+ *
  * @returns {number} The number of entries in the database.
  */
 async function countDatabaseEntries() {
@@ -29,6 +30,7 @@ const MAX_PENDING_UPDATES = Services.prefs.getIntPref(
 
 /**
  * Wait for an observer message.
+ *
  * @param {string} topic The topic to wait for.
  * @returns {Promise<{subject: any, topic: string, data: string}>} A promise that resolves to the subject, topic, and data of the message.
  */
@@ -55,6 +57,7 @@ async function waitForDBFlush() {
 
 /**
  * Wait for the database flush to be skipped because the buffer isn't full yet.
+ *
  * @returns {number} The number of pending updates when the flush was skipped.
  */
 async function waitForDBSkipFlush() {

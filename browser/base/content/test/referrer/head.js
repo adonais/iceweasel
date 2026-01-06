@@ -72,6 +72,7 @@ var _referrerTests = [
 
 /**
  * Returns the test object for a given test number.
+ *
  * @param aTestNumber The test number - 0, 1, 2, ...
  * @return The test object, or undefined if the number is out of range.
  */
@@ -98,6 +99,7 @@ function getRemovedReferrerTest(aTestNumber) {
 
 /**
  * Returns a brief summary of the test, for logging.
+ *
  * @param aTestNumber The test number - 0, 1, 2...
  * @return The test description.
  */
@@ -118,6 +120,7 @@ function getReferrerTestDescription(aTestNumber) {
 
 /**
  * Clicks the link.
+ *
  * @param aWindow The window to click the link in.
  * @param aLinkId The id of the link element.
  * @param aOptions The options for synthesizeMouseAtCenter.
@@ -132,6 +135,7 @@ function clickTheLink(aWindow, aLinkId, aOptions) {
 
 /**
  * Extracts the referrer result from the target window.
+ *
  * @param aWindow The window where the referrer target has loaded.
  * @return {Promise}
  * @resolves When extacted, with the text of the (trimmed) referrer.
@@ -144,6 +148,7 @@ function referrerResultExtracted(aWindow) {
 
 /**
  * Waits for browser delayed startup to finish.
+ *
  * @param aWindow The window to wait for.
  * @return {Promise}
  * @resolves When the window is loaded.
@@ -161,6 +166,7 @@ function delayedStartupFinished(aWindow) {
 
 /**
  * Waits for some (any) tab to load. The caller triggers the load.
+ *
  * @param aWindow The window where to wait for a tab to load.
  * @return {Promise}
  * @resolves With the tab once it's loaded.
@@ -171,6 +177,7 @@ function someTabLoaded() {
 
 /**
  * Waits for a new window to open and load. The caller triggers the open.
+ *
  * @return {Promise}
  * @resolves With the new window once it's open and loaded.
  */
@@ -182,6 +189,7 @@ function newWindowOpened() {
 
 /**
  * Opens the context menu.
+ *
  * @param aWindow The window to open the context menu in.
  * @param aLinkId The id of the link to open the context menu on.
  * @return {Promise}
@@ -199,6 +207,7 @@ function contextMenuOpened(aWindow, aLinkId) {
 
 /**
  * Performs a context menu command.
+ *
  * @param aWindow The window with the already open context menu.
  * @param aMenu The menu popup to hide.
  * @param aItemId The id of the menu item to activate.
@@ -211,6 +220,7 @@ function doContextMenuCommand(aWindow, aMenu, aItemId) {
 
 /**
  * Loads a single test case, i.e., a source url into gTestWindow.
+ *
  * @param aTestNumber The test case number - 0, 1, 2...
  * @return {Promise}
  * @resolves When the source url for this test case is loaded.
@@ -245,6 +255,7 @@ function referrerTestCaseLoaded(aTestNumber, aParams) {
 
 /**
  * Checks the result of the referrer test, and moves on to the next test.
+ *
  * @param aTestNumber The test number - 0, 1, 2, ...
  * @param aNewWindow The new window where the referrer target opened, or null.
  * @param aNewTab The new tab where the referrer target opened, or null.
@@ -289,6 +300,7 @@ function checkReferrerAndStartNextTest(
 
 /**
  * Fires up the complete referrer test.
+ *
  * @param aStartTestCase The callback to start a single test case, called with
  * the test number - 0, 1, 2... Needs to trigger the navigation from the source
  * page, and call checkReferrerAndStartNextTest() when the target is loaded.

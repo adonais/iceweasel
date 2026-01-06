@@ -566,36 +566,36 @@ Here's a basic template for a ToolPanel implementation.
   // In the ToolDefinition object, do
   //   build: (window, target) => new MyPanel(window, target),
 
-  function MyPanel(window, target) {
-    // The window object that has loaded the URL defined in the ToolDefinition
-    this.window = window;
-    // The Target this toolbox is debugging.
-    this.target = target;
+  class MyPanel {
+    constructor(window, target) {
+      // The window object that has loaded the URL defined in the ToolDefinition
+      this.window = window;
+      // The Target this toolbox is debugging.
+      this.target = target;
 
-    // Do synchronous initialization here.
-    window.document.body.addEventListener("click", this.handleClick);
-  }
+      // Do synchronous initialization here.
+      window.document.body.addEventListener("click", this.handleClick);
+    }
 
-  MyPanel.prototype = {
-    open: function() {
+    open() {
       // Any asynchronous operations should be done here.
       return this.doSomethingAsynchronous()
         .then(() => this);
-    },
+    }
 
-    destroy: function() {
+    destroy() {
       // Synchronous destruction.
       this.window.document.body.removeEventListener("click", this.handleClick);
 
       // Async destruction.
       return this.destroySomethingAsynchronously()
         .then(() => console.log("destroyed"));
-    },
+    }
 
     handleClick: function(event) {
       console.log("Clicked", event.originalTarget);
-    },
-  };
+    }
+  }
 
 
 .. _devtoolsapi-event-emitter:

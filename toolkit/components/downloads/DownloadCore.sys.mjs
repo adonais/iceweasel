@@ -1618,7 +1618,7 @@ DownloadSource.prototype = {
    * @param aStatus
    *        The HTTP status in question
    *
-   * @return {Boolean} Download can progress
+   * @return {boolean} Download can progress
    */
   allowHttpStatus: null,
 

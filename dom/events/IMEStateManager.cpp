@@ -43,6 +43,7 @@
 #include "nsIURI.h"
 #include "nsIURIMutator.h"
 #include "nsPresContext.h"
+#include "nsTextControlFrame.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla {
@@ -678,6 +679,14 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
        BrowserParent::GetFocused(), sActiveIMEContentObserver.get(),
        TrueOrFalse(sInstalledMenuKeyboardListener), TrueOrFalse(sIsActive),
        TrueOrFalse(restoringContextForRemoteContent)));
+  if (aElement) {
+    MOZ_LOG(sISMLog, LogLevel::Debug,
+            ("  aElement:        %s", ToString(*aElement).c_str()));
+  }
+  if (sFocusedElement) {
+    MOZ_LOG(sISMLog, LogLevel::Debug,
+            ("  sFocusedElement: %s", ToString(*sFocusedElement).c_str()));
+  }
 
   sIsActive = !!aPresContext;
   if (sPendingFocusedBrowserSwitchingData.isSome()) {
@@ -1173,6 +1182,14 @@ void IMEStateManager::OnFocusInEditor(nsPresContext& aPresContext,
            &aPresContext, TrueOrFalse(CanHandleWith(&aPresContext)), aElement,
            &aEditorBase, sFocusedPresContext.get(), sFocusedElement.get(),
            sActiveIMEContentObserver.get()));
+  if (aElement) {
+    MOZ_LOG(sISMLog, LogLevel::Debug,
+            ("  aElement:        %s", ToString(*aElement).c_str()));
+  }
+  if (sFocusedElement) {
+    MOZ_LOG(sISMLog, LogLevel::Debug,
+            ("  sFocusedElement: %s", ToString(*sFocusedElement).c_str()));
+  }
 
   if (!IsFocusedElement(aPresContext, aElement)) {
     MOZ_LOG(sISMLog, LogLevel::Debug,
@@ -1266,9 +1283,15 @@ void IMEStateManager::OnReFocus(nsPresContext& aPresContext,
                                 Element& aElement) {
   MOZ_LOG(sISMLog, LogLevel::Info,
           ("OnReFocus(aPresContext=0x%p (available: %s), aElement=0x%p), "
-           "sActiveIMEContentObserver=0x%p, aElement=0x%p",
+           "sActiveIMEContentObserver=0x%p, sFocusedElement=0x%p",
            &aPresContext, TrueOrFalse(CanHandleWith(&aPresContext)), &aElement,
            sActiveIMEContentObserver.get(), sFocusedElement.get()));
+  MOZ_LOG(sISMLog, LogLevel::Debug,
+          ("  aElement:        %s", ToString(aElement).c_str()));
+  if (sFocusedElement) {
+    MOZ_LOG(sISMLog, LogLevel::Debug,
+            ("  sFocusedElement: %s", ToString(*sFocusedElement).c_str()));
+  }
 
   if (NS_WARN_IF(!sTextInputHandlingWidget) ||
       NS_WARN_IF(sTextInputHandlingWidget->Destroyed())) {
@@ -1306,10 +1329,45 @@ void IMEStateManager::OnReFocus(nsPresContext& aPresContext,
     }
   }
 
-  InputContextAction action(InputContextAction::CAUSE_UNKNOWN,
-                            InputContextAction::FOCUS_NOT_CHANGED);
-  IMEState newState = GetNewIMEState(aPresContext, &aElement);
-  MOZ_ASSERT(newState.IsEditable());
+  const InputContextAction action(InputContextAction::CAUSE_UNKNOWN,
+                                  InputContextAction::FOCUS_NOT_CHANGED);
+  const IMEState newState = GetNewIMEState(aPresContext, &aElement);
+  // If aElement has not had a primary frame for it,
+  if (MOZ_UNLIKELY(!newState.IsEditable())) {
+    if (sActiveIMEContentObserver->EditorIsTextEditor()) {
+      TextControlElement* const textControlElement =
+          TextControlElement::FromNode(aElement);
+      MOZ_ASSERT(textControlElement);
+      if (textControlElement &&
+          textControlElement->IsSingleLineTextControlOrTextArea()) {
+        nsTextControlFrame* const boundFrame =
+            textControlElement->GetTextControlState()->GetBoundFrame();
+        MOZ_ASSERT(!boundFrame);
+        MOZ_LOG(
+            sISMLog, LogLevel::Warning,
+            ("  OnReFocus(), Temporarily disabling IME for the focused element "
+             "because probably the TextControlState could not return "
+             "TextEditor (textControlFrame: %p, textEditor: %p)",
+             boundFrame,
+             textControlElement->GetTextControlState()->GetExtantTextEditor()));
+      }
+    } else {
+      HTMLEditor* const htmlEditor =
+          nsContentUtils::GetHTMLEditor(&aPresContext);
+#ifdef DEBUG
+      MOZ_ASSERT(htmlEditor);
+      Result<IMEState, nsresult> stateOrError =
+          htmlEditor->GetPreferredIMEState();
+      MOZ_ASSERT(stateOrError.isOk());
+      MOZ_ASSERT(!stateOrError.inspect().IsEditable());
+#endif  // #ifdef DEBUG
+      MOZ_LOG(sISMLog, LogLevel::Warning,
+              ("  OnRefocus(), Disabling IME for the focused element, "
+               "HTMLEditor=%p { IsReadonly()=%s }",
+               htmlEditor,
+               htmlEditor ? TrueOrFalse(htmlEditor->IsReadonly()) : "N/A"));
+    }
+  }
   SetIMEState(newState, &aPresContext, &aElement, textInputHandlingWidget,
               action, sOrigin);
 }
@@ -1406,6 +1464,14 @@ void IMEStateManager::UpdateIMEState(const IMEState& aNewIMEState,
        TrueOrFalse(sTextInputHandlingWidget &&
                    !sTextInputHandlingWidget->Destroyed()),
        sActiveIMEContentObserver.get(), TrueOrFalse(sIsGettingNewIMEState)));
+  if (aElement) {
+    MOZ_LOG(sISMLog, LogLevel::Debug,
+            ("  aElement:        %s", ToString(*aElement).c_str()));
+  }
+  if (sFocusedElement) {
+    MOZ_LOG(sISMLog, LogLevel::Debug,
+            ("  sFocusedElement: %s", ToString(*sFocusedElement).c_str()));
+  }
 
   if (sIsGettingNewIMEState) {
     MOZ_LOG(sISMLog, LogLevel::Debug,

@@ -21,7 +21,6 @@ import mozilla.components.concept.engine.webextension.WebExtensionPageAction
 import mozilla.components.concept.toolbar.Toolbar
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.whenever
@@ -276,8 +275,8 @@ class WebExtensionToolbarFeatureTest {
         assertEquals(2, webExtToolbarFeature.webExtensionBrowserActions.size)
         assertEquals(2, webExtToolbarFeature.webExtensionPageActions.size)
 
-        store.dispatch(WebExtensionAction.UninstallWebExtensionAction("1")).joinBlocking()
-        store.dispatch(WebExtensionAction.UpdateWebExtensionEnabledAction("2", false)).joinBlocking()
+        store.dispatch(WebExtensionAction.UninstallWebExtensionAction("1"))
+        store.dispatch(WebExtensionAction.UpdateWebExtensionEnabledAction("2", false))
 
         webExtToolbarFeature.start()
         assertEquals(0, webExtToolbarFeature.webExtensionBrowserActions.size)

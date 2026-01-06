@@ -8,8 +8,6 @@
 #define __IPC_GLUE_IPCMESSAGEUTILS_H__
 
 #include <cstdint>
-#include <string>
-#include <type_traits>
 #include "chrome/common/ipc_message.h"
 #include "chrome/common/ipc_message_utils.h"
 #include "mozilla/ipc/IPCCore.h"

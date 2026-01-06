@@ -36,8 +36,6 @@
 
 #include <stdint.h>
 
-#include <vector>
-
 #include "gmp-errors.h"
 #include "gmp-video-codec.h"
 #include "gmp-video-frame-encoded.h"

@@ -36,7 +36,7 @@
   --arrowpanel-menuitem-padding-inline: 8px;
   --arrowpanel-menuitem-padding: var(--arrowpanel-menuitem-padding-block) var(--arrowpanel-menuitem-padding-inline);
 
-  --search-engine-name-max-width: 25em;
+  --search-engine-name-max-width: 15em;
 
   @media (-moz-platform: macos) {
     /* On macOS we use native shadows via -moz-window-shadow */

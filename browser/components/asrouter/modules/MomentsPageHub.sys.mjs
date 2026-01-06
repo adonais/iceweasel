@@ -70,6 +70,7 @@ export class _MomentsPageHub {
    * it depends on user dependent parameters. Since the message matched
    * targeting we calculate `expire` based on the current timestamp and the
    * `expireDelta` which defines for how long it should be available.
+   *
    * @param expireDelta {number} - Offset in milliseconds from the current date
    */
   getExpirationDate(expireDelta) {

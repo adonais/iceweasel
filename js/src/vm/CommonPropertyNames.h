@@ -75,6 +75,7 @@
   MACRO_(caseFirst, "caseFirst")                                               \
   MACRO_(catch_, "catch")                                                      \
   MACRO_(cause, "cause")                                                       \
+  MACRO_(chunks, "chunks")                                                     \
   MACRO_(class_, "class")                                                      \
   MACRO_(cleanupSome, "cleanupSome")                                           \
   MACRO_(collation, "collation")                                               \
@@ -555,6 +556,7 @@
   MACRO_(weeksDisplay, "weeksDisplay")                                         \
   MACRO_(weeksStyle, "weeksStyle")                                             \
   MACRO_(while_, "while")                                                      \
+  MACRO_(windows, "windows")                                                   \
   MACRO_(with, "with")                                                         \
   MACRO_(written, "written")                                                   \
   MACRO_(toReversed, "toReversed")                                             \

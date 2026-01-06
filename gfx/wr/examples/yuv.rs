@@ -68,7 +68,7 @@ impl ExternalImageHandler for YuvImageProvider {
         key: ExternalImageId,
         _channel_index: u8,
         _is_composited: bool,
-    ) -> ExternalImage {
+    ) -> ExternalImage<'_> {
         let id = self.texture_ids[key.0 as usize];
         ExternalImage {
             uv: TexelRect::new(0.0, 0.0, 1.0, 1.0),

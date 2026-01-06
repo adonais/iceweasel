@@ -56,16 +56,16 @@ struct CSPViolationData {
       const nsAString& aSample);
   BlockedContentSource BlockedContentSourceOrUnknown() const;
 
-  const uint32_t mViolatedPolicyIndex;
-  const Resource mResource;
-  const CSPDirective mEffectiveDirective;
+  uint32_t mViolatedPolicyIndex;
+  Resource mResource;
+  CSPDirective mEffectiveDirective;
   // String representation of the URL. The empty string represents a null-URL.
-  const nsCString mSourceFile;
-  const uint32_t mLineNumber;
-  const uint32_t mColumnNumber;
+  nsCString mSourceFile;
+  uint32_t mLineNumber;
+  uint32_t mColumnNumber;
   RefPtr<Element> mElement;
-  const nsString mSample;
-  const nsCString mHashSHA256;
+  nsString mSample;
+  nsCString mHashSHA256;
 };
 }  // namespace mozilla::dom
 

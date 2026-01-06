@@ -16,7 +16,8 @@ const TEXT_WRAP_BALANCE_LIMIT = Services.prefs.getIntPref(
   10
 );
 
-const VISITED_MDN_LINK = "https://developer.mozilla.org/docs/Web/CSS/:visited";
+const VISITED_MDN_LINK =
+  "https://developer.mozilla.org/docs/Web/CSS/Reference/Selectors/:visited";
 const VISITED_INVALID_PROPERTIES = allCssPropertiesExcept([
   "all",
   "color",
@@ -71,7 +72,7 @@ const REPLACED_ELEMENTS_NAMES = new Set([
 ]);
 
 const CUE_PSEUDO_ELEMENT_STYLING_SPEC_URL =
-  "https://developer.mozilla.org/docs/Web/CSS/::cue";
+  "https://developer.mozilla.org/docs/Web/CSS/Reference/Selectors/::cue";
 
 const HIGHLIGHT_PSEUDO_ELEMENTS_STYLING_SPEC_URL =
   "https://www.w3.org/TR/css-pseudo-4/#highlight-styling";
@@ -95,6 +96,9 @@ const FIRST_LETTER_PSEUDO_ELEMENT_STYLING_SPEC_URL =
 
 const PLACEHOLDER_PSEUDO_ELEMENT_STYLING_SPEC_URL =
   "https://www.w3.org/TR/css-pseudo-4/#placeholder-pseudo";
+
+const AT_POSITION_TRY_MDN_URL =
+  "https://developer.mozilla.org/docs/Web/CSS/Reference/At-rules/@position-try";
 
 class InactivePropertyHelper {
   /**
@@ -177,7 +181,7 @@ class InactivePropertyHelper {
         fixId: "inactive-css-not-grid-container-fix",
         msgId: "inactive-css-not-grid-container",
       },
-      // Grid item property used on non-grid item.
+      // Grid/absolutely positioned item property used on non-grid/non-absolutely positioned item.
       {
         invalidProperties: [
           "grid-area",
@@ -187,7 +191,6 @@ class InactivePropertyHelper {
           "grid-row",
           "grid-row-end",
           "grid-row-start",
-          "justify-self",
         ],
         when: () => !this.gridItem && !this.isAbsPosGridElement(),
         fixId: "inactive-css-not-grid-item-fix-2",
@@ -195,11 +198,29 @@ class InactivePropertyHelper {
       },
       // Grid and flex item properties used on non-grid or non-flex item.
       {
-        invalidProperties: ["align-self", "place-self", "order"],
-        when: () =>
-          !this.gridItem && !this.flexItem && !this.isAbsPosGridElement(),
+        invalidProperties: ["order"],
+        when: () => !this.gridItem && !this.flexItem,
         fixId: "inactive-css-not-grid-or-flex-item-fix-3",
         msgId: "inactive-css-not-grid-or-flex-item",
+      },
+      // Absolutely positioned, grid and flex item properties used on non absolutely positioned,
+      // non-grid or non-flex item.
+      {
+        invalidProperties: ["align-self", "place-self"],
+        when: () =>
+          !this.gridItem && !this.flexItem && !this.isAbsolutelyPositioned,
+        fixId:
+          "inactive-css-not-grid-or-flex-or-absolutely-positioned-item-fix",
+        msgId: "inactive-css-not-grid-or-flex-or-absolutely-positioned-item",
+      },
+      // Absolutely positioned and grid item properties used on non absolutely positioned,
+      // or non-grid item.
+      {
+        invalidProperties: ["justify-self"],
+        // This should be updated when justify-self support is added on block level boxes (see Bug 2005203)
+        when: () => !this.gridItem && !this.isAbsolutelyPositioned,
+        fixId: "inactive-css-not-grid-or-absolutely-positioned-item-fix",
+        msgId: "inactive-css-not-grid-or-absolutely-positioned-item",
       },
       // Grid and flex container properties used on non-grid or non-flex container.
       {
@@ -778,6 +799,66 @@ class InactivePropertyHelper {
       fixId: "learn-more",
       learnMoreURL: CUE_PSEUDO_ELEMENT_STYLING_SPEC_URL,
     },
+    // Constrained set of properties on @position-try rules
+    {
+      // List from Object.keys(CSSPositionTryDescriptors.prototype)
+      // We should directly retrieve the properties from the CSSPositionTryDescriptors.prototype
+      // See Bug 2005233
+      acceptedProperties: new Set([
+        "position-anchor",
+        "position-area",
+        // Inset property descriptors
+        "top",
+        "left",
+        "bottom",
+        "right",
+        "inset-block-start",
+        "inset-block-end",
+        "inset-inline-start",
+        "inset-inline-end",
+        "inset-block",
+        "inset-inline",
+        "inset",
+        // Margin property descriptors
+        "margin-top",
+        "margin-left",
+        "margin-bottom",
+        "margin-right",
+        "margin-block-start",
+        "margin-block-end",
+        "margin-inline-start",
+        "margin-inline-end",
+        "margin",
+        "margin-block",
+        "margin-inline",
+        "-moz-margin-start",
+        "-moz-margin-end",
+        // Sizing property descriptors
+        "width",
+        "height",
+        "min-width",
+        "min-height",
+        "max-width",
+        "max-height",
+        "block-size",
+        "inline-size",
+        "min-block-size",
+        "min-inline-size",
+        "max-block-size",
+        "max-inline-size",
+        // Self-alignment property descriptors
+        "align-self",
+        "justify-self",
+        "place-self",
+        "-webkit-align-self",
+      ]),
+      rejectCustomProperties: true,
+      when: () =>
+        ChromeUtils.getClassName(this.cssRule) === "CSSPositionTryRule",
+      msgId: "inactive-css-at-position-try-not-supported",
+      fixId: "learn-more",
+      learnMoreURL: AT_POSITION_TRY_MDN_URL,
+    },
   ];
 
   /**
@@ -807,22 +888,22 @@ class InactivePropertyHelper {
    *        The computed style for this DOMNode.
    * @param {DOMRule} cssRule
    *        The CSS rule the property is defined in.
-   * @param {String} property
+   * @param {string} property
    *        The CSS property name.
    *
-   * @return {Object|null} object
+   * @return {object | null} object
    *         if the property is active, this will return null
-   * @return {String} object.display
+   * @return {string} object.display
    *         The element computed display value.
-   * @return {String} object.fixId
+   * @return {string} object.fixId
    *         A Fluent id containing a suggested solution to the problem that is
    *         causing a property to be inactive.
-   * @return {String} object.msgId
+   * @return {string} object.msgId
    *         A Fluent id containing an error message explaining why a property
    *         is inactive in this situation.
-   * @return {String} object.property
+   * @return {string} object.property
    *         The inactive property name.
-   * @return {String} object.learnMoreURL
+   * @return {string} object.learnMoreURL
    *         An optional link if we need to open an other link than
    *         the default MDN property one.
    */
@@ -842,8 +923,7 @@ class InactivePropertyHelper {
       } else if (validator.acceptedProperties) {
         isRuleConcerned =
           !validator.acceptedProperties.has(property) &&
-          // custom properties can always be set
-          !property.startsWith("--");
+          (!property.startsWith("--") || validator.rejectCustomProperties);
       }
 
       if (!isRuleConcerned) {
@@ -955,7 +1035,7 @@ class InactivePropertyHelper {
    * Check if the current node's propName is set to one of the values passed in
    * the values array.
    *
-   * @param {String} propName
+   * @param {string} propName
    *        Property name to check.
    * @param {Array} values
    *        Values to compare against.
@@ -971,7 +1051,7 @@ class InactivePropertyHelper {
    * Check if a rule's propName is set to one of the values passed in the values
    * array.
    *
-   * @param {String} propName
+   * @param {string} propName
    *        Property name to check.
    * @param {Array} values
    *        Values to compare against.
@@ -1355,7 +1435,7 @@ class InactivePropertyHelper {
   /**
    * Return the current node's localName.
    *
-   * @returns {String}
+   * @returns {string}
    */
   get localName() {
     return this.node.localName;
@@ -1379,7 +1459,7 @@ class InactivePropertyHelper {
    * Check if the current node is an absolutely-positioned grid element.
    * See: https://drafts.csswg.org/css-grid/#abspos-items
    *
-   * @return {Boolean} whether or not the current node is absolutely-positioned by a
+   * @return {boolean} whether or not the current node is absolutely-positioned by a
    *                   grid container.
    */
   isAbsPosGridElement() {
@@ -1588,7 +1668,7 @@ class InactivePropertyHelper {
    * This is either going to be the table element if there is one, or the parent element.
    * If the current element is not a table track, this returns the current element.
    *
-   * @param  {Boolean} isGroup
+   * @param  {boolean} isGroup
    *         Whether the element is a table track group, instead of a table track.
    * @return {DOMNode}
    *         The parent table, the parent element, or the element itself.
@@ -1640,7 +1720,7 @@ class InactivePropertyHelper {
    * Assuming the current element is an internal table element,
    * check wether its parent table element has `border-collapse` set to `collapse`.
    *
-   * @returns {Boolean}
+   * @returns {boolean}
    */
   checkTableParentHasBorderCollapsed() {
     const parent = this.getTableParent();
@@ -1678,7 +1758,7 @@ function allCssPropertiesExcept(propertiesToIgnore) {
  *         The node to get the styles for.
  * @param  {Window} window
  *         Optional window object. If omitted, will get the node's window.
- * @return {Object}
+ * @return {object}
  */
 function computedStyle(node, window = node.ownerGlobal) {
   return window.getComputedStyle(node);

@@ -71,7 +71,7 @@ class AppLinksInterceptor(
     private val store: BrowserStore? = null,
 ) : RequestInterceptor {
 
-    @Suppress("ComplexMethod", "ReturnCount")
+    @Suppress("CognitiveComplexMethod", "ReturnCount", "CyclomaticComplexMethod")
     override fun onLoadRequest(
         engineSession: EngineSession,
         uri: String,

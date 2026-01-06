@@ -1926,17 +1926,17 @@ bool jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfoArg) {
       saveFailedICHash = true;
       break;
 
-    case BailoutKind::MonomorphicInlinedStubFolding:
+    case BailoutKind::StubFoldingGuardMultipleShapes:
       action = BailoutAction::InvalidateIfFrequent;
       saveFailedICHash = true;
-      if (innerScript != outerScript) {
-        // In the case where this instruction comes from a monomorphic-inlined
-        // ICScript, we need to ensure that we note the connection between the
-        // inner script and the outer script, so that we can properly track if
-        // we add a new case to the folded stub and avoid invalidating the
-        // outer script.
-        cx->zone()->jitZone()->noteStubFoldingBailout(innerScript, outerScript);
-      }
+      // A GuardMultipleShapes LIR instruction bailed out.
+      //
+      // Call noteStubFoldingBailout so that AttachBaselineCacheIRStub can
+      // distinguish this from a bailout from GuardShapeList. This lets us avoid
+      // an invalidation if we add a new case to the folded stub. We also need
+      // to store the connection between the inner script and the outer script
+      // so that we can find the outer script after monomorphic inlining.
+      cx->zone()->jitZone()->noteStubFoldingBailout(innerScript, outerScript);
       break;
 
     case BailoutKind::SpeculativePhi:

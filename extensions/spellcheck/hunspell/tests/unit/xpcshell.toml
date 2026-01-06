@@ -1,5 +1,7 @@
 [DEFAULT]
-run-if = ["os != 'android'"]
+run-if = [
+  "os != 'android'",
+]
 head = ""
 support-files = ["data/**"]
 firefox-appdir = "browser"

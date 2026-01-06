@@ -347,7 +347,7 @@ class RootActor extends Actor {
   /**
    * This function can receive the following option from devtools client.
    *
-   * @param {Object} option
+   * @param {object} option
    *        - iconDataURL: {boolean}
    *            When true, make data url from the icon of addon, then make possible to
    *            access by iconDataURL in the actor. The iconDataURL is useful when

@@ -83,6 +83,16 @@ const PanelUI = {
       autoHidePref => autoHidePref && Services.appinfo.OS !== "Darwin"
     );
 
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "isAIWindowEnabled",
+      "browser.aiwindow.enabled",
+      false,
+      (_pref, _previousValue, _newValue) => {
+        this._showAIMenuItem();
+      }
+    );
+
     if (this.autoHideToolbarInFullScreen) {
       window.addEventListener("fullscreen", this);
     } else {
@@ -110,6 +120,7 @@ const PanelUI = {
       "refresh"
     );
 
+    this._showAIMenuItem();
     this._initialized = true;
   },
 
@@ -1050,6 +1061,21 @@ const PanelUI = {
 
     popupnotification.notification = notification;
     popupnotification.show();
+  },
+
+  _showAIMenuItem() {
+    const isAIWindowActive = document.documentElement.hasAttribute("ai-window");
+    const aiMenuItem = PanelMultiView.getViewNode(
+      document,
+      "appMenu-new-ai-window-button"
+    );
+    const classicWindowMenuItem = PanelMultiView.getViewNode(
+      document,
+      "appMenu-new-classic-window-button"
+    );
+
+    aiMenuItem.hidden = !this.isAIWindowEnabled || isAIWindowActive;
+    classicWindowMenuItem.hidden = !this.isAIWindowEnabled || !isAIWindowActive;
   },
 
   _showBadge(notification) {

@@ -94,9 +94,6 @@ class HeadlessWidget final : public nsIWidget {
       NativeKeyBindingsType aType, const WidgetKeyboardEvent& aEvent,
       nsTArray<CommandInt>& aCommands) override;
 
-  nsresult DispatchEvent(WidgetGUIEvent* aEvent,
-                         nsEventStatus& aStatus) override;
-
   nsresult SynthesizeNativeMouseEvent(
       LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
       mozilla::MouseButton aButton, nsIWidget::Modifiers aModifierFlags,

@@ -61,6 +61,8 @@
   <string name="tab_manager_empty_synced_tabs_page_description">بارلىق ئۈسكۈنىڭىزدە قەدەمداشلانغان بەتكۈچنى باشقۇرۇش ئۈچۈن تىزىمغا كىرىڭ.</string>
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
   <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">تىزىمغا كىرىڭ</string>
+  <!-- Text for the button used to show all stories -->
+  <string name="homepage_all_stories">بارلىق ماقالە</string>
   <!--
     Home - Bookmarks
 
@@ -622,6 +624,86 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Firefox نى قانداق بايقىغانلىقىڭىز ۋە ئۇنى ئىشلىتىشنى Mozilla نىڭ بازارچىلىق ھەمكارلاشقۇچىلىرى بىلەن ھەمبەھىرلەڭ. بۇ سانلىق مەلۇماتلار ھەرگىز سېتىلمايدۇ.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">ساقلاپ كۆز يۈگۈرتۈشنى باشلا</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- "Continue" onboarding button. -->
+  <string name="nova_onboarding_continue_button" tools:ignore="UnusedResources">داۋاملاشتۇر</string>
+  <!-- "Not now" onboarding button. -->
+  <string name="nova_onboarding_negative_button" tools:ignore="UnusedResources">ھازىر ئەمەس</string>
+  <!-- Terms of use (ToU) onboarding title. -->
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">ئەركىن يۈگۈرۈشكە تەييار</string>
+  <!-- Terms of use (ToU) onboarding subtitle. -->
+  <string name="nova_onboarding_tou_subtitle" tools:ignore="UnusedResources">تېز، بىخەتەر، سىزنى ھەرگىز سېتىۋەتمەيدۇ.\nتېخىمۇ ياخشى تور زىيارەت تەسىراتىغا ئېرىشتۈرىدۇ.</string>
+  <!--
+    Terms of use (ToU) onboarding body line one.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
+  -->
+  <string name="nova_onboarding_tou_body_line_1" tools:ignore="UnusedResources">داۋاملاشتۇرسىڭىز، %1$s غا قوشۇلىسىز.</string>
+  <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage,UnusedResources">Firefox ئىشلىتىش ماددىلىرى</string>
+  <!--
+    Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
+  -->
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage,UnusedResources">Firefox شەخسىيىتىڭىزگە كۆڭۈل بۆلىدۇ. %1$s دىن تەپسىلاتىنى بىلىڭ.</string>
+  <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
+  <string name="nova_onboarding_tou_body_line_2_link_text" tools:ignore="UnusedResources">شەخسىيەت ئۇقتۇرۇشى</string>
+  <!--
+    Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
+  -->
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage,UnusedResources">توركۆرگۈنى ياخشىلاشقا ياردەملىشىپ، Firefox دىياگنوز ۋە تەسىرلىشىش سانلىق مەلۇماتىنى Mozilla غا يوللايدۇ. %1$s</string>
+  <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
+  <string name="nova_onboarding_tou_body_line_3_link_text" tools:ignore="UnusedResources">تەڭشەك باشقۇرۇش</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">زېرىكىشلىك ئىزلىغۇچىلار بىلەن خوشلىشىڭ</string>
+  <!-- "Set to default" onboarding subtitle. -->
+  <string name="nova_onboarding_set_to_default_subtitle" tools:ignore="UnusedResources">سانلىق مەلۇماتىڭىزنى قوغدايمىز ۋە شىركەتلەرنىڭ چېكىشلىرىڭىزنى نازارەت قىلىشىنى ئۆزلۈكىدىن توسىمىز.</string>
+  <!-- "Set to default" onboarding button. -->
+  <string name="nova_onboarding_set_to_default_button" tools:ignore="UnusedResources">كۆڭۈلدىكى توركۆرگۈ قىلىپ تەڭشە</string>
+  <!-- Toolbar selection onboarding title. -->
+  <string name="nova_onboarding_toolbar_selection_title" tools:ignore="UnusedResources">ئادرېس بالداق ئورنى تاللىنىدۇ</string>
+  <!-- Toolbar selection onboarding "top" option label. -->
+  <string name="nova_onboarding_toolbar_selection_top_label" tools:ignore="UnusedResources">چوققا</string>
+  <!-- Toolbar selection onboarding "bottom" option label. -->
+  <string name="nova_onboarding_toolbar_selection_bottom_label" tools:ignore="UnusedResources">ئاستى</string>
+  <!-- Theme selection onboarding title. -->
+  <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">ئۆرنەك تاللىنىدۇ</string>
+  <!-- Theme selection onboarding "automatic" option label. -->
+  <string name="nova_onboarding_theme_selection_automatic_label" tools:ignore="UnusedResources">ئاپتوماتىك</string>
+  <!-- Theme selection onboarding "light" option label. -->
+  <string name="nova_onboarding_theme_selection_light_label" tools:ignore="UnusedResources">يورۇق</string>
+  <!-- Theme selection onboarding "dark" option label. -->
+  <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">قاراڭغۇ</string>
+  <!-- Sync onboarding title. -->
+  <string name="nova_onboarding_sync_title" tools:ignore="UnusedResources">شۇئان ئالدىنقى قېتىم كەلگەن جايدىن داۋاملاشتۇرىدۇ</string>
+  <!-- Sync onboarding subtitle. -->
+  <string name="nova_onboarding_sync_subtitle" tools:ignore="UnusedResources">كۆزنى يۇمۇپ ئاچقۇچە خالىغان ئۈسكۈنىدە خەتكۈچ، ئىم قاتارلىق ئۇچۇرلارنى كۆرەلەيسىز. شەخسىي ئۇچۇرلىرىڭىز شىفىرلىنىپ بىخەتەر ساقلىنىدۇ.</string>
+  <!-- Sync onboarding button. -->
+  <string name="nova_onboarding_sync_button" tools:ignore="UnusedResources">قەدەمداشلاشنى باشلا</string>
+  <!-- Marketing onboarding title. -->
+  <string name="nova_onboarding_marketing_title" tools:ignore="UnusedResources">تېخىمۇ ياخشى ئىنتېرنېت قۇرۇشىمىزغا ياردەم قىلىڭ</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Firefox نى قانداق بايقىغانلىقىڭىز ۋە ئۇنى ئىشلىتىشنى Mozilla نىڭ بازارچىلىق ھەمكارلاشقۇچىلىرى بىلەن ھەمبەھىرلەڭ. بۇ سانلىق مەلۇماتلار ھەرگىز سېتىلمايدۇ. %1$s</string>
+  <!-- Marketing onboarding body link text. -->
+  <string name="nova_onboarding_marketing_body_link_text" tools:ignore="UnusedResources">سانلىق مەلۇماتنى قانداق ئىشلىتىمىز</string>
+  <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">ئۇقتۇرۇش Firefox ئارقىلىق تېخىمۇ بىخەتەر بولۇشىڭىزغا ياردەم بېرىدۇ</string>
+  <!-- Notifications onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_notifications_subtitle" tools:ignore="BrandUsage,UnusedResources">Firefox نىڭ ئەڭ يېڭى شەخسىيەت ئىقتىدارىنى بايقاپ، شەخسىيەت قوغداشنىڭ ئەڭ يېڭى ئېقىمىغا ئەگىشەلەيسىز.</string>
+  <!-- Notifications onboarding button. -->
+  <string name="nova_onboarding_notifications_button" tools:ignore="UnusedResources">ئۇقتۇرۇشنى ئاچ</string>
+  <!-- "Add search widget" onboarding title. -->
+  <string name="nova_onboarding_add_search_widget_title" tools:ignore="UnusedResources">ھەر بىر ئىزدەشنى تېخىمۇ شەخسىي قىلىدۇ</string>
+  <!-- "Add search widget" onboarding subtitle. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_add_search_widget_subtitle" tools:ignore="BrandUsage,UnusedResources">تېلېفوننىڭ باش ئېكرانىدىنلا ئىزدىيەلەيسىز، Firefox نىڭ ئۆزلۈكىدىن قوغداش ئىقتىدارى ھەر ۋاقىت سىزگە ماياك بولىدۇ.</string>
+  <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage,UnusedResources">Firefox ئەپچە قوش</string>
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">قورال بالداق ئورنى تاللىنىدۇ</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -820,8 +902,6 @@
   <string name="preferences_gestures">قول ئىشارىسى</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">ئىختىيارىچە</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">تىزىمغا كىرسە بەتكۈچ، خەتكۈچ، ئىم ۋە باشقا سانلىق مەلۇماتلار قەدەمداشلىنىدۇ.</string>
   <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
   <string name="preferences_sign_in_description">بەتكۈچ، خەتكۈچ، ئىم ۋە باشقىلارنى قەدەمداشلايدۇ.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
@@ -1217,10 +1297,8 @@
   <!--
     Turn On Sync Preferences
 
-    Header of the Sync and save your data preference view
+    Header of the Sign in preference view
   -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">سانلىق مەلۇماتلىرىڭىزنى قەدەمداشلاپ ۋە ساقلايدۇ</string>
-  <!-- Header of the Sign in preference view -->
   <string name="preferences_sign_in">تىزىمغا كىرىڭ</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">قايتا باشلىنىش ئۈچۈن تىزىمغا كىرىڭ</string>
@@ -1469,6 +1547,8 @@
   <string name="tab_drawer_fab_content">شەخسىي</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
   <string name="tab_drawer_fab_sync">قەدەمداش</string>
+  <!-- Text for the tab search bar placeholder -->
+  <string name="tab_manager_search_bar_placeholder">بەتكۈچ ئىزدەيدۇ</string>
   <!-- Text shown in the menu for sharing all tabs -->
   <string name="tab_tray_menu_item_share">ھەممە بەتكۈچ ھەمبەھىر</string>
   <!-- Text shown in the menu to view recently closed tabs -->
@@ -1481,6 +1561,14 @@
   <string name="tab_tray_menu_tab_settings">بەتكۈچ تەڭشىكى</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">ھەممە بەتكۈچنى ياپ</string>
+  <!-- Text shown as the title of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_title">ھەممە بەتكۈچنى ياپامدۇ؟</string>
+  <!-- Text shown in the body of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_body">بۇ مەشغۇلات بارلىق ئوچۇق بەتكۈچنى ياپىدۇ.</string>
+  <!-- Text shown on the confirm button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_confirm">بەتكۈچنى ياپ</string>
+  <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_cancel">ۋاز كەچ</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
   <string name="tab_tray_multiselect_menu_item_bookmark">خەتكۈچ</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
@@ -1499,18 +1587,22 @@
   <string name="tab_tray_multiselect_menu_content_description">تاللانغان بەتكۈچ تىزىملىكى</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
   <string name="tab_tray_homepage_tab">باش بەت</string>
-  <!-- Title text displayed for a homepage tab in the tabs tray. %s is a placeholder that will be replaced by app name. -->
-  <string name="tab_tray_homepage_tab_2" tools:ignore="UnusedResources" moz:removedIn="145">%s باش بەت</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">بەتكۈچنى يىغقۇچتىن چىقىرىۋەت</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
   <string name="tabs_tray_select_tabs">بەتكۈچنى تاللا</string>
+  <!-- Text for tab manager search page when there are no results. -->
+  <string name="tab_manager_no_search_results">ماس كەلگىنى تېپىلمىدى.</string>
+  <!-- Additional text for tab manager search page when there are no results. -->
+  <string name="tab_manager_no_search_results_additional_text">باشقىسىنى ئىزدەپ بېقىڭ!</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button. Closes the current session when pressed -->
   <string name="close_tab">بەتكۈچنى تاقاش</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab <title> button. %s is the tab title -->
   <string name="close_tab_title">%s بەتكۈچنى ياپ</string>
   <!-- Content description (not visible, for screen readers etc.): Opens the open tabs menu when pressed -->
   <string name="open_tabs_menu">بەتكۈچ تىزىملىكىنى ئاچ</string>
+  <!-- Content description (not visible, for screen readers etc.): Return to tab manager -->
+  <string name="tab_manager_search_bar_back_content_description">بەتكۈچ باشقۇرغۇچقا قايتىدۇ</string>
   <!-- Open tabs menu item to save tabs to collection -->
   <string name="tabs_menu_save_to_collection1">بەتكۈچلەرنى يىغقۇچقا ساقلا</string>
   <!-- Text for the menu button to delete a collection -->
@@ -1527,6 +1619,8 @@
   <string name="delete_from_history">تارىختىن ئۆچۈر</string>
   <!-- Postfix for private WebApp titles. %1$s is the name of the app (for example "Firefox"). -->
   <string name="pwa_site_controls_title_private">%1$s (شەخسىي ھالەت)</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
+  <string name="tab_manager_open_tab_search">بەتكۈچ ئىزدەشنى ئاچىدۇ</string>
   <!--
     History
 
@@ -1900,6 +1994,8 @@
   <string name="bookmark_delete_folder_content_description">قىسقۇچ ئۆچۈر</string>
   <!-- Content description for bookmark search floating action button -->
   <string name="bookmark_search_button_content_description">خەتكۈچ ئىزدەيدۇ</string>
+  <!-- Content description for select folder screen search action button ("search" is a verb) -->
+  <string name="select_bookmark_search_button_content_description">قىسقۇچ ئىزدە</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">%s نىڭ تۈر تىزىملىكى</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
@@ -1918,6 +2014,8 @@
   <string name="bookmark_empty_list_folder_description">زىيارەت قىلىۋاتقاندا خەتكۈچكە قوشسىڭىز كېيىن ياقتۇرغان تور بېكەتلىرىڭىزنى تاپالايسىز.</string>
   <!-- Description for the add new folder button when selecting a folder. -->
   <string name="bookmark_select_folder_new_folder_button_title">يېڭى قىسقۇچ</string>
+  <!-- Bookmark snackbar message for moving a single item. %1$s is the title of the item being moved and %2$s is the new parent folder of the bookmark -->
+  <string name="bookmark_moved_single_item">%1$s دىن %2$s غا يۆتكەلدى</string>
   <!--
     Site Permissions
 
@@ -2101,8 +2199,6 @@
   <string name="toast_copy_link_to_clipboard">چاپلاش تاختىسىغا كۆچۈرۈلدى</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">قەدەمداشلاشتا تىزىمغا كىرىڭ</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">سانلىق مەلۇمات قەدەمداش ۋە ساقلاش</string>
   <!-- An option from the three dot menu to sign in -->
   <string name="sync_menu_sign_in">تىزىمغا كىرىڭ</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
@@ -2223,7 +2319,7 @@
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">خەت چوڭلۇقى</string>
   <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
-  <string name="a11y_preference_accessibility_font_size_percentage">%d %%.</string>
+  <string name="a11y_preference_accessibility_font_size_percentage" tools:ignore="UnusedResources" moz:removedIn="148">%d %%.</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">ئاپتوماتىك خەت چوڭلۇقى</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
@@ -2691,6 +2787,10 @@
   <string name="edit_login_navigate_back_button_content_description">كەينىگە قايت</string>
   <!-- Content description, used by tools like screenreaders, to press on the edit login button. -->
   <string name="edit_login_button_content_description">تىزىمغا كىرىش تەھرىر</string>
+  <!-- Content description, used by tools like screenreaders, to press on the add new login button. -->
+  <string name="saved_logins_add_new_login_button_content_description">يېڭى تىزىمغا كىرىشنى قوشىدۇ</string>
+  <!-- Content description, used by tools like screenreaders, to press on the clear search text button. -->
+  <string name="saved_logins_clear_search_text_button_content_description">ئىزدەش تېكىستىنى تازىلايدۇ</string>
   <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
   <string name="saved_login_open_site">تور بېكەتنى توركۆرگۈدە ئاچىدۇ</string>
   <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
@@ -3893,7 +3993,7 @@
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">يېقىنقى ئىزدەش يوق</string>
   <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message">خاتالىق كۆرۈلدى</string>
+  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">خاتالىق كۆرۈلدى</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">ھەممىنى تازىلا</string>
   <!-- Section header for recent search results -->
@@ -3902,11 +4002,9 @@
   <string name="settings_search_no_results_title">ھېچ نېمە تاپالمىدى</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">باشقىسىنى ئىزدەپ باقامدۇ؟</string>
-  <!--
-    Terms of use pop up prompt
+  <!-- ==== Terms of use pop up prompt ==== -->
 
-    Title for the pop up prompt
-  -->
+  <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">يېڭىلىدۇق</string>
   <!--
     Message for the terms of use pop up prompt
@@ -3930,4 +4028,34 @@
   <string name="terms_of_use_prompt_accept">قوشۇل</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">مېنى كېيىن ئەسكەرت</string>
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- A title for the popup prompt. -->
+  <string name="terms_of_use_prompt_title_option_a" tools:ignore="UnusedResources">ئىشلىتىش شەرتلىرى</string>
+  <!--
+    A title for the popup prompt.
+    %1$s is the product name "Firefox"
+  -->
+  <string name="terms_of_use_prompt_title_option_b" tools:ignore="UnusedResources">%1$s نىڭ ئەسكەرتىشى</string>
+  <!--
+    Copy for the Terms of Use popup prompt body line two.
+    %1$s is the string terms_of_use_prompt_body_line_two_alternative_link ("here") that is a link to the Terms of Use
+  -->
+  <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">سىز %1$s ھەققىدە مول بىلىمگە ئېرىشەلەيسىز.</string>
+  <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
+  <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">بۇ جاي</string>
+  <!-- ==== End of Terms of use popup prompt. ==== -->
+
+  <!--
+    Privacy notice homepage banner
+
+    A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link using privacy_notice_updated_homepage_message_privacy_notice as text (Privacy Notice)
+    %2$s is replaced by an active link using privacy_notice_updated_homepage_message_learn_more as text (Learn more)
+  -->
+  <string name="privacy_notice_updated_homepage_message" tools:ignore="BrandUsage,UnusedResources">Firefox نىڭ ئەڭ يېڭى ئىقتىدارىغا ماسلىشىش ئۈچۈن، %1$s نى يېڭىلىدۇق. %2$s</string>
+  <!-- The first active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">شەخسىيەت ئۇقتۇرۇشى</string>
+  <!-- The second active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">مول بىلىم</string>
 </resources>

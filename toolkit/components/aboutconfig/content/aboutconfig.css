@@ -4,7 +4,7 @@
 
 :root {
   --prefs-table-border-width: 1px;
-  --prefs-table-border: var(--prefs-table-border-width) solid var(--in-content-box-border-color);
+  --prefs-table-border: var(--prefs-table-border-width) solid var(--border-color);
 }
 
 .hidden {

@@ -836,7 +836,10 @@ class AndroidEmulator:
             return False
         if self.avd_info.x86:
             _log_info(
-                "Running the x86/x86_64 emulator; be sure to install an x86 or x86_64 APK!"
+                "Running the x86_64 emulator; be sure to install a compatible APK!"
+            )
+            _log_info(
+                "AArch64 APKs are supported but will perform poorly compared to x86_64."
             )
         else:
             _log_info("Running the arm emulator; be sure to install an arm APK!")
@@ -958,7 +961,8 @@ class AndroidEmulator:
             return requested
         if self.substs:
             target_cpu = self.substs["TARGET_CPU"]
-            if target_cpu == "aarch64":
+            host_cpu = self.substs["HOST_CPU_ARCH"]
+            if host_cpu == "aarch64" and target_cpu == "aarch64":
                 return "arm64"
             elif target_cpu.startswith("arm"):
                 return "arm"

@@ -34,6 +34,10 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
  public:
   explicit MediaEngineWebRTCMicrophoneSource(const MediaDevice* aMediaDevice);
 
+  static already_AddRefed<MediaEngineWebRTCMicrophoneSource> CreateFrom(
+      const MediaEngineWebRTCMicrophoneSource* aSource,
+      const MediaDevice* aMediaDevice);
+
   nsresult Allocate(const dom::MediaTrackConstraints& aConstraints,
                     const MediaEnginePrefs& aPrefs, uint64_t aWindowID,
                     const char** aOutBadConstraint) override;
@@ -314,9 +318,13 @@ class AudioProcessingTrack : public DeviceInputConsumerTrack {
   void DestroyImpl() override;
   void ProcessInput(GraphTime aFrom, GraphTime aTo, uint32_t aFlags) override;
   uint32_t NumberOfChannels() const override {
-    MOZ_DIAGNOSTIC_ASSERT(
-        mInputProcessing,
-        "Must set mInputProcessing before exposing to content");
+    if (!mInputProcessing) {
+      // There's an async gap between adding the track to the graph
+      // (AudioProcessingTrack::Create) and setting mInputProcessing
+      // (SetInputProcessing on the media manager thread).
+      // Return 0 to indicate the default within this gap.
+      return 0;
+    }
     return mInputProcessing->GetRequestedInputChannelCount();
   }
   // Pass the graph's mixed audio output to mInputProcessing for processing as

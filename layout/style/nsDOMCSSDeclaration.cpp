@@ -32,19 +32,19 @@ JSObject* nsDOMCSSDeclaration::WrapObject(JSContext* aCx,
 
 NS_IMPL_QUERY_INTERFACE(nsDOMCSSDeclaration, nsICSSDeclaration)
 
-void nsDOMCSSDeclaration::GetPropertyValue(const nsCSSPropertyID aPropID,
+void nsDOMCSSDeclaration::GetPropertyValue(const NonCustomCSSPropertyId aPropId,
                                            nsACString& aValue) {
-  MOZ_ASSERT(aPropID != eCSSProperty_UNKNOWN,
+  MOZ_ASSERT(aPropId != eCSSProperty_UNKNOWN,
              "Should never pass eCSSProperty_UNKNOWN around");
   MOZ_ASSERT(aValue.IsEmpty());
 
   if (DeclarationBlock* decl =
           GetOrCreateCSSDeclaration(Operation::Read, nullptr)) {
-    decl->GetPropertyValueByID(aPropID, aValue);
+    decl->GetPropertyValueById(aPropId, aValue);
   }
 }
 
-void nsDOMCSSDeclaration::SetPropertyValue(const nsCSSPropertyID aPropID,
+void nsDOMCSSDeclaration::SetPropertyValue(const NonCustomCSSPropertyId aPropId,
                                            const nsACString& aValue,
                                            nsIPrincipal* aSubjectPrincipal,
                                            ErrorResult& aRv) {
@@ -55,10 +55,10 @@ void nsDOMCSSDeclaration::SetPropertyValue(const nsCSSPropertyID aPropID,
   if (aValue.IsEmpty()) {
     // If the new value of the property is an empty string we remove the
     // property.
-    return RemovePropertyInternal(aPropID, aRv);
+    return RemovePropertyInternal(aPropId, aRv);
   }
 
-  aRv = ParsePropertyValue(aPropID, aValue, false, aSubjectPrincipal);
+  aRv = ParsePropertyValue(aPropId, aValue, false, aSubjectPrincipal);
 }
 
 void nsDOMCSSDeclaration::GetCssText(nsACString& aCssText) {
@@ -166,8 +166,8 @@ void nsDOMCSSDeclaration::SetProperty(const nsACString& aPropertyName,
   }
 
   // In the common (and fast) cases we can use the property id
-  nsCSSPropertyID propID = nsCSSProps::LookupProperty(aPropertyName);
-  if (propID == eCSSProperty_UNKNOWN) {
+  NonCustomCSSPropertyId propId = nsCSSProps::LookupProperty(aPropertyName);
+  if (propId == eCSSProperty_UNKNOWN) {
     return;
   }
 
@@ -181,12 +181,12 @@ void nsDOMCSSDeclaration::SetProperty(const nsACString& aPropertyName,
     return;
   }
 
-  if (propID == eCSSPropertyExtra_variable) {
+  if (propId == eCSSPropertyExtra_variable) {
     aRv = ParseCustomPropertyValue(aPropertyName, aValue, important,
                                    aSubjectPrincipal);
     return;
   }
-  aRv = ParsePropertyValue(propID, aValue, important, aSubjectPrincipal);
+  aRv = ParsePropertyValue(propId, aValue, important, aSubjectPrincipal);
 }
 
 void nsDOMCSSDeclaration::RemoveProperty(const nsACString& aPropertyName,
@@ -266,7 +266,7 @@ nsresult nsDOMCSSDeclaration::ModifyDeclaration(
 }
 
 nsresult nsDOMCSSDeclaration::ParsePropertyValue(
-    const nsCSSPropertyID aPropID, const nsACString& aPropValue,
+    const NonCustomCSSPropertyId aPropId, const nsACString& aPropValue,
     bool aIsImportant, nsIPrincipal* aSubjectPrincipal) {
   AUTO_PROFILER_LABEL_CATEGORY_PAIR_RELEVANT_FOR_JS(LAYOUT_CSSParsing);
 
@@ -282,7 +282,7 @@ nsresult nsDOMCSSDeclaration::ParsePropertyValue(
       aSubjectPrincipal, &closureData,
       [&](DeclarationBlock* decl, ParsingEnvironment& env) {
         return Servo_DeclarationBlock_SetPropertyById(
-            decl->Raw(), aPropID, &aPropValue, aIsImportant, env.mUrlExtraData,
+            decl->Raw(), aPropId, &aPropValue, aIsImportant, env.mUrlExtraData,
             StyleParsingMode::DEFAULT, env.mCompatMode, env.mLoader,
             env.mRuleType, closure);
       });
@@ -311,7 +311,7 @@ nsresult nsDOMCSSDeclaration::ParseCustomPropertyValue(
       });
 }
 
-void nsDOMCSSDeclaration::RemovePropertyInternal(nsCSSPropertyID aPropID,
+void nsDOMCSSDeclaration::RemovePropertyInternal(NonCustomCSSPropertyId aPropId,
                                                  ErrorResult& aRv) {
   DeclarationBlock* olddecl =
       GetOrCreateCSSDeclaration(Operation::RemoveProperty, nullptr);
@@ -335,7 +335,7 @@ void nsDOMCSSDeclaration::RemovePropertyInternal(nsCSSPropertyID aPropID,
   GetPropertyChangeClosure(&closure, &closureData);
 
   RefPtr<DeclarationBlock> decl = olddecl->EnsureMutable();
-  if (!decl->RemovePropertyByID(aPropID, closure)) {
+  if (!decl->RemovePropertyById(aPropId, closure)) {
     return;
   }
   aRv = SetCSSDeclaration(decl, &closureData);

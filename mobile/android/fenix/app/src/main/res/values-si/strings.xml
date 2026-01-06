@@ -412,6 +412,10 @@
   <string name="onboarding_term_of_service_line_two_link_text">රහස්‍යතා දැන්වීම</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">කළමනාකරණය</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding label for 'Save and continue' button, used by Nimbus experiments. -->
   <string name="onboarding_save_and_continue_button">සුරකින්න සහ ඉදිරියට</string>
   <!-- Onboarding toolbar selection card label for 'top' option, used by Nimbus experiments. -->
@@ -569,8 +573,6 @@
   <string name="preferences_gestures">අභින</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">රිසිකරණය</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">පටිති, පොත්යොමු, මුරපද හා තවත් දෑ සමමුහූර්තයට පිවිසෙන්න.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">මොසිල්ලා ගිණුම</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -810,12 +812,6 @@
   <string name="preference_experiments_2">අධ්‍යන</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">මොස්ල්ලා සඳහා අධ්‍යන ස්ථාපනයට හා ධාවනයට ඉඩ දෙන්න</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">සමමුහූර්ත කර සුරකින්න</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">යළි සබැඳීමට පිවිසෙන්න</string>
   <!-- Preference for removing FxA account -->
@@ -1369,8 +1365,6 @@
   <string name="toast_copy_link_to_clipboard">පසුරු පුවරුවට පිටපත් විය</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">සමමුහූර්තයට පිවිසෙන්න</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">සමමුහූර්ත කර සුරකින්න</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">සියළු උපාංග වෙත යවන්න</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2373,4 +2367,10 @@
   -->
   <string name="beta_feature">බීටා</string>
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

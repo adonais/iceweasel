@@ -78,7 +78,7 @@ class WebExtensionPromptFeatureTest {
                     mockk(),
                 ),
             ),
-        ).joinBlocking()
+        )
 
         verify { webExtensionPromptFeature.handleInstallationFailedRequest(any()) }
     }
@@ -260,7 +260,7 @@ class WebExtensionPromptFeatureTest {
                     mockk(),
                 ),
             ),
-        ).joinBlocking()
+        )
 
         verify { webExtensionPromptFeature.handleAfterInstallationRequest(any()) }
     }

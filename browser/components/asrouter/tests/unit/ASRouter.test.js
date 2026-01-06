@@ -1012,13 +1012,15 @@ describe("ASRouter", () => {
         ASRouterTriggerListeners.get("openURL").init,
         Router._triggerHandler,
         ["www.mozilla.org", "www.mozilla.com"],
-        undefined
+        undefined, // patterns
+        undefined // regexPatterns
       );
       assert.calledWithExactly(
         ASRouterTriggerListeners.get("openURL").init,
         Router._triggerHandler,
         ["www.example.com"],
-        undefined
+        undefined, // patterns
+        undefined // regexPatterns
       );
     });
     it("should parse the message's messagesLoaded trigger and immediately fire trigger", async () => {

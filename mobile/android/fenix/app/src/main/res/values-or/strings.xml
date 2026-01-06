@@ -60,6 +60,10 @@
   <string name="default_locale_text">ଡିଭାଇସ୍ ର ଭାଷାକୁ ଅନୁସରଣ କରନ୍ତୁ</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">ସନ୍ଧାନ ଇଞ୍ଜିନ୍ ସେଟିଂସ୍</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!--
     Search Widget
 
@@ -173,4 +177,10 @@
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

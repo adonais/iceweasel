@@ -12,7 +12,6 @@
 #include <cmath>
 #include <cstdlib>
 #include <stdint.h>
-#include <utility>
 
 #include "jsdate.h"
 #include "jsnum.h"

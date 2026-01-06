@@ -31,7 +31,9 @@ static uint32_t get_mips_flags() {
 
 #if defined(JS_SIMULATOR_MIPS64)
   flags |= HWCAP_FPU;
-  flags |= HWCAP_R2;
+  if (!getenv("MIPS_PRE_R2")) {
+    flags |= HWCAP_R2;
+  }
 #else
 #  ifdef __linux__
   FILE* fp = fopen("/proc/cpuinfo", "r");

@@ -177,7 +177,7 @@ class Infobar {
   /**
    * Gets the element with the specified ID.
    *
-   * @param  {String} id
+   * @param  {string} id
    *         Element ID.
    * @return {Element} The element with specified ID.
    */
@@ -188,9 +188,9 @@ class Infobar {
   /**
    * Gets the text content of element.
    *
-   * @param  {String} id
+   * @param  {string} id
    *          Element ID to retrieve text content from.
-   * @return {String} The text content of the element.
+   * @return {string} The text content of the element.
    */
   getTextContent(id) {
     const anonymousContent = this.markup.content;
@@ -238,7 +238,7 @@ class Infobar {
    *
    * @param  {Element} el
    *         Element to set text content on.
-   * @param  {String} text
+   * @param  {string} text
    *         Text for content.
    */
   setTextContent(el, text) {
@@ -248,7 +248,7 @@ class Infobar {
   /**
    * Show the accessible's name message.
    *
-   * @param  {String} name
+   * @param  {string} name
    *         Accessible's name value.
    * @param  {Element} el
    *         Element to set text content on.
@@ -261,7 +261,7 @@ class Infobar {
   /**
    * Show the accessible's role.
    *
-   * @param  {String} role
+   * @param  {string} role
    *         Accessible's role value.
    * @param  {Element} el
    *         Element to set text content on.
@@ -430,9 +430,10 @@ class ContrastRatio extends AuditReport {
 
   /**
    * Update contrast ratio score infobar markup.
-   * @param  {Object}
+   *
+   * @param  {object}
    *         Audit report for a given highlighted accessible.
-   * @return {Boolean}
+   * @return {boolean}
    *         True if the contrast ratio markup was updated correctly and infobar audit
    *         block should be visible.
    */
@@ -545,9 +546,10 @@ class Keyboard extends AuditReport {
 
   /**
    * Update keyboard audit infobar markup.
-   * @param  {Object}
+   *
+   * @param  {object}
    *         Audit report for a given highlighted accessible.
-   * @return {Boolean}
+   * @return {boolean}
    *         True if the keyboard markup was updated correctly and infobar audit
    *         block should be visible.
    */
@@ -623,9 +625,10 @@ class TextLabel extends AuditReport {
 
   /**
    * Update text label audit infobar markup.
-   * @param  {Object}
+   *
+   * @param  {object}
    *         Audit report for a given highlighted accessible.
-   * @return {Boolean}
+   * @return {boolean}
    *         True if the text label markup was updated correctly and infobar
    *         audit block should be visible.
    */
@@ -659,9 +662,9 @@ class TextLabel extends AuditReport {
  * A helper function that calculate accessible object bounds and positioning to
  * be used for highlighting.
  *
- * @param  {Object} win
+ * @param  {object} win
  *         window that contains accessible object.
- * @param  {Object} options
+ * @param  {object} options
  *         Object used for passing options:
  *         - {Number} x
  *           x coordinate of the top left corner of the accessible object
@@ -671,7 +674,7 @@ class TextLabel extends AuditReport {
  *           width of the the accessible object
  *         - {Number} h
  *           height of the the accessible object
- * @return {Object|null} Returns, if available, positioning and bounds information for
+ * @return {object | null} Returns, if available, positioning and bounds information for
  *                 the accessible object.
  */
 function getBounds(win, { x, y, w, h }) {
@@ -702,9 +705,9 @@ function getBounds(win, { x, y, w, h }) {
  * A helper function that calculate accessible object bounds and positioning to
  * be used for highlighting in browser toolbox.
  *
- * @param  {Object} win
+ * @param  {object} win
  *         window that contains accessible object.
- * @param  {Object} options
+ * @param  {object} options
  *         Object used for passing options:
  *         - {Number} x
  *           x coordinate of the top left corner of the accessible object
@@ -716,7 +719,7 @@ function getBounds(win, { x, y, w, h }) {
  *           height of the the accessible object
  *         - {Number} zoom
  *           zoom level of the accessible object's parent window
- * @return {Object|null} Returns, if available, positioning and bounds information for
+ * @return {object | null} Returns, if available, positioning and bounds information for
  *                 the accessible object.
  */
 function getBoundsXUL(win, { x, y, w, h, zoom }) {

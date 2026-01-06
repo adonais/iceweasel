@@ -10,7 +10,6 @@ import mozilla.components.lib.state.Action
  * Actions relating to the Logins list screen and its various subscreens.
  */
 internal sealed interface LoginsAction : Action
-internal data object ViewDisposed : LoginsAction
 internal data object LoginsListAppeared : LoginsAction
 internal data object LoginsListBackClicked : LoginsAction
 
@@ -35,18 +34,6 @@ internal data object LearnMoreAboutSync : LoginsAction
 
 internal data class LoginClicked(val item: LoginItem) : LoginsAction
 
-internal sealed class LifecycleAction : LoginsAction {
-    data object OnPause : LifecycleAction()
-    data object OnResume : LifecycleAction()
-}
-
-internal sealed class BiometricAuthenticationAction : LoginsAction {
-    data object Started : BiometricAuthenticationAction()
-    data object Succeeded : BiometricAuthenticationAction()
-
-    data object Failed : BiometricAuthenticationAction()
-}
-
 internal sealed class DetailLoginMenuAction : LoginsAction {
     data class EditLoginMenuItemClicked(val item: LoginItem) : DetailLoginMenuAction()
     data class DeleteLoginMenuItemClicked(val item: LoginItem) : DetailLoginMenuAction()
@@ -66,11 +53,6 @@ internal sealed class EditLoginAction : LoginsAction {
     data class PasswordChanged(val passwordChanged: String) : EditLoginAction()
     data class PasswordVisibilityChanged(val isPasswordVisible: Boolean) : EditLoginAction()
     data class SaveEditClicked(val login: LoginItem) : EditLoginAction()
-}
-
-internal sealed class UnlockScreenAction : LoginsAction {
-    data object UnlockTapped : UnlockScreenAction()
-    data object LeaveTapped : UnlockScreenAction()
 }
 
 internal sealed class AddLoginAction : LoginsAction {

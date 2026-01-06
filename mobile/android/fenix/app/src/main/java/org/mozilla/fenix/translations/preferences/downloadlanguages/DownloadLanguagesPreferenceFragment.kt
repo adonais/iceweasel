@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.Composable
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
-import androidx.navigation.findNavController
 import androidx.navigation.fragment.findNavController
 import mozilla.components.browser.state.action.TranslationsAction
 import mozilla.components.browser.state.store.BrowserStore
@@ -24,10 +23,9 @@ import mozilla.components.concept.engine.translate.OperationLevel
 import mozilla.components.concept.engine.translate.TranslationError
 import mozilla.components.lib.state.ext.observeAsComposableState
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
-import org.mozilla.fenix.BrowserDirection
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
+import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
@@ -50,6 +48,7 @@ class DownloadLanguagesPreferenceFragment : Fragment() {
         showToolbar(getString(R.string.download_languages_translations_toolbar_title_preference))
     }
 
+    @Suppress("CognitiveComplexMethod")
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -164,10 +163,10 @@ class DownloadLanguagesPreferenceFragment : Fragment() {
     }
 
     private fun openBrowserAndLoad(learnMoreUrl: String) {
-        (requireActivity() as HomeActivity).openToBrowserAndLoad(
+        findNavController().openToBrowser()
+        requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
             searchTermOrURL = learnMoreUrl,
             newTab = true,
-            from = BrowserDirection.FromDownloadLanguagesPreferenceFragment,
         )
     }
 

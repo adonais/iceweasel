@@ -35,18 +35,6 @@ using NotificationMap = nsTHashMap<nsStringHashKey, AndroidNotificationTuple>;
 static StaticAutoPtr<NotificationMap> sNotificationMap;
 
 NS_IMETHODIMP
-AndroidAlerts::ShowAlertNotification(
-    const nsAString& aImageUrl, const nsAString& aAlertTitle,
-    const nsAString& aAlertText, bool aAlertTextClickable,
-    const nsAString& aAlertCookie, nsIObserver* aAlertListener,
-    const nsAString& aAlertName, const nsAString& aBidi, const nsAString& aLang,
-    const nsAString& aData, nsIPrincipal* aPrincipal, bool aInPrivateBrowsing,
-    bool aRequireInteraction) {
-  MOZ_ASSERT_UNREACHABLE("Should be implemented by nsAlertsService.");
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-NS_IMETHODIMP
 AndroidAlerts::ShowAlert(nsIAlertNotification* aAlert,
                          nsIObserver* aAlertListener) {
   // nsAlertsService disables our alerts backend if we ever return failure

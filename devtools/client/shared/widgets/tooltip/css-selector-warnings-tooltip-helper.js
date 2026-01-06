@@ -26,7 +26,7 @@ class CssSelectorWarningsTooltipHelper {
   /**
    * Get the template of the tooltip.
    *
-   * @param {Array<String>} data: Array of selector warning kind returned by
+   * @param {Array<string>} data: Array of selector warning kind returned by
    *        CSSRule#getSelectorWarnings
    * @param {HTMLTooltip} tooltip
    *        The tooltip we are targetting.

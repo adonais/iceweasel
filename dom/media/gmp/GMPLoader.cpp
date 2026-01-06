@@ -24,8 +24,6 @@
 #  include "mozilla/SandboxProfilerObserver.h"
 #endif
 
-#include <string>
-
 #ifdef XP_WIN
 #  include <windows.h>
 #endif

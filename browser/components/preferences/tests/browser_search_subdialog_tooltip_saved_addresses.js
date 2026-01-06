@@ -8,10 +8,7 @@ add_task(async function test_show_search_term_tooltip_in_subdialog() {
   let keyword = "organization";
   await runSearchInput(keyword);
 
-  let formAutofillGroupBox = gBrowser.contentDocument.getElementById(
-    "formAutofillGroupBox"
-  );
-  let addressesGroup = formAutofillGroupBox.querySelector(
+  let addressesGroup = gBrowser.contentDocument.querySelector(
     "setting-group[groupid=addresses]"
   );
   let savedAddressesButton = addressesGroup.querySelector(

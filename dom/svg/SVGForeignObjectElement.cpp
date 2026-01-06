@@ -107,7 +107,7 @@ SVGElement::LengthAttributesInfo SVGForeignObjectElement::GetLengthInfo() {
                               std::size(sLengthInfo));
 }
 
-nsCSSPropertyID SVGForeignObjectElement::GetCSSPropertyIdForAttrEnum(
+NonCustomCSSPropertyId SVGForeignObjectElement::GetCSSPropertyIdForAttrEnum(
     uint8_t aAttrEnum) {
   switch (aAttrEnum) {
     case ATTR_X:

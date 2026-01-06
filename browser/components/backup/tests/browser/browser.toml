@@ -16,6 +16,9 @@ support-files = [
 ["browser_password_validation_inputs.js"]
 
 ["browser_settings.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && tsan", # Bug 2000907
+]
 
 ["browser_settings_create_backup.js"]
 

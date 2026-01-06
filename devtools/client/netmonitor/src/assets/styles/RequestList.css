@@ -168,6 +168,10 @@
   display: inline-block;
 }
 
+.requests-list-column.requests-list-number-column {
+  text-align: end;
+}
+
 /* Requests list headers */
 
 .requests-list-headers-group,

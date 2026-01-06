@@ -329,7 +329,6 @@ open class DefaultComponents(private val applicationContext: Context) {
             SimpleBrowserMenuItem("Save to PDF") {
                 sessionUseCases.saveToPdf.invoke()
             },
-
             SimpleBrowserMenuItem("Translate (auto)") {
                 var detectedFrom =
                     store.state.selectedTab?.translationsState?.translationEngineState

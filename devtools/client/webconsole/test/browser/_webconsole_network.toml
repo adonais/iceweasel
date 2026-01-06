@@ -44,11 +44,13 @@ support-files = [
 ["browser_webconsole_network_messages_stacktrace_console_initiated_request.js"]
 
 ["browser_webconsole_network_messages_status_code.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_webconsole_network_requests_from_chrome.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 
 ["browser_webconsole_network_reset_filter.js"]

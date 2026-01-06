@@ -216,6 +216,40 @@ class OutOfLineCode : public TempObject {
   virtual void generate(MacroAssembler* masm) = 0;
 };
 
+class OutOfLineAbortingTrap : public OutOfLineCode {
+  Trap trap_;
+  TrapSiteDesc desc_;
+
+ public:
+  OutOfLineAbortingTrap(Trap trap, const TrapSiteDesc& desc)
+      : trap_(trap), desc_(desc) {}
+
+  virtual void generate(MacroAssembler* masm) override {
+    masm->wasmTrap(trap_, desc_);
+    MOZ_ASSERT(!rejoin()->bound());
+  }
+};
+
+class OutOfLineResumableTrap : public OutOfLineCode {
+  Trap trap_;
+  TrapSiteDesc desc_;
+  wasm::StackMap* stackMap_;
+  wasm::StackMaps* stackMaps_;
+
+ public:
+  OutOfLineResumableTrap(Trap trap, const TrapSiteDesc& desc,
+                         wasm::StackMap* stackMap, wasm::StackMaps* stackMaps)
+      : trap_(trap), desc_(desc), stackMap_(stackMap), stackMaps_(stackMaps) {}
+
+  virtual void generate(MacroAssembler* masm) override {
+    masm->wasmTrap(trap_, desc_);
+    if (stackMap_ && !stackMaps_->add(masm->currentOffset(), stackMap_)) {
+      masm->setOOM();
+    }
+    masm->jump(rejoin());
+  }
+};
+
 OutOfLineCode* BaseCompiler::addOutOfLineCode(OutOfLineCode* ool) {
   if (!ool || !outOfLine_.append(ool)) {
     return nullptr;
@@ -539,17 +573,34 @@ bool BaseCompiler::beginFunction() {
 
   // Generate a stack-overflow check and its associated stackmap.
 
-  fr.checkStack(ABINonArgReg0,
-                TrapSiteDesc(BytecodeOffset(func_.lineOrBytecode)));
-
   ExitStubMapVector extras;
-  if (!stackMapGenerator_.generateStackmapEntriesForTrapExit(args, &extras)) {
+  StackMap* functionEntryStackMap;
+  if (!stackMapGenerator_.generateStackmapEntriesForTrapExit(args, &extras) ||
+      !stackMapGenerator_.createStackMap("stack check", extras,
+                                         HasDebugFrameWithLiveRefs::No, stk_,
+                                         &functionEntryStackMap)) {
     return false;
   }
-  if (!createStackMap("stack check", extras, masm.currentOffset(),
-                      HasDebugFrameWithLiveRefs::No)) {
+
+  OutOfLineCode* oolStackOverflowTrap =
+      addOutOfLineCode(new (alloc_) OutOfLineAbortingTrap(
+          Trap::StackOverflow,
+          TrapSiteDesc(BytecodeOffset(func_.lineOrBytecode))));
+  if (!oolStackOverflowTrap) {
     return false;
   }
+  fr.checkStack(ABINonArgReg0, ABINonArgReg1, oolStackOverflowTrap->entry());
+
+  OutOfLineCode* oolInterruptTrap = addOutOfLineCode(
+      new (alloc_) OutOfLineResumableTrap(Trap::CheckInterrupt, trapSiteDesc(),
+                                          functionEntryStackMap, stackMaps_));
+  if (!oolInterruptTrap) {
+    return false;
+  }
+  masm.branch32(Assembler::NotEqual,
+                Address(InstanceReg, wasm::Instance::offsetOfInterrupt()),
+                Imm32(0), oolInterruptTrap->entry());
+  masm.bind(oolInterruptTrap->rejoin());
 
   size_t reservedBytes = fr.fixedAllocSize() - masm.framePushed();
   MOZ_ASSERT(0 == (reservedBytes % sizeof(void*)));
@@ -2013,20 +2064,6 @@ CodeOffset BaseCompiler::callSymbolic(SymbolicAddress callee,
 }
 
 // Precondition: sync()
-
-class OutOfLineAbortingTrap : public OutOfLineCode {
-  Trap trap_;
-  TrapSiteDesc desc_;
-
- public:
-  OutOfLineAbortingTrap(Trap trap, const TrapSiteDesc& desc)
-      : trap_(trap), desc_(desc) {}
-
-  virtual void generate(MacroAssembler* masm) override {
-    masm->wasmTrap(trap_, desc_);
-    MOZ_ASSERT(!rejoin()->bound());
-  }
-};
 
 static ReturnCallAdjustmentInfo BuildReturnCallAdjustmentInfo(
     const FuncType& callerType, const FuncType& calleeType) {
@@ -3712,8 +3749,9 @@ bool BaseCompiler::jumpConditionalWithResults(BranchState* b, RegRef object,
 
       masm.branchWasmRefIsSubtype(
           object, sourceType, destType, &notTaken,
-          /*onSuccess=*/b->invertBranch ? onSuccess : !onSuccess, regs.superSTV,
-          regs.scratch1, regs.scratch2);
+          /*onSuccess=*/b->invertBranch ? onSuccess : !onSuccess,
+          /*signalNullChecks=*/false, regs.superSTV, regs.scratch1,
+          regs.scratch2);
       freeRegistersForBranchIfRefSubtype(regs);
 
       // Shuffle stack args.
@@ -3727,8 +3765,8 @@ bool BaseCompiler::jumpConditionalWithResults(BranchState* b, RegRef object,
 
   masm.branchWasmRefIsSubtype(
       object, sourceType, destType, b->label,
-      /*onSuccess=*/b->invertBranch ? !onSuccess : onSuccess, regs.superSTV,
-      regs.scratch1, regs.scratch2);
+      /*onSuccess=*/b->invertBranch ? !onSuccess : onSuccess,
+      /*signalNullChecks=*/false, regs.superSTV, regs.scratch1, regs.scratch2);
   freeRegistersForBranchIfRefSubtype(regs);
   return true;
 }
@@ -8906,8 +8944,8 @@ bool BaseCompiler::emitRefTest(bool nullable) {
   BranchIfRefSubtypeRegisters regs =
       allocRegistersForBranchIfRefSubtype(destType);
   masm.branchWasmRefIsSubtype(ref, MaybeRefType(sourceType), destType, &success,
-                              /*onSuccess=*/true, regs.superSTV, regs.scratch1,
-                              regs.scratch2);
+                              /*onSuccess=*/true, /*signalNullChecks=*/false,
+                              regs.superSTV, regs.scratch1, regs.scratch2);
   freeRegistersForBranchIfRefSubtype(regs);
 
   masm.xor32(result, result);
@@ -8936,16 +8974,24 @@ bool BaseCompiler::emitRefCast(bool nullable) {
 
   RegRef ref = popRef();
 
-  Label success;
+  OutOfLineCode* ool = addOutOfLineCode(
+      new (alloc_) OutOfLineAbortingTrap(Trap::BadCast, trapSiteDesc()));
+  if (!ool) {
+    return false;
+  }
+
   BranchIfRefSubtypeRegisters regs =
       allocRegistersForBranchIfRefSubtype(destType);
-  masm.branchWasmRefIsSubtype(ref, MaybeRefType(sourceType), destType, &success,
-                              /*onSuccess=*/true, regs.superSTV, regs.scratch1,
-                              regs.scratch2);
+  FaultingCodeOffset fco = masm.branchWasmRefIsSubtype(
+      ref, MaybeRefType(sourceType), destType, ool->entry(),
+      /*onSuccess=*/false, /*signalNullChecks=*/true, regs.superSTV,
+      regs.scratch1, regs.scratch2);
+  if (fco.isValid()) {
+    masm.append(wasm::Trap::BadCast, wasm::TrapMachineInsnForLoadWord(),
+                fco.get(), trapSiteDesc());
+  }
   freeRegistersForBranchIfRefSubtype(regs);
 
-  trap(Trap::BadCast);
-  masm.bind(&success);
   pushRef(ref);
 
   return true;
@@ -11802,7 +11848,7 @@ bool BaseCompiler::emitBody() {
                                       ValType::F32, ValType::I32));
           case uint32_t(MiscOp::I32TruncSatF32U):
             CHECK_NEXT(dispatchConversionOOM(
-                emitTruncateF32ToI32 < TRUNC_UNSIGNED | TRUNC_SATURATING >,
+                emitTruncateF32ToI32<TRUNC_UNSIGNED | TRUNC_SATURATING>,
                 ValType::F32, ValType::I32));
           case uint32_t(MiscOp::I32TruncSatF64S):
             CHECK_NEXT(
@@ -11810,7 +11856,7 @@ bool BaseCompiler::emitBody() {
                                       ValType::F64, ValType::I32));
           case uint32_t(MiscOp::I32TruncSatF64U):
             CHECK_NEXT(dispatchConversionOOM(
-                emitTruncateF64ToI32 < TRUNC_UNSIGNED | TRUNC_SATURATING >,
+                emitTruncateF64ToI32<TRUNC_UNSIGNED | TRUNC_SATURATING>,
                 ValType::F64, ValType::I32));
           case uint32_t(MiscOp::I64TruncSatF32S):
 #ifdef RABALDR_FLOAT_TO_I64_CALLOUT
@@ -11831,7 +11877,7 @@ bool BaseCompiler::emitBody() {
                 ValType::I64));
 #else
             CHECK_NEXT(dispatchConversionOOM(
-                emitTruncateF32ToI64 < TRUNC_UNSIGNED | TRUNC_SATURATING >,
+                emitTruncateF32ToI64<TRUNC_UNSIGNED | TRUNC_SATURATING>,
                 ValType::F32, ValType::I64));
 #endif
           case uint32_t(MiscOp::I64TruncSatF64S):
@@ -11853,7 +11899,7 @@ bool BaseCompiler::emitBody() {
                 ValType::I64));
 #else
             CHECK_NEXT(dispatchConversionOOM(
-                emitTruncateF64ToI64 < TRUNC_UNSIGNED | TRUNC_SATURATING >,
+                emitTruncateF64ToI64<TRUNC_UNSIGNED | TRUNC_SATURATING>,
                 ValType::F64, ValType::I64));
 #endif
           case uint32_t(MiscOp::MemoryCopy):
@@ -12305,6 +12351,7 @@ BaseCompiler::BaseCompiler(const CodeMetadata& codeMeta,
       decoder_(decoder),
       iter_(codeMeta, decoder, locals),
       fr(*masm),
+      stackMaps_(stackMaps),
       stackMapGenerator_(stackMaps, trapExitLayout, trapExitLayoutNumWords,
                          *masm),
       deadCode_(false),

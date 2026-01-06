@@ -62,6 +62,7 @@
   <string name="menu_settings">Nuk’ulem</string>
   <string name="menu_about">Chi rij</string>
   <string name="menu_help">To\'ïk</string>
+  <string name="menu_terms_of_use">Rojqanem Rokisaxik</string>
   <!--
     Menu item: This is the label for a menu entry that shows how many trackers have been blocked
     for the currently loaded website. The number of blocked trackers is shown below this label.
@@ -151,6 +152,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s nuya\' ronojel pan aq\'a\'.</p>\n<p>Tawokisaj achi\'el jun ichinan okik\'amaya\'l:\n<ul>\n<li>Tikanöx chuqa\' tokisäx ri chokoy</li>\n<li>Keq\'at ojqanela\' (o kek\'ex taq cha\'oj richin niya\' q\'ij chi ke ri ojqanela\')</li>\n<li>Tiyuj richin yeyuj el taq kaxlawey chuqa\' runatab\'al kanoxïk chuqa\' okem pa k\'amaya\'l</li>\n</ul> </p>\n<p>%1$s Xsamajin ruma ri Mozilla. Ri taqel qataqanem ja ri niqayäk qak\'u\'x richin jun jaqäl chuqa\' raxinäq k\'amaya\'l.<br/>\n<a href=\"%2$s\">Tetamäx ch\'aqa\' chik</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">Tetamäx ch\'aqa\' chik</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">Ichinanem &amp; Jikomal</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -321,12 +324,18 @@
   <string name="preference_mozilla_telemetry_summary">Tetamäx ch\'aqa\' chik</string>
   <!-- %1$s will be replaced with the name of the app (e.g. Firefox Focus) -->
   <string name="preference_mozilla_telemetry_summary2">Ri Mozilla nutïj ruq\'ij chi numöl ri niqajo\' niqataluj chuqa\' niqutzilaj %1$s k\'atzinel chi qe qonojel.</string>
+  <!-- Preference switch for daily usage ping data collection -->
+  <string name="preference_daily_usage_ping_title">Ping nokisäx ronojel q\'ij</string>
+  <string name="preference_daily_usage_ping_description">Re re\' nuto\' ri Mozilla richin nitikïr yerajilaj taq ruwinaq yetajin.</string>
+  <string name="preference_daily_usage_ping_learn_more">Tetamäx ch\'aqa\' chik</string>
   <!-- In-app link (in settings) to Focus privacy notice. -->
   <string name="preference_privacy_notice">Rutzijol Ichinanem</string>
   <!-- In-app link (in settings) to Focus licensing information. -->
   <string name="preference_licensing_info">Na\'oj chi rij ya\'öl q\'ij</string>
   <!-- Link to Focus licensing information from other libraries that we use. -->
   <string name="preference_libraries_we_use">Taq wujb\'äl yeqokisaj</string>
+  <!-- Link to Focus Crash reports list. -->
+  <string name="preference_crashes">Taq sachoj</string>
   <!-- Open Source Licenses page title. %s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
   <string name="open_source_licenses_title">%s | OSS taq wujb\'äl</string>
   <!-- Item in Preferences that shows the about page. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar"). -->
@@ -453,6 +462,30 @@
   <!-- New Onboarding flow first screen subtitle the one that appears under title -->
   <string name="onboarding_first_screen_subtitle">Anin. Ichinan. Majun nrewaj.</string>
   <!--
+    New Onboarding flow first screen 'terms of use' text
+
+    %1$s will be replaced by a link using onboarding_first_screen_terms_of_use_link as text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_text_2" tools:ignore="UnusedResources">Toq nasamajij chik el, naya\' atzij chi ke ri %1$s.</string>
+  <!--
+    New Onboarding flow first screen 'terms of use link'
+
+    Text for the link used in onboarding_first_screen_terms_of_use_text
+  -->
+  <string name="onboarding_first_screen_terms_of_use_link_2" tools:ignore="BrandUsage">Rojqanem rokisaxik Firefox</string>
+  <!--
+    New Onboarding flow first screen 'privacy notice' text
+
+    %1$s will be replaced by a link using onboarding_first_screen_privacy_notice_link as text
+  -->
+  <string name="onboarding_first_screen_privacy_notice_text_2" tools:ignore="BrandUsage">Firefox numäy ri awichinanem. Tawetamaj ch\'aqa\' chik pa %1$s.</string>
+  <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
+  <string name="onboarding_first_screen_privacy_notice_link_2">Ichinan na\'oj</string>
+  <!-- New Onboarding flow first screen button label -->
+  <string name="onboarding_first_screen_button_agree_and_continue_2">Titikïr chik el</string>
+  <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->
+  <string name="a11y_link_available">Ximonel k\'o</string>
+  <!--
     Onboarding second screen: Title
 
     %1$s will be replaced by the app short name(Focus)
@@ -522,6 +555,8 @@
   <string name="notification_browsing_session_channel_description">Ri taq rutzijol nikiya\' q\'ij chawe ye\'ayüj el ri rumolojri\'ïl %1$s rik\'in jun chapoj. Man k\'atzinel ta najäq ri chokoy chuqa\' ri nusamajij ri awokik\'amaya\'l.</string>
   <!-- Label for a button in the "tabs tray" to erase the browsing history (closes all tabs and removes associated data). -->
   <string name="tabs_tray_action_erase">Tiyuj runatab\'al okem pa k\'amaya\'l</string>
+  <!-- Label for the option in the Focus "tabs tray" to clos the other tabs except the current tab. -->
+  <string name="tabs_tray_action_erase_other">Ketz\'apïx ri ch\'aqa\' chik taq ruwi\'</string>
   <!--
     If the user decides to open the current page in another browser and if Firefox is not installed then we show this
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
@@ -617,6 +652,10 @@
   <string name="cookie_banner_exception_panel_site_is_not_supported_cancel_button">Tiq\'at</string>
   <!-- Text for request support button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner panel in the toolbar. -->
   <string name="cookie_banner_exception_panel_site_is_not_supported_request_support_button">Tik\'utüx to\'ïk</string>
+  <!-- Label for the snackBar, after the user reports with success a website where cookie banner reducer did not work -->
+  <string name="cookie_banner_report_a_site_snackbar_label">Xtaq ri ruk\'utuj tob\'äl.</string>
+  <!-- Label for cookie banner item from tracking protection, after the user reports with success a website where cookie banner reducer did not work -->
+  <string name="cookie_banner_the_site_was_reported">Xtaq ri ruk\'utuj tob\'äl.</string>
   <!-- CFR for Cookie Banner (Banner Info Message). This string is used as text for a link in cfr_cookie_banner and takes the user to the app settings. -->
   <string name="cfr_cookie_banner_link">taq nuk\'ulem</string>
   <!-- Preference for autoplay -->
@@ -661,6 +700,10 @@
   <string name="preference_remote_debugging">Näj chojmirisanem pa USB/Wi-Fi</string>
   <!-- Text Button for show biometric prompt -->
   <string name="show_biometric_button_text">Titzij chik</string>
+  <!-- Title text for biometric prompt pop-up -->
+  <string name="biometric_prompt_title">Tijikib\'äx chi nokisäx ri retal ruwi\' q\'ab\'aj</string>
+  <!-- Subtitle text for biometric prompt pop-up -->
+  <string name="biometric_prompt_subtitle">Yatikïr nawokisaj ri retal ruwi\' aq\'a\' richin yasamäj chik el pa ri amoloj chupam ri chokoy.</string>
   <!--
     Button for the fingerprint authentication dialog box that is shown to the user when sharing a link to the app
     while the user has biometric authentication enabled. When pressed, the user's previous session is cleared, and the shared link is opened.
@@ -745,6 +788,8 @@
   <string name="preference_exceptions_remove_all_button_label">Keyuj ronojel ajk\'amaya\'l ruxaq</string>
   <!-- Title for Preference screen for cookie blocking for exceptions tracking protection -->
   <string name="preference_block_cookies_title">Keq\'at Kuki</string>
+  <!-- Message for Preference screen for cookie blocking for exceptions tracking protection -->
+  <string name="preference_category_block_cookies">¿La nawajo\' ye\'aq\'ät ri taq kuki?</string>
   <!-- Title for the tab crash report screen -->
   <string name="tab_crash_report_title">Xsach ri Ruwi\'</string>
   <!-- Headline for the tab crash report screen -->
@@ -757,10 +802,16 @@
   <string name="crash_report_send_crash_label">Titaq rutzijol sachoj chi re Mozilla</string>
   <!-- Tracking protection bottom sheet -->
 
+  <!-- Label for the total number of trackers blocked. %s is the app install date. -->
+  <string name="trackers_count_note">Eq\'aton taq ojqanela\' rik\'in ri %s</string>
   <!-- Category of trackers (content) that can be blocked by Enhanced Tracking Protection. -->
   <string name="content">Rupam</string>
+  <!-- Category of trackers (advertising) that can be blocked by Enhanced Tracking Protection. -->
+  <string name="advertising">Eltzijol</string>
   <!-- Category of trackers (social media) that can be blocked by Enhanced Tracking Protection. -->
   <string name="social">Winaqinem</string>
+  <!-- Category of trackers (analytics) that can be blocked by Enhanced Tracking Protection. -->
+  <string name="analytics">Ch\'ob\'okilal</string>
   <!-- Preference title for enhanced tracking protection settings. -->
   <string name="enhanced_tracking_protection">Utzirisan Chajinïk chuwäch Ojqanem</string>
   <!-- Enhanced tracking protection preference description when the tracking protection is disabled for this site. -->
@@ -771,6 +822,8 @@
   <string name="secure_connection">Rujikomal okem</string>
   <!-- Label that indicates a site is using a insecure connection. -->
   <string name="insecure_connection">Man ütz ta chi okem</string>
+  <!-- Title for the list of trackers enhanced tracking protection can block. -->
+  <string name="trackers_and_scripts">Taq ojqanela\' chuqa\' taq ximonel xkeq\'at</string>
   <!-- Content description (not visible, for screen readers etc.): Navigate back button description. -->
   <string name="go_back">Titzolin</string>
   <!--
@@ -804,6 +857,8 @@
   <string name="preference_auto_battery_theme">Xjikib\'äx ruma ri Yakonel Uchuq\'ab\'äl</string>
   <!-- Preference for using following device theme -->
   <string name="preference_follow_device_theme">Tojqäx ri ruwachinel oyonib\'äl</string>
+  <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
+  <string name="errorpage_httpsonly_title2">Man nuköch ta ri HTTPS re ruxaq k\'amaya\'l re\'</string>
   <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_title">Man ütz ta okem</string>
   <!--
@@ -836,6 +891,8 @@
   <string name="promote_search_widget_dialog_picture_content_description">Rukanoxik widget</string>
   <!-- This is the title of promote search widget dialog. -->
   <string name="promote_search_widget_dialog_title">Josq\'in kinatab\'al okem pa k\'amaya\'l 🎉</string>
+  <!-- Banner Info Message than will appear when user first enters in the app. The location is at the toolbar. -->
+  <string name="cfr_for_start_browsing">Tatikirisaj molojri\'ïl pa ichinan okem k\'a ri xkeqaq\'ät taq ojqanela\' chuqa\' juley chik taq k\'ayewal toq tajin yatok pa k\'amaya\'l.</string>
   <!--
     This is te text from add search widget to home screen button .The button is located on
     promote search widget dialog.

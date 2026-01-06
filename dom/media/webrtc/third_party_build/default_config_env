@@ -5,35 +5,35 @@
 export MOZ_LIBWEBRTC_SRC=$STATE_DIR/moz-libwebrtc
 
 # The previous fast-forward bug number is used for some error messaging.
-export MOZ_PRIOR_FASTFORWARD_BUG="1985396"
+export MOZ_PRIOR_FASTFORWARD_BUG="1993083"
 
 # Fast-forwarding each Chromium version of libwebrtc should be done
 # under a separate bugzilla bug.  This bug number is used when crafting
 # the commit summary as each upstream commit is vendored into the
 # mercurial repository.  The bug used for the v106 fast-forward was
 # 1800920.
-export MOZ_FASTFORWARD_BUG="1993083"
+export MOZ_FASTFORWARD_BUG="1995393"
 
 # MOZ_NEXT_LIBWEBRTC_MILESTONE and MOZ_NEXT_FIREFOX_REL_TARGET are
 # not used during fast-forward processing, but facilitate generating this
 # default config.  To generate an default config for the next update, run
 # bash dom/media/webrtc/third_party_build/update_default_config_env.sh
-export MOZ_NEXT_LIBWEBRTC_MILESTONE=140
-export MOZ_NEXT_FIREFOX_REL_TARGET=146
+export MOZ_NEXT_LIBWEBRTC_MILESTONE=141
+export MOZ_NEXT_FIREFOX_REL_TARGET=147
 
 # For Chromium release branches, see:
 # https://chromiumdash.appspot.com/branches
 
-# Chromium's v139 release branch was 7258.  This is used to pre-stack
+# Chromium's v140 release branch was 7339.  This is used to pre-stack
 # the previous release branch's commits onto the appropriate base commit
 # (the first common commit between trunk and the release branch).
-export MOZ_PRIOR_UPSTREAM_BRANCH_HEAD_NUM="7258"
+export MOZ_PRIOR_UPSTREAM_BRANCH_HEAD_NUM="7339"
 
-# New target release branch for v140 is branch-heads/7339.  This is used
+# New target release branch for v141 is branch-heads/7390.  This is used
 # to calculate the next upstream commit.
-export MOZ_TARGET_UPSTREAM_BRANCH_HEAD="branch-heads/7339"
+export MOZ_TARGET_UPSTREAM_BRANCH_HEAD="branch-heads/7390"
 
 # For local development 'mozpatches' is fine for a branch name, but when
 # pushing the patch stack to github, it should be named something like
-# 'moz-mods-chr140-for-rel146'.
+# 'moz-mods-chr141-for-rel147'.
 export MOZ_LIBWEBRTC_BRANCH="mozpatches"

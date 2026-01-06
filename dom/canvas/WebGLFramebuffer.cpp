@@ -7,7 +7,6 @@
 
 // You know it's going to be fun when these two show up:
 #include <algorithm>
-#include <iterator>
 
 #include "GLBlitHelper.h"
 #include "GLContext.h"

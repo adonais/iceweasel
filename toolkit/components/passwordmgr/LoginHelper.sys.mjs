@@ -48,6 +48,7 @@ class ImportRowProcessor {
   /**
    * Validates if the login data contains a GUID that was already found in a previous row in the current import.
    * If this is the case, the summary will be updated with an error.
+   *
    * @param {object} loginData
    *        An vanilla object for the login without any methods.
    * @returns {boolean} True if there is an error, false otherwise.
@@ -66,6 +67,7 @@ class ImportRowProcessor {
   /**
    * Validates if the login data contains invalid fields that are mandatory like origin and password.
    * If this is the case, the summary will be updated with an error.
+   *
    * @param {object} loginData
    *        An vanilla object for the login without any methods.
    * @returns {boolean} True if there is an error, false otherwise.
@@ -90,6 +92,7 @@ class ImportRowProcessor {
    * If there are similar values but not identical, a new "modified" entry will be added to the summary.
    * If there are identical values, a new "no_change" entry will be added to the summary
    * If either of these is the case, it will return true.
+   *
    * @param {object} loginData
    *        An vanilla object for the login without any methods.
    * @returns {boolean} True if the entry is similar or identical to another previously processed entry, false otherwise.
@@ -138,6 +141,7 @@ class ImportRowProcessor {
    * Validates if there is a conflict with previous rows based on the origin.
    * We need to check the logins that we've already decided to add, to see if this is a duplicate.
    * If this is the case, we mark this one as "no_change" in the summary and return true.
+   *
    * @param {object} login
    *        A login object.
    * @returns {boolean} True if the entry is similar or identical to another previously processed entry, false otherwise.
@@ -169,6 +173,7 @@ class ImportRowProcessor {
    * If this is the case and there are some changes, we mark it as "modified" in the summary.
    * If it matches an existing login without any extra modifications, we mark it as "no_change".
    * For both cases we return true.
+   *
    * @param {object} login
    *        A login object.
    * @returns {boolean} True if the entry is similar or identical to another previously processed entry, false otherwise.
@@ -224,6 +229,7 @@ class ImportRowProcessor {
   /**
    * Validates if there are any invalid values using LoginHelper.checkLoginValues.
    * If this is the case we mark it as "error" and return true.
+   *
    * @param {object} login
    *        A login object.
    * @param {object} loginData
@@ -245,6 +251,7 @@ class ImportRowProcessor {
 
   /**
    * Creates a new login from loginData.
+   *
    * @param {object} loginData
    *        An vanilla object for the login without any methods.
    * @returns {object} A login object.
@@ -275,6 +282,7 @@ class ImportRowProcessor {
 
   /**
    * Cleans the action and realm field of the loginData.
+   *
    * @param {object} loginData
    *        An vanilla object for the login without any methods.
    */
@@ -291,6 +299,7 @@ class ImportRowProcessor {
 
   /**
    * Adds a login to the summary.
+   *
    * @param {object} login
    *        A login object.
    * @param {string} result
@@ -347,7 +356,8 @@ class ImportRowProcessor {
    * Iterates over all then rows where more than two match the same origin. It mutates the internal state of the processor.
    * It makes sure that if the `timePasswordChanged` field is present it will be used to decide if it's a "no_change" or "added".
    * The entry with the oldest `timePasswordChanged` will be "added", the rest will be "no_change".
-   * @returns {Object[]} An entry for each processed row containing how the row was processed and the login data.
+   *
+   * @returns {object[]} An entry for each processed row containing how the row was processed and the login data.
    */
   async processLoginsAndBuildSummary() {
     this.markLastTimePasswordChangedAsModified();
@@ -621,7 +631,7 @@ export const LoginHelper = {
   /**
    * Returns a new XPCOM property bag with the provided properties.
    *
-   * @param {Object} aProperties
+   * @param {object} aProperties
    *        Each property of this object is copied to the property bag.  This
    *        parameter can be omitted to return an empty property bag.
    *
@@ -646,9 +656,10 @@ export const LoginHelper = {
   /**
    * Helper to avoid the property bags when calling
    * Services.logins.searchLogins from JS.
+   *
    * @deprecated Use Services.logins.searchLoginsAsync instead.
    *
-   * @param {Object} aSearchOptions - A regular JS object to copy to a property bag before searching
+   * @param {object} aSearchOptions - A regular JS object to copy to a property bag before searching
    * @return {nsILoginInfo[]} - The result of calling searchLogins.
    */
   searchLoginsWithObject(aSearchOptions) {
@@ -683,9 +694,9 @@ export const LoginHelper = {
   },
 
   /**
-   * @param {String} aLoginOrigin - An origin value from a stored login's
+   * @param {string} aLoginOrigin - An origin value from a stored login's
    *                                origin or formActionOrigin properties.
-   * @param {String} aSearchOrigin - The origin that was are looking to match
+   * @param {string} aSearchOrigin - The origin that was are looking to match
    *                                 with aLoginOrigin. This would normally come
    *                                 from a form or page that we are considering.
    * @param {nsILoginFindOptions} aOptions - Options to affect whether the origin
@@ -993,6 +1004,7 @@ export const LoginHelper = {
 
   /**
    * Generate a unique key string from a login.
+   *
    * @param {nsILoginInfo} login
    * @param {string[]} uniqueKeys containing nsILoginInfo attribute names or "hostPort"
    * @returns {string} to use as a key in a Map
@@ -1262,11 +1274,11 @@ export const LoginHelper = {
    *
    * @param {Element} element
    *                  the field we want to check.
-   * @param {Object} options
+   * @param {object} options
    * @param {bool} [options.ignoreConnect] - Whether to ignore checking isConnected
    *                                         of the element.
    *
-   * @returns {Boolean} true if the field can
+   * @returns {boolean} true if the field can
    *                    be treated as a password input
    */
   isPasswordFieldType(element, { ignoreConnect = false } = {}) {
@@ -1278,11 +1290,11 @@ export const LoginHelper = {
    *
    * @param {Element} element
    *                  the field we want to check.
-   * @param {Object} options
+   * @param {object} options
    * @param {bool} [options.ignoreConnect] - Whether to ignore checking isConnected
    *                                         of the element.
    *
-   * @returns {Boolean} true if the field type is one
+   * @returns {boolean} true if the field type is one
    *                    of the username types.
    */
   isUsernameFieldType(element, { ignoreConnect = false } = {}) {
@@ -1409,8 +1421,8 @@ export const LoginHelper = {
    * For each login, add the login to the password manager if a similar one
    * doesn't already exist. Merge it otherwise with the similar existing ones.
    *
-   * @param {Object[]} loginDatas - For each login, the data that needs to be added.
-   * @returns {Object[]} An entry for each processed row containing how the row was processed and the login data.
+   * @param {object[]} loginDatas - For each login, the data that needs to be added.
+   * @returns {object[]} An entry for each processed row containing how the row was processed and the login data.
    */
   async maybeImportLogins(loginDatas) {
     // by setting this flag we ensure no events are submitted
@@ -1559,6 +1571,33 @@ export const LoginHelper = {
     Services.prefs.lockPref(prefName);
   },
 
+  async trySetOSAuthEnabled(win, checked, messageText, captionText) {
+    // Calling OSKeyStore.ensureLoggedIn() instead of LoginHelper.verifyOSAuth()
+    // since we want to authenticate user each time this setting is changed.
+
+    // Note on Glean collection: because OSKeyStore.ensureLoggedIn() is not wrapped in
+    // verifyOSAuth(), it will be documenting "success" for unsupported platforms
+    // and won't record "fail_error", only "fail_user_canceled"
+    let isAuthorized = (
+      await lazy.OSKeyStore.ensureLoggedIn(messageText, captionText, win, false)
+    ).authenticated;
+
+    Glean.pwmgr.promptShownOsReauth.record({
+      trigger: "toggle_pref_os_auth",
+      result: isAuthorized ? "success" : "fail_user_canceled",
+    });
+
+    if (!isAuthorized) {
+      return;
+    }
+
+    // If osReauthCheckbox is checked enable osauth.
+    LoginHelper.setOSAuthEnabled(checked);
+    Glean.pwmgr.requireOsReauthToggle.record({
+      toggle_state: checked,
+    });
+  },
+
   async verifyUserOSAuth(
     prefName,
     promptMessage,
@@ -1590,6 +1629,7 @@ export const LoginHelper = {
   /**
    * Shows the Primary Password prompt if enabled, or the
    * OS auth dialog otherwise.
+   *
    * @param {Element} browser
    *        The <browser> that the prompt should be shown on
    * @param OSReauthEnabled Boolean indicating if OS reauth should be tried

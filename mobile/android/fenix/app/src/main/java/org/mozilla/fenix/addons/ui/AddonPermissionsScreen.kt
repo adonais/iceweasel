@@ -4,22 +4,17 @@
 
 package org.mozilla.fenix.addons.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.feature.addons.Addon
@@ -33,6 +28,7 @@ import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.compose.list.TextListItem
+import org.mozilla.fenix.compose.settings.SettingsSectionHeader
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.feature.addons.R as addonsR
@@ -41,7 +37,7 @@ import mozilla.components.feature.addons.R as addonsR
  * The permissions screen for an addon which allows a user to edit the optional permissions.
  */
 @Composable
-@Suppress("LongParameterList", "LongMethod")
+@Suppress("LongParameterList", "LongMethod", "CognitiveComplexMethod")
 fun AddonPermissionsScreen(
     permissions: List<String>,
     optionalPermissions: List<Addon.LocalizedPermission>,
@@ -53,170 +49,176 @@ fun AddonPermissionsScreen(
     onAddAllSitesPermissions: () -> Unit,
     onRemoveAllSitesPermissions: () -> Unit,
     onLearnMoreClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
     requiredDataCollectionPermissions: List<String> = emptyList(),
     hasNoneDataCollection: Boolean = false,
     optionalDataCollectionPermissions: List<Addon.LocalizedPermission> = emptyList(),
 ) {
-    val hasNoPermission = permissions.isEmpty() &&
-            optionalPermissions.isEmpty() &&
-            originPermissions.isEmpty() &&
-            requiredDataCollectionPermissions.isEmpty() &&
-            optionalDataCollectionPermissions.isEmpty() && !hasNoneDataCollection
+    Surface {
+        val hasNoPermission = permissions.isEmpty() &&
+                optionalPermissions.isEmpty() &&
+                originPermissions.isEmpty() &&
+                requiredDataCollectionPermissions.isEmpty() &&
+                optionalDataCollectionPermissions.isEmpty() && !hasNoneDataCollection
 
-    // Early return with a "no permissions required" message when the add-on doesn't have any permission that we can
-    // list in this screen.
-    if (hasNoPermission) {
-        return LazyColumn(modifier = Modifier.padding(vertical = 8.dp)) {
-            item {
-                TextListItem(
-                    label = stringResource(R.string.addons_does_not_require_permissions),
-                    maxLabelLines = Int.MAX_VALUE,
-                )
+        // Early return with a "no permissions required" message when the add-on doesn't have any permission that we can
+        // list in this screen.
+        if (hasNoPermission) {
+            return@Surface LazyColumn(modifier = Modifier.padding(vertical = 8.dp)) {
+                item {
+                    TextListItem(
+                        label = stringResource(R.string.addons_does_not_require_permissions),
+                        maxLabelLines = Int.MAX_VALUE,
+                    )
+                }
+
+                item {
+                    HorizontalDivider()
+                }
+
+                item {
+                    LearnMoreItem(onLearnMoreClick)
+                }
+            }
+        }
+
+        LazyColumn(modifier = modifier.padding(vertical = 8.dp)) {
+            if (permissions.isNotEmpty()) {
+                // Required Permissions Header
+                item {
+                    SectionHeader(
+                        label = stringResource(R.string.addons_permissions_heading_required_permissions),
+                    )
+                }
+
+                // Required Permissions
+                items(items = permissions) { permission ->
+                    TextListItem(
+                        label = permission,
+                        maxLabelLines = Int.MAX_VALUE,
+                    )
+                }
+
+                item {
+                    HorizontalDivider()
+                }
             }
 
-            item {
-                HorizontalDivider()
+            // Optional Section
+            if (optionalPermissions.isNotEmpty() || originPermissions.isNotEmpty()) {
+                // Optional Section Header
+                item {
+                    SectionHeader(
+                        label = stringResource(id = R.string.addons_permissions_heading_optional_permissions),
+                    )
+                }
+
+                // All Sites Toggle if needed
+                if (isAllSitesSwitchVisible) {
+                    item {
+                        AllSitesToggle(
+                            enabledAllowForAll = isAllSitesEnabled,
+                            onAddAllSitesPermissions,
+                            onRemoveAllSitesPermissions,
+                        )
+                    }
+                }
+
+                // Optional Permissions
+                items(
+                    items = optionalPermissions,
+                    key = {
+                        it.localizedName
+                    },
+                ) { optionalPermission ->
+
+                    // Hide <all_urls> permission and use the all_urls toggle instead
+                    if (!optionalPermission.permission.isAllURLsPermission()) {
+                        OptionalPermissionSwitch(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                            localizedPermission = optionalPermission,
+                            type = OptionalPermissionType.PERMISSION,
+                            addOptionalPermission = onAddOptionalPermissions,
+                            removeOptionalPermission = onRemoveOptionalPermissions,
+                        )
+                    }
+                }
+
+                // Origin Permissions
+                items(
+                    items = originPermissions,
+                    key = {
+                        it.permission.name
+                    },
+                ) { originPermission ->
+                    // Hide host permissions when a user has enabled all_urls permission.
+                    // Also hide permissions that match all_urls because they are replaced by the all_urls toggle.
+                    if (!originPermission.permission.isAllURLsPermission()) {
+                        OptionalPermissionSwitch(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                            localizedPermission = originPermission,
+                            type = OptionalPermissionType.ORIGIN,
+                            isEnabled = !isAllSitesEnabled,
+                            addOptionalPermission = onAddOptionalPermissions,
+                            removeOptionalPermission = onRemoveOptionalPermissions,
+                        )
+                    }
+                }
+
+                item {
+                    HorizontalDivider()
+                }
+            }
+
+            if (requiredDataCollectionPermissions.isNotEmpty() || hasNoneDataCollection) {
+                // Optional Section Header
+                item {
+                    SectionHeader(
+                        label = stringResource(id = R.string.addons_permissions_heading_required_data_collection),
+                    )
+                }
+
+                item {
+                    DataCollectionPermission(
+                        hasNoneDataCollection,
+                        requiredDataCollectionPermissions,
+                    )
+                }
+
+                item {
+                    HorizontalDivider()
+                }
+            }
+
+            if (optionalDataCollectionPermissions.isNotEmpty()) {
+                item {
+                    SectionHeader(
+                        label = stringResource(id = R.string.addons_permissions_heading_optional_data_collection),
+                    )
+                }
+
+                items(
+                    items = optionalDataCollectionPermissions,
+                    key = { it.localizedName },
+                ) { optionalPermission ->
+                    OptionalPermissionSwitch(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                        localizedPermission = optionalPermission,
+                        type = OptionalPermissionType.DATA_COLLECTION,
+                        addOptionalPermission = onAddOptionalPermissions,
+                        removeOptionalPermission = onRemoveOptionalPermissions,
+                    )
+                }
+
+                item {
+                    HorizontalDivider()
+                }
             }
 
             item {
                 LearnMoreItem(onLearnMoreClick)
             }
-        }
-    }
-
-    LazyColumn(modifier = Modifier.padding(vertical = 8.dp)) {
-        if (permissions.isNotEmpty()) {
-            // Required Permissions Header
-            item {
-                SectionHeader(
-                    label = stringResource(R.string.addons_permissions_heading_required_permissions),
-                )
-            }
-
-            // Required Permissions
-            items(items = permissions) { permission ->
-                TextListItem(
-                    label = permission,
-                    maxLabelLines = Int.MAX_VALUE,
-                )
-            }
-
-            item {
-                HorizontalDivider()
-            }
-        }
-
-        // Optional Section
-        if (optionalPermissions.isNotEmpty() || originPermissions.isNotEmpty()) {
-            // Optional Section Header
-            item {
-                SectionHeader(
-                    label = stringResource(id = R.string.addons_permissions_heading_optional_permissions),
-                )
-            }
-
-            // All Sites Toggle if needed
-            if (isAllSitesSwitchVisible) {
-                item {
-                    AllSitesToggle(
-                        enabledAllowForAll = isAllSitesEnabled,
-                        onAddAllSitesPermissions,
-                        onRemoveAllSitesPermissions,
-                    )
-                }
-            }
-
-            // Optional Permissions
-            items(
-                items = optionalPermissions,
-                key = {
-                    it.localizedName
-                },
-            ) { optionalPermission ->
-
-                // Hide <all_urls> permission and use the all_urls toggle instead
-                if (!optionalPermission.permission.isAllURLsPermission()) {
-                    OptionalPermissionSwitch(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 6.dp),
-                        localizedPermission = optionalPermission,
-                        type = OptionalPermissionType.PERMISSION,
-                        addOptionalPermission = onAddOptionalPermissions,
-                        removeOptionalPermission = onRemoveOptionalPermissions,
-                    )
-                }
-            }
-
-            // Origin Permissions
-            items(
-                items = originPermissions,
-                key = {
-                    it.permission.name
-                },
-            ) { originPermission ->
-                // Hide host permissions when a user has enabled all_urls permission.
-                // Also hide permissions that match all_urls because they are replaced by the all_urls toggle.
-                if (!originPermission.permission.isAllURLsPermission()) {
-                    OptionalPermissionSwitch(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                        localizedPermission = originPermission,
-                        type = OptionalPermissionType.ORIGIN,
-                        isEnabled = !isAllSitesEnabled,
-                        addOptionalPermission = onAddOptionalPermissions,
-                        removeOptionalPermission = onRemoveOptionalPermissions,
-                    )
-                }
-            }
-
-            item {
-                HorizontalDivider()
-            }
-        }
-
-        if (requiredDataCollectionPermissions.isNotEmpty() || hasNoneDataCollection) {
-            // Optional Section Header
-            item {
-                SectionHeader(
-                    label = stringResource(id = R.string.addons_permissions_heading_required_data_collection),
-                )
-            }
-
-            item {
-                DataCollectionPermission(hasNoneDataCollection, requiredDataCollectionPermissions)
-            }
-
-            item {
-                HorizontalDivider()
-            }
-        }
-
-        if (optionalDataCollectionPermissions.isNotEmpty()) {
-            item {
-                SectionHeader(
-                    label = stringResource(id = R.string.addons_permissions_heading_optional_data_collection),
-                )
-            }
-
-            items(
-                items = optionalDataCollectionPermissions,
-                key = { it.localizedName },
-            ) { optionalPermission ->
-                OptionalPermissionSwitch(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                    localizedPermission = optionalPermission,
-                    type = OptionalPermissionType.DATA_COLLECTION,
-                    addOptionalPermission = onAddOptionalPermissions,
-                    removeOptionalPermission = onRemoveOptionalPermissions,
-                )
-            }
-
-            item {
-                HorizontalDivider()
-            }
-        }
-
-        item {
-            LearnMoreItem(onLearnMoreClick)
         }
     }
 }
@@ -267,25 +269,13 @@ private fun AllSitesToggle(
 }
 
 @Composable
-private fun SectionHeader(label: String, testTag: String = "") {
+private fun SectionHeader(label: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .also {
-                if (testTag.isNotEmpty()) {
-                    it.testTag(testTag)
-                }
-            },
+            .padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
-        Text(
-            text = label,
-            color = FirefoxTheme.colors.textPrimary,
-            style = FirefoxTheme.typography.headline8,
-            modifier = Modifier
-                .weight(1f)
-                .semantics { heading() },
-        )
+        SettingsSectionHeader(text = label)
     }
 }
 
@@ -409,22 +399,20 @@ private fun AddonPermissionsScreenPreview() {
     )
 
     FirefoxTheme {
-        Column(modifier = Modifier.background(FirefoxTheme.colors.layer1)) {
-            AddonPermissionsScreen(
-                permissions = permissions,
-                optionalPermissions = optionalPermissions,
-                originPermissions = originPermissions,
-                requiredDataCollectionPermissions = requiredDataCollectionPermissions,
-                optionalDataCollectionPermissions = optionalDataCollectionPermissions,
-                isAllSitesSwitchVisible = true,
-                isAllSitesEnabled = false,
-                onAddOptionalPermissions = { _ -> },
-                onRemoveOptionalPermissions = { _ -> },
-                onAddAllSitesPermissions = {},
-                onRemoveAllSitesPermissions = {},
-                onLearnMoreClick = { _ -> },
-            )
-        }
+        AddonPermissionsScreen(
+            permissions = permissions,
+            optionalPermissions = optionalPermissions,
+            originPermissions = originPermissions,
+            requiredDataCollectionPermissions = requiredDataCollectionPermissions,
+            optionalDataCollectionPermissions = optionalDataCollectionPermissions,
+            isAllSitesSwitchVisible = true,
+            isAllSitesEnabled = false,
+            onAddOptionalPermissions = { _ -> },
+            onRemoveOptionalPermissions = { _ -> },
+            onAddAllSitesPermissions = {},
+            onRemoveAllSitesPermissions = {},
+            onLearnMoreClick = { _ -> },
+        )
     }
 }
 
@@ -432,20 +420,18 @@ private fun AddonPermissionsScreenPreview() {
 @PreviewLightDark
 private fun AddonPermissionsScreenWithPermissionsPreview() {
     FirefoxTheme {
-        Column(modifier = Modifier.background(FirefoxTheme.colors.layer1)) {
-            AddonPermissionsScreen(
-                permissions = emptyList(),
-                optionalPermissions = emptyList(),
-                originPermissions = emptyList(),
-                isAllSitesSwitchVisible = true,
-                isAllSitesEnabled = false,
-                onAddOptionalPermissions = { _ -> },
-                onRemoveOptionalPermissions = { _ -> },
-                onAddAllSitesPermissions = {},
-                onRemoveAllSitesPermissions = {},
-                onLearnMoreClick = { _ -> },
-            )
-        }
+        AddonPermissionsScreen(
+            permissions = emptyList(),
+            optionalPermissions = emptyList(),
+            originPermissions = emptyList(),
+            isAllSitesSwitchVisible = true,
+            isAllSitesEnabled = false,
+            onAddOptionalPermissions = { _ -> },
+            onRemoveOptionalPermissions = { _ -> },
+            onAddAllSitesPermissions = {},
+            onRemoveAllSitesPermissions = {},
+            onLearnMoreClick = { _ -> },
+        )
     }
 }
 
@@ -460,19 +446,17 @@ private fun AddonPermissionsScreenWithUserScriptsPermissionsPreview() {
     )
 
     FirefoxTheme {
-        Column(modifier = Modifier.background(FirefoxTheme.colors.layer1)) {
-            AddonPermissionsScreen(
-                permissions = emptyList(),
-                optionalPermissions = optionalPermissions,
-                originPermissions = emptyList(),
-                isAllSitesSwitchVisible = true,
-                isAllSitesEnabled = false,
-                onAddOptionalPermissions = { _ -> },
-                onRemoveOptionalPermissions = { _ -> },
-                onAddAllSitesPermissions = {},
-                onRemoveAllSitesPermissions = {},
-                onLearnMoreClick = { _ -> },
-            )
-        }
+        AddonPermissionsScreen(
+            permissions = emptyList(),
+            optionalPermissions = optionalPermissions,
+            originPermissions = emptyList(),
+            isAllSitesSwitchVisible = true,
+            isAllSitesEnabled = false,
+            onAddOptionalPermissions = { _ -> },
+            onRemoveOptionalPermissions = { _ -> },
+            onAddAllSitesPermissions = {},
+            onRemoveAllSitesPermissions = {},
+            onLearnMoreClick = { _ -> },
+        )
     }
 }

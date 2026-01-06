@@ -19,7 +19,6 @@
 #include "nsCOMPtr.h"
 #include "nsIIPCSerializableInputStream.h"
 #include "nsReadLine.h"
-#include <algorithm>
 
 namespace mozilla {
 namespace ipc {

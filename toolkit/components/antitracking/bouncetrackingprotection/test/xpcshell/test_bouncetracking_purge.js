@@ -16,6 +16,7 @@ let bounceTrackingActivationLifetimeSec;
 
 /**
  * Adds brackets to a host if it's an IPv6 address.
+ *
  * @param {string} host - Host which may be an IPv6.
  * @returns {string} bracketed IPv6 or host if host is not an IPv6.
  */
@@ -28,6 +29,7 @@ function maybeFixupIpv6(host) {
 
 /**
  * Adds cookies and indexedDB test data for the given host.
+ *
  * @param {string} host
  */
 async function addStateForHost(host) {
@@ -38,6 +40,7 @@ async function addStateForHost(host) {
 
 /**
  * Checks if the given host as cookies or indexedDB data.
+ *
  * @param {string} host
  * @returns {boolean}
  */

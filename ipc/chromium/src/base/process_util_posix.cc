@@ -17,9 +17,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <limits>
-#include <set>
-
 #include "base/basictypes.h"
 #include "base/command_line.h"
 #include "base/eintr_wrapper.h"

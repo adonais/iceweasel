@@ -126,6 +126,7 @@ constexpr nsStaticAtom* kDefaultMathMLElements[] = {
 
 constexpr nsStaticAtom* kDefaultSVGElements[] = {
     // clang-format off
+    nsGkAtoms::a,
     nsGkAtoms::circle,
     nsGkAtoms::defs,
     nsGkAtoms::desc,
@@ -312,6 +313,11 @@ constexpr nsStaticAtom* kMathMLElementWithAttributes[] = {
 
 constexpr nsStaticAtom* kSVGElementWithAttributes[] = {
     // clang-format off
+    /* element */ nsGkAtoms::a,
+    nsGkAtoms::href,
+    nsGkAtoms::hreflang,
+    nsGkAtoms::type,
+    nullptr,
     /* element */ nsGkAtoms::circle,
     nsGkAtoms::cx,
     nsGkAtoms::cy,

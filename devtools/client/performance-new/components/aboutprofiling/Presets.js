@@ -31,7 +31,7 @@ const Localized = createFactory(
 );
 
 /**
- * @typedef {Object} PresetProps
+ * @typedef {object} PresetProps
  * @property {string} presetName
  * @property {boolean} selected
  * @property {import("../../@types/perf").PresetDefinition | null} preset
@@ -47,6 +47,7 @@ const Localized = createFactory(
 class Preset extends PureComponent {
   /**
    * Handle the checkbox change.
+   *
    * @param {React.ChangeEvent<HTMLInputElement>} event
    */
   onChange = event => {
@@ -89,13 +90,13 @@ class Preset extends PureComponent {
 }
 
 /**
- * @typedef {Object} StateProps
+ * @typedef {object} StateProps
  * @property {string} selectedPresetName
  * @property {import("../../@types/perf").Presets} presets
  */
 
 /**
- * @typedef {Object} ThunkDispatchProps
+ * @typedef {object} ThunkDispatchProps
  * @property {typeof actions.changePreset} changePreset
  */
 
@@ -114,6 +115,7 @@ class Preset extends PureComponent {
 class Presets extends PureComponent {
   /**
    * Handle the checkbox change.
+   *
    * @param {string} presetName
    */
   onChange = presetName => {

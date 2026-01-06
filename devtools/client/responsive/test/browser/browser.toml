@@ -47,19 +47,23 @@ https_first_disabled = true
 ["browser_contextmenu_inspect.js"]
 
 ["browser_device_change.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_device_custom.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent a11y_checks results (fails on Try, passes on Autoland)
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent a11y_checks results (fails on Try, passes on Autoland)
 ]
 
 ["browser_device_custom_edit.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_device_custom_remove.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent a11y_checks results (fails on Try, passes on Autoland)
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent a11y_checks results (fails on Try, passes on Autoland)
 ]
 
 ["browser_device_modal_exit.js"]
@@ -68,11 +72,13 @@ skip-if = [
 
 ["browser_device_modal_submit.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent a11y_checks results (fails on Autoland, passes on Try)
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent a11y_checks results (fails on Autoland, passes on Try)
 ]
 
 ["browser_device_pixel_ratio_change.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_device_selector_items.js"]
 
@@ -90,7 +96,7 @@ tags = "devtools webextensions"
 
 ["browser_eyedropper_update.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && tsan",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan",
 ]
 
 ["browser_in_rdm_pane.js"]
@@ -104,7 +110,9 @@ skip-if = [
 ["browser_menu_item_02.js"]
 
 ["browser_mouse_resize.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_navigation.js"]
 https_first_disabled = true
@@ -125,7 +133,7 @@ https_first_disabled = true
 ["browser_permission_doorhanger.js"]
 tags = "devtools geolocation"
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 
 ["browser_picker_link.js"]
@@ -170,24 +178,28 @@ https_first_disabled = true
 ["browser_touch_all_events.js"]
 skip-if = [
   "a11y_checks",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1980013
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1980013
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1980013
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1980013
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && verify", # can be too slow in chaos mode to trigger dblclick events
   "os == 'win'", # Bug 1977557 and Bug 1977558
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && asan", # Bug 1980013
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1980013
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug", # Bug 1980013
-  "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && debug", # Bug 1980013
-  "os == 'mac' && os_version == '14.70' && processor == 'x86_64' && verify", # can be too slow in chaos mode to trigger dblclick events
 ]
 
 ["browser_touch_device.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_touch_does_not_trigger_hover_states.js"]
 
 ["browser_touch_event_iframes.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && asan", # Bug 1767692
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && opt", # Bug 1767692
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan", # Bug 1767692
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && opt", # Bug 1767692
 ]
 
 ["browser_touch_event_should_bubble.js"]

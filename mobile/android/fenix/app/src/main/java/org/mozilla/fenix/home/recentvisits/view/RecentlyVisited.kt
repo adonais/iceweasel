@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.home.recentvisits.view
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -15,10 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -47,7 +45,9 @@ import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryGroup
 import org.mozilla.fenix.home.recentvisits.RecentlyVisitedItem.RecentHistoryHighlight
+import org.mozilla.fenix.home.topsites.ui.HomepageCard
 import org.mozilla.fenix.theme.FirefoxTheme
+import mozilla.components.ui.icons.R as iconsR
 
 // Number of recently visited items per column.
 private const val VISITS_PER_COLUMN = 3
@@ -68,10 +68,11 @@ private val contentPadding = 16.dp
  * the item resides in.
  */
 @Composable
+@Suppress("CognitiveComplexMethod")
 fun RecentlyVisited(
     recentVisits: List<RecentlyVisitedItem>,
     menuItems: List<RecentVisitMenuItem>,
-    backgroundColor: Color = FirefoxTheme.colors.layer2,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
     onRecentVisitClick: (RecentlyVisitedItem, pageNumber: Int) -> Unit = { _, _ -> },
 ) {
     val isSingleColumn by remember(recentVisits) { derivedStateOf { recentVisits.size <= VISITS_PER_COLUMN } }
@@ -88,11 +89,9 @@ fun RecentlyVisited(
                 vertical = 8.dp,
             ),
     ) {
-        Card(
+        HomepageCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(8.dp),
-            colors = CardDefaults.cardColors(containerColor = backgroundColor),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+            backgroundColor = backgroundColor,
         ) {
             FlowColumn(
                 modifier = Modifier.fillMaxWidth(),
@@ -174,7 +173,7 @@ private fun RecentlyVisitedHistoryGroup(
                     onClick = { onRecentVisitClick(recentVisit) },
                     onLongClick = { isMenuExpanded = true },
                 ),
-            beforeIconPainter = painterResource(R.drawable.ic_multiple_tabs),
+            beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_tab_tray_24),
             description = stringResource(id = captionId, recentVisit.historyMetadata.size),
         )
 
@@ -236,11 +235,7 @@ private fun RecentlyVisitedHistoryHighlight(
 @PreviewLightDark
 private fun RecentlyVisitedMultipleColumnsPreview() {
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer1)
-                .padding(vertical = contentPadding),
-        ) {
+        Surface {
             RecentlyVisited(
                 recentVisits = listOf(
                     RecentHistoryGroup(title = "running shoes"),
@@ -259,11 +254,7 @@ private fun RecentlyVisitedMultipleColumnsPreview() {
 @PreviewLightDark
 private fun RecentlyVisitedSingleColumnPreview() {
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer1)
-                .padding(vertical = contentPadding),
-        ) {
+        Surface {
             RecentlyVisited(
                 recentVisits = listOf(
                     RecentHistoryGroup(title = "running shoes"),

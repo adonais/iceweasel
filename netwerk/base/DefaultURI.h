@@ -20,7 +20,6 @@ class DefaultURI : public nsIURI, public nsISerializable, public nsISizeOf {
   NS_DECL_NSIURI
   NS_DECL_NSISERIALIZABLE
 
-  virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const override;
   virtual size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const override;
 
   class Mutator final : public nsIURIMutator, public nsISerializable {

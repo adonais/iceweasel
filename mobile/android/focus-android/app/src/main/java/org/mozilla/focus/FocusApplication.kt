@@ -15,10 +15,8 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration.Builder
 import androidx.work.Configuration.Provider
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import mozilla.components.support.AppServicesInitializer
 import mozilla.components.support.base.facts.register
@@ -38,13 +36,14 @@ import org.mozilla.focus.session.VisibilityLifeCycleCallback
 import org.mozilla.focus.telemetry.FactsProcessor
 import org.mozilla.focus.telemetry.ProfilerMarkerFactProcessor
 import org.mozilla.focus.utils.AppConstants
-import kotlin.coroutines.CoroutineContext
 import mozilla.components.support.AppServicesInitializer.Config as AppServiceConfig
 
-open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope {
-    private var job = Job()
-    override val coroutineContext: CoroutineContext
-        get() = job + Dispatchers.Main
+/**
+ * Focus application class.
+ */
+open class FocusApplication : LocaleAwareApplication(), Provider {
+
+    protected val applicationScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     open val components: Components by lazy { Components(this) }
 
@@ -54,7 +53,6 @@ open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope
     private val storeLink by lazy { StoreLink(components.appStore, components.store) }
     private val lockObserver by lazy { LockObserver(this, components.store, components.appStore) }
 
-    @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
 
@@ -79,7 +77,7 @@ open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope
             registerActivityLifecycleCallbacks(visibilityLifeCycleCallback)
             registerComponentCallbacks(visibilityLifeCycleCallback)
 
-            storeLink.start()
+            storeLink.start(applicationScope)
 
             initializeWebExtensionSupport()
 
@@ -91,7 +89,8 @@ open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope
             components.startupActivityLog.registerInAppOnCreate(this)
 
             ProcessLifecycleOwner.get().lifecycle.addObserver(lockObserver)
-            GlobalScope.launch(Dispatchers.IO) {
+
+            applicationScope.launch {
                 // Remove stale temporary uploaded files.
                 components.fileUploadsDirCleaner.cleanUploadsDirectory()
             }
@@ -107,6 +106,11 @@ open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope
         // no-op, LeakCanary is disabled by default
     }
 
+    /**
+     * Updates the configuration of LeakCanary based on the provided state.
+     *
+     * @param isEnabled Whether LeakCanary features should be enabled.
+     */
     open fun updateLeakCanaryState(isEnabled: Boolean) {
         // no-op, LeakCanary is disabled by default
     }
@@ -151,10 +155,9 @@ open class FocusApplication : LocaleAwareApplication(), Provider, CoroutineScope
     /**
      * Finish Megazord setup sequence.
      */
-    @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     @OpenForTesting
     open fun finishSetupMegazord() {
-        GlobalScope.launch(Dispatchers.IO) {
+        applicationScope.launch(Dispatchers.IO) {
             // We need to use an unwrapped client because native components do not support private
             // requests.
             @Suppress("Deprecation")

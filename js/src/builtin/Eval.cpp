@@ -259,8 +259,10 @@ static bool EvalKernel(JSContext* cx, HandleValue v, EvalType evalType,
   // Steps 6-8.
   JS::RootedVector<JSString*> parameterStrings(cx);
   JS::RootedVector<Value> parameterArgs(cx);
-  bool canCompileStrings = false;
-  if (!cx->isRuntimeCodeGenEnabled(
+  bool canCompileStrings = cx->bypassCSPForDebugger;
+
+  if (!canCompileStrings &&
+      !cx->isRuntimeCodeGenEnabled(
           JS::RuntimeCode::JS, str,
           evalType == DIRECT_EVAL ? JS::CompilationType::DirectEval
                                   : JS::CompilationType::IndirectEval,

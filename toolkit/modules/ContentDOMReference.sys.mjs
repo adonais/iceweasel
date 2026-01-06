@@ -27,7 +27,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 /**
  * @typedef {number} ElementID
- * @typedef {Object} ElementIdentifier
+ * @typedef {object} ElementIdentifier
  */
 
 const FINALIZATION_TOPIC = "content-dom-reference-finalized";

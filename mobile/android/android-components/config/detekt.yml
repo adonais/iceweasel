@@ -94,7 +94,7 @@ comments:
 complexity:
   active: true
   CognitiveComplexMethod:
-    active: false
+    active: true
     threshold: 15
   ComplexCondition:
     active: true
@@ -596,7 +596,7 @@ style:
         value: 'kotlin.io.println'
   ForbiddenSuppress:
     active: true
-    rules: ['LongMethod', 'ComplexMethod', 'MagicNumber']
+    rules: ['LongMethod', 'CognitiveComplexMethod', 'CyclomaticComplexMethod', 'MagicNumber']
   ForbiddenVoid:
     active: false # (Default: true)
     ignoreOverridden: false

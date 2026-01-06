@@ -24,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.wallpaper.WallpaperThumbnails
@@ -51,8 +51,7 @@ fun WallpaperOnboarding(
     onSelectWallpaper: (Wallpaper) -> Unit,
 ) {
     Surface(
-        color = FirefoxTheme.colors.layer2,
-        shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp),
@@ -61,7 +60,6 @@ fun WallpaperOnboarding(
             Icon(
                 painter = painterResource(id = iconsR.drawable.mozac_ic_cross_24),
                 contentDescription = stringResource(id = R.string.close_tab),
-                tint = FirefoxTheme.colors.iconPrimary,
                 modifier = Modifier
                     .clickable { onCloseClicked() }
                     .size(24.dp)
@@ -72,7 +70,6 @@ fun WallpaperOnboarding(
 
             Text(
                 text = stringResource(R.string.wallpapers_onboarding_dialog_title_text),
-                color = FirefoxTheme.colors.textPrimary,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
                 style = FirefoxTheme.typography.headline7,
@@ -82,7 +79,7 @@ fun WallpaperOnboarding(
 
             Text(
                 text = stringResource(R.string.wallpapers_onboarding_dialog_body_text),
-                color = FirefoxTheme.colors.textSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
                 style = FirefoxTheme.typography.caption,
@@ -118,7 +115,7 @@ fun WallpaperOnboarding(
     }
 }
 
-@Preview
+@PreviewLightDark
 @Composable
 private fun WallpaperSnackbarPreview() {
     FirefoxTheme {

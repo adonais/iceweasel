@@ -987,6 +987,7 @@ DownloadsDataCtor.prototype = {
   /**
    * Displays a new or finished download notification in the most recent browser
    * window, if one is currently available with the required privacy type.
+   *
    * @param {string} aType
    *        Set to "start" for new downloads, "finish" for completed downloads,
    *        "error" for downloads that failed and need attention

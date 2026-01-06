@@ -126,6 +126,7 @@ function getErrorName(props) {
  * semicolon@debugger eval code:1:109
  * jkl@debugger eval code:1:63
  * asdf@debugger eval code:1:28
+ *
  * @debugger eval code:1:227
  *
  * Into a column layout:
@@ -222,7 +223,8 @@ function getCauseElement(props, preview) {
  * Parse a string that should represent a stack trace and returns an array of
  * the frames. The shape of the frames are extremely important as they can then
  * be processed here or in the toolbox by other components.
- * @param {String} stack
+ *
+ * @param {string} stack
  * @returns {Array} Array of frames, which are object with the following shape:
  *                  - {String} filename
  *                  - {String} functionName

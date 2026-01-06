@@ -192,7 +192,6 @@ TalosPowersService.prototype = {
    * Adds an instant marker to the Profile in the parent process.
    *
    * @param marker (string)  A marker to set.
-   *
    */
   addInstantMarker(marker) {
     ChromeUtils.addProfilerMarker("Talos", { category: "Test" }, marker);

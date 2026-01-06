@@ -11,9 +11,6 @@ add_setup(() => {
   Services.prefs.setBoolPref("extensions.manifestV3.enabled", true);
   Services.prefs.setBoolPref("extensions.dnr.enabled", true);
 
-  // Allow navigation to URLs with embedded credentials, without prompt.
-  Services.prefs.setBoolPref("network.auth.confirmAuth.enabled", false);
-
   // We don't normally allow localhost channels to be proxied, but this
   // is easier than updating all the certs and/or domains.
   Services.prefs.setBoolPref("network.proxy.allow_hijacking_localhost", true);

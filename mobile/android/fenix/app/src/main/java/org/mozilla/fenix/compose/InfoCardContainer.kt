@@ -20,6 +20,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,12 +36,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
 import org.mozilla.fenix.shopping.ui.ext.headingResource
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 private val cardShape = RoundedCornerShape(8.dp)
@@ -87,7 +91,6 @@ fun ExpandableInfoCardContainer(
         ) {
             Text(
                 text = title,
-                color = FirefoxTheme.colors.textPrimary,
                 style = FirefoxTheme.typography.headline8,
                 modifier = Modifier.semantics {
                     contentDescription = titleContentDescription
@@ -107,7 +110,6 @@ fun ExpandableInfoCardContainer(
                 } else {
                     stringResource(R.string.a11y_state_label_collapsed)
                 },
-                tint = FirefoxTheme.colors.iconPrimary,
             )
         }
 
@@ -137,7 +139,7 @@ fun ExpandableInfoCardContainer(
 @Composable
 fun InfoCardContainer(
     modifier: Modifier,
-    backgroundColor: Color = FirefoxTheme.colors.layer2,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
     elevation: Dp = defaultCardElevation,
     contentPadding: PaddingValues = PaddingValues(defaultCardContentPadding),
     content: @Composable ColumnScope.() -> Unit,
@@ -160,32 +162,67 @@ fun InfoCardContainer(
 @Composable
 private fun InfoCardContainerPreview() {
     FirefoxTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
-            var isExpanded by remember { mutableStateOf(true) }
+        Surface {
+            Column(modifier = Modifier.padding(16.dp)) {
+                var isExpanded by remember { mutableStateOf(true) }
 
-            InfoCardContainer(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = "Info Check Card Content",
-                    color = FirefoxTheme.colors.textPrimary,
-                    style = FirefoxTheme.typography.headline8,
-                )
+                InfoCardContainer(
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "Info Check Card Content",
+                        style = FirefoxTheme.typography.headline8,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ExpandableInfoCardContainer(
+                    title = "Info Expandable Card",
+                    modifier = Modifier.fillMaxWidth(),
+                    isExpanded = isExpanded,
+                    onExpandToggleClick = { isExpanded = !isExpanded },
+                ) {
+                    Text(
+                        text = "content",
+                        style = FirefoxTheme.typography.body2,
+                    )
+                }
             }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(16.dp))
+@Preview
+@Composable
+private fun InfoCardContainerPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        Surface {
+            Column(modifier = Modifier.padding(16.dp)) {
+                var isExpanded by remember { mutableStateOf(true) }
 
-            ExpandableInfoCardContainer(
-                title = "Info Expandable Card",
-                modifier = Modifier.fillMaxWidth(),
-                isExpanded = isExpanded,
-                onExpandToggleClick = { isExpanded = !isExpanded },
-            ) {
-                Text(
-                    text = "content",
-                    color = FirefoxTheme.colors.textPrimary,
-                    style = FirefoxTheme.typography.body2,
-                )
+                InfoCardContainer(
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "Info Check Card Content",
+                        style = FirefoxTheme.typography.headline8,
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                ExpandableInfoCardContainer(
+                    title = "Info Expandable Card",
+                    modifier = Modifier.fillMaxWidth(),
+                    isExpanded = isExpanded,
+                    onExpandToggleClick = { isExpanded = !isExpanded },
+                ) {
+                    Text(
+                        text = "content",
+                        style = FirefoxTheme.typography.body2,
+                    )
+                }
             }
         }
     }

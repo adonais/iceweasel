@@ -102,7 +102,6 @@ class BackgroundServices(
     private val deviceConfig = DeviceConfig(
         name = defaultDeviceName(context),
         type = DeviceType.MOBILE,
-
         // NB: flipping this flag back and worth is currently not well supported and may need hand-holding.
         // Consult with the android-components peers before changing.
         // See https://github.com/mozilla/application-services/issues/1308
@@ -110,7 +109,6 @@ class BackgroundServices(
             add(DeviceCapability.SEND_TAB)
             add(DeviceCapability.CLOSE_TABS)
         },
-
         // Enable encryption for account state on supported API levels (23+).
         // Just on Nightly and local builds for now.
         // Enabling this for all channels is tracked in https://github.com/mozilla-mobile/fenix/issues/6704

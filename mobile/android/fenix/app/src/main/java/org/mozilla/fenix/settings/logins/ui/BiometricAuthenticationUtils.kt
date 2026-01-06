@@ -94,7 +94,8 @@ object DefaultBiometricUtils : BiometricAuthenticationUtils {
         val executor = ContextCompat.getMainExecutor(activity)
 
         val biometricPrompt = BiometricPrompt(
-            activity, executor,
+            activity,
+            executor,
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)

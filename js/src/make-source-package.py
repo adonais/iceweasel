@@ -185,6 +185,7 @@ rsync_filter_list = """
 + /layout/tools/reftest/reftest/**
 
 + /testing/*.py
++ /testing/manifest/**
 + /testing/moz.build
 + /testing/mozbase/**
 + /testing/mozharness/**

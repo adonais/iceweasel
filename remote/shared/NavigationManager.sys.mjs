@@ -955,13 +955,13 @@ export function registerNavigationId(data) {
  * NavigationRegistry can register or unregister the underlying listeners/actors
  * correctly.
  *
- * @fires navigation-started
+ * @fires NavigationManager#"navigation-started"
  *    The NavigationManager emits "navigation-started" when a new navigation is
  *    detected, with the following object as payload:
  *      - {string} navigationId - The UUID for the navigation.
  *      - {string} navigableId - The UUID for the navigable.
  *      - {string} url - The target url for the navigation.
- * @fires navigation-stopped
+ * @fires NavigationManager#"navigation-stopped"
  *    The NavigationManager emits "navigation-stopped" when a known navigation
  *    is stopped, with the following object as payload:
  *      - {string} navigationId - The UUID for the navigation.

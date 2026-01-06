@@ -23,7 +23,6 @@ const FTL_FILES = [
   "browser/defaultBrowserNotification.ftl",
   "browser/profiles.ftl",
   "browser/termsofuse.ftl",
-  "preview/termsOfUse.ftl",
 ];
 
 class InfoBarNotification {
@@ -347,7 +346,7 @@ class InfoBarNotification {
    * Callback fired when a button in the infobar is clicked.
    *
    * @param {Element} notificationBox - The `<notification-message>` element representing the infobar.
-   * @param {Object} btnDescription - An object describing the button, includes the label, the action with an optional dismiss property, and primary button styling.
+   * @param {object} btnDescription - An object describing the button, includes the label, the action with an optional dismiss property, and primary button styling.
    * @param {Element} target - The <button> DOM element that was clicked.
    * @returns {boolean} `true` to keep the infobar open, `false` to dismiss it.
    */

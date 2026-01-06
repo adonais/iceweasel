@@ -317,6 +317,10 @@
   <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Rohkem teavet</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">Rohkem teavet</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->
   <string name="onboarding_customize_toolbar_a11y_action_label_select">valimiseks</string>
   <!-- Action label for options that can be selected. Talkback will append this to say "Double tap to select". -->
@@ -2039,4 +2043,9 @@
   <string name="review_prompt_feedback_header">Meil on kahju, et sul on probleeme. Anna meile teada, kuidas saaksime %1$si paremaks muuta.</string>
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">Anna tagasisidet</string>
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

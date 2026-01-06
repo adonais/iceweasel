@@ -85,6 +85,10 @@ void SMILTimeContainer::Pause(uint32_t aType) {
   }
 }
 
+void SMILTimeContainer::PauseAt(SMILTime aTime) {
+  mPauseTime = Some(std::max<SMILTime>(0, aTime));
+}
+
 void SMILTimeContainer::Resume(uint32_t aType) {
   if (!mPauseState) return;
 
@@ -162,8 +166,11 @@ void SMILTimeContainer::Sample() {
 
   UpdateCurrentTime();
   DoSample();
-
   mNeedsPauseSample = false;
+
+  if (mPauseTime && mCurrentTime >= mPauseTime.value()) {
+    Pause(PAUSE_SCRIPT);
+  }
 }
 
 nsresult SMILTimeContainer::SetParent(SMILTimeContainer* aParent) {

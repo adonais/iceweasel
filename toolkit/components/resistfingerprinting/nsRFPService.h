@@ -7,7 +7,6 @@
 #define __nsRFPService_h__
 
 #include <cstdint>
-#include <tuple>
 #include <bitset>
 #include "ErrorList.h"
 #include "PLDHashTable.h"

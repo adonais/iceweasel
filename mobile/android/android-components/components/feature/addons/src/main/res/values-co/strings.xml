@@ -33,6 +33,11 @@
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Accede à i vostri dati per d’altri duminii</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
   <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">Accede à i vostri dati per i siti di %1$d duminii</string>
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
+    <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
+    <item quantity="one">Accede à i vostri dati per i siti di %1$d duminiu</item>
+    <item quantity="other">Accede à i vostri dati per i siti di %1$d duminii</item>
+  </plurals>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d nant’à %3$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -375,6 +380,8 @@
   <string name="mozac_feature_addons_admin_install_only">%1$s ùn pò micca esse installatu perchè a so installazione si pò fà solu da un urganismu impieghendu strategie d’impresa, ciò chì ùn hè micca accettatu nant’à sta piattaforma.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s trasgredisce e regule di Mozilla è ùn pò micca esse installatu nant’à %2$s.</string>
+  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_soft_blocked_2">%1$s hè sottumessu à certe ristrizzioni è ùn pò micca esse installatu nant’à %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Impussibule d’attivà %1$s</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -421,8 +428,12 @@
   <string name="mozac_feature_addons_status_blocklisted_1">St’estensione hè stata bluccata perchè trasgredisce e regule di Mozilla è tandu hè stata disattivata.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">St’estensione hè stata ristrinta perchè trasgredisce e regule di Mozilla è tandu hè stata disattivata. Pudete attivalla, ma puderia esse risicatu.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
+  <string name="mozac_feature_addons_status_softblocked_2">St’estensione hè sottumessa à certe ristrizzioni è hè stata disattivata. Pudete attivalla, ma puderia esse risicatu.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">St’estensione trasgredisce e regule di Mozilla. Impiegalla hè risicatu.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
+  <string name="mozac_feature_addons_status_softblocked_re_enabled_2">St’estensione hè sottumessa à certe ristrizzioni. Impiegalla hè risicatu.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">%1$s ùn pò micca esse verificatu cum’è sicuru è hè statu disattivatu.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

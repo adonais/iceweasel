@@ -41,7 +41,6 @@
 #define _hex_h
 
 int nr_nbin2hex(UCHAR *bin, size_t binlen, char hex[], size_t size, size_t *len);
-int nr_nhex2bin(char *hex, size_t hexlen, UCHAR bin[], size_t size, size_t *len);
 
 #endif
 

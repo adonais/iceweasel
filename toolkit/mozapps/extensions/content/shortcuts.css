@@ -6,7 +6,7 @@
   margin-bottom: 16px;
 
   &.focused-extension {
-    border: 1px solid var(--color-accent-primary);
+    border: 1px solid var(--border-color-selected);
   }
 
   .card-heading-icon {

@@ -1,26 +1,69 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Wed, 16 Jul 2025 21:08:00 +0300
-Subject: Bug 1974813 - turn off rust in libwebrtc since we don't use any
- libwebrtc rust code. r=ng?
+Date: Fri, 18 Jul 2025 16:07:00 -0500
+Subject: Bug 1971201 - (fix-70fb834e8c) most all of libwebrtc has converted
+ from rtc:: to webrtc::
 
-Note: no moz.build changes are caused by this change.
-
-Differential Revision: https://phabricator.services.mozilla.com/D257316
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/14ee98c4832a55bf32116c925540ab0f53e46cd3
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d51a82971b9e755d5514572fcd8ddc557153c8ef
 ---
- .gn | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ modules/rtp_rtcp/source/rtp_header_extensions.h | 4 ++--
+ modules/video_capture/video_capture.h           | 2 +-
+ modules/video_capture/video_capture_impl.cc     | 2 +-
+ modules/video_capture/video_capture_impl.h      | 2 +-
+ 4 files changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/.gn b/.gn
-index 4ee826ec58..0d50e80115 100644
---- a/.gn
-+++ b/.gn
-@@ -89,7 +89,7 @@ default_args = {
-   use_fuzztest_wrapper = false
+diff --git a/modules/rtp_rtcp/source/rtp_header_extensions.h b/modules/rtp_rtcp/source/rtp_header_extensions.h
+index cc811cae3a..46d80e424a 100644
+--- a/modules/rtp_rtcp/source/rtp_header_extensions.h
++++ b/modules/rtp_rtcp/source/rtp_header_extensions.h
+@@ -321,10 +321,10 @@ class CsrcAudioLevel {
+   static constexpr const char* kUri =
+       "urn:ietf:params:rtp-hdrext:csrc-audio-level";
  
-   # Enable Rust in WebRTC
--  enable_rust = true
-+  enable_rust = false # Mozilla
-   enable_rust_cxx = true
-   enable_chromium_prelude = true
+-  static bool Parse(rtc::ArrayView<const uint8_t> data,
++  static bool Parse(webrtc::ArrayView<const uint8_t> data,
+                     CsrcAudioLevelList* csrcAudioLevels);
+   static size_t ValueSize(const CsrcAudioLevelList& csrcAudioLevels);
+-  static bool Write(rtc::ArrayView<uint8_t> data,
++  static bool Write(webrtc::ArrayView<uint8_t> data,
+                     const CsrcAudioLevelList& csrcAudioLevels);
+ };
+ #endif
+diff --git a/modules/video_capture/video_capture.h b/modules/video_capture/video_capture.h
+index a7c1764c51..8a91ca2f83 100644
+--- a/modules/video_capture/video_capture.h
++++ b/modules/video_capture/video_capture.h
+@@ -123,7 +123,7 @@ class VideoCaptureModule : public RefCountInterface {
  
+   //  Remove capture data callback
+   virtual void DeRegisterCaptureDataCallback(
+-      rtc::VideoSinkInterface<VideoFrame> *dataCallback) = 0;
++      webrtc::VideoSinkInterface<VideoFrame> *dataCallback) = 0;
+ 
+   // Start capture device
+   virtual int32_t StartCapture(const VideoCaptureCapability& capability) = 0;
+diff --git a/modules/video_capture/video_capture_impl.cc b/modules/video_capture/video_capture_impl.cc
+index 62a4b21a5f..98d7081b1d 100644
+--- a/modules/video_capture/video_capture_impl.cc
++++ b/modules/video_capture/video_capture_impl.cc
+@@ -120,7 +120,7 @@ void VideoCaptureImpl::RegisterCaptureDataCallback(
+ }
+ 
+ void VideoCaptureImpl::DeRegisterCaptureDataCallback(
+-    rtc::VideoSinkInterface<VideoFrame>* dataCallBack) {
++    webrtc::VideoSinkInterface<VideoFrame>* dataCallBack) {
+   MutexLock lock(&api_lock_);
+   auto it = _dataCallBacks.find(dataCallBack);
+   if (it != _dataCallBacks.end()) {
+diff --git a/modules/video_capture/video_capture_impl.h b/modules/video_capture/video_capture_impl.h
+index 4d5b83547f..220b8cff27 100644
+--- a/modules/video_capture/video_capture_impl.h
++++ b/modules/video_capture/video_capture_impl.h
+@@ -63,7 +63,7 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
+   virtual void RegisterCaptureDataCallback(
+       RawVideoSinkInterface* dataCallback) override;
+   void DeRegisterCaptureDataCallback(
+-      rtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
++      webrtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
+ 
+   int32_t StopCaptureIfAllClientsClose() override;
+   int32_t SetCaptureRotation(VideoRotation rotation) override;

@@ -1,0 +1,6 @@
+[DEFAULT]
+prefs = [
+  "browser.tabs.notes.enabled=true",
+]
+
+["browser_tab_notes_menu.js"]

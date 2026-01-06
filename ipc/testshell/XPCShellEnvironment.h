@@ -7,7 +7,6 @@
 
 #include "base/basictypes.h"
 
-#include <string>
 #include <stdio.h>
 
 #include "nsCOMPtr.h"

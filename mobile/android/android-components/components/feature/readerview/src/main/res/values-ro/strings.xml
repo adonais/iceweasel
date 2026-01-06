@@ -28,7 +28,7 @@
   <!-- Accessible description for the color option -->
   <string name="mozac_feature_readerview_sepia_color_scheme_desc">Paletă de culori sepia</string>
   <!-- Color option for the background -->
-  <string name="mozac_feature_readerview_light">Deschis</string>
+  <string name="mozac_feature_readerview_light">Luminos</string>
   <!-- Accessible description for the color option -->
   <string name="mozac_feature_readerview_light_color_scheme_desc">Paletă de culori deschise</string>
 </resources>

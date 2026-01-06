@@ -54,7 +54,7 @@ const SESSION_TYPES = {
  * - all privileges: privileged/chrome and content/web,
  * - all components/targets: HTML documents, processes, workers, add-ons,...
  *
- * @param {Object} config
+ * @param {object} config
  *        An object with optional configuration. Only supports "enableWindowGlobalThreadActors" attribute.
  *        See jsdoc in this file header for more info.
  */
@@ -80,7 +80,7 @@ function createBrowserSessionContext({
  *
  * @param {BrowserElement} browserElement
  *        The tab to debug. It should be a reference to a <browser> element.
- * @param {Object} config
+ * @param {object} config
  *        An object with optional configuration. Only supports "isServerTargetSwitchingEnabled" attribute.
  *        See jsdoc in this file header for more info.
  */
@@ -103,11 +103,11 @@ function createBrowserElementSessionContext(browserElement, config) {
 /**
  * Create the SessionContext used by the web extension toolboxes.
  *
- * @param {Object} addon
+ * @param {object} addon
  *        First object argument to describe the add-on.
- * @param {String} addon.addonId
+ * @param {string} addon.addonId
  *        The web extension ID, to uniquely identify the debugged add-on.
- * @param {Object} config
+ * @param {object} config
  *        An object with optional configuration. Only supports "isServerTargetSwitchingEnabled" attribute.
  *        See jsdoc in this file header for more info.
  */
@@ -151,8 +151,8 @@ function createWorkerSessionContext() {
 /**
  * Get the supported targets by the watcher given a session context type.
  *
- * @param {String} type
- * @returns {Object}
+ * @param {string} type
+ * @returns {object}
  */
 function getWatcherSupportedTargets(type) {
   return {
@@ -175,8 +175,8 @@ function getWatcherSupportedTargets(type) {
 /**
  * Get the supported resources by the watcher given a session context type.
  *
- * @param {String} _type
- * @returns {Object}
+ * @param {string} _type
+ * @returns {object}
  */
 function getWatcherSupportedResources(_type) {
   return {

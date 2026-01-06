@@ -85,8 +85,8 @@ async function installAndStartContentScriptExtension() {
 /**
  * Return the text content for a given line in the Source Tree.
  *
- * @param {Object} dbg
- * @param {Number} index
+ * @param {object} dbg
+ * @param {number} index
  *        Line number in the source tree
  */
 function getSourceTreeLabel(dbg, index) {
@@ -102,8 +102,8 @@ function getSourceTreeLabel(dbg, index) {
  * Find and assert the source tree node with the specified text
  * exists on the source tree.
  *
- * @param {Object} dbg
- * @param {String} text The node text displayed
+ * @param {object} dbg
+ * @param {string} text The node text displayed
  */
 async function assertSourceTreeNode(dbg, text) {
   let node = null;
@@ -117,12 +117,12 @@ async function assertSourceTreeNode(dbg, text) {
 /**
  * Assert precisely the list of all breakable line for a given source
  *
- * @param {Object} dbg
- * @param {Object|String} file
+ * @param {object} dbg
+ * @param {object | string} file
  *        The source name or source object to review
- * @param {Number} numberOfLines
+ * @param {number} numberOfLines
  *        The expected number of lines for this source.
- * @param {Array<Number>} breakableLines
+ * @param {Array<number>} breakableLines
  *        This list of all breakable line numbers
  */
 async function assertBreakableLines(
@@ -150,9 +150,9 @@ async function assertBreakableLines(
 /**
  * Helper alongside assertBreakable lines to ease defining list of breakable lines.
  *
- * @param {Number} start
- * @param {Number} end
- * @return {Array<Number>}
+ * @param {number} start
+ * @param {number} end
+ * @return {Array<number>}
  *         Returns an array of decimal numbers starting from `start` and ending with `end`.
  */
 function getRange(start, end) {

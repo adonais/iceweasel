@@ -337,7 +337,7 @@ export var ShortcutUtils = {
    * Attempt to find a key for a given shortcut string, such as
    * "Ctrl+Shift+A" and determine if it is a system shortcut.
    *
-   * @param {Object} win The window to look for key elements in.
+   * @param {object} win The window to look for key elements in.
    * @param {string} value The shortcut string.
    * @returns {boolean} Whether a system shortcut was found or not.
    */

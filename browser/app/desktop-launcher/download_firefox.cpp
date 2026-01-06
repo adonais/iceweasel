@@ -4,7 +4,6 @@
 
 #include "download_firefox.h"
 #include <iostream>
-#include <memory>
 #include <optional>
 #include <string>
 #include <wchar.h>

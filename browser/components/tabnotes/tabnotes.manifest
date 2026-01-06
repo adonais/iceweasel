@@ -1,0 +1,4 @@
+category browser-first-window-ready moz-src:///browser/components/tabnotes/TabNotesController.sys.mjs TabNotesController.init
+category browser-window-delayed-startup moz-src:///browser/components/tabnotes/TabNotesController.sys.mjs TabNotesController.registerWindow
+category browser-window-unload moz-src:///browser/components/tabnotes/TabNotesController.sys.mjs TabNotesController.unregisterWindow
+category browser-quit-application-granted moz-src:///browser/components/tabnotes/TabNotesController.sys.mjs TabNotesController.quit

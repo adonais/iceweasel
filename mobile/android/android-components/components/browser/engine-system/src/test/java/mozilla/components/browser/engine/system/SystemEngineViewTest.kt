@@ -76,6 +76,7 @@ import org.mockito.Mockito.verifyNoInteractions
 import org.robolectric.Robolectric
 import org.robolectric.annotation.Config
 import java.io.StringReader
+import java.security.cert.X509Certificate
 
 @RunWith(AndroidJUnit4::class)
 class SystemEngineViewTest {
@@ -108,7 +109,10 @@ class SystemEngineViewTest {
         var observedUrl = ""
         var observedUserGesture = true
         var observedLoadingState = false
-        var observedSecurityChange: Triple<Boolean, String?, String?> = Triple(false, null, null)
+        var observedSecure = false
+        var observedHost: String? = null
+        var observedIssuer: String? = null
+        var observedCertificate: X509Certificate? = null
         engineSession.register(
             object : EngineSession.Observer {
                 override fun onLoadingStateChange(loading: Boolean) { observedLoadingState = loading }
@@ -116,8 +120,11 @@ class SystemEngineViewTest {
                     observedUrl = url
                     observedUserGesture = hasUserGesture
                 }
-                override fun onSecurityChange(secure: Boolean, host: String?, issuer: String?) {
-                    observedSecurityChange = Triple(secure, host, issuer)
+                override fun onSecurityChange(secure: Boolean, host: String?, issuer: String?, certificate: X509Certificate?) {
+                    observedSecure = secure
+                    observedHost = host
+                    observedIssuer = issuer
+                    observedCertificate = certificate
                 }
             },
         )
@@ -131,11 +138,17 @@ class SystemEngineViewTest {
         assertEquals("http://mozilla.org", observedUrl)
         assertEquals(false, observedUserGesture)
         assertFalse(observedLoadingState)
-        assertEquals(Triple(false, null, null), observedSecurityChange)
+        assertFalse(observedSecure)
+        assertNull(observedHost)
+        assertNull(observedIssuer)
+        assertNull(observedCertificate)
 
         val view = mock<WebView>()
         engineSession.webView.webViewClient.onPageFinished(view, "http://mozilla.org")
-        assertEquals(Triple(false, null, null), observedSecurityChange)
+        assertFalse(observedSecure)
+        assertNull(observedHost)
+        assertNull(observedIssuer)
+        assertNull(observedCertificate)
 
         val certificate = mock<SslCertificate>()
         val dName = mock<SslCertificate.DName>()
@@ -147,7 +160,10 @@ class SystemEngineViewTest {
         doReturn(dName).`when`(certificate).issuedBy
         doReturn(certificate).`when`(view).certificate
         engineSession.webView.webViewClient.onPageFinished(view, "http://mozilla.org")
-        assertEquals(Triple(true, "mozilla.org", "testCA"), observedSecurityChange)
+        assertTrue(observedSecure)
+        assertEquals("mozilla.org", observedHost)
+        assertEquals("testCA", observedIssuer)
+        assertNull(observedCertificate)
     }
 
     @Test
@@ -931,13 +947,19 @@ class SystemEngineViewTest {
 
         var observedUrl = ""
         var observedLoadingState = true
-        var observedSecurityChange: Triple<Boolean, String?, String?> = Triple(false, null, null)
+        var observedSecure = false
+        var observedHost: String? = null
+        var observedIssuer: String? = null
+        var observedCertificate: X509Certificate? = null
         engineSession.register(
             object : EngineSession.Observer {
                 override fun onLoadingStateChange(loading: Boolean) { observedLoadingState = loading }
                 override fun onLocationChange(url: String, hasUserGesture: Boolean) { observedUrl = url }
-                override fun onSecurityChange(secure: Boolean, host: String?, issuer: String?) {
-                    observedSecurityChange = Triple(secure, host, issuer)
+                override fun onSecurityChange(secure: Boolean, host: String?, issuer: String?, certificate: X509Certificate?) {
+                    observedSecure = secure
+                    observedHost = host
+                    observedIssuer = issuer
+                    observedCertificate = certificate
                 }
             },
         )
@@ -954,7 +976,10 @@ class SystemEngineViewTest {
         engineSession.webView.webViewClient.onPageFinished(view, "invalid:")
         assertEquals("invalid:", observedUrl)
         assertFalse(observedLoadingState)
-        assertEquals(Triple(true, null, "testCA"), observedSecurityChange)
+        assertTrue(observedSecure)
+        assertNull(observedHost)
+        assertEquals("testCA", observedIssuer)
+        assertNull(observedCertificate)
     }
 
     @Test

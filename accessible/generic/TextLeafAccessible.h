@@ -23,7 +23,7 @@ class TextLeafAccessible : public LinkableAccessible {
   virtual mozilla::a11y::role NativeRole() const override;
   virtual void AppendTextTo(nsAString& aText, uint32_t aStartOffset = 0,
                             uint32_t aLength = UINT32_MAX) override;
-  virtual ENameValueFlag Name(nsString& aName) const override;
+  virtual ENameValueFlag DirectName(nsString& aName) const override;
 
   // TextLeafAccessible
   void SetText(const nsAString& aText) { mText = aText; }

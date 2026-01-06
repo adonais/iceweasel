@@ -1264,7 +1264,7 @@ class AddonInstall {
    * @param {nsIURL} url
    *        The nsIURL to get the add-on from. If this is an nsIFileURL then
    *        the add-on will not need to be downloaded
-   * @param {Object} [options = {}]
+   * @param {object} [options = {}]
    *        Additional options for the install
    * @param {string} [options.hash]
    *        An optional hash for the add-on
@@ -1279,7 +1279,7 @@ class AddonInstall {
    * @param {string} [options.version]
    *        The expected version for the add-on.
    *        Required for updates, i.e. when existingAddon is set.
-   * @param {Object?} [options.telemetryInfo]
+   * @param {object?} [options.telemetryInfo]
    *        An optional object which provides details about the installation source
    *        included in the addon manager telemetry events.
    * @param {boolean} [options.isUserRequestedUpdate]
@@ -2345,7 +2345,7 @@ var DownloadAddonInstall = class extends AddonInstall {
    *        The XPIStateLocation the add-on will be installed into
    * @param {nsIURL} url
    *        The nsIURL to get the add-on from
-   * @param {Object} [options = {}]
+   * @param {object} [options = {}]
    *        Additional options for the install
    * @param {string} [options.hash]
    *        An optional hash for the add-on
@@ -2360,7 +2360,7 @@ var DownloadAddonInstall = class extends AddonInstall {
    *        An optional name for the add-on
    * @param {string} [options.type]
    *        An optional type for the add-on
-   * @param {Object} [options.icons]
+   * @param {object} [options.icons]
    *        Optional icons for the add-on
    * @param {string} [options.version]
    *        The expected version for the add-on.
@@ -2846,7 +2846,7 @@ var DownloadAddonInstall = class extends AddonInstall {
  *        The callback to pass the new AddonInstall to
  * @param {AddonInternal} aAddon
  *        The add-on being updated
- * @param {Object} aUpdate
+ * @param {object} aUpdate
  *        The metadata about the new version from the update manifest
  * @param {boolean} isUserRequested
  *        An optional boolean, true if the install object is related to a user triggered update.
@@ -3287,7 +3287,7 @@ UpdateChecker.prototype = {
  *        The file to install
  * @param {XPIStateLocation} location
  *        The location to install to
- * @param {Object?} [telemetryInfo]
+ * @param {object?} [telemetryInfo]
  *        An optional object which provides details about the installation source
  *        included in the addon manager telemetry events.
  * @returns {Promise<AddonInstall>}
@@ -3474,7 +3474,7 @@ class DirectoryInstaller {
   /**
    * Installs an add-on into the install location.
    *
-   * @param {Object} options
+   * @param {object} options
    *        Installation options.
    * @param {string} options.id
    *        The ID of the add-on to install
@@ -3627,7 +3627,7 @@ class SystemAddonInstaller extends DirectoryInstaller {
   /**
    * Saves the current set of system add-ons
    *
-   * @param {Object} aAddonSet - object containing schema, directory and set
+   * @param {object} aAddonSet - object containing schema, directory and set
    *                 of system add-on IDs and versions.
    */
   static _saveAddonSet(aAddonSet) {
@@ -4589,13 +4589,13 @@ export var XPIInstall = {
    *        A hash for the install
    * @param {string} [aOptions.name]
    *        A name for the install
-   * @param {Object} [aOptions.icons]
+   * @param {object} [aOptions.icons]
    *        Icon URLs for the install
    * @param {string} [aOptions.version]
    *        A version for the install
    * @param {XULElement} [aOptions.browser]
    *        The browser performing the install
-   * @param {Object} [aOptions.telemetryInfo]
+   * @param {object} [aOptions.telemetryInfo]
    *        An optional object which provides details about the installation source
    *        included in the addon manager telemetry events.
    * @param {boolean} [aOptions.sendCookies = false]
@@ -4633,7 +4633,7 @@ export var XPIInstall = {
    *
    * @param {nsIFile} aFile
    *        The file to be installed
-   * @param {Object?} [aInstallTelemetryInfo]
+   * @param {object?} [aInstallTelemetryInfo]
    *        An optional object which provides details about the installation source
    *        included in the addon manager telemetry events.
    * @param {boolean} [aUseSystemLocation = false]

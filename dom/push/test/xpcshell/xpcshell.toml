@@ -1,7 +1,9 @@
 [DEFAULT]
 head = "head.js"
 support-files = ["broadcast_handler.sys.mjs"]
-skip-if = ["os == 'android'"] # Push notifications and alarms are currently disabled on Android.
+skip-if = [
+  "os == 'android'", # Push notifications and alarms are currently disabled on Android.
+]
 
 ["test_broadcast_success.js"]
 
@@ -38,7 +40,9 @@ run-sequentially = ["true"] # This will delete all existing push subscriptions.
 ["test_observer_data.js"]
 
 ["test_observer_remoting.js"]
-skip-if = ["true"]
+skip-if = [
+  "true",
+]
 
 ["test_permissions.js"]
 run-sequentially = ["true"] # This will delete all existing push subscriptions.
@@ -97,7 +101,7 @@ run-sequentially = ["true"] # This will delete all existing push subscriptions.
 
 ["test_unregister_invalid_json.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && ccov", # Bug 1966067
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Bug 1966067
 ]
 
 ["test_unregister_not_found.js"]

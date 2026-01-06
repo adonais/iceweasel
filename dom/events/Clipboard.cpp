@@ -322,10 +322,6 @@ void Clipboard::RequestRead(Promise* aPromise, ReadRequestType aType,
   }
 }
 
-static bool IsReadTextExposedToContent() {
-  return StaticPrefs::dom_events_asyncClipboard_readText_DoNotUseDirectly();
-}
-
 already_AddRefed<Promise> Clipboard::ReadHelper(nsIPrincipal& aSubjectPrincipal,
                                                 ReadRequestType aType,
                                                 ErrorResult& aRv) {
@@ -809,14 +805,6 @@ JSObject* Clipboard::WrapObject(JSContext* aCx,
 
 /* static */
 LogModule* Clipboard::GetClipboardLog() { return gClipboardLog; }
-
-/* static */
-bool Clipboard::ReadTextEnabled(JSContext* aCx, JSObject* aGlobal) {
-  nsIPrincipal* prin = nsContentUtils::SubjectPrincipal(aCx);
-  return IsReadTextExposedToContent() ||
-         prin->GetIsAddonOrExpandedAddonPrincipal() ||
-         prin->IsSystemPrincipal();
-}
 
 /* static */
 bool Clipboard::IsTestingPrefEnabled() {

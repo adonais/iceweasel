@@ -4868,6 +4868,12 @@ GeneralParser<ParseHandler, Unit>::declarationList(
 
     Node binding;
     if (tt == TokenKind::LeftBracket || tt == TokenKind::LeftCurly) {
+      if (declKind == DeclarationKind::Using ||
+          declKind == DeclarationKind::AwaitUsing) {
+        MOZ_ASSERT(!initialDeclaration);
+        error(JSMSG_NO_DESTRUCT_IN_USING);
+        return errorResult();
+      }
       binding = MOZ_TRY(declarationPattern(declKind, tt, initialDeclaration,
                                            yieldHandling, forHeadKind,
                                            forInOrOfExpression));

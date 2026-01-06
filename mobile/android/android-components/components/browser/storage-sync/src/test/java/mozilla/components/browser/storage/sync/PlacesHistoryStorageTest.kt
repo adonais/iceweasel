@@ -110,9 +110,15 @@ class PlacesHistoryStorageTest {
         // Can use WebView-style getVisited API.
         assertEquals(
             listOf(
-                "http://www.firefox.com/1", "http://www.firefox.com/2", "http://www.firefox.com/3",
-                "http://www.firefox.com/4", "http://www.firefox.com/5", "http://www.firefox.com/6",
-                "http://www.firefox.com/7", "http://www.firefox.com/8", "http://www.firefox.com/9",
+                "http://www.firefox.com/1",
+                "http://www.firefox.com/2",
+                "http://www.firefox.com/3",
+                "http://www.firefox.com/4",
+                "http://www.firefox.com/5",
+                "http://www.firefox.com/6",
+                "http://www.firefox.com/7",
+                "http://www.firefox.com/8",
+                "http://www.firefox.com/9",
             ),
             history.getVisited(),
         )
@@ -123,10 +129,16 @@ class PlacesHistoryStorageTest {
             history.getVisited(
                 listOf(
                     "http://www.mozilla.com",
-                    "http://www.firefox.com/1", "http://www.firefox.com/2", "http://www.firefox.com/3",
-                    "http://www.firefox.com/4", "http://www.firefox.com/5", "http://www.firefox.com/6",
+                    "http://www.firefox.com/1",
+                    "http://www.firefox.com/2",
+                    "http://www.firefox.com/3",
+                    "http://www.firefox.com/4",
+                    "http://www.firefox.com/5",
+                    "http://www.firefox.com/6",
                     "http://www.firefox.com/oops",
-                    "http://www.firefox.com/7", "http://www.firefox.com/8", "http://www.firefox.com/9",
+                    "http://www.firefox.com/7",
+                    "http://www.firefox.com/8",
+                    "http://www.firefox.com/9",
                 ),
             ),
         )

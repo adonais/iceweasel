@@ -43,7 +43,7 @@ export var ProfilerTestUtils = {
    * while additionally performing checks to ensure that the profiler is not
    * already running when we call this function.
    *
-   * @param {Object} callersSettings The settings object to deconstruct and pass
+   * @param {object} callersSettings The settings object to deconstruct and pass
    *   to the profiler. Unspecified settings are overwritten by the default:
    *   {
    *     entries: 8 * 1024 * 1024
@@ -91,7 +91,7 @@ export var ProfilerTestUtils = {
   /**
    * Get the payloads of a type recursively, including from all subprocesses.
    *
-   * @param {Object} profile The gecko profile.
+   * @param {object} profile The gecko profile.
    * @param {string} type The marker payload type, e.g. "DiskIO".
    * @param {Array} payloadTarget The recursive list of payloads.
    * @return {Array} The final payloads.
@@ -116,7 +116,7 @@ export var ProfilerTestUtils = {
   /**
    * Get the payloads of a type from a single thread.
    *
-   * @param {Object} thread The thread from a profile.
+   * @param {object} thread The thread from a profile.
    * @param {string} type The marker payload type, e.g. "DiskIO".
    * @return {Array} The payloads.
    */
@@ -135,7 +135,7 @@ export var ProfilerTestUtils = {
   /**
    * Applies the marker schema to create individual objects for each marker
    *
-   * @param {Object} thread The thread from a profile.
+   * @param {object} thread The thread from a profile.
    * @return {InflatedMarker[]} The markers.
    */
   getInflatedMarkerData(thread) {
@@ -157,7 +157,7 @@ export var ProfilerTestUtils = {
    * Applies the marker schema to create individual objects for each marker, then
    * keeps only the network markers that match the profiler tests.
    *
-   * @param {Object} thread The thread from a profile.
+   * @param {object} thread The thread from a profile.
    * @return {InflatedMarker[]} The filtered network markers.
    */
   getInflatedNetworkMarkers(thread) {
@@ -244,7 +244,7 @@ export var ProfilerTestUtils = {
    * Verify that a given JSON string is compact - i.e. does not contain
    * unexpected whitespace.
    *
-   * @param {String} the JSON string to check
+   * @param {string} the JSON string to check
    * @return {Bool} Whether the string is compact or not
    */
   verifyJSONStringIsCompact(s) {
@@ -287,6 +287,7 @@ export var ProfilerTestUtils = {
   /**
    * This function pauses the profiler before getting the profile. Then after
    * getting the data, the profiler is stopped, and all profiler data is removed.
+   *
    * @returns {Promise<Profile>}
    */
   async stopNowAndGetProfile() {
@@ -310,6 +311,7 @@ export var ProfilerTestUtils = {
    * This function ensures there's at least one sample, then pauses the profiler
    * before getting the profile. Then after getting the data, the profiler is
    * stopped, and all profiler data is removed.
+   *
    * @returns {Promise<Profile>}
    */
   async waitSamplingAndStopAndGetProfile() {

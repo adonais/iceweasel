@@ -415,6 +415,10 @@
   <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">Firefox авиджет ацҵатәуп</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">Уажәазы акәым</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!--
     Search Widget
 
@@ -558,8 +562,6 @@
   <string name="preferences_gestures">Анапқәа</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Ахатәтәра</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Аҭаҩра асинхронизациа аҭаӡҩырақәа, анҵамҭақәа, аԥсыӡажәақәа, уҳәа убас иҵегьы.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Мозилла ахыԥхьаӡара</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -809,12 +811,6 @@
   <string name="preference_experiments_2">Аҭҵаара</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">Мозилла азин аҭатәуп аԥшаара ашьақәыргылареи амҩаԥгареи</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Асинхронизациа</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Ҿыц аҽаԥшьгаразы аҭалара</string>
   <!-- Preference for removing FxA account -->
@@ -1352,8 +1348,6 @@
   <string name="toast_copy_link_to_clipboard">Аҭаӡҩыраҿы иқәҭыхуп</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Асинхронизациазы аҭалара</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Адыррақәа рсинхронизациеи рыхьчареи</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Аиқәыршәагақәа зегьы рахь идәықәҵатәуп</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2588,4 +2582,10 @@
   -->
   <string name="beta_feature">АБЕТА</string>
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

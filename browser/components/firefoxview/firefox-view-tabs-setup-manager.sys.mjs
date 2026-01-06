@@ -44,9 +44,9 @@ const SYNC_SERVICE_FINISHED = "weave:service:sync:finish";
 const PRIMARY_PASSWORD_UNLOCKED = "passwordmgr-crypto-login";
 
 function openTabInWindow(window, url) {
-  const { switchToTabHavingURI } =
-    window.docShell.chromeEventHandler.ownerGlobal;
-  switchToTabHavingURI(url, true, {});
+  // Null checks as the passed window might be closing, particularly in tests.
+  const ownerGlobal = window.docShell?.chromeEventHandler?.ownerGlobal;
+  ownerGlobal?.switchToTabHavingURI(url, true, {});
 }
 
 export const TabsSetupFlowManager = new (class {

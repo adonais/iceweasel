@@ -25,10 +25,10 @@ const DEFAULT_INTERNAL_ID = 0;
  * This class is exported for test purposes. Otherwise the UserContextManager
  * singleton should be used.
  *
- * @fires user-context-created
+ * @fires UserContextManagerClass#"user-context-created"
  *      - {string} userContextId
  *            The UUID of the user context which was just created.
- * @fires user-context-deleted
+ * @fires UserContextManagerClass#"user-context-deleted"
  *      - {string} userContextId
  *            The UUID of the user context which was just deleted.
  */

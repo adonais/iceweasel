@@ -144,6 +144,16 @@ class WebExtensionPolicyCore final {
   bool QuarantinedFromDoc(const DocInfo& aDoc) const;
   bool QuarantinedFromURI(const URLInfo& aURI) const MOZ_EXCLUDES(mLock);
 
+  bool HasRecommendedState() const MOZ_EXCLUDES(mLock) {
+    AutoReadLock lock(mLock);
+    return mHasRecommendedState;
+  }
+
+  void SetHasRecommendedState(bool aHasRecommendedState) MOZ_EXCLUDES(mLock) {
+    AutoWriteLock lock(mLock);
+    mHasRecommendedState = aHasRecommendedState;
+  }
+
   bool PrivateBrowsingAllowed() const;
 
   // Try to get a reference to the cycle-collected main-thread-only
@@ -194,6 +204,7 @@ class WebExtensionPolicyCore final {
   mutable RWLock mLock{"WebExtensionPolicyCore"};
 
   bool mIgnoreQuarantine MOZ_GUARDED_BY(mLock);
+  bool mHasRecommendedState MOZ_GUARDED_BY(mLock);
   RefPtr<AtomSet> mPermissions MOZ_GUARDED_BY(mLock);
   RefPtr<MatchPatternSetCore> mHostPermissions MOZ_GUARDED_BY(mLock);
 };
@@ -314,6 +325,9 @@ class WebExtensionPolicy final : public nsISupports, public nsWrapperCache {
 
   bool IgnoreQuarantine() const { return mCore->IgnoreQuarantine(); }
   void SetIgnoreQuarantine(bool aIgnore);
+
+  bool HasRecommendedState() const { return mCore->HasRecommendedState(); }
+  void SetHasRecommendedState(bool aHasRecommendedState);
 
   void GetContentScripts(ScriptArray& aScripts) const;
   const ScriptArray& ContentScripts() const { return mContentScripts; }

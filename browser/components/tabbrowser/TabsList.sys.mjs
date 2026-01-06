@@ -513,6 +513,7 @@ export class TabsPanel extends TabsListBase {
     /**
      * Setting a new property `XulToolbarItem._tab` on the row elements
      * for internal use by this module only.
+     *
      * @see getTabFromRow
      */
     row._tab = tab;
@@ -529,6 +530,7 @@ export class TabsPanel extends TabsListBase {
     /**
      * Setting a new property `MozToolbarbutton.tab` on the buttons
      * to support tab context menu integration.
+     *
      * @see TabContextMenu.updateContextMenu
      */
     button.tab = tab;
@@ -587,6 +589,7 @@ export class TabsPanel extends TabsListBase {
     /**
      * Setting a new property `XulToolbarItem._tabGroup` on the row elements
      * for internal use by this module only.
+     *
      * @see getTabGroupFromRow
      */
     row._tabGroup = group;

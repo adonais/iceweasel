@@ -5,7 +5,6 @@
 package org.mozilla.fenix.tabstray
 
 import io.mockk.mockk
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -45,7 +44,6 @@ class TabsTrayTelemetryMiddlewareTest {
         assertNull(Metrics.inactiveTabsCount.testGetValue())
 
         store.dispatch(TabsTrayAction.UpdateInactiveTabs(emptyList()))
-        store.waitUntilIdle()
         assertNotNull(TabsTray.hasInactiveTabs.testGetValue())
         assertNotNull(Metrics.inactiveTabsCount.testGetValue())
         assertEquals(0L, Metrics.inactiveTabsCount.testGetValue())
@@ -56,7 +54,6 @@ class TabsTrayTelemetryMiddlewareTest {
         assertNull(TabsTray.enterMultiselectMode.testGetValue())
 
         store.dispatch(TabsTrayAction.EnterSelectMode)
-        store.waitUntilIdle()
 
         assertNotNull(TabsTray.enterMultiselectMode.testGetValue())
         val snapshot = TabsTray.enterMultiselectMode.testGetValue()!!
@@ -67,7 +64,6 @@ class TabsTrayTelemetryMiddlewareTest {
     @Test
     fun `WHEN multi select mode by long press is entered THEN relevant metrics are collected`() {
         store.dispatch(TabsTrayAction.AddSelectTab(mockk()))
-        store.waitUntilIdle()
 
         assertNotNull(TabsTray.enterMultiselectMode.testGetValue())
         val snapshot = TabsTray.enterMultiselectMode.testGetValue()!!
@@ -80,7 +76,6 @@ class TabsTrayTelemetryMiddlewareTest {
         assertNull(TabsTray.autoCloseSeen.testGetValue())
 
         store.dispatch(TabsTrayAction.TabAutoCloseDialogShown)
-        store.waitUntilIdle()
 
         assertNotNull(TabsTray.autoCloseSeen.testGetValue())
     }
@@ -90,7 +85,6 @@ class TabsTrayTelemetryMiddlewareTest {
         assertNull(TabsTray.shareAllTabs.testGetValue())
 
         store.dispatch(TabsTrayAction.ShareAllNormalTabs)
-        store.waitUntilIdle()
 
         assertNotNull(TabsTray.shareAllTabs.testGetValue())
     }
@@ -100,7 +94,6 @@ class TabsTrayTelemetryMiddlewareTest {
         assertNull(TabsTray.shareAllTabs.testGetValue())
 
         store.dispatch(TabsTrayAction.ShareAllPrivateTabs)
-        store.waitUntilIdle()
 
         assertNotNull(TabsTray.shareAllTabs.testGetValue())
     }
@@ -110,7 +103,6 @@ class TabsTrayTelemetryMiddlewareTest {
         assertNull(TabsTray.closeAllTabs.testGetValue())
 
         store.dispatch(TabsTrayAction.CloseAllNormalTabs)
-        store.waitUntilIdle()
 
         assertNotNull(TabsTray.closeAllTabs.testGetValue())
     }
@@ -120,7 +112,6 @@ class TabsTrayTelemetryMiddlewareTest {
         assertNull(TabsTray.closeAllTabs.testGetValue())
 
         store.dispatch(TabsTrayAction.CloseAllPrivateTabs)
-        store.waitUntilIdle()
 
         assertNotNull(TabsTray.closeAllTabs.testGetValue())
     }
@@ -130,7 +121,6 @@ class TabsTrayTelemetryMiddlewareTest {
         assertNull(TabsTray.bookmarkSelectedTabs.testGetValue())
 
         store.dispatch(TabsTrayAction.BookmarkSelectedTabs(1))
-        store.waitUntilIdle()
 
         assertNotNull(TabsTray.bookmarkSelectedTabs.testGetValue())
         val snapshot = TabsTray.bookmarkSelectedTabs.testGetValue()!!
@@ -146,7 +136,6 @@ class TabsTrayTelemetryMiddlewareTest {
         assertNull(TabsTray.bookmarkSelectedTabs.testGetValue())
 
         store.dispatch(TabsTrayAction.BookmarkSelectedTabs(2))
-        store.waitUntilIdle()
 
         assertNotNull(TabsTray.bookmarkSelectedTabs.testGetValue())
         val snapshot = TabsTray.bookmarkSelectedTabs.testGetValue()!!
@@ -162,7 +151,6 @@ class TabsTrayTelemetryMiddlewareTest {
         assertNull(TabsTray.menuOpened.testGetValue())
 
         store.dispatch(TabsTrayAction.ThreeDotMenuShown)
-        store.waitUntilIdle()
 
         assertNotNull(TabsTray.menuOpened.testGetValue())
     }

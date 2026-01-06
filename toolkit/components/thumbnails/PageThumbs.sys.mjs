@@ -146,6 +146,7 @@ export var PageThumbs = {
 
   /**
    * Gets the thumbnail image's url for a given web page's url.
+   *
    * @param aUrl The web page's url that is depicted in the thumbnail.
    * @return The thumbnail image's url.
    */
@@ -204,6 +205,7 @@ export var PageThumbs = {
    * Note, when dealing with remote content, this api draws into the passed
    * canvas asynchronously. Pass aCallback to receive an async callback after
    * canvas painting has completed.
+   *
    * @param aBrowser The browser to capture a thumbnail from.
    * @param aCanvas The canvas to draw to. The thumbnail will be scaled to match
    *   the dimensions of this canvas. If callers pass a 0x0 canvas, the canvas
@@ -412,6 +414,7 @@ export var PageThumbs = {
 
   /**
    * Captures a thumbnail for the given browser and stores it to the cache.
+   *
    * @param aBrowser The browser to capture a thumbnail for.
    */
   captureAndStore: async function PageThumbs_captureAndStore(aBrowser) {
@@ -607,6 +610,7 @@ export var PageThumbs = {
 
   /**
    * Unregister an expiration filter.
+   *
    * @param aFilter A filter that was previously passed to addExpirationFilter.
    */
   removeExpirationFilter: function PageThumbs_removeExpirationFilter(aFilter) {
@@ -615,6 +619,7 @@ export var PageThumbs = {
 
   /**
    * Creates a new hidden canvas element.
+   *
    * @param aWindow The document of this window will be used to create the
    *                canvas.  If not given, the hidden window will be used.
    * @return The newly created canvas.

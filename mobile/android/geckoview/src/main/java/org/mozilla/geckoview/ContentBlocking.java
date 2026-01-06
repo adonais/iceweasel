@@ -94,7 +94,7 @@ public class ContentBlocking {
           .reportMalwareMistakeUrl("https://%LOCALE%.malware-error.mozilla.com/?url=")
           .advisoryUrl("https://developers.google.com/safe-browsing/v4/advisory")
           .advisoryName("Google Safe Browsing")
-          .enabled(BuildConfig.NIGHTLY_BUILD)
+          .enabled(true)
           .build();
 
   /** Protected constructor - this class shouldn't be instantiated. */
@@ -447,6 +447,8 @@ public class ContentBlocking {
         new Pref<Boolean>("browser.safebrowsing.malware.enabled", true);
     /* package */ final Pref<Boolean> mSbPhishing =
         new Pref<Boolean>("browser.safebrowsing.phishing.enabled", true);
+    /* package */ final Pref<Boolean> mSbHarmfulAddon =
+        new Pref<Boolean>("privacy.trackingprotection.harmfuladdon.enabled", true);
     /* package */ final Pref<Integer> mCookieBehavior =
         new Pref<Integer>(
             "network.cookie.cookieBehavior", CookieBehavior.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS);
@@ -515,6 +517,11 @@ public class ContentBlocking {
         new Pref<String>(
             "urlclassifier.features.emailtracking.blocklistTables",
             ContentBlocking.catToPref(AntiTracking.NONE, AntiTracking.EMAIL, EMAIL));
+
+    /* package */ final Pref<String> mSbHarmfulAddonList =
+        new Pref<String>(
+            "urlclassifier.features.harmfuladdon.blocklistTables",
+            ContentBlocking.catToPref(AntiTracking.NONE, SafeBrowsing.HARMFULADDON, HARMFULADDON));
 
     /* package */ final Pref<String> mSafeBrowsingMalwareTable =
         new Pref<>(
@@ -823,6 +830,7 @@ public class ContentBlocking {
     public @NonNull Settings setSafeBrowsing(final @CBSafeBrowsing int cat) {
       mSbMalware.commit(ContentBlocking.catToSbMalware(cat));
       mSbPhishing.commit(ContentBlocking.catToSbPhishing(cat));
+      mSbHarmfulAddon.commit(ContentBlocking.catToSbHarmfulAddon(cat));
       return this;
     }
 
@@ -885,7 +893,8 @@ public class ContentBlocking {
      */
     public @CBSafeBrowsing int getSafeBrowsingCategories() {
       return ContentBlocking.sbMalwareToSbCat(mSbMalware.get())
-          | ContentBlocking.sbPhishingToSbCat(mSbPhishing.get());
+          | ContentBlocking.sbPhishingToSbCat(mSbPhishing.get())
+          | ContentBlocking.sbHarmfulAddonToSbCat(mSbHarmfulAddon.get());
     }
 
     /**
@@ -1795,8 +1804,11 @@ public class ContentBlocking {
     /** Block phishing sites. */
     public static final int PHISHING = 1 << 13;
 
+    /** Block harmful add-on sites. */
+    public static final int HARMFULADDON = 1 << 14;
+
     /** Block all unsafe sites. */
-    public static final int DEFAULT = MALWARE | UNWANTED | HARMFUL | PHISHING;
+    public static final int DEFAULT = MALWARE | UNWANTED | HARMFUL | PHISHING | HARMFULADDON;
 
     /** Protected constructor for SafeBrowsing. */
     protected SafeBrowsing() {}
@@ -1809,7 +1821,8 @@ public class ContentBlocking {
       value = {
         SafeBrowsing.MALWARE, SafeBrowsing.UNWANTED,
         SafeBrowsing.HARMFUL, SafeBrowsing.PHISHING,
-        SafeBrowsing.DEFAULT, SafeBrowsing.NONE
+        SafeBrowsing.HARMFULADDON, SafeBrowsing.DEFAULT,
+        SafeBrowsing.NONE
       })
   public @interface CBSafeBrowsing {}
 
@@ -2031,6 +2044,7 @@ public class ContentBlocking {
   private static final String STP =
       "social-tracking-protection-facebook-digest256,social-tracking-protection-linkedin-digest256,social-tracking-protection-twitter-digest256";
   private static final String EMAIL = "base-email-track-digest256";
+  private static final String HARMFULADDON = "harmfuladdon-block-digest256";
 
   /* package */ static @CBSafeBrowsing int sbMalwareToSbCat(final boolean enabled) {
     return enabled
@@ -2042,12 +2056,20 @@ public class ContentBlocking {
     return enabled ? SafeBrowsing.PHISHING : SafeBrowsing.NONE;
   }
 
+  /* package */ static @CBSafeBrowsing int sbHarmfulAddonToSbCat(final boolean enabled) {
+    return enabled ? SafeBrowsing.HARMFULADDON : SafeBrowsing.NONE;
+  }
+
   /* package */ static boolean catToSbMalware(@CBSafeBrowsing final int cat) {
     return (cat & (SafeBrowsing.MALWARE | SafeBrowsing.UNWANTED | SafeBrowsing.HARMFUL)) != 0;
   }
 
   /* package */ static boolean catToSbPhishing(@CBSafeBrowsing final int cat) {
     return (cat & SafeBrowsing.PHISHING) != 0;
+  }
+
+  /* package */ static boolean catToSbHarmfulAddon(@CBSafeBrowsing final int cat) {
+    return (cat & SafeBrowsing.HARMFULADDON) != 0;
   }
 
   /* package */ static String catToAtPref(@CBAntiTracking final int cat) {
@@ -2201,6 +2223,9 @@ public class ContentBlocking {
     }
     if (error == 0x805D001EL) {
       return SafeBrowsing.MALWARE;
+    }
+    if (error == 0x805D002E) {
+      return SafeBrowsing.HARMFULADDON;
     }
     if (error == 0x805D0023L) {
       return SafeBrowsing.UNWANTED;

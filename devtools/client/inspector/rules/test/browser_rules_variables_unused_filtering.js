@@ -41,6 +41,7 @@ add_task(async function testUnusedVariablesAndFiltering() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -60,6 +61,7 @@ add_task(async function testUnusedVariablesAndFiltering() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -96,6 +98,7 @@ add_task(async function testUnusedVariablesAndFiltering() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -127,6 +130,7 @@ add_task(async function testUnusedVariablesAndFiltering() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -214,6 +218,7 @@ add_task(async function testUnusedVariablesAndFiltering() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {

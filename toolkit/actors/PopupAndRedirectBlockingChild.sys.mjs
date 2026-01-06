@@ -18,7 +18,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
  */
 export class PopupAndRedirectBlockingChild extends JSWindowActorChild {
   /**
-   * @typedef {Object} DocState
+   * @typedef {object} DocState
    * @property {Array<{
    *   popupWindowURISpec: string,
    *   popupWindowFeatures: string,
@@ -38,6 +38,7 @@ export class PopupAndRedirectBlockingChild extends JSWindowActorChild {
 
   /**
    * WeakMap keyed by `document`, holding per-document popup/redirect state.
+   *
    * @type {WeakMap<Document, DocState>}
    */
   #mWeakDocStates;

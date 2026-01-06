@@ -104,7 +104,7 @@ async function navigateIframeTo(inspector, url) {
   info("Navigate the test iframe to " + url);
 
   const { commands } = inspector;
-  const { resourceCommand } = inspector.toolbox;
+  const { resourceCommand } = inspector.commands;
   const onTargetProcessed = waitForTargetProcessed(commands, url);
 
   const { onResource: onNewRoot } = await resourceCommand.waitForNextResource(

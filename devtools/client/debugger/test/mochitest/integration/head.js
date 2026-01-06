@@ -56,11 +56,11 @@ function _loadAllIntegrationTests() {
  * run all the "integration tasks" implemented in files from the "integration-tests" folder.
  * These files should call the `addIntegrationTask()` method to register something to run.
  *
- * @param {String} testFolder
+ * @param {string} testFolder
  *        Define what folder in "examples" folder to load before opening the debugger.
  *        This is meant to be a versionized test folder with v1, v2, v3 folders.
  *        (See createVersionizedHttpTestServer())
- * @param {Object} env
+ * @param {object} env
  *        Environment object passed down to each task to better know
  *        which particular integration test is being run.
  */

@@ -16,9 +16,9 @@ run-sequentially = ["true"] # bug 1784963 - beacon-handler shares state
 skip-if = [
   "http2",
   "http3",
+  "os == 'android' && os_version == '14' && arch == 'x86_64'", # Bug 1784963
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && xorigin", # Bug 1784963
   "verify-standalone",
-  "os == 'android' && os_version == '14' && processor == 'x86_64'", # Bug 1784963
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && xorigin", # Bug 1784963
 ]
 
 ["test_beaconOriginHeader.html"]
@@ -31,12 +31,12 @@ skip-if = [
 
 ["test_beaconPreflightWithCustomContentType.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_beaconRedirect.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]

@@ -4,12 +4,12 @@
 // @ts-check
 
 /**
- * @typedef {Object} StateProps
+ * @typedef {object} StateProps
  * @property {RecordingState} recordingState
  */
 
 /**
- * @typedef {Object} OwnProps
+ * @typedef {object} OwnProps
  * @property {any} toolbox
  */
 

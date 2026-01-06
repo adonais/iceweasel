@@ -223,8 +223,6 @@ bool FontFaceSet::HasRuleFontFace(FontFace* aFontFace) {
 #endif
 
 void FontFaceSet::Add(FontFace& aFontFace, ErrorResult& aRv) {
-  FlushUserFontSet();
-
   FontFaceImpl* fontImpl = aFontFace.GetImpl();
   MOZ_ASSERT(fontImpl);
 

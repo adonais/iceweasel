@@ -11,7 +11,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Span.h"
 
-#include <array>
 #include <climits>
 #include <cstddef>
 #include <cstdint>

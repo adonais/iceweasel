@@ -172,6 +172,7 @@ void nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
   PresShell* presShell = pc->PresShell();
 
   const bool usesMetricsFromStyle = pc->StyleSet()->UsesFontMetrics();
+  const bool usesRootMetricsFromStyle = pc->StyleSet()->UsesRootFontMetrics();
 
   // StyleSingleFontFamily::IsNamedFamily expects a UTF-16 string. Convert it
   // once here rather than on each call.
@@ -201,7 +202,18 @@ void nsFontFaceUtils::MarkDirtyForFontChange(nsIFrame* aSubtreeRoot,
           ScheduleReflow(presShell, f);
           alreadyScheduled = ReflowAlreadyScheduled::Yes;
         }
-        if (kind & FontUsageKind::FontMetrics) {
+
+        // If the updated font is used for font metrics, then styles need to be
+        // recomputed. This can occur if the current frame directly uses the
+        // font's metrics (ex/ch/...). However, if there are any elements in the
+        // document using root element relative font metrics (rex/rch/...) and
+        // the root element itself used the updated font, then the entire
+        // subtree needs to be restyled.
+        const bool shouldRestyleForFontMetrics =
+            (kind & FontUsageKind::FontMetrics) ||
+            (usesRootMetricsFromStyle && f->Style()->IsRootElementStyle());
+
+        if (shouldRestyleForFontMetrics) {
           MOZ_ASSERT(f->GetContent() && f->GetContent()->IsElement(),
                      "How could we target a non-element with selectors?");
           f->PresContext()->RestyleManager()->PostRestyleEvent(

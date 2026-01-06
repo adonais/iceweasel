@@ -17,7 +17,6 @@
 #include "base/waitable_event.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CycleCollectedJSContext.h"
-#include "mozilla/Fuzzing.h"
 #include "mozilla/FlowMarkers.h"
 #include "mozilla/IntentionalCrash.h"
 #include "mozilla/Logging.h"

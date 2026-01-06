@@ -16,6 +16,7 @@
 #include "mozilla/gfx/2D.h"
 #include "nsAttrValue.h"
 #include "nsAttrValueInlines.h"
+#include "nsAttrValueOrString.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::dom::SVGAngle_Binding;
@@ -150,15 +151,15 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromBasicAttrs(
   if (HasAttr(nsGkAtoms::values)) {
     // Generate path based on our values array
     mPathSourceType = ePathSourceType_ValuesAttr;
-    const nsAString& valuesStr = GetAttr(nsGkAtoms::values)->GetStringValue();
+    nsAttrValueOrString valuesVal(GetAttr(nsGkAtoms::values));
     SVGMotionSMILPathUtils::MotionValueParser parser(&pathGenerator,
                                                      &mPathVertices);
-    success = SMILParserUtils::ParseValuesGeneric(valuesStr, parser);
+    success = SMILParserUtils::ParseValuesGeneric(valuesVal.String(), parser);
   } else if (HasAttr(nsGkAtoms::to) || HasAttr(nsGkAtoms::by)) {
     // Apply 'from' value (or a dummy 0,0 'from' value)
     if (HasAttr(nsGkAtoms::from)) {
-      const nsAString& fromStr = GetAttr(nsGkAtoms::from)->GetStringValue();
-      success = pathGenerator.MoveToAbsolute(fromStr);
+      nsAttrValueOrString fromVal(GetAttr(nsGkAtoms::from));
+      success = pathGenerator.MoveToAbsolute(fromVal.String());
       if (!mPathVertices.AppendElement(0.0, fallible)) {
         success = false;
       }
@@ -181,12 +182,12 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromBasicAttrs(
       double dist;
       if (HasAttr(nsGkAtoms::to)) {
         mPathSourceType = ePathSourceType_ToAttr;
-        const nsAString& toStr = GetAttr(nsGkAtoms::to)->GetStringValue();
-        success = pathGenerator.LineToAbsolute(toStr, dist);
+        nsAttrValueOrString toVal(GetAttr(nsGkAtoms::to));
+        success = pathGenerator.LineToAbsolute(toVal.String(), dist);
       } else {  // HasAttr(nsGkAtoms::by)
         mPathSourceType = ePathSourceType_ByAttr;
-        const nsAString& byStr = GetAttr(nsGkAtoms::by)->GetStringValue();
-        success = pathGenerator.LineToRelative(byStr, dist);
+        nsAttrValueOrString byVal(GetAttr(nsGkAtoms::by));
+        success = pathGenerator.LineToRelative(byVal.String(), dist);
       }
       if (success) {
         if (!mPathVertices.AppendElement(dist, fallible)) {
@@ -227,7 +228,7 @@ void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromMpathElem(
 }
 
 void SVGMotionSMILAnimationFunction::RebuildPathAndVerticesFromPathAttr() {
-  const nsAString& pathSpec = GetAttr(nsGkAtoms::path)->GetStringValue();
+  nsString pathSpec(nsAttrValueOrString(GetAttr(nsGkAtoms::path)).String());
   mPathSourceType = ePathSourceType_PathAttr;
 
   // Generate Path from |path| attr

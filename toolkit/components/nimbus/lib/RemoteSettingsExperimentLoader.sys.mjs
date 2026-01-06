@@ -247,7 +247,7 @@ export class RemoteSettingsExperimentLoader {
   /**
    * Initialize the loader, updating recipes from Remote Settings.
    *
-   * @param {Object} options            additional options.
+   * @param {object} options            additional options.
    * @param {bool}   options.forceSync  force Remote Settings to sync recipe collection
    *                                    before updating recipes; throw if sync fails.
    * @return {Promise}                  which resolves after initialization and recipes
@@ -1085,6 +1085,7 @@ export class EnrollmentsContext {
 
   /**
    * Checks targeting of a recipe if it is defined
+   *
    * @param {Recipe} recipe
    * @param {{[key: string]: any}} customContext A custom filter context
    * @returns {Promise<boolean>} Should we process the recipe?

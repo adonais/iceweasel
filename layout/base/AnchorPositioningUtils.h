@@ -8,7 +8,6 @@
 #define AnchorPositioningUtils_h__
 
 #include "WritingModes.h"
-#include "mozilla/EnumSet.h"
 #include "mozilla/Maybe.h"
 #include "nsRect.h"
 #include "nsTHashMap.h"
@@ -24,6 +23,8 @@ class CopyableTArray;
 
 namespace mozilla {
 
+class nsDisplayListBuilder;
+
 struct AnchorPosInfo {
   // Border-box of the anchor frame, offset against the positioned frame's
   // absolute containing block's padding box.
@@ -34,16 +35,14 @@ struct AnchorPosInfo {
 
 class DistanceToNearestScrollContainer {
  public:
-  DistanceToNearestScrollContainer() : mDistance{kInvalid} {}
+  DistanceToNearestScrollContainer() = default;
   explicit DistanceToNearestScrollContainer(uint32_t aDistance)
       : mDistance{aDistance} {}
+
   bool Valid() const { return mDistance != kInvalid; }
-  bool operator==(const DistanceToNearestScrollContainer& aOther) const {
-    return mDistance == aOther.mDistance;
-  }
-  bool operator!=(const DistanceToNearestScrollContainer& aOther) const {
-    return !(*this == aOther);
-  }
+
+  bool operator==(const DistanceToNearestScrollContainer&) const = default;
+  bool operator!=(const DistanceToNearestScrollContainer&) const = default;
 
  private:
   // 0 is invalid - a frame itself cannot be its own nearest scroll container.
@@ -52,7 +51,7 @@ class DistanceToNearestScrollContainer {
   // between abspos/fixedpos frames and their containing blocks are irrelevant,
   // so the distance should be measured from the out-of-flow frame, not the
   // placeholder frame.
-  uint32_t mDistance;
+  uint32_t mDistance = kInvalid;
 };
 
 struct AnchorPosOffsetData {
@@ -95,8 +94,7 @@ class AnchorPosReferenceData {
   struct PositionTryBackup {
     mozilla::PhysicalAxes mCompensatingForScroll;
     nsPoint mDefaultScrollShift;
-    nsRect mContainingBlockRect;
-    bool mUseScrollableContainingBlock = false;
+    nsRect mAdjustedContainingBlock;
   };
   using Value = mozilla::Maybe<AnchorPosResolutionData>;
 
@@ -131,24 +129,26 @@ class AnchorPosReferenceData {
   PositionTryBackup TryPositionWithSameDefaultAnchor() {
     auto compensatingForScroll = std::exchange(mCompensatingForScroll, {});
     auto defaultScrollShift = std::exchange(mDefaultScrollShift, {});
-    auto insetModifiedContainingBlock = std::exchange(mContainingBlockRect, {});
-    return {compensatingForScroll, defaultScrollShift,
-            insetModifiedContainingBlock};
+    auto adjustedContainingBlock = std::exchange(mAdjustedContainingBlock, {});
+    return {compensatingForScroll, defaultScrollShift, adjustedContainingBlock};
   }
 
   void UndoTryPositionWithSameDefaultAnchor(PositionTryBackup&& aBackup) {
     mCompensatingForScroll = aBackup.mCompensatingForScroll;
     mDefaultScrollShift = aBackup.mDefaultScrollShift;
-    mContainingBlockRect = aBackup.mContainingBlockRect;
+    mAdjustedContainingBlock = aBackup.mAdjustedContainingBlock;
   }
 
   // Distance from the default anchor to the nearest scroll container.
   DistanceToNearestScrollContainer mDistanceToDefaultScrollContainer;
   // https://drafts.csswg.org/css-anchor-position-1/#default-scroll-shift
   nsPoint mDefaultScrollShift;
-  // Rect of containing block before being inset-modified, at the time of
-  // resolution.
-  nsRect mContainingBlockRect;
+  // Rect of the original containg block.
+  nsRect mOriginalContainingBlockRect;
+  // Adjusted containing block, by position-area or grid, as per
+  // https://drafts.csswg.org/css-position/#original-cb
+  // TODO(dshin, bug 2004596): "or" should be "and/or."
+  nsRect mAdjustedContainingBlock;
   // TODO(dshin, bug 1987962): Remembered scroll offset
   // https://drafts.csswg.org/css-anchor-position-1/#remembered-scroll-offset
   // Name of the default used anchor. Not necessarily positioned frame's
@@ -160,6 +160,11 @@ class AnchorPosReferenceData {
   // Axes we need to compensate for scroll [1] in.
   // [1]: https://drafts.csswg.org/css-anchor-position-1/#compensate-for-scroll
   mozilla::PhysicalAxes mCompensatingForScroll;
+};
+
+struct LastSuccessfulPositionData {
+  uint32_t mIndex = 0;
+  bool mTriedAllFallbacks = false;
 };
 
 struct StylePositionArea;
@@ -279,7 +284,7 @@ struct AnchorPositioningUtils {
    * element. For popovers, this returns the primary frame of the invoker. In
    * all other cases, returns null.
    */
-  static const nsIFrame* GetAnchorPosImplicitAnchor(const nsIFrame* aFrame);
+  static nsIFrame* GetAnchorPosImplicitAnchor(const nsIFrame* aFrame);
 
   struct NearestScrollFrameInfo {
     const nsIFrame* mScrollContainer = nullptr;
@@ -306,10 +311,23 @@ struct AnchorPositioningUtils {
     nsRect mRect;
   };
 
-  static bool FitsInContainingBlock(
-      const ContainingBlockInfo& aContainingBlockInfo,
-      const nsIFrame* aPositioned,
-      const AnchorPosReferenceData* aReferenceData);
+  static bool FitsInContainingBlock(const nsIFrame* aPositioned,
+                                    const AnchorPosReferenceData&);
+
+  /**
+   * If aFrame is positioned using CSS anchor positioning, and it scrolls with
+   * its anchor this function returns the anchor. Otherwise null.
+   * Note that this function has different behaviour if it called during paint
+   * (ie aBuilder not null) or not during painting (aBuilder null).
+   */
+  static nsIFrame* GetAnchorThatFrameScrollsWith(nsIFrame* aFrame,
+                                                 nsDisplayListBuilder* aBuilder,
+                                                 bool aSkipAsserts = false);
+
+  // Trigger a layout for positioned items that are currently overflowing their
+  // abs-cb and that have available fallbacks to try.
+  static bool TriggerLayoutOnOverflow(PresShell* aPresShell,
+                                      bool aEvaluateAllFallbacksIfNeeded);
 };
 
 }  // namespace mozilla

@@ -19,18 +19,20 @@ const BACKUP_DEBUG_INFO_PREF_NAME = "browser.backup.backup-debug-info";
 const BACKUP_DEFAULT_LOCATION_PREF_NAME = "browser.backup.location";
 
 function bsInProgressStateUpdate(bs, isBackupInProgress) {
+  // Check if already in desired state
+  if (bs.state.backupInProgress === isBackupInProgress) {
+    return Promise.resolve();
+  }
+
   return new Promise(resolve => {
-    bs.addEventListener(
-      "BackupService:StateUpdate",
-      () => {
-        if (bs.state.backupInProgress == isBackupInProgress) {
-          resolve();
-        } else {
-          Assert.ok(false, "Failure in waiting for state updates");
-        }
-      },
-      { once: true }
-    );
+    const listener = () => {
+      if (bs.state.backupInProgress === isBackupInProgress) {
+        bs.removeEventListener("BackupService:StateUpdate", listener);
+        resolve();
+      }
+    };
+
+    bs.addEventListener("BackupService:StateUpdate", listener);
   });
 }
 

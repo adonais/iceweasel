@@ -153,6 +153,8 @@ class TLSTransportLayer final : public nsISocketTransport,
   nsCOMPtr<nsIOutputStreamCallback> mOutputCallback;
   PRFileDesc* mFD{nullptr};
   nsCOMPtr<nsIInputStreamCallback> mOwner;
+  nsresult mOutputStatus{NS_OK};
+  nsresult mInputStatus{NS_OK};
 };
 
 }  // namespace mozilla::net

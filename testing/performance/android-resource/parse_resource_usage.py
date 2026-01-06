@@ -26,6 +26,7 @@ def make_differential_metrics(
             }
             for mem_type, mem_info in mem_measures.items()
             for category, mem_usage in mem_info.items()
+            if category in base_measures["mem"].get(mem_type, {})
         ]
     )
     metrics.extend(
@@ -54,6 +55,7 @@ def make_differential_metrics(
                 "values": [cpu_time - base_measures["cpu"][category]],
             }
             for category, cpu_time in cpu_measures.items()
+            if category in base_measures.get("cpu", {})
         ]
     )
     metrics.append(

@@ -61,6 +61,8 @@
   <string name="tab_manager_empty_synced_tabs_page_description">Συνδεθείτε για να διαχειριστείτε τις συγχρονισμένες καρτέλες από όλες τις συσκευές σας.</string>
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
   <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">Σύνδεση</string>
+  <!-- Text for the button used to show all stories -->
+  <string name="homepage_all_stories">Όλα τα άρθρα</string>
   <!--
     Home - Bookmarks
 
@@ -622,6 +624,72 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Μοιραστείτε πώς ανακαλύψατε το Firefox και δηλώστε ότι το χρησιμοποιείτε στους συνεργάτες μάρκετινγκ της Mozilla. Αυτά τα δεδομένα δεν θα πωληθούν ποτέ.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Αποδοχή και έναρξη περιήγησης</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- "Continue" onboarding button. -->
+  <string name="nova_onboarding_continue_button" tools:ignore="UnusedResources">Συνέχεια</string>
+  <!-- "Not now" onboarding button. -->
+  <string name="nova_onboarding_negative_button" tools:ignore="UnusedResources">Όχι τώρα</string>
+  <!--
+    Terms of use (ToU) onboarding body line one.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
+  -->
+  <string name="nova_onboarding_tou_body_line_1" tools:ignore="UnusedResources">Συνεχίζοντας, συμφωνείτε με τους %1$s.</string>
+  <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage,UnusedResources">Όρους χρήσης του Firefox</string>
+  <!--
+    Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
+  -->
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage,UnusedResources">Το Firefox νοιάζεται για το απόρρητό σας. Μάθετε περισσότερα στη %1$s μας.</string>
+  <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
+  <string name="nova_onboarding_tou_body_line_2_link_text" tools:ignore="UnusedResources">Σημείωση απορρήτου</string>
+  <!--
+    Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
+  -->
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage,UnusedResources">Για τη βελτίωση του προγράμματος περιήγησης, το Firefox στέλνει διαγνωστικά δεδομένα και δεδομένα αλληλεπίδρασης στη Mozilla. %1$s</string>
+  <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
+  <string name="nova_onboarding_tou_body_line_3_link_text" tools:ignore="UnusedResources">Διαχείριση ρυθμίσεων</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Πείτε αντίο στους παρεμβατικούς ιχνηλάτες</string>
+  <!-- "Set to default" onboarding button. -->
+  <string name="nova_onboarding_set_to_default_button" tools:ignore="UnusedResources">Ορισμός ως προεπιλογή</string>
+  <!-- Toolbar selection onboarding title. -->
+  <string name="nova_onboarding_toolbar_selection_title" tools:ignore="UnusedResources">Επιλέξτε τη γραμμή διευθύνσεών σας</string>
+  <!-- Toolbar selection onboarding "top" option label. -->
+  <string name="nova_onboarding_toolbar_selection_top_label" tools:ignore="UnusedResources">Πάνω</string>
+  <!-- Toolbar selection onboarding "bottom" option label. -->
+  <string name="nova_onboarding_toolbar_selection_bottom_label" tools:ignore="UnusedResources">Κάτω</string>
+  <!-- Theme selection onboarding title. -->
+  <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">Επιλέξτε το θέμα σας</string>
+  <!-- Theme selection onboarding "automatic" option label. -->
+  <string name="nova_onboarding_theme_selection_automatic_label" tools:ignore="UnusedResources">Αυτόματο</string>
+  <!-- Theme selection onboarding "light" option label. -->
+  <string name="nova_onboarding_theme_selection_light_label" tools:ignore="UnusedResources">Ανοιχτόχρωμο</string>
+  <!-- Theme selection onboarding "dark" option label. -->
+  <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">Σκουρόχρωμο</string>
+  <!-- Sync onboarding title. -->
+  <string name="nova_onboarding_sync_title" tools:ignore="UnusedResources">Συνεχίστε άμεσα από εκεί που σταματήσατε</string>
+  <!-- Sync onboarding button. -->
+  <string name="nova_onboarding_sync_button" tools:ignore="UnusedResources">Έναρξη συγχρονισμού</string>
+  <!-- Marketing onboarding title. -->
+  <string name="nova_onboarding_marketing_title" tools:ignore="UnusedResources">Βοηθήστε μας να δημιουργήσουμε ένα καλύτερο διαδίκτυο</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">Μοιραστείτε πώς ανακαλύψατε το Firefox και δηλώστε ότι το χρησιμοποιείτε στους συνεργάτες μάρκετινγκ της Mozilla. Αυτά τα δεδομένα δεν θα πωληθούν ποτέ. %1$s</string>
+  <!-- Marketing onboarding body link text. -->
+  <string name="nova_onboarding_marketing_body_link_text" tools:ignore="UnusedResources">Πώς χρησιμοποιούμε τα δεδομένα</string>
+  <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">Οι ειδοποιήσεις σάς βοηθούν να παραμένετε ασφαλείς με το Firefox</string>
+  <!-- Notifications onboarding button. -->
+  <string name="nova_onboarding_notifications_button" tools:ignore="UnusedResources">Ενεργοποίηση ειδοποιήσεων</string>
+  <!-- "Add search widget" onboarding title. -->
+  <string name="nova_onboarding_add_search_widget_title" tools:ignore="UnusedResources">Κάντε κάθε αναζήτηση πιο ιδιωτική</string>
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Επιλογή τοποθεσίας γραμμής εργαλείων</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -820,8 +888,6 @@
   <string name="preferences_gestures">Χειρονομίες</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Προσαρμογή</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Συνδεθείτε για να συγχρονίσετε τις καρτέλες, τους σελιδοδείκτες, τους κωδικούς πρόσβασης και πολλά άλλα.</string>
   <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
   <string name="preferences_sign_in_description">Συγχρονίστε τις καρτέλες, τους σελιδοδείκτες, τους κωδικούς πρόσβασής και πολλά άλλα.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
@@ -1065,6 +1131,8 @@
   <string name="restart_warning_dialog_title">Αλλαγή εικονιδίου εφαρμογής;</string>
   <!-- Message to warn users that applying an alternative app icon may require an app restart. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
   <string name="restart_warning_dialog_body_2">Η εφαρμογή ενδέχεται να κλείσει. Πατήστε το νέο εικονίδιο για να ανοίξετε ξανά το %1$s.</string>
+  <!-- Message to warn users that applying an alternative app icon may require an app restart and will remove existing shortcuts because of the OS limitations. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="restart_and_shortcuts_removal_warning_dialog_body">Η αλλαγή του εικονιδίου θα αφαιρέσει τυχόν αποθηκευμένους ιστοτόπους και συντομεύσεις από την αρχική σας οθόνη. \n\nΤο %1$s ενδέχεται να κλείσει. Πατήστε το νέο σας εικονίδιο για να ανοίξετε ξανά την εφαρμογή.</string>
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
   <string name="restart_warning_dialog_button_positive_2">Αλλαγή εικονιδίου</string>
   <!-- Dialog button text for cancelling app icon change -->
@@ -1215,10 +1283,8 @@
   <!--
     Turn On Sync Preferences
 
-    Header of the Sync and save your data preference view
+    Header of the Sign in preference view
   -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Συγχρονισμός δεδομένων</string>
-  <!-- Header of the Sign in preference view -->
   <string name="preferences_sign_in">Σύνδεση</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Συνδεθείτε για επανασύνδεση</string>
@@ -1448,7 +1514,7 @@
   -->
   <string name="tabs_header_synced_tabs_counter_title">Ανοικτές συγχρονισμένες καρτέλες: %1$s. Πατήστε για εναλλαγή καρτελών.</string>
   <!-- Text for the tabs header private tabs -->
-  <string name="tabs_header_private_tabs_title">Ιδιωτική</string>
+  <string name="tabs_header_private_tabs_title">Ιδιωτικές</string>
   <!-- Text for the tabs header normal tabs -->
   <string name="tabs_header_normal_tabs_title">Καρτέλες</string>
   <!-- Text for the tabs header synced tabs -->
@@ -1467,6 +1533,8 @@
   <string name="tab_drawer_fab_content">Ιδιωτικη</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
   <string name="tab_drawer_fab_sync">Συγχρονισμός</string>
+  <!-- Text for the tab search bar placeholder -->
+  <string name="tab_manager_search_bar_placeholder">Αναζήτηση καρτελών</string>
   <!-- Text shown in the menu for sharing all tabs -->
   <string name="tab_tray_menu_item_share">Κοινή χρήση όλων των καρτελών</string>
   <!-- Text shown in the menu to view recently closed tabs -->
@@ -1479,6 +1547,14 @@
   <string name="tab_tray_menu_tab_settings">Ρυθμίσεις καρτελών</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Κλείσιμο όλων των καρτελών</string>
+  <!-- Text shown as the title of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_title">Κλείσιμο όλων των καρτελών;</string>
+  <!-- Text shown in the body of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_body">Αυτό θα κλείσει όλες τις ανοικτές καρτέλες.</string>
+  <!-- Text shown on the confirm button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_confirm">Κλείσιμο καρτελών</string>
+  <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_cancel">Ακύρωση</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
   <string name="tab_tray_multiselect_menu_item_bookmark">Αποθήκευση</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
@@ -1497,18 +1573,22 @@
   <string name="tab_tray_multiselect_menu_content_description">Μενού επιλεγμένων καρτελών</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
   <string name="tab_tray_homepage_tab">Αρχική σελίδα</string>
-  <!-- Title text displayed for a homepage tab in the tabs tray. %s is a placeholder that will be replaced by app name. -->
-  <string name="tab_tray_homepage_tab_2" tools:ignore="UnusedResources" moz:removedIn="145">%s αρχική σελίδα</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">Αφαίρεση καρτέλας από τη συλλογή</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
   <string name="tabs_tray_select_tabs">Επιλογή καρτελών</string>
+  <!-- Text for tab manager search page when there are no results. -->
+  <string name="tab_manager_no_search_results">Δεν βρέθηκαν αντιστοιχίες.</string>
+  <!-- Additional text for tab manager search page when there are no results. -->
+  <string name="tab_manager_no_search_results_additional_text">Δοκιμάστε άλλη αναζήτηση!</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab button. Closes the current session when pressed -->
   <string name="close_tab">Κλείσιμο καρτέλας</string>
   <!-- Content description (not visible, for screen readers etc.): Close tab <title> button. %s is the tab title -->
   <string name="close_tab_title">Κλείσιμο καρτέλας %s</string>
   <!-- Content description (not visible, for screen readers etc.): Opens the open tabs menu when pressed -->
   <string name="open_tabs_menu">Άνοιγμα μενού καρτελών</string>
+  <!-- Content description (not visible, for screen readers etc.): Return to tab manager -->
+  <string name="tab_manager_search_bar_back_content_description">Επιστροφή στη διαχείριση καρτελών</string>
   <!-- Open tabs menu item to save tabs to collection -->
   <string name="tabs_menu_save_to_collection1">Αποθήκευση καρτελών στη συλλογή</string>
   <!-- Text for the menu button to delete a collection -->
@@ -1525,6 +1605,8 @@
   <string name="delete_from_history">Διαγραφή από ιστορικό</string>
   <!-- Postfix for private WebApp titles. %1$s is the name of the app (for example "Firefox"). -->
   <string name="pwa_site_controls_title_private">%1$s (Ιδιωτική λειτουργία)</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
+  <string name="tab_manager_open_tab_search">Αναζήτηση ανοικτών καρτελών</string>
   <!--
     History
 
@@ -1898,6 +1980,8 @@
   <string name="bookmark_delete_folder_content_description">Διαγραφή φακέλου</string>
   <!-- Content description for bookmark search floating action button -->
   <string name="bookmark_search_button_content_description">Αναζήτηση σελιδοδεικτών</string>
+  <!-- Content description for select folder screen search action button ("search" is a verb) -->
+  <string name="select_bookmark_search_button_content_description">Αναζήτηση φακέλων</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">Μενού στοιχείων για «%s»</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
@@ -2099,8 +2183,6 @@
   <string name="toast_copy_link_to_clipboard">Αντιγράφηκε στο πρόχειρο</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Σύνδεση στο Sync</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Συγχρονισμός δεδομένων</string>
   <!-- An option from the three dot menu to sign in -->
   <string name="sync_menu_sign_in">Σύνδεση</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
@@ -2221,7 +2303,7 @@
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">Μέγεθος γραμματοσειράς</string>
   <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
-  <string name="a11y_preference_accessibility_font_size_percentage">%d %%.</string>
+  <string name="a11y_preference_accessibility_font_size_percentage" tools:ignore="UnusedResources" moz:removedIn="148">%d %%.</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">Αυτόματο μέγεθος γραμματοσειράς</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
@@ -2689,6 +2771,8 @@
   <string name="edit_login_navigate_back_button_content_description">Πλοήγηση προς τα πίσω</string>
   <!-- Content description, used by tools like screenreaders, to press on the edit login button. -->
   <string name="edit_login_button_content_description">Επεξεργασία σύνδεσης</string>
+  <!-- Content description, used by tools like screenreaders, to press on the add new login button. -->
+  <string name="saved_logins_add_new_login_button_content_description">Προσθήκη νέας σύνδεσης</string>
   <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
   <string name="saved_login_open_site">Άνοιγμα σελίδας στο πρόγραμμα περιήγησης</string>
   <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
@@ -2759,6 +2843,8 @@
   <string name="autofill_settings_navigate_back_button_content_description">Πίσω</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">Προσθήκη κάρτας</string>
+  <!-- Content description for the "credit card feature" top bar back button -->
+  <string name="credit_cards_navigate_back_button_content_description">Πλοήγηση προς τα πίσω</string>
   <!-- Title of the "Edit card" screen -->
   <string name="credit_cards_edit_card">Επεξεργασία κάρτας</string>
   <!-- The header for the card number of a credit card -->
@@ -3889,7 +3975,7 @@
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Δεν υπάρχουν πρόσφατες αναζητήσεις</string>
   <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message">Προέκυψε σφάλμα</string>
+  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Προέκυψε σφάλμα</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Απαλοιφή όλων</string>
   <!-- Section header for recent search results -->
@@ -3898,11 +3984,9 @@
   <string name="settings_search_no_results_title">Δεν βρέθηκε τίποτα</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">Μήπως να δοκιμάσετε μια άλλη αναζήτηση;</string>
-  <!--
-    Terms of use pop up prompt
+  <!-- ==== Terms of use pop up prompt ==== -->
 
-    Title for the pop up prompt
-  -->
+  <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">Έχουμε μια ενημέρωση</string>
   <!--
     Message for the terms of use pop up prompt
@@ -3926,4 +4010,26 @@
   <string name="terms_of_use_prompt_accept">Αποδοχή</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Υπενθύμιση αργότερα</string>
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- A title for the popup prompt. -->
+  <string name="terms_of_use_prompt_title_option_a" tools:ignore="UnusedResources">Όροι χρήσης</string>
+  <!--
+    A title for the popup prompt.
+    %1$s is the product name "Firefox"
+  -->
+  <string name="terms_of_use_prompt_title_option_b" tools:ignore="UnusedResources">Μια σημείωση από το %1$s</string>
+  <!--
+    Copy for the Terms of Use popup prompt body line two.
+    %1$s is the string terms_of_use_prompt_body_line_two_alternative_link ("here") that is a link to the Terms of Use
+  -->
+  <string name="terms_of_use_prompt_body_line_two_alternative" tools:ignore="UnusedResources">Μπορείτε να μάθετε περισσότερα %1$s.</string>
+  <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
+  <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">εδώ</string>
+  <!-- ==== End of Terms of use popup prompt. ==== -->
+
+  <!-- The first active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Σημείωση απορρήτου</string>
+  <!-- The second active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Μάθετε περισσότερα</string>
 </resources>

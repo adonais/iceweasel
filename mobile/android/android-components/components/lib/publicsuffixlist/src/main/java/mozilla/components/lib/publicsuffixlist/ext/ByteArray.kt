@@ -14,7 +14,7 @@ private const val BITMASK = 0xff.toByte()
  * This algorithm is based on OkHttp's PublicSuffixDatabase class:
  * https://github.com/square/okhttp/blob/master/okhttp/src/main/java/okhttp3/internal/publicsuffix/PublicSuffixDatabase.java
  */
-@Suppress("NestedBlockDepth")
+@Suppress("NestedBlockDepth", "CognitiveComplexMethod")
 internal fun ByteArray.binarySearch(labels: List<ByteArray>, labelIndex: Int): String? {
     var low = 0
     var high = size

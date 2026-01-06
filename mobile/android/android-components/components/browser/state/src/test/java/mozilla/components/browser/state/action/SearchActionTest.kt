@@ -147,7 +147,8 @@ class SearchActionTest {
 
         // Add a custom search engine
         state = BrowserStateReducer.reduce(
-            state, SearchAction.UpdateCustomSearchEngineAction(customSearchEngine),
+            state,
+            SearchAction.UpdateCustomSearchEngineAction(customSearchEngine),
         )
 
         state.search.customSearchEngines.let { searchEngines ->
@@ -165,7 +166,8 @@ class SearchActionTest {
 
         // Add another search engine
         state = BrowserStateReducer.reduce(
-            state, SearchAction.UpdateCustomSearchEngineAction(customSearchEngine2),
+            state,
+            SearchAction.UpdateCustomSearchEngineAction(customSearchEngine2),
         )
 
         state.search.customSearchEngines.let { searchEngines ->
@@ -180,7 +182,8 @@ class SearchActionTest {
             name = "My awesome search engine",
         )
         state = BrowserStateReducer.reduce(
-            state, SearchAction.UpdateCustomSearchEngineAction(updated),
+            state,
+            SearchAction.UpdateCustomSearchEngineAction(updated),
         )
 
         state.search.customSearchEngines.let { searchEngines ->
@@ -210,13 +213,15 @@ class SearchActionTest {
         assertEquals(1, state.search.customSearchEngines.size)
 
         state = BrowserStateReducer.reduce(
-            state, SearchAction.RemoveCustomSearchEngineAction("unrecognized_id"),
+            state,
+            SearchAction.RemoveCustomSearchEngineAction("unrecognized_id"),
         )
 
         assertEquals(1, state.search.customSearchEngines.size)
 
         state = BrowserStateReducer.reduce(
-            state, SearchAction.RemoveCustomSearchEngineAction(customSearchEngine.id),
+            state,
+            SearchAction.RemoveCustomSearchEngineAction(customSearchEngine.id),
         )
 
         assertTrue(state.search.customSearchEngines.isEmpty())
@@ -240,14 +245,16 @@ class SearchActionTest {
         assertNull(state.search.userSelectedSearchEngineId)
 
         state = BrowserStateReducer.reduce(
-            state, SearchAction.SelectSearchEngineAction(searchEngine.id, null),
+            state,
+            SearchAction.SelectSearchEngineAction(searchEngine.id, null),
         )
         assertEquals(searchEngine.id, state.search.userSelectedSearchEngineId)
 
         assertEquals(searchEngine.id, state.search.userSelectedSearchEngineId)
 
         state = BrowserStateReducer.reduce(
-            state, SearchAction.SelectSearchEngineAction("unrecognized_id", null),
+            state,
+            SearchAction.SelectSearchEngineAction("unrecognized_id", null),
         )
 
         // We allow setting an ID of a search engine that is not in the state since loading happens
@@ -261,7 +268,8 @@ class SearchActionTest {
         assertNull(state.search.region)
 
         state = BrowserStateReducer.reduce(
-            state, SearchAction.SetRegionAction(RegionState("DE", "FR")),
+            state,
+            SearchAction.SetRegionAction(RegionState("DE", "FR")),
         )
 
         assertNotNull(state.search.region)

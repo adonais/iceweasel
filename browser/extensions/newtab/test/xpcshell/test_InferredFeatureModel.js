@@ -14,8 +14,8 @@ ChromeUtils.defineESModuleGetters(this, {
 /**
  * Compares two dictionaries up to decimalPoints decimal points
  *
- * @param {Object} a
- * @param {Object} b
+ * @param {object} a
+ * @param {object} b
  * @param {number} decimalPoints
  * @returns {boolean} True if vectors are similar
  */

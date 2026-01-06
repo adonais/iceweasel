@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">ئالدامچىلىق تور بېكىتى مەسىلىسى</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>%1$s دىكى بۇ تور بېكەت ئالدامچىلىق تور بېكىتى دەپ دوكلات قىلىنغان ۋە بىخەتەرلىك مايىللىقىڭىزغا ئاساسەن چەكلەنگەن. </p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">تور بىخەتەرلىكىڭىز ئۈچۈن تور بېكەت توسۇلدى</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>%1$s دىكى تور بەت توسۇلدى چۈنكى بىر قوشۇلما ئۇنى ئېچىشقا ئۇرۇندى. بۇ تور بېكەت ئىم ياكى ئىناۋەتلىك كارتا نومۇرىغا ئوخشاش — ئۇچۇرنى ئوغرىلىشى مۇمكىن.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">بىخەتەر تور بېكەتنى ئىشلەتكىلى بولمايدۇ</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

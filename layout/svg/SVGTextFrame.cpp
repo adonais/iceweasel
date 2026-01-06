@@ -259,7 +259,8 @@ static bool IsGlyphPositioningAttribute(nsAtom* aAttribute) {
  * @param aTextRun The text run of aFrame.
  * @param aDominantBaseline The dominant-baseline value to use.
  */
-static nscoord GetBaselinePosition(nsTextFrame* aFrame, gfxTextRun* aTextRun,
+static nscoord GetBaselinePosition(nsTextFrame* aFrame,
+                                   const gfxTextRun* aTextRun,
                                    StyleDominantBaseline aDominantBaseline,
                                    float aFontSizeScaleFactor) {
   WritingMode writingMode = aFrame->GetWritingMode();
@@ -2078,6 +2079,13 @@ class MOZ_STACK_CLASS CharIterator {
    * Returns whether the iterator is past the subtree.
    */
   bool IsAfterSubtree() const { return mFrameIterator.IsAfterSubtree(); }
+
+  /**
+   * Returns the iterator's computed dominant-baseline value.
+   */
+  StyleDominantBaseline DominantBaseline() const {
+    return mFrameIterator.DominantBaseline();
+  }
 
   /**
    * Returns whether the current character is a skipped character.
@@ -4028,15 +4036,18 @@ already_AddRefed<SVGRect> SVGTextFrame::GetExtentOfChar(nsIContent* aContent,
   m.PreRotate(mPositions[startIndex].mAngle);
   m.PreScale(1 / mFontSizeScaleFactor, 1 / mFontSizeScaleFactor);
 
+  nscoord baseline = GetBaselinePosition(
+      textFrame, textRun, it.DominantBaseline(), mFontSizeScaleFactor);
+
   gfxRect glyphRect;
   if (textRun->IsVertical()) {
     glyphRect = gfxRect(
-        -presContext->AppUnitsToGfxUnits(descent) * cssPxPerDevPx, x,
+        -presContext->AppUnitsToGfxUnits(baseline) * cssPxPerDevPx, x,
         presContext->AppUnitsToGfxUnits(ascent + descent) * cssPxPerDevPx,
         advance);
   } else {
     glyphRect = gfxRect(
-        x, -presContext->AppUnitsToGfxUnits(ascent) * cssPxPerDevPx, advance,
+        x, -presContext->AppUnitsToGfxUnits(baseline) * cssPxPerDevPx, advance,
         presContext->AppUnitsToGfxUnits(ascent + descent) * cssPxPerDevPx);
   }
 

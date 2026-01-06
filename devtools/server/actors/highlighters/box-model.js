@@ -51,18 +51,18 @@ const GUIDE_STROKE_WIDTH = 1;
  * h.hide();
  * h.destroy();
  *
- * @param {String} options.region
+ * @param {string} options.region
  *        Specifies the region that the guides should outline:
  *          "content" (default), "padding", "border" or "margin".
- * @param {Boolean} options.hideGuides
+ * @param {boolean} options.hideGuides
  *        Defaults to false
- * @param {Boolean} options.hideInfoBar
+ * @param {boolean} options.hideInfoBar
  *        Defaults to false
- * @param {String} options.showOnly
+ * @param {string} options.showOnly
  *        If set, only this region will be highlighted. Use with onlyRegionArea
  *        to only highlight the area of the region:
  *        "content", "padding", "border" or "margin"
- * @param {Boolean} options.onlyRegionArea
+ * @param {boolean} options.onlyRegionArea
  *        This can be set to true to make each region's box only highlight the
  *        area of the corresponding region rather than the area of nested
  *        regions too. This is useful when used with showOnly.
@@ -318,8 +318,9 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
   /**
    * Override the AutoRefreshHighlighter's _isNodeValid method to also return true for
    * text nodes since these can also be highlighted.
+   *
    * @param {DOMNode} node
-   * @return {Boolean}
+   * @return {boolean}
    */
   _isNodeValid(node) {
     return (
@@ -464,8 +465,9 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
    * This is useful to position the guides and infobar.
    * This may happen if the BoxModelHighlighter is used to highlight an inline
    * element that spans line breaks.
-   * @param {String} region The box-model region to get the outer quad for.
-   * @return {Object} A quad-like object {p1,p2,p3,p4,bounds}
+   *
+   * @param {string} region The box-model region to get the outer quad for.
+   * @return {object} A quad-like object {p1,p2,p3,p4,bounds}
    */
   _getOuterQuad(region) {
     const quads = this.currentQuads[region];
@@ -662,7 +664,8 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Can the current node be highlighted? Does it have quads.
-   * @return {Boolean}
+   *
+   * @return {boolean}
    */
   _nodeNeedsHighlighting() {
     return (
@@ -704,7 +707,8 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
   /**
    * We only want to show guides for horizontal and vertical edges as this helps
    * to line them up. This method finds these edges and displays a guide there.
-   * @param {String} region The region around which the guides should be shown.
+   *
+   * @param {string} region The region around which the guides should be shown.
    */
   _showGuides(region) {
     const quad = this._getOuterQuad(region);
@@ -753,7 +757,7 @@ class BoxModelHighlighter extends AutoRefreshHighlighter {
    * Move a guide to the appropriate position and display it. If no point is
    * passed then the guide is hidden.
    *
-   * @param  {String} side
+   * @param  {string} side
    *         The guide to update
    * @param  {Integer} point
    *         x or y co-ordinate. If this is undefined we hide the guide.

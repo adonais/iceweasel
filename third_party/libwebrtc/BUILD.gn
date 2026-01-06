@@ -315,16 +315,6 @@ config("common_config") {
   cflags_objc = []
   defines = []
 
-  # We should be able to remove this after c++20 is enabled
-  # across the Mozilla tree.
-  if (build_with_mozilla) {
-    if (is_win) {
-      cflags_cc += [ "-std:c++20" ]
-    } else {
-      cflags_cc += [ "-std=gnu++20" ]
-    }
-  }
-
   if (rtc_enable_protobuf) {
     defines += [ "WEBRTC_ENABLE_PROTOBUF=1" ]
   } else {
@@ -391,6 +381,10 @@ config("common_config") {
     defines += [ "WEBRTC_EXCLUDE_AUDIO_PROCESSING_MODULE" ]
   }
 
+  if (rtc_video_psnr) {
+    defines += [ "WEBRTC_ENCODER_PSNR_STATS" ]
+  }
+
   if (is_clang) {
     cflags += [
       "-Wshadow",
@@ -426,7 +420,7 @@ config("common_config") {
         # "-Wnested-externs",  (C/Obj-C only)
       ]
       cflags_objc += [ "-Wstrict-prototypes" ]
-      cflags_cc += [
+      cflags_cc = [
         "-Wnon-virtual-dtor",
 
         # This is enabled for clang; enable for gcc as well.
@@ -730,6 +724,7 @@ if (rtc_include_tests && !build_with_chromium) {
       "rtc_base:rtc_numerics_unittests",
       "rtc_base:rtc_operations_chain_unittests",
       "rtc_base:rtc_task_queue_unittests",
+      "rtc_base:sigslot_trampoline_unittest",
       "rtc_base:sigslot_unittest",
       "rtc_base:task_queue_stdlib_unittest",
       "rtc_base:untyped_function_unittest",

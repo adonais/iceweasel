@@ -12,6 +12,7 @@
 #include "mozilla/dom/SVGAnimatedString.h"
 #include "mozilla/dom/SVGGeometryElement.h"
 #include "mozilla/gfx/2D.h"
+#include "nsINode.h"
 #include "nsImageLoadingContent.h"
 
 nsresult NS_NewSVGImageElement(
@@ -43,6 +44,7 @@ class SVGImageElement final : public SVGImageElementBase,
   // interfaces:
 
   NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
   // EventTarget
   void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
@@ -102,7 +104,7 @@ class SVGImageElement final : public SVGImageElementBase,
 
   already_AddRefed<Promise> Decode(ErrorResult& aRv);
 
-  static nsCSSPropertyID GetCSSPropertyIdForAttrEnum(uint8_t aAttrEnum);
+  static NonCustomCSSPropertyId GetCSSPropertyIdForAttrEnum(uint8_t aAttrEnum);
 
   gfx::Rect GeometryBounds(const gfx::Matrix& aToBoundsSpace);
 

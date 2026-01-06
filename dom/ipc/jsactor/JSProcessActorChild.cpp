@@ -9,6 +9,8 @@
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/InProcessChild.h"
 #include "mozilla/dom/InProcessParent.h"
+#include "mozilla/dom/JSIPCValue.h"
+#include "mozilla/dom/JSIPCValueUtils.h"
 #include "mozilla/dom/JSProcessActorBinding.h"
 
 namespace mozilla::dom {
@@ -27,7 +29,7 @@ JSObject* JSProcessActorChild::WrapObject(JSContext* aCx,
 }
 
 void JSProcessActorChild::SendRawMessage(
-    const JSActorMessageMeta& aMeta, UniquePtr<ipc::StructuredCloneData> aData,
+    const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
     UniquePtr<ipc::StructuredCloneData> aStack, ErrorResult& aRv) {
   if (NS_WARN_IF(!CanSend() || !mManager || !mManager->GetCanSend())) {
     aRv.ThrowInvalidStateError("JSProcessActorChild cannot send at the moment");
@@ -45,16 +47,13 @@ void JSProcessActorChild::SendRawMessage(
   }
 
   // Cross-process case - send data over ContentChild to other side.
-  UniquePtr<ClonedMessageData> msgData;
-  if (aData) {
-    msgData = MakeUnique<ClonedMessageData>();
-    if (NS_WARN_IF(!aData->BuildClonedMessageData(*msgData))) {
-      aRv.ThrowDataCloneError(
-          nsPrintfCString("JSProcessActorChild serialization error: cannot "
-                          "clone, in actor '%s'",
-                          PromiseFlatCString(aMeta.actorName()).get()));
-      return;
-    }
+  JSIPCValueUtils::SCDHolder holder;
+  if (NS_WARN_IF(!JSIPCValueUtils::PrepareForSending(holder, aData))) {
+    aRv.ThrowDataCloneError(
+        nsPrintfCString("JSProcessActorChild serialization error: cannot "
+                        "clone, in actor '%s'",
+                        PromiseFlatCString(aMeta.actorName()).get()));
+    return;
   }
 
   UniquePtr<ClonedMessageData> stackData;
@@ -65,7 +64,7 @@ void JSProcessActorChild::SendRawMessage(
     }
   }
 
-  if (NS_WARN_IF(!contentChild->SendRawMessage(aMeta, msgData, stackData))) {
+  if (NS_WARN_IF(!contentChild->SendRawMessage(aMeta, aData, stackData))) {
     aRv.ThrowOperationError(
         nsPrintfCString("JSProcessActorChild send error in actor '%s'",
                         PromiseFlatCString(aMeta.actorName()).get()));
@@ -77,7 +76,9 @@ void JSProcessActorChild::Init(const nsACString& aName,
                                nsIDOMProcessChild* aManager) {
   MOZ_ASSERT(!mManager, "Cannot Init() a JSProcessActorChild twice!");
   mManager = aManager;
-  JSActor::Init(aName);
+  bool sendTyped =
+      !!mManager->AsContentChild() && JSActorSupportsTypedSend(aName);
+  JSActor::Init(aName, sendTyped);
 }
 
 void JSProcessActorChild::ClearManager() { mManager = nullptr; }

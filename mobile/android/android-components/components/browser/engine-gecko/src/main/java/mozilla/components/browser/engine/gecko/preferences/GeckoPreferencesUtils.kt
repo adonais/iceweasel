@@ -55,21 +55,24 @@ object GeckoPreferencesUtils {
             is String -> {
                  SetGeckoPreference.setStringPref(
                     this.pref,
-                    this.value as String, this.branch.intoGeckoBranch(),
+                    this.value as String,
+                    this.branch.intoGeckoBranch(),
                 )
             }
 
             is Int -> {
                  SetGeckoPreference.setIntPref(
                     this.pref,
-                    this.value as Int, this.branch.intoGeckoBranch(),
+                    this.value as Int,
+                    this.branch.intoGeckoBranch(),
                 )
             }
 
             is Boolean -> {
                 SetGeckoPreference.setBoolPref(
                     this.pref,
-                    this.value as Boolean, this.branch.intoGeckoBranch(),
+                    this.value as Boolean,
+                    this.branch.intoGeckoBranch(),
                 )
             }
             else -> {

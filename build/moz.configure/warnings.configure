@@ -102,21 +102,18 @@ check_and_add_warning("-Wloop-analysis", min_clang_version="4.0.0")
 # positives.
 check_and_add_warning("-Wno-range-loop-analysis", min_clang_version="4.0.0")
 
-# Enable some C++20 compat warnings. We can remove these flags after we compile
-# as C++20 (bug 1768116), because they will be enabled by default:
-check_and_add_warning("-Wcomma-subscript", cxx_compiler, when=not_clang_based)
-check_and_add_warning("-Wenum-compare-conditional", min_clang_version="10.0.0")
-check_and_add_warning("-Wenum-float-conversion", min_clang_version="10.0.0")
-check_and_add_warning("-Wvolatile", cxx_compiler, when=not_clang)
-
+# Suppress some C++20 enum conversion warnings to be fixed later. These
+# warnings will become hard errors in C++26 and must be fixed before updating.
 # Disable some C++20 errors to be fixed in bugs 1791958, 1791955, and 1775161.
 check_and_add_warning(
-    "-Wno-deprecated-anon-enum-enum-conversion",
+    "-Wno-deprecated-anon-enum-enum-conversion",  # Bug 1791958
     cxx_compiler,
     min_clang_version="10.0.0",
 )
 check_and_add_warning(
-    "-Wno-deprecated-enum-enum-conversion", cxx_compiler, min_clang_version="10.0.0"
+    "-Wno-deprecated-enum-enum-conversion",  # Bug 1791955
+    cxx_compiler,
+    min_clang_version="10.0.0",
 )
 # Suppress C++20 warnings about implicit capture of `this` until they are fixed
 # in bug 1775161. gcc doesn't have a -Wdeprecated-this-capture flag like clang,

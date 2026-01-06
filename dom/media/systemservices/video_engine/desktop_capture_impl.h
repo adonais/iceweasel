@@ -24,6 +24,7 @@
 #include "api/sequence_checker.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
+#include "common_video/include/video_frame_buffer_pool.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/video_capture/video_capture.h"
 #include "mozilla/DataMutex.h"
@@ -135,6 +136,8 @@ class DesktopCaptureImpl : public DesktopCapturer::Callback,
       mCallbacks;
   // Subscribers to this event will be notified when the capture has ended.
   mozilla::MediaEventProducer<void> mCaptureEndedEvent;
+
+  webrtc::VideoFrameBufferPool mBufferPool;
 };
 
 }  // namespace webrtc

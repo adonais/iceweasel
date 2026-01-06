@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,12 +21,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import mozilla.components.compose.base.theme.AcornTheme
 import org.mozilla.fenix.R
+import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
+
+private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
 
 /**
  * A translation toolbar for browsers.
@@ -41,14 +45,13 @@ fun TranslationToolbar(
     onExpand: () -> Unit = {},
     onClose: () -> Unit = {},
 ) {
-    val shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)
-
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(40.dp)
-            .clip(shape),
-        color = AcornTheme.colors.layer1.copy(alpha = 0.9f),
+            .clip(ROUNDED_CORNER_SHAPE),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.87f),
+        contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Row(
             modifier = Modifier
@@ -59,7 +62,7 @@ fun TranslationToolbar(
             Icon(
                 painter = painterResource(iconsR.drawable.mozac_ic_translate_active_24),
                 contentDescription = null,
-                tint = AcornTheme.colors.iconAccentViolet,
+                tint = MaterialTheme.colorScheme.tertiary,
             )
 
             Text(
@@ -67,18 +70,15 @@ fun TranslationToolbar(
                 modifier = Modifier
                     .padding(start = 8.dp)
                     .weight(1f),
-                fontSize = 14.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                style = AcornTheme.typography.body2,
-                color = AcornTheme.colors.textPrimary,
+                style = FirefoxTheme.typography.body2,
             )
 
             IconButton(onClick = onExpand) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_chevron_up_24),
                     contentDescription = stringResource(R.string.translation_toolbar_expand_action),
-                    tint = AcornTheme.colors.iconPrimary,
                 )
             }
 
@@ -86,7 +86,6 @@ fun TranslationToolbar(
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_cross_20),
                     contentDescription = stringResource(R.string.translation_toolbar_close_action),
-                    tint = AcornTheme.colors.iconPrimary,
                 )
             }
         }
@@ -96,7 +95,17 @@ fun TranslationToolbar(
 @PreviewLightDark
 @Composable
 private fun TranslationToolbarPreview() {
-    AcornTheme {
+    FirefoxTheme {
+        TranslationToolbar(
+            label = "Translated from French to English",
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun TranslationToolbarPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
         TranslationToolbar(
             label = "Translated from French to English",
         )

@@ -237,8 +237,8 @@ addAccessibleTask(
     testRole(getAcc("aria_region_empty_name_mixed"), ROLE_TEXT);
     testRole(getAcc("aria_region_as_table_with_caption"), ROLE_REGION);
     testRole(getAcc("aria_region_as_table_with_caption_mixed"), ROLE_REGION);
-    testRole(getAcc("aria_region_as_table_with_miscaption"), ROLE_TABLE);
-    testRole(getAcc("aria_region_as_table_with_miscaption_mixed"), ROLE_TABLE);
+    testRole(getAcc("aria_region_as_table_with_miscaption"), ROLE_REGION);
+    testRole(getAcc("aria_region_as_table_with_miscaption_mixed"), ROLE_REGION);
     testRole(getAcc("aria_scrollbar"), ROLE_SCROLLBAR);
     testRole(getAcc("aria_scrollbar_mixed"), ROLE_SCROLLBAR);
     testRole(getAcc("aria_searchbox"), ROLE_SEARCHBOX);

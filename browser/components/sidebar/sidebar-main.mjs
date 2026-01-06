@@ -776,6 +776,11 @@ export default class SidebarMain extends MozLitElement {
     );
   }
 
+  shouldUpdate() {
+    const container = window.SidebarController.sidebarContainer;
+    return container && !container.hidden;
+  }
+
   render() {
     /* Add 1 to tools and extensions count for "Customize sidebar" option */
     let enabledToolsAndExtensionsCount =

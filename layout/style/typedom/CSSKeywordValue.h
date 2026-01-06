@@ -19,6 +19,7 @@ class nsISupports;
 
 namespace mozilla {
 
+struct CSSPropertyId;
 class ErrorResult;
 
 namespace dom {
@@ -44,6 +45,9 @@ class CSSKeywordValue final : public CSSStyleValue {
   void SetValue(const nsACString& aArg, ErrorResult& aRv);
 
   // end of CSSKeywordValue Web IDL declarations
+
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             nsACString& aDest) const;
 
  private:
   virtual ~CSSKeywordValue() = default;

@@ -135,7 +135,6 @@ add_heuristic_tests([
         </form></body></html>`,
     expectedResult: [
       {
-        invalid: true,
         fields: [
           { fieldName: "given-name", reason: "autocomplete" },
           { fieldName: "family-name", reason: "autocomplete" },

@@ -204,7 +204,6 @@ export class YelpSuggestions extends SuggestProvider {
       originalUrl: suggestion.url,
       bottomTextL10n: {
         id: "firefox-suggest-yelp-bottom-text",
-        cacheable: true,
       },
       iconBlob: suggestion.icon_blob,
     };

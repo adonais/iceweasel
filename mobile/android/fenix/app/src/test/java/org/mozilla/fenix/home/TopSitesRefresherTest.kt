@@ -10,17 +10,14 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestCoroutineScheduler
-import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.feature.top.sites.TopSitesProvider
-import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.utils.RunWhenReadyQueue
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.helpers.lifecycle.TestLifecycleOwner
 import org.mozilla.fenix.perf.StartupPathProvider
@@ -29,21 +26,17 @@ import org.mozilla.fenix.utils.Settings
 /**
  * Class to test the [TopSitesRefresher]
  */
-@OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
 class TopSitesRefresherTest {
 
-    private val testScheduler = TestCoroutineScheduler()
-    val testDispatcher = StandardTestDispatcher(testScheduler)
-
-    @get:Rule
-    val coroutinesRule = MainCoroutineRule(testDispatcher = testDispatcher)
+    private val testDispatcher = StandardTestDispatcher()
+    private val testScope = TestScope(testDispatcher)
 
     private val lifecycleOwner = TestLifecycleOwner()
 
     private val topSitesProvider = FakeTopSitesProvider()
     private val settings: Settings = mockk(relaxed = true)
 
-    private val visualCompletenessQueue = RunWhenReadyQueue()
+    private val visualCompletenessQueue = RunWhenReadyQueue(testScope)
     private val startupPathProvider =
         FakeStartupPathProvider(expectedPath = StartupPathProvider.StartupPath.NOT_SET)
     private lateinit var topSitesRefresher: TopSitesRefresher
@@ -66,11 +59,11 @@ class TopSitesRefresherTest {
     @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `WHEN lifecycle resumes AND we want to show contile feature THEN top sites are refreshed`() =
-        runTest(context = testScheduler) {
+        runTest(context = testDispatcher) {
             every { settings.showContileFeature } returns true
 
             lifecycleOwner.onResume()
-            advanceUntilIdle()
+            testScheduler.advanceUntilIdle()
 
             assertTrue(topSitesProvider.cacheRefreshed)
         }
@@ -78,18 +71,18 @@ class TopSitesRefresherTest {
     @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
     fun `WHEN lifecycle resumes AND we DO NOT want to show contile feature THEN top sites are NOT refreshed`() =
-        runTest(context = testScheduler) {
+        runTest(context = testDispatcher) {
             every { settings.showContileFeature } returns false
 
             lifecycleOwner.onResume()
-            advanceUntilIdle()
+            testScheduler.advanceUntilIdle()
 
             assertFalse(topSitesProvider.cacheRefreshed)
         }
 
     @Test
     fun `GIVEN app link startup WHEN lifecycle resumes AND visual completeness is ready THEN top sites are refreshed`() =
-        runTest(context = testScheduler) {
+        runTest(context = testDispatcher) {
             // given we want to show top sites
             every { settings.showContileFeature } returns true
 
@@ -101,7 +94,7 @@ class TopSitesRefresherTest {
 
             // When we resume
             lifecycleOwner.onResume()
-            advanceUntilIdle()
+            testScheduler.advanceUntilIdle()
 
             // Then validate that cache is refreshed
             assertTrue(
@@ -112,7 +105,7 @@ class TopSitesRefresherTest {
 
     @Test
     fun `GIVEN app link startup WHEN lifecycle resumes AND visual completeness is NOT ready THEN top sites are NOT refreshed`() =
-        runTest(context = testScheduler) {
+        runTest(context = testDispatcher) {
             // given we want to show top sites
             every { settings.showContileFeature } returns true
 
@@ -121,7 +114,7 @@ class TopSitesRefresherTest {
 
             // When we resume
             lifecycleOwner.onResume()
-            advanceUntilIdle()
+            testScheduler.advanceUntilIdle()
 
             // Then validate that cache is not refreshed
             assertFalse(
@@ -132,7 +125,7 @@ class TopSitesRefresherTest {
 
     @Test
     fun `GIVEN app link startup WHEN lifecycle resumes THEN top sites are NOT refreshed only after visual completeness is ready`() =
-        runTest(context = testScheduler) {
+        runTest(context = testDispatcher) {
             // given we want to show top sites
             every { settings.showContileFeature } returns true
 
@@ -141,7 +134,7 @@ class TopSitesRefresherTest {
 
             // When we resume
             lifecycleOwner.onResume()
-            advanceUntilIdle()
+            testScheduler.advanceUntilIdle()
 
             // Then validate that cache is not refreshed
             assertFalse(
@@ -151,7 +144,7 @@ class TopSitesRefresherTest {
 
             // When visual completeness queue is ready
             visualCompletenessQueue.ready()
-            advanceUntilIdle()
+            testScheduler.advanceUntilIdle()
 
             // Then cache should be refreshed
             assertTrue(

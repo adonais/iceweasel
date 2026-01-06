@@ -28,6 +28,7 @@ import mozilla.components.support.remotesettings.RemoteSettingsService
 import mozilla.components.support.remotesettings.into
 import mozilla.components.support.utils.BuildManufacturerChecker
 import mozilla.components.support.utils.ClipboardHandler
+import mozilla.components.support.utils.ext.packageManagerWrapper
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.FeatureFlags
@@ -47,7 +48,6 @@ import org.mozilla.fenix.distributions.DefaultDistributionBrowserStoreProvider
 import org.mozilla.fenix.distributions.DefaultDistributionProviderChecker
 import org.mozilla.fenix.distributions.DefaultDistributionSettings
 import org.mozilla.fenix.distributions.DistributionIdManager
-import org.mozilla.fenix.distributions.LegacyDistributionProviderChecker
 import org.mozilla.fenix.ext.asRecentTabs
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.filterState
@@ -73,6 +73,7 @@ import org.mozilla.fenix.perf.lazyMonitored
 import org.mozilla.fenix.reviewprompt.ReviewPromptMiddleware
 import org.mozilla.fenix.settings.settingssearch.DefaultFenixSettingsIndexer
 import org.mozilla.fenix.termsofuse.TermsOfUseManager
+import org.mozilla.fenix.termsofuse.store.DefaultTermsOfUsePromptRepository
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.isLargeScreenSize
 import org.mozilla.fenix.wifi.WifiConnectionMonitor
@@ -197,7 +198,26 @@ class Components(private val context: Context) {
     }
 
     val analytics by lazyMonitored { Analytics(context, nimbus, performance.visualCompletenessQueue) }
-    val nimbus by lazyMonitored { NimbusComponents(context) }
+
+    val remoteSettingsService = lazyMonitored {
+        RemoteSettingsService(
+            context,
+            if (context.settings().useProductionRemoteSettingsServer) {
+                RemoteSettingsServer.Prod.into()
+            } else {
+                RemoteSettingsServer.Stage.into()
+            },
+            channel = BuildConfig.BUILD_TYPE,
+            // Need to send this value separately, since `isLargeScreenSize()` is a fenix extension
+            isLargeScreenSize = context.isLargeScreenSize(),
+        )
+    }
+    val nimbus by lazyMonitored {
+        NimbusComponents(
+            context = context,
+            remoteSettingsService = remoteSettingsService.value.remoteSettingsService,
+        )
+    }
     val publicSuffixList by lazyMonitored { PublicSuffixList(context) }
     val clipboardHandler by lazyMonitored { ClipboardHandler(context) }
     val performance by lazyMonitored { PerformanceComponent() }
@@ -321,34 +341,20 @@ class Components(private val context: Context) {
         null
     }
 
-    val remoteSettingsService = lazyMonitored {
-        RemoteSettingsService(
-            context,
-            if (context.settings().useProductionRemoteSettingsServer) {
-                RemoteSettingsServer.Prod.into()
-            } else {
-                RemoteSettingsServer.Stage.into()
-            },
-            channel = BuildConfig.BUILD_TYPE,
-            // Need to send this value separately, since `isLargeScreenSize()` is a fenix extension
-            isLargeScreenSize = context.isLargeScreenSize(),
-        )
-    }
-
     val fxSuggest by lazyMonitored { FxSuggest(context, remoteSettingsService.value) }
 
     val distributionIdManager by lazyMonitored {
         DistributionIdManager(
-            context = context,
+            packageManager = context.packageManagerWrapper,
             browserStoreProvider = DefaultDistributionBrowserStoreProvider(core.store),
             distributionProviderChecker = DefaultDistributionProviderChecker(context),
-            legacyDistributionProviderChecker = LegacyDistributionProviderChecker(context),
             distributionSettings = DefaultDistributionSettings(settings),
+            metricController = analytics.metrics,
         )
     }
 
     val termsOfUseManager by lazyMonitored {
-        TermsOfUseManager(settings)
+        TermsOfUseManager(DefaultTermsOfUsePromptRepository(settings))
     }
 
     val settingsIndexer by lazyMonitored {

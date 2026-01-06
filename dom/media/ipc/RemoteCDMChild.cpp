@@ -232,10 +232,12 @@ void RemoteCDMChild::CreateSession(uint32_t aCreateSessionToken,
                     return;
                   }
 
-                  const auto& sessionId = response.get_nsString();
+                  const auto& msg = response.get_RemoteCDMKeyMessageIPDL();
+                  const auto& sessionId = msg.sessionId();
                   if (RefPtr<dom::MediaKeySession> session =
                           self->mKeys->GetPendingSession(aCreateSessionToken)) {
                     session->SetSessionId(sessionId);
+                    session->DispatchKeyMessage(msg.type(), msg.message());
                   }
 
                   self->ResolvePromise(aPromiseId);

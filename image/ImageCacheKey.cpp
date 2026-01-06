@@ -5,8 +5,6 @@
 
 #include "ImageCacheKey.h"
 
-#include <utility>
-
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/StorageAccess.h"

@@ -17,6 +17,13 @@ const { UrlbarProviderSemanticHistorySearch } = ChromeUtils.importESModule(
 const { getPlacesSemanticHistoryManager } = ChromeUtils.importESModule(
   "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs"
 );
+ChromeUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
+  const { QuickSuggestTestUtils: module } = ChromeUtils.importESModule(
+    "resource://testing-common/QuickSuggestTestUtils.sys.mjs"
+  );
+  module.init(this);
+  return module;
+});
 
 let semanticManager = getPlacesSemanticHistoryManager();
 let hasSufficientEntriesStub = sinon
@@ -46,6 +53,12 @@ add_task(async function setup() {
   Services.prefs
     .getDefaultBranch("")
     .setIntPref("browser.urlbar.suggest.semanticHistory.minLength", 5);
+
+  let cleanup = await QuickSuggestTestUtils.setRegionAndLocale({
+    region: "US",
+    locale: "en-US",
+  });
+  registerCleanupFunction(cleanup);
 });
 
 add_task(async function test_startQuery_adds_results() {

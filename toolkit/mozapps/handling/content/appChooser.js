@@ -146,7 +146,12 @@ let dialog = {
           // and users won't visit the handler's URL template, they'll only
           // visit URLs derived from that template (i.e. with %s in the template
           // replaced by the URL of the content being handled).
-          elm.setAttribute("image", uri.prePath + "/favicon.ico");
+          let params = new URLSearchParams({
+            url: uri.prePath + "/favicon.ico",
+            width: 32,
+            height: 32,
+          });
+          elm.setAttribute("image", "moz-remote-image://?" + params);
         }
         elm.setAttribute("description", uri.prePath);
 
@@ -293,6 +298,7 @@ let dialog = {
 
   /**
    * Update the handler info to reflect the user choice.
+   *
    * @param {boolean} skipAsk - Whether we should persist the application
    * choice and skip asking next time.
    */

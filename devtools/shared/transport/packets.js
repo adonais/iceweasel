@@ -55,6 +55,7 @@ function Packet(transport) {
  * Attempt to initialize a new Packet based on the incoming packet header we've
  * received so far.  We try each of the types in succession, trying JSON packets
  * first since they are much more common.
+ *
  * @param header string
  *        The packet header string to attempt parsing.
  * @param transport DebuggerTransport
@@ -99,6 +100,7 @@ exports.Packet = Packet;
  * prepended to the packet, followed by a colon ([length]:[packet]). The
  * contents of the JSON packet are specified in the Remote Debugging Protocol
  * specification.
+ *
  * @param transport DebuggerTransport
  *        The transport instance that will own the packet.
  */
@@ -111,6 +113,7 @@ function JSONPacket(transport) {
 /**
  * Attempt to initialize a new JSONPacket based on the incoming packet header
  * we've received so far.
+ *
  * @param header string
  *        The packet header string to attempt parsing.
  * @param transport DebuggerTransport
@@ -242,6 +245,7 @@ exports.JSONPacket = JSONPacket;
  * The interpretation of the data portion depends on the kind of actor and the
  * packet's type.  See the Remote Debugging Protocol Stream Transport spec for
  * more details.
+ *
  * @param transport DebuggerTransport
  *        The transport instance that will own the packet.
  */
@@ -258,6 +262,7 @@ function BulkPacket(transport) {
 /**
  * Attempt to initialize a new BulkPacket based on the incoming packet header
  * we've received so far.
+ *
  * @param header string
  *        The packet header string to attempt parsing.
  * @param transport DebuggerTransport
@@ -434,6 +439,7 @@ exports.BulkPacket = BulkPacket;
 /**
  * RawPacket is used to test the transport's error handling of malformed
  * packets, by writing data directly onto the stream.
+ *
  * @param transport DebuggerTransport
  *        The transport instance that will own the packet.
  * @param data string

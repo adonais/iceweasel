@@ -89,7 +89,7 @@ class TrustPanelStore(
                         WebsitePermission.Toggleable(
                             isEnabled = status.isAllowed(),
                             isBlockedByAndroid = false,
-                            isVisible = settings.isLnaBlockingEnabled && sitePermissions != null &&
+                            isVisible = settings.isLnaFeatureEnabled && sitePermissions != null &&
                                     status.doNotAskAgain(),
                             deviceFeature = phoneFeature,
                         )

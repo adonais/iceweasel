@@ -29,7 +29,7 @@ class AutocompletePopup extends EventEmitter {
   /**
    * @param {Document} toolboxDoc
    *        The toolbox document to attach the autocomplete popup panel.
-   * @param {Object} options
+   * @param {object} options
    *        An object consiting any of the following options:
    *        - listId {String} The id for the list <UL> element.
    *        - position {String} The position for the tooltip ("top" or "bottom").
@@ -230,15 +230,15 @@ class AutocompletePopup extends EventEmitter {
    *
    * @param {Node} anchor
    *        Optional node to anchor the panel to. Will default to this.input if it exists.
-   * @param {Number} xOffset
+   * @param {number} xOffset
    *        Horizontal offset in pixels from the left of the node to the left
    *        of the popup.
-   * @param {Number} yOffset
+   * @param {number} yOffset
    *        Vertical offset in pixels from the top of the node to the starting
    *        of the popup.
-   * @param {Number} index
+   * @param {number} index
    *        The position of item to select.
-   * @param {Object} options: Check `selectItemAtIndex` for more information.
+   * @param {object} options: Check `selectItemAtIndex` for more information.
    */
   async openPopup(anchor, xOffset = 0, yOffset = 0, index, options) {
     if (!anchor && this.#input) {
@@ -277,9 +277,9 @@ class AutocompletePopup extends EventEmitter {
   /**
    * Select item at the provided index.
    *
-   * @param {Number} index
+   * @param {number} index
    *        The position of the item to select.
-   * @param {Object} options: An object that can contain:
+   * @param {object} options: An object that can contain:
    *        -  {Boolean} preventSelectCallback: true to not call this.onSelectCallback as
    *                     during the initial autoSelect.
    */
@@ -380,10 +380,10 @@ class AutocompletePopup extends EventEmitter {
   /**
    * Get the autocomplete items array.
    *
-   * @param {Number} index
+   * @param {number} index
    *        The index of the item what is wanted.
    *
-   * @return {Object} The autocomplete item at index index.
+   * @return {object} The autocomplete item at index index.
    */
   getItemAtIndex(index) {
     return this.items[index];
@@ -404,9 +404,9 @@ class AutocompletePopup extends EventEmitter {
    *
    * @param {Array} items
    *        The list of items you want displayed in the popup list.
-   * @param {Number} selectedIndex
+   * @param {number} selectedIndex
    *        The position of the item to select.
-   * @param {Object} options: An object that can contain:
+   * @param {object} options: An object that can contain:
    *        -  {Boolean} preventSelectCallback: true to not call this.onSelectCallback as
    *                     during the initial autoSelect.
    */
@@ -501,6 +501,7 @@ class AutocompletePopup extends EventEmitter {
 
   /**
    * Getter for the selected item.
+   *
    * @type Object
    */
   get selectedItem() {
@@ -510,7 +511,7 @@ class AutocompletePopup extends EventEmitter {
   /**
    * Setter for the selected item.
    *
-   * @param {Object} item
+   * @param {object} item
    *        The object you want selected in the list.
    */
   set selectedItem(item) {
@@ -524,7 +525,7 @@ class AutocompletePopup extends EventEmitter {
    * Update the aria-activedescendant attribute on the current active element for
    * accessibility.
    *
-   * @param {String} id
+   * @param {string} id
    *        The id (as in DOM id) of the currently selected autocomplete suggestion
    */
   #setActiveDescendant(id) {
@@ -610,7 +611,8 @@ class AutocompletePopup extends EventEmitter {
 
   /**
    * Getter for the number of items in the popup.
-   * @type {Number}
+   *
+   * @type {number}
    */
   get itemCount() {
     return this.items.length;
@@ -619,7 +621,7 @@ class AutocompletePopup extends EventEmitter {
   /**
    * Getter for the height of each item in the list.
    *
-   * @type {Number}
+   * @type {number}
    */
   get #itemsPerPane() {
     if (this.items.length) {
@@ -634,7 +636,7 @@ class AutocompletePopup extends EventEmitter {
   /**
    * Select the next item in the list.
    *
-   * @return {Object}
+   * @return {object}
    *         The newly selected item object.
    */
   selectNextItem() {
@@ -649,7 +651,7 @@ class AutocompletePopup extends EventEmitter {
   /**
    * Select the previous item in the list.
    *
-   * @return {Object}
+   * @return {object}
    *         The newly-selected item object.
    */
   selectPreviousItem() {
@@ -666,7 +668,7 @@ class AutocompletePopup extends EventEmitter {
    * Select the top-most item in the next page of items or
    * the last item in the list.
    *
-   * @return {Object}
+   * @return {object}
    *         The newly-selected item object.
    */
   selectNextPageItem() {
@@ -679,7 +681,7 @@ class AutocompletePopup extends EventEmitter {
    * Select the bottom-most item in the previous page of items,
    * or the first item in the list.
    *
-   * @return {Object}
+   * @return {object}
    *         The newly-selected item object.
    */
   selectPreviousPageItem() {
@@ -692,7 +694,7 @@ class AutocompletePopup extends EventEmitter {
    * Determines if the specified colour object is a valid colour, and if
    * it is not a "special value"
    *
-   * @return {Boolean}
+   * @return {boolean}
    *         If the object represents a proper colour or not.
    */
   #isValidColor(color) {

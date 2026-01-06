@@ -165,7 +165,7 @@ ScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  if (mRequest->IsBytecode() && firstTime) {
+  if (mRequest->IsSerializedStencil() && firstTime) {
     PerfStats::RecordMeasurementStart(PerfStats::Metric::JSBC_IO_Read);
   }
 
@@ -189,8 +189,8 @@ ScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
       mSRIStatus = mSRIDataVerifier->Update(aDataLength, aData);
     }
   } else {
-    MOZ_ASSERT(mRequest->IsBytecode());
-    if (!mRequest->SRIAndBytecode().append(aData, aDataLength)) {
+    MOZ_ASSERT(mRequest->IsSerializedStencil());
+    if (!mRequest->SRIAndSerializedStencil().append(aData, aDataLength)) {
       return NS_ERROR_OUT_OF_MEMORY;
     }
 
@@ -301,7 +301,7 @@ nsresult ScriptLoadHandler::MaybeDecodeSRI(uint32_t* sriLength) {
   }
 
   // Skip until the content is large enough to be decoded.
-  JS::TranscodeBuffer& receivedData = mRequest->SRIAndBytecode();
+  JS::TranscodeBuffer& receivedData = mRequest->SRIAndSerializedStencil();
   if (receivedData.length() <= mSRIDataVerifier->DataSummaryLength()) {
     return NS_OK;
   }
@@ -311,7 +311,7 @@ nsresult ScriptLoadHandler::MaybeDecodeSRI(uint32_t* sriLength) {
 
   if (NS_FAILED(mSRIStatus)) {
     // We are unable to decode the hash contained in the alternate data which
-    // contains the bytecode, or it does not use the same algorithm.
+    // contains the serialized Stencil, or it does not use the same algorithm.
     LOG(
         ("ScriptLoadHandler::MaybeDecodeSRI, failed to decode SRI, restart "
          "request"));
@@ -344,7 +344,7 @@ nsresult ScriptLoadHandler::EnsureKnownDataType(
     nsAutoCString altDataType;
     cic->GetAlternativeDataType(altDataType);
     if (altDataType.Equals(ScriptLoader::BytecodeMimeTypeFor(mRequest))) {
-      mRequest->SetBytecode();
+      mRequest->SetSerializedStencil();
       TRACE_FOR_TEST(mRequest, "load:diskcache");
       return NS_OK;
     }
@@ -399,7 +399,7 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    if (mRequest->IsBytecode() && !firstMessage) {
+    if (mRequest->IsSerializedStencil() && !firstMessage) {
       // if firstMessage, then entire stream is in aData, and PerfStats would
       // measure 0 time
       PerfStats::RecordMeasurementEnd(PerfStats::Metric::JSBC_IO_Read);
@@ -421,14 +421,14 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
         mSRIStatus = mSRIDataVerifier->Update(aDataLength, aData);
       }
     } else {
-      MOZ_ASSERT(mRequest->IsBytecode());
-      JS::TranscodeBuffer& bytecode = mRequest->SRIAndBytecode();
-      if (!bytecode.append(aData, aDataLength)) {
+      MOZ_ASSERT(mRequest->IsSerializedStencil());
+      JS::TranscodeBuffer& buf = mRequest->SRIAndSerializedStencil();
+      if (!buf.append(aData, aDataLength)) {
         return NS_ERROR_OUT_OF_MEMORY;
       }
 
-      LOG(("ScriptLoadRequest (%p): Bytecode length = %u", mRequest.get(),
-           unsigned(bytecode.length())));
+      LOG(("ScriptLoadRequest (%p): SRIAndSerializedStencil length = %u",
+           mRequest.get(), unsigned(buf.length())));
 
       // If we abort while decoding the SRI, we fallback on explicitly
       // requesting the source. Thus, we should not continue in
@@ -442,30 +442,30 @@ ScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
         return channelRequest->Cancel(mScriptLoader->RestartLoad(mRequest));
       }
 
-      // The bytecode cache always starts with the SRI hash, thus even if there
-      // is no SRI data verifier instance, we still want to skip the hash.
+      // The serialized stencil always starts with the SRI hash, thus even if
+      // there is no SRI data verifier instance, we still want to skip the hash.
       uint32_t sriLength;
-      rv = SRICheckDataVerifier::DataSummaryLength(
-          bytecode.length(), bytecode.begin(), &sriLength);
+      rv = SRICheckDataVerifier::DataSummaryLength(buf.length(), buf.begin(),
+                                                   &sriLength);
       if (NS_FAILED(rv)) {
         return channelRequest->Cancel(mScriptLoader->RestartLoad(mRequest));
       }
 
       mRequest->SetSRILength(sriLength);
 
-      Vector<uint8_t> compressedBytecode;
-      // mRequest has the compressed bytecode, but will be filled with the
-      // uncompressed bytecode
-      compressedBytecode.swap(bytecode);
+      Vector<uint8_t> compressed;
+      // mRequest has the compressed data, but will be filled with the
+      // uncompressed data
+      compressed.swap(buf);
       if (!JS::loader::ScriptBytecodeDecompress(
-              compressedBytecode, mRequest->GetSRILength(), bytecode)) {
+              compressed, mRequest->GetSRILength(), buf)) {
         return NS_ERROR_UNEXPECTED;
       }
     }
   }
 
   // Everything went well, keep the CacheInfoChannel alive such that we can
-  // later save the bytecode on the cache entry.
+  // later save the serialized stencil on the cache entry.
   // we have to mediate and use mRequest.
   rv = mScriptLoader->OnStreamComplete(aLoader, mRequest, aStatus, mSRIStatus,
                                        mSRIDataVerifier.get());

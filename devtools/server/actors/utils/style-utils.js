@@ -25,7 +25,7 @@ const FONT_NEED_WRAPPING_QUOTES_REGEX = /^[^'"].* /;
  * @param options {object}
  *        Object with options 'previewText' and 'previewFontSize'
  *
- * @return {Object} An object with the following properties:
+ * @return {object} An object with the following properties:
  *         - dataUrl {string}: The data URI of the font preview image
  *         - size {Number}: The optimal width of preview image
  *         - ctx {CanvasRenderingContext2D}: The canvas context (returned for tests)
@@ -46,7 +46,7 @@ function getFontPreviewData(font, doc, options) {
   // properly applied, but we don't want to wrap all fonts, otherwise generic family names
   // (e.g. `monospace`) wouldn't work.
   // It should be safe to only add the quotes when the font has some spaces (generic family
-  // names don't have spaces, https://developer.mozilla.org/en-US/docs/Web/CSS/font-family#generic-name)
+  // names don't have spaces, https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/font-family#generic-name)
   // We also don't want to add quotes if there are already some
   // `font` is the declaration value, so it can have multiple parts,
   // e.g: `"Menlo", MonoLisa, monospace`
@@ -138,6 +138,8 @@ exports.getFontPreviewData = getFontPreviewData;
 /**
  * Get the text content of a rule given some CSS text, a line and a column
  * Consider the following example:
+ *
+ * ```css
  * body {
  *  color: red;
  * }
@@ -145,11 +147,14 @@ exports.getFontPreviewData = getFontPreviewData;
  *  line-height: 2em;
  *  color: blue;
  * }
- * Calling the function with the whole text above and line=4 and column=1 would
- * return "line-height: 2em; color: blue;"
- * @param {String} initialText
- * @param {Number} line (1-indexed)
- * @param {Number} column (1-indexed)
+ * ```
+ *
+ * Calling the function with the whole text above and `line=4` and `column=1` would
+ * return `line-height: 2em; color: blue;`
+ *
+ * @param {string} initialText
+ * @param {number} line (1-indexed)
+ * @param {number} column (1-indexed)
  * @return {object} An object of the form {offset: number, text: string}
  *                  The offset is the index into the input string where
  *                  the rule text started.  The text is the content of
@@ -173,9 +178,10 @@ exports.getRuleText = getRuleText;
 /**
  * Return the offset and substring of |text| that starts at the given
  * line and column.
- * @param {String} text
- * @param {Number} line (1-indexed)
- * @param {Number} column (1-indexed)
+ *
+ * @param {string} text
+ * @param {number} line (1-indexed)
+ * @param {number} column (1-indexed)
  * @return {object} An object of the form {offset: number, text: string},
  *                  where the offset is the offset into the input string
  *                  where the text starts, and where text is the text.

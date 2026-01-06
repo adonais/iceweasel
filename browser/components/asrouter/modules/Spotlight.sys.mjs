@@ -36,6 +36,7 @@ export const Spotlight = {
 
   /**
    * Shows spotlight tab or window modal specific to the given browser
+   *
    * @param browser             The browser for spotlight display
    * @param message             Message containing content to show
    * @param dispatchCFRAction   A function to dispatch resulting actions

@@ -7,6 +7,7 @@
 #include "SVGFragmentIdentifier.h"
 
 #include "SVGAnimatedTransformList.h"
+#include "mozilla/MediaFragmentURIParser.h"
 #include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/SVGViewElement.h"
@@ -52,6 +53,12 @@ class MOZ_RAII AutoSVGViewHandler {
   void CreateSVGView() {
     MOZ_ASSERT(!mSVGView, "CreateSVGView should not be called multiple times");
     mSVGView = MakeUnique<SVGView>();
+  }
+
+  void SetViewBox(const gfx::Rect& aRect) {
+    SVGViewBox viewBox(aRect.x, aRect.y, aRect.width, aRect.height);
+    mSVGView->mViewBox.SetBaseValue(viewBox, mRoot, true);
+    mValid = true;
   }
 
   bool ProcessAttr(const nsAString& aToken, const nsAString& aParams) {
@@ -147,6 +154,48 @@ bool SVGFragmentIdentifier::ProcessSVGViewSpec(const nsAString& aViewSpec,
   return true;
 }
 
+static float PxLengthOrFallback(const LengthPercentage& aLenPct,
+                                CSSIntCoord aFallback) {
+  if (!aLenPct.IsLength()) {
+    return aFallback;
+  }
+  return aLenPct.AsLength().ToCSSPixels();
+}
+
+bool SVGFragmentIdentifier::ProcessMediaFragment(
+    const nsAString& aMediaFragment, SVGSVGElement* aRoot) {
+  NS_ConvertUTF16toUTF8 mediaFragment(aMediaFragment);
+  MediaFragmentURIParser parser(mediaFragment);
+
+  bool foundMediaFragment = false;
+
+  if (parser.HasStartTime()) {
+    aRoot->SetCurrentTime(parser.GetStartTime());
+    foundMediaFragment = true;
+  }
+  if (parser.HasEndTime()) {
+    // pause animations at end time.
+    aRoot->PauseAnimationsAt(parser.GetEndTime());
+    foundMediaFragment = true;
+  }
+  if (parser.HasClip()) {
+    gfx::Rect rect = IntRectToRect(parser.GetClip());
+    if (parser.GetClipUnit() == eClipUnit_Percent) {
+      float width = PxLengthOrFallback(aRoot->GetIntrinsicWidth(),
+                                       kFallbackIntrinsicWidthInPixels);
+      float height = PxLengthOrFallback(aRoot->GetIntrinsicHeight(),
+                                        kFallbackIntrinsicHeightInPixels);
+      rect.Scale(width / 100.0f, height / 100.0f);
+    }
+    AutoSVGViewHandler viewHandler(aRoot);
+    viewHandler.CreateSVGView();
+    viewHandler.SetViewBox(rect);
+    foundMediaFragment = true;
+  }
+
+  return foundMediaFragment;
+}
+
 bool SVGFragmentIdentifier::ProcessFragmentIdentifier(
     Document* aDocument, const nsAString& aAnchorName) {
   MOZ_ASSERT(aDocument->GetRootElement()->IsSVGElement(nsGkAtoms::svg),
@@ -154,10 +203,7 @@ bool SVGFragmentIdentifier::ProcessFragmentIdentifier(
 
   auto* rootElement = SVGSVGElement::FromNode(aDocument->GetRootElement());
 
-  const auto* viewElement =
-      SVGViewElement::FromNodeOrNull(aDocument->GetElementById(aAnchorName));
-
-  if (viewElement) {
+  if (SVGViewElement::FromNodeOrNull(aDocument->GetElementById(aAnchorName))) {
     if (!rootElement->mCurrentViewID) {
       rootElement->mCurrentViewID = MakeUnique<nsString>();
     }
@@ -174,7 +220,13 @@ bool SVGFragmentIdentifier::ProcessFragmentIdentifier(
     return false;
   }
 
-  return ProcessSVGViewSpec(aAnchorName, rootElement);
+  if (ProcessSVGViewSpec(aAnchorName, rootElement)) {
+    return true;
+  }
+  if (ProcessMediaFragment(aAnchorName, rootElement)) {
+    return true;
+  }
+  return false;
 }
 
 }  // namespace mozilla

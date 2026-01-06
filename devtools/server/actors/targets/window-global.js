@@ -479,6 +479,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
   /**
    * Getter for the list of all `docShell`s in the window global.
+   *
    * @return {Array}
    */
   get docShells() {
@@ -535,6 +536,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
 
   /**
    * Getter for the list of all content DOM windows in the window global.
+   *
    * @return {Array}
    */
   get windows() {
@@ -759,10 +761,10 @@ class WindowGlobalTargetActor extends BaseTargetActor {
   /**
    * Called when the actor is removed from the connection.
    *
-   * @params {Object} options
-   * @params {Boolean} options.isTargetSwitching: Set to true when this is called during
+   * @params {object} options
+   * @params {boolean} options.isTargetSwitching: Set to true when this is called during
    *         a target switch.
-   * @params {Boolean} options.isModeSwitching: Set to true true when this is called as the
+   * @params {boolean} options.isModeSwitching: Set to true true when this is called as the
    *         result of a change to the devtools.browsertoolbox.scope pref.
    */
   destroy({ isTargetSwitching = false, isModeSwitching = false } = {}) {

@@ -107,6 +107,13 @@
           event.stopPropagation();
         }
       });
+
+      this.dispatchEvent(
+        new CustomEvent("moz-input-box-rebuilt", {
+          bubbles: true,
+          composed: false,
+        })
+      );
     }
 
     _doPopupItemEnablingSpell(event) {

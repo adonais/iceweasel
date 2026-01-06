@@ -10,7 +10,6 @@
 #include "ActorsChild.h"
 
 // Global includes
-#include <utility>
 
 #include "mozilla/StaticPtr.h"
 #include "nsHashKeys.h"

@@ -79,6 +79,7 @@ var gPageStyleMenu = {
 
   /**
    * Send a message to all PageStyleParents by walking the BrowsingContext tree.
+   *
    * @param message
    *        The string message to send to each PageStyleChild.
    * @param data
@@ -103,6 +104,7 @@ var gPageStyleMenu = {
 
   /**
    * Switch the stylesheet of all documents in the current browser.
+   *
    * @param title The title of the stylesheet to switch to.
    */
   switchStyleSheet(title) {

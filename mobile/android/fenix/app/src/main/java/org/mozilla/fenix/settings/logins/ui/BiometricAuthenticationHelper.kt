@@ -12,55 +12,54 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.fragment.app.FragmentActivity
-import org.mozilla.fenix.R
 
 /**
  *  The UI host for displaying the Biometric Authentication dialog
- *  @param store The [LoginsStore]
+ *
+ *  @param title The title of the authentication prompt.
+ *  @param onAuthSuccess Callback triggered when biometric authentication succeeds.
+ *  @param onAuthFailure Callback triggered when biometric authentication fails.
  */
 @Composable
-internal fun BiometricAuthenticationDialog(store: LoginsStore) {
+internal fun BiometricAuthenticationDialog(
+    title: String,
+    onAuthSuccess: () -> Unit,
+    onAuthFailure: () -> Unit,
+) {
     val context = LocalContext.current
     val activity = context as? FragmentActivity ?: return
 
     if (DefaultBiometricUtils.canUseBiometricAuthentication(activity = activity)) {
         ShowBiometricAuthenticationDialog(
+            title = title,
             activity = activity,
-            onAuthSuccess = {
-                store.dispatch(BiometricAuthenticationAction.Succeeded)
-            },
-            onAuthFailure = {
-                store.dispatch(BiometricAuthenticationAction.Failed)
-            },
+            onAuthSuccess = onAuthSuccess,
+            onAuthFailure = onAuthFailure,
         )
     } else if (DefaultBiometricUtils.canUsePinVerification(activity = activity)) {
         ShowPinVerificationDialog(
+            title = title,
             activity = activity,
-            onAuthSuccess = {
-                store.dispatch(BiometricAuthenticationAction.Succeeded)
-            },
-            onAuthFailure = {
-                store.dispatch(BiometricAuthenticationAction.Failed)
-            },
+            onAuthSuccess = onAuthSuccess,
+            onAuthFailure = onAuthFailure,
         )
     } else {
         ShowPinWarningDialog(
             activity = activity,
-            onAuthSuccess = {
-                store.dispatch(BiometricAuthenticationAction.Succeeded)
-            },
+            onAuthSuccess = onAuthSuccess,
         )
     }
 }
 
 @Composable
 private fun ShowBiometricAuthenticationDialog(
+    title: String,
     activity: FragmentActivity,
     onAuthSuccess: () -> Unit,
     onAuthFailure: () -> Unit,
 ) {
     DefaultBiometricUtils.showBiometricPromptForCompose(
-        title = activity.resources.getString(R.string.logins_biometric_prompt_message_2),
+        title = title,
         activity = activity,
         onAuthSuccess = onAuthSuccess,
         onAuthFailure = onAuthFailure,
@@ -69,6 +68,7 @@ private fun ShowBiometricAuthenticationDialog(
 
 @Composable
 private fun ShowPinVerificationDialog(
+    title: String,
     activity: FragmentActivity,
     onAuthSuccess: () -> Unit,
     onAuthFailure: () -> Unit,
@@ -86,7 +86,7 @@ private fun ShowPinVerificationDialog(
 
     SideEffect {
         DefaultBiometricUtils.getConfirmDeviceCredentialIntent(
-            title = activity.resources.getString(R.string.logins_biometric_prompt_message_2),
+            title = title,
             activity = activity,
         )?.also { startForResult.launch(it) }
     }

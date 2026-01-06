@@ -19,6 +19,7 @@ function synthesize_idle_daily() {
 
 /**
  * Returns a new nsIFile reference for a profile database.
+ *
  * @param filename for the database, excluded the .sqlite extension.
  */
 function new_db_file(name = "testVacuum") {

@@ -789,7 +789,7 @@ class ResponsiveUI {
   /**
    * Restores the previous actor state.
    *
-   * @param {Boolean} isTargetSwitching
+   * @param {boolean} isTargetSwitching
    */
   async restoreActorState(isTargetSwitching) {
     // It's possible the target will switch to a page loaded in the
@@ -870,7 +870,7 @@ class ResponsiveUI {
   /**
    * Set or clear the emulated device pixel ratio.
    *
-   * @param {Number|null} dppx: The ratio to simulate. Set to null to disable the
+   * @param {number | null} dppx: The ratio to simulate. Set to null to disable the
    *                      simulation and roll back to the original ratio
    */
   async updateDPPX(dppx = null) {
@@ -913,9 +913,9 @@ class ResponsiveUI {
   /**
    * Set or clear the emulated user agent.
    *
-   * @param {String|null} userAgent: The user agent to set on the page. Set to null to revert
+   * @param {string | null} userAgent: The user agent to set on the page. Set to null to revert
    *                      the user agent to its original value
-   * @return {Boolean} Whether a reload is needed to apply the change.
+   * @return {boolean} Whether a reload is needed to apply the change.
    */
   async updateUserAgent(userAgent) {
     const getConfigurationCustomUserAgent = () =>
@@ -950,9 +950,9 @@ class ResponsiveUI {
   /**
    * Sets the screen orientation values of the simulated device.
    *
-   * @param {String} type
+   * @param {string} type
    *        The orientation type to update the current device screen to.
-   * @param {Number} angle
+   * @param {number} angle
    *        The rotation angle to update the current device screen to.
    */
   async updateScreenOrientation(type, angle) {
@@ -965,7 +965,7 @@ class ResponsiveUI {
   /**
    * Sets whether or not maximum touch points are supported for the simulated device.
    *
-   * @param {Boolean} touchSimulationEnabled
+   * @param {boolean} touchSimulationEnabled
    *        Whether or not touch is enabled for the simulated device.
    */
   async updateMaxTouchPointsEnabled(touchSimulationEnabled) {
@@ -977,7 +977,7 @@ class ResponsiveUI {
   /**
    * Sets whether or not the RDM UI should be left-aligned.
    *
-   * @param {Boolean} leftAlignmentEnabled
+   * @param {boolean} leftAlignmentEnabled
    *        Whether or not the UI is left-aligned.
    */
   updateUIAlignment(leftAlignmentEnabled) {
@@ -990,9 +990,9 @@ class ResponsiveUI {
   /**
    * Sets the browser element to be the given width and height.
    *
-   * @param {Number} width
+   * @param {number} width
    *        The viewport's width.
-   * @param {Number} height
+   * @param {number} height
    *        The viewport's height.
    */
   updateViewportSize(width, height) {

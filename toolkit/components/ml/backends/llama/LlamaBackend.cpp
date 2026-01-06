@@ -10,7 +10,6 @@
 #include <cstddef>
 
 #include <functional>
-#include "mozilla/ResultVariant.h"
 #include "mozilla/HashTable.h"
 #include "nsIFileStreams.h"
 #include "nsTArray.h"

@@ -108,7 +108,7 @@ async function getProxySource(proxyInfo) {
  * ServiceRequest is intended to be a drop-in replacement for current users
  * of XMLHttpRequest.
  *
- * @param {Object} options - Options for underlying XHR, e.g. { mozAnon: bool }
+ * @param {object} options - Options for underlying XHR, e.g. { mozAnon: bool }
  */
 export class ServiceRequest extends XMLHttpRequest {
   constructor(options) {
@@ -118,9 +118,9 @@ export class ServiceRequest extends XMLHttpRequest {
    * Opens an XMLHttpRequest, and sets the NSS "beConservative" flag.
    * Requests are always async.
    *
-   * @param {String} method - HTTP method to use, e.g. "GET".
-   * @param {String} url - URL to open.
-   * @param {Object} options - Additional options { bypassProxy: bool }.
+   * @param {string} method - HTTP method to use, e.g. "GET".
+   * @param {string} url - URL to open.
+   * @param {object} options - Additional options { bypassProxy: bool }.
    */
   open(method, url, options) {
     super.open(method, url, true);

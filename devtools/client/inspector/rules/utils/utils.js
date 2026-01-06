@@ -63,7 +63,7 @@ function getDeclarationFromNode(node, rule) {
  *        The node which we want information about
  * @param {ElementStyle} elementStyle
  *        The ElementStyle to which this rule belongs
- * @return {Object|null} containing the following props:
+ * @return {object | null} containing the following props:
  * - rule {Rule} The Rule object.
  * - type {String} One of the VIEW_NODE_XXX_TYPE const in
  *   client/inspector/shared/node-types.
@@ -235,7 +235,7 @@ function getNodeInfo(node, elementStyle) {
  *
  * @param {DOMNode} node
  *        The node to start from
- * @return {Object} {name, value}
+ * @return {object} {name, value}
  */
 function getPropertyNameAndValue(node) {
   while (node?.classList) {
@@ -285,7 +285,7 @@ function getShapeToggleActive(node) {
  *
  * @param {DOMNode} node
  *        A shape point node
- * @returns {String} The point associated with the given node.
+ * @returns {string} The point associated with the given node.
  */
 function getShapePoint(node) {
   const classList = node.classList;
@@ -308,11 +308,10 @@ function getShapePoint(node) {
  * Returns an array of CSS variables used in a CSS property value.
  * If no CSS variables are used, returns an empty array.
  *
- * @param {String} propertyValue
+ * @param {string} propertyValue
  *        CSS property value (e.g. "1px solid var(--color, blue)")
  * @return {Array}
  *         List of variable names (e.g. ["--color"])
- *
  */
 function getCSSVariables(propertyValue = "") {
   const variables = [];

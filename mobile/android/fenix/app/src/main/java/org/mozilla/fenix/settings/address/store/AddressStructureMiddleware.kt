@@ -44,7 +44,7 @@ data class UnknownLocalizationKey(
  * @param ioDispatcher the dispatcher to run background code on.
  */
 class AddressStructureMiddleware(
-    private var environment: AddressEnvironment? = null,
+    private val environment: AddressEnvironment,
     private val scope: CoroutineScope = MainScope(),
     private val ioDispatcher: CoroutineDispatcher = IO,
 ) : Middleware<AddressState, AddressAction> {
@@ -57,7 +57,6 @@ class AddressStructureMiddleware(
         next(action)
 
         when (action) {
-            is EnvironmentRehydrated -> environment = action.environment
             is ViewAppeared -> loadAddressStructure(context.store, true)
             is FormChange.Country -> if (preReductionCountry != context.store.state.address.country) {
                 loadAddressStructure(context.store, false)

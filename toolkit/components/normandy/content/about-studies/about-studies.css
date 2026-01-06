@@ -39,7 +39,7 @@ button > .button-box {
 .info-box-content {
   align-items: center;
   background: var(--background-color-box-info);
-  border: 1px solid var(--in-content-border-color);
+  border: 1px solid var(--border-color);
   display: inline-flex;
   padding: 10px 15px;
 }
@@ -60,7 +60,7 @@ button > .button-box {
 
 .study {
   align-items: center;
-  border-bottom: 1px solid var(--in-content-border-color);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   flex-direction: row;
   padding: 10px;

@@ -12,7 +12,6 @@
 #include <sys/socket.h>  // for CMSG macros
 
 #include <atomic>
-#include <string>
 #include <vector>
 #include <list>
 

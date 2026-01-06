@@ -10,7 +10,6 @@ import { Provider } from "react-redux";
 const DEFAULT_PROPS = {
   mayHaveWidgets: false,
   mayHaveWeather: true,
-  mayHaveTrendingSearch: true,
   mayHaveTimerWidget: false,
   mayHaveListsWidget: false,
   wallpapersEnabled: false,
@@ -20,7 +19,6 @@ const DEFAULT_PROPS = {
     topSitesEnabled: true,
     pocketEnabled: true,
     weatherEnabled: true,
-    trendingSearchEnabled: true,
     showInferredPersonalizationEnabled: false,
     topSitesRowsCount: 1,
   },
@@ -153,56 +151,6 @@ describe("ContentSection", () => {
         .exists()
     );
     assert.isFalse(wrapper.find(".widgets-section #weather-section").exists());
-  });
-
-  it("places Trending Search under Widgets when widgets are enabled and doesn't render default Trending Search placement", () => {
-    wrapper = mount(
-      <WrapWithProvider>
-        <ContentSection
-          {...DEFAULT_PROPS}
-          mayHaveWidgets={true}
-          mayHaveTrendingSearch={true}
-          enabledSections={{
-            ...DEFAULT_PROPS.enabledSections,
-            trendingSearchEnabled: true,
-          }}
-        />
-      </WrapWithProvider>
-    );
-
-    assert.isTrue(
-      wrapper
-        .find(
-          ".widgets-section #trending-search-section #trending-search-toggle"
-        )
-        .exists()
-    );
-    assert.isFalse(
-      wrapper.find(".settings-toggles #trending-search-section").exists()
-    );
-  });
-
-  it("places Trending Search in the default area when widgets are disabled", () => {
-    wrapper = mount(
-      <WrapWithProvider>
-        <ContentSection
-          {...DEFAULT_PROPS}
-          mayHaveWidgets={false}
-          mayHaveTrendingSearch={true}
-        />
-      </WrapWithProvider>
-    );
-
-    assert.isTrue(
-      wrapper
-        .find(
-          ".settings-toggles #trending-search-section #trending-search-toggle"
-        )
-        .exists()
-    );
-    assert.isFalse(
-      wrapper.find(".widgets-section #trending-search-section").exists()
-    );
   });
 
   it("renders Lists toggle only when mayHaveListsWidget = true in Widgets section", () => {

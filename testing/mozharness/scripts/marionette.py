@@ -163,7 +163,7 @@ class MarionetteTest(TestingMixin, MercurialScript, TransferMixin, CodeCoverageM
                 {
                     "action": "store",
                     "dest": "subsuite",
-                    "default": "marionette",
+                    "default": "marionette-integration",
                     "help": "Selects test paths from test-manifests.active",
                 },
             ],

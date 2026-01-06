@@ -225,6 +225,10 @@
         fieldset.headingLevel = 7;
         await fieldset.updateComplete;
 
+        ok(
+          !fieldset.hasAttribute("hasheading"),
+          "hasheading attribute isn't set when headingLevel is invalid"
+        );
         is(legendEl.childElementCount, 0, "The legend has no child elements");
         is(legendEl.innerText, "Test label", "The legend text is correct");
 
@@ -238,6 +242,11 @@
         for (let i = 1; i <= 6; i++) {
           fieldset.headingLevel = i;
           await fieldset.updateComplete;
+
+          ok(
+            fieldset.hasAttribute("hasheading"),
+            "hasheading attribute is set when headingLevel is valid"
+          );
 
           is(legendEl.childElementCount, 1, "The legend has a child");
           is(legendEl.innerText, "Test label", "The legend text is correct");

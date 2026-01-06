@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">ปัญหาไซต์หลอกลวง</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>หน้าเว็บนี้ที่ %1$s ถูกรายงานว่าเป็นไซต์หลอกลวงและถูกปิดกั้นตามค่ากำหนดความปลอดภัยของคุณ</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">ไซต์ถูกปิดกั้นเพื่อความปลอดภัยของคุณ</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>หน้าเว็บนี้ที่ %1$s ถูกปิดกั้นเนื่องจากส่วนเสริมของคุณพยายามเปิดหน้านี้ ไซต์นี้อาจถูกใช้เพื่อขโมยข้อมูลของคุณ เช่น รหัสผ่าน หรือหมายเลขบัตรเครดิต</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">ไซต์ที่ปลอดภัยไม่พร้อมใช้งาน</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

@@ -7,6 +7,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  IPPProxyManager: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
     "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
   IPProtectionStates:
@@ -86,10 +87,10 @@ add_task(async function toolbar_icon_status() {
   Assert.ok(toggle, "Status card connection toggle should be present");
 
   let vpnOnPromise = BrowserTestUtils.waitForEvent(
-    lazy.IPProtectionService,
-    "IPProtectionService:StateChanged",
+    lazy.IPPProxyManager,
+    "IPPProxyManager:StateChanged",
     false,
-    () => !!IPProtectionService.activatedAt
+    () => !!IPPProxyManager.activatedAt
   );
   // Toggle the VPN on
   toggle.click();
@@ -99,8 +100,8 @@ add_task(async function toolbar_icon_status() {
     "Toolbar icon should now show connected status"
   );
   let vpnOffPromise = BrowserTestUtils.waitForEvent(
-    lazy.IPProtectionService,
-    "IPProtectionService:StateChanged",
+    lazy.IPPProxyManager,
+    "IPPProxyManager:StateChanged",
     false,
     () => lazy.IPProtectionService.state === lazy.IPProtectionStates.READY
   );
@@ -133,10 +134,10 @@ add_task(async function toolbar_icon_status_new_window() {
   let content = await openPanel();
 
   let vpnOnPromise = BrowserTestUtils.waitForEvent(
-    lazy.IPProtectionService,
-    "IPProtectionService:StateChanged",
+    lazy.IPPProxyManager,
+    "IPPProxyManager:StateChanged",
     false,
-    () => !!IPProtectionService.activatedAt
+    () => !!IPPProxyManager.activatedAt
   );
   // Toggle the VPN on
   let statusCard = content.statusCardEl;
@@ -179,8 +180,8 @@ add_task(async function customize_toolbar_remove_widget() {
   ).position;
 
   let stoppedEventPromise = BrowserTestUtils.waitForEvent(
-    lazy.IPProtectionService,
-    "IPProtectionService:StateChanged",
+    lazy.IPPProxyManager,
+    "IPPProxyManager:StateChanged",
     false,
     () => lazy.IPProtectionService.state === lazy.IPProtectionStates.READY
   );

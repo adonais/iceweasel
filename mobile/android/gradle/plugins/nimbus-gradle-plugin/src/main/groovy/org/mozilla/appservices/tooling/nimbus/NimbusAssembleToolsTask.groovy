@@ -13,8 +13,11 @@ import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.LocalState
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputFile
@@ -23,6 +26,8 @@ import org.gradle.api.tasks.TaskAction
 import javax.inject.Inject
 
 import groovy.transform.Immutable
+
+import java.security.MessageDigest
 
 /**
  * A task that fetches a prebuilt `nimbus-fml` binary for the current platform.
@@ -43,6 +48,9 @@ abstract class NimbusAssembleToolsTask extends DefaultTask {
     @Inject
     abstract ArchiveOperations getArchiveOperations()
 
+    @Inject
+    abstract ProviderFactory getProviders()
+
     @Nested
     abstract FetchSpec getFetchSpec()
 
@@ -50,19 +58,78 @@ abstract class NimbusAssembleToolsTask extends DefaultTask {
     abstract UnzipSpec getUnzipSpec()
 
     /** The location of the fetched ZIP archive. */
-    @LocalState
+    @Internal
     abstract RegularFileProperty getArchiveFile()
 
     /**
      * The location of the fetched hash file, which contains the
      * archive's checksum.
      */
-    @LocalState
+    @Internal
     abstract RegularFileProperty getHashFile()
 
     /** The location of the unzipped binary. */
     @OutputFile
     abstract RegularFileProperty getFmlBinary()
+
+    /** The platform string (e.g. "x86_64-pc-windows-gnu"). */
+    @Input
+    abstract Property<String> getPlatform()
+
+    /** Connection timeout in milliseconds. */
+    @Internal
+    abstract Property<Integer> getConnectTimeout()
+
+    /** Read timeout in milliseconds. */
+    @Internal
+    abstract Property<Integer> getReadTimeout()
+
+    /** The cache root directory */
+    @Internal
+    abstract Property<File> getCacheRoot()
+
+    NimbusAssembleToolsTask() {
+        platform.convention(detectPlatform(providers))
+        connectTimeout.convention(30000)
+        readTimeout.convention(60000)
+    }
+
+    private static Provider<String> detectPlatform(ProviderFactory providers) {
+        def osProvider = providers.systemProperty("os.name").map { it.toLowerCase() }
+        def archProvider = providers.systemProperty("os.arch").map { it.toLowerCase() }
+
+        return osProvider.zip(archProvider) { os, arch ->
+            String osPart
+            if (os.contains("win")) {
+                osPart = "pc-windows-gnu"
+            } else if (os.contains("nix") || os.contains("nux") || os.contains("aix")) {
+                osPart = "unknown-linux"
+            } else if (os.contains("mac")) {
+                osPart = "apple-darwin"
+            } else {
+                osPart = "unknown"
+            }
+
+            String archPart
+            if (arch.contains("x86_64")) {
+                archPart = "x86_64"
+            } else if (arch.contains("amd64")) {
+                archPart = "x86_64"
+            } else if (arch.contains("aarch")) {
+                archPart = "aarch64"
+            } else {
+                archPart = "unknown"
+            }
+            return "${archPart}-${osPart}"
+        }
+    }
+
+    static String getBinaryName(String platform) {
+        if (platform.contains("windows")) {
+            return "nimbus-fml.exe"
+        }
+        return "nimbus-fml"
+    }
 
     /**
      * Configures the task to download the archive.
@@ -84,34 +151,97 @@ abstract class NimbusAssembleToolsTask extends DefaultTask {
 
     @TaskAction
     void assembleTools() {
+        def binaryFile = fmlBinary.get().asFile
+        def archiveFileObj = archiveFile.get().asFile
+        def hashFileObj = hashFile.get().asFile
+
         def sources = [fetchSpec, *fetchSpec.fallbackSources.get()].collect {
-            new Source(new URI(it.archive.get()), new URI(it.hash.get()))
+            new Source(
+                new URI(it.archive.get()),
+                new URI(it.hash.get()),
+                connectTimeout.get(),
+                readTimeout.get()
+            )
         }
 
-        def successfulSource = sources.find { it.trySaveArchiveTo(archiveFile.get().asFile) }
+        // Check if we have valid cached files by verifying against source hashes
+        def cachedHash = hashFileObj.exists() ? hashFileObj.text.trim() : null
+        if (cachedHash) {
+            for (source in sources) {
+                try {
+                    def sourceHash = source.fetchHashString()
+                    if (cachedHash.equalsIgnoreCase(sourceHash)) {
+                        // Hash matches. Use cached binary if it exists, otherwise extract from archive
+                        if (binaryFile.exists()) {
+                            logger.info("nimbus-fml binary is up-to-date")
+                            return
+                        }
+                        if (archiveFileObj.exists()) {
+                            logger.info("Extracting nimbus-fml binary from cached archive")
+                            extractBinary(archiveFileObj)
+                            return
+                        }
+                        // We have a hash file, but neither binary nor archive, so we need to fetch the archive
+                        break
+                    }
+                } catch (IOException ignored) {
+                    // Try next source
+                }
+            }
+        }
+
+        logger.info("Fetching nimbus-fml for platform: {}", platform.get())
+
+        // Clear cache before downloading a new archive
+        if (cacheRoot.isPresent()) {
+            def root = cacheRoot.get()
+            if (root.exists()) {
+                root.deleteDir()
+            }
+        }
+
+        // Download the archive and verify with hash from the same source
+        Source successfulSource = null
+        String sourceHash = null
+        for (source in sources) {
+            try {
+                sourceHash = source.fetchHashString()
+            } catch (IOException ignored) {
+                continue
+            }
+
+            if (source.trySaveArchiveTo(archiveFileObj)) {
+                successfulSource = source
+                break
+            }
+        }
+
         if (successfulSource == null) {
-            throw new GradleException("Couldn't fetch archive from any of: ${sources*.archiveURI.collect { "`$it`" }.join(', ')}")
+            throw new GradleException("Failed to fetch archive from any of: ${sources*.archiveURI.collect { "`$it`" }.join(', ')}")
         }
 
-        // We get the checksum, although don't do anything with it yet;
-        // Checking it here would be able to detect if the zip file was tampered with
-        // in transit between here and the server.
-        // It won't detect compromise of the CI server.
-        try {
-            successfulSource.saveHashTo(hashFile.get().asFile)
-        } catch (IOException e) {
-            throw new GradleException("Couldn't fetch hash from `${successfulSource.hashURI}`", e)
+        def actualHash = computeSha256(archiveFileObj)
+        if (!actualHash.equalsIgnoreCase(sourceHash)) {
+            archiveFileObj.delete()
+            throw new GradleException("Archive checksum mismatch! Expected: $sourceHash, got: $actualHash")
         }
+        hashFileObj.text = sourceHash
 
-        def zipTree = archiveOperations.zipTree(archiveFile.get())
+        extractBinary(archiveFileObj)
+    }
+
+    private void extractBinary(File archiveFileObj) {
+        def binaryFile = fmlBinary.get().asFile
+        def zipTree = archiveOperations.zipTree(archiveFileObj)
         def visitedFilePaths = []
         zipTree.matching {
             include unzipSpec.includePatterns.get()
         }.visit { FileVisitDetails details ->
             if (!details.directory) {
                 if (visitedFilePaths.empty) {
-                    details.copyTo(fmlBinary.get().asFile)
-                    fmlBinary.get().asFile.setExecutable(true)
+                    binaryFile.parentFile?.mkdirs()
+                    details.copyTo(binaryFile)
+                    binaryFile.setExecutable(true)
                 }
                 visitedFilePaths.add(details.relativePath)
             }
@@ -124,6 +254,18 @@ abstract class NimbusAssembleToolsTask extends DefaultTask {
         if (visitedFilePaths.size() > 1) {
             throw new GradleException("Ambiguous unzip spec matched ${visitedFilePaths.size()} files in archive: ${visitedFilePaths.collect { "`$it`" }.join(', ')}")
         }
+    }
+
+    private static String computeSha256(File file) {
+        def digest = MessageDigest.getInstance("SHA-256")
+        file.withInputStream { is ->
+            byte[] buffer = new byte[8192]
+            int read
+            while ((read = is.read(buffer)) != -1) {
+                digest.update(buffer, 0, read)
+            }
+        }
+        return digest.digest().encodeHex().toString()
     }
 
     /**
@@ -188,6 +330,8 @@ abstract class NimbusAssembleToolsTask extends DefaultTask {
     static class Source {
         URI archiveURI
         URI hashURI
+        int connectTimeout
+        int readTimeout
 
         boolean trySaveArchiveTo(File destination) {
             try {
@@ -202,11 +346,44 @@ abstract class NimbusAssembleToolsTask extends DefaultTask {
             saveURITo(hashURI, destination)
         }
 
-        private static void saveURITo(URI source, File destination) {
-            source.toURL().withInputStream { from ->
-                destination.withOutputStream { out ->
-                    out << from
+        String fetchHashString() {
+            def connection = hashURI.toURL().openConnection() as HttpURLConnection
+            connection.connectTimeout = connectTimeout
+            connection.readTimeout = readTimeout
+            connection.instanceFollowRedirects = true
+            connection.requestMethod = 'GET'
+
+            try {
+                if (connection.responseCode != 200) {
+                    throw new IOException("HTTP ${connection.responseCode}: ${connection.responseMessage}")
                 }
+                return connection.inputStream.withStream { is ->
+                    is.text.trim().split(/\s+/)[0]
+                }
+            } finally {
+                connection.disconnect()
+            }
+        }
+
+        private void saveURITo(URI source, File destination) {
+            def connection = source.toURL().openConnection() as HttpURLConnection
+            connection.connectTimeout = connectTimeout
+            connection.readTimeout = readTimeout
+            connection.instanceFollowRedirects = true
+            connection.requestMethod = 'GET'
+
+            try {
+                if (connection.responseCode != 200) {
+                    throw new IOException("HTTP ${connection.responseCode}: ${connection.responseMessage}")
+                }
+                destination.parentFile?.mkdirs()
+                connection.inputStream.withStream { from ->
+                    destination.withOutputStream { out ->
+                        out << from
+                    }
+                }
+            } finally {
+                connection.disconnect()
             }
         }
     }

@@ -256,7 +256,7 @@ nsresult CTFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
     rv = NS_OK;
   } else {
     uint32_t kCMAP = TRUETYPE_TAG('c', 'm', 'a', 'p');
-    charmap = new gfxCharacterMap();
+    charmap = new gfxCharacterMap(256);
     AutoTable cmapTable(this, kCMAP);
 
     if (cmapTable) {
@@ -353,7 +353,7 @@ nsresult CTFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
     mHasCmapTable = true;
   } else {
     // if error occurred, initialize to null cmap
-    charmap = new gfxCharacterMap();
+    charmap = new gfxCharacterMap(0);
     mHasCmapTable = false;
   }
   if (setCharMap) {
@@ -1491,6 +1491,8 @@ static void ReleaseData(void* info, const void* data, size_t size) {
   free((void*)data);
 }
 
+MOZ_DEFINE_MALLOC_SIZE_OF_ON_ALLOC(UserFontMallocSizeOfOnAlloc)
+
 gfxFontEntry* CoreTextFontList::MakePlatformFont(const nsACString& aFontName,
                                                  WeightRange aWeightForEntry,
                                                  StretchRange aStretchForEntry,
@@ -1520,6 +1522,13 @@ gfxFontEntry* CoreTextFontList::MakePlatformFont(const nsACString& aFontName,
   auto newFontEntry = MakeUnique<CTFontEntry>(
       NS_ConvertUTF16toUTF8(uniqueName), fontRef, aWeightForEntry,
       aStretchForEntry, aStyleForEntry, true, false);
+
+  // Record size for memory reporting purposes.
+  // The *OnAlloc function will also tell DMD about this block, as the
+  // OS font code may hold on to it for an extended period.
+  newFontEntry->mComputedSizeOfUserFont =
+      UserFontMallocSizeOfOnAlloc(aFontData);
+
   return newFontEntry.release();
 }
 
@@ -1639,7 +1648,7 @@ void CTFontInfo::LoadFontFamilyData(const nsACString& aFamilyName) {
       if (cmapTable) {
         const uint8_t* cmapData = (const uint8_t*)CFDataGetBytePtr(cmapTable);
         uint32_t cmapLen = CFDataGetLength(cmapTable);
-        RefPtr<gfxCharacterMap> charmap = new gfxCharacterMap();
+        RefPtr<gfxCharacterMap> charmap = new gfxCharacterMap(256);
         uint32_t offset;
         nsresult rv;
 
@@ -1758,7 +1767,7 @@ void CoreTextFontList::AddFaceInitData(
       AutoCFTypeRef<CFDataRef> data(CGFontCopyTableForTag(font, kCMAP));
       if (data) {
         uint32_t offset;
-        charmap = new gfxCharacterMap();
+        charmap = new gfxCharacterMap(256);
         gfxFontUtils::ReadCMAP(CFDataGetBytePtr(data), CFDataGetLength(data),
                                *charmap, offset);
       }

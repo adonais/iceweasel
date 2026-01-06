@@ -7,8 +7,6 @@
 #if !defined(PDMFactory_h_)
 #  define PDMFactory_h_
 
-#  include <utility>
-
 #  include "DecoderDoctorDiagnostics.h"
 #  include "MediaCodecsSupport.h"
 #  include "PlatformDecoderModule.h"

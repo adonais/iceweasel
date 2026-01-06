@@ -121,10 +121,14 @@ export default class MozBoxGroup extends MozLitElement {
       }
     }
 
-    let positionAttr =
-      event.target.getAttribute("position") ??
-      // handles the case where an interactive element is nested in a moz-box-item
-      event.target.closest("[position]").getAttribute("position");
+    let positionElement = event.target.closest("[position]");
+    if (!positionElement) {
+      // If the user has clicked on the MozBoxGroup it may get keydown events
+      // even if there is no focused element within it. Then the event target
+      // will be the <ul> and we won't find an element with [position].
+      return;
+    }
+    let positionAttr = positionElement.getAttribute("position");
     let currentPosition = parseInt(positionAttr);
 
     switch (event.key) {

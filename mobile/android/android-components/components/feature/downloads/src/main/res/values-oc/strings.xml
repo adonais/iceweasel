@@ -14,6 +14,8 @@
     %1$s will be replaced with the estimated time remaining to complete the download.
   -->
   <string name="mozac_feature_downloads_time_remaining">dins %1$s</string>
+  <!-- Summary text shown on an in progress download notification when the estimated time remaining is unknown. -->
+  <string name="mozac_feature_downloads_time_remaining_unknown">durada desconeguda</string>
   <!-- Text shown on the second row of a paused download notification. -->
   <string name="mozac_feature_downloads_paused_notification_text">Lo telecargament es en pausa</string>
   <!-- Text shown on the second row of an completed download notification. The filename is shown on the first row. -->
@@ -32,6 +34,8 @@
   <string name="mozac_feature_downloads_dialog_title_3">Telecargar lo fichièr ? (%1$s)</string>
   <!-- This string is used as the title for the download confirmation dialog when the size of the file is not known. -->
   <string name="mozac_feature_downloads_dialog_title_with_unknown_size">Telecargar lo fichièr ?</string>
+  <!-- Alert dialog confirmation before downloading a previously downloaded file, this is the title when the size of the file is not known. -->
+  <string name="mozac_feature_downloads_again_dialog_title_with_unknown_size">Telecargar de nòu lo fichièr\u00a0?</string>
   <!-- Alert dialog confirmation before download a file, this is the positive action. -->
   <string name="mozac_feature_downloads_dialog_download">Telecargar</string>
   <!-- Alert dialog confirmation before downloading a file again, this is the positive action. -->
@@ -43,6 +47,8 @@
     %1$s will be replaced with the name of the file.
   -->
   <string name="mozac_feature_downloads_already_exists_dialog_title">%1$s existís ja.</string>
+  <!-- Alert dialog confirmation before downloading a previously downloaded file, this is the neutral action that proposes to open the file instead. -->
+  <string name="mozac_feature_downloads_open_existing_file">Dobrir lo fichièr existent</string>
   <!--
     Alert dialog confirmation before downloading a file without network connection, this is the description.
     %1$s will be replaced with the name of the file.

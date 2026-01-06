@@ -19,6 +19,7 @@
  *                       specific location within a given menu.
  *
  * Implemented features:
+ *
  *  @param Object options
  *    String accelerator
  *      Text that appears beside the menu label to indicate the shortcut key

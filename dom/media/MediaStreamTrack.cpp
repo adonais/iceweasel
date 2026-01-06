@@ -46,6 +46,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(MediaStreamTrackSource)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPrincipal)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
+auto MediaStreamTrackSource::Clone() -> CloneResult { return {}; }
+
 auto MediaStreamTrackSource::ApplyConstraints(
     const dom::MediaTrackConstraints& aConstraints, CallerType aCallerType)
     -> RefPtr<ApplyConstraintsPromise> {
@@ -537,13 +539,6 @@ void MediaStreamTrack::RemoveConsumer(MediaStreamTrackConsumer* aConsumer) {
   while (mConsumers.RemoveElement(nullptr)) {
     MOZ_ASSERT_UNREACHABLE("A consumer was not explicitly removed");
   }
-}
-
-already_AddRefed<MediaStreamTrack> MediaStreamTrack::Clone() {
-  RefPtr<MediaStreamTrack> newTrack = CloneInternal();
-  newTrack->SetEnabled(Enabled());
-  newTrack->SetMuted(Muted());
-  return newTrack.forget();
 }
 
 void MediaStreamTrack::SetReadyState(MediaStreamTrackState aState) {

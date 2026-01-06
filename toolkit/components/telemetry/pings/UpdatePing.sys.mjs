@@ -54,9 +54,9 @@ export var UpdatePing = {
    * Generate an "update" ping with reason "success" and dispatch it
    * to the Telemetry system.
    *
-   * @param {String} aPreviousVersion The browser version we updated from.
-   * @param {String} aPreviousBuildId The browser build id we updated from.
-   * @param {String} progress An object to measure the progress of handleUpdateSuccess
+   * @param {string} aPreviousVersion The browser version we updated from.
+   * @param {string} aPreviousBuildId The browser build id we updated from.
+   * @param {string} progress An object to measure the progress of handleUpdateSuccess
    *                          to provide to the shutdown blocker (Bug 1917651)
    */
   async handleUpdateSuccess(aPreviousVersion, aPreviousBuildId, progress) {
@@ -118,7 +118,7 @@ export var UpdatePing = {
    * Generate an "update" ping with reason "ready" and dispatch it
    * to the Telemetry system.
    *
-   * @param {String} aUpdateState The state of the downloaded patch. See
+   * @param {string} aUpdateState The state of the downloaded patch. See
    *        nsIUpdateService.idl for a list of possible values.
    */
   async _handleUpdateReady(aUpdateState) {

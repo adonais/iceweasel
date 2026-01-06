@@ -163,7 +163,6 @@ add_heuristic_tests([
                </form>`,
     expectedResult: [
       {
-        invalid: true,
         default: {
           reason: "autocomplete",
         },

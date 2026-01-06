@@ -4,6 +4,7 @@
 
 /**
  * Determines whether a given value is a fluent id or plain text and adds it to an element
+ *
  * @param {Array<[HTMLElement, string]>} items An array of [element, value] where value is
  *                                       a fluent id starting with "fluent:" or plain text
  */

@@ -69,7 +69,6 @@
 #endif
 
 #include <string.h>
-#include <list>
 
 using namespace mozilla;
 

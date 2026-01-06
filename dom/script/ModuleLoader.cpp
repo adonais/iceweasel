@@ -300,11 +300,11 @@ nsresult ModuleLoader::CompileJavaScriptModule(
     };
     stencil = maybeSource.mapNonEmpty(compile);
   } else {
-    MOZ_ASSERT(aRequest->IsBytecode());
+    MOZ_ASSERT(aRequest->IsSerializedStencil());
     JS::DecodeOptions decodeOptions(aOptions);
     decodeOptions.borrowBuffer = true;
 
-    JS::TranscodeRange range = aRequest->Bytecode();
+    JS::TranscodeRange range = aRequest->SerializedStencil();
     JS::TranscodeResult tr =
         JS::DecodeStencil(aCx, decodeOptions, range, getter_AddRefs(stencil));
     if (tr != JS::TranscodeResult::Ok) {

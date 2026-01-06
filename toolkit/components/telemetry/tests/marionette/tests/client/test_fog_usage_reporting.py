@@ -40,6 +40,7 @@ class TestUsageReporting(FOGTestCase):
         The "deletion-request" ping should not include the usage-id.
         The `usage.profile_id` stays the same across telemetry toggling.
         """
+        self.marionette.set_pref("telemetry.glean.internal.maxPingsPerMinute", 60)
 
         ping1 = self.wait_for_ping(
             lambda: self.marionette.restart(in_app=True),
@@ -100,6 +101,7 @@ class TestUsageReporting(FOGTestCase):
 
         We expect a "usage-deletion-request" ping, and it should include the usage-id.
         """
+        self.marionette.set_pref("telemetry.glean.internal.maxPingsPerMinute", 60)
 
         ping1 = self.wait_for_ping(
             lambda: self.marionette.restart(in_app=True),
@@ -168,6 +170,7 @@ class TestUsageReporting(FOGTestCase):
         """
         Test that the "usage-reporting" ping remains enabled and the usage ID and usage group ID remain fixed when restarting the browser.
         """
+        self.marionette.set_pref("telemetry.glean.internal.maxPingsPerMinute", 60)
 
         # Not guaranteed to send a "usage-reporting" ping.
         self.enable_usage_reporting()
@@ -212,6 +215,7 @@ class TestUsageReporting(FOGTestCase):
         """
         Test that the "usage-reporting" ping remains disabled and the usage ID remains null when restarting the browser.
         """
+        self.marionette.set_pref("telemetry.glean.internal.maxPingsPerMinute", 60)
 
         self.enable_usage_reporting()
 
@@ -257,6 +261,7 @@ class TestUsageReporting(FOGTestCase):
         # Existing profiles should inherit the general preference, true or
         # false.  New profiles should not inherit the general preference, and
         # instead should default to true.
+        self.marionette.set_pref("telemetry.glean.internal.maxPingsPerMinute", 60)
 
         def healthreportEnabled():
             return self.marionette.get_pref("datareporting.healthreport.uploadEnabled")

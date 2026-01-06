@@ -23,7 +23,6 @@ import mozilla.components.feature.privatemode.notification.AbstractPrivateNotifi
 import mozilla.components.feature.privatemode.notification.AbstractPrivateNotificationService.Companion.defaultIgnoreTaskActions
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.test.argumentCaptor
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
@@ -144,7 +143,7 @@ class AbstractPrivateNotificationServiceTest {
         service.onCreate()
 
         val mockLocale = Locale.forLanguageTag("English")
-        service.store.dispatch(LocaleAction.UpdateLocaleAction(mockLocale)).joinBlocking()
+        service.store.dispatch(LocaleAction.UpdateLocaleAction(mockLocale))
         dispatcher.scheduler.advanceUntilIdle()
 
         verify(service).notifyLocaleChanged()

@@ -283,16 +283,21 @@ class AsyncPanZoomController {
   // These methods must only be called on the updater thread.
   //
 
+  struct LayersUpdateFlags {
+    // Passed from the WebRender scroll data code indicating that the scroll
+    // metadata being sent with this call are the initial metadata and the
+    // initial paint of the frame has just happened.
+    bool mIsFirstPaint : 1;
+    // Whether this update was triggered by a paint for the LayersId (tab)
+    // containing this scroll frame.
+    bool mThisLayerTreeUpdated : 1;
+  };
   /**
-   * A shadow layer update has arrived. |aScrollMetdata| is the new
-   * ScrollMetadata for the container layer corresponding to this APZC.
-   * |aIsFirstPaint| is a flag passed from the shadow
-   * layers code indicating that the scroll metadata being sent with this call
-   * are the initial metadata and the initial paint of the frame has just
-   * happened.
+   * A WebRender scroll data has arrived. |aScrollMetdata| is the new
+   * ScrollMetadata for the scroll container corresponding to this APZC.
    */
   void NotifyLayersUpdated(const ScrollMetadata& aScrollMetadata,
-                           bool aIsFirstPaint, bool aThisLayerTreeUpdated);
+                           LayersUpdateFlags aLayersUpdateFlags);
 
   /**
    * The platform implementation must set the compositor controller so that we

@@ -52,6 +52,7 @@ class PrivateBrowsingFragment : PreferenceFragmentCompat() {
         updatePreferences()
     }
 
+    @Suppress("CognitiveComplexMethod")
     private fun updatePreferences() {
         val biometricManager = BiometricManager.from(requireContext())
         val deviceCapable = biometricManager.isHardwareAvailable()

@@ -436,7 +436,7 @@ function waitUntilUsbDeviceIsUnplugged(deviceName, aboutDebuggingDocument) {
  *        The browser instance to update.
  * @param {XULTab} tab
  *        The tab to select.
- * @param {Object} store
+ * @param {object} store
  *        The about:debugging redux store.
  */
 async function updateSelectedTab(browser, tab, store) {
@@ -468,7 +468,7 @@ async function updateSelectedTab(browser, tab, store) {
  *        The DevToolsToolbox debugging the target.
  * @param {HTMLElement} inputEl
  *        The <input> element to submit the URL with.
- * @param {String}  url
+ * @param {string}  url
  *        The URL to navigate to.
  */
 async function synthesizeUrlKeyInput(toolbox, inputEl, url) {
@@ -495,7 +495,7 @@ async function synthesizeUrlKeyInput(toolbox, inputEl, url) {
  * Click on a given add-on widget button so that its browser actor is fired.
  * Typically a popup would open, or a listener would be called in the background page.
  *
- * @param {String} addonId
+ * @param {string} addonId
  *        The ID of the add-on to click on.
  */
 function clickOnAddonWidget(addonId) {

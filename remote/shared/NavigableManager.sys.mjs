@@ -5,6 +5,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  BiMap: "chrome://remote/content/shared/BiMap.sys.mjs",
   BrowsingContextListener:
     "chrome://remote/content/shared/listeners/BrowsingContextListener.sys.mjs",
   generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
@@ -23,10 +24,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * that is not implemented in Firefox.
  */
 class NavigableManagerClass {
-  #tracking;
   #browserIds;
+  #chromeNavigables;
   #contextListener;
   #navigableIds;
+  #tracking;
 
   constructor() {
     this.#tracking = false;
@@ -37,6 +39,10 @@ class NavigableManagerClass {
     // discarded embedderElement is gone, and we cannot retrieve the
     // context id from the formerly known browser.
     this.#browserIds = new WeakMap();
+
+    // Maps canonical browsing contexts from the parent process
+    // to a uuid and vice versa.
+    this.#chromeNavigables = new lazy.BiMap();
 
     // Maps browsing contexts to uuid: WeakMap.<BrowsingContext, string>.
     this.#navigableIds = new WeakMap();
@@ -77,19 +83,23 @@ class NavigableManagerClass {
    * @param {string} id
    *     A browsing context unique id (created by getIdForBrowsingContext).
    *
-   * @returns {BrowsingContext=}
+   * @returns {BrowsingContext|null}
    *     The browsing context found for this id, null if none was found or
    *     browsing context is discarded.
    */
   getBrowsingContextById(id) {
     let browsingContext;
 
-    const browser = this.getBrowserById(id);
-    if (browser) {
-      // top-level browsing context
-      browsingContext = browser.browsingContext;
+    if (this.#chromeNavigables.hasId(id)) {
+      browsingContext = this.#chromeNavigables.getObject(id);
     } else {
-      browsingContext = BrowsingContext.get(id);
+      const browser = this.getBrowserById(id);
+      if (browser) {
+        // top-level browsing context
+        browsingContext = browser.browsingContext;
+      } else {
+        browsingContext = BrowsingContext.get(id);
+      }
     }
 
     if (!browsingContext || browsingContext.isDiscarded) {
@@ -120,11 +130,10 @@ class NavigableManagerClass {
       return null;
     }
 
-    const key = browser.permanentKey;
-    if (!this.#browserIds.has(key)) {
-      this.#browserIds.set(key, lazy.generateUUID());
-    }
-    return this.#browserIds.get(key);
+    return this.#browserIds.getOrInsertComputed(
+      browser.permanentKey,
+      lazy.generateUUID
+    );
   }
 
   /**
@@ -141,6 +150,12 @@ class NavigableManagerClass {
   getIdForBrowsingContext(browsingContext) {
     if (!BrowsingContext.isInstance(browsingContext)) {
       return null;
+    }
+
+    if (!browsingContext.isContent) {
+      // When the browsing context runs in the parent process we
+      // can use the browsing context as key because it's stable.
+      return this.#chromeNavigables.getOrInsert(browsingContext);
     }
 
     if (!browsingContext.parent) {
@@ -194,13 +209,15 @@ class NavigableManagerClass {
       return;
     }
 
+    this.#contextListener = new lazy.BrowsingContextListener();
+    this.#contextListener.on("attached", this.#onContextAttached);
+    this.#contextListener.on("discarded", this.#onContextDiscarded);
+    this.#contextListener.startListening();
+
+    // Register as well all browsing contexts from already open tabs.
     lazy.TabManager.getBrowsers().forEach(browser =>
       this.#setIdForBrowsingContext(browser.browsingContext)
     );
-
-    this.#contextListener = new lazy.BrowsingContextListener();
-    this.#contextListener.on("attached", this.#onContextAttached);
-    this.#contextListener.startListening();
 
     this.#tracking = true;
   }
@@ -210,9 +227,12 @@ class NavigableManagerClass {
       return;
     }
 
+    this.#contextListener.off("attached", this.#onContextAttached);
+    this.#contextListener.off("discarded", this.#onContextDiscarded);
     this.#contextListener.stopListening();
     this.#contextListener = null;
 
+    this.#chromeNavigables.clear();
     this.#browserIds = new WeakMap();
     this.#navigableIds = new WeakMap();
 
@@ -255,8 +275,19 @@ class NavigableManagerClass {
   #onContextAttached = (_, data = {}) => {
     const { browsingContext } = data;
 
-    if (lazy.TabManager.isValidCanonicalBrowsingContext(browsingContext)) {
-      this.#setIdForBrowsingContext(browsingContext);
+    if (!browsingContext.isContent) {
+      this.#chromeNavigables.getOrInsert(browsingContext);
+      return;
+    }
+
+    this.#setIdForBrowsingContext(browsingContext);
+  };
+
+  #onContextDiscarded = (_, data = {}) => {
+    const { browsingContext } = data;
+
+    if (!browsingContext.isContent) {
+      this.#chromeNavigables.deleteByObject(browsingContext);
     }
   };
 }

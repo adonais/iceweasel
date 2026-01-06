@@ -44,9 +44,11 @@ class VideoEngine : public webrtc::VideoInputFeedBack {
 #if defined(ANDROID)
   static int SetAndroidObjects();
 #endif
+  int32_t GenerateId();
   /** Returns a non-negative capture identifier or -1 on failure.
    */
-  int32_t CreateVideoCapture(const char* aDeviceUniqueIdUTF8);
+  int32_t CreateVideoCapture(const char* aDeviceUniqueIdUTF8,
+                             uint64_t aWindowID);
 
   int ReleaseVideoCapture(const int32_t aId);
 
@@ -87,9 +89,16 @@ class VideoEngine : public webrtc::VideoInputFeedBack {
     friend class VideoEngine;
   };
 
+  struct CaptureHandle {
+    int32_t mCaptureEntryNum{};
+    uint64_t mWindowID{};
+  };
+
   // Returns true iff an entry for capnum exists
   bool WithEntry(const int32_t entryCapnum,
                  const std::function<void(CaptureEntry& entry)>&& fn);
+
+  bool IsWindowCapturing(uint64_t aWindowID, const nsCString& aUniqueIdUTF8);
 
   void OnDeviceChange() override;
 
@@ -102,12 +111,11 @@ class VideoEngine : public webrtc::VideoInputFeedBack {
   const CaptureDeviceType mCaptureDevType;
   const RefPtr<VideoCaptureFactory> mVideoCaptureFactory;
   std::shared_ptr<webrtc::VideoCaptureModule::DeviceInfo> mDeviceInfo;
-  std::map<int32_t, CaptureEntry> mCaps;
-  std::map<int32_t, int32_t> mIdMap;
+  std::map<int32_t, CaptureEntry> mSharedCapturers;
+  std::map<int32_t, CaptureHandle> mIdToCapturerMap;
   MediaEventProducer<void> mDeviceChangeEvent;
   // The validity period for non-camera capture device infos`
   webrtc::Timestamp mExpiryTime = webrtc::Timestamp::Micros(0);
-  int32_t GenerateId();
 };
 }  // namespace mozilla::camera
 #endif

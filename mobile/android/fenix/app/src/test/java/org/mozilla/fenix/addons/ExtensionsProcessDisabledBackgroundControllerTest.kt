@@ -7,7 +7,6 @@ package org.mozilla.fenix.addons
 import mozilla.components.browser.state.action.ExtensionsProcessAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -40,7 +39,6 @@ class ExtensionsProcessDisabledBackgroundControllerTest {
 
         browserStore.dispatch(ExtensionsProcessAction.ShowPromptAction(show = true))
         dispatcher.scheduler.advanceUntilIdle()
-        browserStore.waitUntilIdle()
 
         assertTrue(invoked)
     }
@@ -63,7 +61,6 @@ class ExtensionsProcessDisabledBackgroundControllerTest {
 
         browserStore.dispatch(ExtensionsProcessAction.ShowPromptAction(show = true))
         dispatcher.scheduler.advanceUntilIdle()
-        browserStore.waitUntilIdle()
 
         assertFalse(invoked)
     }

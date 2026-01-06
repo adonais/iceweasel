@@ -9,10 +9,10 @@
  *
  * @param {Element} browser The <xul:browser> hosting the <video>
  *
- * @param {String} videoID The ID of the video to open the context
+ * @param {string} videoID The ID of the video to open the context
  * menu with.
  *
- * @param {Object} modifiers The properties to pass to synthesizeMouseAtCenter.
+ * @param {object} modifiers The properties to pass to synthesizeMouseAtCenter.
  *
  * @returns Promise
  * @resolves With the context menu DOM node once opened.

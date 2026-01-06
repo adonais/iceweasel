@@ -257,6 +257,10 @@ public final class StorageController {
             bundle -> {
               final GeckoBundle[] permsArray = bundle.getBundleArray("permissions");
               return ContentPermission.fromBundleArray(permsArray);
+            },
+            exception -> {
+              Log.w(LOGTAG, "An error occurred when getting permissions: " + exception);
+              return exception;
             });
   }
 

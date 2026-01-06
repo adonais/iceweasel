@@ -34,7 +34,7 @@ from ..backend import get_backend_class
 from ..base import MozbuildObject
 from ..compilation.warnings import WarningsCollector, WarningsDatabase
 from ..dirutils import mkdir
-from ..logging import read_serialized_record
+from ..serialized_logging import read_serialized_record
 from ..telemetry import get_cpu_brand
 from ..testing import install_test_files
 from ..util import FileAvoidWrite, resolve_target_to_make

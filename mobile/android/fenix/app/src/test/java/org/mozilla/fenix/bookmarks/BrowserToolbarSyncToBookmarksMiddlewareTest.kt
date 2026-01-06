@@ -59,7 +59,7 @@ class BrowserToolbarSyncToBookmarksMiddlewareTest {
             middleware = listOf(middleware),
         )
 
-        toolbarStore.dispatch(EnterEditMode)
+        toolbarStore.dispatch(EnterEditMode(false))
 
         assertFalse(bookmarksStore.state.isSearching)
     }

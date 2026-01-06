@@ -426,7 +426,7 @@ add_task(function test_Capabilities_ctor_bidi() {
   equal(false, caps.get("acceptInsecureCerts"));
   ok(!caps.has("timeouts"));
   ok(caps.get("proxy") instanceof ProxyConfiguration);
-  ok(!caps.has("setWindowRect"));
+  ok(caps.has("setWindowRect"));
   ok(!caps.has("strictFileInteractability"));
   ok(!caps.has("webSocketUrl"));
 

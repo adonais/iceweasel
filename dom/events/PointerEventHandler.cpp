@@ -773,8 +773,7 @@ void PointerEventHandler::SynthesizeMoveToDispatchBoundaryEvents(
   // cannot synthesize the pointermove/mousemove on the document since
   // dispatching events to the parent process is currently allowed only in
   // automation.
-  nsEventStatus eventStatus = nsEventStatus_eIgnore;
-  widget->DispatchEvent(&event, eventStatus);
+  widget->DispatchEvent(&event);
 }
 
 /* static */

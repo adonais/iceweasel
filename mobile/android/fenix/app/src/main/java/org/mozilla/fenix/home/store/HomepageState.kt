@@ -57,13 +57,11 @@ internal sealed class HomepageState {
      * @property headerState State related to the header of the homepage.
      * @property firstFrameDrawn Flag indicating whether the first frame of the homescreen has been drawn.
      * @property isSearchInProgress Whether search is currently active on the homepage.
-     * @property privateModeRedesignEnabled Whether private browsing mode redesign is enabled.
      */
     internal data class Private(
         override val headerState: HeaderState,
         override val firstFrameDrawn: Boolean = false,
         override val isSearchInProgress: Boolean,
-        val privateModeRedesignEnabled: Boolean,
     ) : HomepageState()
 
     /**
@@ -138,8 +136,7 @@ internal sealed class HomepageState {
      */
     internal fun isMinimalLayout(): Boolean {
         return (this as? Normal)?.run {
-            !showRecentTabs && !showRecentSyncedTab && !showBookmarks && !showRecentlyVisited &&
-                    (!showCollections || collectionsState == CollectionsState.Gone) && !headerState.showHeader
+            !showRecentTabs && !showRecentSyncedTab && !showBookmarks && !showRecentlyVisited
         } ?: false
     }
 
@@ -160,19 +157,17 @@ internal sealed class HomepageState {
             browsingModeManager: BrowsingModeManager,
             settings: Settings,
         ): HomepageState {
-            return with(appState) {
-                if (browsingModeManager.mode.isPrivate) {
-                    buildPrivateState(
-                        appState = appState,
-                        settings = settings,
-                    )
-                } else {
-                    buildNormalState(
-                        appState = appState,
-                        browsingModeManager = browsingModeManager,
-                        settings = settings,
-                    )
-                }
+            return if (browsingModeManager.mode.isPrivate) {
+                buildPrivateState(
+                    appState = appState,
+                    settings = settings,
+                )
+            } else {
+                buildNormalState(
+                    appState = appState,
+                    browsingModeManager = browsingModeManager,
+                    settings = settings,
+                )
             }
         }
 
@@ -199,7 +194,6 @@ internal sealed class HomepageState {
                 ),
                 firstFrameDrawn = firstFrameDrawn,
                 isSearchInProgress = searchState.isSearchActive,
-                privateModeRedesignEnabled = settings.enablePrivateBrowsingModeRedesign,
             )
         }
 

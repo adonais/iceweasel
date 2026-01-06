@@ -83,7 +83,7 @@ void ScrollAnimationMSDPhysics::ApplyContentShift(const CSSPoint& aShiftDelta) {
 
 double ScrollAnimationMSDPhysics::GetDampingRatio() const {
   if (mAnimationKind == ScrollAnimationKind::SmoothMsd) {
-    return StaticPrefs::layout_css_scroll_behavior_damping_ratio();
+    return StaticPrefs::layout_css_scroll_snap_damping_ratio();
   }
   return 1.0;
 }
@@ -91,7 +91,7 @@ double ScrollAnimationMSDPhysics::GetDampingRatio() const {
 double ScrollAnimationMSDPhysics::ComputeSpringConstant(
     const TimeStamp& aTime) {
   if (mAnimationKind == ScrollAnimationKind::SmoothMsd) {
-    return StaticPrefs::layout_css_scroll_behavior_spring_constant();
+    return StaticPrefs::layout_css_scroll_snap_spring_constant();
   }
 
   if (!mPreviousEventTime) {

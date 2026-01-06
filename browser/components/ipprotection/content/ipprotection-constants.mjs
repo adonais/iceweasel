@@ -35,3 +35,9 @@ export const SIGNIN_DATA = Object.freeze({
     utm_term: "fx-vpn-pilot-panel-button",
   },
 });
+
+export const ONBOARDING_PREF_FLAGS = {
+  EVER_TURNED_ON_AUTOSTART: 1 << 0,
+  EVER_USED_SITE_EXCEPTIONS: 1 << 1,
+  EVER_TURNED_ON_VPN: 1 << 2,
+};

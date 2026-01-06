@@ -1277,6 +1277,7 @@ void jit::ToggleBaselineProfiling(JSContext* cx, bool enable) {
       JSScript* script = jitScript->owningScript();
       if (enable) {
         jitScript->ensureProfileString(cx, script);
+        jitScript->ensureProfilerScriptSource(cx, script);
       }
       if (script->hasBaselineScript()) {
         AutoWritableJitCode awjc(script->baselineScript()->method());

@@ -15,8 +15,6 @@ kind-dependencies:
 
 task-defaults:
     run-on-repo-type: [hg]
-    attributes:
-        retrigger: true
     fetches:
         toolchain:
             - linux64-android-sdk-linux-repack

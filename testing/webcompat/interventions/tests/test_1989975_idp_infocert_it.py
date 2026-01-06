@@ -1,7 +1,7 @@
 import pytest
 
 URL = "https://idp.infocert.it/login"
-SUPPORTED_CSS = "#banner-accept-btn-1"
+SUPPORTED_CSS = "#icIdName"
 UNSUPPORTED_CSS = ".unsupported-browser"
 
 

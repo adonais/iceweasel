@@ -11,7 +11,8 @@ const TEST_PAGE = TEST_ROOT + "get_user_media.html";
 
 /**
  * Run a preview test with the given options.
- * @param {Object} options
+ *
+ * @param {object} options
  * @param {boolean} options.requestCamera - Whether to request camera
  * @param {boolean} options.requestMicrophone - Whether to request microphone
  * @param {boolean} options.expectCameraPreview - Whether to expect camera

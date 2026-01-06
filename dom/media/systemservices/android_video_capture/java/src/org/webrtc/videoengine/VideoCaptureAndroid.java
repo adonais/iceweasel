@@ -22,6 +22,7 @@ import androidx.annotation.NonNull;
 import java.util.concurrent.CountDownLatch;
 
 import org.mozilla.gecko.annotation.WebRTCJNITarget;
+import org.mozilla.gecko.GeckoAppShell;
 
 import org.webrtc.CameraEnumerator;
 import org.webrtc.Camera1Enumerator;
@@ -78,8 +79,9 @@ public class VideoCaptureAndroid implements CameraVideoCapturer.CameraEventsHand
   }
 
   // Return the global application context.
-  @WebRTCJNITarget
-  private static native Context GetContext();
+  private static Context GetContext() {
+    return GeckoAppShell.getApplicationContext();
+  }
 
   public boolean canCapture() {
     return cameraVideoCapturer != null;

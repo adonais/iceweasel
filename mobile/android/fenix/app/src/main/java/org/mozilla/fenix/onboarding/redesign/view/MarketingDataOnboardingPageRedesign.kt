@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -90,11 +91,16 @@ fun MarketingDataOnboardingPageRedesign(
                     style = MaterialTheme.typography.headlineSmall,
                 )
 
-                Image(
-                    modifier = Modifier.height(CONTENT_IMAGE_HEIGHT),
-                    painter = painterResource(id = state.imageRes),
-                    contentDescription = null,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Image(
+                        modifier = Modifier.height(CONTENT_IMAGE_HEIGHT),
+                        painter = painterResource(id = state.imageRes),
+                        contentDescription = null,
+                    )
+                }
 
                 state.marketingData?.let {
                     MarketingDataView(

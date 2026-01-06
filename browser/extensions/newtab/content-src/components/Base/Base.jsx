@@ -469,11 +469,15 @@ export class BaseContent extends React.PureComponent {
     let url = "";
     let color = "transparent";
     let newTheme = colorMode;
+    let backgroundPosition = "center";
 
     // if no selected wallpaper fallback to browser/theme styles
     if (!selectedWallpaper) {
       global.document?.body.style.removeProperty("--newtab-wallpaper");
       global.document?.body.style.removeProperty("--newtab-wallpaper-color");
+      global.document?.body.style.removeProperty(
+        "--newtab-wallpaper-backgroundPosition"
+      );
       global.document?.body.classList.remove("lightWallpaper", "darkWallpaper");
       return;
     }
@@ -482,6 +486,8 @@ export class BaseContent extends React.PureComponent {
     if (selectedWallpaper === "custom" && uploadedWallpaperUrl) {
       url = uploadedWallpaperUrl;
       color = "transparent";
+      // Note: There is no method to set a specific background position for custom wallpapers
+      backgroundPosition = "center";
       newTheme = uploadedWallpaperTheme || colorMode;
     } else if (wallpaperList) {
       const wallpaper = wallpaperList.find(
@@ -498,6 +504,7 @@ export class BaseContent extends React.PureComponent {
         // standard wallpaper & solid colors
       } else if (selectedWallpaper) {
         url = wallpaper?.wallpaperUrl || "";
+        backgroundPosition = wallpaper?.background_position || "center";
         color = wallpaper?.solid_color || "transparent";
         newTheme = wallpaper?.theme || colorMode;
         // if a solid color, determine if dark or light
@@ -511,6 +518,10 @@ export class BaseContent extends React.PureComponent {
     global.document?.body.style.setProperty(
       "--newtab-wallpaper",
       `url(${url})`
+    );
+    global.document?.body.style.setProperty(
+      "--newtab-wallpaper-backgroundPosition",
+      backgroundPosition
     );
     global.document?.body.style.setProperty(
       "--newtab-wallpaper-color",
@@ -650,7 +661,6 @@ export class BaseContent extends React.PureComponent {
         prefs[PREF_INFERRED_PERSONALIZATION_USER],
       topSitesRowsCount: prefs.topSitesRows,
       weatherEnabled: prefs.showWeather,
-      trendingSearchEnabled: prefs["trendingSearch.enabled"],
     };
 
     const pocketRegion = prefs["feeds.system.topstories"];
@@ -691,14 +701,8 @@ export class BaseContent extends React.PureComponent {
     const enabledWidgets = {
       listsEnabled: prefs["widgets.lists.enabled"],
       timerEnabled: prefs["widgets.focusTimer.enabled"],
-      trendingSearchEnabled: prefs["trendingSearch.enabled"],
       weatherEnabled: prefs.showWeather,
     };
-
-    // Trending Searches experiment pref check
-    const mayHaveTrendingSearch =
-      prefs["system.trendingSearch.enabled"] &&
-      prefs["trendingSearch.defaultSearchEngine"].toLowerCase() === "google";
 
     // Mobile Download Promo Pref Checks
     const mobileDownloadPromoEnabled = prefs["mobileDownloadModal.enabled"];
@@ -873,7 +877,6 @@ export class BaseContent extends React.PureComponent {
             mayHaveTopicSections={mayHavePersonalizedTopicSections}
             mayHaveInferredPersonalization={mayHaveInferredPersonalization}
             mayHaveWeather={mayHaveWeather}
-            mayHaveTrendingSearch={mayHaveTrendingSearch}
             mayHaveWidgets={mayHaveWidgets}
             mayHaveTimerWidget={mayHaveTimerWidget}
             mayHaveListsWidget={mayHaveListsWidget}

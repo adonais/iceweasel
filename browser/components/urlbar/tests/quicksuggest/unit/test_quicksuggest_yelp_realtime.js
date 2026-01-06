@@ -415,14 +415,12 @@ function yelpOptInResult({ dismissButton = false } = {}) {
         command: "dismiss",
         l10n: {
           id: "urlbar-result-realtime-opt-in-dismiss",
-          cacheable: true,
         },
       }
     : {
         command: "not_now",
         l10n: {
           id: "urlbar-result-realtime-opt-in-not-now",
-          cacheable: true,
         },
       };
   return {
@@ -440,11 +438,9 @@ function yelpOptInResult({ dismissButton = false } = {}) {
       icon: "chrome://browser/skin/illustrations/yelpRealtime-opt-in.svg",
       titleL10n: {
         id: "urlbar-result-yelp-realtime-opt-in-title",
-        cacheable: true,
       },
       descriptionL10n: {
         id: "urlbar-result-yelp-realtime-opt-in-description",
-        cacheable: true,
         parseMarkup: true,
       },
       descriptionLearnMoreTopic: "firefox-suggest",
@@ -453,7 +449,6 @@ function yelpOptInResult({ dismissButton = false } = {}) {
           command: "opt_in",
           l10n: {
             id: "urlbar-result-realtime-opt-in-allow",
-            cacheable: true,
           },
           input: "coffee",
           attributes: {

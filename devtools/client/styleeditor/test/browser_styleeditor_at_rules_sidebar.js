@@ -40,6 +40,8 @@ waitForExplicitFinish();
 add_task(async function () {
   // Enable @property rules
   await pushPref("layout.css.properties-and-values.enabled", true);
+  // Enable anchor positioning
+  await pushPref("layout.css.anchor-positioning.enabled", true);
 
   const { ui } = await openStyleEditorForURL(TESTCASE_URI);
 
@@ -50,10 +52,10 @@ add_task(async function () {
   await openEditor(plainEditor);
   testPlainEditor(plainEditor);
 
-  info("Test editor for inline sheet with @media rules");
-  const inlineMediaEditor = ui.editors[3];
-  await openEditor(inlineMediaEditor);
-  await testInlineMediaEditor(ui, inlineMediaEditor);
+  info("Test editor for inline sheet with at-rules");
+  const inlineAtRulesEditor = ui.editors[3];
+  await openEditor(inlineAtRulesEditor);
+  await testInlineAtRulesEditor(ui, inlineAtRulesEditor);
 
   info("Test editor with @media rules");
   const mediaEditor = ui.editors[1];
@@ -84,12 +86,12 @@ function testPlainEditor(editor) {
   is(sidebar.hidden, true, "sidebar is hidden on editor without @media");
 }
 
-async function testInlineMediaEditor(ui, editor) {
+async function testInlineAtRulesEditor(ui, editor) {
   const sidebar = editor.details.querySelector(".stylesheet-sidebar");
   is(sidebar.hidden, false, "sidebar is showing on editor with @media");
 
   const entries = sidebar.querySelectorAll(".at-rule-label");
-  is(entries.length, 7, "7 at-rules displayed in sidebar");
+  is(entries.length, 8, "8 at-rules displayed in sidebar");
 
   await testRule({
     ui,
@@ -154,6 +156,15 @@ async function testInlineMediaEditor(ui, editor) {
     line: 30,
     type: "property",
     propertyName: "--my-property",
+  });
+
+  await testRule({
+    ui,
+    editor,
+    rule: entries[7],
+    line: 36,
+    type: "position-try",
+    positionTryName: "--pt-custom-bottom",
   });
 }
 
@@ -278,16 +289,17 @@ async function testMediaRuleAdded(ui, editor) {
 /**
  * Run assertion on given rule
  *
- * @param {Object} options
+ * @param {object} options
  * @param {StyleEditorUI} options.ui
  * @param {StyleSheetEditor} options.editor: The editor the rule is displayed in
  * @param {Element} options.rule: The rule element in the media sidebar
- * @param {String} options.conditionText: at-rule condition text (for @media, @container, @support)
- * @param {Boolean} options.matches: Whether or not the document matches the rule
- * @param {String} options.layerName: Optional name of the @layer
- * @param {String} options.propertyName: Name of the @property if type is "property"
- * @param {Number} options.line: Line of the rule
- * @param {String} options.type: The type of the rule (container, layer, media, support, property ).
+ * @param {string} options.conditionText: at-rule condition text (for @media, @container, @support)
+ * @param {boolean} options.matches: Whether or not the document matches the rule
+ * @param {string} options.layerName: Optional name of the @layer
+ * @param {string} options.positionTryName: Name of the @position-try if type is "position-try"
+ * @param {string} options.propertyName: Name of the @property if type is "property"
+ * @param {number} options.line: Line of the rule
+ * @param {string} options.type: The type of the rule (container, layer, media, support, property ).
  *                               Defaults to "media".
  */
 async function testRule({
@@ -297,6 +309,7 @@ async function testRule({
   conditionText = "",
   matches,
   layerName,
+  positionTryName,
   propertyName,
   line,
   type = "media",
@@ -307,6 +320,8 @@ async function testRule({
     name = layerName;
   } else if (type === "property") {
     name = propertyName;
+  } else if (type === "position-try") {
+    name = positionTryName;
   }
   is(
     atTypeEl.textContent,

@@ -1768,9 +1768,10 @@ async function RestoreChangedPreferences() {
   // SpecialPowers property because it was created before SpecialPowers was
   // registered.
   // Get a parent actor so that there is less waiting than with a child.
-  let { requiresRefresh } = g.browser.browsingContext.currentWindowGlobal
-    .getActor("SpecialPowers")
-    .flushPrefEnv();
+  let { requiresRefresh } =
+    g.containingWindow.browsingContext.currentWindowGlobal
+      .getActor("SpecialPowers")
+      .flushPrefEnv();
 
   if (!g.prefsToRestore.length && !requiresRefresh) {
     return;

@@ -84,6 +84,7 @@ const gLoggingPresets = {
       label: "about-logging-preset-networking-cookie-label",
       description: "about-logging-preset-networking-cookie-description",
     },
+    profilerPreset: "networking",
   },
   websocket: {
     modules:
@@ -92,6 +93,7 @@ const gLoggingPresets = {
       label: "about-logging-preset-networking-websocket-label",
       description: "about-logging-preset-networking-websocket-description",
     },
+    profilerPreset: "networking",
   },
   http3: {
     modules:
@@ -100,6 +102,7 @@ const gLoggingPresets = {
       label: "about-logging-preset-networking-http3-label",
       description: "about-logging-preset-networking-http3-description",
     },
+    profilerPreset: "networking",
   },
   "http3-upload-speed": {
     modules: "timestamp,neqo_transport::*:3",
@@ -108,6 +111,7 @@ const gLoggingPresets = {
       description:
         "about-logging-preset-networking-http3-upload-speed-description",
     },
+    profilerPreset: "networking",
   },
   "media-playback": {
     modules:

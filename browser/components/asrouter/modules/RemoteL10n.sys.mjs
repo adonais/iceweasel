@@ -219,7 +219,6 @@ export class _RemoteL10n {
         "browser/profiles.ftl",
         "browser/termsofuse.ftl",
         "toolkit/branding/brandings.ftl",
-        "preview/termsOfUse.ftl",
       ],
       false
     );

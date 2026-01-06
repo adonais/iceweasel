@@ -10,7 +10,7 @@ import {
 import componentsData from "./components.json";
 
 /* DS styles */
-import dsTokensTable from "toolkit/themes/shared/design-system/tokens-table.css";
+import dsTokensTable from "toolkit/themes/shared/design-system/storybook/tokens-table.css";
 
 export default {
   title: "Docs/Component Statuses",

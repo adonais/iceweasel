@@ -49,9 +49,10 @@ vendoring:
   skip-vendoring-steps: ['move-contents', 'update-moz-build']
 
   keep:
+    - "*.patch"
+    - arm2gnu.py
     - COPYING
     - gen-sources.py
-    - "*.patch"
     - Makefile.in
     - README_MOZILLA
     - sources.mozbuild

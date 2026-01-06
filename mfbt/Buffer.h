@@ -13,7 +13,6 @@
 
 #include <cstddef>
 #include <iterator>
-#include <memory>
 #include <utility>
 
 namespace mozilla {

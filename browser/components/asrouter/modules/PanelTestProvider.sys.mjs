@@ -2617,10 +2617,7 @@ const MESSAGES = () => [
     id: "UNIVERSAL_INFOBAR_WITH_EMBEDDED_LINKS",
     content: {
       text: [
-        {
-          string_id: "existing-user-tou-update",
-        },
-        " - Read the release notes ",
+        "Read the release notes ",
         {
           raw: "here",
           href: "https://www.mozilla.org/en-US/firefox/releases/",

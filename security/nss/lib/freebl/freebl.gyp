@@ -16,19 +16,6 @@
       'dependencies': [
         '<(DEPTH)/exports.gyp:nss_exports'
       ],
-      'conditions': [
-        [ 'cc_is_clang==1 and force_integrated_as!=1', {
-          'cflags': [
-            '-no-integrated-as',
-          ],
-          'cflags_mozilla': [
-            '-no-integrated-as',
-          ],
-          'asflags_mozilla': [
-            '-no-integrated-as',
-          ],
-        }],
-      ],
     },
     {
       'target_name': 'intel-gcm-wrap_c_lib',
@@ -36,8 +23,33 @@
       'sources': [
         'intel-gcm-wrap.c',
       ],
+      'conditions': [
+        [ '(OS=="linux" or OS=="android") and target_arch=="x64"', {
+          'dependencies': [
+            'intel-gcm-s_lib',
+          ],
+        }],
+      ],
       'dependencies': [
         '<(DEPTH)/exports.gyp:nss_exports'
+      ],
+      'cflags': [
+        '-mssse3',
+      ],
+      'cflags_mozilla': [
+        '-mssse3'
+      ],
+      # Remove FREEBL_NO_DEPEND so intel-gcm-wrap.c uses real NSS utility
+      # functions instead of stubs. This is needed for static builds.
+      'defines!': [
+        'FREEBL_NO_DEPEND',
+      ],
+    },
+    {
+      'target_name': 'intel-gcm-wrap-nodepend_c_lib',
+      'type': 'static_library',
+      'sources': [
+        'intel-gcm-wrap.c',
       ],
       'conditions': [
         [ '(OS=="linux" or OS=="android") and target_arch=="x64"', {
@@ -45,6 +57,9 @@
             'intel-gcm-s_lib',
           ],
         }],
+      ],
+      'dependencies': [
+        '<(DEPTH)/exports.gyp:nss_exports'
       ],
       'cflags': [
         '-mssse3',
@@ -313,11 +328,6 @@
             '-maltivec'
           ],
         }],
-        [ 'ppc_abi==2', {
-          'sources': [
-            'sha512-p8.s',
-          ],
-        }],
       ]
     },
     {
@@ -328,19 +338,6 @@
       ],
       'dependencies': [
         '<(DEPTH)/exports.gyp:nss_exports'
-      ],
-      'conditions': [
-        [ 'cc_is_clang==1 and force_integrated_as!=1', {
-          'cflags': [
-            '-no-integrated-as',
-          ],
-          'cflags_mozilla': [
-            '-no-integrated-as',
-          ],
-          'asflags_mozilla': [
-            '-no-integrated-as',
-          ],
-        }],
       ],
     },
     {
@@ -369,7 +366,7 @@
       ],
     },
     {
-      'target_name': 'gcm-sha512-nodepend-ppc_c_lib',
+      'target_name': 'sha512-nodepend-ppc_c_lib',
       'type': 'static_library',
       'sources': [
         'sha512.c',
@@ -378,6 +375,11 @@
         '<(DEPTH)/exports.gyp:nss_exports'
       ],
       'conditions': [
+        [ 'ppc_abi==2', {
+          'sources': [
+            'sha512-p8.s',
+          ],
+        }],
         [ 'disable_crypto_vsx==0', {
           'cflags': [
             '-mcrypto',
@@ -408,7 +410,7 @@
       ]
     },
     {
-      'target_name': 'gcm-sha512-ppc_c_lib',
+      'target_name': 'sha512-ppc_c_lib',
       'type': 'static_library',
       'sources': [
         'sha512.c',
@@ -417,6 +419,11 @@
         '<(DEPTH)/exports.gyp:nss_exports'
       ],
       'conditions': [
+        [ 'ppc_abi==2', {
+          'sources': [
+            'sha512-p8.s',
+          ],
+        }],
         [ 'disable_crypto_vsx==0', {
           'cflags': [
             '-mcrypto',
@@ -518,8 +525,10 @@
         [ 'target_arch=="ia32" or target_arch=="x64"', {
           'dependencies': [
             'gcm-aes-x86_c_lib',
+            'intel-gcm-wrap_c_lib',
           ],
-        }, '(disable_arm_hw_aes==0 or disable_arm_hw_sha1==0 or disable_arm_hw_sha2==0) and (target_arch=="arm" or target_arch=="arm64" or target_arch=="aarch64")', {
+        }],
+        [ '(disable_arm_hw_aes==0 or disable_arm_hw_sha1==0 or disable_arm_hw_sha2==0) and (target_arch=="arm" or target_arch=="arm64" or target_arch=="aarch64")', {
           'dependencies': [
             'armv8_c_lib'
           ],
@@ -547,24 +556,24 @@
         [ 'disable_altivec==0 and target_arch=="ppc64"', {
           'dependencies': [
             'gcm-aes-ppc_c_lib',
-            'gcm-sha512-ppc_c_lib',
+            'sha512-ppc_c_lib',
           ],
         }],
         [ 'disable_altivec==0 and target_arch=="ppc64le"', {
           'dependencies': [
             'gcm-aes-ppc_c_lib',
-            'gcm-sha512-ppc_c_lib',
+            'sha512-ppc_c_lib',
             'chacha20-ppc_lib',
             'ppc-gcm-wrap_c_lib',
           ],
         }],
         [ 'disable_altivec==1 and (target_arch=="ppc64" or target_arch=="ppc64le")', {
-          'defines!': [
+          'defines': [
             'NSS_DISABLE_ALTIVEC',
           ],
         }],
         [ 'disable_crypto_vsx==1 and (target_arch=="ppc" or target_arch=="ppc64" or target_arch=="ppc64le")', {
-          'defines!': [
+          'defines': [
             'NSS_DISABLE_CRYPTO_VSX',
           ],
         }],
@@ -572,20 +581,6 @@
           'defines!': [
             'FREEBL_NO_DEPEND',
             'FREEBL_LOWHASH',
-            'USE_HW_AES',
-            'INTEL_GCM',
-            'PPC_GCM',
-          ],
-          'conditions': [
-            [ 'target_arch=="x64"', {
-              # The AES assembler code doesn't work in static builds.
-              # The linker complains about non-relocatable code, and I
-              # currently don't know how to fix this properly.
-              'sources!': [
-                'intel-aes.s',
-                'intel-gcm.s',
-              ],
-            }],
           ],
         }],
       ],
@@ -605,8 +600,10 @@
         [ 'target_arch=="ia32" or target_arch=="x64"', {
           'dependencies': [
             'gcm-aes-x86_c_lib',
+            'intel-gcm-wrap-nodepend_c_lib',
           ]
-        }, 'target_arch=="arm" or target_arch=="arm64" or target_arch=="aarch64"', {
+        }],
+        [ 'target_arch=="arm" or target_arch=="arm64" or target_arch=="aarch64"', {
           'dependencies': [
             'armv8_c_lib',
           ],
@@ -636,24 +633,24 @@
             [ 'target_arch=="ppc64"', {
               'dependencies': [
                 'gcm-aes-ppc_c_lib',
-                'gcm-sha512-nodepend-ppc_c_lib',
+                'sha512-nodepend-ppc_c_lib',
               ],
             }, 'target_arch=="ppc64le"', {
                'dependencies': [
                  'gcm-aes-ppc_c_lib',
-                 'gcm-sha512-nodepend-ppc_c_lib',
+                 'sha512-nodepend-ppc_c_lib',
                  'ppc-gcm-wrap-nodepend_c_lib',
                ],
             }],
           ],
         }],
         [ 'disable_altivec==1 and (target_arch=="ppc64" or target_arch=="ppc64le")', {
-          'defines!': [
+          'defines': [
             'NSS_DISABLE_ALTIVEC',
           ],
         }],
         [ 'disable_crypto_vsx==1 and (target_arch=="ppc" or target_arch=="ppc64" or target_arch=="ppc64le")', {
-          'defines!': [
+          'defines': [
             'NSS_DISABLE_CRYPTO_VSX',
           ],
         }],
@@ -668,16 +665,6 @@
                 '<(moz_folded_library_name)',
               ],
             }],
-          ],
-        }],
-        [ '(OS=="linux" or OS=="android") and target_arch=="x64"', {
-          'dependencies': [
-            'intel-gcm-wrap_c_lib',
-          ],
-        }],
-        [ 'OS=="win" and (target_arch=="ia32" or target_arch=="x64") and cc_is_clang==1', {
-          'dependencies': [
-            'intel-gcm-wrap_c_lib',
           ],
         }],
         [ 'OS=="linux"', {
@@ -808,7 +795,6 @@
             #TODO: -Ox optimize flags
             'PreprocessorDefinitions': [
               # Should be copied to mingw defines below
-              'MP_IS_LITTLE_ENDIAN',
               'NSS_BEVAND_ARCFOUR',
               'MPI_AMD64',
               'MP_ASSEMBLY_MULTIPLY',
@@ -838,12 +824,6 @@
         'defines': [
           'USE_HW_SHA2',
         ],
-      }],
-      [ 'cc_use_gnu_ld==1 and OS=="win" and target_arch=="x64"', {
-        # mingw x64
-        'defines': [
-          'MP_IS_LITTLE_ENDIAN',
-         ],
       }],
       # Poly1305_256 requires the flag to run
       ['target_arch=="x64"', {
@@ -883,7 +863,6 @@
         'conditions': [
           [ 'target_arch=="x64"', {
             'defines': [
-              'MP_IS_LITTLE_ENDIAN',
               'NSS_BEVAND_ARCFOUR',
               'MPI_AMD64',
               'MP_ASSEMBLY_MULTIPLY',
@@ -898,7 +877,6 @@
           }],
           [ 'target_arch=="ia32"', {
             'defines': [
-              'MP_IS_LITTLE_ENDIAN',
               'MP_ASSEMBLY_MULTIPLY',
               'MP_ASSEMBLY_SQUARE',
               'MP_ASSEMBLY_DIV_2DX1D',

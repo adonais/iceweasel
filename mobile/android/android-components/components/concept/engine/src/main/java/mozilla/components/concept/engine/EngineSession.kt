@@ -25,6 +25,7 @@ import mozilla.components.concept.fetch.Response
 import mozilla.components.support.base.observer.Observable
 import mozilla.components.support.base.observer.ObserverRegistry
 import org.json.JSONObject
+import java.security.cert.X509Certificate
 
 /**
  * Class representing a single engine session.
@@ -60,7 +61,22 @@ abstract class EngineSession(
         fun onProgress(progress: Int) = Unit
         fun onLoadingStateChange(loading: Boolean) = Unit
         fun onNavigationStateChange(canGoBack: Boolean? = null, canGoForward: Boolean? = null) = Unit
-        fun onSecurityChange(secure: Boolean, host: String? = null, issuer: String? = null) = Unit
+
+        /**
+         * Event to indicate the top-level connection security has changed.
+         *
+         * @param secure If true, the connection is considered secure (e.g. delivered over TLS with no errors).
+         * @param host The domain name of the server that was connected to.
+         * @param issuer The name of the organization that issued the server certificate, if present.
+         * @param certificate The certificate presented by the server, if any.
+         */
+        fun onSecurityChange(
+            secure: Boolean,
+            host: String? = null,
+            issuer: String? = null,
+            certificate: X509Certificate? = null,
+        ) = Unit
+
         fun onTrackerBlockingEnabledChange(enabled: Boolean) = Unit
 
         /**
@@ -414,9 +430,14 @@ abstract class EngineSession(
         PHISHING(1 shl 13),
 
         /**
+         * Blocks harmful add-on sites.
+         */
+        HARMFULADDON(1 shl 14),
+
+        /**
          * Blocks all unsafe sites.
          */
-        RECOMMENDED(MALWARE.id + UNWANTED.id + HARMFUL.id + PHISHING.id),
+        RECOMMENDED(MALWARE.id + UNWANTED.id + HARMFUL.id + PHISHING.id + HARMFULADDON.id),
     }
 
     /**

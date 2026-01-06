@@ -66,10 +66,10 @@ async function checkLoginInvalid(aLoginInfo, aExpectedError) {
  * Verifies that two objects are not the same instance
  * but have equal attributes.
  *
- * @param {Object} objectA
+ * @param {object} objectA
  *        An object to compare.
  *
- * @param {Object} objectB
+ * @param {object} objectB
  *        Another object to compare.
  *
  * @param {string[]} attributes

@@ -15,7 +15,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.downloads.AbstractFetchDownloadService.Companion.EXTRA_DOWNLOAD_STATUS
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.grantPermission
 import mozilla.components.support.test.robolectric.testContext
@@ -67,7 +66,6 @@ class AndroidDownloadManagerTest {
 
         assertTrue(store.state.downloads.isEmpty())
         val id = downloadManager.download(download)!!
-        store.waitUntilIdle()
         assertEquals(download.copy(id = id), store.state.downloads[id])
 
         notifyDownloadCompleted(id)
@@ -83,7 +81,6 @@ class AndroidDownloadManagerTest {
         grantPermissions()
 
         val id = downloadManager.download(download)!!
-        store.waitUntilIdle()
         notifyDownloadFailed(id)
         shadowOf(getMainLooper()).idle()
         assertTrue(downloadStopped)
@@ -138,7 +135,6 @@ class AndroidDownloadManagerTest {
             downloadWithFileName,
             cookie = "yummy_cookie=choco",
         )!!
-        store.waitUntilIdle()
 
         downloadManager.onDownloadStopped = { _, _, status ->
             downloadStatus = status
@@ -166,7 +162,6 @@ class AndroidDownloadManagerTest {
             downloadWithFileName,
             cookie = "yummy_cookie=choco",
         )!!
-        store.waitUntilIdle()
         assertEquals(downloadWithFileName.copy(id = id), store.state.downloads[id])
 
         notifyDownloadCompleted(id)

@@ -12,7 +12,7 @@ support-files = [
   "webchannel-js-sources.html",
 ]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1804081, timeouts and data races in various tests
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1804081, timeouts and data races in various tests
 ]
 
 ["browser_aboutprofiling-entries.js"]

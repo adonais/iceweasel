@@ -54,7 +54,7 @@
 }
 
 .log-title {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   font-size: var(--font-size-medium);
   margin-block-end: var(--space-medium);
   display: block;

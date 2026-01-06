@@ -15,9 +15,7 @@
 #include <iterator>
 #include <stddef.h>
 #include <stdint.h>
-#include <string>
 #include <string.h>
-#include <type_traits>
 #include <utility>
 
 #include "unicode/uloc.h"

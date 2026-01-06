@@ -43,6 +43,7 @@ class PerformancePanel {
 
   /**
    * Open is effectively an asynchronous constructor.
+   *
    * @return {Promise<PerformancePanel>} Resolves when the Perf tool completes
    *     opening.
    */
@@ -55,6 +56,7 @@ class PerformancePanel {
 
   /**
    * This function is the actual implementation of the open() method.
+   *
    * @returns Promise<PerformancePanel>
    */
   async _doOpen() {

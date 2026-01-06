@@ -122,12 +122,45 @@ static const size_t MinHeapLength = PageSize;
 // See IsValidAsmJSHeapLength().
 static const uint64_t MaxHeapLength = 0x7f000000;
 
+// Because ARM has a fixed-width instruction encoding, ARM can only express a
+// limited subset of immediates (in a single instruction).
+static const uint64_t HighestValidARMImmediate = 0xff000000;
+
+//  Heap length on ARM should fit in an ARM immediate. We approximate the set
+//  of valid ARM immediates with the predicate:
+//    2^n for n in [16, 24)
+//  or
+//    2^24 * n for n >= 1.
+static bool IsValidARMImmediate(uint32_t i) {
+  bool valid = (IsPowerOfTwo(i) || (i & 0x00ffffff) == 0);
+
+  MOZ_ASSERT_IF(valid, i % PageSize == 0);
+
+  return valid;
+}
+
+static uint64_t RoundUpToNextValidARMImmediate(uint64_t i) {
+  MOZ_ASSERT(i <= HighestValidARMImmediate);
+  static_assert(HighestValidARMImmediate == 0xff000000,
+                "algorithm relies on specific constant");
+
+  if (i <= 16 * 1024 * 1024) {
+    i = i ? mozilla::RoundUpPow2(i) : 0;
+  } else {
+    i = (i + 0x00ffffff) & ~0x00ffffff;
+  }
+
+  MOZ_ASSERT(IsValidARMImmediate(i));
+
+  return i;
+}
+
 static uint64_t RoundUpToNextValidAsmJSHeapLength(uint64_t length) {
   if (length <= MinHeapLength) {
     return MinHeapLength;
   }
 
-  return wasm::RoundUpToNextValidARMImmediate(length);
+  return RoundUpToNextValidARMImmediate(length);
 }
 
 static uint64_t DivideRoundingUp(uint64_t a, uint64_t b) {
@@ -204,8 +237,8 @@ struct LitValPOD {
   }
 };
 
-static_assert(std::is_pod_v<LitValPOD>,
-              "must be POD to be simply serialized/deserialized");
+static_assert(std::is_trivially_copyable_v<LitValPOD>,
+              "must be trivially copyable for serialization/deserialization");
 
 // An AsmJSGlobal represents a JS global variable in the asm.js module function.
 class AsmJSGlobal {
@@ -3262,13 +3295,13 @@ static bool CheckArguments(FunctionValidatorShared& f, ParseNode** stmtIter,
       return false;
     }
 
+    if (argTypes->length() > MaxParams) {
+      return f.fail(stmt, "too many parameters");
+    }
+
     if (!f.addLocal(argpn, name, type)) {
       return false;
     }
-  }
-
-  if (argTypes->length() > MaxParams) {
-    return f.fail(stmt, "too many parameters");
   }
 
   *stmtIter = stmt;
@@ -7397,5 +7430,6 @@ bool js::IsValidAsmJSHeapLength(size_t length) {
     return false;
   }
 
-  return wasm::IsValidARMImmediate(length);
+  // asm.js specifies that the heap size must fit in an ARM immediate.
+  return IsValidARMImmediate(length);
 }

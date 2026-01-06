@@ -9,7 +9,6 @@
 #include "CustomTypeAnnotation.h"
 #include "Utils.h"
 
-#include <unordered_set>
 
 class MemMoveAnnotation final : public CustomTypeAnnotation {
 public:

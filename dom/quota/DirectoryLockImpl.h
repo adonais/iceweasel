@@ -9,7 +9,6 @@
 
 #include <cstdint>
 #include <functional>
-#include <utility>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"

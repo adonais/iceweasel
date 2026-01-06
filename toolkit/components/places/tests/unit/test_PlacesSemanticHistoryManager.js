@@ -8,6 +8,15 @@ ChromeUtils.defineESModuleGetters(this, {
   sinon: "resource://testing-common/Sinon.sys.mjs",
   getPlacesSemanticHistoryManager:
     "resource://gre/modules/PlacesSemanticHistoryManager.sys.mjs",
+  Region: "resource://gre/modules/Region.sys.mjs",
+});
+
+ChromeUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
+  const { QuickSuggestTestUtils: module } = ChromeUtils.importESModule(
+    "resource://testing-common/QuickSuggestTestUtils.sys.mjs"
+  );
+  module.init(this);
+  return module;
 });
 
 // Must be supported, and a multiple of 8. see EmbeddingsGenerator.sys.mjs for
@@ -61,6 +70,11 @@ class MockMLEngine {
 
 add_setup(async function () {
   Services.fog.initializeFOG();
+  let cleanup = await QuickSuggestTestUtils.setRegionAndLocale({
+    region: "US",
+    locale: "en-US",
+  });
+  registerCleanupFunction(cleanup);
 });
 
 add_task(async function test_tensorToSQLBindable() {
@@ -164,6 +178,105 @@ add_task(async function test_canUseSemanticSearch_not_qualified() {
   );
 });
 
+add_task(async function test_canUseSemanticSearch_region_locale() {
+  const semanticManager = createPlacesSemanticHistoryManager();
+
+  Services.prefs.setBoolPref("browser.ml.enable", true);
+  Services.prefs.setBoolPref("places.semanticHistory.featureGate", true);
+
+  semanticManager.qualifiedForSemanticSearch = true;
+  semanticManager.enoughEntries = true;
+
+  let tests = [
+    { region: "US", locale: "en-US", supported: true },
+    { region: "FR", locale: "fr-FR", supported: false },
+    {
+      region: "IT",
+      locale: "it-IT",
+      supported: true,
+      setPref: '[["IT",["it-*"]]]',
+    },
+    {
+      region: "US",
+      locale: "en-US",
+      supported: false,
+      setPref: '[["IT",["it-*"]]]',
+    },
+    {
+      region: "US",
+      locale: "en-US",
+      supported: false,
+      setPref: "[]", // empty list means disable
+    },
+    {
+      region: "US",
+      locale: "en-US",
+      supported: false,
+      setPref: "", // empty string means disable
+    },
+    {
+      region: "US",
+      locale: "en-US",
+      supported: true,
+      setPref: "invalid json", // invalid, should use default.
+    },
+    {
+      region: "IT",
+      locale: "it", // short locale format
+      supported: true,
+      setPref: '[["IT",["it-*"]]]',
+    },
+    {
+      region: "US",
+      locale: "en-US",
+      supported: true,
+      setPref: '[["US",["en-US"]]]',
+    },
+    {
+      region: "US",
+      locale: "es-MX",
+      supported: false,
+      setPref: '[["US",["en-US"]]]',
+    },
+    {
+      region: "US",
+      locale: "es-MX",
+      supported: true,
+      setPref: '[["US",["en-*","es-*"]]]',
+    },
+    {
+      region: "US",
+      locale: "en-US",
+      supported: true,
+      setPref: '[["US",["en-*","es-*"]]]',
+    },
+  ];
+  for (let { region, locale, supported, setPref } of tests) {
+    if (setPref !== undefined) {
+      info("Setting `supportedRegions` pref to " + setPref);
+      Services.prefs.setCharPref(
+        "places.semanticHistory.supportedRegions",
+        setPref
+      );
+    }
+    await QuickSuggestTestUtils.withRegionAndLocale({
+      region,
+      locale,
+      skipSuggestReset: true,
+      callback() {
+        Assert.equal(
+          semanticManager.canUseSemanticSearch,
+          supported,
+          `Check region ${region} and locale ${locale}`
+        );
+      },
+    });
+    if (setPref !== undefined) {
+      Services.prefs.clearUserPref("places.semanticHistory.supportedRegions");
+    }
+  }
+});
+
 add_task(async function test_removeDatabaseFilesOnDisable() {
   // Ensure Places has been initialized.
   Assert.equal(
@@ -244,6 +357,21 @@ add_task(async function test_removeDatabaseFilesOnStartup() {
   );
 });
 
+add_task(async function test_empty_region() {
+  // Test that if region is empty (uninitialized) creating a semantic manager
+  // will try to initialize Region.
+  let stub = sinon.stub(Region, "home").get(() => "");
+  let spy = sinon.spy(Region, "init");
+  let semanticManager = createPlacesSemanticHistoryManager();
+  Assert.ok(
+    !semanticManager.canUseSemanticSearch,
+    `Check semantic search disabled when region not set`
+  );
+  Assert.ok(spy.calledOnce, "Region.init should have been called");
+  spy.restore();
+  stub.restore();
+});
+
 add_task(async function test_chunksTelemetry() {
   await PlacesTestUtils.addVisits([
     { url: "https://test1.moz.com/", title: "test 1" },
@@ -269,9 +397,9 @@ add_task(async function test_chunksTelemetry() {
   );
   Services.prefs.setBoolPref("places.semanticHistory.featureGate", true);
 
-  let semanticManager = createPlacesSemanticHistoryManager();
-  // Ensure only one task execution for measuremant purposes.
-  semanticManager.setDeferredTaskIntervalForTests(3000);
+  let semanticManager = createPlacesSemanticHistoryManager({
+    deferredTaskInterval: 2000, // lower time to avoid timeouts.
+  });
   await semanticManager.getConnection();
   semanticManager.embedder.setEngine(new MockMLEngine());
   await TestUtils.topicObserved(
@@ -317,9 +445,9 @@ add_task(async function test_duplicate_urlhash() {
     );
   });
 
-  let semanticManager = createPlacesSemanticHistoryManager();
-  // Ensure only one task execution for measuremant purposes.
-  semanticManager.setDeferredTaskIntervalForTests(3000);
+  let semanticManager = createPlacesSemanticHistoryManager({
+    deferredTaskInterval: 2000, // lower time to avoid timeouts.
+  });
   let conn = await semanticManager.getConnection();
   semanticManager.embedder.setEngine(new MockMLEngine());
   await TestUtils.topicObserved(
@@ -358,6 +486,7 @@ add_task(async function test_rowid_relations() {
 
   let semanticManager = createPlacesSemanticHistoryManager({
     changeThresholdCount: 1,
+    deferredTaskInterval: 2000, // lower time to avoid timeouts.
   });
   // Ensure we start from an empty database.
   await semanticManager.semanticDB.removeDatabaseFiles();
@@ -426,6 +555,7 @@ add_task(async function test_rowid_conflict() {
 
   let semanticManager = createPlacesSemanticHistoryManager({
     changeThresholdCount: 1,
+    deferredTaskInterval: 2000, // lower time to avoid timeouts.
   });
   // Ensure we start from an empty database.
   await semanticManager.semanticDB.removeDatabaseFiles();

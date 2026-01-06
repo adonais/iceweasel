@@ -438,6 +438,9 @@ TEST_F(VideoConduitTest, TestConfigureSendMediaCodec) {
   ASSERT_EQ(Call()->mVideoSendEncoderConfig->min_transmit_bitrate_bps, 0);
   ASSERT_EQ(Call()->mVideoSendEncoderConfig->max_bitrate_bps, KBPS(10000));
   ASSERT_EQ(Call()->mVideoSendEncoderConfig->number_of_streams, 1U);
+  ASSERT_EQ(
+      Call()->mVideoSendEncoderConfig->simulcast_layers[0].max_bitrate_bps,
+      KBPS(10000));
 
   // empty codec name
   mControl.Update([&](auto& aControl) {
@@ -552,9 +555,13 @@ TEST_F(VideoConduitTest, TestConfigureSendMediaCodecTias) {
     aControl.mVideoSendRtpRtcpConfig =
         Some(RtpRtcpConfig(webrtc::RtcpMode::kCompound, true));
   });
-  ASSERT_EQ(Call()->mVideoSendEncoderConfig->max_bitrate_bps, 2000000);
   {
     ASSERT_TRUE(Call()->mVideoSendEncoderConfig);
+    ASSERT_EQ(Call()->mVideoSendEncoderConfig->max_bitrate_bps, 2000000);
+    ASSERT_EQ(Call()->mVideoSendEncoderConfig->number_of_streams, 1U);
+    ASSERT_EQ(
+        Call()->mVideoSendEncoderConfig->simulcast_layers[0].max_bitrate_bps,
+        2000000);
     SendVideoFrame(1280, 720, 1);
     const std::vector<webrtc::VideoStream> videoStreams =
         Call()->CreateEncoderStreams(1280, 720);
@@ -571,9 +578,13 @@ TEST_F(VideoConduitTest, TestConfigureSendMediaCodecTias) {
     codecConfigTiasLow.mTias = 1000;
     aControl.mVideoSendCodec = Some(codecConfigTiasLow);
   });
-  ASSERT_EQ(Call()->mVideoSendEncoderConfig->max_bitrate_bps, 1000);
   {
     ASSERT_TRUE(Call()->mVideoSendEncoderConfig);
+    ASSERT_EQ(Call()->mVideoSendEncoderConfig->max_bitrate_bps, 1000);
+    ASSERT_EQ(Call()->mVideoSendEncoderConfig->number_of_streams, 1U);
+    ASSERT_EQ(
+        Call()->mVideoSendEncoderConfig->simulcast_layers[0].max_bitrate_bps,
+        1000);
     SendVideoFrame(1280, 720, 2);
     const std::vector<webrtc::VideoStream> videoStreams =
         Call()->CreateEncoderStreams(1280, 720);
@@ -595,6 +606,11 @@ TEST_F(VideoConduitTest, TestConfigureSendMediaCodecMaxBr) {
         Some(RtpRtcpConfig(webrtc::RtcpMode::kCompound, true));
   });
   ASSERT_TRUE(Call()->mVideoSendEncoderConfig);
+  ASSERT_EQ(Call()->mVideoSendEncoderConfig->max_bitrate_bps, 50000);
+  ASSERT_EQ(Call()->mVideoSendEncoderConfig->number_of_streams, 1U);
+  ASSERT_EQ(
+      Call()->mVideoSendEncoderConfig->simulcast_layers[0].max_bitrate_bps,
+      50000);
   SendVideoFrame(1280, 720, 1);
   const std::vector<webrtc::VideoStream> videoStreams =
       Call()->CreateEncoderStreams(1280, 720);
@@ -1261,6 +1277,10 @@ TEST_P(VideoConduitCodecModeTest, TestReconfigureSendMediaCodec) {
   });
   ASSERT_TRUE(Call()->mVideoSendEncoderConfig);
   EXPECT_EQ(Call()->mVideoSendEncoderConfig->max_bitrate_bps, 2000000);
+  ASSERT_EQ(Call()->mVideoSendEncoderConfig->number_of_streams, 1U);
+  EXPECT_EQ(
+      Call()->mVideoSendEncoderConfig->simulcast_layers[0].max_bitrate_bps,
+      2000000);
   SendVideoFrame(1280, 720, 1);
 
   {
@@ -1285,6 +1305,11 @@ TEST_P(VideoConduitCodecModeTest, TestReconfigureSendMediaCodec) {
     aControl.mVideoSendCodec = Some(codecConfig);
   });
   ASSERT_TRUE(Call()->mVideoSendEncoderConfig);
+  EXPECT_EQ(Call()->mVideoSendEncoderConfig->max_bitrate_bps, 50000);
+  ASSERT_EQ(Call()->mVideoSendEncoderConfig->number_of_streams, 1U);
+  EXPECT_EQ(
+      Call()->mVideoSendEncoderConfig->simulcast_layers[0].max_bitrate_bps,
+      50000);
   SendVideoFrame(1280, 720, 2);
   {
     const std::vector<webrtc::VideoStream> videoStreams =
@@ -1382,6 +1407,10 @@ TEST_P(VideoConduitCodecModeTest,
   });
   ASSERT_TRUE(Call()->mVideoSendEncoderConfig);
   ASSERT_EQ(Call()->mVideoSendEncoderConfig->max_bitrate_bps, 2000000);
+  ASSERT_EQ(Call()->mVideoSendEncoderConfig->number_of_streams, 1U);
+  EXPECT_EQ(
+      Call()->mVideoSendEncoderConfig->simulcast_layers[0].max_bitrate_bps,
+      2000000);
   SendVideoFrame(1280, 720, 1);
 
   {
@@ -1403,6 +1432,10 @@ TEST_P(VideoConduitCodecModeTest,
     aControl.mVideoSendCodec = Some(codecConfig);
   });
   ASSERT_TRUE(Call()->mVideoSendEncoderConfig);
+  ASSERT_EQ(Call()->mVideoSendEncoderConfig->number_of_streams, 1U);
+  EXPECT_EQ(
+      Call()->mVideoSendEncoderConfig->simulcast_layers[0].max_bitrate_bps,
+      50000);
   SendVideoFrame(1280, 720, 2);
   {
     const std::vector<webrtc::VideoStream> videoStreams =

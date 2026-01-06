@@ -17,6 +17,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.not
+import org.hamcrest.Matchers.notNullValue
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -62,7 +64,8 @@ class InteractiveWidgetTest : BaseSessionTest() {
             activityRule.scenario.onActivity { activity ->
                 activity.view.releaseSession()
             }
-        } catch (e: Exception) {}
+        } catch (e: Exception) {
+            }
     }
 
     private fun ensureKeyboardOpen() {
@@ -329,5 +332,60 @@ class InteractiveWidgetTest : BaseSessionTest() {
               scrollY,
               equalTo(viewportHeight),
             )
+    }
+
+    @GeckoSessionTestRule.NullDelegate(Autofill.Delegate::class)
+    @Test
+    fun bug1993407() {
+        mainSession.setActive(true)
+
+        mainSession.loadTestPath(BaseSessionTest.BUG1993407_HTML_PATH)
+        mainSession.waitForPageStop()
+        mainSession.promiseAllPaintsDone()
+        mainSession.flushApzRepaints()
+
+        val caretRect = mainSession.evaluateJS(
+            """
+            const inputRect = document.querySelector('input').getBoundingClientRect();
+            document.caretPositionFromPoint(0, inputRect.y)?.getClientRect();
+        """.trimIndent(),
+        )
+        assertThat("The caretRect should not be null", caretRect, notNullValue())
+
+        val caretRectObject = caretRect as JSONObject
+        val caretY = caretRectObject.getDouble("y")
+        val caretHeight = caretRectObject.getDouble("height")
+        val caretBottom = caretRectObject.getDouble("bottom")
+
+        // Open the software keyboard.
+        ensureKeyboardOpen()
+
+        mainSession.evaluateJS("document.querySelector('input').focus();")
+        mainSession.zoomToFocusedInput()
+
+        mainSession.flushApzRepaints()
+        mainSession.promiseAllPaintsDone()
+
+        val scrollY = mainSession.evaluateJS("window.scrollY") as Double
+        val offsetTop = mainSession.evaluateJS("window.visualViewport.offsetTop") as Double
+        val pageTop = mainSession.evaluateJS("window.visualViewport.pageTop") as Double
+        val visualViewportHeight = mainSession.evaluateJS("window.visualViewport.height") as Double
+
+        assertThat(
+              "The offsetTop and pageTop of visual viewport is not diverged",
+              offsetTop,
+              equalTo(pageTop),
+            )
+        assertThat("The offsetTop is not 0", offsetTop, not(equalTo(0.0)))
+        assertThat("The offsetTop is ", offsetTop, equalTo(caretBottom - visualViewportHeight))
+
+        assertThat(
+              "The layout scroll offset stays at 0",
+              scrollY,
+              equalTo(0.0),
+            )
+
+        // Close the software keyboard.
+        imm.hideSoftInputFromWindow(view.getWindowToken(), 0)
     }
 }

@@ -261,7 +261,7 @@ class ResponsePanel extends Component {
    * Pick correct component, componentprops, and other needed data to render
    * the given response
    *
-   * @returns {Object} shape:
+   * @returns {object} shape:
    *  {component}: React component used to render response
    *  {Object} componetProps: Props passed to component
    *  {Error} error: JSON parsing error

@@ -73,12 +73,8 @@ NS_IMETHODIMP DefaultURI::Write(nsIObjectOutputStream* aOutputStream) {
 // nsISizeOf
 //----------------------------------------------------------------------------
 
-size_t DefaultURI::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
-  return mURL->SizeOf();
-}
-
 size_t DefaultURI::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
-  return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
+  return aMallocSizeOf(this) + mURL->SizeOf();
 }
 
 //----------------------------------------------------------------------------

@@ -32,8 +32,8 @@ const PREFIX = "Services.prefs:";
  *
  * @param {PrefBranch} parent the parent branch, or null for the root
  *        branch.
- * @param {String} name the base name of this branch
- * @param {String} fullName the fully-qualified name of this branch
+ * @param {string} name the base name of this branch
+ * @param {string} fullName the fully-qualified name of this branch
  */
 function PrefBranch(parent, name, fullName) {
   this._parent = parent;
@@ -292,13 +292,13 @@ PrefBranch.prototype = {
    * storage.  This is used to handle changes to local storage that
    * were made externally.
    *
-   * @param {Number} type one of the PREF_* values
+   * @param {number} type one of the PREF_* values
    * @param {Any} userValue the user value to use if the pref does not exist
    * @param {Any} defaultValue the default value to use if the pref
    *        does not exist
-   * @param {Boolean} hasUserValue if a new pref is created, whether
+   * @param {boolean} hasUserValue if a new pref is created, whether
    *        the default value is also a user value
-   * @param {Object} store the new value of the preference.  It should
+   * @param {object} store the new value of the preference.  It should
    *        be of the form {type, defaultValue, hasUserValue, userValue};
    *        where |type| is one of the PREF_* type constants; |defaultValue|
    *        and |userValue| are the default and user values, respectively;
@@ -319,8 +319,8 @@ PrefBranch.prototype = {
    * Helper function to find either a Preference or PrefBranch object
    * given its name.  If the name is not found, throws an exception.
    *
-   * @param {String} prefName the fully-qualified preference name
-   * @return {Object} Either a Preference or PrefBranch object
+   * @param {string} prefName the fully-qualified preference name
+   * @return {object} Either a Preference or PrefBranch object
    */
   _findPref(prefName) {
     const branchNames = prefName.split(".");
@@ -342,7 +342,7 @@ PrefBranch.prototype = {
    * changed.  This will also notify the parent branch for further
    * reporting.
    *
-   * @param {String} relativeName the name of the updated pref,
+   * @param {string} relativeName the name of the updated pref,
    *        relative to this branch
    */
   _notify(relativeName) {
@@ -404,14 +404,14 @@ PrefBranch.prototype = {
    * Create a new preference.  The new preference is assumed to be in
    * local storage already, and the new value is taken from there.
    *
-   * @param {String} keyName the full-qualified name of the preference.
+   * @param {string} keyName the full-qualified name of the preference.
    *        This is also the name of the key in local storage.
    * @param {Any} userValue the user value to use if the pref does not exist
-   * @param {Boolean} hasUserValue if a new pref is created, whether
+   * @param {boolean} hasUserValue if a new pref is created, whether
    *        the default value is also a user value
    * @param {Any} defaultValue the default value to use if the pref
    *        does not exist
-   * @param {Boolean} init if true, then this call is initialization
+   * @param {boolean} init if true, then this call is initialization
    *        from local storage and should override the default prefs
    */
   _findOrCreatePref(

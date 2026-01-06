@@ -31,6 +31,11 @@ To install node dependencies, run the following from the root of the mozilla-cen
 
   ./mach newtab install
 
+**IMPORTANT NOTE**: If you're using Windows, you may need to run the install command differently:
+
+.. code-block:: shell
+
+  (cd browser/extensions/newtab && ../../../mach npm install)
 
 Which files should you edit?
 ````````````````````````````

@@ -10,6 +10,7 @@
 
 #include "DOMIntersectionObserver.h"
 
+#include "NonCustomCSSPropertyId.h"
 #include "Units.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/ScrollContainerFrame.h"
@@ -23,7 +24,6 @@
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/HTMLImageElement.h"
-#include "nsCSSPropertyID.h"
 #include "nsContainerFrame.h"
 #include "nsContentUtils.h"
 #include "nsIFrame.h"

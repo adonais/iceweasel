@@ -12,9 +12,8 @@
 #include "mozilla/Vector.h"  // for Vector
 
 #include <algorithm>
-#include <string.h>     // for size_t, strlen
-#include <type_traits>  // for remove_reference<>::type
-#include <utility>      // for move
+#include <string.h>  // for size_t, strlen
+#include <utility>   // for move
 
 #include "jsapi.h"  // for CallArgs, RootedObject, Rooted
 

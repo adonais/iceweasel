@@ -1,0 +1,52 @@
+# Non-idiomatic manifest
+[DEFAULT]
+
+["aaa.js"]
+skip-if = [
+  "os == 'android' && os_version == '16' && arch == 'x86_64'", # 5
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # 6
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # 4
+  "os == 'mac' && os_version == '11.20' && verify", # 1
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # 2
+]
+
+["bbb.js"]
+
+["ccc.js"]
+support-files = ["file_beforeunload_stop.html"]
+fail-if = [
+  "a11y_checks",
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
+  "os == 'win' && os_version == '10.2009' && arch == 'x86_64'",
+] # Bug 1953248 a11y_checks fails when testing multiple tab prompts
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1970150
+]
+
+["ddd.js"]
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # 1
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # 1
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && vertical_tab", # 2
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && vertical_tab", # 2
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && vertical_tab", # 2
+  "os == 'win'", # 3
+]
+
+["eee.js"]
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && opt", # expands linux * (asan,opt,tsan) except 22 && asan
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && tsan", # expands linux * (asan,opt,tsan) except 22 && asan
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # expands linux * (asan,opt,tsan) except 22 && asan
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # expands linux * (asan,opt,tsan) except 22 && asan
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # expands linux * (asan,opt,tsan) except 22 && asan
+]
+
+["fff.js"]
+skip-if = [
+  "asan",
+  "http3",
+  "opt",
+  "tsan",
+]

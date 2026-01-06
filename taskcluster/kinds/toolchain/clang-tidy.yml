@@ -8,7 +8,7 @@ task-defaults:
         local-toolchain: true
     index:
         product: static-analysis
-    worker-type: b-linux-large-amd
+    worker-type: b-linux-docker-large-amd
     worker:
         max-run-time: 3600
     run:
@@ -23,7 +23,7 @@ task-defaults:
             - 'build/build-clang/build-clang.py'
     fetches:
         fetch:
-            - clang-19
+            - clang-20
 
 linux64-clang-tidy:
     index:

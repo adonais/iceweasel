@@ -5,32 +5,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "base/basictypes.h"
-
 #include "gfxPlatform.h"
 #include "nsRefreshDriver.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/EventForwards.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/IMEStateManager.h"
-#include "mozilla/layers/APZChild.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/NativeKeyBindingsType.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SchedulerGroup.h"
-#include "mozilla/StaticPrefs_browser.h"
-#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEventDispatcher.h"
 #include "mozilla/TextEvents.h"
 #include "PuppetWidget.h"
 #include "nsContentUtils.h"
-#include "nsIWidgetListener.h"
 #include "imgIContainer.h"
-#include "nsView.h"
-#include "nsXPLookAndFeel.h"
-#include "nsPrintfCString.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -177,14 +166,13 @@ void PuppetWidget::Resize(const DesktopSize& aSize, bool aRepaint) {
     InvalidateRegion(this, dirty);
   }
 
-  // call WindowResized() on both the current listener, and possibly
+  // call WindowResized() on both the current paint listener, and possibly
   // also the previous one if we're in a state where we're drawing that one
   // because the current one is paint suppressed
   if (!oldBounds.IsEqualEdges(mBounds) && mAttachedWidgetListener) {
-    if (GetCurrentWidgetListener() &&
-        GetCurrentWidgetListener() != mAttachedWidgetListener) {
-      GetCurrentWidgetListener()->WindowResized(this, mBounds.Width(),
-                                                mBounds.Height());
+    if (auto* paintListener = GetPaintListener();
+        paintListener && paintListener != mAttachedWidgetListener) {
+      paintListener->WindowResized(this, mBounds.Width(), mBounds.Height());
     }
     mAttachedWidgetListener->WindowResized(this, mBounds.Width(),
                                            mBounds.Height());
@@ -227,8 +215,7 @@ void PuppetWidget::InitEvent(WidgetGUIEvent& aEvent,
   }
 }
 
-nsresult PuppetWidget::DispatchEvent(WidgetGUIEvent* aEvent,
-                                     nsEventStatus& aStatus) {
+nsEventStatus PuppetWidget::DispatchEvent(WidgetGUIEvent* aEvent) {
 #ifdef DEBUG
   debug_DumpEvent(stdout, aEvent->mWidget, aEvent, "PuppetWidget", 0);
 #endif
@@ -237,8 +224,7 @@ nsresult PuppetWidget::DispatchEvent(WidgetGUIEvent* aEvent,
                  aEvent->mFlags.mIsSynthesizedForTests ||
                  aEvent->AsKeyboardEvent()->AreAllEditCommandsInitialized(),
              "Non-sysnthesized keyboard events should have edit commands for "
-             "all types "
-             "before dispatched");
+             "all types before dispatched");
 
   if (aEvent->mClass == eCompositionEventClass) {
     // If we've already requested to commit/cancel the latest composition,
@@ -248,8 +234,7 @@ nsresult PuppetWidget::DispatchEvent(WidgetGUIEvent* aEvent,
     // discard all unnecessary composition events here.
     if (mIgnoreCompositionEvents) {
       if (aEvent->mMessage != eCompositionStart) {
-        aStatus = nsEventStatus_eIgnore;
-        return NS_OK;
+        return nsEventStatus_eIgnore;
       }
       // Now, we receive new eCompositionStart.  Let's restart to handle
       // composition in this process.
@@ -301,21 +286,14 @@ nsresult PuppetWidget::DispatchEvent(WidgetGUIEvent* aEvent,
     }
   }
 
-  aStatus = nsEventStatus_eIgnore;
-
-  if (GetCurrentWidgetListener()) {
-    aStatus =
-        GetCurrentWidgetListener()->HandleEvent(aEvent, mUseAttachedEvents);
-  }
-
-  return NS_OK;
+  return nsIWidget::DispatchEvent(aEvent);
 }
 
 nsIWidget::ContentAndAPZEventStatus PuppetWidget::DispatchInputEvent(
     WidgetInputEvent* aEvent) {
   ContentAndAPZEventStatus status;
   if (!AsyncPanZoomEnabled()) {
-    DispatchEvent(aEvent, status.mContentStatus);
+    status.mContentStatus = DispatchEvent(aEvent);
     return status;
   }
 
@@ -616,8 +594,7 @@ nsresult PuppetWidget::RequestIMEToCommitComposition(bool aCancel) {
   WidgetCompositionEvent compositionCommitEvent(true, eCompositionCommit, this);
   InitEvent(compositionCommitEvent, nullptr);
   compositionCommitEvent.mData = committedString;
-  nsEventStatus status = nsEventStatus_eIgnore;
-  DispatchEvent(&compositionCommitEvent, status);
+  DispatchEvent(&compositionCommitEvent);
 
 #ifdef DEBUG
   RefPtr<TextComposition> currentComposition =
@@ -908,16 +885,11 @@ PuppetWidget::WidgetPaintTask::Run() {
 }
 
 void PuppetWidget::Paint() {
-  if (!GetCurrentWidgetListener()) return;
-
   mWidgetPaintTask.Revoke();
 
   RefPtr<PuppetWidget> strongThis(this);
-
-  GetCurrentWidgetListener()->WillPaintWindow(this);
-
-  if (GetCurrentWidgetListener()) {
-    GetCurrentWidgetListener()->DidPaintWindow();
+  if (auto* listener = GetPaintListener()) {
+    listener->PaintWindow(this);
   }
 }
 
@@ -988,18 +960,6 @@ LayoutDeviceIntMargin PuppetWidget::GetSafeAreaInsets() const {
 void PuppetWidget::UpdateSafeAreaInsets(
     const LayoutDeviceIntMargin& aSafeAreaInsets) {
   mSafeAreaInsets = aSafeAreaInsets;
-}
-
-nsIWidgetListener* PuppetWidget::GetCurrentWidgetListener() {
-  if (!mPreviouslyAttachedWidgetListener || !mAttachedWidgetListener) {
-    return mAttachedWidgetListener;
-  }
-
-  if (mAttachedWidgetListener->GetView()->IsPrimaryFramePaintSuppressed()) {
-    return mPreviouslyAttachedWidgetListener;
-  }
-
-  return mAttachedWidgetListener;
 }
 
 void PuppetWidget::ZoomToRect(const uint32_t& aPresShellId,

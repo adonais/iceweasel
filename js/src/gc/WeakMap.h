@@ -10,10 +10,12 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/LinkedList.h"
 
+#include "gc/AllocKind.h"
 #include "gc/Barrier.h"
 #include "gc/Marking.h"
 #include "gc/Tracer.h"
 #include "gc/ZoneAllocator.h"
+#include "js/GCVector.h"
 #include "js/HashTable.h"
 #include "js/HeapAPI.h"
 #include "vm/JSObject.h"
@@ -39,6 +41,26 @@ namespace gc {
 // Check whether a weak map entry is marked correctly.
 bool CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key, Cell* value);
 #endif
+
+template <typename PtrT>
+struct MightBeInNursery {
+  using T = std::remove_pointer_t<PtrT>;
+  static_assert(std::is_base_of_v<Cell, T>);
+  static_assert(!std::is_same_v<Cell, T> && !std::is_same_v<TenuredCell, T>);
+
+#define CAN_NURSERY_ALLOC_KIND_OR(_1, _2, Type, _3, _4, canNurseryAlloc, _5) \
+  std::is_base_of_v<Type, T> ? canNurseryAlloc:
+
+  // FOR_EACH_ALLOCKIND doesn't cover every possible type: make sure
+  // to default to `true` for unknown types.
+  static constexpr bool value =
+      FOR_EACH_ALLOCKIND(CAN_NURSERY_ALLOC_KIND_OR) true;
+#undef CAN_NURSERY_ALLOC_KIND_OR
+};
+template <>
+struct MightBeInNursery<JS::Value> {
+  static constexpr bool value = true;
+};
 
 }  // namespace gc
 
@@ -126,9 +148,6 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   [[nodiscard]] static bool findSweepGroupEdgesForZone(JS::Zone* atomsZone,
                                                        JS::Zone* mapZone);
 
-  // Sweep the marked weak maps in a zone, updating moved keys.
-  static void sweepZoneAfterMinorGC(JS::Zone* zone);
-
   // Trace all weak map bindings. Used by the cycle collector.
   static void traceAllMappings(WeakMapTracer* tracer);
 
@@ -156,21 +175,28 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   virtual void traceMappings(WeakMapTracer* tracer) = 0;
   virtual void clearAndCompact() = 0;
 
+  virtual bool markEntries(GCMarker* marker) = 0;
+
+  // Trace any keys and values that are in the nursery. Return false if any
+  // remain in the nursery.
+  virtual bool traceNurseryEntriesOnMinorGC(JSTracer* trc) = 0;
+  virtual bool sweepAfterMinorGC() = 0;
+
   // We have a key that, if it or its delegate is marked, may lead to a WeakMap
   // value getting marked. Insert the necessary edges into the appropriate
   // zone's gcEphemeronEdges or gcNurseryEphemeronEdges tables.
   [[nodiscard]] bool addEphemeronEdgesForEntry(gc::MarkColor mapColor,
-                                               gc::Cell* key,
+                                               gc::TenuredCell* key,
                                                gc::Cell* delegate,
                                                gc::TenuredCell* value);
-  [[nodiscard]] bool addEphemeronEdge(gc::MarkColor color, gc::Cell* src,
-                                      gc::Cell* dst);
-
-  virtual bool markEntries(GCMarker* marker) = 0;
+  [[nodiscard]] bool addEphemeronEdge(gc::MarkColor color, gc::TenuredCell* src,
+                                      gc::TenuredCell* dst);
 
   gc::CellColor mapColor() const { return gc::CellColor(uint32_t(mapColor_)); }
   void setMapColor(gc::CellColor newColor) { mapColor_ = uint32_t(newColor); }
   bool markMap(gc::MarkColor markColor);
+
+  void setHasNurseryEntries();
 
 #ifdef JS_GC_ZEAL
   virtual bool checkMarking() const = 0;
@@ -197,23 +223,105 @@ class WeakMapBase : public mozilla::LinkedListElement<WeakMapBase> {
   bool mayHaveKeyDelegates = false;
   bool mayHaveSymbolKeys = false;
 
+  // Whether this map contains entries with nursery keys or values.
+  bool hasNurseryEntries = false;
+
+  // Whether the |nurseryKeys| vector contains the keys of all entries with
+  // nursery keys or values. This can be false if it gets too large or on OOM.
+  bool nurseryKeysValid = true;
+
   friend class JS::Zone;
+  friend class js::Nursery;
 };
 
-template <typename Key>
-struct WeakMapKeyHasher : public StableCellHasher<HeapPtr<Key>> {};
+// Get the hash from a Symbol.
+HashNumber GetSymbolHash(JS::Symbol* sym);
+
+// By default weak maps use default hasher for the key type, which hashes
+// the pointer itself for pointer types.
+template <typename T>
+struct WeakMapKeyHasher : public DefaultHasher<T> {};
+
+// We only support JS::Value keys that contain objects or symbols. For objects
+// we hash the pointer and for symbols we use its stored hash, which is randomly
+// generated on creation.
+//
+// Equality is based on a bitwise test not on JS Value semantics.
+//
+// Take care when modifying this code! Previously there have been security
+// issues around using pointer hashing for maps (e.g. bug 1312001).
+//
+// Although this does use pointer hashing for objects, we don't think those
+// concerns apply here because:
+//
+//  1) This uses an open addressed hash table rather than a chained one which
+//     makes the attack much more difficult.
+//
+//  2) The allowed key types are restricted to objects and non-registered
+//     symbols, so it's not possible to use int32 keys as were used in the
+//     attack.
+//
+//  3) Symbols use their own random hash codes which can't be predicted.
+//
+//  4) Registered symbols are not allowed, which means it's not possible to leak
+//     information about such symbols used by another zone.
+//
+//  5) Although sequentially allocated objects will have similar pointers,
+//     ScrambleHashCode should work well enough to distribute these keys and
+//     make predicting the hash code from the pointer difficult.
+template <>
+struct WeakMapKeyHasher<JS::Value> {
+  using Key = JS::Value;
+  using Lookup = JS::Value;
+
+  static HashNumber hash(const Lookup& l) {
+    checkValueType(l);
+    if (l.isSymbol()) {
+      return GetSymbolHash(l.toSymbol());
+    }
+    return mozilla::HashGeneric(l.asRawBits());
+  }
+
+  static bool match(const Key& k, const Lookup& l) {
+    checkValueType(k);
+    return k == l;
+  }
+
+  static void rekey(Key& k, const Key& newKey) { k = newKey; }
+
+ private:
+  static void checkValueType(const Value& value);
+};
+
+template <>
+struct WeakMapKeyHasher<PreBarriered<JS::Value>> {
+  using Key = PreBarriered<JS::Value>;
+  using Lookup = JS::Value;
+
+  static HashNumber hash(const Lookup& l) {
+    return WeakMapKeyHasher<JS::Value>::hash(l);
+  }
+  static bool match(const Key& k, const Lookup& l) {
+    return WeakMapKeyHasher<JS::Value>::match(k, l);
+  }
+  static void rekey(Key& k, const Key& newKey) { k.unbarrieredSet(newKey); }
+};
 
 template <class Key, class Value, class AllocPolicy>
 class WeakMap : public WeakMapBase {
-  using BarrieredKey = HeapPtr<Key>;
-  using BarrieredValue = HeapPtr<Value>;
+  using BarrieredKey = PreBarriered<Key>;
+  using BarrieredValue = PreBarriered<Value>;
 
-  using Map =
-      HashMap<HeapPtr<Key>, HeapPtr<Value>, WeakMapKeyHasher<Key>, AllocPolicy>;
+  using Map = HashMap<BarrieredKey, BarrieredValue,
+                      WeakMapKeyHasher<BarrieredKey>, AllocPolicy>;
   using UnbarrieredMap =
-      HashMap<Key, Value, StableCellHasher<Key>, AllocPolicy>;
+      HashMap<Key, Value, WeakMapKeyHasher<Key>, AllocPolicy>;
 
   UnbarrieredMap map_;  // Barriers are added by |map()| accessor.
+
+  // The keys of entries where either the key or value is allocated in the
+  // nursery.
+  GCVector<Key, 0, SystemAllocPolicy> nurseryKeys;
 
  public:
   using Lookup = typename Map::Lookup;
@@ -276,36 +384,32 @@ class WeakMap : public WeakMapBase {
 
   [[nodiscard]] bool add(AddPtr& p, const Key& k, const Value& v) {
     MOZ_ASSERT(gc::ToMarkable(k));
-    keyWriteBarrier(k);
+    writeBarrier(k, v);
     return map().add(p, k, v);
   }
 
   [[nodiscard]] bool relookupOrAdd(AddPtr& p, const Key& k, const Value& v) {
     MOZ_ASSERT(gc::ToMarkable(k));
-    keyWriteBarrier(k);
+    writeBarrier(k, v);
     return map().relookupOrAdd(p, k, v);
   }
 
   [[nodiscard]] bool put(const Key& k, const Value& v) {
     MOZ_ASSERT(gc::ToMarkable(k));
-    keyWriteBarrier(k);
+    writeBarrier(k, v);
     return map().put(k, v);
   }
 
   [[nodiscard]] bool putNew(const Key& k, const Value& v) {
     MOZ_ASSERT(gc::ToMarkable(k));
-    keyWriteBarrier(k);
+    writeBarrier(k, v);
     return map().putNew(k, v);
-  }
-
-  void putNewInfallible(const Key& k, const Value& v) {
-    MOZ_ASSERT(gc::ToMarkable(k));
-    keyWriteBarrier(k);
-    map().putNewInfallible(k, k);
   }
 
   void clear() {
     map().clear();
+    nurseryKeys.clear();
+    nurseryKeysValid = true;
     mayHaveSymbolKeys = false;
     mayHaveKeyDelegates = false;
   }
@@ -317,12 +421,23 @@ class WeakMap : public WeakMapBase {
   }
 #endif
 
-  bool markEntry(GCMarker* marker, gc::CellColor mapColor, BarrieredKey& key,
-                 BarrieredValue& value, bool populateWeakKeysTable);
+  bool markEntry(GCMarker* marker, gc::CellColor mapColor, Enum& iter,
+                 bool populateWeakKeysTable);
 
   void trace(JSTracer* trc) override;
 
+  // Used by the debugger to trace cross-compartment edges.
+  void traceKeys(JSTracer* trc);
+  void traceKey(JSTracer* trc, Enum& iter);
+
   size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf);
+
+  static size_t offsetOfHashShift() {
+    return offsetof(WeakMap, map_) + UnbarrieredMap::offsetOfHashShift();
+  }
+  static size_t offsetOfTable() {
+    return offsetof(WeakMap, map_) + UnbarrieredMap::offsetOfTable();
+  }
 
  protected:
   inline void assertMapIsSameZoneWithValue(const BarrieredValue& v);
@@ -357,84 +472,58 @@ class WeakMap : public WeakMapBase {
     JS::ExposeObjectToActiveJS(obj);
   }
 
-  void keyWriteBarrier(const JS::Value& v) {
-    if (v.isSymbol()) {
+  void writeBarrier(const Key& key, const Value& value) {
+    keyKindBarrier(key);
+    nurseryEntryBarrier(key, value);
+  }
+
+  void keyKindBarrier(const JS::Value& key) {
+    if (key.isSymbol()) {
       mayHaveSymbolKeys = true;
     }
-    if (v.isObject()) {
-      keyWriteBarrier(&v.toObject());
+    if (key.isObject()) {
+      keyKindBarrier(&key.toObject());
     }
   }
-  void keyWriteBarrier(JSObject* key) {
+  void keyKindBarrier(JSObject* key) {
     JSObject* delegate = UncheckedUnwrapWithoutExpose(key);
     if (delegate != key || ObjectMayBeSwapped(key)) {
       mayHaveKeyDelegates = true;
     }
   }
-  void keyWriteBarrier(BaseScript* key) {}
+  void keyKindBarrier(BaseScript* key) {}
+
+  void nurseryEntryBarrier(const Key& key, const Value& value) {
+    if ((gc::MightBeInNursery<Key>::value &&
+         !JS::GCPolicy<Key>::isTenured(key)) ||
+        (gc::MightBeInNursery<Value>::value &&
+         !JS::GCPolicy<Value>::isTenured(value))) {
+      if (!hasNurseryEntries) {
+        setHasNurseryEntries();
+      }
+
+      addNurseryKey(key);
+    }
+  }
+
+  void addNurseryKey(const Key& key);
 
   void traceWeakEdges(JSTracer* trc) override;
 
   void clearAndCompact() override {
-    map().clear();
+    clear();
     map().compact();
+    nurseryKeys.clearAndFree();
   }
 
   // memberOf can be nullptr, which means that the map is not part of a
   // JSObject.
   void traceMappings(WeakMapTracer* tracer) override;
+
+  bool traceNurseryEntriesOnMinorGC(JSTracer* trc) override;
+  bool sweepAfterMinorGC() override;
 };
-
-// Get the hash from the Symbol.
-HashNumber GetSymbolHash(JS::Symbol* sym);
-
-namespace gc {
-
-// A hasher for GC things used as WeakMap keys and WeakRef targets. Uses stable
-// cell hashing, except for symbols where it uses the symbol's stored hash.
-struct WeakTargetHasher {
-  using Key = HeapPtr<Value>;
-  using Lookup = Value;
-
-  static bool maybeGetHash(const Lookup& l, HashNumber* hashOut) {
-    if (l.isSymbol()) {
-      *hashOut = GetSymbolHash(l.toSymbol());
-      return true;
-    }
-    return StableCellHasher<Cell*>::maybeGetHash(l.toGCThing(), hashOut);
-  }
-  static bool ensureHash(const Lookup& l, HashNumber* hashOut) {
-    if (l.isSymbol()) {
-      *hashOut = GetSymbolHash(l.toSymbol());
-      return true;
-    }
-    return StableCellHasher<Cell*>::ensureHash(l.toGCThing(), hashOut);
-  }
-  static HashNumber hash(const Lookup& l) {
-    if (l.isSymbol()) {
-      return GetSymbolHash(l.toSymbol());
-    }
-    return StableCellHasher<Cell*>::hash(l.toGCThing());
-  }
-  static bool match(const Key& k, const Lookup& l) {
-    if (l.isSymbol()) {
-      return k.toSymbol() == l.toSymbol();
-    }
-    return StableCellHasher<Cell*>::match(k.toGCThing(), l.toGCThing());
-  }
-};
-
-}  // namespace gc
-
-template <>
-struct WeakMapKeyHasher<JS::Value> : public gc::WeakTargetHasher {};
 
 } /* namespace js */
-
-namespace mozilla {
-template <typename T>
-struct FallibleHashMethods<js::WeakMapKeyHasher<T>>
-    : public js::WeakMapKeyHasher<T> {};
-}  // namespace mozilla
 
 #endif /* gc_WeakMap_h */

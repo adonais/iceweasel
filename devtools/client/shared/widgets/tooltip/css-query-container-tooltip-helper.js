@@ -28,7 +28,7 @@ class CssQueryContainerTooltipHelper {
   /**
    * Get the template of the tooltip.
    *
-   * @param {Object} data
+   * @param {object} data
    * @param {NodeFront} data.node
    * @param {string} data.containerType
    * @param {string} data.inlineSize

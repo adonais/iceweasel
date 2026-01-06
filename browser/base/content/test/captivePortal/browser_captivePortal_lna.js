@@ -160,9 +160,9 @@ add_task(async function test_captivePortalTab_noLnaPrompt() {
   await freePortal(true);
 });
 
-// Tests that a regular tab (non-captive portal) does trigger an LNA
-// permission prompt when accessing local network resources.
-add_task(async function test_regularTab_hasLnaPrompt() {
+// Tests that a regular tab (non-captive portal) does NOT trigger an LNA
+// permission prompt when accessing local network resources during captive portal.
+add_task(async function test_regularTab_noLnaPrompt_duringCaptivePortal() {
   await portalDetected();
 
   let canonicalURL = `http://127.0.0.1:${gHttpServer.identity.primaryPort}/`;
@@ -175,29 +175,11 @@ add_task(async function test_regularTab_hasLnaPrompt() {
     canonicalURL
   );
 
-  // Verify the tab has the isCaptivePortalTab flag set
+  // Verify the tab does not have the isCaptivePortalTab flag set
   ok(
     !tab.linkedBrowser.browsingContext.isCaptivePortalTab,
-    "New tab should not have isCaptivePortalTab flag set"
+    "Regular tab should not have isCaptivePortalTab flag set"
   );
-
-  // Wait for the LNA permission prompt to appear
-  await BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown");
-
-  // Verify that LNA permission prompt appeared
-  let lnaPrompt = PopupNotifications.getNotification(
-    "local-network",
-    tab.linkedBrowser
-  );
-  ok(
-    lnaPrompt,
-    "Should show LNA prompt for regular tab accessing local network"
-  );
-
-  // Click the "Allow" button on the doorhanger
-  let popupNotification = lnaPrompt?.owner?.panel?.childNodes?.[0];
-  ok(popupNotification, "Notification popup is available");
-  popupNotification.button.doCommand();
 
   // Wait for the fetch to complete and the page content to be updated
   await BrowserTestUtils.waitForCondition(
@@ -213,6 +195,16 @@ add_task(async function test_regularTab_hasLnaPrompt() {
     return content.document.body.textContent;
   });
   is(bodyText, "hello", "Page should display the fetch response");
+
+  // Verify that no local network LNA permission prompt appeared
+  let lnaPrompt = PopupNotifications.getNotification(
+    "local-network",
+    tab.linkedBrowser
+  );
+  ok(
+    !lnaPrompt,
+    "Should not show local network LNA prompt for regular tab during captive portal"
+  );
 
   // Clean up
   BrowserTestUtils.removeTab(tab);

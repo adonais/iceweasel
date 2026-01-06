@@ -18,7 +18,7 @@ task-defaults:
     run:
         script: build-dxc.sh
         sparse-profile: null
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         env:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system

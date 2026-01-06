@@ -26,11 +26,13 @@
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tabbrowser.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tabgroup.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tabgroup-menu.js", this);
+  Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tabnote-menu.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tabs.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/tabbrowser/tabsplitview.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/places/places-menupopup.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/search/autocomplete-popup.js", this);
   Services.scriptloader.loadSubScript("chrome://browser/content/search/searchbar.js", this);
+  ChromeUtils.importESModule("chrome://browser/content/urlbar/UrlbarInput.mjs", { global: "current" });
 }
 
 window.onload = gBrowserInit.onLoad.bind(gBrowserInit);

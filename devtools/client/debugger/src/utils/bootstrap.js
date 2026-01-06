@@ -83,7 +83,7 @@ export function teardownWorkers() {
  *
  * @param {ReduxStore} store
  * @param {ReduxStore} toolboxStore
- * @param {Object} appComponentAttributes
+ * @param {object} appComponentAttributes
  * @param {Array} appComponentAttributes.fluentBundles
  * @param {Document} appComponentAttributes.toolboxDoc
  */

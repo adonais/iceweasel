@@ -14,14 +14,14 @@
 
 /**
  * This interface provides access to methods analogous to those of
- * CSSStyleDeclaration; the difference is that these use nsCSSPropertyID
+ * CSSStyleDeclaration; the difference is that these use NonCustomCSSPropertyId
  * enums for the prop names instead of using strings.
  */
 
+#include "NonCustomCSSPropertyId.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/dom/CSSValue.h"
 #include "nsCOMPtr.h"
-#include "nsCSSPropertyID.h"
 #include "nsStringFwd.h"
 #include "nsWrapperCache.h"
 

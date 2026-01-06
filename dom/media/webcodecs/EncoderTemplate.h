@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_EncoderTemplate_h
 #define mozilla_dom_EncoderTemplate_h
 
-#include <limits>
 #include <queue>
 
 #include "EncoderAgent.h"

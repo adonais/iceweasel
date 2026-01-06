@@ -77,7 +77,9 @@ support-files = [
 ["test_isUsedColorSchemeDark.html"]
 
 ["test_is_element_themed.html"]
-skip-if = ["os == 'android'"]
+skip-if = [
+  "os == 'android'",
+]
 
 ["test_is_valid_css_color.html"]
 

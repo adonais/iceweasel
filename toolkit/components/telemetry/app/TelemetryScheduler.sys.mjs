@@ -198,8 +198,9 @@ export var TelemetryScheduler = {
 
   /**
    * Checks if we can send a daily ping or not.
-   * @param {Object} nowDate A date object.
-   * @return {Boolean} True if we can send the daily ping, false otherwise.
+   *
+   * @param {object} nowDate A date object.
+   * @return {boolean} True if we can send the daily ping, false otherwise.
    */
   _isDailyPingDue(nowDate) {
     // The daily ping is not due if we already sent one today.
@@ -223,8 +224,9 @@ export var TelemetryScheduler = {
 
   /**
    * Checks if we can send a regular ping or not.
-   * @param {Object} nowDate A date object.
-   * @return {Boolean} True if we can send the regular pings, false otherwise.
+   *
+   * @param {object} nowDate A date object.
+   * @return {boolean} True if we can send the regular pings, false otherwise.
    */
   _isPeriodicPingDue(nowDate) {
     // The periodic ping is not due if we already sent one today.
@@ -239,8 +241,9 @@ export var TelemetryScheduler = {
 
   /**
    * An helper function to save an aborted-session ping.
-   * @param {Number} now The current time, in milliseconds.
-   * @param {Object} [competingPayload=null] If we are coalescing the daily and the
+   *
+   * @param {number} now The current time, in milliseconds.
+   * @param {object} [competingPayload=null] If we are coalescing the daily and the
    *                 aborted-session pings, this is the payload for the former. Note
    *                 that the reason field of this payload will be changed.
    * @return {Promise} A promise resolved when the ping is saved.
@@ -303,7 +306,8 @@ export var TelemetryScheduler = {
 
   /**
    * Performs a scheduler tick. This function manages Telemetry recurring operations.
-   * @param {Boolean} [dispatchOnIdle=false] If true, the tick is dispatched in the
+   *
+   * @param {boolean} [dispatchOnIdle=false] If true, the tick is dispatched in the
    *                  next idle cycle of the main thread.
    * @return {Promise} A promise, only used when testing, resolved when the scheduled
    *                   operation completes.
@@ -354,6 +358,7 @@ export var TelemetryScheduler = {
 
   /**
    * Implements the scheduler logic.
+   *
    * @return {Promise} Resolved when the scheduled task completes. Only used in tests.
    */
   _schedulerTickLogic() {
@@ -401,7 +406,7 @@ export var TelemetryScheduler = {
    * This is only called from TelemetrySession when a main ping with reason 'environment-change'
    * is sent.
    *
-   * @param {Object} [payload] The payload of the ping that was sent,
+   * @param {object} [payload] The payload of the ping that was sent,
    *                           to be stored as an aborted-session ping.
    */
   rescheduleDailyPing(payload) {

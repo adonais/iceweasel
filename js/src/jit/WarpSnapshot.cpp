@@ -191,7 +191,7 @@ void WarpBailout::dumpData(GenericPrinter& out) const {
   // No fields.
 }
 
-void WarpCacheIR::dumpData(GenericPrinter& out) const {
+void WarpCacheIRBase::dumpData(GenericPrinter& out) const {
   out.printf("    stubCode: 0x%p\n", static_cast<JitCode*>(stubCode_));
   out.printf("    stubInfo: 0x%p\n", stubInfo_);
   out.printf("    stubData: 0x%p\n", stubData_);
@@ -201,6 +201,19 @@ void WarpCacheIR::dumpData(GenericPrinter& out) const {
 #  else
   out.printf("(CacheIR spew unavailable)\n");
 #  endif
+}
+
+void WarpCacheIR::dumpData(GenericPrinter& out) const {
+  WarpCacheIRBase::dumpData(out);
+}
+
+void WarpCacheIRWithShapeList::dumpData(GenericPrinter& out) const {
+  WarpCacheIRBase::dumpData(out);
+  uint32_t index = 0;
+  for (Shape* shape : shapes_.shapes()) {
+    out.printf("    shape %u: 0x%p\n", index, shape);
+    index++;
+  }
 }
 
 void WarpInlinedCall::dumpData(GenericPrinter& out) const {
@@ -342,7 +355,7 @@ static void TraceWarpStubPtr(JSTracer* trc, uintptr_t word, const char* name) {
   TraceOffthreadGCPtr(trc, OffthreadGCPtr<T*>(ptr), name);
 }
 
-void WarpCacheIR::traceData(JSTracer* trc) {
+void WarpCacheIRBase::traceData(JSTracer* trc) {
   TraceOffthreadGCPtr(trc, stubCode_, "warp-stub-code");
   if (stubData_) {
     uint32_t field = 0;
@@ -423,6 +436,21 @@ void WarpCacheIR::traceData(JSTracer* trc) {
       offset += StubField::sizeInBytes(fieldType);
     }
   }
+}
+
+void WarpCacheIR::traceData(JSTracer* trc) { WarpCacheIRBase::traceData(trc); }
+
+void ShapeListSnapshot::trace(JSTracer* trc) const {
+  for (auto& shape : shapes_) {
+    if (shape) {
+      TraceOffthreadGCPtr(trc, shape, "warp-shape-list-shape");
+    }
+  }
+}
+
+void WarpCacheIRWithShapeList::traceData(JSTracer* trc) {
+  WarpCacheIRBase::traceData(trc);
+  shapes_.trace(trc);
 }
 
 void WarpInlinedCall::traceData(JSTracer* trc) {

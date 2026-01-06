@@ -5,9 +5,32 @@
 package org.mozilla.focus.state
 
 import android.os.Bundle
+import androidx.fragment.app.Fragment
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.lib.state.State
+import org.mozilla.focus.autocomplete.AutocompleteAddFragment
+import org.mozilla.focus.autocomplete.AutocompleteListFragment
+import org.mozilla.focus.autocomplete.AutocompleteRemoveFragment
+import org.mozilla.focus.autocomplete.AutocompleteSettingsFragment
+import org.mozilla.focus.cookiebanner.CookieBannerFragment
+import org.mozilla.focus.exceptions.ExceptionsListFragment
+import org.mozilla.focus.exceptions.ExceptionsRemoveFragment
+import org.mozilla.focus.fragment.CrashListFragment
+import org.mozilla.focus.fragment.about.AboutFragment
+import org.mozilla.focus.locale.screen.LanguageFragment
+import org.mozilla.focus.settings.AboutLibrariesFragment
+import org.mozilla.focus.settings.GeneralSettingsFragment
+import org.mozilla.focus.settings.InstalledSearchEnginesSettingsFragment
+import org.mozilla.focus.settings.ManualAddSearchEngineSettingsFragment
+import org.mozilla.focus.settings.MozillaSettingsFragment
+import org.mozilla.focus.settings.RemoveSearchEnginesSettingsFragment
+import org.mozilla.focus.settings.SearchSettingsFragment
+import org.mozilla.focus.settings.SettingsFragment
+import org.mozilla.focus.settings.advanced.AdvancedSettingsFragment
+import org.mozilla.focus.settings.advanced.SecretSettingsFragment
+import org.mozilla.focus.settings.permissions.SitePermissionsFragment
 import org.mozilla.focus.settings.permissions.permissionoptions.SitePermission
+import org.mozilla.focus.settings.privacy.PrivacySecuritySettingsFragment
 import java.util.UUID
 
 /**
@@ -100,32 +123,32 @@ sealed class Screen {
     data class Settings(
         val page: Page = Page.Start,
     ) : Screen() {
-        enum class Page {
-            Start,
+        enum class Page(val fragmentClass: Class<out Fragment>) {
+            Start(SettingsFragment::class.java),
 
-            General,
-            Privacy,
-            Search,
-            Advanced,
-            Mozilla,
-            About,
-            Licenses,
-            Locale,
+            General(GeneralSettingsFragment::class.java),
+            Privacy(PrivacySecuritySettingsFragment::class.java),
+            Search(SearchSettingsFragment::class.java),
+            Advanced(AdvancedSettingsFragment::class.java),
+            Mozilla(MozillaSettingsFragment::class.java),
+            About(AboutFragment::class.java),
+            Licenses(AboutLibrariesFragment::class.java),
+            Locale(LanguageFragment::class.java),
 
-            PrivacyExceptions,
-            PrivacyExceptionsRemove,
-            CookieBanner,
-            SitePermissions,
-            SecretSettings,
+            PrivacyExceptions(ExceptionsListFragment::class.java),
+            PrivacyExceptionsRemove(ExceptionsRemoveFragment::class.java),
+            CookieBanner(CookieBannerFragment::class.java),
+            SitePermissions(SitePermissionsFragment::class.java),
+            SecretSettings(SecretSettingsFragment::class.java),
 
-            SearchList,
-            SearchRemove,
-            SearchAdd,
-            SearchAutocomplete,
-            SearchAutocompleteList,
-            SearchAutocompleteAdd,
-            SearchAutocompleteRemove,
-            CrashList,
+            SearchList(InstalledSearchEnginesSettingsFragment::class.java),
+            SearchRemove(RemoveSearchEnginesSettingsFragment::class.java),
+            SearchAdd(ManualAddSearchEngineSettingsFragment::class.java),
+            SearchAutocomplete(AutocompleteSettingsFragment::class.java),
+            SearchAutocompleteList(AutocompleteListFragment::class.java),
+            SearchAutocompleteAdd(AutocompleteAddFragment::class.java),
+            SearchAutocompleteRemove(AutocompleteRemoveFragment::class.java),
+            CrashList(CrashListFragment::class.java),
         }
     }
 }

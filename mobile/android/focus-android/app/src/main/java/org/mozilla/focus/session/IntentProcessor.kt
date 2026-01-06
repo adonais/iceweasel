@@ -63,7 +63,7 @@ class IntentProcessor(
         createSessionFromIntent(context, intent)
     }
 
-    @Suppress("ReturnCount")
+    @Suppress("ReturnCount", "CognitiveComplexMethod")
     private fun createSessionFromIntent(context: Context, intent: SafeIntent): Result {
         when (intent.action) {
             Intent.ACTION_VIEW -> {

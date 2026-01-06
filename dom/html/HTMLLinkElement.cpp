@@ -25,6 +25,7 @@
 #include "mozilla/dom/ReferrerInfo.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "nsAttrValueInlines.h"
+#include "nsAttrValueOrString.h"
 #include "nsContentUtils.h"
 #include "nsDOMTokenList.h"
 #include "nsGenericHTMLElement.h"
@@ -223,8 +224,7 @@ void HTMLLinkElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       CreateAndDispatchEvent(u"DOMLinkChanged"_ns);
     }
     mTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
-        this, aValue ? aValue->GetStringValue() : EmptyString(),
-        aSubjectPrincipal);
+        this, nsAttrValueOrString(aValue).String(), aSubjectPrincipal);
 
     // If the link has `rel=localization` and its `href` attribute is changed,
     // update the list of localization links.
@@ -409,7 +409,7 @@ void HTMLLinkElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
                                              size_t* aNodeSize) const {
   nsGenericHTMLElement::AddSizeOfExcludingThis(aSizes, aNodeSize);
   if (nsCOMPtr<nsISizeOf> iface = do_QueryInterface(mCachedURI)) {
-    *aNodeSize += iface->SizeOfExcludingThis(aSizes.mState.mMallocSizeOf);
+    *aNodeSize += iface->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
   }
 }
 

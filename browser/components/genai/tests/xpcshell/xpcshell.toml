@@ -1,5 +1,7 @@
 [DEFAULT]
-run-if = ["os != 'android'"]
+run-if = [
+  "os != 'android'",
+]
 firefox-appdir = "browser"
 
 ["test_build_chat_prompt.js"]

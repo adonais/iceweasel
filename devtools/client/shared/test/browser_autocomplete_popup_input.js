@@ -225,8 +225,8 @@ function hasFocus(node) {
  *
  * @param {AutocompletePopup} popup
  * @param {HTMLInput} input
- * @param {Object} expectedSelectedItem
- * @param {String} info
+ * @param {object} expectedSelectedItem
+ * @param {string} info
  */
 function checkPopupSelectedItem(popup, input, expectedSelectedItem, info) {
   is(popup.selectedItem.label, expectedSelectedItem.label, info);

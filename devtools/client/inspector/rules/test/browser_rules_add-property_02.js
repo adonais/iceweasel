@@ -122,10 +122,7 @@ add_task(async function () {
   );
 
   await checkRuleViewContent(view, [
-    {
-      selector: "element",
-      declarations: [],
-    },
+    { selector: "element", selectorEditable: false, declarations: [] },
     {
       selector: "#testid",
       declarations: [

@@ -59,8 +59,13 @@ void swgl_drawSpanRGBA8() {
         return;
     }
 
+#ifdef WR_FEATURE_DITHERING
+    swgl_commitDitheredLinearGradientRGBA8(sGpuBufferF, address, GRADIENT_ENTRIES, false, v_gradient_repeat.x != 0.0,
+                                   v_pos, v_scale_dir, v_start_offset.x);
+#else
     swgl_commitLinearGradientRGBA8(sGpuBufferF, address, GRADIENT_ENTRIES, false, v_gradient_repeat.x != 0.0,
                                    v_pos, v_scale_dir, v_start_offset.x);
+#endif
 }
 #endif
 

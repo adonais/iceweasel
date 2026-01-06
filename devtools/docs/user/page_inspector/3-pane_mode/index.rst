@@ -48,7 +48,7 @@ Press the toggle control to toggle between the 2- and 3-pane views.
  :class: border
 
 
-With the 3-pane mode enabled, you can observe live changes in CSS features as you edit the rules applied to the page. For example, you could edit a `CSS Grid <https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Grid_Layout>`_ property and observe the change immediately in the :doc:`Grid Inspector <../how_to/examine_grid_layouts/index>`.
+With the 3-pane mode enabled, you can observe live changes in CSS features as you edit the rules applied to the page. For example, you could edit a `CSS Grid <https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Grid_layout>`_ property and observe the change immediately in the :doc:`Grid Inspector <../how_to/examine_grid_layouts/index>`.
 
 .. raw:: html
 

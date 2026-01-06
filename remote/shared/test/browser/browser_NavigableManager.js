@@ -439,4 +439,112 @@ describe("NavigableManager", function () {
       "Got a valid uuid for the top-level context"
     );
   });
+
+  it("Get the Navigable id for a chrome browsing context", async function test_getIdForChromeBrowsingContext() {
+    // Get the parent process browsing context (chrome scope)
+    const chromeContext = window.browsingContext;
+
+    ok(!chromeContext.isContent, "Chrome context is not a content context");
+
+    const chromeContextId =
+      NavigableManager.getIdForBrowsingContext(chromeContext);
+
+    Assert.stringMatches(
+      chromeContextId,
+      uuidRegex,
+      "Got a valid uuid for chrome browsing context"
+    );
+
+    is(
+      NavigableManager.getIdForBrowsingContext(chromeContext),
+      chromeContextId,
+      "Id is always the same for the same chrome browsing context"
+    );
+
+    const chromeContext2 = BrowsingContext.getFromWindow(
+      Services.wm.getMostRecentWindow("navigator:browser")
+    );
+    is(
+      NavigableManager.getIdForBrowsingContext(chromeContext2),
+      chromeContextId,
+      "Same chrome context returns same id when retrieved differently"
+    );
+  });
+
+  it("Get chrome browsing context by its Navigable id", async function test_getChromeBrowsingContextById() {
+    const chromeContext = BrowsingContext.getFromWindow(window);
+
+    ok(!chromeContext.isContent, "Chrome context is not a content context");
+
+    const chromeContextId =
+      NavigableManager.getIdForBrowsingContext(chromeContext);
+
+    is(
+      NavigableManager.getBrowsingContextById(chromeContextId),
+      chromeContext,
+      "Chrome browsing context can be retrieved by its id"
+    );
+  });
+
+  it("Chrome browsing contexts have different ids than content contexts", async function test_chromeVsContentIds() {
+    const { newContext } = testData;
+    const chromeContext = BrowsingContext.getFromWindow(window);
+
+    const chromeContextId =
+      NavigableManager.getIdForBrowsingContext(chromeContext);
+    const contentContextId =
+      NavigableManager.getIdForBrowsingContext(newContext);
+
+    Assert.stringMatches(
+      chromeContextId,
+      uuidRegex,
+      "Chrome context has valid uuid"
+    );
+    Assert.stringMatches(
+      contentContextId,
+      uuidRegex,
+      "Content context has valid uuid"
+    );
+
+    isnot(
+      chromeContextId,
+      contentContextId,
+      "Chrome and content contexts have different ids"
+    );
+  });
+
+  it("Chrome browsing context cleanup on discard", async function test_chromeBrowsingContextDiscard() {
+    // Open a new window to get a chrome browsing context we can close
+    const newWindow = await BrowserTestUtils.openNewBrowserWindow();
+    const newChromeContext = BrowsingContext.getFromWindow(newWindow);
+
+    ok(
+      !newChromeContext.isContent,
+      "New window's chrome context is not a content context"
+    );
+
+    const chromeContextId =
+      NavigableManager.getIdForBrowsingContext(newChromeContext);
+
+    Assert.stringMatches(
+      chromeContextId,
+      uuidRegex,
+      "Got a valid uuid for new window's chrome context"
+    );
+
+    is(
+      NavigableManager.getBrowsingContextById(chromeContextId),
+      newChromeContext,
+      "Chrome browsing context can be retrieved by id"
+    );
+
+    // Close the new window
+    await BrowserTestUtils.closeWindow(newWindow);
+
+    is(
+      NavigableManager.getBrowsingContextById(chromeContextId),
+      null,
+      "Discarded chrome browsing context has no navigable id"
+    );
+  });
 });

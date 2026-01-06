@@ -1430,13 +1430,13 @@ class AccessibilityTest : BaseSessionTest() {
                     }
                 }
 
-                val ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE = AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE
-                val ACTION_SET_TEXT = AccessibilityNodeInfo.ACTION_SET_TEXT
-
-                args.putCharSequence(ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, value)
+                args.putCharSequence(
+                    AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                    value,
+                )
                 assertThat(
                     "Can perform auto-fill",
-                    provider.performAction(id, ACTION_SET_TEXT, args),
+                    provider.performAction(id, AccessibilityNodeInfo.ACTION_SET_TEXT, args),
                     equalTo(true),
                 )
             }

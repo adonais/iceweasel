@@ -38,7 +38,6 @@ import mozilla.components.lib.state.MiddlewareContext
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.whenever
 import org.junit.Before
@@ -117,6 +116,7 @@ class TranslationsMiddlewareTest {
 
         doReturn(mockSessionState).`when`(tab).translationsState
         doReturn(mockBrowserState).`when`(state).translationEngine
+        whenever(store.state).thenReturn(state)
     }
 
     @Test
@@ -803,7 +803,7 @@ class TranslationsMiddlewareTest {
                 tabId = tab.id,
                 operation = TranslationOperation.FETCH_NEVER_TRANSLATE_SITES,
             ),
-        ).joinBlocking()
+        )
         scope.testScheduler.advanceUntilIdle()
 
         verify(store).dispatch(

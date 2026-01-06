@@ -892,6 +892,7 @@ void HttpChannelChild::ProcessOnStopRequest(
     MutexAutoLock lock(mOnDataFinishedMutex);
     mTransferSize = aTiming.transferSize();
     mEncodedBodySize = aTiming.encodedBodySize();
+    mDecodedBodySize = aTiming.decodedBodySize();
   }
 
   if (StaticPrefs::network_send_OnDataFinished()) {
@@ -1198,6 +1199,7 @@ void HttpChannelChild::DoOnStopRequest(nsIRequest* aRequest,
         aChannelStatus == NS_ERROR_UNWANTED_URI ||
         aChannelStatus == NS_ERROR_BLOCKED_URI ||
         aChannelStatus == NS_ERROR_HARMFUL_URI ||
+        aChannelStatus == NS_ERROR_HARMFULADDON_URI ||
         aChannelStatus == NS_ERROR_PHISHING_URI) {
       nsCString list, provider, fullhash;
 
@@ -2782,10 +2784,14 @@ HttpChannelChild::IsFromCache(bool* value) {
 }
 
 NS_IMETHODIMP
+HttpChannelChild::HasCacheEntry(bool* value) {
+  *value = mCacheEntryAvailable;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 HttpChannelChild::GetCacheEntryId(uint64_t* aCacheEntryId) {
-  bool fromCache = false;
-  if (NS_FAILED(IsFromCache(&fromCache)) || !fromCache ||
-      !mCacheEntryAvailable) {
+  if (!mCacheEntryAvailable) {
     return NS_ERROR_NOT_AVAILABLE;
   }
 

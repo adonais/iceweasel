@@ -271,7 +271,7 @@ ElementEditor.prototype = {
    *
    * @param  {DOMNode} node
    *         The node to get information from.
-   * @return {Object} An object literal with the following information:
+   * @return {object} An object literal with the following information:
    *         {type: "attribute", name: "rel", value: "index", el: node}
    */
   getInfoAtNode(node) {
@@ -340,6 +340,7 @@ ElementEditor.prototype = {
     this.updateCustomBadge();
     this.updateScrollableBadge();
     this.updateContainerBadge();
+    this.updateAnchorBadge();
     this.updateTextEditor();
     this.updateUnavailableChildren();
     this.updateOverflowBadge();
@@ -550,6 +551,30 @@ ElementEditor.prototype = {
     this.markup.emit("badge-added-event");
   },
 
+  updateAnchorBadge() {
+    const showAnchorBadge = this.node.anchorName?.includes?.("--");
+
+    if (this._anchorBadge && !showAnchorBadge) {
+      this._anchorBadge.remove();
+      this._anchorBadge = null;
+    } else if (showAnchorBadge && !this._anchorBadge) {
+      this._createAnchorBadge();
+    }
+
+    if (this._anchorBadge) {
+      this._anchorBadge.title = `anchor-name: ${this.node.anchorName}`;
+    }
+  },
+
+  _createAnchorBadge() {
+    this._anchorBadge = this.doc.createElement("div");
+    this._anchorBadge.classList.add("inspector-badge");
+    this._anchorBadge.dataset.anchor = "true";
+
+    this._anchorBadge.append(this.doc.createTextNode("anchor"));
+    this.elt.insertBefore(this._anchorBadge, this._containerBadge);
+  },
+
   /**
    * If node causes overflow, toggle its overflow highlight if its scrollable ancestor's
    * scrollable badge is active/inactive.
@@ -584,7 +609,7 @@ ElementEditor.prototype = {
   /**
    * Show overflow highlight if showOverflowHighlight is true, otherwise hide it.
    *
-   * @param {Boolean} showOverflowHighlight
+   * @param {boolean} showOverflowHighlight
    */
   setOverflowHighlight(showOverflowHighlight) {
     this.container.tagState.classList.toggle(
@@ -661,7 +686,7 @@ ElementEditor.prototype = {
   /**
    * Get the element used for one of the attributes of this element.
    *
-   * @param  {String} attrName
+   * @param  {string} attrName
    *         The name of the attribute to get the element for
    * @return {DOMNode}
    */
@@ -674,7 +699,7 @@ ElementEditor.prototype = {
   /**
    * Remove an attribute from the attrElements object and the DOM.
    *
-   * @param  {String} attrName
+   * @param  {string} attrName
    *         The name of the attribute to remove
    */
   removeAttribute(attrName) {
@@ -753,7 +778,7 @@ ElementEditor.prototype = {
   /**
    * Setup the editable field for the given attribute.
    *
-   * @param  {Object} attribute
+   * @param  {object} attribute
    *         An object containing the name and value of a DOM attribute.
    * @param  {Element} attrEditorEl
    *         The attribute container <span class="attreditor"> element.
@@ -847,7 +872,7 @@ ElementEditor.prototype = {
   /**
    * Appends the attribute value to the given attribute value <span> element.
    *
-   * @param  {Object} attribute
+   * @param  {object} attribute
    *         An object containing the name and value of a DOM attribute.
    * @param  {Element} attributeValueEl
    *         The attribute value <span class="attr-value"> element to append
@@ -911,9 +936,9 @@ ElementEditor.prototype = {
    * Truncates the given attribute value if it is a base64 data URL or the
    * collapse attributes pref is enabled.
    *
-   * @param  {String} value
+   * @param  {string} value
    *         Attribute value.
-   * @return {String} truncated attribute value.
+   * @return {string} truncated attribute value.
    */
   _truncateAttributeValue(value) {
     if (value && value.match(COLLAPSE_DATA_URL_REGEX)) {
@@ -929,7 +954,7 @@ ElementEditor.prototype = {
    * Parse a user-entered attribute string and apply the resulting
    * attributes to the node. This operation is undoable.
    *
-   * @param  {String} value
+   * @param  {string} value
    *         The user-entered value.
    * @param  {DOMNode} attrNode
    *         The attribute editor that created this

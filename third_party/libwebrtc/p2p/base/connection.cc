@@ -25,10 +25,12 @@
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "api/candidate.h"
+#include "api/environment/environment.h"
 #include "api/rtc_error.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/transport/stun.h"
+#include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
@@ -47,13 +49,11 @@
 #include "rtc_base/crypto_random.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/net_helper.h"
-#include "rtc_base/net_helpers.h"
 #include "rtc_base/network.h"
 #include "rtc_base/network/received_packet.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_constants.h"
-#include "rtc_base/numerics/safe_minmax.h"
-#include "rtc_base/socket.h"
+#include "rtc_base/platform_thread_types.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_utils.h"
@@ -69,15 +69,15 @@ namespace {
 inline bool TooManyFailures(
     const std::vector<Connection::SentPing>& pings_since_last_response,
     uint32_t maximum_failures,
-    int rtt_estimate,
-    int64_t now) {
+    TimeDelta rtt_estimate,
+    Timestamp now) {
   // If we haven't sent that many pings, then we can't have failed that many.
   if (pings_since_last_response.size() < maximum_failures)
     return false;
 
   // Check if the window in which we would expect a response to the ping has
   // already elapsed.
-  int64_t expected_response_time =
+  Timestamp expected_response_time =
       pings_since_last_response[maximum_failures - 1].sent_time + rtt_estimate;
   return now > expected_response_time;
 }
@@ -85,9 +85,9 @@ inline bool TooManyFailures(
 // Determines whether we have gone too long without seeing any response.
 inline bool TooLongWithoutResponse(
     const std::vector<Connection::SentPing>& pings_since_last_response,
-    int64_t maximum_time,
-    int64_t now) {
-  if (pings_since_last_response.size() == 0)
+    TimeDelta maximum_time,
+    Timestamp now) {
+  if (pings_since_last_response.empty())
     return false;
 
   auto first = pings_since_last_response[0];
@@ -153,18 +153,18 @@ IceCandidateNetworkType ConvertNetworkType(AdapterType type) {
 
 // When we don't have any RTT data, we have to pick something reasonable.  We
 // use a large value just in case the connection is really slow.
-const int DEFAULT_RTT = 3000;  // 3 seconds
+constexpr TimeDelta kDefaultRtt = TimeDelta::Seconds(3);
 
 // We will restrict RTT estimates (when used for determining state) to be
 // within a reasonable range.
-const int MINIMUM_RTT = 100;    // 0.1 seconds
-const int MAXIMUM_RTT = 60000;  // 60 seconds
+constexpr TimeDelta kMinimumRtt = TimeDelta::Millis(100);
+constexpr TimeDelta kMaximumRtt = TimeDelta::Seconds(60);
 
-const int DEFAULT_RTT_ESTIMATE_HALF_TIME_MS = 500;
+constexpr int kDefaultRttEstimateHalfTimeMs = 500;
 // Weighting of the old rtt value to new data.
-const int RTT_RATIO = 3;  // 3 : 1
+constexpr int kRttRatio = 3;  // 3 : 1
 
-constexpr int64_t kMinExtraPingDelayMs = 100;
+constexpr TimeDelta kMinExtraPingDelay = TimeDelta::Millis(100);
 
 // Default field trials.
 const IceFieldTrials kDefaultFieldTrials;
@@ -180,7 +180,8 @@ constexpr int kSupportGoogPingVersionResponseIndex = static_cast<int>(
 // A ConnectionRequest is a STUN binding used to determine writability.
 class Connection::ConnectionRequest : public StunRequest {
  public:
-  ConnectionRequest(StunRequestManager& manager,
+  ConnectionRequest(const Environment& env,
+                    StunRequestManager& manager,
                     Connection* connection,
                     std::unique_ptr<IceMessage> message);
   void OnResponse(StunMessage* response) override;
@@ -194,10 +195,11 @@ class Connection::ConnectionRequest : public StunRequest {
 };
 
 Connection::ConnectionRequest::ConnectionRequest(
+    const Environment& env,
     StunRequestManager& manager,
     Connection* connection,
     std::unique_ptr<IceMessage> message)
-    : StunRequest(manager, std::move(message)), connection_(connection) {}
+    : StunRequest(env, manager, std::move(message)), connection_(connection) {}
 
 void Connection::ConnectionRequest::OnResponse(StunMessage* response) {
   RTC_DCHECK_RUN_ON(connection_->network_thread_);
@@ -226,16 +228,19 @@ int Connection::ConnectionRequest::resend_delay() {
   return CONNECTION_RESPONSE_TIMEOUT;
 }
 
-Connection::Connection(WeakPtr<PortInterface> port,
+Connection::Connection(const Environment& env,
+                       WeakPtr<PortInterface> port,
                        size_t index,
                        const Candidate& remote_candidate)
-    : network_thread_(port->thread()),
+    : env_(env),
+      network_thread_(port->thread()),
       id_(CreateRandomId()),
       port_(std::move(port)),
       local_candidate_(port_->Candidates()[index]),
       remote_candidate_(remote_candidate),
       recv_rate_tracker_(100, 10u),
       send_rate_tracker_(100, 10u),
+      last_send_data_(Timestamp::Zero()),
       write_state_(STATE_WRITE_INIT),
       receiving_(false),
       connected_(true),
@@ -245,16 +250,18 @@ Connection::Connection(WeakPtr<PortInterface> port,
                 [this](const void* data, size_t size, StunRequest* request) {
                   OnSendStunPacket(data, size, request);
                 }),
-      rtt_(DEFAULT_RTT),
-      last_ping_sent_(0),
-      last_ping_received_(0),
-      last_data_received_(0),
-      last_ping_response_received_(0),
+      rtt_(kDefaultRtt),
+      last_ping_sent_(Timestamp::Zero()),
+      last_ping_received_(Timestamp::Zero()),
+      last_data_received_(Timestamp::Zero()),
+      last_ping_response_received_(Timestamp::Zero()),
+      receiving_unchanged_since_(Timestamp::Zero()),
       state_(IceCandidatePairState::WAITING),
-      time_created_ms_(TimeMillis()),
-      delta_internal_unix_epoch_ms_(TimeUTCMillis() - TimeMillis()),
+      time_created_(AlignTime(env_.clock().CurrentTime())),
+      delta_internal_unix_epoch_(Timestamp::Millis(TimeUTCMillis()) -
+                                 time_created_),
       field_trials_(&kDefaultFieldTrials),
-      rtt_estimate_(DEFAULT_RTT_ESTIMATE_HALF_TIME_MS) {
+      rtt_estimate_(kDefaultRttEstimateHalfTimeMs) {
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK(port_);
   RTC_LOG(LS_INFO) << ToString() << ": Connection created";
@@ -329,10 +336,11 @@ void Connection::set_write_state(WriteState value) {
   }
 }
 
-void Connection::UpdateReceiving(int64_t now) {
+void Connection::UpdateReceiving(Timestamp now) {
+  now = AlignTime(now);
   RTC_DCHECK_RUN_ON(network_thread_);
   bool receiving;
-  if (last_ping_sent() < last_ping_response_received()) {
+  if (LastPingSent() < LastPingResponseReceived()) {
     // We consider any candidate pair that has its last connectivity check
     // acknowledged by a response as receiving, particularly for backup
     // candidate pairs that send checks at a much slower pace than the selected
@@ -343,8 +351,8 @@ void Connection::UpdateReceiving(int64_t now) {
     // IceConfig.ice_connection_receiving_timeout and their default value.
     receiving = true;
   } else {
-    receiving =
-        last_received() > 0 && now <= last_received() + receiving_timeout();
+    receiving = LastReceived() > Timestamp::Zero() &&
+                now <= LastReceived() + ReceivingTimeout();
   }
   if (receiving_ == receiving) {
     return;
@@ -399,14 +407,14 @@ bool Connection::nominated() const {
   return acked_nomination_ || remote_nomination_;
 }
 
-int Connection::unwritable_timeout() const {
+TimeDelta Connection::UnwritableTimeout() const {
   RTC_DCHECK_RUN_ON(network_thread_);
-  return unwritable_timeout_.value_or(CONNECTION_WRITE_CONNECT_TIMEOUT);
+  return unwritable_timeout_.value_or(kConnectionWriteConnectTimeout);
 }
 
-void Connection::set_unwritable_timeout(const std::optional<int>& value_ms) {
+void Connection::SetUnwritableTimeout(std::optional<TimeDelta> value) {
   RTC_DCHECK_RUN_ON(network_thread_);
-  unwritable_timeout_ = value_ms;
+  unwritable_timeout_ = value;
 }
 
 int Connection::unwritable_min_checks() const {
@@ -419,25 +427,25 @@ void Connection::set_unwritable_min_checks(const std::optional<int>& value) {
   unwritable_min_checks_ = value;
 }
 
-int Connection::inactive_timeout() const {
+TimeDelta Connection::InactiveTimeout() const {
   RTC_DCHECK_RUN_ON(network_thread_);
-  return inactive_timeout_.value_or(CONNECTION_WRITE_TIMEOUT);
+  return inactive_timeout_.value_or(kConnectionWriteTimeout);
 }
 
-void Connection::set_inactive_timeout(const std::optional<int>& value) {
+void Connection::SetInactiveTimeout(std::optional<TimeDelta> value) {
   RTC_DCHECK_RUN_ON(network_thread_);
   inactive_timeout_ = value;
 }
 
-int Connection::receiving_timeout() const {
+TimeDelta Connection::ReceivingTimeout() const {
   RTC_DCHECK_RUN_ON(network_thread_);
-  return receiving_timeout_.value_or(WEAK_CONNECTION_RECEIVE_TIMEOUT);
+  return receiving_timeout_.value_or(kWeakConnectionReceiveTimeout);
 }
 
-void Connection::set_receiving_timeout(
-    std::optional<int> receiving_timeout_ms) {
+void Connection::SetReceivingTimeout(
+    std::optional<TimeDelta> receiving_timeout) {
   RTC_DCHECK_RUN_ON(network_thread_);
-  receiving_timeout_ = receiving_timeout_ms;
+  receiving_timeout_ = receiving_timeout;
 }
 
 void Connection::SetIceFieldTrials(const IceFieldTrials* field_trials) {
@@ -491,7 +499,7 @@ void Connection::OnReadPacket(const ReceivedIpPacket& packet) {
           packet.payload().size(), addr, &msg, &remote_ufrag)) {
     // The packet did not parse as a valid STUN message
     // This is a data packet, pass it along.
-    last_data_received_ = TimeMillis();
+    last_data_received_ = AlignTime(env_.clock().CurrentTime());
     UpdateReceiving(last_data_received_);
     recv_rate_tracker_.AddSamples(packet.payload().size());
     stats_.packets_received++;
@@ -670,11 +678,12 @@ void Connection::HandleStunBindingOrGoogPingRequest(IceMessage* msg) {
   RTC_DCHECK_RUN_ON(network_thread_);
   // This connection should now be receiving.
   ReceivedPing(msg->transaction_id());
-  if (field_trials_->extra_ice_ping && last_ping_response_received_ == 0) {
+  if (field_trials_->extra_ice_ping &&
+      last_ping_response_received_ <= Timestamp::Zero()) {
     if (local_candidate().is_relay() || local_candidate().is_prflx() ||
         remote_candidate().is_relay() || remote_candidate().is_prflx()) {
-      const int64_t now = TimeMillis();
-      if (last_ping_sent_ + kMinExtraPingDelayMs <= now) {
+      const Timestamp now = AlignTime(env_.clock().CurrentTime());
+      if (last_ping_sent_ + kMinExtraPingDelay <= now) {
         RTC_LOG(LS_INFO) << ToString()
                          << "WebRTC-ExtraICEPing/Sending extra ping"
                             " last_ping_sent_: "
@@ -994,14 +1003,15 @@ void Connection::set_selected(bool selected) {
   selected_ = selected;
 }
 
-void Connection::UpdateState(int64_t now) {
+void Connection::UpdateState(Timestamp now) {
+  now = AlignTime(now);
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK(port_) << ToDebugId() << ": port_ null in UpdateState()";
   if (!port_)
     return;
 
   // Computes our estimate of the RTT given the current estimate.
-  int rtt = SafeClamp(2 * rtt_, MINIMUM_RTT, MAXIMUM_RTT);
+  TimeDelta rtt = std::clamp(2 * rtt_, kMinimumRtt, kMaximumRtt);
 
   if (RTC_LOG_CHECK_LEVEL(LS_VERBOSE)) {
     std::string pings;
@@ -1027,7 +1037,7 @@ void Connection::UpdateState(int64_t now) {
   if ((write_state_ == STATE_WRITABLE) &&
       TooManyFailures(pings_since_last_response_, unwritable_min_checks(), rtt,
                       now) &&
-      TooLongWithoutResponse(pings_since_last_response_, unwritable_timeout(),
+      TooLongWithoutResponse(pings_since_last_response_, UnwritableTimeout(),
                              now)) {
     uint32_t max_pings = unwritable_min_checks();
     RTC_LOG(LS_INFO) << ToString() << ": Unwritable after " << max_pings
@@ -1042,7 +1052,7 @@ void Connection::UpdateState(int64_t now) {
   }
   if ((write_state_ == STATE_WRITE_UNRELIABLE ||
        write_state_ == STATE_WRITE_INIT) &&
-      TooLongWithoutResponse(pings_since_last_response_, inactive_timeout(),
+      TooLongWithoutResponse(pings_since_last_response_, InactiveTimeout(),
                              now)) {
     RTC_LOG(LS_INFO) << ToString() << ": Timed out after "
                      << now - pings_since_last_response_[0].sent_time
@@ -1066,13 +1076,18 @@ void Connection::UpdateLocalIceParameters(int component,
   local_candidate_.set_password(password);
 }
 
-int64_t Connection::last_ping_sent() const {
+Timestamp Connection::LastPingSent() const {
   RTC_DCHECK_RUN_ON(network_thread_);
   return last_ping_sent_;
 }
 
-void Connection::Ping(int64_t now,
+void Connection::Ping() {
+  Ping(env_.clock().CurrentTime());
+}
+
+void Connection::Ping(Timestamp now,
                       std::unique_ptr<StunByteStringAttribute> delta) {
+  now = AlignTime(now);
   RTC_DCHECK_RUN_ON(network_thread_);
   RTC_DCHECK(port_) << ToDebugId() << ": port_ null in Ping()";
   if (!port_)
@@ -1090,19 +1105,20 @@ void Connection::Ping(int64_t now,
 
   bool has_delta = delta != nullptr;
   auto req = std::make_unique<ConnectionRequest>(
-      requests_, this, BuildPingRequest(std::move(delta)));
+      env_, requests_, this, BuildPingRequest(std::move(delta)));
 
   if (!has_delta && ShouldSendGoogPing(req->msg())) {
     auto message = std::make_unique<IceMessage>(GOOG_PING_REQUEST, req->id());
     message->AddMessageIntegrity32(remote_candidate_.password());
-    req.reset(new ConnectionRequest(requests_, this, std::move(message)));
+    req = std::make_unique<ConnectionRequest>(env_, requests_, this,
+                                              std::move(message));
   }
 
   pings_since_last_response_.push_back(SentPing(req->id(), now, nomination));
   RTC_LOG(LS_VERBOSE) << ToString()
                       << ": Sending STUN ping, id=" << hex_encode(req->id())
                       << ", nomination=" << nomination_;
-  requests_.Send(req.release());
+  requests_.Send(std::move(req));
   state_ = IceCandidatePairState::IN_PROGRESS;
   num_pings_sent_++;
 }
@@ -1179,7 +1195,7 @@ std::unique_ptr<IceMessage> Connection::BuildPingRequest(
   return message;
 }
 
-int64_t Connection::last_ping_response_received() const {
+Timestamp Connection::LastPingResponseReceived() const {
   RTC_DCHECK_RUN_ON(network_thread_);
   return last_ping_response_received_;
 }
@@ -1197,14 +1213,14 @@ int Connection::rtt_samples() const {
 
 // Called whenever a valid ping is received on this connection.  This is
 // public because the connection intercepts the first ping for us.
-int64_t Connection::last_ping_received() const {
+Timestamp Connection::LastPingReceived() const {
   RTC_DCHECK_RUN_ON(network_thread_);
   return last_ping_received_;
 }
 
 void Connection::ReceivedPing(const std::optional<std::string>& request_id) {
   RTC_DCHECK_RUN_ON(network_thread_);
-  last_ping_received_ = TimeMillis();
+  last_ping_received_ = AlignTime(env_.clock().CurrentTime());
   last_ping_id_received_ = request_id;
   UpdateReceiving(last_ping_received_);
 }
@@ -1226,28 +1242,29 @@ void Connection::HandlePiggybackCheckAcknowledgementIfAny(StunMessage* msg) {
       RTC_LOG_V(sev) << ToString()
                      << ": Received piggyback STUN ping response, id="
                      << hex_encode(request_id);
-      const int64_t rtt = TimeMillis() - iter->sent_time;
+      const TimeDelta rtt =
+          AlignTime(env_.clock().CurrentTime()) - iter->sent_time;
       ReceivedPingResponse(rtt, request_id, iter->nomination);
     }
   }
 }
 
-int64_t Connection::last_send_data() const {
+Timestamp Connection::LastSendData() const {
   RTC_DCHECK_RUN_ON(network_thread_);
   return last_send_data_;
 }
 
-int64_t Connection::last_data_received() const {
+Timestamp Connection::LastDataReceived() const {
   RTC_DCHECK_RUN_ON(network_thread_);
   return last_data_received_;
 }
 
 void Connection::ReceivedPingResponse(
-    int rtt,
+    TimeDelta rtt,
     absl::string_view /* request_id */,
     const std::optional<uint32_t>& nomination) {
   RTC_DCHECK_RUN_ON(network_thread_);
-  RTC_DCHECK_GE(rtt, 0);
+  RTC_DCHECK_GE(rtt, TimeDelta::Zero());
   // We've already validated that this is a STUN binding response with
   // the correct local and remote username for this connection.
   // So if we're not already, become writable. We may be bringing a pruned
@@ -1257,10 +1274,10 @@ void Connection::ReceivedPingResponse(
     acked_nomination_ = nomination.value();
   }
 
-  int64_t now = TimeMillis();
-  total_round_trip_time_ms_ += rtt;
-  current_round_trip_time_ms_ = static_cast<uint32_t>(rtt);
-  rtt_estimate_.AddSample(now, rtt);
+  Timestamp now = AlignTime(env_.clock().CurrentTime());
+  total_round_trip_time_ += rtt;
+  current_round_trip_time_ = rtt;
+  rtt_estimate_.AddSample(now.ms(), rtt.ms());
 
   pings_since_last_response_.clear();
   last_ping_response_received_ = now;
@@ -1270,7 +1287,7 @@ void Connection::ReceivedPingResponse(
 
   // Smooth the RTT estimate using a moving average.
   if (rtt_samples_ > 0) {
-    rtt_ = (RTT_RATIO * rtt_ + rtt) / (RTT_RATIO + 1);
+    rtt_ = (kRttRatio * rtt_ + rtt) / (kRttRatio + 1);
   } else {
     rtt_ = rtt;
   }
@@ -1308,9 +1325,10 @@ bool Connection::active() const {
   return write_state_ != STATE_WRITE_TIMEOUT;
 }
 
-bool Connection::dead(int64_t now) const {
+bool Connection::dead(Timestamp now) const {
+  now = AlignTime(now);
   RTC_DCHECK_RUN_ON(network_thread_);
-  if (last_received() > 0) {
+  if (LastReceived() > Timestamp::Zero()) {
     // If it has ever received anything, we keep it alive
     // - if it has recevied last DEAD_CONNECTION_RECEIVE_TIMEOUT (30s)
     // - if it has a ping outstanding shorter than
@@ -1322,7 +1340,7 @@ bool Connection::dead(int64_t now) const {
     // locally inactive (pruned) connection. This also allows the local agent to
     // ping with longer interval than 30s as long as it shorter than
     // `dead_connection_timeout_ms`.
-    if (now <= (last_received() + DEAD_CONNECTION_RECEIVE_TIMEOUT)) {
+    if (now <= (LastReceived() + kDeadConnectionReceiveTimeout)) {
       // Not dead since we have received the last 30s.
       return false;
     }
@@ -1330,12 +1348,14 @@ bool Connection::dead(int64_t now) const {
       // Outstanding pings: let it live until the ping is unreplied for
       // DEAD_CONNECTION_RECEIVE_TIMEOUT.
       return now > (pings_since_last_response_[0].sent_time +
-                    DEAD_CONNECTION_RECEIVE_TIMEOUT);
+                    kDeadConnectionReceiveTimeout);
     }
 
     // No outstanding pings: let it live until
     // field_trials_->dead_connection_timeout_ms has passed.
-    return now > (last_received() + field_trials_->dead_connection_timeout_ms);
+    return now >
+           LastReceived() +
+               TimeDelta::Millis(field_trials_->dead_connection_timeout_ms);
   }
 
   if (active()) {
@@ -1350,15 +1370,15 @@ bool Connection::dead(int64_t now) const {
   // keep it around for at least MIN_CONNECTION_LIFETIME to prevent connections
   // from being pruned too quickly during a network change event when two
   // networks would be up simultaneously but only for a brief period.
-  return now > (time_created_ms_ + MIN_CONNECTION_LIFETIME);
+  return now > (time_created_ + kMinConnectionLifetime);
 }
 
-int Connection::rtt() const {
+TimeDelta Connection::Rtt() const {
   RTC_DCHECK_RUN_ON(network_thread_);
   return rtt_;
 }
 
-bool Connection::stable(int64_t now) const {
+bool Connection::stable(Timestamp now) const {
   // A connection is stable if it's RTT has converged and it isn't missing any
   // responses.  We should send pings at a higher rate until the RTT converges
   // and whenever a ping response is missing (so that we can detect
@@ -1432,8 +1452,8 @@ std::string Connection::ToString() const {
   if (port_)
     ss << priority() << "|";
 
-  if (rtt_ < DEFAULT_RTT) {
-    ss << rtt_ << "]";
+  if (rtt_ < kDefaultRtt) {
+    ss << rtt_.ms() << "]";
   } else {
     ss << "-]";
   }
@@ -1496,7 +1516,7 @@ void Connection::OnConnectionRequestResponse(StunRequest* request,
   // connection.
   LoggingSeverity sev = !writable() ? LS_INFO : LS_VERBOSE;
 
-  int rtt = request->Elapsed();
+  TimeDelta rtt = request->Elapsed();
 
   if (RTC_LOG_CHECK_LEVEL_V(sev)) {
     std::string pings;
@@ -1600,7 +1620,7 @@ void Connection::OnConnectionRequestErrorResponse(ConnectionRequest* request,
       error_code == STUN_ERROR_UNAUTHORIZED) {
     // Recoverable error, retry
   } else if (error_code == STUN_ERROR_ROLE_CONFLICT) {
-    port_->SignalRoleConflict(port_.get());
+    port_->NotifyRoleConflict();
   } else if (request->msg()->type() == GOOG_PING_REQUEST) {
     // Race, retry.
   } else {
@@ -1677,13 +1697,13 @@ void Connection::MaybeUpdatePeerReflexiveCandidate(
   }
 }
 
-int64_t Connection::last_received() const {
+Timestamp Connection::LastReceived() const {
   RTC_DCHECK_RUN_ON(network_thread_);
-  return std::max(last_data_received_,
-                  std::max(last_ping_received_, last_ping_response_received_));
+  return std::max(
+      {last_data_received_, last_ping_received_, last_ping_response_received_});
 }
 
-int64_t Connection::receiving_unchanged_since() const {
+Timestamp Connection::ReceivingUnchangedSince() const {
   RTC_DCHECK_RUN_ON(network_thread_);
   return receiving_unchanged_since_;
 }
@@ -1712,7 +1732,7 @@ ConnectionInfo Connection::stats() {
   stats_.receiving = receiving_;
   stats_.writable = write_state_ == STATE_WRITABLE;
   stats_.timeout = write_state_ == STATE_WRITE_TIMEOUT;
-  stats_.rtt = rtt_;
+  stats_.rtt = rtt_.ms();
   stats_.key = this;
   stats_.state = state_;
   if (port_) {
@@ -1720,16 +1740,18 @@ ConnectionInfo Connection::stats() {
     stats_.local_candidate = local_candidate();
   }
   stats_.nominated = nominated();
-  stats_.total_round_trip_time_ms = total_round_trip_time_ms_;
-  stats_.current_round_trip_time_ms = current_round_trip_time_ms_;
+  stats_.total_round_trip_time_ms = total_round_trip_time_.ms();
+  stats_.current_round_trip_time_ms =
+      current_round_trip_time_.has_value()
+          ? std::optional(current_round_trip_time_->ms<uint32_t>())
+          : std::nullopt;
   stats_.remote_candidate = remote_candidate();
-  if (last_data_received_ > 0) {
+  if (last_data_received_ > Timestamp::Zero()) {
     stats_.last_data_received =
-        Timestamp::Millis(last_data_received_ + delta_internal_unix_epoch_ms_);
+        last_data_received_ + delta_internal_unix_epoch_;
   }
-  if (last_send_data_ > 0) {
-    stats_.last_data_sent =
-        Timestamp::Millis(last_send_data_ + delta_internal_unix_epoch_ms_);
+  if (last_send_data_ > Timestamp::Zero()) {
+    stats_.last_data_sent = last_send_data_ + delta_internal_unix_epoch_;
   }
   return stats_;
 }
@@ -1805,17 +1827,18 @@ void Connection::MaybeUpdateLocalCandidate(StunRequest* request,
 
 bool Connection::rtt_converged() const {
   RTC_DCHECK_RUN_ON(network_thread_);
-  return rtt_samples_ > (RTT_RATIO + 1);
+  return rtt_samples_ > (kRttRatio + 1);
 }
 
-bool Connection::missing_responses(int64_t now) const {
+bool Connection::missing_responses(Timestamp now) const {
   RTC_DCHECK_RUN_ON(network_thread_);
+  now = AlignTime(now);
   if (pings_since_last_response_.empty()) {
     return false;
   }
 
-  int64_t waiting = now - pings_since_last_response_[0].sent_time;
-  return waiting > 2 * rtt();
+  TimeDelta waiting = now - pings_since_last_response_[0].sent_time;
+  return waiting > 2 * Rtt();
 }
 
 bool Connection::TooManyOutstandingPings(
@@ -1872,31 +1895,32 @@ void Connection::ForgetLearnedState() {
   pings_since_last_response_.clear();
 }
 
-ProxyConnection::ProxyConnection(WeakPtr<PortInterface> port,
+ProxyConnection::ProxyConnection(const Environment& env,
+                                 WeakPtr<PortInterface> port,
                                  size_t index,
                                  const Candidate& remote_candidate)
-    : Connection(std::move(port), index, remote_candidate) {}
+    : Connection(env, std::move(port), index, remote_candidate) {}
 
 int ProxyConnection::Send(const void* data,
                           size_t size,
                           const AsyncSocketPacketOptions& options) {
-  RTC_DCHECK(port_) << ToDebugId() << ": port_ null in Send()";
-  if (!port_)
+  RTC_DCHECK(port() != nullptr) << ToDebugId() << ": port_ null in Send()";
+  if (port() == nullptr)
     return SOCKET_ERROR;
 
-  stats_.sent_total_packets++;
+  mutable_stats().sent_total_packets++;
   int sent =
-      port_->SendTo(data, size, remote_candidate_.address(), options, true);
-  int64_t now = TimeMillis();
+      port()->SendTo(data, size, remote_candidate().address(), options, true);
+  Timestamp now = env().clock().CurrentTime();
   if (sent <= 0) {
     RTC_DCHECK(sent < 0);
-    error_ = port_->GetError();
-    stats_.sent_discarded_packets++;
-    stats_.sent_discarded_bytes += size;
+    error_ = port()->GetError();
+    mutable_stats().sent_discarded_packets++;
+    mutable_stats().sent_discarded_bytes += size;
   } else {
-    send_rate_tracker_.AddSamplesAtTime(now, sent);
+    send_rate_tracker().AddSamplesAtTime(now.ms(), sent);
   }
-  last_send_data_ = now;
+  set_last_send_data(now);
   return sent;
 }
 

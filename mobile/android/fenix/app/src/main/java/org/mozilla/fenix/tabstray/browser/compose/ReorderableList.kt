@@ -153,6 +153,7 @@ class ListReorderState internal constructor(
         draggingItemInitialOffset = 0f
     }
 
+    @Suppress("CognitiveComplexMethod")
     internal fun onDrag(offset: Float) {
         draggingItemCumulatedOffset += offset
 

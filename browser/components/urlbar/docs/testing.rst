@@ -105,11 +105,10 @@ manifest in alphabetical order.
 
 Start in the manifest file and add your test name in alphabetical
 order. The manifest file we should add our test in is
-`browser.ini <https://searchfox.org/mozilla-central/source/browser/components/
-urlbar/tests/browser/browser.ini>`_. The ``urlbar/test/browser/`` directory
+`browser.toml <https://searchfox.org/mozilla-central/source/browser/components/
+urlbar/tests/browser/browser.toml>`_. The ``urlbar/test/browser/`` directory
 is the main browser test directory for address bar, and the manifest file
 linked above is the main browser test manifest.
-The ``.ini`` file extension is an initialization file for Windows or MS-DOS.
 
 Manifest Metadata
 ~~~~~~~~~~~~~~~~~

@@ -68,23 +68,32 @@
       "__mk_de_DE",
       "aaxitk",
       "content-id",
+      "creativeId",
       "crid",
       "dib",
       "dib_tag",
       "hsa_cr_id",
+      "ipRedirectFrom",
+      "ipRedirectOriginalURL",
       "keywords",
       "lp_asins",
       "lp_query",
       "lp_slot",
+      "overrideBaseCountry",
+      "pageLoadId",
       "pd_rd_plhdr",
       "pd_rd_r",
       "pd_rd_w",
       "pd_rd_wg",
       "pf_rd_r",
       "pf_rd_p",
+      "plink",
       "psc",
+      "ref",
       "ref_",
+      "ref_pageloadid",
       "sbo",
+      "source_code",
       "sprefix",
       "s_prefix",
       "sp_csd",
@@ -102,12 +111,23 @@
       "www.amazon.ac",
       "www.amazon.cn",
       "www.amazon.eg",
-      "www.amazon.in",
       "www.amazon.co.uk",
       "www.amazon.it",
       "www.amazon.pl",
       "www.amazon.sg",
-      "www.amazon.ca"
+      "www.amazon.ca",
+      "www.amazon.com.au",
+      "www.amazon.com.br",
+      "www.amazon.com.mx",
+      "www.amazon.com.be",
+      "www.amazon.com.tr",
+      "www.amazon.sa",
+      "www.amazon.ae",
+      "www.audible.com",
+      "www.audible.co.uk",
+      "www.audible.de",
+      "www.audible.fr",
+      "www.audible.it"
     ]
   },
   "handelsblatt": {
@@ -166,6 +186,19 @@
       "www.wikifunctions.org",
       "meta.wikimedia.org",
       "commons.wikimedia.org"
+    ]
+  },
+  "bilibili": {
+    "queryParams": [
+      "spm_id_from",
+      "broadcast_type",
+      "is_room_feed",
+      "live_from"
+    ],
+    "topLevelSites": [
+      "www.bilibili.com",
+      "space.bilibili.com",
+      "live.bilibili.com"
     ]
   }
 }

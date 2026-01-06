@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Problemă de site înșelător</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Această pagină web de la %1$s a fost raportată ca site înșelător și a fost blocată pe baza preferințelor tale de securitate.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Site blocat pentru siguranța ta</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Pagina web de la adresa %1$s a fost blocată deoarece unul dintre suplimentele tale a încercat să o deschidă. Site-ul ar putea fi folosit pentru a-ți fura informațiile — cum ar fi parole sau numere de card de credit.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Site securizat indisponibil</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

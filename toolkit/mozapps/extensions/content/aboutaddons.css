@@ -57,7 +57,8 @@ h2 {
     content: "";
     width: 1px;
     height: 100%;
-    background-color: var(--in-content-border-color);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
+    background-color: var(--border-color);
     top: 0;
     inset-inline-end: 0;
     position: absolute;
@@ -535,7 +536,7 @@ button.addon-detail-description-toggle {
 .addon-detail-contribute {
   display: flex;
   padding: var(--card-padding);
-  border: 1px solid var(--in-content-box-border-color);
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius-small);
   margin-bottom: var(--card-padding);
   flex-direction: column;
@@ -566,7 +567,7 @@ button.addon-detail-description-toggle {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid var(--in-content-border-color);
+  border-top: 1px solid var(--border-color);
   margin: 0 calc(var(--card-padding) * -1);
   padding: var(--card-padding);
   color: var(--text-color);
@@ -750,8 +751,8 @@ addon-permissions-list .addon-permissions-list-wrapper:not(:first-child) {
   margin-top: 8px;
   /* Pull the buttons flush with the side of the card */
   margin-inline: calc(var(--card-padding) * -1);
-  border-bottom: 1px solid var(--in-content-border-color);
-  border-top: 1px solid var(--in-content-border-color);
+  border-bottom: 1px solid var(--border-color);
+  border-top: 1px solid var(--border-color);
   font-size: 0;
   line-height: 0;
 }
@@ -769,7 +770,7 @@ button.tab-button {
 }
 
 button.tab-button:hover {
-  border-top-color: var(--in-content-box-border-color);
+  border-top-color: var(--border-color);
 }
 
 button.tab-button[selected],

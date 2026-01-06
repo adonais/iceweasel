@@ -5,7 +5,6 @@
 package org.mozilla.fenix.settings.settingssearch
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -21,7 +20,6 @@ class SettingsSearchStoreTest {
         assert(store.state == initialState)
 
         store.dispatch(SettingsSearchAction.SearchQueryUpdated(query))
-        store.waitUntilIdle()
 
         assert(store.state is SettingsSearchState.SearchInProgress)
         assert(store.state.searchQuery == query)
@@ -39,7 +37,6 @@ class SettingsSearchStoreTest {
         assert(store.state is SettingsSearchState.SearchInProgress)
 
         store.dispatch(SettingsSearchAction.SearchQueryUpdated(""))
-        store.waitUntilIdle()
 
         assert(store.state == SettingsSearchState.Default(emptyList()))
     }

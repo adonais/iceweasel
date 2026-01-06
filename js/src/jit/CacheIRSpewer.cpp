@@ -8,7 +8,6 @@
 
 #include "mozilla/Sprintf.h"
 
-#include <algorithm>
 #include <stdarg.h>
 
 #include "jsapi.h"

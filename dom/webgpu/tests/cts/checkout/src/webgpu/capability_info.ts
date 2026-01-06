@@ -12,7 +12,7 @@ import {
   valueof,
 } from '../common/util/data_tables.js';
 import { assertTypeTrue, TypeEqual } from '../common/util/types.js';
-import { unreachable } from '../common/util/util.js';
+import { hasFeature, unreachable } from '../common/util/util.js';
 
 import { GPUConst, kMaxUnsignedLongValue, kMaxUnsignedLongLongValue } from './constants.js';
 
@@ -839,7 +839,9 @@ export function getDefaultLimitsForCTS() {
 }
 
 export function getDefaultLimitsForDevice(device: GPUDevice) {
-  const featureLevel = device.features.has('core-features-and-limits') ? 'core' : 'compatibility';
+  const featureLevel = hasFeature(device.features, 'core-features-and-limits')
+    ? 'core'
+    : 'compatibility';
   return getDefaultLimits(featureLevel);
 }
 
@@ -937,6 +939,7 @@ export const kKnownWGSLLanguageFeatures = [
   'unrestricted_pointer_parameters',
   'pointer_composite_access',
   'uniform_buffer_standard_layout',
+  'subgroup_id',
 ] as const;
 
 export type WGSLLanguageFeature = (typeof kKnownWGSLLanguageFeatures)[number];

@@ -204,10 +204,9 @@ class nsMenuPopupFrame final : public nsBlockFrame, public nsIWidgetListener {
   bool WindowResized(nsIWidget*, int32_t aWidth, int32_t aHeight) override;
   bool RequestWindowClose(nsIWidget*) override;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  nsEventStatus HandleEvent(mozilla::WidgetGUIEvent* aEvent,
-                            bool aUseAttachedEvents) override;
+  nsEventStatus HandleEvent(mozilla::WidgetGUIEvent* aEvent) override;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  bool PaintWindow(nsIWidget* aWidget, mozilla::LayoutDeviceIntRegion) override;
+  void PaintWindow(nsIWidget* aWidget) override;
   void DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,
                           const mozilla::TimeStamp& aCompositeStart,
                           const mozilla::TimeStamp& aCompositeEnd) override;

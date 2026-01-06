@@ -46,7 +46,7 @@ const PREF_ORIG_SOURCES = "devtools.source-map.client-service.enabled";
  *
  * @param {RuleView|ComputedView} view
  *        RuleView or ComputedView instance controlling this menu
- * @param {Object} options
+ * @param {object} options
  *        Option menu configuration
  */
 function StyleInspectorMenu(view, { isRuleView = false } = {}) {
@@ -254,9 +254,9 @@ StyleInspectorMenu.prototype = {
         "styleinspector.contextmenu.addNewRule"
       ),
       accesskey: STYLE_INSPECTOR_L10N.getStr(addRuleAccessKey),
-      click: () => this.view._onAddRule(),
+      click: () => this.view.addNewRule(),
       visible: this.isRuleView,
-      disabled: !this.isRuleView || this.inspector.selection.isAnonymousNode(),
+      disabled: !this.isRuleView || !this.view.canAddNewRuleForSelectedNode(),
     });
     menu.append(menuitemAddRule);
 
@@ -310,7 +310,7 @@ StyleInspectorMenu.prototype = {
    * A helper that determines if the popup was opened with a click to a color
    * value and saves the color to this._colorToCopy.
    *
-   * @return {Boolean}
+   * @return {boolean}
    *         true if click on color opened the popup, false otherwise.
    */
   _isColorPopup() {
@@ -333,7 +333,7 @@ StyleInspectorMenu.prototype = {
   /**
    * Check if the current node (clicked node) is an image URL
    *
-   * @return {Boolean} true if the node is an image url
+   * @return {boolean} true if the node is an image url
    */
   _isImageUrl() {
     const nodeInfo = this._getClickedNodeInfo();

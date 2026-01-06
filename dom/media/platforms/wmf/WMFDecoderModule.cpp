@@ -7,7 +7,6 @@
 #include "WMFDecoderModule.h"
 
 #include <algorithm>
-#include <vector>
 
 #include "DriverCrashGuard.h"
 #include "GfxDriverInfo.h"

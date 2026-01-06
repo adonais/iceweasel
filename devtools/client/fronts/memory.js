@@ -41,7 +41,7 @@ class MemoryFront extends FrontClassWithSpec(memorySpec) {
    *         Always force a bulk data copy of the saved heap snapshot, even when
    *         the server and client share a file system.
    *
-   * @params {Object|undefined} options.boundaries
+   * @params {object | undefined} options.boundaries
    *         The boundaries for the heap snapshot. See
    *         ChromeUtils.webidl for more details.
    *
@@ -65,7 +65,7 @@ class MemoryFront extends FrontClassWithSpec(memorySpec) {
    * heap snapshot file to the client. The path to the client's local file is
    * returned.
    *
-   * @param {String} snapshotId
+   * @param {string} snapshotId
    *
    * @returns Promise<String>
    */

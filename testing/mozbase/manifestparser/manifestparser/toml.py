@@ -6,8 +6,9 @@ import os
 import re
 
 # ruff linter deprecates List, Tuple required for Python 3.8 compatibility
-from typing import Callable, List, Optional, Tuple  # noqa UP035
+from typing import Callable, Dict, List, Optional, Tuple  # noqa UP035
 
+from mozinfo.platforminfo import android_api_to_os_version
 from tomlkit.items import Array, Table
 from tomlkit.toml_document import TOMLDocument
 
@@ -22,6 +23,7 @@ OptRegex = Optional[re.Pattern]
 OptStr = Optional[str]
 OptConditions = List[Tuple[str, OptStr]]  # noqa UP006
 TupleStrBoolStr = Tuple[str, bool, str]  # noqa UP006
+TupleOptStrListStr = Tuple[OptStr, ListStr]  # noqa UP006
 
 FILENAME_REGEX = r"^([A-Za-z0-9_./-]*)([Bb][Uu][Gg])([-_]*)([0-9]+)([A-Za-z0-9_./-]*)$"
 DEFAULT_SECTION = "DEFAULT"
@@ -57,14 +59,20 @@ def sort_paths(paths):
 
 def parse_toml_str(contents):
     """
-    Parse TOML contents using toml
+    Parse TOML contents using rtoml (fastest), tomllib, or toml
     """
     try:
-        from tomllib import TOMLDecodeError
-        from tomllib import loads as TOMLloads
+        import rtoml
+
+        TOMLDecodeError = ValueError  # rtoml raises ValueError on parse errors
+        TOMLloads = rtoml.loads
     except ImportError:
-        from toml import TomlDecodeError as TOMLDecodeError
-        from toml import loads as TOMLloads
+        try:
+            from tomllib import TOMLDecodeError
+            from tomllib import loads as TOMLloads
+        except ImportError:
+            from toml import TomlDecodeError as TOMLDecodeError
+            from toml import loads as TOMLloads
 
     error = None
     manifest = None
@@ -157,7 +165,7 @@ def read_toml(
                         new_val = new_val[0 : comment_found.span()[0]]
                     if " = " in new_val:
                         raise Exception(
-                            f"Should not assign in {key} condition for {section}"
+                            f"Should not assign in {key} list condition for {section}"
                         )
                     new_vals += new_val
                 val = new_vals
@@ -194,21 +202,335 @@ def read_toml(
     return sections, defaults, manifest
 
 
-def alphabetize_toml_str(manifest):
+def unused_condition(condition: str) -> bool:
+    """true if condition does not exist in the CI infrastructure"""
+
+    if (
+        condition.find("os == 'linux' && os_version == '22.04'") >= 0
+        and condition.find(" asan") >= 0
+    ):
+        return True
+    return False
+
+
+def idiomatic_condition(cond: str, condition: str) -> TupleOptStrListStr:
+    """
+    Given the cond (skip-if, run-if)...
+    Converts a manifest condtiion into an idiomatic form
+    cond is None if the condition should be removed
+    Returns (condition, new_conds) where
+    - condition is the revised condition
+    - new_conds are NEW conditions to add
+    """
+
+    AND: str = "&&"
+    EQUAL: str = "=="
+    NOT_EQUAL: str = "!="
+    GREATER_EQUAL: str = ">="
+    new_conds: ListStr = []
+    ops: ListStr = condition.replace("processor", "arch").split(AND)
+    single_ops: ListStr = []  # one word ops, no equality/comparison
+    new_ops: ListStr = []
+    new_op: OptStr = None
+    permutations: ListStr = []  # like !debug -> asan,opt,tsan
+    android_version: OptStr = None
+    os: OptStr = None
+    os_version: OptStr = None
+    arch: OptStr = None
+    display: OptStr = None
+    k_seen: Dict = {}  # noqa UP006
+    k: str = ""
+    v: str = ""
+    i: int = 0
+
+    if "verify" in condition:
+        return (condition, new_conds)  # do not edit with verify*
+    # Get values
+    for i in range(len(ops)):
+        op: str = ops[i]
+        op = op.strip()
+        if EQUAL in op:
+            kv = op.split(EQUAL)
+            if len(kv) != 2:
+                single_ops.append(op)
+                continue
+            k, v = kv
+            k = k.strip(" '\"")
+            vv = v.strip()
+            v = vv.strip("'\"")
+            if k in k_seen:  # duplicate key => ignore
+                continue
+            k_seen[k] = True
+            if k == "android_version":
+                android_version = v
+                op = f"android_version == '{android_version}'"
+            elif k == "arch":
+                arch = v
+                op = f"arch == '{arch}'"
+            elif k == "display":
+                display = v
+                op = f"display == '{display}'"
+            elif k == "os":
+                os = v
+                op = f"os == '{os}'"
+            elif k == "os_version":
+                os_version = v
+                op = f"os_version == '{os_version}'"
+            elif v == vv:  # not quoted
+                if v == "false":
+                    if k == "debug":
+                        permutations.append(["asan", "opt", "tsan"])
+                    else:
+                        single_ops.append("!" + k)
+                    op = None
+                elif v == "true":
+                    single_ops.append(k)
+                    op = None
+                else:
+                    op = f"{k} == {v}"
+            else:
+                op = f"{k} == '{v}'"
+            if op is not None:
+                new_ops.append(op)
+        elif NOT_EQUAL in op or GREATER_EQUAL in op:
+            new_ops.append(op)
+        elif op == "apple_catalina":
+            if os is None:
+                os = "mac"
+                op = f"os == '{os}'"
+                new_ops.insert(0, op)
+            if os_version is None:
+                os_version = "10.15"
+                op = f"os_version == '{os_version}'"
+                new_ops.insert(1, op)
+            if arch is None:
+                arch = "x86_64"
+                op = f"arch == '{arch}'"
+                new_ops.insert(2, op)
+        elif op == "apple_silicon":
+            if os is None:
+                os = "mac"
+                op = f"os == '{os}'"
+                new_ops.insert(0, op)
+            if os_version is None:
+                os_version = "15.30"
+                op = f"os_version == '{os_version}'"
+                new_ops.insert(1, op)
+            if arch is None:
+                arch = "aarch64"
+                op = f"arch == '{arch}'"
+                new_ops.insert(2, op)
+        elif op == "win10_2009":
+            if os is None:
+                os = "win"
+                op = f"os == '{os}'"
+                new_ops.insert(0, op)
+            if os_version is None:
+                os_version = "10.2009"
+                op = f"os_version == '{os_version}'"
+                new_ops.insert(1, op)
+            if arch is None:
+                arch = "x86_64"
+                op = f"arch == '{arch}'"
+                new_ops.insert(2, op)
+        elif op == "win11_2009":  # no longer used
+            return (None, new_conds)
+        elif op == "!debug":
+            permutations.append(["asan", "opt", "tsan"])
+        else:
+            single_ops.append(op)
+
+    # place single operands after equality/comparison operands
+    ops = []
+    for op in new_ops:
+        ops.append(op)
+    single_ops.sort()
+    for op in single_ops:
+        ops.append(op)
+
+    # Handle special cases
+    if android_version is not None:
+        v = android_api_to_os_version(android_version)
+        if os is None:
+            os = "android"
+            op = f"os == '{os}'"
+            i = 0
+            ops.insert(i, op)
+        else:
+            i = ops.index(f"os == '{os}'")
+        if os_version is None:
+            op = f"os_version == '{v}'"
+            i += 1
+            ops.insert(i, op)
+        elif v != os_version:
+            raise Exception(
+                f"android_version == '{android_version}' conflicts with os_version == '{os_version}'"
+            )
+    if os is not None:
+        i = ops.index(f"os == '{os}'")
+        if os == "linux":
+            if os_version is None:
+                if cond == "skip-if":
+                    new_cond = "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'"
+                    for single_op in single_ops:
+                        new_cond += " && " + single_op
+                    new_conds.append(new_cond)
+                    os_version = "24.04"
+                    op = f"os_version == '{os_version}'"
+                    i += 1
+                    ops.insert(i, op)
+            elif os_version == "18.04":  # no longer used
+                return (None, new_conds)
+            else:
+                i = ops.index(f"os_version == '{os_version}'")
+            if arch is None:
+                if cond == "skip-if":
+                    arch = "x86_64"
+                    op = f"arch == '{arch}'"
+                    i += 1
+                    ops.insert(i, op)
+            else:
+                i = ops.index(f"arch == '{arch}'")
+            if display is None:
+                if cond == "skip-if":
+                    if os_version == "22.04":
+                        display = "wayland"
+                    else:
+                        display = "x11"
+                    op = f"display == '{display}'"
+                    i += 1
+                    ops.insert(i, op)
+            elif os_version == "24.04" and display == "wayland":
+                i = ops.index(f"display == '{display}'")
+                display = "x11"
+                op = f"display == '{display}'"
+                ops[i] = op
+        elif os == "mac":
+            if os_version is None:  # do NOT guess os_version on mac
+                if cond == "skip-if":
+                    new_cond = (
+                        "os == 'mac' && os_version == '10.15' && arch == 'x86_64'"
+                    )
+                    for single_op in single_ops:
+                        new_cond += " && " + single_op
+                    new_conds.append(new_cond)
+                    new_cond = (
+                        "os == 'mac' && os_version == '14.70' && arch == 'x86_64'"
+                    )
+                    for single_op in single_ops:
+                        new_cond += " && " + single_op
+                    new_conds.append(new_cond)
+                    os_version = "15.30"
+                    op = f"os_version == '{os_version}'"
+                    i += 1
+                    ops.insert(i, op)
+            elif os_version == "11.20":  # no longer used
+                return (None, new_conds)
+            else:
+                i = ops.index(f"os_version == '{os_version}'")
+            if arch is None and cond == "skip-if":
+                if os_version in ["10.15", "14.70"]:
+                    arch = "x86_64"
+                else:
+                    arch = "aarch64"
+                op = f"arch == '{arch}'"
+                i += 1
+                ops.insert(i, op)
+        elif os == "win":
+            if os_version is None:
+                pass  # do NOT guess os_version on win
+            elif os_version == "11.2009":  # no longer used
+                return (None, new_conds)
+
+    # Fix values
+    new_ops = []
+    for op in ops:
+        new_op = op
+        if EQUAL in op:
+            kv = op.split(EQUAL)
+            if len(kv) == 2:
+                k, v = kv
+                k = k.strip(" '\"")
+                v = v.strip(" '\"")
+                if k == "android_version":
+                    new_op = None
+                elif k == "bits":
+                    if arch is None:
+                        arch = "x86_64"
+                        if v == "32":
+                            arch = "x86"
+                        elif (
+                            os is not None
+                            and os == "mac"
+                            and os_version is not None
+                            and os_version not in ["10.15", "14.70"]
+                        ):
+                            arch = "aarch64"
+                        new_op = f"arch == '{arch}'"
+                    else:
+                        new_op = None
+        if new_op is not None:
+            new_ops.append(new_op)
+    condition = " && ".join(new_ops)
+    new_conds.insert(0, condition)
+    if len(permutations) > 0:
+        perm_conds: ListStr = []
+        for perm in permutations:  # for each set of permutations
+            for condition in new_conds:  # for all the conditions
+                for p in perm:
+                    c = condition
+                    if c != "":
+                        c += " && "
+                    c += p
+                    perm_conds.append(c)
+            new_conds = perm_conds
+            perm_conds = []
+    i = 0
+    while i < len(new_conds):
+        condition = new_conds[i]
+        if unused_condition(condition):
+            del new_conds[i]
+        else:
+            i += 1
+    if len(new_conds) > 0:
+        condition = new_conds.pop(0)
+        if not condition:
+            condition = None
+    else:
+        condition = None
+    return (condition, new_conds)
+
+
+def add_unique_condition(
+    conds: OptConditions, condition: str, comment: str
+) -> OptConditions:
+    """only add a condition if it is unique"""
+
+    ignore: bool = False
+    for c in conds:
+        if _should_ignore_new_condition(c[0], condition):
+            ignore = True
+    if not ignore:
+        conds.append([condition, comment])
+    return conds
+
+
+def alphabetize_toml_str(manifest, fix: bool = False):
     """
     Will take a TOMLkit manifest document (i.e. from a previous invocation
     of read_toml(..., document=True) and accessing the document
     from mp.source_documents[filename]) and return it as a string
     in sorted order by section (i.e. test file name, taking bug ids into consideration).
+    If fix then fix non-idiomatic conditions
     """
 
-    from tomlkit import document, dumps, table
-    from tomlkit.items import Table
+    from tomlkit import array, document, dumps, table
+    from tomlkit.items import Comment, String
 
-    preamble = ""
+    preamble: str = ""
     new_manifest = document()
-    first_section = False
-    sections = {}
+    first_section: bool = False
+    sections: Dict = {}  # noqa UP006
 
     for k, v in manifest.body:
         if k is None:
@@ -233,6 +555,96 @@ def alphabetize_toml_str(manifest):
         if section is None:
             section = str(k).strip("'\"")
             sections[section] = v
+        if fix:
+            new_conds: ListStr = []  # conditions to add
+            del_conds: ListStr = []  # conditions to remove
+            keyvals: Dict = sections[section]  # noqa UP006
+            for cond, skip_if in keyvals.items():
+                conds: OptConditions = []
+                first: OptStr = None  # first skip-if condition
+                first_comment: str = ""  # first skip-if comment
+                e_cond: OptStr = None  # existing skip-if condition
+                e_comment: str = ""  # existing skip-if comment
+                comment1: str = ""
+
+                if not cond.endswith("-if"):
+                    continue
+                # handle the first condition uniquely to perserve whitespace
+                if len(skip_if) == 1:
+                    for e in skip_if._iter_items():
+                        if isinstance(e, String):
+                            if first is None:
+                                if first_comment:  # comment before condition
+                                    first_comment = _simplify_comment(first_comment)
+                                    conds = add_unique_condition(
+                                        conds, " comment", first_comment
+                                    )
+                                    comment1 = first_comment
+                                    first_comment = ""
+                                first = e.as_string().strip('"')
+                        else:
+                            c: str = e.as_string().strip()
+                            if c and c != ",":
+                                first_comment += c
+                    if skip_if.trivia is not None:
+                        first_comment += skip_if.trivia.comment
+                        skip_if.trivia.indent = ""
+                        skip_if.trivia.comment_ws = ""
+                        skip_if.trivia.comment = ""  # remove comment after array
+                    first_comment = _simplify_comment(first_comment)
+                if first is not None:
+                    e_cond, new_conds = idiomatic_condition(cond, first)
+                e_comment = first_comment
+
+                # loop over all skip-if conditions
+                for e in skip_if._iter_items():
+                    if isinstance(e, String):
+                        if e_cond is not None:
+                            conds = add_unique_condition(conds, e_cond, e_comment)
+                            for new_cond in new_conds:
+                                conds = add_unique_condition(conds, new_cond, e_comment)
+
+                            e_cond = None
+                            e_comment = ""
+                            new_conds = []
+                        if len(e) > 0:
+                            e_cond = e.as_string().strip('"')
+
+                            if e_cond == first:
+                                e_cond = None  # don't repeat first
+                                e_comment = ""
+                            else:
+                                e_cond, new_conds = idiomatic_condition(cond, e_cond)
+                    elif isinstance(e, Comment):
+                        simple = _simplify_comment(e.as_string())
+                        if e_cond == "" or (e_cond is None and simple != first_comment):
+                            e_cond = " comment"
+                            e_comment = simple
+                        if e_comment:
+                            e_comment += "\n  # " + simple
+                        elif simple != comment1:
+                            e_comment = simple
+                if e_cond is not None:
+                    conds = add_unique_condition(conds, e_cond, e_comment)
+                    for new_cond in new_conds:
+                        conds = add_unique_condition(conds, new_cond, e_comment)
+                if len(conds) > 0:
+                    # Save updated conditions in order
+                    conds.sort()
+                    mp_array: Array = array()
+                    for c in conds:
+                        if c[0] == " comment":
+                            mp_array.add_line(indent="  ", comment=c[1])
+                        else:
+                            mp_array.add_line(c[0], indent="  ", comment=c[1])
+                    mp_array.add_line("", indent="")  # fixed in write_toml_str
+                    sections[section][cond] = mp_array
+                else:
+                    del_conds.append(cond)
+
+            if len(del_conds) > 0:
+                for cond in del_conds:
+                    del sections[section][cond]
 
     if not first_section:
         new_manifest.add(DEFAULT_SECTION, table())
@@ -241,6 +653,7 @@ def alphabetize_toml_str(manifest):
         new_manifest.add(section, sections[section])
 
     manifest_str = dumps(new_manifest)
+
     # tomlkit fixups
     manifest_str = preamble + manifest_str.replace('"",]', "]")
     while manifest_str.endswith("\n\n"):
@@ -256,9 +669,9 @@ def _simplify_comment(comment):
     length = len(comment)
     i = 0
     j = -1  # remove exactly one space
-    while i < length and comment[i] in " #":
+    while i < length and comment[i] in " \n#":
         i += 1
-        if comment[i] == " ":
+        if i < length and comment[i] == " ":
             j += 1
     comment = comment[i:]
     if j > 0:
@@ -273,15 +686,23 @@ def _should_keep_existing_condition(
     Checks the new condition is equal or not simpler than the existing one
     """
     return (
-        existing_condition == new_condition or not new_condition in existing_condition
+        existing_condition == new_condition
+        or not existing_condition.startswith(new_condition)
+        or not existing_condition.endswith(new_condition)
     )
 
 
 def _should_ignore_new_condition(existing_condition: str, new_condition: str) -> bool:
     """
     Checks if the new condition is equal or more complex than an existing one
+    Avoid ignoring conditions like "os == 'win' && !debug" if the
+    existing condition is "debug" (etc.)
     """
-    return existing_condition == new_condition or existing_condition in new_condition
+    return (
+        existing_condition == new_condition
+        or new_condition.startswith(existing_condition)
+        or new_condition.endswith(existing_condition)
+    )
 
 
 class Mode:
@@ -447,11 +868,11 @@ def add_skip_if(
     carryover: bool = False  # not carried over from a previous skip-if
     if filename not in manifest:
         raise Exception(f"TOML manifest does not contain section: {filename}")
-    keyvals: dict = manifest[filename]
+    keyvals: Dict = manifest[filename]  # noqa UP006
     first: OptStr = None
     first_comment: str = ""
     skip_if: OptArray = None
-    ignore_condition: bool = False  # this condition should not be added
+    ignore_cond: bool = False  # this condition should not be added
     if "skip-if" in keyvals:
         skip_if = keyvals["skip-if"]
         if len(skip_if) == 1:
@@ -468,28 +889,27 @@ def add_skip_if(
     mp_array: Array = array()
     if skip_if is None:  # add the first one line entry to the table
         if mode != Mode.CARRYOVER:
-            mp_array.add_line(condition, indent="", add_comma=False, newline=False)
             if create_bug_lambda is not None:
                 bug = create_bug_lambda()
                 if bug is not None:
                     bug_reference = f"Bug {bug.id}"
-            if bug_reference is not None:
-                mp_array.comment(bug_reference)
+            mp_array.add_line(condition, indent="  ", comment=bug_reference)
+            mp_array.add_line("", indent="")  # fixed in write_toml_str
             skip_if = {"skip-if": mp_array}
             keyvals.update(skip_if)
     else:
         # We store the conditions in a regular python array so we can sort them before
         # dumping them in the TOML
-        conditions_array: OptConditions = []
+        conds: OptConditions = []
         if first is not None:
             if _should_ignore_new_condition(first, condition):
-                ignore_condition = True
+                ignore_cond = True
             if first_comment:
                 first_comment = _simplify_comment(first_comment)
             if _should_keep_existing_condition(first, condition):
-                conditions_array.append([first, first_comment])
+                conds.append([first, first_comment])
                 if (
-                    not ignore_condition
+                    not ignore_cond
                     and mode == Mode.CARRYOVER
                     and carry.is_carryover(first, condition)
                 ):
@@ -498,43 +918,43 @@ def add_skip_if(
             elif bug_reference is None and create_bug_lambda is None:
                 bug_reference = first_comment
         if len(skip_if) > 1:
-            e_condition = None
+            e_cond = None
             e_comment = None
             for e in skip_if._iter_items():
                 if isinstance(e, String):
-                    if e_condition is not None:
-                        if _should_keep_existing_condition(e_condition, condition):
-                            conditions_array.append([e_condition, e_comment])
+                    if e_cond is not None:
+                        if _should_keep_existing_condition(e_cond, condition):
+                            conds.append([e_cond, e_comment])
                             if (
-                                not ignore_condition
+                                not ignore_cond
                                 and mode == Mode.CARRYOVER
-                                and carry.is_carryover(e_condition, condition)
+                                and carry.is_carryover(e_cond, condition)
                             ):
                                 carryover = True
                                 bug_reference = e_comment
                         elif bug_reference is None and create_bug_lambda is None:
                             bug_reference = e_comment
                         e_comment = None
-                        e_condition = None
+                        e_cond = None
                     if len(e) > 0:
-                        e_condition = e.as_string().strip('"')
-                        if _should_ignore_new_condition(e_condition, condition):
-                            ignore_condition = True
+                        e_cond = e.as_string().strip('"')
+                        if _should_ignore_new_condition(e_cond, condition):
+                            ignore_cond = True
                 elif isinstance(e, Comment):
                     e_comment = _simplify_comment(e.as_string())
-            if e_condition is not None:
-                if _should_keep_existing_condition(e_condition, condition):
-                    conditions_array.append([e_condition, e_comment])
+            if e_cond is not None:
+                if _should_keep_existing_condition(e_cond, condition):
+                    conds.append([e_cond, e_comment])
                     if (
-                        not ignore_condition
+                        not ignore_cond
                         and mode == Mode.CARRYOVER
-                        and carry.is_carryover(e_condition, condition)
+                        and carry.is_carryover(e_cond, condition)
                     ):
                         carryover = True
                         bug_reference = e_comment
                 elif bug_reference is None and create_bug_lambda is None:
                     bug_reference = e_comment
-        if ignore_condition:
+        if ignore_cond:
             carryover = False
             bug_reference = None
         else:
@@ -542,9 +962,9 @@ def add_skip_if(
                 bug = create_bug_lambda()
                 if bug is not None:
                     bug_reference = f"Bug {bug.id}"
-            conditions_array.append([condition, bug_reference])
-        conditions_array.sort()
-        for c in conditions_array:
+            conds.append([condition, bug_reference])
+        conds.sort()
+        for c in conds:
             mp_array.add_line(c[0], indent="  ", comment=c[1])
         mp_array.add_line("", indent="")  # fixed in write_toml_str
         skip_if = {"skip-if": mp_array}
@@ -553,7 +973,7 @@ def add_skip_if(
     return (additional_comment, carryover, bug_reference)
 
 
-def _should_remove_condition(
+def _should_remove_cond(
     condition: str,
     os_name: OptStr = None,
     os_version: OptStr = None,
@@ -592,7 +1012,7 @@ def remove_skip_if(
                 for item in condition_array._iter_items():
                     if isinstance(item, String):
                         if condition is not None:
-                            if not _should_remove_condition(
+                            if not _should_remove_cond(
                                 condition, os_name, os_version, processor
                             ):
                                 conditions_to_add.append((condition, comment))
@@ -605,7 +1025,7 @@ def remove_skip_if(
                     elif isinstance(item, Comment):
                         comment = _simplify_comment(item.as_string())
                 if condition is not None:
-                    if not _should_remove_condition(
+                    if not _should_remove_cond(
                         condition, os_name, os_version, processor
                     ):
                         conditions_to_add.append((condition, comment))
@@ -613,25 +1033,10 @@ def remove_skip_if(
                         has_removed_items = True
 
                 if len(conditions_to_add) > 0:
-                    # If there is only one condition, make the skip-if a one-liner
-                    if len(conditions_to_add) > 1:
-                        for condition, comment in conditions_to_add:
-                            new_conditions.add_line(
-                                condition, comment=comment, indent="  "
-                            )
-                    else:
-                        condition, comment = conditions_to_add[0]
-                        new_conditions.add_line(
-                            condition, indent="", add_comma=False, newline=False
-                        )
-                        # Make sure the comment is added outside the array on one-liners
-                        if comment is not None:
-                            new_conditions.comment(comment)
-
-                # Do not keep an empty skip-if array if there are no conditions
+                    for condition, comment in conditions_to_add:
+                        new_conditions.add_line(condition, comment=comment, indent="  ")
                 if len(new_conditions) > 0:
-                    if len(new_conditions) > 1:
-                        new_conditions.add_line("", indent="")
+                    new_conditions.add_line("", indent="")
                     key_values.update({"skip-if": new_conditions})
                 else:
                     del key_values["skip-if"]
@@ -655,17 +1060,17 @@ def replace_tbd_skip_if(
     BUG_TBD: str = "Bug TBD"  # string we are looking for
     if filename not in manifest:
         raise Exception(f"TOML manifest does not contain section: {filename}")
-    keyvals: dict = manifest[filename]
+    keyvals: Dict = manifest[filename]  # noqa UP006
     if not "skip-if" in keyvals:
         raise Exception(
             f"TOML manifest for section: {filename} does not contain a skip-if condition"
         )
     skip_if: Array = keyvals["skip-if"]
     mp_array: Array = array()
-    conditions_array: OptConditions = []
+    conds: OptConditions = []
     first: OptStr = None  # first skip-if condition
     first_comment: str = ""  # first skip-if comment
-    e_condition: OptStr = None  # existing skip-if condition
+    e_cond: OptStr = None  # existing skip-if condition
     e_comment: str = ""  # existing skip-if comment
 
     # handle the first condition uniquely to properly perserve whitespace
@@ -687,32 +1092,32 @@ def replace_tbd_skip_if(
             i: int = max(first_comment.find(BUG_TBD), 0)
             first_comment = f"{' ' * i}Bug {bugid}"
             updated = True
-        e_condition = first
+        e_cond = first
         e_comment = first_comment
 
     # loop over all skip-if conditions to find BUG_TBD
     for e in skip_if._iter_items():
         if isinstance(e, String):
-            if e_condition is not None:
-                conditions_array.append([e_condition, e_comment])
-                e_condition = None
+            if e_cond is not None:
+                conds.append([e_cond, e_comment])
+                e_cond = None
                 e_comment = ""
             if len(e) > 0:
-                e_condition = e.as_string().strip('"')
-                if e_condition == first:
-                    e_condition = None  # don't repeat first
+                e_cond = e.as_string().strip('"')
+                if e_cond == first:
+                    e_cond = None  # don't repeat first
         elif isinstance(e, Comment):
             e_comment = _simplify_comment(e.as_string())
-        if e_condition == condition and e_comment.endswith(BUG_TBD):
+        if e_cond == condition and e_comment.endswith(BUG_TBD):
             i: int = max(e_comment.find(BUG_TBD), 0)
             e_comment = f"{' ' * i}Bug {bugid}"
             updated = True
-    if e_condition is not None:
-        conditions_array.append([e_condition, e_comment])
+    if e_cond is not None:
+        conds.append([e_cond, e_comment])
 
     # Update TOML document for the test with the updated skip-if comment
-    conditions_array.sort()
-    for c in conditions_array:
+    conds.sort()
+    for c in conds:
         mp_array.add_line(c[0], indent="  ", comment=c[1])
     mp_array.add_line("", indent="")  # fixed in write_toml_str
     skip_if = {"skip-if": mp_array}

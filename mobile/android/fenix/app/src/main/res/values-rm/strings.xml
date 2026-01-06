@@ -620,6 +620,10 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Fa a savair ils partenaris da marketing da Mozilla co ti has scuvert Firefox e che ti dovras il program. Questas datas na vegnan mai vendidas.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Acceptar e cumenzar a navigar</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Tscherna ina posiziun per la trav d’utensils</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -814,8 +818,6 @@
   <string name="preferences_gestures">Gests</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Persunalisar</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">T\'annunzia per sincronisar tabs, segnapaginas, pleds-clav e dapli.</string>
   <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
   <string name="preferences_sign_in_description">Sincronisescha tabs, segnapaginas, pleds-clav e dapli.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
@@ -1205,10 +1207,8 @@
   <!--
     Turn On Sync Preferences
 
-    Header of the Sync and save your data preference view
+    Header of the Sign in preference view
   -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Sincronisar e memorisar tias datas</string>
-  <!-- Header of the Sign in preference view -->
   <string name="preferences_sign_in">S’annunziar</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">T\'annunzia per ta reconnectar</string>
@@ -1475,8 +1475,6 @@
   <string name="tab_tray_multiselect_menu_content_description">Menu da tabs tschernids</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
   <string name="tab_tray_homepage_tab">Pagina da partenza</string>
-  <!-- Title text displayed for a homepage tab in the tabs tray. %s is a placeholder that will be replaced by app name. -->
-  <string name="tab_tray_homepage_tab_2" tools:ignore="UnusedResources" moz:removedIn="145">Pagina da partenza da %s</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">Allontanar il tab da la collecziun</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -2071,8 +2069,6 @@
   <string name="toast_copy_link_to_clipboard">Copià en l\'archiv provisoric</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">S\'annunziar tar Sync</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Sincronisar e memorisar las datas</string>
   <!-- An option from the three dot menu to sign in -->
   <string name="sync_menu_sign_in">S’annunziar</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
@@ -2193,7 +2189,7 @@
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">Grondezza da scrittira</string>
   <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
-  <string name="a11y_preference_accessibility_font_size_percentage">%d %%.</string>
+  <string name="a11y_preference_accessibility_font_size_percentage" tools:ignore="UnusedResources" moz:removedIn="148">%d %%.</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">Adattaziun automatica da la grondezza da scrittira</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
@@ -3794,11 +3790,9 @@
   <string name="review_prompt_feedback_header">Igl ans displascha che ti has problems. Ans fa a savair co nus pudain meglierar %1$s.</string>
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">Dar in resun</string>
-  <!--
-    Terms of use pop up prompt
+  <!-- ==== Terms of use pop up prompt ==== -->
 
-    Title for the pop up prompt
-  -->
+  <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">Nus avain in’actualisaziun</string>
   <!--
     Message for the terms of use pop up prompt
@@ -3822,4 +3816,7 @@
   <string name="terms_of_use_prompt_accept">Acceptar</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Ma regurdar pli tard</string>
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

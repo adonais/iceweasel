@@ -201,6 +201,8 @@ class ChromeUtils {
                                  const dom::ClearResourceCacheOptions& aOptions,
                                  ErrorResult& aRv);
 
+  static void InvalidateResourceCache(GlobalObject& aGlobal, ErrorResult& aRv);
+
   static void ClearBfcacheByPrincipal(GlobalObject& aGlobal,
                                       nsIPrincipal* aPrincipal,
                                       ErrorResult& aRv);

@@ -127,8 +127,8 @@ html {
   --single-select-hover-color: light-dark(#DEDEDF, #52525E);
   --picker-background-color: color-mix(in srgb, transparent 98%, light-dark(black, white) 2%);
   --picker-hover-background-color: color-mix(in srgb, transparent 95%, light-dark(black, white) 5%);
-  --picker-border-color: var(--in-content-border-color);
-  --picker-checked-border-color: var(--color-accent-primary-selected);
+  --picker-border-color: var(--border-color);
+  --picker-checked-border-color: var(--border-color-selected);
   --picker-hover-border-color: var(--picker-border-color);
   --picker-focus-ring-color: var(--color-accent-primary-selected);
   --picker-checkbox-color: var(--color-accent-primary-selected);
@@ -490,8 +490,8 @@ html {
 
         .addon-container {
           display: flex;
-          border: 1px solid var(--in-content-border-color);
-          box-shadow: 0 1px 2px 0 var(--in-content-border-color);
+          border: 1px solid var(--border-color);
+          box-shadow: 0 1px 2px 0 var(--border-color);
           border-radius: var(--border-radius-small);
           margin: 5px auto;
           text-align: start;
@@ -1175,8 +1175,8 @@ html {
           .addon-container {
             display: flex;
             flex-direction: row;
-            border: 1px solid var(--in-content-border-color);
-            box-shadow: 0 1px 2px 0 var(--in-content-border-color);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 2px 0 var(--border-color);
             border-radius: var(--border-radius-small);
             margin-block: 0 16px;
             text-align: start;
@@ -2002,7 +2002,7 @@ html {
         padding-top: 0;
 
         &:has(.selected) {
-          border: 1px solid var(--color-accent-primary);
+          border: 1px solid var(--border-color-selected);
         }
 
         &:hover {
@@ -2243,7 +2243,7 @@ html {
 
     @media (prefers-contrast: no-preference) {
       background-color: var(--background-color-canvas);
-      border-color: var(--in-content-border-color);
+      border-color: var(--border-color);
     }
 
     cursor: pointer;
@@ -2314,7 +2314,7 @@ html {
               border-end-end-radius: 0;
 
               & + .tile-content {
-                border: 1px solid var(--in-content-border-color);
+                border: 1px solid var(--border-color);
                 border-top: none;
                 border-radius: 0 0 var(--tiles-container-border-radius) var(--tiles-container-border-radius);
               }
@@ -2334,8 +2334,8 @@ html {
         justify-content: space-between;
 
         & + .tile-content {
-          border-inline-start: 1px solid var(--in-content-border-color);
-          border-inline-end: 1px solid var(--in-content-border-color);
+          border-inline-start: 1px solid var(--border-color);
+          border-inline-end: 1px solid var(--border-color);
         }
 
         .header-text-container {

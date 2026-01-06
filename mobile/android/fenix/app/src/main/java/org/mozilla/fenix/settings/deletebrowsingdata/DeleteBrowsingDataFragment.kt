@@ -48,12 +48,21 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
 
         _binding = FragmentDeleteBrowsingDataBinding.bind(view)
         controller = DefaultDeleteBrowsingDataController(
-            tabsUseCases.removeAllTabs,
-            downloadUseCases.removeAllDownloads,
-            requireComponents.core.historyStorage,
-            requireComponents.core.permissionStorage,
-            requireComponents.core.store,
-            requireComponents.core.engine,
+            deleteDataUseCases = DefaultDeleteBrowsingDataController.DeleteDataUseCases(
+                removeAllTabs = tabsUseCases.removeAllTabs,
+                removeAllDownloads = downloadUseCases.removeAllDownloads,
+            ),
+            dataStorage = DefaultDeleteBrowsingDataController.DataStorage(
+                history = requireComponents.core.historyStorage,
+                permissions = requireComponents.core.permissionStorage,
+            ),
+            stores = DefaultDeleteBrowsingDataController.Stores(
+                appStore = requireComponents.appStore,
+                browserStore = requireComponents.core.store,
+            ),
+            engine = requireComponents.core.engine,
+            settings = requireComponents.settings,
+            coroutineContext = requireActivity().lifecycleScope.coroutineContext,
         )
         settings = requireContext().settings()
 

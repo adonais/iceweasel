@@ -475,8 +475,10 @@ static already_AddRefed<gfx::Path> BuildDefaultPathForURL(
     return nullptr;
   }
 
-  Array<const StylePathCommand, 1> array(StylePathCommand::Move(
-      StyleCommandEndPoint<StyleCSSFloat>::ByCoordinate({0.0, 0.0})));
+  using CommandEndPoint =
+      StyleCommandEndPoint<StyleShapePosition<StyleCSSFloat>, StyleCSSFloat>;
+  Array<const StylePathCommand, 1> array(
+      StylePathCommand::Move(CommandEndPoint::ByCoordinate({0.0, 0.0})));
   return SVGPathData::BuildPath(array, aBuilder, StyleStrokeLinecap::Butt, 0.0);
 }
 

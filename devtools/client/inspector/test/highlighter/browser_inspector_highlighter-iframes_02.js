@@ -53,6 +53,7 @@ add_task(async function () {
 /**
  * Helper designed to switch context to another frame at the provided index.
  * Returns a promise that will resolve when the navigation is complete.
+ *
  * @return {Promise}
  */
 async function switchToFrameContext(frameIndex, toolbox, inspector) {

@@ -23,10 +23,11 @@ registerCleanupFunction(() => {
 
 /**
  * Add a new test tab in the browser and load the given url.
- * @param {String} url
+ *
+ * @param {string} url
  *   The url to be loaded in the new tab.
  *
- * @param {Object} [optional]
+ * @param {object} [optional]
  *   An object with the following optional properties:
  *   - appReadyState: The readyState of the JSON Viewer app that you want to
  *     wait for. Its value can be one of:
@@ -217,8 +218,9 @@ function getElementAttr(selector, attr) {
 
 /**
  * Return the text of a row given its index, e.g. `key: "value"`
- * @param {Number} rowIndex
- * @returns {Promise<String>}
+ *
+ * @param {number} rowIndex
+ * @returns {Promise<string>}
  */
 async function getRowText(rowIndex) {
   const key = await getElementText(

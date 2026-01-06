@@ -6,7 +6,7 @@ package mozilla.components.feature.prompts.file
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.test.TestScope
 import mozilla.components.concept.engine.prompt.PromptRequest.File.Companion.DEFAULT_UPLOADS_DIR_NAME
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
@@ -30,7 +30,7 @@ class FileUploadsDirCleanerTest {
     @Before
     fun setup() {
         fileCleaner = FileUploadsDirCleaner(
-            scope = MainScope(),
+            scope = TestScope(),
         ) {
             testContext.cacheDir
         }

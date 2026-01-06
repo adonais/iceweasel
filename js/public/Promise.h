@@ -121,6 +121,21 @@ class JS_PUBLIC_API JobQueue {
     return false;
   }
 
+  /**
+   * Trace hook for non-GCThing microtask values.
+   *
+   * This hook is called during GC tracing for microtask queue values that are
+   * not GC-things. It allows the embedding to provide custom tracing for
+   * values stored in the microtask queue, particularly for Private values
+   * that represent embedding-specific task representations.
+   *
+   * If the value is not a GC thing, this method will be called to allow the
+   * embedding to trace any GC-reachable data associated with the value.
+   *
+   * The default implementation does nothing.
+   */
+  virtual void traceNonGCThingMicroTask(JSTracer* trc, JS::Value* valuePtr) {}
+
  protected:
   friend class AutoDebuggerJobQueueInterruption;
 

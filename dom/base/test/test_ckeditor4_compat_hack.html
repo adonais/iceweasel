@@ -1,0 +1,58 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Test that for the specific CKEditor 4 iframe, we get an async initial about:blank load</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" href="/tests/SimpleTest/test.css"/>
+  <script>
+
+async function base_test(options = {}) {
+  const {
+    cls = "cke_wysiwyg_frame",
+    src = "",
+    name = "CKEDITOR",
+    version = "4.15.0",
+    asyncLoad = true
+  } = options;
+
+  window[name] = { version };
+
+  const iframe = document.createElement("iframe");
+  iframe.src = src;
+  iframe.classList.add(cls);
+  let loadCnt = 0;
+  iframe.addEventListener("load", () => ++loadCnt );
+  document.body.append(iframe);
+
+  is(loadCnt, asyncLoad ? 0 : 1, "CKEditor frame got expected amount of sync loads")
+
+  if (loadCnt == 0 && asyncLoad) {
+    await new Promise(resolve => iframe.addEventListener("load", resolve, { once: true }));
+    ok(true, "CKEditor received an async load");
+  }
+
+  iframe.remove();
+  window[name] = undefined;
+}
+
+add_task(async function test_sanity_sync_load() {
+  await base_test({ name: "NOT_CKEDITOR", asyncLoad: false });
+});
+
+add_task(async function test_ckeditor() {
+  await base_test();
+});
+
+add_task(async function test_jeditor() {
+  await base_test({ name: "JEDITOR" });
+});
+
+  </script>
+</head>
+<body>
+<p id="display"></p>
+<div id="content" style="display: none"></div>
+<pre id="test"></pre>
+</body>
+</html>

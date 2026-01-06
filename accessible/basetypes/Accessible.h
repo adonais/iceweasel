@@ -583,6 +583,8 @@ class Accessible {
 
   // Type "is" methods
 
+  bool IsAbbreviation() const { return mType == eHTMLAbbrevType; }
+
   bool IsDoc() const { return HasGenericType(eDocument); }
 
   bool IsTableRow() const { return HasGenericType(eTableRow); }
@@ -703,11 +705,12 @@ class Accessible {
   }
 
   /**
-   * Returns the nearest ancestor which is not a generic element.
+   * Returns the nearest ancestor in the document which is not a generic
+   * element.
    */
   Accessible* GetNonGenericParent() const {
     for (Accessible* parent = Parent(); parent; parent = parent->Parent()) {
-      if (!parent->IsGeneric()) {
+      if (parent->IsDoc() || !parent->IsGeneric()) {
         return parent;
       }
     }

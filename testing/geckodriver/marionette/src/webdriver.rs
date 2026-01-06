@@ -360,6 +360,10 @@ pub enum Command {
     SwitchToWindow(Window),
     #[serde(rename = "WebDriver:TakeScreenshot")]
     TakeScreenshot(ScreenshotOptions),
+    #[serde(rename = "GPC:GetGlobalPrivacyControl")]
+    GPCGetGlobalPrivacyControl,
+    #[serde(rename = "GPC:SetGlobalPrivacyControl")]
+    GPCSetGlobalPrivacyControl(GlobalPrivacyControlParameters),
     #[serde(rename = "WebAuthn:AddVirtualAuthenticator")]
     WebAuthnAddVirtualAuthenticator(AuthenticatorParameters),
     #[serde(rename = "WebAuthn:RemoveVirtualAuthenticator")]
@@ -374,10 +378,6 @@ pub enum Command {
     WebAuthnRemoveAllCredentials,
     #[serde(rename = "WebAuthn:SetUserVerified")]
     WebAuthnSetUserVerified(UserVerificationParameters),
-    #[serde(rename = "WebAuthn:GetGlobalPrivacyControl")]
-    GetGlobalPrivacyControl,
-    #[serde(rename = "WebAuthn:SetGlobalPrivacyControl")]
-    SetGlobalPrivacyControl(GlobalPrivacyControlParameters),
 }
 
 #[cfg(test)]

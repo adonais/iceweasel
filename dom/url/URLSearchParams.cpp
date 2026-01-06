@@ -12,13 +12,11 @@
 // clang-format on
 
 #include <new>
-#include <type_traits>
 #include <utility>
 
 #include "js/StructuredClone.h"
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/MacroForEach.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/Record.h"
 #include "mozilla/dom/StructuredCloneHolder.h"

@@ -25,7 +25,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
  * };
  * ```
  *
- * @fires download-started
+ * @fires DownloadListener#"download-started"
  *    The DownloadListener emits the following events:
  *    - "download-started" when a download begins,
  *    - "download-stopped" when a download is stopped

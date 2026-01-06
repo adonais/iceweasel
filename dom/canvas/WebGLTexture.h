@@ -7,8 +7,6 @@
 #define WEBGL_TEXTURE_H_
 
 #include <algorithm>
-#include <map>
-#include <set>
 #include <vector>
 
 #include "CacheInvalidator.h"

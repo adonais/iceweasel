@@ -50,6 +50,7 @@ class PerfFront extends FrontClassWithSpec(perfSpec) {
 
   /**
    * This implements the retrieval of the profile data using the bulk protocol.
+   *
    * @param {number} handle THe handle returned by startCaptureAndStopProfiler
    */
   async getPreviouslyCapturedProfileDataBulk(handle) {

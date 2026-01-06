@@ -58,7 +58,7 @@ class PrivateNotificationFeatureTest {
         val privateSession = createTab("https://firefox.com", private = true)
         val intent = argumentCaptor<Intent>()
 
-        store.dispatch(TabListAction.AddTabAction(privateSession)).join()
+        store.dispatch(TabListAction.AddTabAction(privateSession))
 
         feature.start()
         dispatcher.scheduler.runCurrent()
@@ -76,7 +76,7 @@ class PrivateNotificationFeatureTest {
         feature.start()
         verify(context, never()).startService(any())
 
-        store.dispatch(TabListAction.AddTabAction(privateSession)).join()
+        store.dispatch(TabListAction.AddTabAction(privateSession))
         verify(context, times(1)).startService(any())
         Unit
     }
@@ -88,8 +88,8 @@ class PrivateNotificationFeatureTest {
 
         feature.start()
 
-        store.dispatch(TabListAction.AddTabAction(privateSession1)).join()
-        store.dispatch(TabListAction.AddTabAction(privateSession2)).join()
+        store.dispatch(TabListAction.AddTabAction(privateSession1))
+        store.dispatch(TabListAction.AddTabAction(privateSession2))
 
         verify(context, times(1)).startService(any())
         Unit
@@ -103,10 +103,10 @@ class PrivateNotificationFeatureTest {
         feature.start()
         verify(context, never()).startService(any())
 
-        store.dispatch(TabListAction.AddTabAction(normalSession)).join()
+        store.dispatch(TabListAction.AddTabAction(normalSession))
         verify(context, never()).startService(any())
 
-        store.dispatch(CustomTabListAction.AddCustomTabAction(customSession)).join()
+        store.dispatch(CustomTabListAction.AddCustomTabAction(customSession))
         verify(context, never()).startService(any())
         Unit
     }
@@ -121,10 +121,10 @@ class PrivateNotificationFeatureTest {
         feature.start()
         verify(context, never()).startService(any())
 
-        store.dispatch(CustomTabListAction.AddCustomTabAction(privateCustomSession)).join()
+        store.dispatch(CustomTabListAction.AddCustomTabAction(privateCustomSession))
         verify(context, never()).startService(any())
 
-        store.dispatch(CustomTabListAction.AddCustomTabAction(customSession)).join()
+        store.dispatch(CustomTabListAction.AddCustomTabAction(customSession))
         verify(context, never()).startService(any())
         Unit
     }

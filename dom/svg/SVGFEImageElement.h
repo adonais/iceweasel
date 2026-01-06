@@ -9,6 +9,7 @@
 
 #include "SVGAnimatedPreserveAspectRatio.h"
 #include "mozilla/dom/SVGFilters.h"
+#include "nsINode.h"
 
 nsresult NS_NewSVGFEImageElement(
     nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
@@ -41,6 +42,7 @@ class SVGFEImageElement final : public SVGFEImageElementBase,
 
   // interfaces:
   NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(SVGFEImageElement,
                                            SVGFEImageElementBase)

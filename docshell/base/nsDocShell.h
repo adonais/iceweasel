@@ -1052,7 +1052,8 @@ class nsDocShell final : public nsDocLoader,
                              int32_t aCurVerticalPos);
   nsPoint GetCurScrollPos();
 
-  void RestoreScrollPosFromActiveSHE();
+  void RestoreScrollPositionFromTargetSessionHistoryInfo(
+      mozilla::dom::SessionHistoryInfo* aTarget);
 
   already_AddRefed<mozilla::dom::ChildSHistory> GetRootSessionHistory();
 

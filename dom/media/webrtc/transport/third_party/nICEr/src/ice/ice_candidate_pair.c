@@ -554,37 +554,6 @@ void nr_ice_candidate_pair_cancel(nr_ice_peer_ctx *pctx,nr_ice_cand_pair *pair, 
     }
   }
 
-int nr_ice_candidate_pair_select(nr_ice_cand_pair *pair)
-  {
-    int r,_status;
-
-    if(!pair){
-      r_log(LOG_ICE,LOG_ERR,"ICE-PAIR: No pair chosen");
-      ABORT(R_BAD_ARGS);
-    }
-
-    if(pair->state!=NR_ICE_PAIR_STATE_SUCCEEDED){
-      r_log(LOG_ICE,LOG_ERR,"ICE-PEER(%s)/CAND-PAIR(%s): tried to install non-succeeded pair, ignoring: %s",pair->pctx->label,pair->codeword,pair->as_string);
-    }
-    else{
-      /* Ok, they chose one */
-      /* 1. Send a new request with nominated. Do it as a scheduled
-            event to avoid reentrancy issues. Only do this if it hasn't
-            happened already (though this shouldn't happen.)
-      */
-      if(!pair->restart_nominated_cb_timer)
-        NR_ASYNC_TIMER_SET(0,nr_ice_candidate_pair_restart_stun_nominated_cb,pair,&pair->restart_nominated_cb_timer);
-
-      /* 2. Tell ourselves this pair is ready */
-      if(r=nr_ice_component_nominated_pair(pair->remote->component, pair))
-        ABORT(r);
-    }
-
-    _status=0;
-  abort:
-    return(_status);
- }
-
 void nr_ice_candidate_pair_set_state(nr_ice_peer_ctx *pctx, nr_ice_cand_pair *pair, int state)
   {
     r_log(LOG_ICE,LOG_INFO,"ICE-PEER(%s)/CAND-PAIR(%s): setting pair to state %s: %s",

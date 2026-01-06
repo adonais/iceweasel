@@ -7,13 +7,33 @@ use minidump_writer::minidump_writer::{AuxvType, DirectAuxvDumpInfo};
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::FromPrimitive;
 use std::{
-    ffi::{CString, OsString},
+    array::TryFromSliceError,
+    ffi::{CString, FromBytesWithNulError, NulError, OsString},
     mem::size_of,
 };
+use thiserror::Error;
 #[cfg(target_os = "windows")]
 use windows_sys::Win32::System::Diagnostics::Debug::{CONTEXT, EXCEPTION_RECORD};
 
-use crate::{breakpad::Pid, errors::MessageError, ipc_connector::AncillaryData, BreakpadString};
+use crate::{breakpad::Pid, ipc_connector::AncillaryData, BreakpadString};
+
+#[derive(Debug, Error)]
+pub enum MessageError {
+    #[error("Nul terminator found within a string")]
+    InteriorNul(#[from] NulError),
+    #[error("The message contained an invalid payload")]
+    InvalidData,
+    #[error("Message kind is invalid")]
+    InvalidKind,
+    #[error("Invalid message size")]
+    InvalidSize(#[from] TryFromSliceError),
+    #[error("Missing ancillary data")]
+    MissingAncillary,
+    #[error("Missing nul terminator")]
+    MissingNul(#[from] FromBytesWithNulError),
+    #[error("Truncated message")]
+    Truncated,
+}
 
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, FromPrimitive, ToPrimitive, PartialEq)]
@@ -598,7 +618,16 @@ impl Message for UnregisterAuxvInfo {
 
 /* Message sent from the main process to the crash helper to register a new
  * child process which is about to be spawned. This message contains the IPC
- * endpoint which the crash helper will use to talk to the child. */
+ * endpoint which the crash helper will use to talk to the child.
+ *
+ * Note that these processes should only contain an IPC endpoint and no actual
+ * data, however they declare a 1-byte sized payload which is transferred but
+ * ignored on the receiving size. This is a workaround to an issue with macOS
+ * 10.15 implementation of Unix sockets which would sometimes fail to deliver
+ * a message that would only contain control data and no buffer. See bug
+ * 1989686 for more information. This dummy payload can be removed once bug
+ * 2002791 is implemented.
+ */
 
 pub struct RegisterChildProcess {
     pub ipc_endpoint: AncillaryData,
@@ -606,13 +635,11 @@ pub struct RegisterChildProcess {
 
 impl RegisterChildProcess {
     pub fn new(ipc_endpoint: AncillaryData) -> RegisterChildProcess {
-        RegisterChildProcess {
-            ipc_endpoint,
-        }
+        RegisterChildProcess { ipc_endpoint }
     }
 
     fn payload_size(&self) -> usize {
-        0
+        1
     }
 }
 
@@ -630,7 +657,7 @@ impl Message for RegisterChildProcess {
     }
 
     fn into_payload(self) -> (Vec<u8>, Option<AncillaryData>) {
-        (Vec::<u8>::new(), Some(self.ipc_endpoint))
+        (vec![0], Some(self.ipc_endpoint))
     }
 
     fn decode(

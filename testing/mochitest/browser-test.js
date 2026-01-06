@@ -1087,32 +1087,19 @@ Tester.prototype = {
         }
       }
 
-      if (this.currentTest.allowFailure) {
-        if (this.currentTest.expectedAllowedFailureCount) {
-          this.currentTest.addResult(
-            new testResult({
-              name:
-                "Expected " +
-                this.currentTest.expectedAllowedFailureCount +
-                " failures in this file, got " +
-                this.currentTest.allowedFailureCount +
-                ".",
-              pass:
-                this.currentTest.expectedAllowedFailureCount ==
-                this.currentTest.allowedFailureCount,
-            })
-          );
-        } else if (this.currentTest.allowedFailureCount == 0) {
-          this.currentTest.addResult(
-            new testResult({
-              name:
-                "We expect at least one assertion to fail because this" +
-                " test file is marked as fail-if in the manifest.",
-              todo: true,
-              knownFailure: this.currentTest.allowFailure,
-            })
-          );
-        }
+      if (
+        this.currentTest.allowFailure &&
+        this.currentTest.allowedFailureCount == 0
+      ) {
+        this.currentTest.addResult(
+          new testResult({
+            name:
+              "We expect at least one assertion to fail because this" +
+              " test file is marked as fail-if in the manifest.",
+            todo: true,
+            knownFailure: this.currentTest.allowFailure,
+          })
+        );
       }
 
       // Dump memory stats for main thread.
@@ -1969,12 +1956,6 @@ function testScope(aTester, aTest, expected) {
     self.__expectedMinAsserts = min;
     self.__expectedMaxAsserts = max;
   };
-
-  this.setExpectedFailuresForSelfTest =
-    function test_setExpectedFailuresForSelfTest(expectedAllowedFailureCount) {
-      aTest.allowFailure = true;
-      aTest.expectedAllowedFailureCount = expectedAllowedFailureCount;
-    };
 
   this.finish = function test_finish() {
     self.__done = true;

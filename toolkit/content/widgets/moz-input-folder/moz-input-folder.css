@@ -20,3 +20,7 @@
   align-items: flex-end;
   gap: var(--input-folder-space-inline);
 }
+
+#choose-folder-button {
+  white-space: nowrap;
+}

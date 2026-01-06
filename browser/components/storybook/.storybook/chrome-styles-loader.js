@@ -132,7 +132,7 @@ async function rewriteChromeUris(source) {
  *
  * @param {string} source - The source to rewrite.
  * @param {Map} sourceMap - Source map data, unused.
- * @param {Object} meta - Metadata, unused.
+ * @param {object} meta - Metadata, unused.
  */
 module.exports = async function chromeUriLoader(source) {
   // Get a callback to tell webpack when we're done.

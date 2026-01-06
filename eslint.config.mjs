@@ -6,7 +6,7 @@ import sdl from "@microsoft/eslint-plugin-sdl";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
 import html from "eslint-plugin-html";
 import importPlugin from "eslint-plugin-import";
-import json from "eslint-plugin-json";
+import json from "@eslint/json";
 import lit from "eslint-plugin-lit";
 import mozilla from "eslint-plugin-mozilla";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -147,7 +147,21 @@ let config = [
   {
     name: "json-recommended-with-comments",
     files: ["**/*.json"],
-    ...json.configs["recommended-with-comments"],
+    language: "json/jsonc",
+    ...json.configs.recommended,
+  },
+  {
+    name: "json-recommended-no-comments",
+    files: ["**/package.json"],
+    language: "json/json",
+    ...json.configs.recommended,
+  },
+  {
+    name: "json-empty-keys-off-for-image_builder",
+    files: ["taskcluster/docker/image_builder/policy.json"],
+    rules: {
+      "json/no-empty-keys": "off",
+    },
   },
   {
     name: "eslint-plugin-html",

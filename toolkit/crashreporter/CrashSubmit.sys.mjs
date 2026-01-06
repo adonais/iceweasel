@@ -488,6 +488,7 @@ export var CrashSubmit = {
 
   /**
    * Get the list of pending crash IDs, excluding those marked to be ignored
+   *
    * @param minFileDate
    *     A Date object. Any files last modified before that date will be ignored
    *

@@ -35,7 +35,6 @@
 #define GMOCK_INCLUDE_GMOCK_INTERNAL_CUSTOM_GMOCK_MATCHERS_H_
 
 #include "nsTArray.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/media/MediaUtils.h"
 
 namespace testing {

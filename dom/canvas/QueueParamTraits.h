@@ -8,8 +8,6 @@
 #ifndef _QUEUEPARAMTRAITS_H_
 #define _QUEUEPARAMTRAITS_H_ 1
 
-#include <optional>
-
 #include "WebGLTypes.h"
 #include "ipc/EnumSerializer.h"
 #include "mozilla/Assertions.h"

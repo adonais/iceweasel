@@ -101,7 +101,13 @@ nsresult nsXMLPrettyPrinter::PrettyPrint(Document* aDocument,
 
   // Create a DocumentL10n, as the XML document is not allowed to have one.
   // Make it sync so that the test for bug 590812 does not require a setTimeout.
-  RefPtr<DocumentL10n> l10n = DocumentL10n::Create(aDocument, true);
+  RefPtr<DocumentL10n> l10n;
+  if (aDocument->ShouldResistFingerprinting(RFPTarget::JSLocale)) {
+    AutoTArray<nsCString, 1> langs = {nsRFPService::GetSpoofedJSLocale()};
+    l10n = DocumentL10n::Create(aDocument, true, langs);
+  } else {
+    l10n = DocumentL10n::Create(aDocument, true);
+  }
   NS_ENSURE_TRUE(l10n, NS_ERROR_UNEXPECTED);
   l10n->AddResourceId("dom/XMLPrettyPrint.ftl"_ns);
 

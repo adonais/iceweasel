@@ -22,7 +22,6 @@
 #include "nsIInputStream.h"
 #include "nsIOutputStream.h"
 #include "nsISeekableStream.h"
-#include "nsISizeOf.h"
 #include "nsIURI.h"
 #include "nsNetCID.h"
 #include "nsProxyRelease.h"
@@ -1992,7 +1991,7 @@ size_t CacheEntry::SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
   // mWriter is one of many handles we create, but (intentionally) not keep
   // any reference to, so those unfortunately cannot be reported.  Handles are
   // small, though.
-  // mSecurityInfo doesn't impl nsISizeOf.
+  // mSecurityInfo doesn't implement memory reporting.
 
   return n;
 }

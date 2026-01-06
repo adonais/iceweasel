@@ -168,6 +168,8 @@ class SnapTestsBase:
                     test_status = "TIMEOUT"
 
                 test_message = repr(ex)
+                page_source = self._driver.page_source
+                self._logger.info(f"page source:\n-->\n{page_source}\n<--\n")
                 self.save_screenshot(
                     f"screenshot_{m.lower()}_{test_status.lower()}.png"
                 )

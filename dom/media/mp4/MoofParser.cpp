@@ -70,7 +70,7 @@ bool MoofParser::RebuildFragmentedIndex(BoxContext& aContext) {
       ParseMoov(box);
     } else if (box.IsType("moof")) {
       Moof moof(box, mTrackParseMode, mTrex, mMvhd, mMdhd, mEdts, mSinf,
-                &mLastDecodeTime, mIsAudio, mTracksEndCts);
+                mIsAudio, &mLastDecodeTime, mTracksEndCts);
 
       if (!moof.IsValid()) {
         continue;  // Skip to next box.
@@ -120,6 +120,15 @@ MediaByteRange MoofParser::FirstCompleteMediaSegment() {
     }
   }
   return MediaByteRange();
+}
+
+const CencSampleEncryptionInfoEntry* MoofParser::GetSampleEncryptionEntry(
+    size_t aMoof, size_t aSample) const {
+  if (aMoof >= mMoofs.Length()) {
+    return nullptr;
+  }
+  return mMoofs[aMoof].GetSampleEncryptionEntry(
+      aSample, &mTrackSampleToGroupEntries, &mTrackSampleEncryptionInfoEntries);
 }
 
 DDLoggedTypeDeclNameAndBase(BlockingStream, ByteStream);
@@ -421,8 +430,8 @@ class CtsComparator {
 };
 
 Moof::Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
-           Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts, Sinf& aSinf,
-           uint64_t* aDecodeTime, bool aIsAudio,
+           const Mvhd& aMvhd, const Mdhd& aMdhd, const Edts& aEdts,
+           const Sinf& aSinf, const bool aIsAudio, uint64_t* aDecodeTime,
            nsTArray<TrackEndCts>& aTracksEndCts)
     : mRange(aBox.Range()),
       mTfhd(aTrex),
@@ -443,7 +452,7 @@ Moof::Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
   for (Box box = aBox.FirstChild(); box.IsAvailable(); box = box.Next()) {
     if (box.IsType("traf")) {
       ParseTraf(box, aTrackParseMode, aTrex, aMvhd, aMdhd, aEdts, aSinf,
-                aDecodeTime, aIsAudio);
+                aIsAudio, aDecodeTime);
     }
     if (box.IsType("pssh")) {
       psshBoxes.AppendElement(box);
@@ -519,8 +528,8 @@ Moof::Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
       TimeUnit presentationDuration =
           ctsOrder.LastElement()->mCompositionRange.end -
           ctsOrder[0]->mCompositionRange.start;
-      auto decodeOffset =
-          aMdhd.ToTimeUnit((int64_t)*aDecodeTime - aEdts.mMediaStart);
+      auto decodeOffset = aMdhd.ToTimeUnit(static_cast<int64_t>(*aDecodeTime) -
+                                           aEdts.mMediaStart);
       auto offsetOffset = aMvhd.ToTimeUnit(aEdts.mEmptyOffset);
       TimeUnit endDecodeTime =
           (decodeOffset.isOk() && offsetOffset.isOk())
@@ -548,7 +557,11 @@ Moof::Moof(Box& aBox, const TrackParseMode& aTrackParseMode, Trex& aTrex,
           MP4Interval<TimeUnit>(ctsOrder[0]->mCompositionRange.start,
                                 ctsOrder.LastElement()->mCompositionRange.end);
     }
-    ProcessCencAuxInfo(aSinf.mDefaultEncryptionType);
+    // No need to retrieve auxiliary encryption data if we have a senc box: we
+    // won't use it in SampleIterator::GetNext()
+    if (!mSencValid) {
+      ProcessCencAuxInfo(aSinf.mDefaultEncryptionType);
+    }
   }
   LOG_DEBUG(Moof, "Done.");
 }
@@ -645,9 +658,77 @@ bool Moof::ProcessCencAuxInfo(AtomType aScheme) {
   return true;
 }
 
+const CencSampleEncryptionInfoEntry* Moof::GetSampleEncryptionEntry(
+    size_t aSample,
+    const FallibleTArray<SampleToGroupEntry>* aTrackSampleToGroupEntries,
+    const FallibleTArray<CencSampleEncryptionInfoEntry>*
+        aTrackSampleEncryptionInfoEntries) const {
+  const SampleToGroupEntry* sampleToGroupEntry = nullptr;
+
+  // Default to using the sample to group entries for the fragment, otherwise
+  // fall back to the sample to group entries for the track.
+  const FallibleTArray<SampleToGroupEntry>* sampleToGroupEntries =
+      mFragmentSampleToGroupEntries.Length() != 0
+          ? &mFragmentSampleToGroupEntries
+          : aTrackSampleToGroupEntries;
+
+  if (!sampleToGroupEntries) {
+    return nullptr;
+  }
+
+  uint32_t seen = 0;
+
+  for (const SampleToGroupEntry& entry : *sampleToGroupEntries) {
+    if (seen + entry.mSampleCount > aSample) {
+      sampleToGroupEntry = &entry;
+      break;
+    }
+    seen += entry.mSampleCount;
+  }
+
+  // ISO-14496-12 Section 8.9.2.3 and 8.9.4 : group description index
+  // (1) ranges from 1 to the number of sample group entries in the track
+  // level SampleGroupDescription Box, or (2) takes the value 0 to
+  // indicate that this sample is a member of no group, in this case, the
+  // sample is associated with the default values specified in
+  // TrackEncryption Box, or (3) starts at 0x10001, i.e. the index value
+  // 1, with the value 1 in the top 16 bits, to reference fragment-local
+  // SampleGroupDescription Box.
+
+  // According to the spec, ISO-14496-12, the sum of the sample counts in this
+  // box should be equal to the total number of samples, and, if less, the
+  // reader should behave as if an extra SampleToGroupEntry existed, with
+  // groupDescriptionIndex 0.
+
+  if (!sampleToGroupEntry || sampleToGroupEntry->mGroupDescriptionIndex == 0) {
+    return nullptr;
+  }
+
+  const FallibleTArray<CencSampleEncryptionInfoEntry>* entries =
+      aTrackSampleEncryptionInfoEntries;
+
+  uint32_t groupIndex = sampleToGroupEntry->mGroupDescriptionIndex;
+
+  // If the first bit is set to a one, then we should use the sample group
+  // descriptions from the fragment.
+  if (groupIndex > SampleToGroupEntry::kFragmentGroupDescriptionIndexBase) {
+    groupIndex -= SampleToGroupEntry::kFragmentGroupDescriptionIndexBase;
+    entries = &mFragmentSampleEncryptionInfoEntries;
+  }
+
+  if (!entries) {
+    return nullptr;
+  }
+
+  // The group_index is one based.
+  return groupIndex > entries->Length() ? nullptr
+                                        : &entries->ElementAt(groupIndex - 1);
+}
+
 void Moof::ParseTraf(Box& aBox, const TrackParseMode& aTrackParseMode,
-                     Trex& aTrex, Mvhd& aMvhd, Mdhd& aMdhd, Edts& aEdts,
-                     Sinf& aSinf, uint64_t* aDecodeTime, bool aIsAudio) {
+                     Trex& aTrex, const Mvhd& aMvhd, const Mdhd& aMdhd,
+                     const Edts& aEdts, const Sinf& aSinf, const bool aIsAudio,
+                     uint64_t* aDecodeTime) {
   LOG_DEBUG(
       Traf,
       "Starting, aTrackParseMode=%s, track#=%" PRIu32
@@ -712,20 +793,36 @@ void Moof::ParseTraf(Box& aBox, const TrackParseMode& aTrackParseMode,
               mTfhd.mTrackId);
     return;
   }
-  // Now search for TRUN boxes.
+  // Second pass: search for trun boxes and senc boxes.
   uint64_t decodeTime =
       tfdt.IsValid() ? tfdt.mBaseMediaDecodeTime : *aDecodeTime;
+  Box sencBox;
   for (Box box = aBox.FirstChild(); box.IsAvailable(); box = box.Next()) {
     if (box.IsType("trun")) {
-      if (ParseTrun(box, aMvhd, aMdhd, aEdts, &decodeTime, aIsAudio).isOk()) {
+      if (ParseTrun(box, aMvhd, aMdhd, aEdts, aIsAudio, &decodeTime).isOk()) {
         mValid = true;
       } else {
         LOG_WARN(Moof, "ParseTrun failed");
         mValid = false;
         return;
       }
+    } else if (box.IsType("senc")) {
+      LOG_DEBUG(Moof, "Found senc box");
+      sencBox = box;
     }
   }
+
+  // senc box found: parse it.
+  // We need to parse senc boxes in another pass because we need potential sgpd
+  // and sbgp boxes to have been parsed, as they might override the IV size and
+  // as such the size of senc entries.
+  // trun box shall have been parsed as well, so mIndex has been filled.
+  if (sencBox.IsAvailable()) {
+    if (ParseSenc(sencBox, aSinf).isErr()) [[unlikely]] {
+      LOG_WARN(Moof, "ParseSenc failed");
+    }
+  }
+
   *aDecodeTime = decodeTime;
   LOG_DEBUG(Traf, "Done, setting aDecodeTime=%." PRIu64 ".", decodeTime);
 }
@@ -737,9 +834,86 @@ void Moof::FixRounding(const Moof& aMoof) {
   }
 }
 
-Result<Ok, nsresult> Moof::ParseTrun(Box& aBox, Mvhd& aMvhd, Mdhd& aMdhd,
-                                     Edts& aEdts, uint64_t* aDecodeTime,
-                                     bool aIsAudio) {
+Result<Ok, nsresult> Moof::ParseSenc(Box& aBox, const Sinf& aSinf) {
+  // If we already had a senc box, ignore following ones
+  // Not sure how likely this could be in real life
+  if (mSencValid) [[unlikely]] {
+    LOG_WARN(Moof, "Already found a valid senc box, ignoring new one");
+    return Ok();
+  }
+
+  BoxReader reader(aBox);
+  const uint8_t version = MOZ_TRY(reader->ReadU8());
+  const uint32_t flags = MOZ_TRY(reader->ReadU24());
+  const uint32_t sampleCount = MOZ_TRY(reader->ReadU32());
+  // ISO/IEC 23001-7 §7.2:
+  // "sample_count is the number of protected samples in the containing track or
+  // track fragment. This value SHALL be either zero (0) or the total number of
+  // samples in the track or track fragment."
+  if (sampleCount == 0) {
+    LOG_DEBUG(Moof, "senc box has 0 sample_count");
+    // Though having sample_count = 0 seems to be compliant, return without
+    // error but don't set mSencValid to true in case there is another senc box
+    // or saio/saiz auxiliary data
+    return Ok();
+  }
+  if (sampleCount != mIndex.Length()) {
+    LOG_ERROR(Moof, "Invalid sample count in senc box: expecting %zu, got %d\n",
+              mIndex.Length(), sampleCount);
+    return Err(NS_ERROR_FAILURE);
+  }
+
+  if (version == 0) {
+    for (size_t i = 0; i < sampleCount; ++i) {
+      Sample& sample = mIndex[i];
+      const CencSampleEncryptionInfoEntry* sampleInfo =
+          GetSampleEncryptionEntry(i);
+      uint8_t ivSize = sampleInfo ? sampleInfo->mIVSize : aSinf.mDefaultIVSize;
+      if (!reader->ReadArray(sample.mIV, ivSize)) {
+        return Err(MediaResult::Logged(
+            NS_ERROR_DOM_MEDIA_DEMUXER_ERR,
+            RESULT_DETAIL("sample InitializationVector error"),
+            gMediaDemuxerLog));
+      }
+      // Clear arrays, to be safe, in the (unlikely and invalid) case we started
+      // to parse a previous senc box but it failed halfway.
+      sample.mPlainSizes.Clear();
+      sample.mEncryptedSizes.Clear();
+      const bool useSubSampleEncryption = flags & 0x02;
+      if (useSubSampleEncryption) {
+        uint16_t subsampleCount = MOZ_TRY(reader->ReadU16());
+        for (uint16_t i = 0; i < subsampleCount; ++i) {
+          uint16_t bytesOfClearData = MOZ_TRY(reader->ReadU16());
+          uint32_t bytesOfProtectedData = MOZ_TRY(reader->ReadU32());
+          sample.mPlainSizes.AppendElement(bytesOfClearData);
+          sample.mEncryptedSizes.AppendElement(bytesOfProtectedData);
+        }
+      } else {
+        // No UseSubSampleEncryption flag means the entire sample is encrypted.
+        sample.mPlainSizes.AppendElement(0);
+        sample.mEncryptedSizes.AppendElement(sample.mByteRange.Length());
+      }
+    }
+  } else if (version == 1) {
+    // TODO
+    LOG_ERROR(Senc, "version %d not supported yet", version);
+    return Err(NS_ERROR_FAILURE);
+  } else if (version == 2) {
+    // TODO
+    LOG_ERROR(Senc, "version %d not supported yet", version);
+    return Err(NS_ERROR_FAILURE);
+  } else {
+    LOG_ERROR(Senc, "Unknown version %d", version);
+    return Err(NS_ERROR_FAILURE);
+  }
+  mSencValid = true;
+  return Ok();
+}
+
+Result<Ok, nsresult> Moof::ParseTrun(Box& aBox, const Mvhd& aMvhd,
+                                     const Mdhd& aMdhd, const Edts& aEdts,
+                                     const bool aIsAudio,
+                                     uint64_t* aDecodeTime) {
   LOG_DEBUG(Trun, "Starting.");
   if (!mTfhd.IsValid() || !aMvhd.IsValid() || !aMdhd.IsValid() ||
       !aEdts.IsValid()) {

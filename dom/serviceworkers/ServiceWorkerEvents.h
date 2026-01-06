@@ -223,6 +223,7 @@ class PushMessageData final : public nsISupports, public nsWrapperCache {
 
   nsresult EnsureDecodedText();
   uint8_t* GetContentsCopy();
+  void SetUseCounterIfDeclarative(JSContext* aCx);
 };
 
 class PushEvent final : public ExtendableEvent {

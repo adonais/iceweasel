@@ -5,8 +5,6 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/UniquePtr.h"
 
-#include <iterator>
-
 #include "jsapi-tests/tests.h"
 
 static unsigned gSliceCallbackCount = 0;

@@ -7,8 +7,9 @@ const lazy = {};
 import { actionTypes as at } from "resource://newtab/common/Actions.mjs";
 
 ChromeUtils.defineESModuleGetters(lazy, {
-  NewTabAttributionService:
+  newTabAttributionService:
     "resource://newtab/lib/NewTabAttributionService.sys.mjs",
+  NewTabActorRegistry: "resource://newtab/lib/NewTabActorRegistry.sys.mjs",
 });
 
 const PREF_SYSTEM_ATTRIBUTION = "discoverystream.attribution.enabled";
@@ -66,17 +67,17 @@ export class NewTabAttributionFeed {
   }
 
   async init() {
-    this.attributionService = new lazy.NewTabAttributionService();
     this.loaded = true;
+    lazy.NewTabActorRegistry.registerAttributionActor();
   }
 
   uninit() {
-    this.attributionService = null;
     this.loaded = false;
+    lazy.NewTabActorRegistry.unregisterAttributionActor();
   }
 
   async onPlacesHistoryCleared() {
-    await this.attributionService?.onAttributionReset();
+    await lazy.newTabAttributionService.onAttributionReset();
   }
 
   async onPrefChangedAction(action) {
@@ -123,12 +124,12 @@ export class NewTabAttributionFeed {
           const item = action?.data || {};
           if (item.attribution) {
             if (item.type === "impression") {
-              await this.attributionService.onAttributionEvent(
+              await lazy.newTabAttributionService.onAttributionEvent(
                 "view",
                 item.attribution
               );
             } else if (item.type === "click") {
-              await this.attributionService.onAttributionEvent(
+              await lazy.newTabAttributionService.onAttributionEvent(
                 "click",
                 item.attribution
               );
@@ -140,7 +141,7 @@ export class NewTabAttributionFeed {
         if (this.loaded && this.isEnabled()) {
           const item = action?.data?.tiles?.[0] || {};
           if (item.attribution) {
-            await this.attributionService.onAttributionEvent(
+            await lazy.newTabAttributionService.onAttributionEvent(
               "view",
               item.attribution
             );
@@ -151,7 +152,7 @@ export class NewTabAttributionFeed {
         if (this.loaded && this.isEnabled()) {
           const item = action?.data?.value || {};
           if (item.attribution) {
-            await this.attributionService.onAttributionEvent(
+            await lazy.newTabAttributionService.onAttributionEvent(
               "click",
               item.attribution
             );

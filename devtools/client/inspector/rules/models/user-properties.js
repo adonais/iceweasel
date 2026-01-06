@@ -20,11 +20,11 @@ class UserProperties {
    *
    * @param {CSSStyleDeclaration} style
    *        The CSSStyleDeclaration against which the property is mapped.
-   * @param {String} name
+   * @param {string} name
    *        The name of the property to get.
-   * @param {String} value
+   * @param {string} value
    *        Default value.
-   * @return {String}
+   * @return {string}
    *        The property value if it has previously been set by the user, null
    *        otherwise.
    */
@@ -43,9 +43,9 @@ class UserProperties {
    *
    * @param {CSSStyleDeclaration} style
    *        The CSSStyleDeclaration against which the property is to be mapped.
-   * @param {String} name
+   * @param {string} name
    *        The name of the property to set.
-   * @param {String} userValue
+   * @param {string} userValue
    *        The value of the property to set.
    */
   setProperty(style, name, userValue) {
@@ -67,7 +67,7 @@ class UserProperties {
    *
    * @param {CSSStyleDeclaration} style
    *        The CSSStyleDeclaration against which the property would be mapped.
-   * @param {String} name
+   * @param {string} name
    *        The name of the property to check.
    */
   contains(style, name) {
@@ -79,7 +79,7 @@ class UserProperties {
   /**
    * Check whether a named property is stored.
    *
-   * @param {String} name
+   * @param {string} name
    *        The name of the property to check.
    */
   containsName(name) {

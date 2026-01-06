@@ -443,10 +443,13 @@ class AudioBufferSourceNodeEngine final : public AudioNodeEngine {
 
   int32_t ComputeFinalOutSampleRate(float aPlaybackRate, float aDetune) {
     float computedPlaybackRate = aPlaybackRate * fdlibm_exp2f(aDetune / 1200.f);
-    // Make sure the playback rate is something our resampler can work with.
+    if (std::isnan(computedPlaybackRate)) {
+      computedPlaybackRate = 1.0f;
+    }
+    // Make sure the playback rate is something our resampler can work with
     int32_t rate = WebAudioUtils::TruncateFloatToInt<int32_t>(
         mSource->mSampleRate / computedPlaybackRate);
-    return rate ? rate : mBufferSampleRate;
+    return rate > 0 ? rate : mBufferSampleRate;
   }
 
   void UpdateSampleRateIfNeeded(uint32_t aChannels, TrackTime aTrackPosition) {
@@ -470,9 +473,6 @@ class AudioBufferSourceNodeEngine final : public AudioNodeEngine {
       detune = mDetuneTimeline.GetValue();
     } else {
       detune = mDetuneTimeline.GetComplexValueAtTime(aTrackPosition);
-    }
-    if (playbackRate <= 0 || std::isnan(playbackRate)) {
-      playbackRate = 1.0f;
     }
 
     int32_t outRate = ComputeFinalOutSampleRate(playbackRate, detune);

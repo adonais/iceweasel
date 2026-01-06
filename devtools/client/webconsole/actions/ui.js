@@ -180,8 +180,8 @@ function setEditorWidth(width) {
  * Dispatches a SHOW_OBJECT_IN_SIDEBAR action, with a grip property corresponding to the
  * {actor} parameter in the {messageId} message.
  *
- * @param {String} actorID: Actor id of the object we want to place in the sidebar.
- * @param {String} messageId: id of the message containing the {actor} parameter.
+ * @param {string} actorID: Actor id of the object we want to place in the sidebar.
+ * @param {string} messageId: id of the message containing the {actor} parameter.
  */
 function showMessageObjectInSidebar(actorID, messageId) {
   return ({ dispatch, getState }) => {

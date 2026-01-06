@@ -192,6 +192,30 @@ inline auto TakeN(MediaEventSourceImpl<Lp, Args...>& aEvent, size_t aN)
   return holder->Ensure(__func__);
 }
 
+using TakeNVoidPromise = MozPromise<size_t, bool, true>;
+
+template <ListenerPolicy Lp>
+inline auto TakeN(MediaEventSourceImpl<Lp, void>& aEvent, size_t aN)
+    -> RefPtr<TakeNVoidPromise> {
+  using Storage = Maybe<size_t>;
+  using Promise = TakeNVoidPromise;
+  using Holder = media::Refcountable<MozPromiseHolder<Promise>>;
+  using Values = media::Refcountable<Storage>;
+  using Listener = media::Refcountable<MediaEventListener>;
+  auto values = MakeRefPtr<Values>();
+  *values = Some(0);
+  auto listener = MakeRefPtr<Listener>();
+  auto holder = MakeRefPtr<Holder>();
+  *listener = aEvent.Connect(
+      AbstractThread::GetCurrent(), [values, listener, aN, holder]() {
+        if (++(values->ref()) == aN) {
+          listener->Disconnect();
+          holder->Resolve(**values, "TakeN (void) listener callback");
+        }
+      });
+  return holder->Ensure(__func__);
+}
+
 /**
  * Helper that, given that canonicals have just been updated on the current
  * thread, will block its execution until mirrors and their watchers have

@@ -11,6 +11,7 @@ import androidx.test.filters.SdkSuppress
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
+import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.registerAndCleanupIdlingResources
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
@@ -194,6 +195,7 @@ class HistoryTest : TestSetup() {
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/346098
     @Test
+    @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=2000810"])
     fun openMultipleSelectedHistoryItemsInPrivateTabTest() {
         val firstWebPage = mockWebServer.getGenericAsset(1)
 

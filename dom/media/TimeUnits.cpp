@@ -11,7 +11,6 @@
 #include <cmath>
 #include <cstdint>
 #include <limits>
-#include <type_traits>
 
 #include "Intervals.h"
 #include "mozilla/CheckedInt.h"

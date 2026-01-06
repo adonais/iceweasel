@@ -54,7 +54,6 @@
 #  ifdef MOZ_ENABLE_DBUS
 #    include "mozilla/widget/AsyncDBus.h"
 #    include "mozilla/WidgetUtilsGtk.h"
-#    include <map>
 #  endif
 #endif
 

@@ -49,6 +49,13 @@ class MediaEngine {
   virtual RefPtr<MediaEngineSource> CreateSource(
       const MediaDevice* aDevice) = 0;
 
+  /**
+   * Like CreateSource but in addition copies over capabilities and settings
+   * from another source.
+   */
+  virtual RefPtr<MediaEngineSource> CreateSourceFrom(
+      const MediaEngineSource* aSource, const MediaDevice* aDevice) = 0;
+
   virtual MediaEventSource<void>& DeviceListChangeEvent() = 0;
   /**
    * Return true if devices returned from EnumerateDevices are emulated media

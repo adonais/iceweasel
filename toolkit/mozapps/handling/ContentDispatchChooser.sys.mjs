@@ -31,6 +31,7 @@ export class nsContentDispatchChooser {
    * protocol of aURI, we show a permission prompt first.
    * If the caller has permission and a preferred handler is set, we skip the
    * dialogs and directly open the handler.
+   *
    * @param {nsIHandlerInfo} aHandler - Info about protocol and handlers.
    * @param {nsIURI} aURI - URI to be handled.
    * @param {nsIPrincipal} [aPrincipal] - Principal which triggered the load.
@@ -123,6 +124,7 @@ export class nsContentDispatchChooser {
 
   /**
    * Get the name of the application set to handle the the protocol.
+   *
    * @param {nsIHandlerInfo} aHandler - Info about protocol and handlers.
    * @returns {string|null} - Human readable handler name or null if the user
    * is expected to set a handler.
@@ -142,6 +144,7 @@ export class nsContentDispatchChooser {
 
   /**
    * Show permission or/and app chooser prompt.
+   *
    * @param {nsIHandlerInfo} aHandler - Info about protocol and handlers.
    * @param {nsIPrincipal} aPrincipal - Principal which triggered the load.
    * @param {boolean} aHasPermission - Whether the caller has permission to
@@ -276,6 +279,7 @@ export class nsContentDispatchChooser {
   /**
    * Test if a given principal has the open-protocol-handler permission for a
    * specific protocol.
+   *
    * @param {string} scheme - Scheme of the protocol.
    * @param {nsIPrincipal} aPrincipal - Principal to test for permission.
    * @returns {boolean} - true if permission is set, false otherwise.
@@ -318,6 +322,7 @@ export class nsContentDispatchChooser {
 
   /**
    * Get open-protocol-handler permission key for a protocol.
+   *
    * @param {string} aProtocolScheme - Scheme of the protocol.
    * @returns {string} - Permission key.
    */
@@ -333,8 +338,9 @@ export class nsContentDispatchChooser {
    * Opens a dialog as a SubDialog on tab level.
    * If we don't have a BrowsingContext or tab level dialogs are not supported,
    * we will fallback to a standalone window.
+   *
    * @param {string} aDialogURL - URL of the dialog to open.
-   * @param {Object} aDialogArgs - Arguments passed to the dialog.
+   * @param {object} aDialogArgs - Arguments passed to the dialog.
    * @param {BrowsingContext} [aBrowsingContext] - BrowsingContext associated
    * with the tab the dialog is associated with.
    */
@@ -399,6 +405,7 @@ export class nsContentDispatchChooser {
   /**
    * Update the open-protocol-handler permission for the site which triggered
    * the dialog. Sites with this permission may skip this dialog.
+   *
    * @param {nsIPrincipal} aPrincipal - subject to update the permission for.
    * @param {string} aScheme - Scheme of protocol to allow.
    * @param {boolean} aAllow - Whether to set / unset the permission.
@@ -439,6 +446,7 @@ export class nsContentDispatchChooser {
 
   /**
    * Determine if we can use a principal to store permissions.
+   *
    * @param {nsIPrincipal} aPrincipal - Principal to test.
    * @returns {boolean} - true if we can store permissions, false otherwise.
    */

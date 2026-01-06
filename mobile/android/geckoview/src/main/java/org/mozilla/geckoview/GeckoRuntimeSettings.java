@@ -572,11 +572,54 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     /**
      * Sets whether or not local network access (LNA) blocking is enabled
      *
+     * @deprecated This API is deprecated and may not work as expected. Please use {@link
+     *     #setLnaEnabled(Boolean)}, {@link #setLnaBlocking(Boolean)} and {@link
+     *     #setLnaBlockTrackers(Boolean)}} for more fine-grained control.
      * @param enabled flag indicating whether or not local network access (LNA) blocking is enabled
      * @return The builder instance
      */
+    @Deprecated
+    @DeprecationSchedule(id = "deprecated-lna-api", version = 148)
     public @NonNull Builder setLnaBlockingEnabled(@NonNull final Boolean enabled) {
       getSettings().setLnaBlockingEnabled(enabled);
+      return this;
+    }
+
+    /**
+     * Sets whether or not the request blocking feature for Local Network / Device Access blocking
+     * is enabled
+     *
+     * @param enabled flag indicating whether or not the request blocking feature for Local Network
+     *     / Device Access blocking is enabled
+     * @return The builder instance
+     */
+    public @NonNull Builder setLnaBlocking(@NonNull final Boolean enabled) {
+      getSettings().setLnaBlocking(enabled);
+      return this;
+    }
+
+    /**
+     * Sets whether or not the tracker blocking feature on Local Network / Device Access blocking
+     * feature is enabled
+     *
+     * @param enabled flag indicating whether or not the tracker blocking feature for Local Network
+     *     / Device Access blocking is enabled
+     * @return The builder instance
+     */
+    public @NonNull Builder setLnaBlockTrackers(@NonNull final Boolean enabled) {
+      getSettings().setLnaBlockTrackers(enabled);
+      return this;
+    }
+
+    /**
+     * Sets whether or not the overall Local Network / Device Access blocking feature is enabled
+     *
+     * @param enabled flag indicating whether or not the overall Local Network / Device Access
+     *     blocking feature is enabled
+     * @return The builder instance
+     */
+    public @NonNull Builder setLnaEnabled(@NonNull final Boolean enabled) {
+      getSettings().setLnaEnabled(enabled);
       return this;
     }
 
@@ -755,7 +798,12 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   /* package */ final Pref<Boolean> mHttpsOnlyPrivateMode =
       new Pref<Boolean>("dom.security.https_only_mode_pbm", false);
 
-  /* package */ final Pref<Boolean> mLnaBlockingEnabled = new Pref<>("network.lna.blocking", false);
+  /* package */ final PrefWithoutDefault<Boolean> mLnaBlocking =
+      new PrefWithoutDefault<>("network.lna.blocking");
+  /* package */ final PrefWithoutDefault<Boolean> mLnaBlockTrackers =
+      new PrefWithoutDefault<>("network.lna.block_trackers");
+  /* package */ final PrefWithoutDefault<Boolean> mLnaEnabled =
+      new PrefWithoutDefault<>("network.lna.enabled");
   /* package */ final PrefWithoutDefault<Integer> mTrustedRecursiveResolverMode =
       new PrefWithoutDefault<>("network.trr.mode");
   /* package */ final PrefWithoutDefault<String> mTrustedRecursiveResolverUri =
@@ -1475,7 +1523,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   private void commitLocales() {
     final GeckoBundle data = new GeckoBundle(1);
-    data.putStringArray("requestedLocales", mRequestedLocales);
+    if (mRequestedLocales != null) {
+      // Requested locales should be in language or language-region format
+      final String[] normalizedRequestedLocales =
+          Arrays.stream(mRequestedLocales)
+              .map(Locale::forLanguageTag)
+              .map(LocaleUtils::getLanguageRegionLocale)
+              .toArray(String[]::new);
+      data.putStringArray("requestedLocales", normalizedRequestedLocales);
+    } else {
+      data.putStringArray("requestedLocales", (String[]) null);
+    }
+
     data.putString("acceptLanguages", computeAcceptLanguages());
     EventDispatcher.getInstance().dispatch("GeckoView:SetLocale", data);
   }
@@ -1486,7 +1545,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     // Explicitly-set app prefs come first:
     if (mRequestedLocales != null) {
       for (final String locale : mRequestedLocales) {
-        locales.put(locale.toLowerCase(Locale.ROOT), locale);
+        // Requested locales should be in language or language-region format
+        final String normalizedLocale =
+            LocaleUtils.getLanguageRegionLocale(Locale.forLanguageTag(locale));
+        locales.put(normalizedLocale.toLowerCase(Locale.ROOT), normalizedLocale);
       }
     }
     // OS prefs come second:
@@ -1505,7 +1567,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     final String[] locales = new String[localeList.size()];
     for (int i = 0; i < localeList.size(); i++) {
       // accept-language should be language or language-region format.
-      locales[i] = LocaleUtils.getLanguageTagForAcceptLanguage(localeList.get(i));
+      locales[i] = LocaleUtils.getLanguageRegionLocale(localeList.get(i));
     }
     return locales;
   }
@@ -1983,6 +2045,72 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     return this;
   }
 
+  /**
+   * Sets whether or not the request blocking feature of Local Network / Device Access is enabled
+   *
+   * @param enabled flag indicating whether or not the request blocking feature of Local Network /
+   *     Device Access is enabled
+   * @return The updated instance of {@link GeckoRuntimeSettings}
+   */
+  public @NonNull GeckoRuntimeSettings setLnaBlocking(final boolean enabled) {
+    mLnaBlocking.commit(enabled);
+    return this;
+  }
+
+  /**
+   * Gets whether or not the request blocking feature for Local Network / Device Access is enabled
+   *
+   * @return Boolean indicating whether or not the request blocking feature of Local Network /
+   *     Device Access blocking is enabled or not.
+   */
+  public @Nullable Boolean getLnaBlocking() {
+    return mLnaBlocking.get();
+  }
+
+  /**
+   * Sets whether or not the overall Local Network / Device Access blocking feature is enabled
+   *
+   * @param enabled flag indicating whether or not the overall local network / device access
+   *     blocking feature is enabled
+   * @return The updated instance of {@link GeckoRuntimeSettings}
+   */
+  public @NonNull GeckoRuntimeSettings setLnaEnabled(final boolean enabled) {
+    mLnaEnabled.commit(enabled);
+    return this;
+  }
+
+  /**
+   * Gets whether or not the overall Local Network / Device Access blocking feature is enabled
+   *
+   * @return Boolean indicating whether the overall Local Network / Device Access blocking feature
+   *     is enabled or not.
+   */
+  public @Nullable Boolean getLnaEnabled() {
+    return mLnaEnabled.get();
+  }
+
+  /**
+   * Sets whether or not the tracker blocking feature of Local Network / Device Access is enabled
+   *
+   * @param enabled flag indicating whether or not the Local Network / Device Access blocking for
+   *     trackers is enabled
+   * @return The updated instance of {@link GeckoRuntimeSettings}
+   */
+  public @NonNull GeckoRuntimeSettings setLnaBlockTrackers(final boolean enabled) {
+    mLnaBlockTrackers.commit(enabled);
+    return this;
+  }
+
+  /**
+   * Gets whether or not the tracker blocking feature of Local Network / Device Access is enabled
+   *
+   * @return Boolean indicating whether the tracker blocking feature Local Network / Device Access
+   *     is enabled or not.
+   */
+  public @Nullable Boolean getLnaBlockTrackers() {
+    return mLnaBlockTrackers.get();
+  }
+
   /** HTTPS-only mode type definitions for secure browsing. */
   @Retention(RetentionPolicy.SOURCE)
   @IntDef({ALLOW_ALL, HTTPS_ONLY_PRIVATE, HTTPS_ONLY})
@@ -2018,9 +2146,14 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    *
    * @param enabled flag indicating whether or not local network access blocking is enabled
    * @return The updated instance of {@link GeckoRuntimeSettings}
+   * @deprecated This API is deprecated and does not work as expected. Please use {@link
+   *     #setLnaEnabled(boolean)}, {@link #setLnaBlocking(boolean)} and {@link
+   *     #setLnaBlockTrackers(boolean)}} for more fine-grained control.
    */
+  @Deprecated
+  @DeprecationSchedule(id = "deprecated-lna-api", version = 148)
   public @NonNull GeckoRuntimeSettings setLnaBlockingEnabled(final boolean enabled) {
-    mLnaBlockingEnabled.commit(enabled);
+    mLnaBlocking.commit(enabled);
     return this;
   }
 
@@ -2028,9 +2161,14 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    * Gets whether or not local network access (LNA) blocking is enabled
    *
    * @return Boolean indicating whether LNA blocking is enabled or not.
+   * @deprecated This API is deprecated and does not work as expected. Use {@link #getLnaEnabled()},
+   *     {@link #getLnaBlocking()} and {@link #getLnaBlockTrackers()} for more fine-grained control.
    */
+  @Deprecated
+  @DeprecationSchedule(id = "deprecated-lna-api", version = 148)
   public boolean getLnaBlockingEnabled() {
-    return mLnaBlockingEnabled.get();
+    final Boolean lnaBlocking = mLnaBlocking.get();
+    return lnaBlocking != null ? lnaBlocking : false;
   }
 
   /**

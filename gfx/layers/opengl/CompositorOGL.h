@@ -7,8 +7,6 @@
 #ifndef MOZILLA_GFX_COMPOSITOROGL_H
 #define MOZILLA_GFX_COMPOSITOROGL_H
 
-#include <map>
-#include <unordered_map>
 #include <unordered_set>
 
 #include "gfx2DGlue.h"

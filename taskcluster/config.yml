@@ -105,6 +105,7 @@ treeherder:
         'BM': 'Beetmover'
         'BMR': 'Beetmover repackages'
         'BM-apt': 'Beetmover .deb packages'
+        'BM-rpm': 'Beetmover .rpm packages'
         'c-Up': 'Balrog submission of complete updates'
         'css': 'Checksum signing for source'
         'rs': 'Repackage signing'
@@ -113,11 +114,9 @@ treeherder:
         'BMcss': 'Beetmover checksums for source'
         'Deb8': 'Packages for Debian 8'
         'Deb8-32': 'Packages for Debian 8 32-bits'
-        'Deb9': 'Packages for Debian 9'
-        'Deb10': 'Packages for Debian 10'
         'Deb10a64': 'AArch64 packages for Debian 10'
-        'Deb11': 'Packages for Debian 11'
         'Deb12': 'Packages for Debian 12'
+        'Deb13': 'Packages for Debian 13'
         'Ub18': 'Packages for Ubuntu 18.04'
         'Ub20': 'Packages for Ubuntu 20.04'
         'Ub22': 'Packages for Ubuntu 22.04'
@@ -194,7 +193,7 @@ treeherder:
         'Boot': 'Bootstrap'
         'Attr-L10n': 'Build Attribution'
         'android-l10n': 'Import strings from android-l10n repo'
-        'update-test': 'Test updates to release from older firefox versions'
+        'updt-tst': 'Test updates to release from older firefox versions'
 
         # The below symbols are from firefox-android (fenix/focus/android-components)
         'buildconfig': 'Make sure the content of .buildconfig.yml matches what gradle knows about its projects'
@@ -546,6 +545,11 @@ workers:
             implementation: generic-worker
             os: windows
             worker-type: '{alias}'
+        b-win2022-xxlarge:
+            provisioner: '{trust-domain}-{level}'
+            implementation: generic-worker
+            os: windows
+            worker-type: '{alias}'
         b-win-aarch64:
             provisioner: '{trust-domain}-{level}'
             implementation: generic-worker
@@ -845,7 +849,7 @@ workers:
             provisioner: '{trust-domain}-t'
             implementation: docker-worker
             os: linux
-            worker-type: misc-gcp
+            worker-type: misc
 
 
 mac-signing:

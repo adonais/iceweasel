@@ -887,10 +887,9 @@ class Editor extends EventEmitter {
   /**
    * This creates the extension which handles marking of lines within the editor.
    *
-   * @returns {Object} The object contains an extension and effects which used to trigger updates to the extension
+   * @returns {object} The object contains an extension and effects which used to trigger updates to the extension
    *          {Object} - lineContentMarkerExtension - The line content marker extension
    *          {Object} - lineContentMarkerEffect - The effects to add and remove markers
-   *
    */
   #createlineContentMarkersExtension() {
     const {
@@ -925,7 +924,7 @@ class Editor extends EventEmitter {
     /**
      * Uses the marker and current decoration list to create a new decoration list
      *
-     * @param {Object} marker - The marker to be used to create the new decoration
+     * @param {object} marker - The marker to be used to create the new decoration
      * @param {Transaction} transaction - The transaction object
      * @param {Array} newMarkerDecorations - List of the new marker decorations being built
      */
@@ -1018,7 +1017,7 @@ class Editor extends EventEmitter {
      *
      * @param {Array} markerDecorations - The current decorations displayed in the document
      * @param {Array} allMarkers - All the cached markers
-     * @param {Object} transaction
+     * @param {object} transaction
      * @returns
      */
     function updateDecorationsForAllMarkers(
@@ -1127,7 +1126,8 @@ class Editor extends EventEmitter {
 
   /**
    * Adds the DOM event handlers for the editor.
-   * @param {Object} domEventHandlers - A dictionary of handlers for the DOM events
+   *
+   * @param {object} domEventHandlers - A dictionary of handlers for the DOM events
    *                                    the handlers are getting called with the following arguments
    *                                     - {Object} `event`: The DOM event
    *                                     - {Object} `view`: The codemirror view
@@ -1170,7 +1170,8 @@ class Editor extends EventEmitter {
 
   /**
    * Remove specified DOM event handlers for the editor.
-   * @param {Object} domEventHandlers - A dictionary of handlers for the DOM events
+   *
+   * @param {object} domEventHandlers - A dictionary of handlers for the DOM events
    */
   removeEditorDOMEventListeners(domEventHandlers) {
     const cm = editors.get(this);
@@ -1217,17 +1218,18 @@ class Editor extends EventEmitter {
 
   /**
    * This adds a marker used to add classes to editor line based on a condition.
+   *
    *   @property {object}             marker
    *                                  The rule rendering a marker or class.
    *   @property {object}             marker.id
    *                                  The unique identifier for this marker
    *   @property {string}             marker.lineClassName
    *                                  The css class to apply to the line
-   *   @property {Array<Object>}      marker.lines
+   *   @property {Array<object>}      marker.lines
    *                                  The lines to add markers to. Each line object has a `line` and `value` property.
-   *   @property {Boolean}           marker.renderAsBlock
+   *   @property {boolean}           marker.renderAsBlock
    *                                  The specifies that the widget should be rendered as a block element. defaults to `false`. This is optional.
-   *   @property {Boolean}           marker.shouldMarkAllLines
+   *   @property {boolean}           marker.shouldMarkAllLines
    *                                  Set to true to apply the marker to all the lines. In such case, `positions` is ignored. This is optional.
    *   @property {Function}           marker.createLineElementNode
    *                                  This should return the DOM element which is used for the marker. The line number is passed as a parameter.
@@ -1246,6 +1248,7 @@ class Editor extends EventEmitter {
 
   /**
    * This removes the marker which has the specified className
+   *
    * @param {string} markerId - The unique identifier for this marker
    */
   removeLineContentMarker(markerId) {
@@ -1260,7 +1263,7 @@ class Editor extends EventEmitter {
    * This creates the extension used to manage the rendering of markers
    * at specific positions with the editor. e.g used for column breakpoints
    *
-   * @returns {Object} The object contains an extension and effects which used to trigger updates to the extension
+   * @returns {object} The object contains an extension and effects which used to trigger updates to the extension
    *          {Object} - positionContentMarkerExtension - The position content marker extension
    *          {Object} - positionContentMarkerEffect - The effects to add and remove markers
    */
@@ -1443,7 +1446,7 @@ class Editor extends EventEmitter {
      *
      * @param {Array} markerDecorations - The current decorations displayed in the document
      * @param {Array} markers - All the cached markers
-     * @param {Object} transaction
+     * @param {object} transaction
      * @returns
      */
     function updateDecorationsForAllMarkers(
@@ -1537,9 +1540,10 @@ class Editor extends EventEmitter {
 
   /**
    * This adds a marker used to decorate token / content at a specific position .
-   * @param {Object} marker
-   * @param {String} marker.id
-   * @param {Array<Object>} marker.positions - This includes the line / column and any optional positionData which defines each position.
+   *
+   * @param {object} marker
+   * @param {string} marker.id
+   * @param {Array<object>} marker.positions - This includes the line / column and any optional positionData which defines each position.
    * @param {Function} marker.createPositionElementNode - This describes how to render the marker.
    *                                                      The position data (i.e line, column and positionData) are passed as arguments.
    * @param {Function} marker.customEq - A custom function to determine the equality of the marker. This allows the user define special conditions
@@ -1560,6 +1564,7 @@ class Editor extends EventEmitter {
 
   /**
    * This removes the marker which has the specified id
+   *
    * @param {string} markerId - The unique identifier for this marker
    */
   removePositionContentMarker(markerId) {
@@ -1573,7 +1578,8 @@ class Editor extends EventEmitter {
 
   /**
    * Set event listeners for the line gutter
-   * @param {Object} domEventHandlers
+   *
+   * @param {object} domEventHandlers
    *
    * example usage:
    *  const domEventHandlers = { click(event) { console.log(event);} }
@@ -1629,7 +1635,7 @@ class Editor extends EventEmitter {
    *   @property {function}   marker.condition - The condition that decides if the marker/class gets added or removed.
    *                                              This should return `false` for lines where the marker should not be added and the
    *                                              result of the condition for any other line.
-   *   @property {function=}  marker.createLineElementNode - This gets the line and the result of the condition as arguments and should return the DOM element which
+   *   @property {Function=}  marker.createLineElementNode - This gets the line and the result of the condition as arguments and should return the DOM element which
    *                                            is used for the marker. This is optional.
    */
   setLineGutterMarkers(markers) {
@@ -1728,8 +1734,9 @@ class Editor extends EventEmitter {
   /**
    * This creates the extension used to manage the rendering of markers for
    * results for any search pattern
+   *
    * @param {RegExp}      pattern - The search pattern
-   * @param {String}      className - The class used to decorate each result
+   * @param {string}      className - The class used to decorate each result
    * @returns {Array<ViewPlugin>} An extension which is an array containing the view
    *                              which manages the rendering of the line content markers.
    */
@@ -1789,7 +1796,7 @@ class Editor extends EventEmitter {
    * This should add the class to the results of a search pattern specified
    *
    * @param {RegExp} pattern - The search pattern
-   * @param {String} className - The class used to decorate each result
+   * @param {string} className - The class used to decorate each result
    */
   highlightSearchMatches(pattern, className) {
     const cm = editors.get(this);
@@ -1810,7 +1817,7 @@ class Editor extends EventEmitter {
   /**
    * Retrieves the cursor for the next selection to be highlighted
    *
-   * @param {Boolean} reverse - Determines the direction of the cursor movement
+   * @param {boolean} reverse - Determines the direction of the cursor movement
    * @returns {RegExpSearchCursor}
    */
   getNextSearchCursor(reverse) {
@@ -1835,9 +1842,9 @@ class Editor extends EventEmitter {
   /**
    * Get the start and end locations of the current viewport
    *
-   * @param {Number} offsetHorizontalCharacters - Offset of characters offscreen
-   * @param {Number} offsetVerticalLines - Offset of lines offscreen
-   * @returns {Object}  - The location information for the current viewport
+   * @param {number} offsetHorizontalCharacters - Offset of characters offscreen
+   * @param {number} offsetVerticalLines - Offset of lines offscreen
+   * @returns {object}  - The location information for the current viewport
    */
   getLocationsInViewport(
     offsetHorizontalCharacters = 0,
@@ -1891,7 +1898,8 @@ class Editor extends EventEmitter {
 
   /**
    * Gets the position information for the current selection
-   * @returns {Object} cursor      - The location information for the  current selection
+   *
+   * @returns {object} cursor      - The location information for the  current selection
    *                   cursor.from - An object with the starting line / column of the selection
    *                   cursor.to   - An object with the end line / column of the selection
    */
@@ -1920,7 +1928,8 @@ class Editor extends EventEmitter {
 
   /**
    * Gets the text content for the current selection
-   * @returns {String}
+   *
+   * @returns {string}
    */
   getSelectedText() {
     const cm = editors.get(this);
@@ -1935,9 +1944,10 @@ class Editor extends EventEmitter {
    * Given screen coordinates this should return the line and column
    * related. This used currently to determine the line and columns
    * for the tokens that are hovered over.
-   * @param {Number} left - Horizontal position from the left
-   * @param {Number} top - Vertical position from the top
-   * @returns {Object} position - The line and column related to the screen coordinates.
+   *
+   * @param {number} left - Horizontal position from the left
+   * @param {number} top - Vertical position from the top
+   * @returns {object} position - The line and column related to the screen coordinates.
    */
   getPositionAtScreenCoords(left, top) {
     const cm = editors.get(this);
@@ -1968,7 +1978,8 @@ class Editor extends EventEmitter {
 
   /**
    * Check that text is selected
-   * @returns {Boolean}
+   *
+   * @returns {boolean}
    */
   isTextSelected() {
     const cm = editors.get(this);
@@ -2009,8 +2020,8 @@ class Editor extends EventEmitter {
   /**
    * Creates a CodeMirror Document
    *
-   * @param {String} text: Initial text of the document
-   * @param {Object|String} mode: Mode of the document. See https://codemirror.net/5/doc/manual.html#option_mode
+   * @param {string} text: Initial text of the document
+   * @param {object | string} mode: Mode of the document. See https://codemirror.net/5/doc/manual.html#option_mode
    * @returns CodeMirror.Doc
    */
   createDocument(text = "", mode) {
@@ -2028,7 +2039,7 @@ class Editor extends EventEmitter {
   /**
    * Changes the currently used syntax highlighting mode.
    *
-   * @param {Object} mode - Any of the modes from Editor.modes
+   * @param {object} mode - Any of the modes from Editor.modes
    * @returns
    */
   setMode(mode) {
@@ -2127,8 +2138,8 @@ class Editor extends EventEmitter {
   /**
    * Gets details about the line
    *
-   * @param {Number} line
-   * @returns {Object} line info object
+   * @param {number} line
+   * @returns {object} line info object
    */
   lineInfo(line) {
     const cm = editors.get(this);
@@ -2153,7 +2164,7 @@ class Editor extends EventEmitter {
    * Get the functions symbols for the current source loaded in the
    * the editor.
    *
-   * @param {Number} maxResults - The maximum no of results to display
+   * @param {number} maxResults - The maximum no of results to display
    */
   async getFunctionSymbols(maxResults) {
     const cm = editors.get(this);
@@ -2232,7 +2243,7 @@ class Editor extends EventEmitter {
    * This is used to map original function names to their corresponding
    * generated functions.
    *
-   * @param {Object} location
+   * @param {object} location
    * @returns
    */
   async getClosestFunctionName(location) {
@@ -2285,7 +2296,7 @@ class Editor extends EventEmitter {
    * which best match the specified token location is on our
    * list of accepted symbol types.
    *
-   * @param {Object} tokenLocation
+   * @param {object} tokenLocation
    * @returns {Array} Member expression matches
    */
   async findBestMatchExpressions(tokenLocation) {
@@ -2351,7 +2362,7 @@ class Editor extends EventEmitter {
   /**
    * Get all the lines which are inscope when paused a the specified location.
    *
-   * @param {Object} location
+   * @param {object} location
    * @param {Array} in scope lines
    */
   async getInScopeLines(location) {
@@ -2419,10 +2430,10 @@ class Editor extends EventEmitter {
    * Gets all the bindings and generates the related references for
    * the specified platform scope and its ancestry
    *
-   * @param {Object} location - The currently paused location
-   * @param {Object} scope - The innermost scope node for the tree. This is provided by the
+   * @param {object} location - The currently paused location
+   * @param {object} scope - The innermost scope node for the tree. This is provided by the
    *                         platform.
-   * @returns {Object} Binding references
+   * @returns {object} Binding references
    *                  Structure
    *                  ==========
    *                  {
@@ -2531,12 +2542,12 @@ class Editor extends EventEmitter {
    * Replaces whatever is in the text area with the contents of
    * the 'value' argument.
    *
-   * @param {String} value: The text to replace the editor content
-   * @param {Object} options
-   * @param {String} options.documentId
+   * @param {string} value: The text to replace the editor content
+   * @param {object} options
+   * @param {string} options.documentId
    *                 Optional unique id represeting the specific document which is source of the text.
    *                 Will be null for loading and error messages.
-   * @param {Boolean} options.saveTransactionToHistory
+   * @param {boolean} options.saveTransactionToHistory
    *                 This determines if the transaction for this specific text change should be added to the undo/redo history.
    */
   async setText(value, { documentId, saveTransactionToHistory = true } = {}) {
@@ -3429,7 +3440,8 @@ class Editor extends EventEmitter {
 
   /**
    * Gets the element at the specified codemirror offset
-   * @param {Number} offset
+   *
+   * @param {number} offset
    * @return {Element|null}
    */
   #getElementAtOffset(offset) {
@@ -3449,9 +3461,10 @@ class Editor extends EventEmitter {
   /**
    * This checks if the specified position (line/column) is within the current viewport
    * bounds. it helps determine if scrolling should happen.
-   * @param {Number} line - The line in the source
-   * @param {Number} column - The column in the source
-   * @returns {Boolean}
+   *
+   * @param {number} line - The line in the source
+   * @param {number} column - The column in the source
+   * @returns {boolean}
    */
   isPositionVisible(line, column) {
     const cm = editors.get(this);
@@ -3507,9 +3520,10 @@ class Editor extends EventEmitter {
 
   /**
    * Converts  line/col to CM6 offset position
-   * @param {Number} line - The line in the source
-   * @param {Number} col - The column in the source
-   * @returns {Number}
+   *
+   * @param {number} line - The line in the source
+   * @param {number} col - The column in the source
+   * @returns {number}
    */
   #positionToOffset(line, col = 0) {
     const cm = editors.get(this);
@@ -3527,7 +3541,7 @@ class Editor extends EventEmitter {
    * This returns the line and column for the specified search cursor's position
    *
    * @param {RegExpSearchCursor} searchCursor
-   * @returns {Object}
+   * @returns {object}
    */
   getPositionFromSearchCursor(searchCursor) {
     const cm = editors.get(this);
@@ -3541,7 +3555,7 @@ class Editor extends EventEmitter {
   /**
    * Scrolls the editor to the specified codemirror position
    *
-   * @param {Number} position
+   * @param {number} position
    */
   scrollToPosition(position) {
     const cm = editors.get(this);
@@ -3561,9 +3575,10 @@ class Editor extends EventEmitter {
 
   /**
    * Scrolls the editor to the specified line and column
-   * @param {Number} line - The line in the source
-   * @param {Number} column - The column in the source
-   * @param {String|null} yAlign - Optional value for position of the line after the line is scrolled.
+   *
+   * @param {number} line - The line in the source
+   * @param {number} column - The column in the source
+   * @param {string | null} yAlign - Optional value for position of the line after the line is scrolled.
    *                               (Used by `scrollEditorIntoView` test helper)
    */
   async scrollTo(line, column, yAlign) {
@@ -3631,8 +3646,9 @@ class Editor extends EventEmitter {
    * Move CodeMirror cursor to a given location.
    * This will also scroll the editor to the specified position.
    * Used only for CM6
-   * @param {Number} line
-   * @param {Number} column
+   *
+   * @param {number} line
+   * @param {number} column
    */
   async setCursorAt(line, column) {
     await this.scrollTo(line, column);
@@ -3944,8 +3960,8 @@ class Editor extends EventEmitter {
    * adds to handle syntax highlighting.
    *
    * @param {Document} doc: A document that will be used to create elements
-   * @param {String} code: The code to highlight
-   * @returns {String} The HTML string for the parsed code
+   * @param {string} code: The code to highlight
+   * @returns {string} The HTML string for the parsed code
    */
   highlightText(doc, code) {
     if (!doc) {

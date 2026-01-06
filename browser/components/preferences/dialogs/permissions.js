@@ -76,7 +76,7 @@ var gPermissionManager = {
   },
 
   /**
-   * @param {Object} params
+   * @param {object} params
    * @param {string} params.permissionType Permission type for which the dialog should be shown
    * @param {string} params.prefilledHost The value which the URL field should initially contain
    * @param {boolean} params.blockVisible Display the "Block" button in the dialog
@@ -119,12 +119,12 @@ var gPermissionManager = {
       if (params.capabilityFilter === Ci.nsIPermissionManager.ALLOW_ACTION) {
         l10n = {
           window: "ip-protection-exceptions-dialog-window",
-          description: "ip-protection-exclusions-desc",
+          description: "ip-protection-inclusions-desc",
         };
       } else {
         l10n = {
           window: "ip-protection-exceptions-dialog-window",
-          description: "ip-protection-inclusions-desc",
+          description: "ip-protection-exclusions-desc",
         };
       }
     } else {

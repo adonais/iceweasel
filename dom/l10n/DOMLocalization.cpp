@@ -48,6 +48,12 @@ DOMLocalization::DOMLocalization(nsIGlobalObject* aGlobal, bool aIsSync,
   mMutations = new L10nMutations(this);
 }
 
+DOMLocalization::DOMLocalization(nsIGlobalObject* aGlobal, bool aIsSync,
+                                 const nsTArray<nsCString>& aLocales)
+    : Localization(aGlobal, aIsSync, aLocales) {
+  mMutations = new L10nMutations(this);
+}
+
 already_AddRefed<DOMLocalization> DOMLocalization::Constructor(
     const GlobalObject& aGlobal,
     const Sequence<dom::OwningUTF8StringOrResourceId>& aResourceIds,

@@ -5,7 +5,6 @@
 package org.mozilla.fenix.ext
 
 import android.graphics.Rect
-import android.util.DisplayMetrics
 import android.view.View
 import android.view.WindowInsets
 import android.widget.FrameLayout
@@ -16,13 +15,12 @@ import io.mockk.every
 import io.mockk.impl.annotations.MockK
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.verify
-import mozilla.components.support.ktx.android.util.dpToPx
 import mozilla.components.support.test.robolectric.testContext
-import mozilla.components.support.utils.ext.bottom
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,24 +29,18 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class ViewTest {
 
-    @MockK private lateinit var view: View
+    @MockK(relaxed = true) private lateinit var view: View
 
-    @MockK private lateinit var parent: FrameLayout
-
-    @MockK private lateinit var displayMetrics: DisplayMetrics
+    @MockK(relaxed = true) private lateinit var parent: FrameLayout
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
-        mockkStatic("mozilla.components.support.ktx.android.util.DisplayMetricsKt")
-        mockkStatic("mozilla.components.support.utils.ext.WindowInsetsCompatKt")
-        mockkStatic("org.mozilla.fenix.ext.ViewKt")
 
         every { view.context } answers { testContext }
         every { view.resources.getDimensionPixelSize(any()) } answers {
             testContext.resources.getDimensionPixelSize(firstArg())
         }
-        every { view.resources.displayMetrics } returns displayMetrics
         every { view.parent } returns parent
         every { parent.touchDelegate = any() } just Runs
         every { parent.post(any()) } answers {
@@ -62,13 +54,12 @@ class ViewTest {
     @Test
     fun `test increase touch area`() {
         val hitRect = Rect(30, 40, 50, 60)
-        val dp = 10
         val px = 20
         val outRect = slot<Rect>()
-        every { dp.dpToPx(displayMetrics) } returns px
         every { view.getHitRect(capture(outRect)) } answers { outRect.captured.set(hitRect) }
 
-        view.increaseTapArea(dp)
+        view.increaseTapAreaInternal(px)
+
         val expected = Rect(10, 20, 70, 80)
         assertEquals(expected.left, outRect.captured.left)
         assertEquals(expected.top, outRect.captured.top)
@@ -94,31 +85,31 @@ class ViewTest {
         val rootInsets: WindowInsets = mockk(relaxed = true)
         every { view.rootWindowInsets } returns rootInsets
 
-        assertEquals(WindowInsetsCompat.toWindowInsetsCompat(rootInsets), view.getWindowInsets())
+        // Construct the expected object directly instead of mocking the static method
+        val expectedInsets = WindowInsetsCompat.toWindowInsetsCompat(rootInsets)
+        assertEquals(expectedInsets, view.getWindowInsets())
     }
 
     @Test
     fun `getKeyboardHeight accounts for status bar and navigation bar`() {
-        val windowInsetsCompat: WindowInsetsCompat = mockk()
+        val result = getKeyboardHeight(
+            rootViewHeight = 1000,
+            windowVisibleDisplayFrame = Rect(0, 50, 1000, 500),
+            bottomInset = 50,
+        )
 
-        every { view.getWindowVisibleDisplayFrame() } returns Rect(0, 50, 1000, 500)
-        every { view.rootView.height } returns 1000
-        every { view.getWindowInsets() } returns windowInsetsCompat
-        every { windowInsetsCompat.bottom() } returns 50
-
-        assertEquals(450, view.getKeyboardHeight())
+        assertEquals(450, result)
     }
 
     @Test
     fun `isKeyboardVisible returns false when the keyboard height is 0`() {
-        every { view.getKeyboardHeight() } returns 0
-        assertEquals(false, view.isKeyboardVisible())
+        assertFalse(isKeyboardVisible(keyboardHeight = 0))
     }
 
     @Test
     fun `isKeyboardVisible returns true when the keyboard height is greater than 0`() {
-        every { view.getKeyboardHeight() } returns 100
-        assertEquals(true, view.isKeyboardVisible())
+        // Test the pure logic directly
+        assertTrue(isKeyboardVisible(keyboardHeight = 100))
     }
 
     @Test
@@ -141,23 +132,23 @@ class ViewTest {
 
     @Test
     fun `getKeyboardHeight returns the keyboard height when keyboard is considered open`() {
-        val windowVisibleDisplayFrame = Rect(0, 0, 500, 1000)
-        val keyboardHeight = 500
-        every { view.getWindowVisibleDisplayFrame() } returns windowVisibleDisplayFrame
-        every { view.rootView.height } returns windowVisibleDisplayFrame.bottom.plus(keyboardHeight)
-        every { view.rootWindowInsets } returns null
-
-        assertEquals(keyboardHeight, view.getKeyboardHeight())
+        // Test the pure calculation logic directly
+        val result = getKeyboardHeight(
+            rootViewHeight = 1500,
+            windowVisibleDisplayFrame = Rect(0, 0, 500, 1000),
+            bottomInset = 0,
+        )
+        assertEquals(500, result)
     }
 
     @Test
     fun `getKeyboardHeight returns zero when keyboard is considered closed`() {
-        val windowVisibleDisplayFrame = Rect(0, 0, 500, 1000)
-        val keyboardHeight = 0
-        every { view.getWindowVisibleDisplayFrame() } returns windowVisibleDisplayFrame
-        every { view.rootView.height } returns windowVisibleDisplayFrame.bottom.plus(keyboardHeight)
-        every { view.rootWindowInsets } returns null
-
-        assertEquals(keyboardHeight, view.getKeyboardHeight())
+        // Test the pure calculation logic directly
+        val result = getKeyboardHeight(
+            rootViewHeight = 1000,
+            windowVisibleDisplayFrame = Rect(0, 0, 500, 1000),
+            bottomInset = 0,
+        )
+        assertEquals(0, result)
     }
 }

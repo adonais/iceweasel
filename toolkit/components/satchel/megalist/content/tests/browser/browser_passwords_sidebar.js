@@ -372,3 +372,20 @@ add_task(async function test_passwords_visibility_when_view_shown() {
 
   SidebarController.hide();
 });
+
+add_task(async function test_passwords_entry_is_not_visible_for_old_sidebar() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["sidebar.revamp", false],
+      ["sidebar.main.tools", "aichat,passwords,syncedtabs,history,bookmarks"],
+    ],
+  });
+
+  await SidebarController.toggle();
+  let passwordsMenuItem = document.querySelector("#sidebar-switcher-megalist");
+  ok(
+    passwordsMenuItem.hidden,
+    "Passwords menu item should be hidden for the old sidebar."
+  );
+  SidebarController.hide();
+});

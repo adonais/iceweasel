@@ -1,29 +1,41 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 7 Aug 2025 11:37:00 -0500
-Subject: Bug 1980479 - (fix-50544d8dc4) add missing stub implementations for
- SSLStreamAdapter static methods.
+Date: Thu, 11 Sep 2025 14:17:00 -0500
+Subject: Bug 1988042 - add BSD support to new version of libwebrtc's
+ cpu_info.cc r?ng!
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8fee7e6d9736f8d1dfe78e9bc2c4676ca86d0405
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/e3b37acb8816aefb9134a68cafad8c7d5e145179
 ---
- rtc_base/ssl_stream_adapter.h | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ rtc_base/cpu_info.cc | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
 
-diff --git a/rtc_base/ssl_stream_adapter.h b/rtc_base/ssl_stream_adapter.h
-index ca2f6c48c4..24fc299b82 100644
---- a/rtc_base/ssl_stream_adapter.h
-+++ b/rtc_base/ssl_stream_adapter.h
-@@ -244,11 +244,12 @@ class SSLStreamAdapter : public StreamInterface {
-   static bool IsAcceptableCipher(int cipher, KeyType key_type);
-   static bool IsAcceptableCipher(absl::string_view cipher, KeyType key_type);
+diff --git a/rtc_base/cpu_info.cc b/rtc_base/cpu_info.cc
+index 0ce48a02f1..f0bff56911 100644
+--- a/rtc_base/cpu_info.cc
++++ b/rtc_base/cpu_info.cc
+@@ -29,14 +29,14 @@
+ #include <unistd.h>
+ #elif defined(WEBRTC_FUCHSIA)
+ #include <zircon/syscalls.h>
+-#elif defined(WEBRTC_LINUX)
++#elif defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)
+ #include <unistd.h>
+ #endif  // WEBRTC_LINUX
  
--  static std::set<uint16_t> GetSupportedEphemeralKeyExchangeCipherGroups();
-+  static std::set<uint16_t> GetSupportedEphemeralKeyExchangeCipherGroups()
-+      { return {}; }
-   static std::optional<std::string> GetEphemeralKeyExchangeCipherGroupName(
-       uint16_t group_id);
-   static std::vector<uint16_t> GetDefaultEphemeralKeyExchangeCipherGroups(
--      const FieldTrialsView* field_trials);
-+      const FieldTrialsView* field_trials) { return {}; }
- 
-   ////////////////////////////////////////////////////////////////////////////
-   // Testing only member functions
+ #if defined(WEBRTC_ARCH_X86_FAMILY) && defined(_MSC_VER)
+ #include <intrin.h>
+ #endif
+-#if defined(WEBRTC_ARCH_ARM_FAMILY) && defined(WEBRTC_LINUX)
++#if defined(WEBRTC_ARCH_ARM_FAMILY) && (defined(WEBRTC_LINUX) || defined(WEBRTC_BSD))
+ #include <asm/hwcap.h>
+ #include <sys/auxv.h>
+ #endif
+@@ -176,6 +176,9 @@ bool Supports(ISA instruction_set_architecture) {
+   if (instruction_set_architecture == ISA::kNeon) {
+ #if defined(WEBRTC_ANDROID)
+     return 0 != (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON);
++#elif defined(WEBRTC_BSD)
++    // OpenBSD does not have getauxval() and does not have /proc reading
++    return false;
+ #elif defined(WEBRTC_LINUX)
+     uint64_t hwcap = 0;
+     hwcap = getauxval(AT_HWCAP);

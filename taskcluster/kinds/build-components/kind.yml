@@ -126,7 +126,7 @@ task-defaults:
                 default: '{treeherder_group}(B)'
         platform: AC-android-all/opt
         tier: 1
-    worker-type: b-linux-medium-gcp
+    worker-type: b-linux-medium
     worker:
         chain-of-trust: true
         docker-image: {in-tree: android-components}

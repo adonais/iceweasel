@@ -36,8 +36,6 @@ import mozilla.components.concept.storage.BookmarksStorage
 import mozilla.components.feature.accounts.push.CloseTabsUseCases
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.service.fxa.manager.FxaAccountManager
-import mozilla.components.support.test.ext.joinBlocking
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
@@ -674,7 +672,6 @@ class DefaultTabManagerControllerTest {
             ),
         )
         trayStore.dispatch(TabsTrayAction.ExitSelectMode)
-        trayStore.waitUntilIdle()
 
         controller.handleTabSelected(tab1, "Tab Manager")
         verify(exactly = 1) { controller.handleTabSelected(tab1, "Tab Manager") }
@@ -703,7 +700,6 @@ class DefaultTabManagerControllerTest {
         trayStore.dispatch(TabsTrayAction.EnterSelectMode)
         trayStore.dispatch(TabsTrayAction.AddSelectTab(tab1))
         trayStore.dispatch(TabsTrayAction.AddSelectTab(tab2))
-        trayStore.waitUntilIdle()
 
         controller.handleTabSelected(tab1, "Tab Manager")
         middleware.assertLastAction(TabsTrayAction.RemoveSelectTab::class) {
@@ -721,7 +717,6 @@ class DefaultTabManagerControllerTest {
         val middleware = CaptureActionsMiddleware<TabsTrayState, TabsTrayAction>()
         trayStore = TabsTrayStore(middlewares = listOf(middleware))
         trayStore.dispatch(TabsTrayAction.EnterSelectMode)
-        trayStore.waitUntilIdle()
         val controller = createController()
         val tab1 = TabSessionState(
             id = "1",
@@ -738,7 +733,6 @@ class DefaultTabManagerControllerTest {
 
         trayStore.dispatch(TabsTrayAction.EnterSelectMode)
         trayStore.dispatch(TabsTrayAction.AddSelectTab(tab1))
-        trayStore.waitUntilIdle()
 
         controller.handleTabSelected(tab2, "Tab Manager")
 
@@ -752,7 +746,6 @@ class DefaultTabManagerControllerTest {
         val middleware = CaptureActionsMiddleware<TabsTrayState, TabsTrayAction>()
         trayStore = TabsTrayStore(middlewares = listOf(middleware))
         trayStore.dispatch(TabsTrayAction.EnterSelectMode)
-        trayStore.waitUntilIdle()
         val controller = spyk(createController())
         val normalTab = TabSessionState(
             id = "1",
@@ -769,7 +762,6 @@ class DefaultTabManagerControllerTest {
 
         trayStore.dispatch(TabsTrayAction.EnterSelectMode)
         trayStore.dispatch(TabsTrayAction.AddSelectTab(normalTab))
-        trayStore.waitUntilIdle()
 
         controller.handleTabSelected(inactiveTab, INACTIVE_TABS_FEATURE_NAME)
 
@@ -793,8 +785,6 @@ class DefaultTabManagerControllerTest {
 
         createController().handleForceSelectedTabsAsInactiveClicked(numDays = 5)
 
-        browserStore.waitUntilIdle()
-
         val updatedCurrentTab = browserStore.state.tabs.first { it.id == currentTab.id }
         assertEquals(updatedCurrentTab, currentTab)
         val updatedSecondTab = browserStore.state.tabs.first { it.id == secondTab.id }
@@ -815,8 +805,6 @@ class DefaultTabManagerControllerTest {
         every { trayStore.state.mode.selectedTabs } returns setOf(currentTab, secondTab)
 
         createController().handleForceSelectedTabsAsInactiveClicked(numDays = 5)
-
-        browserStore.waitUntilIdle()
 
         val updatedCurrentTab = browserStore.state.tabs.first { it.id == currentTab.id }
         assertEquals(updatedCurrentTab, currentTab)
@@ -1079,7 +1067,7 @@ class DefaultTabManagerControllerTest {
 
         val controller = createController()
 
-        browserStore.dispatch(TabListAction.SelectTabAction(privateTab.id)).joinBlocking()
+        browserStore.dispatch(TabListAction.SelectTabAction(privateTab.id))
         controller.handleTabSelected(privateTab, null)
 
         assertEquals(privateTab.id, browserStore.state.selectedTabId)
@@ -1087,7 +1075,7 @@ class DefaultTabManagerControllerTest {
         assertEquals(BrowsingMode.Private, appStateModeUpdate)
 
         controller.handleTabDeletion("privateTab")
-        browserStore.dispatch(TabListAction.SelectTabAction(normalTab.id)).joinBlocking()
+        browserStore.dispatch(TabListAction.SelectTabAction(normalTab.id))
         controller.handleTabSelected(normalTab, null)
 
         assertEquals(normalTab.id, browserStore.state.selectedTabId)

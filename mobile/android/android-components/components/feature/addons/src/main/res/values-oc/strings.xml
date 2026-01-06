@@ -241,6 +241,8 @@
   <string name="mozac_feature_addons_remove">Levar</string>
   <!-- This is a button to report an add-on. -->
   <string name="mozac_feature_addons_report">Senhalar</string>
+  <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_permissions_dialog_title_2">Apondre %1$s</string>
   <!-- This is a button to add (install) an add-on . -->
   <string name="mozac_feature_addons_permissions_dialog_add">Apondre</string>
   <!-- This is a button to allow the optional permissions requested by an add-on . -->
@@ -351,6 +353,8 @@
   <string name="mozac_feature_addons_updater_dialog_last_attempt">Darrièra temptativa :</string>
   <!-- Displayed in the "Status" field for the updater when an add-on has been correctly updated -->
   <string name="mozac_feature_addons_updater_dialog_status">Estat :</string>
+  <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_installed_dialog_title_2">%1$s es estat apondut</string>
   <!-- Used as text for the link in the description of the post-installation dialog. -->
   <string name="mozac_feature_addons_installed_dialog_description_link_text">paramètres de l’extension</string>
   <!-- Confirmation button text for the dialog when add-on installation is completed. -->

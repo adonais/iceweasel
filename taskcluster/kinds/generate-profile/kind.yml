@@ -35,7 +35,7 @@ tasks:
             job-name: linux64-profile
         treeherder:
             platform: linux64-shippable/opt
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             chain-of-trust: true
             env:
@@ -66,7 +66,7 @@ tasks:
             job-name: android-x86_64-profile
         treeherder:
             platform: android-x86_64-shippable/opt
-        worker-type: b-linux-kvm-gcp
+        worker-type: b-linux-kvm
         worker:
             chain-of-trust: true
             max-run-time: 2700
@@ -109,7 +109,7 @@ tasks:
             job-name: android-aarch64-profile
         treeherder:
             platform: android-aarch64-shippable/opt
-        worker-type: b-linux-kvm-gcp
+        worker-type: b-linux-kvm
         worker:
             chain-of-trust: true
             max-run-time: 2700
@@ -152,7 +152,7 @@ tasks:
             job-name: android-arm-profile
         treeherder:
             platform: android-armv7-shippable/opt
-        worker-type: b-linux-kvm-gcp
+        worker-type: b-linux-kvm
         worker:
             chain-of-trust: true
             max-run-time: 2700

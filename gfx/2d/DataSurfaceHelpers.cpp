@@ -9,7 +9,6 @@
 #include "2D.h"
 #include "DataSurfaceHelpers.h"
 #include "Logging.h"
-#include "mozilla/MathAlgorithms.h"
 #include "Swizzle.h"
 #include "Tools.h"
 

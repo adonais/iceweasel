@@ -105,7 +105,6 @@ class FxaWebChannelFeature(
         scope?.cancel()
     }
 
-    @Suppress("MaxLineLength", "")
     /**
      * Communication channel is established from fxa-web-content to this class via webextension, as follows:
      * [fxa-web-content] <--js events--> [fxawebchannel.js webextension] <--port messages--> [FxaWebChannelFeature]
@@ -123,6 +122,7 @@ class FxaWebChannelFeature(
      *     oauth-login      ------>                             authentication completed within fxa web content, this class receives OAuth code & state
      * ```
      */
+    @Suppress("MaxLineLength")
     private class WebChannelViewContentMessageHandler(
         private val accountManager: FxaAccountManager,
         private val serverConfig: ServerConfig,

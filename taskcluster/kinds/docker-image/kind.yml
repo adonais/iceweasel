@@ -303,6 +303,45 @@ tasks:
         definition: rpm-repackage
         packages:
             - deb12-mercurial
+    # Neither the debian13-raw nor the debian13-packages images can have
+    # packages dependencies.
+    debian13-raw:
+        symbol: I(deb13-raw)
+        definition: debian-raw
+        args:
+            BASE_IMAGE: debian:trixie-20251117
+            DIST: trixie
+            SNAPSHOT: '20251124T083047Z'
+    debian13-packages:
+        symbol: I(deb13-pkg)
+        definition: debian-packages
+        parent: debian13-raw
+    debian13-base:
+        symbol: I(deb13-base)
+        definition: debian-base
+        parent: debian13-raw
+    debian13-amd64-build:
+        symbol: I(deb13)
+        parent: debian13-base
+        definition: debian-build
+    debian13-repackage:
+        symbol: I(deb13-rpk)
+        parent: debian13-base
+        definition: debian-repackage
+    debian13-flatpak:
+        symbol: I(deb13-flatpak)
+        parent: debian13-base
+        definition: debian-flatpak
+    deb13-toolchain-build:
+        symbol: I(deb13-toolchain)
+        parent: debian13-base
+        definition: toolchain-build
+        args:
+            CLANG_VER: '19'
+    debian13-rpm-repackage:
+        symbol: I(deb13-rpm-rpk)
+        parent: debian13-base
+        definition: rpm-repackage
     android-build:
         symbol: I(agb)
         parent: debian12-base
@@ -345,9 +384,6 @@ tasks:
     webrender:
         symbol: I(webrender)
         parent: debian12-base
-    condprof:
-        symbol: I(condprof)
-        parent: ubuntu1804-test
     sentry:
         symbol: I(sentry)
         parent: debian12-base

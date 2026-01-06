@@ -319,7 +319,7 @@ private fun TabsList(
 }
 
 @Composable
-@Suppress("LongMethod")
+@Suppress("LongMethod", "CognitiveComplexMethod")
 private fun TabItem(
     state: TabStripItem,
     modifier: Modifier = Modifier,

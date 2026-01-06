@@ -30,6 +30,8 @@ class TestClientActivity(FOGTestCase):
         # Let's check we get both.
         expected_pings = ["baseline", "usage-reporting"]
 
+        self.marionette.set_pref("telemetry.glean.internal.maxPingsPerMinute", 60)
+
         # Restarting the browser could send multiple "baseline" pings
         # (e.g. there could be some pending, or some triggered near shutdown.)
         # So only accept the "baseline" ping sent near startup.

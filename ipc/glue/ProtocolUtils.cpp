@@ -10,7 +10,6 @@
 #ifdef XP_UNIX
 #  include <errno.h>
 #endif
-#include <type_traits>
 
 #include "mozilla/IntegerPrintfMacros.h"
 

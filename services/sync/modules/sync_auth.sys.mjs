@@ -470,6 +470,7 @@ SyncAuthManager.prototype = {
 
   /**
    * Exchanges an OAuth access_token for a TokenServer token.
+   *
    * @returns {Promise}
    * @private
    */

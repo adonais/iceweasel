@@ -71,8 +71,9 @@ ArrowScrollBox.prototype = {
 
   /**
    * Scroll to the specified element using the current scroll behavior
+   *
    * @param {Element} element element to scroll
-   * @param {String} block desired alignment of element after scrolling
+   * @param {string} block desired alignment of element after scrolling
    */
   scrollToElement(element, block) {
     element.scrollIntoView({ block, behavior: this.scrollBehavior });
@@ -81,6 +82,7 @@ ArrowScrollBox.prototype = {
   /**
    * Call the given function once; then continuously
    * while the mouse button is held
+   *
    * @param {Function} repeatFn the function to repeat while the button is held
    */
   clickOrHold(repeatFn) {
@@ -208,10 +210,11 @@ ArrowScrollBox.prototype = {
   /**
    * Check whether the element is to the left of its container but does
    * not also span the entire container.
-   * @param {Number} left the left scroll point of the container
-   * @param {Number} right the right edge of the container
-   * @param {Number} elementLeft the left edge of the element
-   * @param {Number} elementRight the right edge of the element
+   *
+   * @param {number} left the left scroll point of the container
+   * @param {number} right the right edge of the container
+   * @param {number} elementLeft the left edge of the element
+   * @param {number} elementRight the right edge of the element
    */
   elementLeftOfContainer(left, right, elementLeft, elementRight) {
     return (
@@ -222,10 +225,11 @@ ArrowScrollBox.prototype = {
   /**
    * Check whether the element is to the right of its container but does
    * not also span the entire container.
-   * @param {Number} left the left scroll point of the container
-   * @param {Number} right the right edge of the container
-   * @param {Number} elementLeft the left edge of the element
-   * @param {Number} elementRight the right edge of the element
+   *
+   * @param {number} left the left scroll point of the container
+   * @param {number} right the right edge of the container
+   * @param {number} elementLeft the left edge of the element
+   * @param {number} elementRight the right edge of the element
    */
   elementRightOfContainer(left, right, elementLeft, elementRight) {
     return (
@@ -256,6 +260,7 @@ ArrowScrollBox.prototype = {
   /**
    * Find the first element that matches the given predicate, called with bounds
    * information
+   *
    * @param {Array} elements an ordered list of elements
    * @param {Function} predicate a function to be called with bounds
    * information
@@ -315,8 +320,9 @@ ArrowScrollBox.prototype = {
   /**
    * Create an XHTML element with the given class name, and append it to the
    * parent.
-   * @param {String} tagName name of the tag to create
-   * @param {String} className class of the element
+   *
+   * @param {string} tagName name of the tag to create
+   * @param {string} className class of the element
    * @param {DOMNode} parent the parent node to which it should be appended
    * @return {DOMNode} The new element
    */
@@ -428,31 +434,27 @@ HTMLBreadcrumbs.prototype = {
 
   /**
    * Build a string that represents the node: tagName#id.class1.class2.
-   * @param {NodeFront} node The node to pretty-print
-   * @return {String}
+   *
+   * @param {NodeFront} nodeFront The node to pretty-print
+   * @return {string}
    */
-  prettyPrintNodeAsText(node) {
-    let text = node.isShadowRoot ? SHADOW_ROOT_TAGNAME : node.displayName;
-    if (node.isMarkerPseudoElement) {
-      text = "::marker";
-    } else if (node.isBeforePseudoElement) {
-      text = "::before";
-    } else if (node.isAfterPseudoElement) {
-      text = "::after";
+  prettyPrintNodeAsText(nodeFront) {
+    let text = nodeFront.isShadowRoot
+      ? SHADOW_ROOT_TAGNAME
+      : nodeFront.displayName;
+
+    if (nodeFront.id) {
+      text += "#" + nodeFront.id;
     }
 
-    if (node.id) {
-      text += "#" + node.id;
-    }
-
-    if (node.className) {
-      const classList = node.className.split(/\s+/);
+    if (nodeFront.className) {
+      const classList = nodeFront.className.split(/\s+/);
       for (let i = 0; i < classList.length; i++) {
         text += "." + classList[i];
       }
     }
 
-    for (const pseudo of node.pseudoClassLocks) {
+    for (const pseudo of nodeFront.pseudoClassLocks) {
       text += pseudo;
     }
 
@@ -461,9 +463,13 @@ HTMLBreadcrumbs.prototype = {
 
   /**
    * Build <span>s that represent the node:
-   *   <span class="breadcrumbs-widget-item-tag">tagName</span>
-   *   <span class="breadcrumbs-widget-item-id">#id</span>
-   *   <span class="breadcrumbs-widget-item-classes">.class1.class2</span>
+   *
+   * ```html
+   * <span class="breadcrumbs-widget-item-tag">tagName</span>
+   * <span class="breadcrumbs-widget-item-id">#id</span>
+   * <span class="breadcrumbs-widget-item-classes">.class1.class2</span>
+   * ```
+   *
    * @param {NodeFront} node The node to pretty-print
    * @returns {DocumentFragment}
    */
@@ -481,13 +487,6 @@ HTMLBreadcrumbs.prototype = {
     pseudosLabel.className = "breadcrumbs-widget-item-pseudo-classes";
 
     let tagText = node.isShadowRoot ? SHADOW_ROOT_TAGNAME : node.displayName;
-    if (node.isMarkerPseudoElement) {
-      tagText = "::marker";
-    } else if (node.isBeforePseudoElement) {
-      tagText = "::before";
-    } else if (node.isAfterPseudoElement) {
-      tagText = "::after";
-    }
     let idText = node.id ? "#" + node.id : "";
     let classesText = "";
 
@@ -531,6 +530,7 @@ HTMLBreadcrumbs.prototype = {
 
   /**
    * Generic event handler.
+   *
    * @param {DOMEvent} event.
    */
   handleEvent(event) {
@@ -549,6 +549,7 @@ HTMLBreadcrumbs.prototype = {
    * Focus event handler. When breadcrumbs container gets focus,
    * aria-activedescendant needs to be updated to currently selected
    * breadcrumb. Ensures that the focus stays on the container at all times.
+   *
    * @param {DOMEvent} event.
    */
   handleFocus(event) {
@@ -566,6 +567,7 @@ HTMLBreadcrumbs.prototype = {
 
   /**
    * On click navigate to the correct node.
+   *
    * @param {DOMEvent} event.
    */
   handleClick(event) {
@@ -577,6 +579,7 @@ HTMLBreadcrumbs.prototype = {
 
   /**
    * On mouse over, highlight the corresponding content DOM Node.
+   *
    * @param {DOMEvent} event.
    */
   handleMouseOver(event) {
@@ -598,7 +601,7 @@ HTMLBreadcrumbs.prototype = {
   /**
    * Handle a keyboard shortcut supported by the breadcrumbs widget.
    *
-   * @param {String} name
+   * @param {string} name
    *        Name of the keyboard shortcut received.
    * @param {DOMEvent} event
    *        Original event that triggered the shortcut.
@@ -671,7 +674,8 @@ HTMLBreadcrumbs.prototype = {
 
   /**
    * Set which button represent the selected node.
-   * @param {Number} index Index of the displayed-button to select.
+   *
+   * @param {number} index Index of the displayed-button to select.
    */
   setCursor(index) {
     // Unselect the previously selected button
@@ -695,8 +699,9 @@ HTMLBreadcrumbs.prototype = {
 
   /**
    * Get the index of the node in the cache.
+   *
    * @param {NodeFront} node.
-   * @returns {Number} The index for this node or -1 if not found.
+   * @returns {number} The index for this node or -1 if not found.
    */
   indexOf(node) {
     for (let i = this.nodeHierarchy.length - 1; i >= 0; i--) {
@@ -710,7 +715,8 @@ HTMLBreadcrumbs.prototype = {
   /**
    * Remove all the buttons and their references in the cache after a given
    * index.
-   * @param {Number} index.
+   *
+   * @param {number} index.
    */
   cutAfter(index) {
     while (this.nodeHierarchy.length > index + 1) {
@@ -721,6 +727,7 @@ HTMLBreadcrumbs.prototype = {
 
   /**
    * Build a button representing the node.
+   *
    * @param {NodeFront} node The node from the page.
    * @return {DOMNode} The <button> for this node.
    */
@@ -753,6 +760,7 @@ HTMLBreadcrumbs.prototype = {
 
   /**
    * Connecting the end of the breadcrumbs to a node.
+   *
    * @param {NodeFront} node The node to reach.
    */
   expand(node) {
@@ -781,8 +789,9 @@ HTMLBreadcrumbs.prototype = {
 
   /**
    * Find the "youngest" ancestor of a node which is already in the breadcrumbs.
+   *
    * @param {NodeFront} node.
-   * @return {Number} Index of the ancestor in the cache, or -1 if not found.
+   * @return {number} Index of the ancestor in the cache, or -1 if not found.
    */
   getCommonAncestor(node) {
     while (node) {
@@ -836,8 +845,9 @@ HTMLBreadcrumbs.prototype = {
    * decide whether or not they are "interesting" to the current state of the
    * breadcrumbs widget, i.e. at least one of them should cause part of the
    * widget to be updated.
+   *
    * @param {Array} mutations The mutations array.
-   * @return {Boolean}
+   * @return {boolean}
    */
   _hasInterestingMutations(mutations) {
     if (!mutations || !mutations.length) {
@@ -857,8 +867,8 @@ HTMLBreadcrumbs.prototype = {
    * Check if the provided mutation (from a markupmutation event) is relevant
    * for the current breadcrumbs.
    *
-   * @param {Object} mutation The mutation to check.
-   * @return {Boolean} true if the mutation is relevant, false otherwise.
+   * @param {object} mutation The mutation to check.
+   * @return {boolean} true if the mutation is relevant, false otherwise.
    */
   _isInterestingMutation(mutation) {
     const { type, added, removed, target, attributeName } = mutation;
@@ -880,6 +890,7 @@ HTMLBreadcrumbs.prototype = {
   /**
    * Update the breadcrumbs display when a new node is selected and there are
    * mutations.
+   *
    * @param {Array} mutations An array of mutations in case this was called as
    * the "markupmutation" event listener.
    */
@@ -889,7 +900,8 @@ HTMLBreadcrumbs.prototype = {
 
   /**
    * Update the breadcrumbs display when a new node is selected.
-   * @param {String} reason The reason for the update, if any.
+   *
+   * @param {string} reason The reason for the update, if any.
    * @param {Array} mutations An array of mutations in case this was called as
    * the "markupmutation" event listener.
    */

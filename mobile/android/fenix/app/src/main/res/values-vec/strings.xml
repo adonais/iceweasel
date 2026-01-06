@@ -98,6 +98,10 @@
   <string name="search_suggestions_onboarding_title">Parmetare sugerimenti de reserca in sesion anonime?</string>
   <!-- Search suggestion onboarding hint description text, %s is the name of the app (for example "Firefox"). -->
   <string name="search_suggestions_onboarding_text">Cualsiasi testo digità ne ƚa bara degli indirisi de %s el vegnerà condivixo co’l motore de reserca predefinìo.</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">Serca</string>
   <!-- Text preview for larger sized widgets -->
@@ -764,4 +768,10 @@
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

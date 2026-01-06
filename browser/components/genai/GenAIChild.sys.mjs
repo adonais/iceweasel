@@ -230,14 +230,33 @@ export class GenAIChild extends JSWindowActorChild {
       (/chatgpt\.com/i.test(win.location.host) ||
         win.location.pathname.includes("file_chat-autosubmit.html"))
     ) {
-      win.setTimeout(() => {
-        if (editable.textContent) {
-          editable.textContent = "";
-          editable.dispatchEvent(
+      const container = editable.parentElement;
+      if (!container) {
+        return;
+      }
+
+      const observer = new win.MutationObserver(() => {
+        // Always refetch because ChatGPT replaces editable div
+        const currentEditable = container.querySelector(
+          '[contenteditable="true"]'
+        );
+        if (!currentEditable) {
+          return;
+        }
+
+        let hasText = currentEditable.textContent?.trim().length > 0;
+        if (hasText) {
+          currentEditable.textContent = "";
+          currentEditable.dispatchEvent(
             new win.InputEvent("input", { bubbles: true })
           );
         }
-      }, 500);
+      });
+
+      observer.observe(container, { childList: true, subtree: true });
+
+      // Disconnect once things stabilize
+      win.setTimeout(() => observer.disconnect(), 2000);
     }
   }
 

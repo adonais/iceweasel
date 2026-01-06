@@ -7,6 +7,8 @@ package org.mozilla.fenix.browser
 import android.view.Window
 import androidx.annotation.ColorInt
 import androidx.annotation.VisibleForTesting
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import mozilla.components.lib.state.helpers.AbstractBinding
@@ -20,11 +22,14 @@ import org.mozilla.fenix.browser.store.BrowserScreenStore
  *
  * @param browserScreenStore [BrowserScreenStore] to observe for custom colors changes.
  * @param window [Window] allowing to update the system bars' backgrounds.
+ * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur.
+ *                       Defaults to [Dispatchers.Main].
  */
 class CustomTabColorsBinding(
     browserScreenStore: BrowserScreenStore,
     private val window: Window? = null,
-) : AbstractBinding<BrowserScreenState>(browserScreenStore) {
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+) : AbstractBinding<BrowserScreenState>(browserScreenStore, mainDispatcher) {
     override suspend fun onState(flow: Flow<BrowserScreenState>) {
         flow.distinctUntilChangedBy { it.customTabColors }
             .collect {

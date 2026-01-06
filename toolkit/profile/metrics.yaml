@@ -150,6 +150,31 @@ profiles:
       - heartbeat
       - update
 
+  creation_place:
+    type: labeled_counter
+    description: |
+      Tracking where profiles have been created.  The `legacy_forced` refers to
+      usage of `MOZ_LEGACY_HOME=1` while `legacy_existing` is for the case an
+      existing legacy profile was detected. The `xdg_default` accounts for lack
+      of `XDG_CONFIG_HOME` value defaulting to `$HOME/.config` when
+      `xdg_config` refers to existing `XDG_CONFIG_HOME`.
+    bugs:
+      - https://bugzilla.mozilla.org/259356
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=259356
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - me@mozilla.com
+    expires: never
+    labels:
+      - legacy_forced
+      - legacy_existing
+      - xdg_default
+      - xdg_config
+    send_in_pings:
+      - metrics
+
   reset_date:
     type: quantity
     unit: days since Jan 1 1970

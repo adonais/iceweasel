@@ -1613,7 +1613,6 @@ bool MediaTrackGraphImpl::UpdateMainThreadState() {
         mForceShutDownReceived || (IsEmpty() && mBackMessageQueue.IsEmpty());
     PrepareUpdatesToMainThreadState(finalUpdate);
     if (!finalUpdate) {
-      SwapMessageQueues();
       return true;
     }
     // The JSContext will not be used again.
@@ -1668,6 +1667,7 @@ auto MediaTrackGraphImpl::OneIterationImpl(
   WebCore::DenormalDisabler disabler;
 
   // Process graph message from the main thread for this iteration.
+  SwapMessageQueues();
   RunMessagesInQueue();
 
   // Process MessagePort events.
@@ -2075,10 +2075,8 @@ void MediaTrackGraphImpl::RunInStableState(bool aSourceIsMTG) {
     if (LifecycleStateRef() == LIFECYCLE_THREAD_NOT_STARTED) {
       // Start the driver now. We couldn't start it earlier because the graph
       // might exit immediately on finding it has no tracks. The first message
-      // for a new graph must create a track. Ensure that his message runs on
-      // the first iteration.
+      // for a new graph must create a track.
       MOZ_ASSERT(MessagesQueued());
-      SwapMessageQueues();
 
       LOG(LogLevel::Debug,
           ("%p: Starting a graph with a %s", this,

@@ -525,10 +525,6 @@ export let BrowserUsageTelemetry = {
     this._inited = true;
 
     Services.prefs.addObserver("browser.tabs.inTitlebar", this);
-    Services.prefs.addObserver(
-      "media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled",
-      this
-    );
     Services.prefs.addObserver("idle-daily", this);
 
     this._recordUITelemetry();
@@ -641,12 +637,6 @@ export let BrowserUsageTelemetry = {
               "pref"
             );
             break;
-          case "media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled":
-            if (Services.prefs.getBoolPref(data)) {
-              Glean.pictureinpictureSettings.enableAutotriggerSettings.record();
-            }
-            break;
-
           case "idle-daily":
             this._recordInitialPrefValues();
             break;
@@ -1253,6 +1243,7 @@ export let BrowserUsageTelemetry = {
 
   /**
    * Adds listeners to a single chrome window.
+   *
    * @param {Window} win
    */
   _registerWindow(win) {
@@ -1307,6 +1298,7 @@ export let BrowserUsageTelemetry = {
 
   /**
    * Updates the tab counts.
+   *
    * @param {CustomEvent} [event]
    *   `TabOpen` event
    */
@@ -1712,6 +1704,7 @@ export let BrowserUsageTelemetry = {
 
   /**
    * Tracks the window count and registers the listeners for the tab count.
+   *
    * @param{Object} win The window object.
    */
   _onWindowOpen(win) {
@@ -1896,7 +1889,7 @@ export let BrowserUsageTelemetry = {
    * @param {Array<string>} [msixPackagePrefixes] Optional, list of prefixes to
             consider "existing" installs when looking at installed MSIX packages.
             Defaults to prefixes for builds produced in Firefox automation.
-   * @return {Promise<Object>} A JSON object containing install telemetry.
+   * @return {Promise<object>} A JSON object containing install telemetry.
    * @resolves When the event has been recorded, or if the data file was not found.
    * @rejects JavaScript exception on any failure.
    */

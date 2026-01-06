@@ -29,7 +29,7 @@
 
   &[checked] {
     --visual-picker-item-border-width: 3px;
-    border-color: var(--color-accent-primary);
+    border-color: var(--border-color-selected);
     margin: 0;
   }
 

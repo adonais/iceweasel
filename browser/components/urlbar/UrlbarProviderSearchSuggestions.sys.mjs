@@ -15,6 +15,8 @@ import {
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  DEFAULT_FORM_HISTORY_PARAM:
+    "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   SearchSuggestionController:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
@@ -300,20 +302,6 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
   }
 
   /**
-   * Called when a search session concludes regardless of how it ends -
-   * whether through engagement or abandonment or otherwise. This is
-   * called for all providers who have implemented this method.
-   *
-   * @param {UrlbarQueryContext} _queryContext
-   *    The current query context.
-   * @param {UrlbarController} _controller
-   *    The associated controller.
-   */
-  onSearchSessionEnd(_queryContext, _controller) {
-    this.#suggestionsController?.resetSession();
-  }
-
-  /**
    * Gets the provider's priority.
    *
    * @param {UrlbarQueryContext} queryContext The query context object
@@ -362,10 +350,11 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
 
   onEngagement(queryContext, controller, details) {
     let { result } = details;
-    if (details.selType == "dismiss" && queryContext.formHistoryName) {
+
+    if (details.selType == "dismiss") {
       lazy.FormHistory.update({
         op: "remove",
-        fieldname: queryContext.formHistoryName,
+        fieldname: lazy.DEFAULT_FORM_HISTORY_PARAM,
         value: result.payload.suggestion,
       }).catch(error =>
         console.error(`Removing form history failed: ${error}`)
@@ -400,13 +389,6 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
       this.#suggestionsController = new lazy.SearchSuggestionController();
     }
 
-    // TODO (Bug 1987895): Change Search Suggestions Controller to allow passing
-    // formHistoryParam and other fields as options on the fetch() call.
-    if (queryContext.formHistoryName) {
-      this.#suggestionsController.formHistoryParam =
-        queryContext.formHistoryName;
-    }
-
     // If there's a form history entry that equals the search string, the search
     // suggestions controller will include it, and we'll make a result for it.
     // If the heuristic result ends up being a search result, the muxer will
@@ -414,28 +396,26 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
     // final list of results would be left with `count` - 1 form history results
     // instead of `count`.  Therefore we request `count` + 1 entries.  The muxer
     // will dedupe and limit the final form history count as appropriate.
-    this.#suggestionsController.maxLocalResults = queryContext.maxResults + 1;
+    let maxLocalResults = queryContext.maxResults + 1;
 
     // Request maxResults + 1 remote suggestions for the same reason we request
     // maxResults + 1 form history entries.
     let allowRemote = this._allowRemoteSuggestions(queryContext, searchString);
-    this.#suggestionsController.maxRemoteResults = allowRemote
-      ? queryContext.maxResults + 1
-      : 0;
+    let maxRemoteResults = allowRemote ? queryContext.maxResults + 1 : 0;
 
     if (allowRemote && this.#shouldFetchTrending(queryContext)) {
       if (
         queryContext.searchMode &&
         lazy.UrlbarPrefs.get("trending.maxResultsSearchMode") != -1
       ) {
-        this.#suggestionsController.maxRemoteResults = lazy.UrlbarPrefs.get(
+        maxRemoteResults = lazy.UrlbarPrefs.get(
           "trending.maxResultsSearchMode"
         );
       } else if (
         !queryContext.searchMode &&
         lazy.UrlbarPrefs.get("trending.maxResultsNoSearchMode") != -1
       ) {
-        this.#suggestionsController.maxRemoteResults = lazy.UrlbarPrefs.get(
+        maxRemoteResults = lazy.UrlbarPrefs.get(
           "trending.maxResultsNoSearchMode"
         );
       }
@@ -451,6 +431,8 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
       restrictToEngine: this._isTokenOrRestrictionPresent(queryContext),
       dedupeRemoteAndLocal: false,
       fetchTrending: this.#shouldFetchTrending(queryContext),
+      maxLocalResults,
+      maxRemoteResults,
     });
 
     // The fetch was canceled.
@@ -620,6 +602,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
   #shouldFetchTrending(queryContext) {
     return !!(
       queryContext.searchString == "" &&
+      queryContext.sapName != "searchbar" &&
       lazy.UrlbarPrefs.get("trending.featureGate") &&
       lazy.UrlbarPrefs.get("suggest.trending") &&
       (queryContext.searchMode ||

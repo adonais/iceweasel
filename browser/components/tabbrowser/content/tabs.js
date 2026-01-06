@@ -13,6 +13,7 @@
   const isTab = element => gBrowser.isTab(element);
   const isTabGroup = element => gBrowser.isTabGroup(element);
   const isTabGroupLabel = element => gBrowser.isTabGroupLabel(element);
+  const isSplitViewWrapper = element => gBrowser.isSplitViewWrapper(element);
 
   class MozTabbrowserTabs extends MozElements.TabsBase {
     static observedAttributes = ["orient"];
@@ -33,11 +34,15 @@
       this.addEventListener("TabHoverEnd", this);
       this.addEventListener("TabGroupLabelHoverStart", this);
       this.addEventListener("TabGroupLabelHoverEnd", this);
-      this.addEventListener("TabGroupExpand", this);
-      this.addEventListener("TabGroupCollapse", this);
+      // Capture collapse/expand early so we mark animating groups before
+      // overflow/underflow handlers run.
+      this.addEventListener("TabGroupExpand", this, true);
+      this.addEventListener("TabGroupCollapse", this, true);
       this.addEventListener("TabGroupAnimationComplete", this);
       this.addEventListener("TabGroupCreate", this);
       this.addEventListener("TabGroupRemoved", this);
+      this.addEventListener("SplitViewCreated", this);
+      this.addEventListener("SplitViewRemoved", this);
       this.addEventListener("transitionend", this);
       this.addEventListener("dblclick", this);
       this.addEventListener("click", this);
@@ -385,7 +390,11 @@
     }
 
     on_TabGroupAnimationComplete(event) {
-      this.#animatingGroups.delete(event.target.id);
+      // Delay clearing the animating flag so overflow/underflow handlers
+      // triggered by the size change can observe it and skip auto-scroll.
+      window.requestAnimationFrame(() => {
+        this.#animatingGroups.delete(event.target.id);
+      });
     }
 
     on_TabGroupCreate() {
@@ -393,6 +402,14 @@
     }
 
     on_TabGroupRemoved() {
+      this._invalidateCachedTabs();
+    }
+
+    on_SplitViewCreated() {
+      this._invalidateCachedTabs();
+    }
+
+    on_SplitViewRemoved() {
       this._invalidateCachedTabs();
     }
 
@@ -915,16 +932,17 @@
     /** @type {FocusableItem[]} */
     #focusableItems;
 
+    /** @type {dragAndDropElements[]} */
+    #dragAndDropElements;
+
     /**
      * @returns {FocusableItem[]}
-     * @override tabbox.js:TabsBase
+     * @override
      */
     get ariaFocusableItems() {
       if (this.#focusableItems) {
         return this.#focusableItems;
       }
-
-      let elementIndex = 0;
 
       let unpinnedChildren = Array.from(this.arrowScrollbox.children);
       let pinnedChildren = Array.from(this.pinnedTabsContainer.children);
@@ -932,28 +950,19 @@
       let focusableItems = [];
       for (let child of pinnedChildren) {
         if (isTab(child)) {
-          child.elementIndex = elementIndex++;
           focusableItems.push(child);
         }
       }
       for (let child of unpinnedChildren) {
         if (isTab(child) && child.visible) {
-          child.elementIndex = elementIndex++;
           focusableItems.push(child);
         } else if (isTabGroup(child)) {
-          child.labelElement.elementIndex = elementIndex++;
           focusableItems.push(child.labelElement);
 
           let visibleTabsInGroup = child.tabs.filter(tab => tab.visible);
-          visibleTabsInGroup.forEach(tab => {
-            tab.elementIndex = elementIndex++;
-          });
           focusableItems.push(...visibleTabsInGroup);
         } else if (child.tagName == "tab-split-view-wrapper") {
           let visibleTabsInSplitView = child.tabs.filter(tab => tab.visible);
-          visibleTabsInSplitView.forEach(tab => {
-            tab.elementIndex = elementIndex++;
-          });
           focusableItems.push(...visibleTabsInSplitView);
         }
       }
@@ -961,6 +970,55 @@
       this.#focusableItems = focusableItems;
 
       return this.#focusableItems;
+    }
+
+    /**
+     * @returns {dragAndDropElements[]}
+     * Representation of every drag and drop element including tabs, tab group labels and split view wrapper.
+     * We keep this separate from ariaFocusableItems because not every element for drag n'drop also needs to be
+     * focusable (ex, we don't want the splitview container to be focusable, only its children).
+     */
+    get dragAndDropElements() {
+      if (this.#dragAndDropElements) {
+        return this.#dragAndDropElements;
+      }
+
+      let elementIndex = 0;
+      let dragAndDropElements = [];
+      let unpinnedChildren = Array.from(this.arrowScrollbox.children);
+      let pinnedChildren = Array.from(this.pinnedTabsContainer.children);
+
+      for (let child of [...pinnedChildren, ...unpinnedChildren]) {
+        if (
+          !(
+            (isTab(child) && child.visible) ||
+            isTabGroup(child) ||
+            isSplitViewWrapper(child)
+          )
+        ) {
+          continue;
+        }
+
+        if (isTabGroup(child)) {
+          child.labelElement.elementIndex = elementIndex++;
+          dragAndDropElements.push(child.labelElement);
+
+          let visibleChildren = Array.from(child.children).filter(
+            ele => ele.visible || ele.tagName == "tab-split-view-wrapper"
+          );
+
+          visibleChildren.forEach(tab => {
+            tab.elementIndex = elementIndex++;
+          });
+          dragAndDropElements.push(...visibleChildren);
+        } else {
+          child.elementIndex = elementIndex++;
+          dragAndDropElements.push(child);
+        }
+      }
+
+      this.#dragAndDropElements = dragAndDropElements;
+      return this.#dragAndDropElements;
     }
 
     /**
@@ -1000,8 +1058,9 @@
       this.#visibleTabs = null;
       // Focusable items must also be visible, but they do not depend on
       // this.#visibleTabs, so changes to visible tabs need to also invalidate
-      // the focusable items cache
+      // the focusable items and dragAndDropElements cache.
       this.#focusableItems = null;
+      this.#dragAndDropElements = null;
     }
 
     #isMovingTab() {

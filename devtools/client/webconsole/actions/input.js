@@ -160,7 +160,7 @@ function evaluateExpression(expression, from = "input") {
  * The JavaScript evaluation response handler.
  *
  * @private
- * @param {Object} response
+ * @param {object} response
  *        The message received from the server.
  */
 function onExpressionEvaluated(response) {
@@ -399,8 +399,8 @@ function setInputValue(value) {
 /**
  * Request an eager evaluation from the server.
  *
- * @param {String} expression: The expression to evaluate.
- * @param {Boolean} force: When true, will request an eager evaluation again, even if
+ * @param {string} expression: The expression to evaluate.
+ * @param {boolean} force: When true, will request an eager evaluation again, even if
  *                         the expression is the same one than the one that was used in
  *                         the previous evaluation.
  */

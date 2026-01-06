@@ -7,7 +7,6 @@ package org.mozilla.fenix.settings.logins
 import io.mockk.every
 import io.mockk.mockk
 import mozilla.components.concept.storage.Login
-import mozilla.components.support.test.ext.joinBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -77,7 +76,7 @@ class LoginsFragmentStoreTest {
     fun `UpdateLoginsList action`() {
         val store = LoginsFragmentStore(baseState.copy(isLoading = true))
 
-        store.dispatch(LoginsAction.UpdateLoginsList(loginList)).joinBlocking()
+        store.dispatch(LoginsAction.UpdateLoginsList(loginList))
 
         assertFalse(store.state.isLoading)
         assertEquals(loginList, store.state.loginList)
@@ -90,12 +89,12 @@ class LoginsFragmentStoreTest {
             baseState.copy(isLoading = true),
         )
 
-        store.dispatch(LoginsAction.AddLogin(exampleLogin)).joinBlocking()
+        store.dispatch(LoginsAction.AddLogin(exampleLogin))
         assertFalse(store.state.isLoading)
         assertEquals(listOf(exampleLogin), store.state.loginList)
 
         // Select a login to force "isLoading = true"
-        store.dispatch(LoginsAction.AddLogin(firefoxLogin)).joinBlocking()
+        store.dispatch(LoginsAction.AddLogin(firefoxLogin))
         assertFalse(store.state.isLoading)
         assertEquals(loginList, store.state.loginList)
         assertEquals(listOf(firefoxLogin, exampleLogin), store.state.filteredItems)
@@ -111,12 +110,12 @@ class LoginsFragmentStoreTest {
         )
         val updatedLogin = firefoxLogin.copy(origin = "test")
 
-        store.dispatch(LoginsAction.UpdateLogin(firefoxLogin.guid, updatedLogin)).joinBlocking()
+        store.dispatch(LoginsAction.UpdateLogin(firefoxLogin.guid, updatedLogin))
         assertFalse(store.state.isLoading)
         assertEquals(listOf(exampleLogin, updatedLogin), store.state.loginList)
 
         // Test updating a non-existent login
-        store.dispatch(LoginsAction.UpdateLogin("test", updatedLogin.copy(origin = "none"))).joinBlocking()
+        store.dispatch(LoginsAction.UpdateLogin("test", updatedLogin.copy(origin = "none")))
         assertFalse(store.state.isLoading)
         assertEquals(listOf(exampleLogin, updatedLogin), store.state.loginList)
     }
@@ -130,20 +129,20 @@ class LoginsFragmentStoreTest {
             ),
         )
 
-        store.dispatch(LoginsAction.DeleteLogin("not_existing")).joinBlocking()
+        store.dispatch(LoginsAction.DeleteLogin("not_existing"))
         assertEquals(loginList, store.state.loginList)
         assertEquals(listOf(firefoxLogin, exampleLogin), store.state.filteredItems)
 
-        store.dispatch(LoginsAction.DeleteLogin(exampleLogin.guid)).joinBlocking()
+        store.dispatch(LoginsAction.DeleteLogin(exampleLogin.guid))
         assertEquals(listOf(firefoxLogin), store.state.loginList)
         assertEquals(listOf(firefoxLogin), store.state.filteredItems)
 
-        store.dispatch(LoginsAction.DeleteLogin(firefoxLogin.guid)).joinBlocking()
+        store.dispatch(LoginsAction.DeleteLogin(firefoxLogin.guid))
         assertEquals(emptyList<SavedLogin>(), store.state.loginList)
         assertEquals(emptyList<SavedLogin>(), store.state.filteredItems)
 
         // Test deleting from an empty store
-        store.dispatch(LoginsAction.DeleteLogin(firefoxLogin.guid)).joinBlocking()
+        store.dispatch(LoginsAction.DeleteLogin(firefoxLogin.guid))
         assertEquals(emptyList<SavedLogin>(), store.state.loginList)
         assertEquals(emptyList<SavedLogin>(), store.state.filteredItems)
     }
@@ -158,7 +157,7 @@ class LoginsFragmentStoreTest {
             ),
         )
 
-        store.dispatch(LoginsAction.FilterLogins(null)).joinBlocking()
+        store.dispatch(LoginsAction.FilterLogins(null))
 
         assertFalse(store.state.isLoading)
         assertNull(store.state.searchedForText)
@@ -169,7 +168,7 @@ class LoginsFragmentStoreTest {
     fun `UpdateCurrentLogin action`() {
         val store = LoginsFragmentStore(baseState.copy(isLoading = true))
 
-        store.dispatch(LoginsAction.UpdateCurrentLogin(baseLogin)).joinBlocking()
+        store.dispatch(LoginsAction.UpdateCurrentLogin(baseLogin))
 
         assertEquals(baseLogin, store.state.currentItem)
     }
@@ -187,7 +186,7 @@ class LoginsFragmentStoreTest {
             ),
         )
 
-        store.dispatch(LoginsAction.SortLogins(lastUsed)).joinBlocking()
+        store.dispatch(LoginsAction.SortLogins(lastUsed))
 
         assertFalse(store.state.isLoading)
         assertEquals(lastUsed, store.state.sortingStrategy)
@@ -209,7 +208,7 @@ class LoginsFragmentStoreTest {
             ),
         )
 
-        store.dispatch(LoginsAction.SortLogins(lastUsed)).joinBlocking()
+        store.dispatch(LoginsAction.SortLogins(lastUsed))
 
         assertFalse(store.state.isLoading)
         assertEquals(lastUsed, store.state.sortingStrategy)
@@ -228,7 +227,7 @@ class LoginsFragmentStoreTest {
             ),
         )
 
-        store.dispatch(LoginsAction.LoginSelected(mockk())).joinBlocking()
+        store.dispatch(LoginsAction.LoginSelected(mockk()))
 
         assertTrue(store.state.isLoading)
         assertTrue(store.state.loginList.isNotEmpty())

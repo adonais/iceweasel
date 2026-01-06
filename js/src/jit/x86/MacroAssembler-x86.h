@@ -918,6 +918,11 @@ class MacroAssemblerX86 : public MacroAssemblerX86Shared {
   void unboxGCThingForGCBarrier(const Address& src, Register dest) {
     movl(payloadOf(src), dest);
   }
+  void unboxGCThingForGCBarrier(const ValueOperand& src, Register dest) {
+    if (src.payloadReg() != dest) {
+      movl(src.payloadReg(), dest);
+    }
+  }
 
   void unboxWasmAnyRefGCThingForGCBarrier(const Address& src, Register dest) {
     movl(ImmWord(wasm::AnyRef::GCThingMask), dest);

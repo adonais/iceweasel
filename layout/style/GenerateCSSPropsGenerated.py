@@ -88,12 +88,12 @@ def generate(output, dataFile):
             continue
         name = "g{}SubpropTable".format(p.method)
         names.append(name)
-        output.write("static const nsCSSPropertyID {}[] = {{\n".format(name))
+        output.write("static const NonCustomCSSPropertyId {}[] = {{\n".format(name))
         for subprop in p.subprops:
             output.write("  eCSSProperty_{},\n".format(subprop))
         output.write("  eCSSProperty_UNKNOWN\n")
         output.write("};\n\n")
-    output.write("const nsCSSPropertyID* const\n")
+    output.write("const NonCustomCSSPropertyId* const\n")
     output.write(
         "nsCSSProps::kSubpropertyTable["
         "eCSSProperty_COUNT - eCSSProperty_COUNT_no_shorthands"
@@ -106,7 +106,7 @@ def generate(output, dataFile):
     # Generate assertions
     msg = (
         "GenerateCSSPropsGenerated.py did not list properties "
-        "in nsCSSPropertyID order"
+        "in NonCustomCSSPropertyId order"
     )
     for p in properties:
         output.write(

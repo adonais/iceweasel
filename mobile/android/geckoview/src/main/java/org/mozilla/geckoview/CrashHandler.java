@@ -6,12 +6,14 @@
 package org.mozilla.geckoview;
 
 import android.annotation.SuppressLint;
+import android.app.ForegroundServiceStartNotAllowedException;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import android.util.Log;
@@ -26,11 +28,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.GeckoAppShell;
+import org.mozilla.gecko.util.GeckoBundle;
 
 /** Handler for processing application crashes and sending crash reports. */
 public class CrashHandler implements Thread.UncaughtExceptionHandler {
@@ -351,62 +356,109 @@ public class CrashHandler implements Thread.UncaughtExceptionHandler {
   @AnyThread
   public boolean launchCrashReporter(
       @NonNull final String dumpFile, @NonNull final String extraFile) {
+    if (mHandlerService == null) {
+      Log.w(LOGTAG, "No crash handler service defined, unable to report crash");
+      return false;
+    }
+
+    return launchCrashReporter(
+        mHandlerService,
+        getAppContext(),
+        getAppPackageName(),
+        dumpFile,
+        extraFile,
+        GeckoRuntime.CRASHED_PROCESS_VISIBILITY_MAIN,
+        "main",
+        null);
+  }
+
+  @AnyThread
+  private static boolean launchCrashReporter(
+      @NonNull final Class<?> handlerService,
+      @Nullable final Context context,
+      @NonNull final String appPackageName,
+      @NonNull final String dumpFile,
+      @NonNull final String extraFile,
+      @NonNull final String visibility,
+      @NonNull final String processType,
+      @Nullable final String remoteType) {
     try {
-      final Context context = getAppContext();
-
-      if (mHandlerService == null) {
-        Log.w(LOGTAG, "No crash handler service defined, unable to report crash");
-        return false;
-      }
-
       if (context != null) {
-        final Intent intent = new Intent(GeckoRuntime.ACTION_CRASHED);
+        final Intent intent =
+            new Intent(GeckoRuntime.ACTION_CRASHED, null, context, handlerService);
         intent.putExtra(GeckoRuntime.EXTRA_MINIDUMP_PATH, dumpFile);
         intent.putExtra(GeckoRuntime.EXTRA_EXTRAS_PATH, extraFile);
-        intent.putExtra(
-            GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY,
-            GeckoRuntime.CRASHED_PROCESS_VISIBILITY_MAIN);
-        intent.putExtra(GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE, "main");
-        intent.setClass(context, mHandlerService);
-
+        intent.putExtra(GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY, visibility);
+        intent.putExtra(GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE, processType);
+        if (remoteType != null) {
+          intent.putExtra(GeckoRuntime.EXTRA_CRASH_REMOTE_TYPE, remoteType);
+        }
         context.startForegroundService(intent);
         return true;
       }
 
-      final ProcessBuilder pb =
-          new ProcessBuilder(
-              "/system/bin/am",
-              "start-foreground-service",
-              "--user",
-              /* USER_CURRENT_OR_SELF */ "-3",
-              "-a",
-              GeckoRuntime.ACTION_CRASHED,
-              "-n",
-              getAppPackageName() + '/' + mHandlerService.getName(),
-              "--es",
-              GeckoRuntime.EXTRA_MINIDUMP_PATH,
-              dumpFile,
-              "--es",
-              GeckoRuntime.EXTRA_EXTRAS_PATH,
-              extraFile,
-              "--es",
-              GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY,
-              GeckoRuntime.CRASHED_PROCESS_VISIBILITY_MAIN,
-              "--es",
-              GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE,
-              "main");
+      final List<String> args =
+          new ArrayList<>(
+              Arrays.asList(
+                  "/system/bin/am",
+                  "start-foreground-service",
+                  "--user",
+                  /* USER_CURRENT_OR_SELF */ "-3",
+                  "-a",
+                  GeckoRuntime.ACTION_CRASHED,
+                  "-n",
+                  appPackageName + '/' + handlerService.getName(),
+                  "--es",
+                  GeckoRuntime.EXTRA_MINIDUMP_PATH,
+                  dumpFile,
+                  "--es",
+                  GeckoRuntime.EXTRA_EXTRAS_PATH,
+                  extraFile,
+                  "--es",
+                  GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY,
+                  visibility,
+                  "--es",
+                  GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE,
+                  processType));
+      if (remoteType != null) {
+        args.add("--es");
+        args.add(GeckoRuntime.EXTRA_CRASH_REMOTE_TYPE);
+        args.add(remoteType);
+      }
 
-      pb.start().waitFor();
-
+      final ProcessBuilder pb = new ProcessBuilder();
+      pb.command(args).start().waitFor();
     } catch (final IOException e) {
       Log.e(LOGTAG, "Error launching crash reporter", e);
       return false;
+
+    } catch (final IllegalStateException e) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+          && e instanceof ForegroundServiceStartNotAllowedException) {
+        Log.e(LOGTAG, "Error launching crash reporter", e);
+        return false;
+      }
+      throw e;
 
     } catch (final InterruptedException e) {
       Log.i(LOGTAG, "Interrupted while waiting to launch crash reporter", e);
       // Fall-through
     }
     return true;
+  }
+
+  @AnyThread
+  /* package */ static boolean launchCrashReporter(
+      final Class<?> handlerService, final Context context, final GeckoBundle bundle) {
+    return launchCrashReporter(
+        handlerService,
+        context,
+        context.getPackageName(),
+        bundle.getString(GeckoRuntime.EXTRA_MINIDUMP_PATH),
+        bundle.getString(GeckoRuntime.EXTRA_EXTRAS_PATH),
+        bundle.getString(GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY),
+        bundle.getString(GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE),
+        bundle.getString(GeckoRuntime.EXTRA_CRASH_REMOTE_TYPE));
   }
 
   /**

@@ -25,7 +25,9 @@ sealed class TopSitesFavicon {
      *
      * @property drawableResId The drawable resource ID to use.
      */
-    data class Drawable(@param:DrawableRes val drawableResId: Int) : TopSitesFavicon()
+    data class Drawable(
+        @param:DrawableRes val drawableResId: Int,
+    ) : TopSitesFavicon()
 }
 
 internal fun getTopSitesFavicon(topSite: TopSite): TopSitesFavicon {

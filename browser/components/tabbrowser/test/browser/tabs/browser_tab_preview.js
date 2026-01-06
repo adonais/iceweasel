@@ -820,10 +820,16 @@ add_task(async function tabGroupPanelUpdatesTests() {
     "Panel toolbarbutton has updated label"
   );
 
+  await closeGroupPreviews();
+
   info("Test that adding a tab to the group adds the tab to the group's panel");
   let TabOpenEvent = BrowserTestUtils.waitForEvent(group, "TabOpen");
   let newTab = await addTabTo(gBrowser, "about:robots", { tabGroup: group });
   await TabOpenEvent;
+
+  // Re-collapse the group, which was uncollapsed when the new tab was added
+  group.collapsed = true;
+  await openGroupPreview(group);
 
   Assert.equal(
     panelContent.children.length,
@@ -860,7 +866,7 @@ add_task(async function tabGroupPanelUpdatesTests() {
   newTab = await addTabTo(gBrowser, "about:robots");
 
   let tabGroupedEvent = BrowserTestUtils.waitForEvent(group, "TabGrouped");
-  gBrowser.moveTabToGroup(newTab, group);
+  gBrowser.moveTabToExistingGroup(newTab, group);
   await tabGroupedEvent;
 
   Assert.equal(panelContent.children.length, 2, "Panel has two tabs");
@@ -1059,7 +1065,10 @@ add_task(async function delayTests() {
  */
 add_task(async function zeroDelayTests() {
   await SpecialPowers.pushPrefEnv({
-    set: [["ui.tooltip.delay_ms", 1000]],
+    set: [
+      ["ui.tooltip.delay_ms", 1000],
+      ["ui.prefersReducedMotion", 1],
+    ],
   });
 
   const tabUrl =
@@ -1074,12 +1083,13 @@ add_task(async function zeroDelayTests() {
     resolved = true;
   });
   // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
-  let timeoutPromise = new Promise(resolve => setTimeout(resolve, 300));
+  let timeoutPromise = new Promise(resolve => setTimeout(resolve, 900));
   await Promise.race([openPreviewPromise, timeoutPromise]);
 
-  Assert.ok(resolved, "Zero delay is set immediately after leaving tab strip");
+  Assert.ok(resolved, "Panel was opened the second time without a delay");
 
   await closeTabPreviews();
+
   BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
   await resetState();

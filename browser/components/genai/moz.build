@@ -9,7 +9,7 @@ MOCHITEST_CHROME_MANIFESTS += [
 ]
 
 with Files("**"):
-    BUG_COMPONENT = ("Core", "Machine Learning")
+    BUG_COMPONENT = ("Core", "Machine Learning: Frontend")
 
 EXTRA_JS_MODULES += [
     "GenAI.sys.mjs",

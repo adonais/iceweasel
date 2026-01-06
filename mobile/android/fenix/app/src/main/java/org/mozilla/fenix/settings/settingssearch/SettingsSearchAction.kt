@@ -17,13 +17,6 @@ sealed interface SettingsSearchAction : Action {
     data object Init : SettingsSearchAction
 
     /**
-     * Signals a new valid [SettingsSearchEnvironment] has been set.
-     *
-     * @property environment New [SettingsSearchEnvironment].
-     */
-    data class EnvironmentRehydrated(val environment: SettingsSearchEnvironment) : SettingsSearchAction
-
-    /**
      * Signals that the current [SettingsSearchEnvironment] has been cleared.
      */
     data object EnvironmentCleared : SettingsSearchAction

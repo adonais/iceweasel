@@ -2202,6 +2202,10 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
         id == NameToId(cx->names().isError)) {
       return true;
     }
+    if (!JS::Prefs::experimental_iterator_sequencing() &&
+        id == NameToId(cx->names().concat)) {
+      return true;
+    }
   }
 
 #ifdef JS_HAS_INTL_API
@@ -2225,10 +2229,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
          id == NameToId(cx->names().zipKeyed))) {
       return true;
     }
-    if (!JS::Prefs::experimental_iterator_sequencing() &&
-        id == NameToId(cx->names().concat)) {
-      return true;
-    }
   }
   if (key == JSProto_Map || key == JSProto_WeakMap) {
     if (!JS::Prefs::experimental_upsert() &&
@@ -2242,6 +2242,12 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
     if (id == NameToId(cx->names().immutable) ||
         id == NameToId(cx->names().sliceToImmutable) ||
         id == NameToId(cx->names().transferToImmutable)) {
+      return true;
+    }
+  }
+  if (key == JSProto_Iterator && !JS::Prefs::experimental_iterator_chunking()) {
+    if (id == NameToId(cx->names().chunks) ||
+        id == NameToId(cx->names().windows)) {
       return true;
     }
   }

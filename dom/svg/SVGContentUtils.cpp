@@ -427,7 +427,10 @@ static gfx::Matrix GetCTMInternal(SVGElement* aElement, CTMType aCTMType,
       ret = SVGUtils::GetTransformMatrixInUserSpace(f);
     }
     if (shouldIncludeChildToUserSpace) {
-      ret = e->ChildToUserSpaceTransform() * ret;
+      auto t = e->ChildToUserSpaceTransform();
+      if (!t.IsSingular()) {
+        ret = t * ret;
+      }
     }
     return ret;
   };
@@ -452,7 +455,8 @@ static gfx::Matrix GetCTMInternal(SVGElement* aElement, CTMType aCTMType,
         if (SVGOuterSVGFrame* frame =
                 do_QueryFrame(element->GetPrimaryFrame())) {
           Matrix childTransform;
-          if (frame->HasChildrenOnlyTransform(&childTransform)) {
+          if (frame->HasChildrenOnlyTransform(&childTransform) &&
+              !childTransform.IsSingular()) {
             return gfx::ToMatrix(matrix) * childTransform;
           }
         }

@@ -227,8 +227,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   static bool IsBackendAccelerated(
       const mozilla::gfx::BackendType aBackendType);
 
-  static bool CanMigrateMacGPUs();
-
   /**
    * Create an offscreen surface of the given dimensions
    * and image format.
@@ -689,6 +687,12 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
    * Update the frame rate (called e.g. after pref changes).
    */
   static void ReInitFrameRate(const char* aPrefIgnored, void* aDataIgnored);
+
+  /**
+   * Reset the global hardware vsync source. The next call to ReInitFrameRate
+   * will attempt to reestablish it, and fall back to software if needed.
+   */
+  static void ResetHardwareVsyncSource();
 
   /**
    * Update force subpixel AA quality setting (called after pref

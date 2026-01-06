@@ -37,7 +37,8 @@ function MarkupContainer() {}
 
 /**
  * Unique identifier used to set markup container node id.
- * @type {Number}
+ *
+ * @type {number}
  */
 let markupContainerID = 0;
 
@@ -56,7 +57,7 @@ MarkupContainer.prototype = {
    *         The markup view that owns this container.
    * @param  {NodeFront} node
    *         The node to display.
-   * @param  {String} type
+   * @param  {string} type
    *         The type of container to build. One of TYPES.TEXT_CONTAINER,
    *         TYPES.ELEMENT_CONTAINER, TYPES.READ_ONLY_CONTAINER
    */
@@ -465,7 +466,7 @@ MarkupContainer.prototype = {
 
     return (
       !this.node.isPseudoElement &&
-      !this.node.isAnonymous &&
+      !this.node.isNativeAnonymous &&
       !this.node.isDocumentElement &&
       tagName !== "body" &&
       tagName !== "head" &&
@@ -481,7 +482,7 @@ MarkupContainer.prototype = {
 
   _onKeyDown(event) {
     const { target, keyCode, shiftKey } = event;
-    const isInput = this.markup._isInputOrTextarea(target);
+    const isInput = this.markup.isInputOrTextareaOrInCodeMirrorEditor(target);
 
     // Ignore all keystrokes that originated in editors except for when 'Tab' is
     // pressed.
@@ -609,8 +610,8 @@ MarkupContainer.prototype = {
   /**
    * Open a "link" found in a node's attribute in the markup-view
    *
-   * @param {String} type: A node-attribute-parser.js ATTRIBUTE_TYPES
-   * @param {String} link: A "link" as returned by the `parseAttribute` function from
+   * @param {string} type: A node-attribute-parser.js ATTRIBUTE_TYPES
+   * @param {string} link: A "link" as returned by the `parseAttribute` function from
    *                 node-attribute-parser.js . This can be an actual URL, but could be
    *                 something else (e.g. an element id).
    */
@@ -814,8 +815,8 @@ MarkupContainer.prototype = {
   /**
    * Try to put keyboard focus on the current editor.
    *
-   * @param {Object} options
-   * @param {Boolean} options.fromMouseEvent: Set to true if this is called from a mouse event.
+   * @param {object} options
+   * @param {boolean} options.fromMouseEvent: Set to true if this is called from a mouse event.
    */
   focus({ fromMouseEvent = false } = {}) {
     // Elements with tabindex of -1 are not focusable.
@@ -851,7 +852,7 @@ MarkupContainer.prototype = {
   /**
    * Expands the markup container if it has children.
    *
-   * @param  {Boolean} applyToDescendants
+   * @param  {boolean} applyToDescendants
    *         Whether all descendants should also be expanded/collapsed
    */
   expandContainer(applyToDescendants) {

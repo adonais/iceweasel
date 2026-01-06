@@ -141,8 +141,9 @@ const PingServer = {
 
 /**
  * Decode the payload of an HTTP request into a ping.
- * @param {Object} request The data representing an HTTP request (nsIHttpRequest).
- * @return {Object} The decoded ping payload.
+ *
+ * @param {object} request The data representing an HTTP request (nsIHttpRequest).
+ * @return {object} The decoded ping payload.
  */
 function decodeRequestPayload(request) {
   let s = request.bodyInputStream;

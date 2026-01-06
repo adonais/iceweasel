@@ -273,10 +273,8 @@ class RuntimeSettingsTest : BaseSessionTest() {
 
         val sanitizedDefaultLargeKeepaliveFactor = 1
 
-        /**
-         * Setting an invalid factor will cause an exception to be throw in debug build.
-         * otherwise, the factor will be reset to default when an invalid factor is given.
-         */
+        // Setting an invalid factor will cause an exception to be throw in debug build.
+        // otherwise, the factor will be reset to default when an invalid factor is given.
         try {
             settings.setLargeKeepaliveFactor(128)
             prefValue = (sessionRule.getPrefs(largeKeepaliveFactorPref)[0] as Int)

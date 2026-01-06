@@ -144,10 +144,6 @@ already_AddRefed<Promise> WebAuthnHandler::MakeCredential(
   }
 
   nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
-  if (!IsWebAuthnAllowedForPrincipal(principal)) {
-    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return promise.forget();
-  }
 
   nsCString rpId;
   if (aOptions.mRp.mId.WasPassed()) {
@@ -463,10 +459,6 @@ already_AddRefed<Promise> WebAuthnHandler::GetAssertion(
   }
 
   nsCOMPtr<nsIPrincipal> principal = doc->NodePrincipal();
-  if (!IsWebAuthnAllowedForPrincipal(principal)) {
-    promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-    return promise.forget();
-  }
 
   nsCString rpId;
   if (aOptions.mRpId.WasPassed()) {

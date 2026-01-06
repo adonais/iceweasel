@@ -117,9 +117,13 @@ var gTabsPanel = {
       let { PanelUI } = target.ownerGlobal;
       switch (target.id) {
         case "allTabsMenu-searchTabs":
+          Glean.browserUiInteraction.listAllTabsAction.search_tabs.add(1);
           this.searchTabs();
           break;
         case "allTabsMenu-closeDuplicateTabs":
+          Glean.browserUiInteraction.listAllTabsAction.close_all_duplicates.add(
+            1
+          );
           gBrowser.removeAllDuplicateTabs();
           break;
         case "allTabsMenu-containerTabsButton":
@@ -129,6 +133,7 @@ var gTabsPanel = {
           PanelUI.showSubView(this.kElements.hiddenTabsView, target);
           break;
         case "allTabsMenu-syncedTabs":
+          Glean.browserUiInteraction.listAllTabsAction.tabs_from_devices.add(1);
           SidebarController.show("viewTabsSidebar");
           break;
         case "allTabsMenu-groupsViewShowMore":

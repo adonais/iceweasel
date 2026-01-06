@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Probleme di sît ingjanôs</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Il sît web %1$s al è stât segnalât tant che sît ingjanôs e al è stât blocât daûr des tôs preferencis di sigurece.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Sît blocât pe tô sigurece</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>La pagjine ae direzion %1$s e je stade blocade parcè che un dai tiei components adizionâi al à cirût di jentrâi. Al è pussibil sfrutâ chest sît par robâ i tiei dâts, come passwords o numars di cjartis di credit.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Version sigure dal sît no disponibile</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

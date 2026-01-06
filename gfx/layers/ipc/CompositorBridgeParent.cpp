@@ -8,7 +8,6 @@
 
 #include <stdio.h>   // for fprintf, stdout
 #include <stdint.h>  // for uint64_t
-#include <map>       // for _Rb_tree_iterator, etc
 #include <utility>   // for pair
 
 #include "apz/src/APZCTreeManager.h"  // for APZCTreeManager
@@ -59,7 +58,6 @@
 #include "mozilla/webrender/RenderThread.h"
 #include "mozilla/media/MediaSystemResourceService.h"  // for MediaSystemResourceService
 #include "mozilla/mozalloc.h"                          // for operator new, etc
-#include "mozilla/PodOperations.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/glean/GfxMetrics.h"

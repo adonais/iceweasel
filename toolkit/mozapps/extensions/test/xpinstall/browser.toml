@@ -36,7 +36,9 @@ https_first_disabled = true # Bug 1737265
 
 ["browser_doorhanger_installs.js"]
 https_first_disabled = true # Bug 1737265
-skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt"] # Bug 1815128
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1815128
+]
 
 ["browser_empty.js"]
 
@@ -51,7 +53,9 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && d
 ["browser_localfile4_postDownload.js"]
 
 ["browser_newwindow.js"]
-run-if = ["debug"]  # This is a test for leaks, see comment in the test.
+run-if = [
+  "debug", # This is a test for leaks, see comment in the test.
+]
 
 ["browser_offline.js"]
 
@@ -61,4 +65,6 @@ run-if = ["debug"]  # This is a test for leaks, see comment in the test.
 
 ["browser_unsigned_url.js"]
 https_first_disabled = true # Bug 1737265
-run-if = ["!require_signing"]
+run-if = [
+  "!require_signing",
+]

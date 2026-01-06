@@ -12,8 +12,6 @@
 #undef NOISY_FINAL_SIZE    // enables debug output for desired width/height
                            // computation, once all children have been reflowed
 #undef NOISY_REMOVE_FRAME
-#undef NOISY_COMBINED_AREA  // enables debug output for combined area
-                            // computation
 #undef NOISY_BLOCK_DIR_MARGINS
 #undef NOISY_REFLOW_REASON     // gives a little info about why each reflow was
                                // requested

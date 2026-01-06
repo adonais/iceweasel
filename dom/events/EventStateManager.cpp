@@ -3671,8 +3671,6 @@ void EventStateManager::DoScrollText(
     case WidgetWheelEvent::SCROLL_DEFAULT:
       if (isDeltaModePixel) {
         mode = ScrollMode::Normal;
-      } else if (aEvent->mFlags.mHandledByAPZ) {
-        mode = ScrollMode::SmoothMsd;
       } else {
         mode = ScrollMode::Smooth;
       }

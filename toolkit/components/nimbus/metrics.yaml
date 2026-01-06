@@ -88,7 +88,6 @@ nimbus_targeting_environment:
       - "browser.startup.page"
       - "browser.toolbars.bookmarks.visibility"
       - "browser.urlbar.lastUrlbarSearchSeconds"
-      - "browser.urlbar.quicksuggest.dataCollection.enabled"
       - "browser.urlbar.showSearchSuggestionsFirst"
       - "browser.urlbar.suggest.quicksuggest.sponsored"
       - "media.videocontrols.picture-in-picture.enabled"
@@ -203,8 +202,6 @@ nimbus_targeting_environment:
           type: string
         browser__urlbar__lastUrlbarSearchSeconds:
           type: number
-        browser__urlbar__quicksuggest__dataCollection__enabled:
-          type: boolean
         browser__urlbar__showSearchSuggestionsFirst:
           type: boolean
         browser__urlbar__suggest__quicksuggest__sponsored:
@@ -797,9 +794,11 @@ nimbus_events:
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1773563
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1781953
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1997467
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1773563
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1781953
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1997467
     data_sensitivity:
       - technical
     notification_emails:
@@ -851,8 +850,12 @@ nimbus_events:
           locale we failed to find in the set of available translations.
       about_config_change:
         description: >
-          For nimbus_experiment, if reason = "changed-pref", whether or not the
-          change was triggerd via about:config.
+          If reason == "changed-pref", whether or not the change was triggerd
+          via about:config.
+        type: string
+      migration:
+        description: >
+          If reason == "migration", the migration that triggered the unenrollment.
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1773563
@@ -1033,12 +1036,17 @@ nimbus_events:
       conflict_slug:
         type: string
         description: If the enrollment hit a feature conflict, the slug of the conflicting experiment/rollout
+      migration:
+        type: string
+        description: If the unenrollment was caused by a migration, the name of the migration.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1817481
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1955169
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1997467
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1817481
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1955169
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1997467
     data_sensitivity:
       - technical
     notification_emails:
@@ -1232,7 +1240,7 @@ normandy:
     data_reviews:
       - https://bugzil.la/1675104
     notification_emails:
-      - ujet@mozilla.com
+      - omc-core@mozilla.com
     expires: never
     extra_keys:
       value:

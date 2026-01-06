@@ -6,6 +6,8 @@
 ChromeUtils.defineESModuleGetters(this, {
   actionTypes: "resource://newtab/common/Actions.mjs",
   NewTabAttributionFeed: "resource://newtab/lib/NewTabAttributionFeed.sys.mjs",
+  newTabAttributionService:
+    "resource://newtab/lib/NewTabAttributionService.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
@@ -82,9 +84,9 @@ add_task(async function test_events_when_enabled() {
   Assert.ok(feed.loaded);
 
   const onAttributionEvent = sinon
-    .stub(feed.attributionService, "onAttributionEvent")
+    .stub(newTabAttributionService, "onAttributionEvent")
     .resolves();
-  const onReset = sinon.stub(feed.attributionService, "onAttributionReset");
+  const onReset = sinon.stub(newTabAttributionService, "onAttributionReset");
 
   const attribution = { campaignId: "bar", creativeId: "bar" };
 
@@ -125,6 +127,9 @@ add_task(async function test_events_when_enabled() {
   // History cleared
   await feed.onAction({ type: actionTypes.PLACES_HISTORY_CLEARED });
   Assert.ok(onReset.calledOnce);
+
+  onAttributionEvent.restore();
+  onReset.restore();
 });
 
 add_task(async function test_pref_changed_trigger_init() {

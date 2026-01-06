@@ -130,7 +130,8 @@ class ExtensionStorageActor extends BaseStorageActor {
   /**
    * This method asynchronously reads the storage data for the target extension
    * and caches this data into this.hostVsStores.
-   * @param {String} host - the hostname for the extension
+   *
+   * @param {string} host - the hostname for the extension
    */
   async populateStoresForHost(host) {
     if (host !== this.extensionHostURL) {
@@ -244,8 +245,9 @@ class ExtensionStorageActor extends BaseStorageActor {
    * devtools/shared/specs/storage.js. Behavior largely mirrors the "indexedDB" storage actor,
    * except where it would throw an unhandled error (i.e. for a `BigInt` or `undefined`
    * `item.value`).
-   * @param {Object} item - The storage item to convert
-   * @param {String} item.name - The storage item key
+   *
+   * @param {object} item - The storage item to convert
+   * @param {string} item.name - The storage item key
    * @param {*} item.value - The storage item value
    * @return {extensionobject}
    */

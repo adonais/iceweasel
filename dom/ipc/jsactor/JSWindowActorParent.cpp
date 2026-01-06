@@ -8,6 +8,8 @@
 
 #include "mozilla/dom/BrowserParent.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/dom/JSIPCValue.h"
+#include "mozilla/dom/JSIPCValueUtils.h"
 #include "mozilla/dom/JSWindowActorBinding.h"
 #include "mozilla/dom/MessageManagerBinding.h"
 #include "mozilla/dom/WindowGlobalChild.h"
@@ -32,11 +34,11 @@ void JSWindowActorParent::Init(const nsACString& aName,
                                WindowGlobalParent* aManager) {
   MOZ_ASSERT(!mManager, "Cannot Init() a JSWindowActorParent twice!");
   mManager = aManager;
-  JSActor::Init(aName);
+  JSActor::Init(aName, /* aSendTyped= */ false);
 }
 
 void JSWindowActorParent::SendRawMessage(
-    const JSActorMessageMeta& aMeta, UniquePtr<ipc::StructuredCloneData> aData,
+    const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
     UniquePtr<ipc::StructuredCloneData> aStack, ErrorResult& aRv) {
   if (NS_WARN_IF(!CanSend() || !mManager || !mManager->CanSend())) {
     aRv.ThrowInvalidStateError("JSWindowActorParent cannot send at the moment");
@@ -50,16 +52,13 @@ void JSWindowActorParent::SendRawMessage(
     return;
   }
 
-  UniquePtr<ClonedMessageData> msgData;
-  if (aData) {
-    msgData = MakeUnique<ClonedMessageData>();
-    if (NS_WARN_IF(!aData->BuildClonedMessageData(*msgData))) {
-      aRv.ThrowDataCloneError(
-          nsPrintfCString("JSWindowActorParent serialization error: cannot "
-                          "clone, in actor '%s'",
-                          PromiseFlatCString(aMeta.actorName()).get()));
-      return;
-    }
+  JSIPCValueUtils::SCDHolder holder;
+  if (NS_WARN_IF(!JSIPCValueUtils::PrepareForSending(holder, aData))) {
+    aRv.ThrowDataCloneError(
+        nsPrintfCString("JSWindowActorParent serialization error: cannot "
+                        "clone, in actor '%s'",
+                        PromiseFlatCString(aMeta.actorName()).get()));
+    return;
   }
 
   UniquePtr<ClonedMessageData> stackData;
@@ -70,7 +69,7 @@ void JSWindowActorParent::SendRawMessage(
     }
   }
 
-  if (NS_WARN_IF(!mManager->SendRawMessage(aMeta, msgData, stackData))) {
+  if (NS_WARN_IF(!mManager->SendRawMessage(aMeta, aData, stackData))) {
     aRv.ThrowOperationError(
         nsPrintfCString("JSWindowActorParent send error in actor '%s'",
                         PromiseFlatCString(aMeta.actorName()).get()));

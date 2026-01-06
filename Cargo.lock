@@ -466,7 +466,7 @@ dependencies = [
  "bitflags 2.9.0",
  "cexpr",
  "clang-sys",
- "itertools 0.14.0",
+ "itertools",
  "proc-macro2",
  "quote",
  "regex",
@@ -763,7 +763,6 @@ dependencies = [
  "clubcard-crlite",
  "crossbeam-utils",
  "cstr",
- "firefox-on-glean",
  "log",
  "moz_task",
  "nserror",
@@ -972,7 +971,7 @@ dependencies = [
 [[package]]
 name = "context_id"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "chrono",
  "error-support",
@@ -1166,6 +1165,7 @@ dependencies = [
 name = "crash_helper_common"
 version = "0.1.0"
 dependencies = [
+ "getrandom 0.3.3",
  "minidump-writer",
  "nix 0.30.1",
  "num-derive",
@@ -1336,8 +1336,9 @@ dependencies = [
 
 [[package]]
 name = "cssparser"
-version = "0.35.0"
-source = "git+https://github.com/servo/rust-cssparser?rev=03f982ed70ce1de67bef02de63b2e11e08a9e111#71b7cfe6f1cd85427ca905a41be31ca9f6af29a5"
+version = "0.36.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dae61cf9c0abb83bd659dab65b7e4e38d8236824c85f0f804f173567bda257d2"
 dependencies = [
  "cssparser-macros",
  "dtoa-short",
@@ -1349,7 +1350,8 @@ dependencies = [
 [[package]]
 name = "cssparser-macros"
 version = "0.6.1"
-source = "git+https://github.com/servo/rust-cssparser?rev=03f982ed70ce1de67bef02de63b2e11e08a9e111#71b7cfe6f1cd85427ca905a41be31ca9f6af29a5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "13b588ba4ac1a99f7f2964d24b3d896ddc6bf847ee3855dbd4366f058cfcd331"
 dependencies = [
  "quote",
  "syn",
@@ -1755,9 +1757,9 @@ dependencies = [
 
 [[package]]
 name = "dwrote"
-version = "0.11.0"
+version = "0.11.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "439a1c2ba5611ad3ed731280541d36d2e9c4ac5e7fb818a27b604bdc5a6aa65b"
+checksum = "9e1b35532432acc8b19ceed096e35dfa088d3ea037fe4f3c085f1f97f33b4d02"
 dependencies = [
  "lazy_static",
  "libc",
@@ -1897,7 +1899,7 @@ dependencies = [
 [[package]]
 name = "error-support"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "env_logger",
  "error-support-macros",
@@ -1912,7 +1914,7 @@ dependencies = [
 [[package]]
 name = "error-support-macros"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2007,7 +2009,7 @@ dependencies = [
 [[package]]
 name = "filter_adult"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "base64 0.22.1",
  "error-support",
@@ -2043,7 +2045,7 @@ dependencies = [
 [[package]]
 name = "firefox-versioning"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "serde_json",
  "thiserror 2.0.12",
@@ -2658,6 +2660,7 @@ dependencies = [
  "urlpattern",
  "urlpattern_glue",
  "viaduct",
+ "viaduct-necko",
  "webext-storage",
  "webrender_bindings",
  "wgpu_bindings",
@@ -2714,9 +2717,9 @@ dependencies = [
 
 [[package]]
 name = "glean"
-version = "66.1.2"
+version = "66.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16967309c8c9320aa752fbb700db55b543983845ad5309cb981c0df9650a530f"
+checksum = "3bd66fe38baf2f972ca9fb63015533f05a11c971462a289c923270803da68b91"
 dependencies = [
  "crossbeam-channel",
  "glean-core",
@@ -2729,9 +2732,9 @@ dependencies = [
 
 [[package]]
 name = "glean-core"
-version = "66.1.2"
+version = "66.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8d8cb0e35e0bc8472cf75cd3ca4d448f208003ea49a524deb623bdfd7c6c882"
+checksum = "416be389bdbac4b784bc226950607acaa9e56888e6fbc91ee2ac9ba5f6bbee1c"
 dependencies = [
  "android_logger",
  "bincode",
@@ -2776,9 +2779,9 @@ dependencies = [
 
 [[package]]
 name = "glslopt"
-version = "0.1.11"
+version = "0.1.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "913662ae8335df058d56e00f11340b20fa82e03e0276587797ef325ab01e50d4"
+checksum = "8ba4741358604ca0848c27ecc069d68e62e11cde81e38aac1da3c54b79ab5adf"
 dependencies = [
  "cc",
 ]
@@ -2831,13 +2834,14 @@ dependencies = [
 
 [[package]]
 name = "gpu-allocator"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c151a2a5ef800297b4e79efa4f4bec035c5f51d5ae587287c9b952bdf734cacd"
+checksum = "51255ea7cfaadb6c5f1528d43e92a82acb2b96c43365989a28b2d44ee38f8795"
 dependencies = [
+ "hashbrown 0.16.0",
  "log",
  "presser",
- "thiserror 1.999.999",
+ "thiserror 2.0.12",
  "windows",
 ]
 
@@ -2952,8 +2956,16 @@ dependencies = [
 
 [[package]]
 name = "hashlink"
-version = "0.10.0"
-source = "git+https://github.com/erichdongubler-contrib/hashlink?rev=76dc47a12af5829c1e8bf4834e38b410dec2aeff#76dc47a12af5829c1e8bf4834e38b410dec2aeff"
+version = "0.10.999"
+dependencies = [
+ "hashlink 0.11.0",
+]
+
+[[package]]
+name = "hashlink"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea0b22561a9c04a7cb1a302c013e0259cd3b4bb619f145b32f72b8b4bcbed230"
 dependencies = [
  "hashbrown 0.16.0",
 ]
@@ -3178,6 +3190,29 @@ dependencies = [
  "writeable",
  "zerovec",
 ]
+
+[[package]]
+name = "icu_casemap"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2183be5a01b948227f1a521f4e586ee69828d2eecc1d2397ce686de68233d27d"
+dependencies = [
+ "displaydoc",
+ "icu_casemap_data",
+ "icu_collections",
+ "icu_locale_core",
+ "icu_properties",
+ "icu_provider",
+ "potential_utf",
+ "writeable",
+ "zerovec",
+]
+
+[[package]]
+name = "icu_casemap_data"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7584067558ab4c60c95d1ac2abd1588689cb4bcd4e099507f62dae86ae8d2c0"
 
 [[package]]
 name = "icu_collections"
@@ -3411,7 +3446,7 @@ dependencies = [
 [[package]]
 name = "init_rust_components"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "nss",
  "uniffi",
@@ -3420,7 +3455,7 @@ dependencies = [
 [[package]]
 name = "interrupt-support"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "lazy_static",
  "parking_lot",
@@ -3491,13 +3526,6 @@ name = "ipdl_utils"
 version = "0.1.0"
 dependencies = [
  "bincode",
-]
-
-[[package]]
-name = "itertools"
-version = "0.10.999"
-dependencies = [
- "itertools 0.14.0",
 ]
 
 [[package]]
@@ -3601,7 +3629,7 @@ dependencies = [
 [[package]]
 name = "jwcrypto"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "base64 0.21.999",
  "error-support",
@@ -3933,7 +3961,7 @@ checksum = "30bde2b3dc3671ae49d8e2e9f044c7c005836e7a023ee57cffa25ab82764bb9e"
 [[package]]
 name = "logins"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -3975,6 +4003,22 @@ dependencies = [
  "zerocopy",
  "zerocopy-derive",
 ]
+
+[[package]]
+name = "macro_rules_attribute"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65049d7923698040cd0b1ddcced9b0eb14dd22c5f86ae59c3740eab64a676520"
+dependencies = [
+ "macro_rules_attribute-proc_macro",
+ "paste",
+]
+
+[[package]]
+name = "macro_rules_attribute-proc_macro"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "670fdfda89751bc4a84ac13eaa63e205cf0fd22b4c9a5fbfa085b63c1f1d3a30"
 
 [[package]]
 name = "malloc_buf"
@@ -4100,8 +4144,7 @@ dependencies = [
 [[package]]
 name = "memtest"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8ff5f1d8294a1fd0c8a32428d826ae22da3d473f0052c6e6d449a91b24e365c"
+source = "git+https://github.com/mozilla/memtest?rev=ad681ba425beb0aeba95f03e671432b4be932174#ad681ba425beb0aeba95f03e671432b4be932174"
 dependencies = [
  "anyhow",
  "libc",
@@ -4131,7 +4174,7 @@ dependencies = [
 [[package]]
 name = "midir"
 version = "0.10.3"
-source = "git+https://github.com/mozilla/midir.git?rev=0cc61b81b26088bb8d6e593caf96879879ab814b#0cc61b81b26088bb8d6e593caf96879879ab814b"
+source = "git+https://github.com/mozilla/midir.git?rev=54759f681f3b523e120d047adec2bb1a97152017#54759f681f3b523e120d047adec2bb1a97152017"
 dependencies = [
  "alsa",
  "coremidi",
@@ -4340,7 +4383,7 @@ dependencies = [
  "futures",
  "getrandom 0.2.999",
  "hex",
- "itertools 0.14.0",
+ "itertools",
  "maybe-async",
  "mls-rs-codec",
  "mls-rs-core",
@@ -4587,7 +4630,7 @@ dependencies = [
  "icu_properties",
  "idna",
  "indexmap",
- "itertools 0.14.0",
+ "itertools",
  "libc",
  "log",
  "memchr",
@@ -4617,7 +4660,7 @@ dependencies = [
  "tinystr",
  "tokio",
  "tokio-util",
- "toml",
+ "toml 0.5.999",
  "tracing",
  "unic-langid",
  "unic-langid-impl",
@@ -4723,9 +4766,9 @@ dependencies = [
 [[package]]
 name = "mtu"
 version = "0.2.9"
-source = "git+https://github.com/mozilla/neqo?tag=v0.18.0#57ef3bd8f67023a168734a154e0ef273e9ddc7f1"
+source = "git+https://github.com/mozilla/neqo?tag=v0.20.0#126b1df97c7f88e4b66ef16dbfe4708dc6f104d9"
 dependencies = [
- "bindgen 0.69.999",
+ "bindgen 0.72.0",
  "cfg_aliases",
  "libc",
  "mozbuild",
@@ -4742,7 +4785,7 @@ checksum = "a2983372caf4480544083767bf2d27defafe32af49ab4df3a0b7fc90793a3664"
 [[package]]
 name = "naga"
 version = "27.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a441382328c5163466fae06802737ef1df8d1f13#a441382328c5163466fae06802737ef1df8d1f13"
+source = "git+https://github.com/gfx-rs/wgpu?rev=d65295a3ce2bb11a36c2c2454ef400652fc1c4a4#d65295a3ce2bb11a36c2c2454ef400652fc1c4a4"
 dependencies = [
  "arrayvec",
  "bit-set",
@@ -4767,13 +4810,14 @@ dependencies = [
 
 [[package]]
 name = "neqo-bin"
-version = "0.18.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.18.0#57ef3bd8f67023a168734a154e0ef273e9ddc7f1"
+version = "0.20.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.20.0#126b1df97c7f88e4b66ef16dbfe4708dc6f104d9"
 dependencies = [
  "clap",
  "clap-verbosity-flag",
  "futures",
  "hex",
+ "libc",
  "log",
  "neqo-common",
  "neqo-crypto",
@@ -4791,8 +4835,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-common"
-version = "0.18.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.18.0#57ef3bd8f67023a168734a154e0ef273e9ddc7f1"
+version = "0.20.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.20.0#126b1df97c7f88e4b66ef16dbfe4708dc6f104d9"
 dependencies = [
  "enum-map",
  "env_logger",
@@ -4805,10 +4849,10 @@ dependencies = [
 
 [[package]]
 name = "neqo-crypto"
-version = "0.18.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.18.0#57ef3bd8f67023a168734a154e0ef273e9ddc7f1"
+version = "0.20.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.20.0#126b1df97c7f88e4b66ef16dbfe4708dc6f104d9"
 dependencies = [
- "bindgen 0.69.999",
+ "bindgen 0.72.0",
  "enum-map",
  "log",
  "mozbuild",
@@ -4818,13 +4862,14 @@ dependencies = [
  "serde_derive",
  "strum",
  "thiserror 2.0.12",
- "toml",
+ "toml 0.5.999",
+ "windows",
 ]
 
 [[package]]
 name = "neqo-http3"
-version = "0.18.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.18.0#57ef3bd8f67023a168734a154e0ef273e9ddc7f1"
+version = "0.20.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.20.0#126b1df97c7f88e4b66ef16dbfe4708dc6f104d9"
 dependencies = [
  "enumset",
  "log",
@@ -4842,8 +4887,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-qpack"
-version = "0.18.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.18.0#57ef3bd8f67023a168734a154e0ef273e9ddc7f1"
+version = "0.20.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.20.0#126b1df97c7f88e4b66ef16dbfe4708dc6f104d9"
 dependencies = [
  "log",
  "neqo-common",
@@ -4856,8 +4901,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-transport"
-version = "0.18.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.18.0#57ef3bd8f67023a168734a154e0ef273e9ddc7f1"
+version = "0.20.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.20.0#126b1df97c7f88e4b66ef16dbfe4708dc6f104d9"
 dependencies = [
  "enum-map",
  "enumset",
@@ -4876,8 +4921,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-udp"
-version = "0.18.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.18.0#57ef3bd8f67023a168734a154e0ef273e9ddc7f1"
+version = "0.20.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.20.0#126b1df97c7f88e4b66ef16dbfe4708dc6f104d9"
 dependencies = [
  "cfg_aliases",
  "libc",
@@ -4982,7 +5027,7 @@ dependencies = [
 [[package]]
 name = "nss"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "base64 0.21.999",
  "error-support",
@@ -5005,18 +5050,18 @@ dependencies = [
  "pkcs11-bindings",
  "serde",
  "serde_derive",
- "toml",
+ "toml 0.5.999",
 ]
 
 [[package]]
 name = "nss_build_common"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 
 [[package]]
 name = "nss_sys"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "libsqlite3-sys",
  "nss_build_common",
@@ -5179,7 +5224,7 @@ dependencies = [
  "serde",
  "serde_derive",
  "thiserror 1.999.999",
- "toml",
+ "toml 0.5.999",
 ]
 
 [[package]]
@@ -5289,7 +5334,7 @@ checksum = "d01a5bd0424d00070b0098dd17ebca6f961a959dead1dbcbbbc1d1cd8d3deeba"
 [[package]]
 name = "payload-support"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "serde",
  "serde_derive",
@@ -5619,9 +5664,9 @@ checksum = "74605f360ce573babfe43964cbe520294dcb081afbf8c108fc6e23036b4da2df"
 
 [[package]]
 name = "prost"
-version = "0.12.1"
+version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4fdd22f3b9c31b53c060df4a0613a1c7f062d4115a2b984dd15b1858f7e340d"
+checksum = "2796faa41db3ec313a31f7624d9286acf277b52de526150b7e69f3debf891ee5"
 dependencies = [
  "bytes",
  "prost-derive",
@@ -5629,12 +5674,12 @@ dependencies = [
 
 [[package]]
 name = "prost-derive"
-version = "0.12.1"
+version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "265baba7fabd416cf5078179f7d2cbeca4ce7a9041111900675ea7c4cb8a4c32"
+checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.10.999",
+ "itertools",
  "proc-macro2",
  "quote",
  "syn",
@@ -5813,7 +5858,7 @@ dependencies = [
 [[package]]
 name = "rc_crypto"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "base64 0.21.999",
  "error-support",
@@ -5883,7 +5928,7 @@ checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 [[package]]
 name = "relevancy"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "anyhow",
  "base64 0.21.999",
@@ -5907,7 +5952,7 @@ dependencies = [
 [[package]]
 name = "remote_settings"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "anyhow",
  "camino",
@@ -6068,7 +6113,7 @@ dependencies = [
  "bitflags 2.9.0",
  "fallible-iterator",
  "fallible-streaming-iterator",
- "hashlink",
+ "hashlink 0.10.999",
  "libsqlite3-sys",
  "serde_json",
  "smallvec",
@@ -6199,7 +6244,7 @@ dependencies = [
 [[package]]
 name = "search"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "error-support",
  "firefox-versioning",
@@ -6328,6 +6373,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_spanned"
+version = "1.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e24345aa0fe688594e73770a5f6d1b216508b4f93484c0026d521acd30134392"
+dependencies = [
+ "serde_core",
+]
+
+[[package]]
 name = "serde_urlencoded"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6431,7 +6485,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 name = "signature_cache"
 version = "0.1.0"
 dependencies = [
- "hashlink",
+ "hashlink 0.11.0",
 ]
 
 [[package]]
@@ -6516,7 +6570,7 @@ dependencies = [
 [[package]]
 name = "sql-support"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "error-support",
  "interrupt-support",
@@ -6622,7 +6676,7 @@ dependencies = [
  "gecko-profiler",
  "icu_segmenter",
  "indexmap",
- "itertools 0.14.0",
+ "itertools",
  "itoa",
  "lazy_static",
  "log",
@@ -6654,7 +6708,7 @@ dependencies = [
  "thin-vec",
  "to_shmem",
  "to_shmem_derive",
- "toml",
+ "toml 0.5.999",
  "uluru",
  "void",
  "walkdir",
@@ -6707,12 +6761,15 @@ checksum = "81cdd64d312baedb58e21336b31bc043b77e01cc99033ce76ef539f78e965ebc"
 [[package]]
 name = "suggest"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "anyhow",
  "chrono",
  "error-support",
  "extend",
+ "icu_casemap",
+ "icu_normalizer",
+ "icu_properties",
  "interrupt-support",
  "once_cell",
  "parking_lot",
@@ -6723,8 +6780,6 @@ dependencies = [
  "serde_json",
  "sql-support",
  "thiserror 2.0.12",
- "unicase",
- "unicode-normalization",
  "uniffi",
  "url",
  "viaduct",
@@ -6760,7 +6815,7 @@ dependencies = [
 [[package]]
 name = "sync-guid"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "base64 0.21.999",
  "rand",
@@ -6771,7 +6826,7 @@ dependencies = [
 [[package]]
 name = "sync15"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "anyhow",
  "base16",
@@ -6815,7 +6870,7 @@ dependencies = [
 [[package]]
 name = "tabs"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "anyhow",
  "error-support",
@@ -6973,21 +7028,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "tinyvec"
-version = "1.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "09b3661f17e86524eccd4371ab0429194e0d7c008abb45f7a7495b1719463c71"
-dependencies = [
- "tinyvec_macros",
-]
-
-[[package]]
-name = "tinyvec_macros"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
-
-[[package]]
 name = "to_shmem"
 version = "0.1.0"
 dependencies = [
@@ -7063,12 +7103,49 @@ dependencies = [
 
 [[package]]
 name = "toml"
-version = "0.5.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4f7f0dd8d50a853a531c426359045b1998f04219d88799810762cd4ad314234"
+version = "0.5.999"
 dependencies = [
- "serde",
+ "toml 0.9.8",
 ]
+
+[[package]]
+name = "toml"
+version = "0.9.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f0dc8b1fb61449e27716ec0e1bdf0f6b8f3e8f6b05391e8497b8b6d7804ea6d8"
+dependencies = [
+ "indexmap",
+ "serde_core",
+ "serde_spanned",
+ "toml_datetime",
+ "toml_parser",
+ "toml_writer",
+ "winnow",
+]
+
+[[package]]
+name = "toml_datetime"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f2cdb639ebbc97961c51720f858597f7f24c4fc295327923af55b74c3c724533"
+dependencies = [
+ "serde_core",
+]
+
+[[package]]
+name = "toml_parser"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c0cbe268d35bdb4bb5a56a2de88d0ad0eb70af5384a99d648cd4b3d04039800e"
+dependencies = [
+ "winnow",
+]
+
+[[package]]
+name = "toml_writer"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "df8b2b54733674ad286d16267dcfc7a71ed5c776e4ac7aa3c3e2561f7c637bf2"
 
 [[package]]
 name = "topological-sort"
@@ -7128,7 +7205,7 @@ dependencies = [
 [[package]]
 name = "tracing-support"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "parking_lot",
  "serde_json",
@@ -7194,7 +7271,7 @@ checksum = "497961ef93d974e23eb6f433eb5fe1b7930b659f06d12dec6fc44a8f554c0bba"
 [[package]]
 name = "types"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "rusqlite 0.37.0",
  "serde",
@@ -7270,15 +7347,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "84a22b9f218b40614adcb3f4ff08b703773ad44fa9423e4e0d346d5db86e4ebc"
 
 [[package]]
-name = "unicode-normalization"
-version = "0.1.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5033c97c4262335cded6d6fc3e5c18ab755e1a3dc96376350f3d8e9f009ad956"
-dependencies = [
- "tinyvec",
-]
-
-[[package]]
 name = "unicode-width"
 version = "0.1.999"
 dependencies = [
@@ -7320,7 +7388,7 @@ dependencies = [
  "indexmap",
  "serde",
  "textwrap",
- "toml",
+ "toml 0.5.999",
  "uniffi",
  "uniffi_bindgen",
  "uniffi_pipeline",
@@ -7354,7 +7422,7 @@ dependencies = [
  "serde",
  "tempfile",
  "textwrap",
- "toml",
+ "toml 0.5.999",
  "uniffi_internal_macros",
  "uniffi_meta",
  "uniffi_pipeline",
@@ -7438,7 +7506,7 @@ dependencies = [
  "quote",
  "serde",
  "syn",
- "toml",
+ "toml 0.5.999",
  "uniffi_meta",
 ]
 
@@ -7592,7 +7660,7 @@ checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
 [[package]]
 name = "viaduct"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "async-trait",
  "error-support",
@@ -7606,6 +7674,17 @@ dependencies = [
  "thiserror 2.0.12",
  "uniffi",
  "url",
+]
+
+[[package]]
+name = "viaduct-necko"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "error-support",
+ "futures-channel",
+ "url",
+ "viaduct",
 ]
 
 [[package]]
@@ -7757,7 +7836,7 @@ dependencies = [
 [[package]]
 name = "webext-storage"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/application-services?rev=7ee874e18f461a83f5c8c8927039cbde3225b60d#7ee874e18f461a83f5c8c8927039cbde3225b60d"
+source = "git+https://github.com/mozilla/application-services?rev=799ae231ba91f5b6634672a2737cc9efdf997b70#799ae231ba91f5b6634672a2737cc9efdf997b70"
 dependencies = [
  "anyhow",
  "error-support",
@@ -7854,6 +7933,7 @@ dependencies = [
  "gecko-profiler",
  "gleam",
  "log",
+ "mozbuild",
  "nsstring",
  "num_cpus",
  "objc",
@@ -7901,7 +7981,7 @@ dependencies = [
 [[package]]
 name = "wgpu-core"
 version = "27.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a441382328c5163466fae06802737ef1df8d1f13#a441382328c5163466fae06802737ef1df8d1f13"
+source = "git+https://github.com/gfx-rs/wgpu?rev=d65295a3ce2bb11a36c2c2454ef400652fc1c4a4#d65295a3ce2bb11a36c2c2454ef400652fc1c4a4"
 dependencies = [
  "arrayvec",
  "bit-set",
@@ -7913,6 +7993,7 @@ dependencies = [
  "hashbrown 0.16.0",
  "indexmap",
  "log",
+ "macro_rules_attribute",
  "naga",
  "once_cell",
  "parking_lot",
@@ -7931,7 +8012,7 @@ dependencies = [
 [[package]]
 name = "wgpu-core-deps-apple"
 version = "27.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a441382328c5163466fae06802737ef1df8d1f13#a441382328c5163466fae06802737ef1df8d1f13"
+source = "git+https://github.com/gfx-rs/wgpu?rev=d65295a3ce2bb11a36c2c2454ef400652fc1c4a4#d65295a3ce2bb11a36c2c2454ef400652fc1c4a4"
 dependencies = [
  "wgpu-hal",
 ]
@@ -7939,7 +8020,7 @@ dependencies = [
 [[package]]
 name = "wgpu-core-deps-windows-linux-android"
 version = "27.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a441382328c5163466fae06802737ef1df8d1f13#a441382328c5163466fae06802737ef1df8d1f13"
+source = "git+https://github.com/gfx-rs/wgpu?rev=d65295a3ce2bb11a36c2c2454ef400652fc1c4a4#d65295a3ce2bb11a36c2c2454ef400652fc1c4a4"
 dependencies = [
  "wgpu-hal",
 ]
@@ -7947,7 +8028,7 @@ dependencies = [
 [[package]]
 name = "wgpu-hal"
 version = "27.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a441382328c5163466fae06802737ef1df8d1f13#a441382328c5163466fae06802737ef1df8d1f13"
+source = "git+https://github.com/gfx-rs/wgpu?rev=d65295a3ce2bb11a36c2c2454ef400652fc1c4a4#d65295a3ce2bb11a36c2c2454ef400652fc1c4a4"
 dependencies = [
  "android_system_properties",
  "arrayvec",
@@ -7985,7 +8066,7 @@ dependencies = [
 [[package]]
 name = "wgpu-types"
 version = "27.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a441382328c5163466fae06802737ef1df8d1f13#a441382328c5163466fae06802737ef1df8d1f13"
+source = "git+https://github.com/gfx-rs/wgpu?rev=d65295a3ce2bb11a36c2c2454ef400652fc1c4a4#d65295a3ce2bb11a36c2c2454ef400652fc1c4a4"
 dependencies = [
  "bitflags 2.9.0",
  "bytemuck",
@@ -8018,9 +8099,9 @@ dependencies = [
 
 [[package]]
 name = "whatsys"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb632c0076024630111a08ca9fcbd34736c80d10b9ae517077487b0c82f46a36"
+checksum = "192bcd2925a9791ba474bc673938f8c59b8978b3f304ef2c50672156bacf943b"
 dependencies = [
  "cc",
  "cfg-if",
@@ -8036,6 +8117,7 @@ dependencies = [
  "nsstring",
  "thin-vec",
  "windows",
+ "windows-collections",
  "xpcom",
 ]
 
@@ -8072,31 +8154,53 @@ checksum = "712e227841d057c1ee1cd2fb22fa7e5a5461ae8e48fa2ca79ec42cfc1931183f"
 
 [[package]]
 name = "windows"
-version = "0.58.0"
+version = "0.62.2"
 dependencies = [
  "mozbuild",
+ "windows-collections",
  "windows-core",
- "windows-targets",
+ "windows-future",
+ "windows-numerics",
+]
+
+[[package]]
+name = "windows-collections"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "23b2d95af1a8a14a3c7367e1ed4fc9c20e0a26e79551b1454d72583c97cc6610"
+dependencies = [
+ "windows-core",
 ]
 
 [[package]]
 name = "windows-core"
-version = "0.58.0"
+version = "0.62.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6ba6d44ec8c2591c134257ce647b7ea6b20335bf6379a27dac5f1641fcf59f99"
+checksum = "b8e83a14d34d0623b51dce9581199302a221863196a1dde71a7663a4c2be9deb"
 dependencies = [
  "windows-implement",
  "windows-interface",
+ "windows-link",
  "windows-result",
  "windows-strings",
- "windows-targets",
+]
+
+[[package]]
+name = "windows-future"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1d6f90251fe18a279739e78025bd6ddc52a7e22f921070ccdc67dde84c605cb"
+dependencies = [
+ "windows-core",
+ "windows-link",
+ "windows-threading",
 ]
 
 [[package]]
 name = "windows-implement"
-version = "0.58.0"
+version = "0.60.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bbd5b46c938e506ecbce286b6628a02171d56153ba733b6c741fc627ec9579b"
+checksum = "053e2e040ab57b9dc951b72c264860db7eb3b0200ba345b4e4c3b14f67855ddf"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -8105,9 +8209,9 @@ dependencies = [
 
 [[package]]
 name = "windows-interface"
-version = "0.58.0"
+version = "0.59.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "053c4c462dc91d3b1504c6fe5a726dd15e216ba718e84a0e46a88fbe5ded3515"
+checksum = "3f316c4a2570ba26bbec722032c4099d8c8bc095efccdc15688708623367e358"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -8121,22 +8225,31 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0805222e57f7521d6a62e36fa9163bc891acd422f971defe97d64e70d0a4fe5"
 
 [[package]]
-name = "windows-result"
-version = "0.2.0"
+name = "windows-numerics"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d1043d8214f791817bab27572aaa8af63732e11bf84aa21a45a78d6c317ae0e"
+checksum = "6e2e40844ac143cdb44aead537bbf727de9b044e107a0f1220392177d15b0f26"
 dependencies = [
- "windows-targets",
+ "windows-core",
+ "windows-link",
+]
+
+[[package]]
+name = "windows-result"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7781fa89eaf60850ac3d2da7af8e5242a5ea78d1a11c49bf2910bb5a73853eb5"
+dependencies = [
+ "windows-link",
 ]
 
 [[package]]
 name = "windows-strings"
-version = "0.1.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4cd9b125c486025df0eabcb585e62173c6c9eddcec5d117d3b6e8c30e2ee4d10"
+checksum = "7837d08f69c77cf6b07689544538e017c1bfcf57e34b4c0ff58e6c2cd3b37091"
 dependencies = [
- "windows-result",
- "windows-targets",
+ "windows-link",
 ]
 
 [[package]]
@@ -8157,10 +8270,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "winnow"
-version = "0.7.9"
+name = "windows-threading"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9fb597c990f03753e08d3c29efbfcf2019a003b4bf4ba19225c158e1549f0f3"
+checksum = "3949bd5b99cafdf1c7ca86b43ca564028dfe27d66958f2470940f73d86d75b37"
+dependencies = [
+ "windows-link",
+]
+
+[[package]]
+name = "winnow"
+version = "0.7.13"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "21a0236b59786fed61e2a80582dd500fe61f18b5dca67a4a067d0bc9039339cf"
 dependencies = [
  "memchr",
 ]
@@ -8298,7 +8420,7 @@ checksum = "4ce2a4ff45552406d02501cea6c18d8a7e50228e7736a872951fe2fe75c91be7"
 dependencies = [
  "arraydeque",
  "encoding_rs",
- "hashlink",
+ "hashlink 0.10.999",
 ]
 
 [[package]]

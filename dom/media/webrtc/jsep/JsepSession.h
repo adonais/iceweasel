@@ -5,7 +5,6 @@
 #ifndef _JSEPSESSION_H_
 #define _JSEPSESSION_H_
 
-#include <map>
 #include <string>
 #include <vector>
 

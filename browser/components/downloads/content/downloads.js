@@ -230,6 +230,7 @@ var DownloadsPanel = {
 
   /**
    * Indicates whether the panel is showing.
+   *
    * @note this includes the hiding state.
    */
   get isPanelShowing() {

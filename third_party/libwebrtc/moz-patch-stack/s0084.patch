@@ -11,10 +11,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/2185cab977988fd4a
  3 files changed, 16 insertions(+)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 8704f0f34a..3eab1126bf 100644
+index 33ed200085..a1010e5e9a 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -609,6 +609,7 @@ if (!build_with_chromium) {
+@@ -613,6 +613,7 @@ if (!build_with_chromium) {
  
      if (build_with_mozilla) {
        deps += [
@@ -23,12 +23,12 @@ index 8704f0f34a..3eab1126bf 100644
          "api/video:video_rtp_headers",
          "test:rtp_test_utils",
 diff --git a/api/environment/environment_factory.cc b/api/environment/environment_factory.cc
-index 0dd380a70b..4f48c1a06c 100644
+index 529bbecad7..6e0810267b 100644
 --- a/api/environment/environment_factory.cc
 +++ b/api/environment/environment_factory.cc
-@@ -105,12 +105,22 @@ Environment EnvironmentFactory::CreateWithDefaults() && {
-     Set(std::make_unique<FieldTrialBasedConfig>());
- #pragma clang diagnostic pop
+@@ -102,12 +102,22 @@ Environment EnvironmentFactory::CreateWithDefaults() && {
+   if (field_trials_ == nullptr) {
+     Set(std::make_unique<DeprecatedGlobalFieldTrials>());
    }
 +#if defined(WEBRTC_MOZILLA_BUILD)
 +  // We want to use our clock, not GetRealTimeClockRaw, and we avoid

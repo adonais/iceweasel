@@ -53,7 +53,7 @@
 // prior to that, we need to fall back to llvm's make_unique.  It's also the
 // case that we expect clang 10 to build with c++14 and clang 9 and earlier to
 // build with c++11, at least as suggested by the llvm-config --cxxflags on
-// non-windows platforms.  mozilla-central seems to build with -std=c++17 on
+// non-windows platforms.  firefox-main seems to build with -std=c++17 on
 // windows so we need to make this decision based on __cplusplus instead of
 // the CLANG_VERSION_MAJOR.
 #if __cplusplus < 201402L
@@ -375,7 +375,7 @@ private:
   // In resulting string rep, line is 1-based and zero-padded to 5 digits, while
   // column is 0-based and unpadded.
   std::string locationToString(SourceLocation Loc, size_t Length = 0) {
-    std::pair<FileID, unsigned> Pair = SM.getDecomposedLoc(Loc);
+    std::pair<FileID, unsigned> Pair = SM.getDecomposedExpansionLoc(Loc);
 
     bool IsInvalid;
     unsigned Line = SM.getLineNumber(Pair.first, Pair.second, &IsInvalid);
@@ -397,8 +397,8 @@ private:
   // Convert SourceRange to "line-line" or "line".
   // In the resulting string rep, line is 1-based.
   std::string lineRangeToString(SourceRange Range, bool omitEnd = false) {
-    std::pair<FileID, unsigned> Begin = SM.getDecomposedLoc(Range.getBegin());
-    std::pair<FileID, unsigned> End = SM.getDecomposedLoc(Range.getEnd());
+    std::pair<FileID, unsigned> Begin = SM.getDecomposedExpansionLoc(Range.getBegin());
+    std::pair<FileID, unsigned> End = SM.getDecomposedExpansionLoc(Range.getEnd());
 
     bool IsInvalid;
     unsigned Line1 = SM.getLineNumber(Begin.first, Begin.second, &IsInvalid);
@@ -443,11 +443,30 @@ private:
     return result;
   }
 
+  bool needsNestingRangeForVarDecl(SourceRange& Range) {
+    std::pair<FileID, unsigned> Begin = SM.getDecomposedExpansionLoc(Range.getBegin());
+    std::pair<FileID, unsigned> End = SM.getDecomposedExpansionLoc(Range.getEnd());
+
+    bool IsInvalid;
+    unsigned Line1 = SM.getLineNumber(Begin.first, Begin.second, &IsInvalid);
+    if (IsInvalid) {
+      return false;
+    }
+    unsigned Line2 = SM.getLineNumber(End.first, End.second, &IsInvalid);
+    if (IsInvalid) {
+      return false;
+    }
+
+    static constexpr unsigned MinVarDeclNestingRangeLines = 10;
+
+    return Line2 > Line1 + MinVarDeclNestingRangeLines;
+  }
+
   // Convert SourceRange to "line:column-line:column".
   // In the resulting string rep, line is 1-based, column is 0-based.
   std::string fullRangeToString(SourceRange Range) {
-    std::pair<FileID, unsigned> Begin = SM.getDecomposedLoc(Range.getBegin());
-    std::pair<FileID, unsigned> End = SM.getDecomposedLoc(Range.getEnd());
+    std::pair<FileID, unsigned> Begin = SM.getDecomposedExpansionLoc(Range.getBegin());
+    std::pair<FileID, unsigned> End = SM.getDecomposedExpansionLoc(Range.getEnd());
 
     bool IsInvalid;
     unsigned Line1 = SM.getLineNumber(Begin.first, Begin.second, &IsInvalid);
@@ -2005,12 +2024,12 @@ public:
     // By default, we end at the line containing the function's name.
     SourceLocation End = D->getLocation();
 
-    std::pair<FileID, unsigned> FuncLoc = SM.getDecomposedLoc(End);
+    std::pair<FileID, unsigned> FuncLoc = SM.getDecomposedExpansionLoc(End);
 
     // But if there are parameters, we want to include those as well.
     for (ParmVarDecl *Param : D->parameters()) {
       std::pair<FileID, unsigned> ParamLoc =
-          SM.getDecomposedLoc(Param->getLocation());
+          SM.getDecomposedExpansionLoc(Param->getLocation());
 
       // It's possible there are macros involved or something. We don't include
       // the parameters in that case.
@@ -2029,12 +2048,12 @@ public:
     // By default, we end at the line containing the name.
     SourceLocation End = D->getLocation();
 
-    std::pair<FileID, unsigned> FuncLoc = SM.getDecomposedLoc(End);
+    std::pair<FileID, unsigned> FuncLoc = SM.getDecomposedExpansionLoc(End);
 
     if (CXXRecordDecl *D2 = dyn_cast<CXXRecordDecl>(D)) {
       // But if there are parameters, we want to include those as well.
       for (CXXBaseSpecifier &Base : D2->bases()) {
-        std::pair<FileID, unsigned> Loc = SM.getDecomposedLoc(Base.getEndLoc());
+        std::pair<FileID, unsigned> Loc = SM.getDecomposedExpansionLoc(Base.getEndLoc());
 
         // It's possible there are macros involved or something. We don't
         // include the parameters in that case.
@@ -2067,10 +2086,10 @@ public:
       return Range1;
     }
 
-    std::pair<FileID, unsigned> Begin1 = SM.getDecomposedLoc(Range1.getBegin());
-    std::pair<FileID, unsigned> End1 = SM.getDecomposedLoc(Range1.getEnd());
-    std::pair<FileID, unsigned> Begin2 = SM.getDecomposedLoc(Range2.getBegin());
-    std::pair<FileID, unsigned> End2 = SM.getDecomposedLoc(Range2.getEnd());
+    std::pair<FileID, unsigned> Begin1 = SM.getDecomposedExpansionLoc(Range1.getBegin());
+    std::pair<FileID, unsigned> End1 = SM.getDecomposedExpansionLoc(Range1.getEnd());
+    std::pair<FileID, unsigned> Begin2 = SM.getDecomposedExpansionLoc(Range2.getBegin());
+    std::pair<FileID, unsigned> End2 = SM.getDecomposedExpansionLoc(Range2.getEnd());
 
     if (End1.first != Begin2.first) {
       // Something weird is probably happening with the preprocessor. Just
@@ -2091,9 +2110,9 @@ public:
   // - The range is well ordered (end is not before begin).
   // Returns an empty range otherwise.
   SourceRange validateRange(SourceLocation Loc, SourceRange Range) {
-    std::pair<FileID, unsigned> Decomposed = SM.getDecomposedLoc(Loc);
-    std::pair<FileID, unsigned> Begin = SM.getDecomposedLoc(Range.getBegin());
-    std::pair<FileID, unsigned> End = SM.getDecomposedLoc(Range.getEnd());
+    std::pair<FileID, unsigned> Decomposed = SM.getDecomposedExpansionLoc(Loc);
+    std::pair<FileID, unsigned> Begin = SM.getDecomposedExpansionLoc(Range.getBegin());
+    std::pair<FileID, unsigned> End = SM.getDecomposedExpansionLoc(Range.getEnd());
 
     if (Begin.first != Decomposed.first || End.first != Decomposed.first) {
       return SourceRange();
@@ -2185,6 +2204,10 @@ public:
                  ? "decl"
                  : "def";
       PrettyKind = "variable";
+
+      if (needsNestingRangeForVarDecl(PeekRange)) {
+        NestingRange = PeekRange;
+      }
     } else if (isa<NamespaceDecl>(D) || isa<NamespaceAliasDecl>(D)) {
       Kind = "def";
       PrettyKind = "namespace";

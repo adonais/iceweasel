@@ -29,8 +29,8 @@
 using namespace cdm;
 
 bool AllZero(const std::vector<uint32_t>& aBytes) {
-  return all_of(aBytes.begin(), aBytes.end(),
-                [](uint32_t b) { return b == 0; });
+  return std::all_of(aBytes.begin(), aBytes.end(),
+                     [](uint32_t b) { return b == 0; });
 }
 
 class ClearKeyDecryptor : public RefCounted {

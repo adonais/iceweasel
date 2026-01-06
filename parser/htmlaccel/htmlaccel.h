@@ -20,7 +20,9 @@
 
 // ISA SUPPORT: Do not include this file unless the compilation unit is
 // being compiled either for little-endian aarch64 or for x86/x86_64 with
-// at least SSSE3 enabled.
+// at least SSSE3 enabled. (We're actually not using this on 32-bit x86
+// and are compiling with AVX+BMI on x86_64; see below. In the build
+// system, `HTML_ACCEL_FLAGS` contains the actually-used flags.)
 //
 // It's probably feasible to extend this to support little-endian POWER
 // by defining
@@ -29,7 +31,7 @@
 //  return vec_perm(table, table, nibbles);
 // }
 // but since I don't have a little-endian POWER system to test with,
-// this is left as an exercise to the reader. (The x86/x86_64 reduction
+// this is left as an exercise to the reader. (The x86_64 reduction
 // code should be portable to POWER10 using vec_extractm and the aarch64
 // reduction code should be portable to older POWER using vec_max.)
 //
@@ -39,14 +41,14 @@
 #  error "A little-endian target is required."
 #endif
 #if !(defined(__aarch64__) || defined(__SSSE3__))
-#  error "Must be targeting aarch64 or SSSE3."
+#  error "Must be targeting SSSE3 or above (notably AVX+BMI), or aarch64."
 #endif
 
 // NOTE: This file uses GCC/clang built-ins that provide SIMD portability.
 // Compared to pretending unawareness of what arm_neon.h and tmmintrin.h
 // map to in GCC and clang, this has the benefit that the code is not stuck
 // at an SSSE3 local maximum but adapts maximally to upgrades to SSE 4.2,
-// AVX2, and BMI. (Yes, enabling BMI seems to affect more than just
+// AVX, and AVX+BMI. (Yes, enabling BMI seems to affect more than just
 // __builtin_ctz!)
 // (We need to check for __clang__, because clang-cl does not define __GNUC__.)
 #if !(defined(__GNUC__) || defined(__clang__))
@@ -76,10 +78,10 @@
 // The lookup operation is available unconditionally on aarch64. On
 // x86/x86_64, it is part of the SSSE3 instruction set extension, which is
 // why on x86/x86_64 we must not call into this code unless SSSE3 is
-// available. (Each additional level of compiling  this code with SSE4.2,
-// AVX2, or AVX2 + BMI makes this code shorter, which presumably means more
+// available. (Each additional level of compiling this code with SSE4.2,
+// AVX, or AVX+BMI makes this code shorter, which presumably means more
 // efficient, so instead of compiling this just with SSSE3, we compile this
-// with AVX2+BMI on x86_64, considering that CPUs with such capabilities
+// with AVX+BMI on x86_64, considering that CPUs with such capabilities
 // have been available for 12 years at the time of landing this code.)
 //
 // The lookup table contains the loop-terminating ASCII characters in the
@@ -102,8 +104,9 @@
 // low 4 bits. This is true for U+0000, &, <, LF, CR, ", and ', but,
 // unfortunately, CR, ] and - share the low 4 bits, so cases where we need
 // to include a check for ] or - needs to do a separate check, since CR is
-// always in the lookup table. (Checks for ", ', ], and - are not here at
-// this time but will come in follow-up patches.)
+// always in the lookup table. Note that it's not worthwhile to pursue
+// the low 5 bits instead when possible, because CR and - share the low
+// 5 bits, too.
 //
 // From these operations, we get a vector of 16 8-bit mask lanes where a
 // lane is 0xFF if the low 8 bits of the UTF-16 code unit matched an ASCII
@@ -122,9 +125,9 @@
 // Now we have a vector of 16 8-bit mask lanes that corresponds to the input
 // of 16 UTF-16 code units to indicate which code units in the run of 16
 // UTF-16 code units require terminating the loop (i.e. must not be skipped
-// over). At this point, the handling diverges for x86/x86_64 and aarch64.
+// over). At this point, the handling diverges for x86_64 and aarch64.
 //
-// ## x86/x86_64
+// ## x86_64
 //
 // We convert the SIMD mask into bits in an ALU register. The operation
 // returns a 32-bit type, but only the low 16 bits can be non-zero. If the
@@ -169,11 +172,13 @@
 //
 // # Inlining
 //
-// The public functions here are expected to be called from a loop. To give
-// LICM the opportunity to hoist the SIMD constants out of the loop, make
-// sure that every function on the path from the loop to here is declared
-// MOZ_ALWAYS_INLINE_EVEN_DEBUG and that all these and the loop itself are
-// compiled with the same instruction set extension flags (if applicable).
+// This code was designed for inlining the public functions all the
+// way to the caller for maximum LICM. However, due to
+// https://github.com/llvm/llvm-project/issues/160886 the public
+// functions are currently annotated _not_ to be inlined, because
+// currently inlining them into the eventual caller results in
+// no LICM but leaving them not-inlined results in one level of
+// LICM in the leaf function.
 //
 // # Acknowledments
 //
@@ -231,6 +236,10 @@ const uint8x16_t SURROGATE_MASK = {0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8,
 const uint8x16_t SURROGATE_MATCH = {0xD8, 0xD8, 0xD8, 0xD8, 0xD8, 0xD8,
                                     0xD8, 0xD8, 0xD8, 0xD8, 0xD8, 0xD8,
                                     0xD8, 0xD8, 0xD8, 0xD8};
+const uint8x16_t HYPHENS = {'-', '-', '-', '-', '-', '-', '-', '-',
+                            '-', '-', '-', '-', '-', '-', '-', '-'};
+const uint8x16_t RSQBS = {']', ']', ']', ']', ']', ']', ']', ']',
+                          ']', ']', ']', ']', ']', ']', ']', ']'};
 
 // The approach here supports disallowing up to 16 different
 // characters that 1) are in the Latin1 range, i.e. U+00FF or
@@ -262,12 +271,36 @@ const uint8x16_t LT_GT_AMP_NBSP = {0xA0, 2, 1, 1, 1,   1, '&', 1,
 /// quote.
 const uint8x16_t LT_GT_AMP_NBSP_QUOT = {0xA0, 2, '"', 1, 1,   1, '&', 1,
                                         1,    1, 1,   1, '<', 1, '>', 1};
+/// Disallow U+0000, less-than, and carriage return.
+const uint8x16_t ZERO_LT_CR = {0, 2, 1, 1, 1,   1,    1, 1,
+                               1, 1, 1, 1, '<', '\r', 1, 1};
+/// Disallow U+0000, less-than, carriage return, and line feed.
+const uint8x16_t ZERO_LT_CR_LF = {0, 2, 1,    1, 1,   1,    1, 1,
+                                  1, 1, '\n', 1, '<', '\r', 1, 1};
+/// Disallow U+0000, single quote, ampersand, and carriage return.
+const uint8x16_t ZERO_APOS_AMP_CR = {0, 2, 1, 1, 1, 1,    '&', '\'',
+                                     1, 1, 1, 1, 1, '\r', 1,   1};
+/// Disallow U+0000, single quote, ampersand, carriage return, and line feed.
+const uint8x16_t ZERO_APOS_AMP_CR_LF = {0, 2, 1,    1, 1, 1,    '&', '\'',
+                                        1, 1, '\n', 1, 1, '\r', 1,   1};
+/// Disallow U+0000, double quote, ampersand, and carriage return.
+const uint8x16_t ZERO_QUOT_AMP_CR = {0, 2, '"', 1, 1, 1,    '&', 1,
+                                     1, 1, 1,   1, 1, '\r', 1,   1};
+/// Disallow U+0000, single quote, ampersand, carriage return, and line feed.
+const uint8x16_t ZERO_QUOT_AMP_CR_LF = {0, 2, '"',  1, 1, 1,    '&', 1,
+                                        1, 1, '\n', 1, 1, '\r', 1,   1};
+/// Disallow U+0000 and carriage return.
+const uint8x16_t ZERO_CR = {0, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, '\r', 1, 1};
+/// Disallow U+0000, carriage return, and line feed.
+const uint8x16_t ZERO_CR_LF = {0, 2, 1,    1, 1, 1,    1, 1,
+                               1, 1, '\n', 1, 1, '\r', 1, 1};
 
 /// Compute a 16-lane mask for for 16 UTF-16 code units, where a lane
 /// is 0x00 if OK to skip and 0xFF in not OK to skip.
 MOZ_ALWAYS_INLINE_EVEN_DEBUG uint8x16_t
 StrideToMask(const char16_t* aArr /* len = 16 */, uint8x16_t aTable,
-             bool aAllowSurrogates) {
+             bool aAllowSurrogates = true, bool aAllowHyphen = true,
+             bool aAllowRightSquareBracket = true) {
   uint8x16_t first;
   uint8x16_t second;
   // memcpy generates a single unaligned load instruction with both ISAs.
@@ -287,6 +320,12 @@ StrideToMask(const char16_t* aArr /* len = 16 */, uint8x16_t aTable,
   uint8x16_t high_half_matches = high_halves == ALL_ZEROS;
   uint8x16_t low_half_matches =
       low_halves == TableLookup(aTable, low_halves & NIBBLE_MASK);
+  if (!aAllowHyphen) {  // Assumed to be constant-propagated
+    low_half_matches |= low_halves == HYPHENS;
+  }
+  if (!aAllowRightSquareBracket) {  // Assumed to be constant-propagated
+    low_half_matches |= low_halves == RSQBS;
+  }
   uint8x16_t ret = low_half_matches & high_half_matches;
   if (!aAllowSurrogates) {  // Assumed to be constant-propagated
     ret |= (high_halves & SURROGATE_MASK) == SURROGATE_MATCH;
@@ -296,10 +335,12 @@ StrideToMask(const char16_t* aArr /* len = 16 */, uint8x16_t aTable,
 
 /// Compute a 16-lane mask for for 16 Latin1 code units, where a lane
 /// is 0x00 if OK to skip and 0xFF in not OK to skip.
-/// `aAllowSurrogates` exist for signature compatibility with the UTF-16
-/// case and is unused.
-MOZ_ALWAYS_INLINE_EVEN_DEBUG uint8x16_t StrideToMask(
-    const char* aArr /* len = 16 */, uint8x16_t aTable, bool aAllowSurrogates) {
+/// The boolean arguments exist for signature compatibility with the UTF-16
+/// case and are unused in the Latin1 case.
+MOZ_ALWAYS_INLINE_EVEN_DEBUG uint8x16_t
+StrideToMask(const char* aArr /* len = 16 */, uint8x16_t aTable,
+             bool aAllowSurrogates = true, bool aAllowHyphen = true,
+             bool aAllowRightSquareBracket = true) {
   uint8x16_t stride;
   // memcpy generates a single unaligned load instruction with both ISAs.
   memcpy(&stride, aArr, 16);
@@ -308,13 +349,14 @@ MOZ_ALWAYS_INLINE_EVEN_DEBUG uint8x16_t StrideToMask(
 }
 
 template <typename CharT>
-MOZ_ALWAYS_INLINE_EVEN_DEBUG size_t AccelerateTextNode(const CharT* aInput,
-                                                       const CharT* aEnd,
-                                                       uint8x16_t aTable,
-                                                       bool aAllowSurrogates) {
+MOZ_ALWAYS_INLINE_EVEN_DEBUG size_t
+AccelerateTextNode(const CharT* aInput, const CharT* aEnd, uint8x16_t aTable,
+                   bool aAllowSurrogates = true, bool aAllowHyphen = true,
+                   bool aAllowRightSquareBracket = true) {
   const CharT* current = aInput;
   while (aEnd - current >= 16) {
-    uint8x16_t mask = StrideToMask(current, aTable, aAllowSurrogates);
+    uint8x16_t mask = StrideToMask(current, aTable, aAllowSurrogates,
+                                   aAllowHyphen, aAllowRightSquareBracket);
 #if defined(__aarch64__)
     uint8_t max = vmaxvq_u8(mask & INVERTED_ADVANCES);
     if (max != 0) {
@@ -343,8 +385,7 @@ MOZ_ALWAYS_INLINE_EVEN_DEBUG uint32_t CountEscaped(const CharT* aInput,
   const CharT* current = aInput;
   while (aEnd - current >= 16) {
     uint8x16_t mask = StrideToMask(
-        current, aCountDoubleQuote ? LT_GT_AMP_NBSP_QUOT : LT_GT_AMP_NBSP,
-        true);
+        current, aCountDoubleQuote ? LT_GT_AMP_NBSP_QUOT : LT_GT_AMP_NBSP);
 #if defined(__aarch64__)
     // Reduce on each iteration to avoid branching for overflow avoidance
     // on each iteration.
@@ -369,7 +410,7 @@ MOZ_ALWAYS_INLINE_EVEN_DEBUG bool ContainsMarkup(const char16_t* aInput,
                                                  const char16_t* aEnd) {
   const char16_t* current = aInput;
   while (aEnd - current >= 16) {
-    uint8x16_t mask = StrideToMask(current, ZERO_LT_AMP_CR, true);
+    uint8x16_t mask = StrideToMask(current, ZERO_LT_AMP_CR);
 #if defined(__aarch64__)
     uint8_t max = vmaxvq_u8(mask);
     if (max != 0) {

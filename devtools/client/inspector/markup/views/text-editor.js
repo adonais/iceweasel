@@ -39,7 +39,7 @@ loader.lazyRequireGetter(
  *         The container owning this editor.
  * @param  {DOMNode} node
  *         The node being edited.
- * @param  {String} type
+ * @param  {string} type
  *         The type of editor to build. This can be either 'text' or 'comment'.
  */
 function TextEditor(container, node, type) {

@@ -104,7 +104,7 @@ inline void RLogConnector::RemoveOld() {
 RLogConnector* RLogConnector::CreateInstance() {
   if (!instance) {
     instance = new RLogConnector;
-    NR_reg_init(NR_REG_MODE_LOCAL);
+    NR_reg_init();
     r_log_set_extra_destination(LOG_DEBUG, &ringbuffer_vlog);
   }
   return instance;

@@ -83,22 +83,30 @@ prefs = [
 ]
 
 ["test_alt-data_closeWithStatus_wrap.js"]
-skip-if = ["isolated_process"] # Bug 1709961
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
+skip-if = [
+  "isolated_process", # Bug 1709961
+]
 
 ["test_alt-data_cross_process_wrap.js"]
-skip-if = ["isolated_process"] # Bug 1709961
+skip-if = [
+  "isolated_process", # Bug 1709961
+]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_alt-data_simple_wrap.js"]
-skip-if = ["isolated_process"] # Bug 1709961
+skip-if = [
+  "isolated_process", # Bug 1709961
+]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_alt-data_stream_wrap.js"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_cache-entry-id_wrap.js"]
-skip-if = ["isolated_process"] # Bug 1709961
+skip-if = [
+  "isolated_process", # Bug 1709961
+]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_cache_jar_wrap.js"]
@@ -141,7 +149,9 @@ prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_gio_protocol_wrap.js"]
-run-if = ["os == 'linux'"]
+run-if = [
+  "os == 'linux'",
+]
 
 ["test_head_wrap.js"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
@@ -152,16 +162,20 @@ prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 ["test_http3_prio_disabled_wrap.js"]
 run-sequentially = ["true"] # http3server
 skip-if = [
-  "os == 'android' && os_version == '14' && processor == 'x86_64'", # Bug 1982955
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && msix", # Bug 1807925
+  "os == 'android' && os_version == '14' && arch == 'x86_64'", # Bug 1982955
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && msix", # Bug 1807925
 ]
 
 ["test_http3_prio_enabled_wrap.js"]
 run-sequentially = ["true"] # http3server
-skip-if = ["true"] # Will be reenabled in bug 1865394
+skip-if = [
+  "true", # Will be reenabled in bug 1865394
+]
 
 ["test_httpcancel_wrap.js"]
-skip-if = ["isolated_process"] # Bug 1709961
+skip-if = [
+  "isolated_process", # Bug 1709961
+]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_httpsuspend_wrap.js"]
@@ -190,7 +204,9 @@ prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_redirect-caching_failure_wrap.js"]
-skip-if = ["isolated_process"] # Bug 1709961
+skip-if = [
+  "isolated_process", # Bug 1709961
+]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_redirect-caching_passing_wrap.js"]
@@ -207,7 +223,9 @@ prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 # Do not test the channel.redirectTo() API under e10s until 827269 is resolved
 
 ["test_redirect_from_script_wrap.js"]
-skip-if = ["true"]
+skip-if = [
+  "true",
+]
 
 ["test_redirect_history_wrap.js"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
@@ -216,7 +234,9 @@ prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 
 ["test_redirect_veto_parent.js"]
-skip-if = ["isolated_process"] # Bug 1709961
+skip-if = [
+  "isolated_process", # Bug 1709961
+]
 prefs = ["network.allow_raw_sockets_in_content_processes=true"]
 run-sequentially = ["true"] # doesn't play nice with others.
 

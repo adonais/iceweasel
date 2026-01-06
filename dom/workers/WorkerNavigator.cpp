@@ -6,8 +6,6 @@
 
 #include "mozilla/dom/WorkerNavigator.h"
 
-#include <utility>
-
 #include "ErrorList.h"
 #include "MainThreadUtils.h"
 #include "RuntimeService.h"

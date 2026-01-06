@@ -47,6 +47,7 @@ async function negotiateLangPackForLanguageMismatch() {
 
   /**
    * Figure out a langpack to recommend.
+   *
    * @type {LangPack | null}
    */
   const langPack =
@@ -163,6 +164,7 @@ const mockable = {
 
   /**
    * Use the AddonManager to install an addon from the URL.
+   *
    * @param {LangPack} langPack
    */
   async installLangPack(langPack) {

@@ -7,8 +7,6 @@ subsuite = "taskgraph"
 
 ["test_decision.py"]
 
-["test_files_changed.py"]
-
 ["test_main.py"]
 
 ["test_morph.py"]

@@ -13,6 +13,7 @@
 #include "ggml-cpu.h"
 #include "mozilla/dom/LlamaRunnerBinding.h"
 #include "mozilla/Result.h"
+#include "mozilla/ResultVariant.h"
 #include "mozilla/UniquePtr.h"
 
 namespace mozilla::llama {

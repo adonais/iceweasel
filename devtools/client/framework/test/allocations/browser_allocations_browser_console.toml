@@ -11,4 +11,6 @@ prefs = "extensions.webcompat.disable_debug_logging=true"
 # individually, without any other test being executed before or after.
 
 ["browser_allocations_browser_console.js"]
-run-if = ["os == 'linux' && opt"] # Results should be platform agnostic - only run on linux64-opt
+run-if = [
+  "os == 'linux' && opt", # Results should be platform agnostic - only run on linux64-opt
+]

@@ -135,7 +135,7 @@ function entriesIterator(props, object, max) {
 /**
  * Get entries ordered by index.
  *
- * @param {Object} props Component props.
+ * @param {object} props Component props.
  * @param {Array} entries Entries array.
  * @param {Array} indexes Indexes of entries.
  * @return {Array} Array of PropRep.
@@ -170,7 +170,7 @@ function getEntries(props, entries, indexes) {
  * Get the indexes of entries in the map.
  *
  * @param {Array} entries Entries array.
- * @param {Number} max The maximum length of indexes array.
+ * @param {number} max The maximum length of indexes array.
  * @param {Function} filter Filter the entry you want.
  * @return {Array} Indexes of filtered entries in the map.
  */

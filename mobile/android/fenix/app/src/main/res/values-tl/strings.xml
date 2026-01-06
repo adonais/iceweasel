@@ -489,6 +489,10 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Ibahagi kung paano mo natuklasan ang Firefox, na ginagamit mo ito kaakibat ang mga marketing partner ng Mozilla. Ang data na ito ay di-kailanman ibebenta.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Sumang-ayon at magsimulang mag-browse</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Pilin ang paglalagyan ng toolbar</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -675,8 +679,6 @@
   <string name="preferences_gestures">Mga gesture</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Ipasadya</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Mag-sign in para makapag-sync ng mga tab, bookmark, password, at iba pa.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Mozilla account</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -959,12 +961,6 @@
   <string name="preference_experiments_2">Mga pag-aaral</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">Pinapayagan ang Mozilla para magkabit at magpatakbo ng mga pag-aaral</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">i-Sync at i-save ang iyong data</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Mag-sign in para mag-reconnect</string>
   <!-- Preference for removing FxA account -->
@@ -1651,8 +1647,6 @@
   <string name="toast_copy_link_to_clipboard">Kinopya sa clipboard</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Mag-sign in sa Sync</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">I-sync at i-save ang data</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Ipadala sa lahat ng mga device</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -3231,4 +3225,9 @@
   <string name="private_tab_cfr_negative">Salamat na lang</string>
   <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
   <string name="private_tab_cfr_positive">I-lock ang mga tab</string>
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

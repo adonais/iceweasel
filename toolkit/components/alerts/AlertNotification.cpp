@@ -22,11 +22,6 @@ namespace mozilla {
 
 NS_IMPL_ISUPPORTS(AlertNotification, nsIAlertNotification)
 
-AlertNotification::AlertNotification()
-    : mTextClickable(false), mInPrivateBrowsing(false) {}
-
-AlertNotification::~AlertNotification() = default;
-
 NS_IMETHODIMP
 AlertNotification::Init(const nsAString& aName, const nsAString& aImageURL,
                         const nsAString& aTitle, const nsAString& aText,
@@ -54,6 +49,36 @@ AlertNotification::Init(const nsAString& aName, const nsAString& aImageURL,
   mSilent = aSilent;
   mVibrate = aVibrate.Clone();
 
+  return InitId();
+}
+
+NS_IMETHODIMP
+AlertNotification::InitWithObject(nsIAlertNotification* aAlertNotification) {
+  MOZ_TRY(aAlertNotification->GetName(mName));
+  MOZ_TRY(aAlertNotification->GetImageURL(mImageURL));
+  MOZ_TRY(aAlertNotification->GetTitle(mTitle));
+  MOZ_TRY(aAlertNotification->GetText(mText));
+  MOZ_TRY(aAlertNotification->GetTextClickable(&mTextClickable));
+  MOZ_TRY(aAlertNotification->GetCookie(mCookie));
+  MOZ_TRY(aAlertNotification->GetDir(mDir));
+  MOZ_TRY(aAlertNotification->GetLang(mLang));
+  MOZ_TRY(aAlertNotification->GetData(mData));
+  MOZ_TRY(aAlertNotification->GetPrincipal(getter_AddRefs(mPrincipal)));
+  MOZ_TRY(aAlertNotification->GetInPrivateBrowsing(&mInPrivateBrowsing));
+  MOZ_TRY(aAlertNotification->GetRequireInteraction(&mRequireInteraction));
+  MOZ_TRY(aAlertNotification->GetSilent(&mSilent));
+  if (NS_FAILED(aAlertNotification->GetVibrate(mVibrate))) {
+    mVibrate.Clear();
+  };
+  nsTArray<RefPtr<nsIAlertAction>> actions;
+  if (NS_SUCCEEDED(aAlertNotification->GetActions(actions))) {
+    for (auto& action : actions) {
+      if (RefPtr<nsIAlertAction> copied =
+              AlertAction::Copy(*action).unwrapOr(nullptr)) {
+        mActions.AppendElement(copied);
+      }
+    }
+  };
   return InitId();
 }
 
@@ -463,6 +488,15 @@ NS_IMPL_ISUPPORTS(AlertAction, nsIAlertAction)
 
 AlertAction::AlertAction(const nsAString& aAction, const nsAString& aTitle)
     : mAction(aAction), mTitle(aTitle) {}
+
+Result<already_AddRefed<AlertAction>, nsresult> AlertAction::Copy(
+    nsIAlertAction& aAction) {
+  nsAutoString action;
+  nsAutoString title;
+  MOZ_TRY(aAction.GetAction(action));
+  MOZ_TRY(aAction.GetTitle(title));
+  return do_AddRef(new AlertAction(action, title));
+}
 
 NS_IMETHODIMP
 AlertAction::GetAction(nsAString& aAction) {

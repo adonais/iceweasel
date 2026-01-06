@@ -24,7 +24,7 @@ task-defaults:
     fetches:
         toolchain:
             - android-sdk-linux
-    worker-type: b-linux-medium-gcp
+    worker-type: b-linux-medium
     worker:
         docker-image: {in-tree: android-ui-tests}
         max-run-time: 7200
@@ -199,6 +199,16 @@ tasks:
             build-type: focus-debug-firebase
             shipping-product: focus
         description: 'Focus UI tests with firebase'
+        dependencies:
+            signed-apk-debug-apk: signing-apk-focus-debug
+            signed-apk-android-test: signing-apk-focus-android-test-debug
+        fetches:
+            signed-apk-debug-apk:
+                - artifact: target.arm64-v8a.apk
+                  extract: false
+            signed-apk-android-test:
+                - artifact: target.noarch.apk
+                  extract: false
         optimization:
             skip-unless-backstop: null
         run:
@@ -208,13 +218,7 @@ tasks:
                   path: mobile/android/test_infra/.firebase_token.json
                   json: true
             commands:
-                - [wget, {artifact-reference: '<signed-apk-debug-apk/public/build/target.arm64-v8a.apk>'}, '-O', app.apk]
-                - [wget, {artifact-reference: '<signed-apk-android-test/public/build/target.noarch.apk>'}, '-O', android-test.apk]
-                - [python3, taskcluster/scripts/tests/test-lab.py, focus/arm64-v8a.yml, app.apk, --apk_test, android-test.apk]
-        dependencies:
-            # key is arbitrary, the value corresponds to <kind name>-<build-name>
-            signed-apk-debug-apk: signing-apk-focus-debug
-            signed-apk-android-test: signing-apk-focus-android-test-debug
+                - [python3, taskcluster/scripts/tests/test-lab.py, focus/arm64-v8a.yml, /builds/worker/fetches/target.arm64-v8a.apk, --apk_test, /builds/worker/fetches/target.noarch.apk]
         treeherder:
             platform: 'focus-android-all/opt'
             symbol: focus-debug(ui-test-arm)
@@ -230,6 +234,13 @@ tasks:
         dependencies:
             signed-apk-debug-apk: signing-apk-focus-nightly-firebase
             signed-apk-android-test: signing-apk-focus-android-test-nightly
+        fetches:
+            signed-apk-debug-apk:
+                - artifact: target.arm64-v8a.apk
+                  extract: false
+            signed-apk-android-test:
+                - artifact: target.noarch.apk
+                  extract: false
         optimization:
             skip-unless-backstop: null
         run-on-projects: [trunk]
@@ -240,9 +251,7 @@ tasks:
                   path: mobile/android/test_infra/.firebase_token.json
                   json: true
             commands:
-                - [wget, {artifact-reference: '<signed-apk-debug-apk/public/build/target.arm64-v8a.apk>'}, '-O', app.apk]
-                - [wget, {artifact-reference: '<signed-apk-android-test/public/build/target.noarch.apk>'}, '-O', android-test.apk]
-                - [python3, taskcluster/scripts/tests/test-lab.py, focus/arm-start-test.yml, app.apk, --apk_test, android-test.apk]
+                - [python3, taskcluster/scripts/tests/test-lab.py, focus/arm-start-test.yml, /builds/worker/fetches/target.arm64-v8a.apk, --apk_test, /builds/worker/fetches/target.noarch.apk]
         treeherder:
             platform: 'focus-android-all/opt'
             symbol: focus-nightly(ui-test-arm-nightly)
@@ -258,6 +267,13 @@ tasks:
         dependencies:
             signed-apk-debug-apk: signing-apk-focus-beta-firebase
             signed-apk-android-test: signing-apk-focus-android-test-beta
+        fetches:
+            signed-apk-debug-apk:
+                - artifact: target.arm64-v8a.apk
+                  extract: false
+            signed-apk-android-test:
+                - artifact: target.noarch.apk
+                  extract: false
         optimization:
             skip-unless-backstop: null
         run-on-projects: [release]
@@ -268,9 +284,7 @@ tasks:
                   path: mobile/android/test_infra/.firebase_token.json
                   json: true
             commands:
-                - [wget, {artifact-reference: '<signed-apk-debug-apk/public/build/target.arm64-v8a.apk>'}, '-O', app.apk]
-                - [wget, {artifact-reference: '<signed-apk-android-test/public/build/target.noarch.apk>'}, '-O', android-test.apk]
-                - [python3, taskcluster/scripts/tests/test-lab.py, focus/arm-beta.yml, app.apk, --apk_test, android-test.apk]
+                - [python3, taskcluster/scripts/tests/test-lab.py, focus/arm-beta.yml, /builds/worker/fetches/target.arm64-v8a.apk, --apk_test, /builds/worker/fetches/target.noarch.apk]
         treeherder:
             platform: 'focus-android-all/opt'
             symbol: focus-beta(ui-test-arm-beta)
@@ -286,6 +300,13 @@ tasks:
         dependencies:
             signed-apk-debug-apk: signing-apk-fenix-debug
             signed-apk-android-test: signing-apk-fenix-android-test-debug
+        fetches:
+            signed-apk-debug-apk:
+                - artifact: target.arm64-v8a.apk
+                  extract: false
+            signed-apk-android-test:
+                - artifact: target.noarch.apk
+                  extract: false
         optimization:
             skip-unless-backstop: null
         run:
@@ -295,9 +316,7 @@ tasks:
                   path: mobile/android/test_infra/.firebase_token.json
                   json: true
             commands:
-                - [wget, {artifact-reference: '<signed-apk-debug-apk/public/build/target.arm64-v8a.apk>'}, '-O', app.apk]
-                - [wget, {artifact-reference: '<signed-apk-android-test/public/build/target.noarch.apk>'}, '-O', android-test.apk]
-                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm64-v8a.yml, app.apk, --apk_test, android-test.apk]
+                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm64-v8a.yml, /builds/worker/fetches/target.arm64-v8a.apk, --apk_test, /builds/worker/fetches/target.noarch.apk]
         treeherder:
             platform: 'fenix-android-all/opt'
             symbol: fenix-debug(ui-test-arm)
@@ -313,6 +332,13 @@ tasks:
         dependencies:
             signed-apk-debug-apk: signing-apk-fenix-debug
             signed-apk-android-test: signing-apk-fenix-android-test-debug
+        fetches:
+            signed-apk-debug-apk:
+                - artifact: target.arm64-v8a.apk
+                  extract: false
+            signed-apk-android-test:
+                - artifact: target.noarch.apk
+                  extract: false
         optimization:
             skip-unless-backstop: null
         run-on-projects: [trunk]
@@ -323,9 +349,7 @@ tasks:
                   path: mobile/android/test_infra/.firebase_token.json
                   json: true
             commands:
-                - [wget, {artifact-reference: '<signed-apk-debug-apk/public/build/target.arm64-v8a.apk>'}, '-O', app.apk]
-                - [wget, {artifact-reference: '<signed-apk-android-test/public/build/target.noarch.apk>'}, '-O', android-test.apk]
-                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm64-v8a-detect-leaks.yml, app.apk, --apk_test, android-test.apk]
+                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm64-v8a-detect-leaks.yml, /builds/worker/fetches/target.arm64-v8a.apk, --apk_test, /builds/worker/fetches/target.noarch.apk, --artifact_type, "memory_leaks"]
         treeherder:
             platform: 'fenix-android-all/opt'
             symbol: fenix-debug(detect-leaks-arm)
@@ -341,6 +365,13 @@ tasks:
         dependencies:
             signed-apk-debug-apk: signing-apk-fenix-beta-firebase
             signed-apk-android-test: signing-apk-fenix-android-test-beta
+        fetches:
+            signed-apk-debug-apk:
+                - artifact: target.arm64-v8a.apk
+                  extract: false
+            signed-apk-android-test:
+                - artifact: target.noarch.apk
+                  extract: false
         optimization:
             skip-unless-backstop: null
         run-on-projects: [release]
@@ -351,9 +382,7 @@ tasks:
                   path: mobile/android/test_infra/.firebase_token.json
                   json: true
             commands:
-                - [wget, {artifact-reference: '<signed-apk-debug-apk/public/build/target.arm64-v8a.apk>'}, '-O', app.apk]
-                - [wget, {artifact-reference: '<signed-apk-android-test/public/build/target.noarch.apk>'}, '-O', android-test.apk]
-                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm-beta.yml, app.apk, --apk_test, android-test.apk]
+                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm-beta.yml, /builds/worker/fetches/target.arm64-v8a.apk, --apk_test, /builds/worker/fetches/target.noarch.apk]
         treeherder:
             platform: 'fenix-android-all/opt'
             symbol: fenix-beta(ui-test-arm-beta)
@@ -369,6 +398,13 @@ tasks:
         dependencies:
             signed-apk-debug-apk: signing-apk-fenix-nightly-firebase
             signed-apk-android-test: signing-apk-fenix-android-test-nightly
+        fetches:
+            signed-apk-debug-apk:
+                - artifact: target.arm64-v8a.apk
+                  extract: false
+            signed-apk-android-test:
+                - artifact: target.noarch.apk
+                  extract: false
         optimization:
             skip-unless-backstop: null
         run-on-projects: [trunk]
@@ -379,9 +415,7 @@ tasks:
                   path: mobile/android/test_infra/.firebase_token.json
                   json: true
             commands:
-                - [wget, {artifact-reference: '<signed-apk-debug-apk/public/build/target.arm64-v8a.apk>'}, '-O', app.apk]
-                - [wget, {artifact-reference: '<signed-apk-android-test/public/build/target.noarch.apk>'}, '-O', android-test.apk]
-                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm-start-test.yml, app.apk, --apk_test, android-test.apk]
+                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm-start-test.yml, /builds/worker/fetches/target.arm64-v8a.apk, --apk_test, /builds/worker/fetches/target.noarch.apk]
         treeherder:
             platform: 'fenix-android-all/opt'
             symbol: fenix-nightly(ui-test-arm-nightly)
@@ -398,6 +432,13 @@ tasks:
         dependencies:
             signed-apk-debug-apk: signing-apk-fenix-debug
             signed-apk-android-test: signing-apk-fenix-android-test-debug
+        fetches:
+            signed-apk-debug-apk:
+                - artifact: target.arm64-v8a.apk
+                  extract: false
+            signed-apk-android-test:
+                - artifact: target.noarch.apk
+                  extract: false
         optimization:
             skip-unless-backstop: null
         run:
@@ -407,9 +448,7 @@ tasks:
                   path: mobile/android/test_infra/.firebase_token.json
                   json: true
             commands:
-                - [wget, {artifact-reference: '<signed-apk-debug-apk/public/build/target.arm64-v8a.apk>'}, '-O', app.apk]
-                - [wget, {artifact-reference: '<signed-apk-android-test/public/build/target.noarch.apk>'}, '-O', android-test.apk]
-                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm-legacy-api-tests.yml, app.apk, --apk_test, android-test.apk]
+                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm-legacy-api-tests.yml, /builds/worker/fetches/target.arm64-v8a.apk, --apk_test, /builds/worker/fetches/target.noarch.apk]
         treeherder:
             platform: 'fenix-android-all/opt'
             symbol: fenix-debug(legacy-arm)
@@ -424,6 +463,10 @@ tasks:
         description: Run Robo test on ARM devices
         dependencies:
             signed-apk-debug-apk: signing-apk-fenix-debug
+        fetches:
+            signed-apk-debug-apk:
+                - artifact: target.arm64-v8a.apk
+                  extract: false
         optimization:
             skip-unless-backstop: null
         run:
@@ -433,8 +476,7 @@ tasks:
                   path: mobile/android/test_infra/.firebase_token.json
                   json: true
             commands:
-                - [wget, {artifact-reference: '<signed-apk-debug-apk/public/build/target.arm64-v8a.apk>'}, '-O', app.apk]
-                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm-robo-test.yml, app.apk]
+                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm-robo-test.yml, /builds/worker/fetches/target.arm64-v8a.apk]
         treeherder:
             platform: 'fenix-android-all/opt'
             symbol: fenix-debug(robo-arm)
@@ -450,6 +492,13 @@ tasks:
         dependencies:
             signed-apk-debug-apk: signing-apk-fenix-debug
             signed-apk-android-test: signing-apk-fenix-android-test-debug
+        fetches:
+            signed-apk-debug-apk:
+                - artifact: target.arm64-v8a.apk
+                  extract: false
+            signed-apk-android-test:
+                - artifact: target.noarch.apk
+                  extract: false
         optimization:
             skip-unless-backstop: null
         run:
@@ -459,9 +508,7 @@ tasks:
                   path: mobile/android/test_infra/.firebase_token.json
                   json: true
             commands:
-                - [wget, {artifact-reference: '<signed-apk-debug-apk/public/build/target.arm64-v8a.apk>'}, '-O', app.apk]
-                - [wget, {artifact-reference: '<signed-apk-android-test/public/build/target.noarch.apk>'}, '-O', android-test.apk]
-                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm-experimental-api-tests.yml, app.apk, --apk_test, android-test.apk]
+                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm-experimental-api-tests.yml, /builds/worker/fetches/target.arm64-v8a.apk, --apk_test, /builds/worker/fetches/target.noarch.apk]
         run-on-projects: [trunk]
         treeherder:
             platform: 'fenix-android-all/opt'
@@ -478,6 +525,13 @@ tasks:
         dependencies:
             signed-apk-debug-apk: signing-apk-fenix-debug
             signed-apk-android-test: signing-apk-fenix-android-test-debug
+        fetches:
+            signed-apk-debug-apk:
+                - artifact: target.arm64-v8a.apk
+                  extract: false
+            signed-apk-android-test:
+                - artifact: target.noarch.apk
+                  extract: false
         optimization: {"test": ["android", "fenix"]}
         run:
             secrets:
@@ -486,9 +540,7 @@ tasks:
                   path: mobile/android/test_infra/.firebase_token.json
                   json: true
             commands:
-                - [wget, {artifact-reference: '<signed-apk-debug-apk/public/build/target.arm64-v8a.apk>'}, '-O', app.apk]
-                - [wget, {artifact-reference: '<signed-apk-android-test/public/build/target.noarch.apk>'}, '-O', android-test.apk]
-                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm-smoke-tests.yml, app.apk, --apk_test, android-test.apk]
+                - [python3, taskcluster/scripts/tests/test-lab.py, fenix/arm-smoke-tests.yml, /builds/worker/fetches/target.arm64-v8a.apk, --apk_test, /builds/worker/fetches/target.noarch.apk]
         run-on-projects: ['autoland', 'mozilla-central']
         treeherder:
             platform: 'fenix-android-all/opt'

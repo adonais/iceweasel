@@ -10,15 +10,7 @@
     },
     "FINAL_LIBRARY": "xul"
   },
-  "mozilla_flags": [
-    "-fobjc-arc",
-    "-mavx2",
-    "-mfma",
-    "-mfpu=neon",
-    "-msse2",
-    "-std=gnu++20",
-    "-std:c++20"
-  ],
+  "mozilla_flags": ["-fobjc-arc", "-mavx2", "-mfma", "-mfpu=neon", "-msse2"],
   "write_mozbuild_variables": {
     "INCLUDE_TK_CFLAGS_DIRS": [
       "third_party/libwebrtc/modules/desktop_capture/desktop_capture_gn",

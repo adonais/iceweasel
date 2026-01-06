@@ -7,9 +7,6 @@
 #ifndef PannerNode_h_
 #define PannerNode_h_
 
-#include <limits>
-#include <set>
-
 #include "AudioNode.h"
 #include "AudioParam.h"
 #include "ThreeDPoint.h"

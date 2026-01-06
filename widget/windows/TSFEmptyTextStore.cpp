@@ -23,7 +23,6 @@
 #include "mozilla/ToString.h"
 #include "nsWindow.h"
 
-#include <algorithm>
 #include <comutil.h>  // for _bstr_t
 #include <oleauto.h>  // for SysAllocString
 #include <olectl.h>

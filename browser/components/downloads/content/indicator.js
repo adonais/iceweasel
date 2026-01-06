@@ -337,6 +337,7 @@ const DownloadsIndicatorView = {
 
   /**
    * Check if the panel containing aNode is open.
+   *
    * @param aNode
    *        the node whose panel we're interested in.
    */

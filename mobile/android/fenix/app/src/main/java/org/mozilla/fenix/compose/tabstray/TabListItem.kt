@@ -25,6 +25,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -148,7 +149,7 @@ private fun TabContent(
     val contentBackgroundColor = if (isSelected) {
         FirefoxTheme.colors.layerAccentNonOpaque
     } else {
-        FirefoxTheme.colors.layer1
+        MaterialTheme.colorScheme.surface
     }
 
     // Used to propagate the ripple effect to the whole tab
@@ -178,7 +179,6 @@ private fun TabContent(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(FirefoxTheme.colors.layer3)
             .background(contentBackgroundColor)
             .then(clickableModifier)
             .padding(start = 16.dp, top = 8.dp, bottom = 8.dp)
@@ -204,7 +204,7 @@ private fun TabContent(
         ) {
             Text(
                 text = tab.toDisplayTitle().take(MAX_URI_LENGTH),
-                color = FirefoxTheme.colors.textPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 style = FirefoxTheme.typography.body1,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 2,
@@ -212,7 +212,7 @@ private fun TabContent(
 
             Text(
                 text = tab.content.url.toShortUrl(),
-                color = FirefoxTheme.colors.textSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = FirefoxTheme.typography.body2,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
@@ -232,7 +232,7 @@ private fun TabContent(
                         id = R.string.close_tab_title,
                         tab.toDisplayTitle(),
                     ),
-                    tint = FirefoxTheme.colors.iconPrimary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
         } else {

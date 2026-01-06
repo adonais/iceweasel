@@ -83,13 +83,13 @@ const EXTRA_HEIGHT = {
  * @param {DOMRect} viewportRect
  *        Bounding rectangle for the viewport. top/left can be different from 0 if some
  *        space should not be used by tooltips (for instance OS toolbars, taskbars etc.).
- * @param {Number} height
+ * @param {number} height
  *        Preferred height for the tooltip.
- * @param {String} pos
+ * @param {string} pos
  *        Preferred position for the tooltip. Possible values: "top" or "bottom".
- * @param {Number} offset
+ * @param {number} offset
  *        Offset between the top of the anchor and the tooltip.
- * @return {Object}
+ * @return {object}
  *         - {Number} top: the top offset for the tooltip.
  *         - {Number} height: the height to use for the tooltip container.
  *         - {String} computedPosition: Can differ from the preferred position depending
@@ -158,20 +158,20 @@ const calculateVerticalPosition = (
  * @param {DOMRect} windowRect
  *        Bounding rectangle for the window. Used to determine which direction
  *        doorhangers should hang.
- * @param {Number} width
+ * @param {number} width
  *        Preferred width for the tooltip.
- * @param {String} type
+ * @param {string} type
  *        The tooltip type (e.g. "arrow").
- * @param {Number} offset
+ * @param {number} offset
  *        Horizontal offset in pixels.
- * @param {Number} borderRadius
+ * @param {number} borderRadius
  *        The border radius of the panel. This is added to ARROW_OFFSET to
  *        calculate the distance from the edge of the tooltip to the start
  *        of arrow. It is separate from ARROW_OFFSET since it will vary by
  *        platform.
- * @param {Boolean} isRtl
+ * @param {boolean} isRtl
  *        If the anchor is in RTL, the tooltip should be aligned to the right.
- * @return {Object}
+ * @return {object}
  *         - {Number} left: the left offset for the tooltip.
  *         - {Number} width: the width to use for the tooltip container.
  *         - {Number} arrowLeft: the left offset to use for the arrow element.
@@ -314,7 +314,7 @@ const getRelativeRect = function (node, relativeTo) {
  *
  * @param {Document} toolboxDoc
  *        The toolbox document to attach the HTMLTooltip popup.
- * @param {Object}
+ * @param {object}
  *        - {String} className
  *          A string separated list of classes to add to the tooltip container
  *          element.
@@ -427,7 +427,7 @@ HTMLTooltip.prototype = {
    * Set the preferred width/height of the panel content.
    * The panel content is set by appending content to `this.panel`.
    *
-   * @param {Object}
+   * @param {object}
    *        - {Number} width: preferred width for the tooltip container. If not specified
    *          the tooltip container will be measured before being displayed, and the
    *          measured width will be used as the preferred width.
@@ -480,16 +480,16 @@ HTMLTooltip.prototype = {
    *
    * @param {Element} anchor
    *        The reference element with which the tooltip should be aligned
-   * @param {Object} options
+   * @param {object} options
    *        Optional settings for positioning the tooltip.
-   * @param {String} options.position
+   * @param {string} options.position
    *        Optional, possible values: top|bottom
    *        If layout permits, the tooltip will be displayed on top/bottom
    *        of the anchor. If omitted, the tooltip will be displayed where
    *        more space is available.
-   * @param {Number} options.x
+   * @param {number} options.x
    *        Optional, horizontal offset between the anchor and the tooltip.
-   * @param {Number} options.y
+   * @param {number} options.y
    *        Optional, vertical offset between the anchor and the tooltip.
    */
   async show(anchor, options) {
@@ -691,13 +691,13 @@ HTMLTooltip.prototype = {
    *   window in screen coordinates. Otherwise it will be the same as the
    *   viewport rect.
    *
-   * @param {Object} anchorRect
+   * @param {object} anchorRect
    *        DOMRect-like object of the target anchor element.
    *        We need to pass this to detect the case when the anchor is not in
    *        the current window (because, the center of the window is in
    *        a different window to the anchor).
    *
-   * @return {Object} An object with the following properties
+   * @return {object} An object with the following properties
    *         viewportRect {Object} DOMRect-like object with the Number
    *                      properties: top, right, bottom, left, width, height
    *                      representing the viewport rect.
@@ -839,7 +839,8 @@ HTMLTooltip.prototype = {
 
   /**
    * Check if the tooltip is currently displayed.
-   * @return {Boolean} true if the tooltip is visible
+   *
+   * @return {boolean} true if the tooltip is visible
    */
   isVisible() {
     return this.container.classList.contains("tooltip-visible");

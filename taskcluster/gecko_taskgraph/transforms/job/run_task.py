@@ -192,7 +192,12 @@ def generic_worker_run_task(config, job, taskdesc):
             "file": "./run-task",
         }
     )
-    if job.get("fetches", {}):
+
+    if (
+        job.get("fetches")
+        or job.get("use-uv")
+        or job.get("use-python", "system") != "system"
+    ):
         worker["mounts"].append(
             {
                 "content": {

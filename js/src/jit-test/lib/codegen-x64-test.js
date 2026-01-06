@@ -163,9 +163,10 @@ function codegenTestX64_adhoc(module_text, export_name, expected, options = {}) 
     if (!options.no_suffix)
         expected = expected + '\n' + x64_suffix;
     const expected_pretty = striplines(expected);
-    expected = fixlines(expected, `(?:${HEX}{2} )*`);
+    expected = fixlines(expected);
 
-    const success = output.match(new RegExp(expected)) != null;
+    const output_simple = stripencoding(output, `(?:${HEX}{2} )*`);
+    const success = output_simple.match(new RegExp(expected)) != null;
     if (options.log || !success) {
         print("Module text:")
         print(module_text);

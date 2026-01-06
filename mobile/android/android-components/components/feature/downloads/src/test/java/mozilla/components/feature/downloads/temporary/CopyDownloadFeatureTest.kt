@@ -20,7 +20,6 @@ import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.Response
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
@@ -106,7 +105,7 @@ class CopyDownloadFeatureTest {
         val action = CopyInternetResourceAction.AddCopyAction("123", download)
         copyFeature.start()
 
-        store.dispatch(action).joinBlocking()
+        store.dispatch(action)
         dispatcher.scheduler.advanceUntilIdle()
 
         verify(copyFeature).startCopy(download)

@@ -28,6 +28,7 @@ class PropertyBagConverter {
 
   /**
    * Converts from a PropertyBag to a JS value.
+   *
    * @param {nsIPropertyBag} bag The PropertyBag to convert.
    * @returns {jsval} A JS value.
    */
@@ -63,6 +64,7 @@ class PropertyBagConverter {
 
   /**
    * Converts from a JS value to a PropertyBag.
+   *
    * @param {jsval} val JS value to convert.
    * @returns {nsIPropertyBag} A PropertyBag.
    * @note function is converted to "(function)" and undefined to null.

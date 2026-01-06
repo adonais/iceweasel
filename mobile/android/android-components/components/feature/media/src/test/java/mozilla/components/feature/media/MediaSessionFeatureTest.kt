@@ -23,7 +23,6 @@ import mozilla.components.feature.media.service.MediaSessionServiceDelegate
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
@@ -306,7 +305,6 @@ class MediaSessionFeatureTest {
         feature.start()
 
         store.dispatch(MediaSessionAction.DeactivatedMediaSessionAction(store.state.tabs[0].id))
-        store.waitUntilIdle()
 
         verify(mediaService).handleNoMedia()
         verify(mockApplicationContext).unbindService(feature.mediaServiceConnection)
@@ -333,7 +331,6 @@ class MediaSessionFeatureTest {
         feature.start()
 
         store.dispatch(MediaSessionAction.DeactivatedMediaSessionAction(store.state.customTabs[0].id))
-        store.waitUntilIdle()
 
         verify(mediaService).handleNoMedia()
         verify(mockApplicationContext).unbindService(feature.mediaServiceConnection)

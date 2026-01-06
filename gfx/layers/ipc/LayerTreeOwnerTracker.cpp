@@ -11,7 +11,6 @@
 #include "mozilla/gfx/GPUProcessManager.h"  // for GPUProcessManager
 
 #include <functional>
-#include <utility>  // for std::make_pair
 
 namespace mozilla {
 namespace layers {

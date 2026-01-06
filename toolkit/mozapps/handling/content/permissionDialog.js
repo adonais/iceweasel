@@ -78,6 +78,7 @@ let dialog = {
   /**
    * We only show the website address if the origin is not user-readable
    * in the address bar.
+   *
    * @returns {boolean} - true if principal is top level and user-readable,
    *                      false otherwise.
    * If the triggering principal is null this method always returns false.
@@ -184,6 +185,7 @@ let dialog = {
    * It's usually the prePath of the site that wants to navigate to
    * the external protocol, though we use the OS syntax for paths if
    * the request comes from `file://`.
+   *
    * @returns {string|null} - text to show, or null if we can't derive an
    * readable string from the triggering principal.
    */

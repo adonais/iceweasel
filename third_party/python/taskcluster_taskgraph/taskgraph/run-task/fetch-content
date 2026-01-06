@@ -949,11 +949,11 @@ def command_task_artifacts(args):
         ],
     }
     print(f"PERFHERDER_DATA: {json.dumps(perfherder_data)}", file=sys.stderr)
-    upload_dir = os.environ.get("UPLOAD_DIR")
-    if os.environ.get("MOZ_AUTOMATION", "0") == "1" and upload_dir:
-        upload_path = pathlib.Path(upload_dir) / "perfherder-data-fetch-content.json"
+    perfherder_fetch_content_json_path = os.environ.get("PERFHERDER_FETCH_CONTENT_JSON_PATH")
+    if os.environ.get("MOZ_AUTOMATION", "0") == "1" and perfherder_fetch_content_json_path:
+        upload_path = pathlib.Path(perfherder_fetch_content_json_path)
         upload_path.parent.mkdir(parents=True, exist_ok=True)
-        with upload_path.open("w") as f:
+        with upload_path.open("w", encoding="utf-8") as f:
             json.dump(perfherder_data, f)
 
 

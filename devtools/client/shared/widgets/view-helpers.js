@@ -32,6 +32,7 @@ exports.setNamedTimeout = setNamedTimeout;
 
 /**
  * Clears a named timeout.
+ *
  * @see setNamedTimeout
  *
  * @param string id
@@ -407,6 +408,7 @@ Item.prototype = {
   /**
    * Returns a string representing the object.
    * Avoid using `toString` to avoid accidental JSONification.
+   *
    * @return string
    */
   stringify() {

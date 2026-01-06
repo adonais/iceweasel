@@ -804,6 +804,11 @@ void BufferAllocator::markSmallNurseryOwnedBuffer(void* alloc,
   MOZ_ASSERT(region->hasNurseryOwnedAllocs());
   MOZ_ASSERT(region->isNurseryOwned(alloc));
 
+  if (region->isMarked(alloc)) {
+    MOZ_ASSERT(nurseryOwned);
+    return;
+  }
+
   if (!nurseryOwned) {
     region->setNurseryOwned(alloc, false);
     // If all nursery owned allocations in the region were tenured then
@@ -822,7 +827,11 @@ void BufferAllocator::markMediumNurseryOwnedBuffer(void* alloc,
   MOZ_ASSERT(chunk->hasNurseryOwnedAllocs);
   MOZ_ASSERT(chunk->isAllocated(alloc));
   MOZ_ASSERT(chunk->isNurseryOwned(alloc));
-  MOZ_ASSERT(!chunk->isMarked(alloc));
+
+  if (chunk->isMarked(alloc)) {
+    MOZ_ASSERT(nurseryOwned);
+    return;
+  }
 
   size_t size = chunk->allocBytes(alloc);
   increaseHeapSize(size, nurseryOwned, false, false);
@@ -845,6 +854,7 @@ void BufferAllocator::markLargeNurseryOwnedBuffer(LargeBuffer* buffer,
   // been marked.
   auto* region = SmallBufferRegion::from(buffer);
   MOZ_ASSERT(region->isNurseryOwned(buffer));
+
   if (region->isMarked(buffer)) {
     MOZ_ASSERT(nurseryOwned);
     return;
@@ -1364,6 +1374,13 @@ void BufferAllocator::abortMajorSweeping(const AutoLock& lock) {
 #endif
 
   clearAllocatedDuringCollectionState(lock);
+
+  if (minorState == State::Sweeping) {
+    // If we are minor sweeping then chunks with allocatedDuringCollection set
+    // may be present in |mixedChunksToSweep|. Set a flag so these are cleared
+    // when they are merged later.
+    majorFinishedWhileMinorSweeping = true;
+  }
 
   for (BufferChunk* chunk : tenuredChunksToSweep.ref()) {
     MOZ_ASSERT(chunk->ownsFreeLists);

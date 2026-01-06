@@ -10,7 +10,7 @@ pub mod command;
 pub mod error;
 pub mod server;
 
-pub use wgc::command::Command as CommandEncoderAction;
+pub use wgc::command::ffi::Command as CommandEncoderAction;
 
 use std::marker::PhantomData;
 use std::{borrow::Cow, mem, slice};

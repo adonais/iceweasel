@@ -690,14 +690,12 @@ AsyncAssociateIconToPage::Run() {
   MOZ_ASSERT(mPage.canAddToHistory || !mPage.bookmarkedSpec.IsEmpty(),
              "The page should be addable to history or a bookmark");
 
-  bool shouldUpdateIcon = mIcon.status & ICON_STATUS_CHANGED;
-  if (!shouldUpdateIcon) {
-    for (const auto& payload : mIcon.payloads) {
-      // If the entry is missing from the database, we should add it.
-      if (payload.id == 0) {
-        shouldUpdateIcon = true;
-        break;
-      }
+  bool shouldUpdateIcon = false;
+  for (const auto& payload : mIcon.payloads) {
+    // If the entry is missing from the database, we should add it.
+    if (payload.id == 0) {
+      shouldUpdateIcon = true;
+      break;
     }
   }
 
@@ -787,10 +785,9 @@ AsyncAssociateIconToPage::Run() {
     stmt = DB->GetStatement(
         "INSERT INTO moz_icons_to_pages (page_id, icon_id, expire_ms) "
         "VALUES ((SELECT id from moz_pages_w_icons WHERE page_url_hash = "
-        "hash(:page_url) AND page_url = :page_url), "
-        ":icon_id, :expire) "
+        "  hash(:page_url) AND page_url = :page_url), :icon_id, :expire) "
         "ON CONFLICT(page_id, icon_id) DO "
-        "UPDATE SET expire_ms = :expire ");
+        "  UPDATE SET expire_ms = :expire ");
     NS_ENSURE_STATE(stmt);
 
     // For some reason using BindingParamsArray here fails execution, so we must
@@ -1036,11 +1033,13 @@ NS_IMETHODIMP AsyncTryCopyFaviconsRunnable::Run() {
 
   // Create the relations.
   nsCOMPtr<mozIStorageStatement> stmt = DB->GetStatement(
-      "INSERT OR IGNORE INTO moz_icons_to_pages (page_id, icon_id, expire_ms) "
+      "INSERT INTO moz_icons_to_pages (page_id, icon_id, expire_ms) "
       "SELECT :id, icon_id, expire_ms "
       "FROM moz_icons_to_pages "
-      "WHERE page_id = (SELECT id FROM moz_pages_w_icons WHERE page_url_hash = "
-      "hash(:url) AND page_url = :url) ");
+      "WHERE page_id = (SELECT id FROM moz_pages_w_icons "
+      "                 WHERE page_url_hash = hash(:url) AND page_url = :url) "
+      "ON CONFLICT (page_id, icon_id) DO "
+      "  UPDATE SET expire_ms = max(excluded.expire_ms, :min_expiration_ms)");
   NS_ENSURE_STATE(stmt);
   mozStorageStatementScoper scoper(stmt);
   rv = stmt->BindInt64ByName("id"_ns, toPageData.id);
@@ -1048,6 +1047,9 @@ NS_IMETHODIMP AsyncTryCopyFaviconsRunnable::Run() {
   nsAutoCString fromPageSpec;
   mFromPageURI->GetSpec(fromPageSpec);
   rv = URIBinder::Bind(stmt, "url"_ns, fromPageSpec);
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = stmt->BindInt64ByName("min_expiration_ms"_ns,
+                             (PR_Now() + MIN_FAVICON_EXPIRATION) / 1000);
   NS_ENSURE_SUCCESS(rv, rv);
   rv = stmt->Execute();
   NS_ENSURE_SUCCESS(rv, rv);

@@ -1949,13 +1949,11 @@ nsresult nsLocalFile::MoveOrCopyAsSingleFileOrDir(nsIFile* aDestParent,
       if (isDir.isNothing() ||
           !ChildAclMatchesAclInheritedFromParent(WrapNotNull(childDacl), *isDir,
                                                  childSecDesc, aDestParent)) {
-        // We don't expect this to fail, but it shouldn't crash in release.
-        MOZ_ALWAYS_TRUE(
-            ERROR_SUCCESS ==
-            ::SetNamedSecurityInfoW(destPath.get(), SE_FILE_OBJECT,
-                                    DACL_SECURITY_INFORMATION |
-                                        UNPROTECTED_DACL_SECURITY_INFORMATION,
-                                    nullptr, nullptr, childDacl, nullptr));
+        // This may fail if the destination file is not available.
+        ::SetNamedSecurityInfoW(
+            destPath.get(), SE_FILE_OBJECT,
+            DACL_SECURITY_INFORMATION | UNPROTECTED_DACL_SECURITY_INFORMATION,
+            nullptr, nullptr, childDacl, nullptr);
       }
     }
   }

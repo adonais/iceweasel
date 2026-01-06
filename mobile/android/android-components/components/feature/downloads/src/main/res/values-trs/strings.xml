@@ -20,6 +20,20 @@
   <string name="mozac_feature_downloads_completed_notification_text2">Ngà gisîj nahuij nadunin</string>
   <!-- Text shown on the second row of an failed download notification. The filename is shown on the first row. -->
   <string name="mozac_feature_downloads_failed_notification_text2">Nu ga\'ue nādunin</string>
+  <!--
+    Alert dialog confirmation before downloading a previously downloaded file, this is the title.
+    %1$s will be replaced with the size of the file.
+  -->
+  <string name="mozac_feature_downloads_again_dialog_title">Nādunïnjt ñûnt ārchibô nan anj? (%1$s)</string>
+  <!--
+    Alert dialog confirmation before downloading a file, this is the title.
+    %1$s will be replaced with the size of the file.
+  -->
+  <string name="mozac_feature_downloads_dialog_title_3">Nādunïnjt ārchibô nan anj? (%1$s)</string>
+  <!-- This string is used as the title for the download confirmation dialog when the size of the file is not known. -->
+  <string name="mozac_feature_downloads_dialog_title_with_unknown_size">Nādunïnjt ārchibô nan anj?</string>
+  <!-- Alert dialog confirmation before downloading a previously downloaded file, this is the title when the size of the file is not known. -->
+  <string name="mozac_feature_downloads_again_dialog_title_with_unknown_size">Nādunïnjt ñûnt ārchibô nan anj?</string>
   <!-- Alert dialog confirmation before download a file, this is the positive action. -->
   <string name="mozac_feature_downloads_dialog_download">Nādunïnj</string>
   <!-- Alert dialog confirmation before downloading a file again, this is the positive action. -->

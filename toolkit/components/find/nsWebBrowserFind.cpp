@@ -312,15 +312,12 @@ void nsWebBrowserFind::SetSelectionAndScroll(nsPIDOMWindowOuter* aWindow,
     return;
   }
 
-  nsCOMPtr<nsINode> node = aRange->GetStartContainer();
-  nsCOMPtr<nsIContent> content(do_QueryInterface(node));
-  nsIFrame* frame = content->GetPrimaryFrame();
-  if (!frame) {
+  nsCOMPtr<nsIContent> content =
+      nsIContent::FromNodeOrNull(aRange->GetStartContainer());
+  nsIFrame* const frameForStartContainer = content->GetPrimaryFrame();
+  if (!frameForStartContainer) {
     return;
   }
-  nsCOMPtr<nsISelectionController> selCon;
-  frame->GetSelectionController(presShell->GetPresContext(),
-                                getter_AddRefs(selCon));
 
   // since the match could be an anonymous textnode inside a
   // <textarea> or text <input>, we need to get the outer frame
@@ -338,6 +335,8 @@ void nsWebBrowserFind::SetSelectionAndScroll(nsPIDOMWindowOuter* aWindow,
     }
   }
 
+  const nsCOMPtr<nsISelectionController> selCon =
+      frameForStartContainer->GetSelectionController();
   selCon->SetDisplaySelection(nsISelectionController::SELECTION_ON);
   RefPtr<Selection> selection =
       selCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
@@ -675,27 +674,27 @@ already_AddRefed<Selection> nsWebBrowserFind::GetFrameSelection(
 
   // text input controls have their independent selection controllers that we
   // must use when they have focus.
-  nsPresContext* presContext = presShell->GetPresContext();
 
   nsCOMPtr<nsPIDOMWindowOuter> focusedWindow;
   nsCOMPtr<nsIContent> focusedContent = nsFocusManager::GetFocusedDescendant(
       aWindow, nsFocusManager::eOnlyCurrentWindow,
       getter_AddRefs(focusedWindow));
 
-  nsIFrame* frame =
+  nsIFrame* const frame =
       focusedContent ? focusedContent->GetPrimaryFrame() : nullptr;
 
   nsCOMPtr<nsISelectionController> selCon;
-  RefPtr<Selection> sel;
   if (frame) {
-    frame->GetSelectionController(presContext, getter_AddRefs(selCon));
-    sel = selCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
+    nsISelectionController* const selCon = frame->GetSelectionController();
+    Selection* const sel =
+        selCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
     if (sel && sel->RangeCount() > 0) {
-      return sel.forget();
+      return do_AddRef(sel);
     }
   }
 
-  sel = presShell->GetSelection(nsISelectionController::SELECTION_NORMAL);
+  RefPtr<Selection> sel =
+      presShell->GetSelection(nsISelectionController::SELECTION_NORMAL);
   return sel.forget();
 }
 

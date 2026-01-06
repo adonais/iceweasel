@@ -11,15 +11,17 @@
  * @import {OpenedConnection} from "resource://gre/modules/Sqlite.sys.mjs"
  */
 
-const lazy = {};
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
+const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
-  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+  DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
+  EmbeddingsGenerator: "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs",
   PlacesSemanticHistoryDatabase:
     "resource://gre/modules/PlacesSemanticHistoryDatabase.sys.mjs",
-  EmbeddingsGenerator: "chrome://global/content/ml/EmbeddingsGenerator.sys.mjs",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+  Region: "resource://gre/modules/Region.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", function () {
@@ -32,6 +34,45 @@ ChromeUtils.defineLazyGetter(lazy, "PAGES_FRECENCY_FIELD", () => {
     ? "alt_frecency"
     : "frecency";
 });
+
+// This list is based on the current model capabilities. It is a Map-like list
+// of regions where English is predominant, and a common language is latin-based.
+// Each country code is assigned to an array of supported BCP 47 language tags,
+// a tag can end with "-*" to match any variants (match at the start).
+// The list of supported region and locales is loaded from the
+// places.semanticHistory.supportedRegions string pref, and this is used as a
+// fallback if we fail to parse the pref.
+/** @type {[string, string[]][]} */
+const ENABLED_REGIONS_DEFAULT = [
+  ["AU", ["en-*"]],
+  ["CA", ["en-*"]],
+  ["GB", ["en-*"]],
+  ["IE", ["en-*"]],
+  ["NZ", ["en-*"]],
+  ["PH", ["en-*"]],
+  ["US", ["en-*"]],
+];
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "supportedRegions",
+  "places.semanticHistory.supportedRegions",
+  JSON.stringify(ENABLED_REGIONS_DEFAULT),
+  null,
+  val => {
+    try {
+      return new Map(JSON.parse(val));
+    } catch (ex) {
+      lazy.logger.debug("Invalid json in supportedRegions pref.");
+      // Supposing a user may empty the pref to disable the feature, as they
+      // don't know it should be a JSON string, we'll treat that as an empty
+      // Map, so the feature is disabled.
+      if (val === "") {
+        return new Map();
+      }
+      return new Map(ENABLED_REGIONS_DEFAULT);
+    }
+  }
+);
 
 // Time between deferred task executions.
 const DEFERRED_TASK_INTERVAL_MS = 3000;
@@ -66,7 +107,7 @@ class PlacesSemanticHistoryManager {
   #updateTaskLatency = [];
   embedder;
   qualifiedForSemanticSearch = false;
-  #promiseRemoved = null;
+  #promiseInitialized = null;
   enoughEntries = false;
   #shutdownProgress = { state: "Not started" };
   #deferredTaskInterval = DEFERRED_TASK_INTERVAL_MS;
@@ -94,6 +135,7 @@ class PlacesSemanticHistoryManager {
    * @param {number} [options.changeThresholdCount=3] - Threshold of changed rows to trigger updates.
    * @param {number} [options.distanceThreshold=0.6] - Cosine distance threshold to determine similarity.
    * @param {boolean} [options.testFlag=false] - Flag for test behavior.
+   * @param {number} [options.deferredTaskInterval=DEFERRED_TASK_INTERVAL_MS] - Interval for deferred task execution.
    */
   constructor({
     backend = "static-embeddings",
@@ -103,6 +145,7 @@ class PlacesSemanticHistoryManager {
     changeThresholdCount = 3,
     distanceThreshold = 0.6,
     testFlag = false,
+    deferredTaskInterval = DEFERRED_TASK_INTERVAL_MS,
   } = {}) {
     this.QueryInterface = ChromeUtils.generateQI([
       "nsIObserver",
@@ -149,37 +192,49 @@ class PlacesSemanticHistoryManager {
     this.#changeThresholdCount = changeThresholdCount;
     this.#distanceThreshold = distanceThreshold;
     this.testFlag = testFlag;
+    this.#deferredTaskInterval = deferredTaskInterval;
     this.#updateTaskLatency = [];
     lazy.logger.trace("PlaceSemanticManager constructor");
 
-    // When semantic history is disabled or not available anymore due to system
-    // requirements, we want to remove the database files, though we don't want
-    // to check on disk on every startup, thus we use a pref. The removal is
-    // done on startup anyway, as it's less likely to fail.
-    // We check UserValue because users may set it to false to try to disable
-    // the feature, then if we'd check the value the files would not be removed.
-    let wasInitialized = Services.prefs.prefHasUserValue(
-      "places.semanticHistory.initialized"
-    );
-    let isAvailable = this.canUseSemanticSearch;
-    let removeFiles =
-      (wasInitialized && !isAvailable) ||
-      Services.prefs.getBoolPref(
-        "places.semanticHistory.removeOnStartup",
-        false
+    this.#promiseInitialized = (async () => {
+      // canUseSemanticSearch depends on Region being initialized.
+      if (!lazy.Region.home) {
+        await lazy.Region.init();
+      }
+
+      // When semantic history is disabled or not available anymore due to
+      // system requirements, we want to remove the database files, though we
+      // don't want to check on disk on every startup, thus we use a pref.
+      // The removal is done on startup anyway, as it's less likely to fail.
+      // We check prefHasUserValue instead of the value itself, because users
+      // may set it to false to try to disable the feature, then checking value
+      // the files would not be removed.
+      lazy.logger.debug(
+        "PlaceSemanticManager detected region:",
+        lazy.Region.home
       );
-    if (removeFiles) {
-      lazy.logger.info("Removing database files on startup");
-      Services.prefs.clearUserPref("places.semanticHistory.removeOnStartup");
-      this.#promiseRemoved = this.semanticDB
-        .removeDatabaseFiles()
-        .catch(console.error);
-    }
-    if (!isAvailable) {
-      Services.prefs.clearUserPref("places.semanticHistory.initialized");
-    } else if (!wasInitialized) {
-      Services.prefs.setBoolPref("places.semanticHistory.initialized", true);
-    }
+      let wasInitialized = Services.prefs.prefHasUserValue(
+        "places.semanticHistory.initialized"
+      );
+
+      let isAvailable = this.canUseSemanticSearch;
+      let removeFiles =
+        (wasInitialized && !isAvailable) ||
+        Services.prefs.getBoolPref(
+          "places.semanticHistory.removeOnStartup",
+          false
+        );
+      if (removeFiles) {
+        lazy.logger.info("Removing database files on startup");
+        Services.prefs.clearUserPref("places.semanticHistory.removeOnStartup");
+        await this.semanticDB.removeDatabaseFiles().catch(console.error);
+      }
+      if (!isAvailable) {
+        Services.prefs.clearUserPref("places.semanticHistory.initialized");
+      } else if (!wasInitialized) {
+        Services.prefs.setBoolPref("places.semanticHistory.initialized", true);
+      }
+    })();
   }
 
   /**
@@ -192,13 +247,16 @@ class PlacesSemanticHistoryManager {
     if (
       Services.startup.isInOrBeyondShutdownPhase(
         Ci.nsIAppStartup.SHUTDOWN_PHASE_APPSHUTDOWNCONFIRMED
-      ) ||
-      !this.canUseSemanticSearch
+      )
     ) {
       return null;
     }
-    // We must eventually wait for removal to finish.
-    await this.#promiseRemoved;
+
+    await this.#promiseInitialized;
+
+    if (!this.canUseSemanticSearch) {
+      return null;
+    }
 
     // Avoid re-entrance using a cached promise rather than handing off a conn.
     if (!this.#promiseConn) {
@@ -289,11 +347,39 @@ class PlacesSemanticHistoryManager {
    *   else false
    */
   get canUseSemanticSearch() {
+    // This requires Region to have been initialized somewhere else
+    // asynchronously, so consumer is responsible for that, otherwise it may
+    // be null.
     return (
       this.qualifiedForSemanticSearch &&
       Services.prefs.getBoolPref("browser.ml.enable", true) &&
-      Services.prefs.getBoolPref("places.semanticHistory.featureGate", false)
+      Services.prefs.getBoolPref("places.semanticHistory.featureGate", false) &&
+      this.#isSupportedLocale(Services.locale.appLocaleAsBCP47)
     );
+  }
+
+  /**
+   * Check if the given locale is supported for Semantic History Search.
+   *
+   * @param {string} appLocale BCP 47 language tag.
+   * @returns {boolean} Whether the locale is supported.
+   */
+  #isSupportedLocale(appLocale) {
+    // Per BCP-47 comparisons must be performend in a case-insensitive manner.
+    appLocale = appLocale.toLowerCase();
+    let supportedLocales = lazy.supportedRegions.get(lazy.Region.home) ?? [];
+    for (let localePattern of supportedLocales) {
+      localePattern = localePattern.toLowerCase();
+      if (
+        localePattern.endsWith("*") &&
+        appLocale.startsWith(localePattern.replace(/-?\*$/, ""))
+      ) {
+        return true;
+      } else if (localePattern == appLocale) {
+        return true;
+      }
+    }
+    return false;
   }
 
   handlePlacesEvents(events) {
@@ -327,15 +413,6 @@ class PlacesSemanticHistoryManager {
   // getter for testing purposes
   getUpdateTaskLatency() {
     return this.#updateTaskLatency;
-  }
-
-  /**
-   * Sets the DeferredTask interval for testing purposes.
-   *
-   * @param {number} val minimum milliseconds between deferred task executions.
-   */
-  setDeferredTaskIntervalForTests(val) {
-    this.#deferredTaskInterval = val;
   }
 
   /**

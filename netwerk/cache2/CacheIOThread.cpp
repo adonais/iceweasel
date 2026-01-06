@@ -506,8 +506,7 @@ size_t CacheIOThread::SizeOfExcludingThis(
   for (const auto& event : mEventQueue) {
     n += event.ShallowSizeOfExcludingThis(mallocSizeOf);
     // Events referenced by the queues are arbitrary objects we cannot be sure
-    // are reported elsewhere as well as probably not implementing nsISizeOf
-    // interface.  Deliberatly omitting them from reporting here.
+    // aren't reported elsewhere.  Deliberately omitting them from reporting.
   }
 
   return n;

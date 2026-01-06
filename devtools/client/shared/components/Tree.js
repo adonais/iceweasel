@@ -151,8 +151,8 @@ class TreeNode extends Component {
    * element).
    *
    * @param  {DOMNode} current  currently focused element
-   * @param  {Boolean} back     direction
-   * @return {Boolean}          true there is a newly focused element.
+   * @param  {boolean} back     direction
+   * @return {boolean}          true there is a newly focused element.
    */
   _wrapMoveFocus(current, back) {
     const elms = this.getFocusableElements();
@@ -257,7 +257,7 @@ const TreeNodeFactory = createFactory(TreeNode);
  * frame.
  *
  * @param {Function} fn
- * @param {Object} options: object that contains the following properties:
+ * @param {object} options: object that contains the following properties:
  *                      - {Function} getDocument: A function that return the document
  *                                                the component is rendered in.
  * @returns {Function}
@@ -698,8 +698,8 @@ class Tree extends Component {
   /**
    * Expands current row.
    *
-   * @param {Object} item
-   * @param {Boolean} expandAllChildren
+   * @param {object} item
+   * @param {boolean} expandAllChildren
    */
   _onExpand(item, expandAllChildren) {
     if (this.props.onExpand) {
@@ -718,7 +718,7 @@ class Tree extends Component {
   /**
    * Collapses current row.
    *
-   * @param {Object} item
+   * @param {object} item
    */
   _onCollapse(item) {
     if (this.props.onCollapse) {
@@ -729,10 +729,10 @@ class Tree extends Component {
   /**
    * Sets the passed in item to be the focused item.
    *
-   * @param {Object|undefined} item
+   * @param {object | undefined} item
    *        The item to be focused, or undefined to focus no item.
    *
-   * @param {Object|undefined} options
+   * @param {object | undefined} options
    *        An options object which can contain:
    *          - alignTo: "up" or "down" to indicate if we should scroll the element
    *                 to the top or the bottom of the scrollable container when
@@ -761,7 +761,7 @@ class Tree extends Component {
   /**
    * Sets the passed in item to be the active item.
    *
-   * @param {Object|undefined} item
+   * @param {object | undefined} item
    *        The item to be activated, or undefined to activate no item.
    */
   _activate(item) {
@@ -773,10 +773,10 @@ class Tree extends Component {
   /**
    * Sets the passed in item to be the focused item.
    *
-   * @param {Object|undefined} item
+   * @param {object | undefined} item
    *        The item to be scrolled to.
    *
-   * @param {Object|undefined} options
+   * @param {object | undefined} options
    *        An options object which can contain:
    *          - alignTo: "up" or "down" to indicate if we should scroll the element
    *                 to the top or the bottom of the scrollable container when

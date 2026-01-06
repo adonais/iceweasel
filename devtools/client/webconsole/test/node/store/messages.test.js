@@ -1046,7 +1046,7 @@ describe("Message reducer:", () => {
       packet.actor = "message1";
       updatePacket.actor = "message1";
       dispatch(actions.messagesAdd([packet]));
-      dispatch(actions.networkMessageUpdates([updatePacket], null));
+      dispatch(actions.networkMessageUpdates([updatePacket]));
 
       let networkUpdates = getAllNetworkMessagesUpdateById(getState());
       expect(Object.keys(networkUpdates)).toEqual(["message1"]);
@@ -1056,7 +1056,7 @@ describe("Message reducer:", () => {
       packet.actor = "message2";
       updatePacket.actor = "message2";
       dispatch(actions.messagesAdd([packet]));
-      dispatch(actions.networkMessageUpdates([updatePacket], null));
+      dispatch(actions.networkMessageUpdates([updatePacket]));
 
       networkUpdates = getAllNetworkMessagesUpdateById(getState());
       expect(Object.keys(networkUpdates)).toEqual(["message1", "message2"]);
@@ -1066,7 +1066,7 @@ describe("Message reducer:", () => {
       const { dispatch, getState } = setupStore(["XHR GET request"]);
 
       const updatePacket = stubPackets.get("XHR GET request update");
-      dispatch(actions.networkMessageUpdates([updatePacket], null));
+      dispatch(actions.networkMessageUpdates([updatePacket]));
 
       let networkUpdates = getAllNetworkMessagesUpdateById(getState());
       expect(!!Object.keys(networkUpdates).length).toBe(true);
@@ -1092,17 +1092,17 @@ describe("Message reducer:", () => {
       packet.actor = "message1";
       updatePacket.actor = "message1";
       dispatch(actions.messagesAdd([packet]));
-      dispatch(actions.networkMessageUpdates([updatePacket], null));
+      dispatch(actions.networkMessageUpdates([updatePacket]));
 
       packet.actor = "message2";
       updatePacket.actor = "message2";
       dispatch(actions.messagesAdd([packet]));
-      dispatch(actions.networkMessageUpdates([updatePacket], null));
+      dispatch(actions.networkMessageUpdates([updatePacket]));
 
       packet.actor = "message3";
       updatePacket.actor = "message3";
       dispatch(actions.messagesAdd([packet]));
-      dispatch(actions.networkMessageUpdates([updatePacket], null));
+      dispatch(actions.networkMessageUpdates([updatePacket]));
 
       // Check that we have the expected data.
       const messages = getMutableMessagesById(getState());

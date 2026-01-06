@@ -333,6 +333,23 @@ class RemoteAccIterator : public AccIterable {
   uint32_t mIndex;
 };
 
+/**
+ * Used to iterate through an array of accessibles
+ */
+class ArrayAccIterator : public AccIterable {
+ public:
+  explicit ArrayAccIterator(nsTArray<Accessible*>&& aAccs)
+      : mAccs(std::move(aAccs)), mIndex(0) {}
+
+  virtual ~ArrayAccIterator() = default;
+
+  virtual Accessible* Next() override;
+
+ private:
+  nsTArray<Accessible*> mAccs;
+  uint32_t mIndex;
+};
+
 }  // namespace a11y
 }  // namespace mozilla
 

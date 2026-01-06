@@ -19,7 +19,6 @@ import mozilla.components.feature.addons.R
 import mozilla.components.feature.addons.ui.AddonsManagerAdapter.DifferCallback
 import mozilla.components.feature.addons.ui.AddonsManagerAdapter.NotYetSupportedSection
 import mozilla.components.feature.addons.ui.AddonsManagerAdapter.Section
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
@@ -540,7 +539,6 @@ class AddonsManagerAdapterTest {
 
         viewHolder.restartButton.performClick()
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         assertFalse(store.state.extensionsProcessDisabled)
         verify(adapter).submitList(emptyList())

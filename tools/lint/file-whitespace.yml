@@ -123,7 +123,6 @@ file-whitespace:
         - toolkit/locales/en-US/chrome/passwordmgr/passwordmgr.properties
         - tools/lint/eslint
         - tools/lint/test/test_clang_format.py
-        - view/crashtests
         - widget/cocoa/crashtests
         - widget/nsFilePickerProxy.cpp
         - widget/tests

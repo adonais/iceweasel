@@ -116,6 +116,8 @@ class NavigateEvent final : public Event {
 
   void PerformSharedChecks(ErrorResult& aRv);
 
+  Document* GetAssociatedDocument() const;
+
  private:
   MOZ_CAN_RUN_SCRIPT
   void PotentiallyResetFocus();
@@ -125,8 +127,6 @@ class NavigateEvent final : public Event {
 
   MOZ_CAN_RUN_SCRIPT
   void ProcessScrollBehavior();
-
-  Document* GetAssociatedDocument() const;
 
   explicit NavigateEvent(EventTarget* aOwner);
   ~NavigateEvent();

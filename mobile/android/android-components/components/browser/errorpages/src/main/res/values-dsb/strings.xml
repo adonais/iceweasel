@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Problem z wobšudnym sedłom</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Toś ten bok na %1$s jo se ako wobšudne sedło k wěsći dało a jo se na zakłaźe wašych wěstotnych nastajenjow zablokěrowało.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Sedło jo za wašu wěstotu blokěrowane</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Toś ten webbok pla %1$s jo se blokěrował, dokulaž jaden z wašych dodankow wopytajo ju wócyniś. Toś to sedło mógło se wužywaś, aby waše informacije kšadnuło – na pśikład gronidła abo numery kreditowych kórtow.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Wěste sedło njejo k dispoziciji</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

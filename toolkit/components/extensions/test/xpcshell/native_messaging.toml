@@ -21,7 +21,9 @@ run-sequentially = [
   "os == 'win'", # almost perma-fail in parallel on Windows
   "os == 'mac'", # frequent timeouts on Mac
 ]
-skip-if = ["tsan"] # Unreasonably slow, bug 1612707
+skip-if = [
+  "tsan", # Unreasonably slow, bug 1612707
+]
 
 ["test_ext_native_messaging_portal.js"]
 environment = [
@@ -30,13 +32,16 @@ environment = [
   # ready.
   "GSETTINGS_BACKEND=memory",
 ]
-run-if = ["os == 'linux' && toolkit == 'gtk' && dbus_enabled"]
+run-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
+]
 tags = "portal"
 
 ["test_ext_native_messaging_portal_real.js"]
 environment = ["GTK_USE_PORTAL=1"]
-run-if = ["os == 'linux' && toolkit == 'gtk' && dbus_enabled"]
-skip-if = ["os == 'linux' && os_version == '18.04'"] # requires Ubuntu 22.04 and higher, depends on https://launchpad.net/bugs/1968215 . Future Ubuntu versions may depend on xdg-native-messaging-proxy instead, see https://bugzilla.mozilla.org/show_bug.cgi?id=1955255
+run-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
+]
 tags = "portal"
 
 ["test_ext_native_messaging_unresponsive.js"]

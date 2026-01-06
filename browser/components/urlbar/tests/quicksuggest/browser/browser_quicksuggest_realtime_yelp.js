@@ -139,6 +139,15 @@ add_task(async function ui_single() {
   Assert.equal(getComputedStyle(row, "::before").content, "attr(label)");
   Assert.equal(row.getAttribute("label"), "Yelp · Sponsored");
 
+  Assert.deepEqual(
+    document.l10n.getAttributes(row._content),
+    {
+      id: null,
+      args: null,
+    },
+    "ARIA group label should not be set on the row inner"
+  );
+
   info("Check the item");
   let items = row.querySelectorAll(".urlbarView-realtime-item");
   Assert.equal(items.length, 1);
@@ -205,6 +214,15 @@ add_task(async function ui_multi() {
 
   let items = element.row.querySelectorAll(".urlbarView-realtime-item");
   Assert.equal(items.length, 2);
+
+  Assert.deepEqual(
+    document.l10n.getAttributes(element.row._content),
+    {
+      id: "urlbar-result-aria-group-yelp-realtime",
+      args: null,
+    },
+    "ARIA group label should be set on the row inner"
+  );
 
   for (let i = 0; i < items.length; i++) {
     info(`Check the item[${i}]`);

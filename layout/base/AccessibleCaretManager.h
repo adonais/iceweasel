@@ -221,14 +221,63 @@ class AccessibleCaretManager {
 
   void SetSelectionDirection(nsDirection aDir) const;
 
-  // If aDirection is eDirNext, get the frame for the range start in the first
-  // range from the current selection, and return the offset into that frame as
-  // well as the range start content and the content offset. Otherwise, get the
-  // frame and the offset for the range end in the last range instead.
-  nsIFrame* GetFrameForFirstRangeStartOrLastRangeEnd(
-      nsDirection aDirection, int32_t* aOutOffset,
-      nsIContent** aOutContent = nullptr,
-      int32_t* aOutContentOffset = nullptr) const;
+  /**
+   * Return a frame and offset in aOutContent where the meaningful start of
+   * aRange.  E.g., if aRange starts with non-selectable elements, this returns
+   * the first selectable content's frame and its start offset.
+   *
+   * @param aRange      The range, typically the first range of `Selection`.
+   * @param aOutOffsetInFrameContent
+   *                    Must not be nullptr. If the result is not nullptr, this
+   *                    will be set to the offset in result->GetContent().
+   *                    NOTE: {result->GetContent(), *aOutOffsetInFrameContent}
+   *                    means that it's the start boundary of visible/meaningful
+   *                    selection start boundary at a leaf node like a `Text`.
+   * @param aOutContent [optional] If set, this will be set to the first
+   *                    selectable container in aRange. It's typically a
+   *                    container element.
+   * @param aOutOffsetInContent
+   *                    [optional] If set, this will be set to the offset in
+   *                    the first selectable content (i.e., aOutContent).
+   *                    NOTE: {*aOutContent, *aOutOffsetInContent} means that
+   *                    it's the start boundary of actual selectable range at a
+   *                    container element.
+   * @return            The first meaningful frame whose content is selected by
+   *                    aRange. Typically, a text frame or a image frame.
+   */
+  nsIFrame* GetFrameForRangeStart(nsRange& aRange,
+                                  int32_t* aOutOffsetInFrameContent,
+                                  nsIContent** aOutContent = nullptr,
+                                  int32_t* aOutOffsetInContent = nullptr) const;
+
+  /**
+   * Return a frame and offset in aOutContent where the meaningful end of
+   * aRange.  E.g., if aRange ends with non-selectable elements, this returns
+   * the last selectable content's frame and its end offset.
+   *
+   * @param aRange      The range, typically the last range of `Selection`.
+   * @param aOutOffsetInFrameContent
+   *                    Must not be nullptr. If the result is not nullptr, this
+   *                    will be set to the offset in result->GetContent().
+   *                    NOTE: {result->GetContent(), *aOutOffsetInFrameContent}
+   *                    means that it's the end boundary of visible/meaningful
+   *                    selection end boundary at a leaf node like a `Text`.
+   * @param aOutContent [optional] If set, this will be set to the last
+   *                    selectable container in aRange. It's typically a
+   *                    container element.
+   * @param aOutOffsetInContent
+   *                    [optional] If set, this will be set to the offset in
+   *                    the last selectable container (i.e., aOutContent).
+   *                    NOTE: {*aOutContent, *aOutOffsetInContent} means that
+   *                    it's the end boundary of actual selectable range at a
+   *                    container element.
+   * @return            The last meaningful frame whose content is selected by
+   *                    aRange. Typically, a text frame or a image frame.
+   */
+  nsIFrame* GetFrameForRangeEnd(nsRange& aRange,
+                                int32_t* aOutOffsetInFrameContent,
+                                nsIContent** aOutContent = nullptr,
+                                int32_t* aOutOffsetInContent = nullptr) const;
 
   MOZ_CAN_RUN_SCRIPT nsresult DragCaretInternal(const nsPoint& aPoint);
   nsPoint AdjustDragBoundary(const nsPoint& aPoint) const;
@@ -277,11 +326,11 @@ class AccessibleCaretManager {
   // Get caret mode based on current selection.
   virtual CaretMode GetCaretMode() const;
 
-  // @return true if aStartContent comes before aEndContent.
+  // @return true if aStartFrame comes before aEndFrame.
   virtual bool CompareTreePosition(const nsIFrame* aStartFrame,
+                                   int32_t aStartOffset,
                                    const nsIFrame* aEndFrame,
-                                   const nsIContent* aStartContent,
-                                   const nsIContent* aEndContent) const;
+                                   int32_t aEndOffset) const;
 
   // Check if the two carets is overlapping to become tilt.
   // @return true if the two carets become tilt; false, otherwise.

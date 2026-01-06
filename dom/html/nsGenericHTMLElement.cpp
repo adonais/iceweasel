@@ -57,7 +57,9 @@
 #include "mozilla/dom/ToggleEvent.h"
 #include "mozilla/dom/TouchEvent.h"
 #include "mozilla/dom/UnbindContext.h"
+#include "mozilla/intl/Locale.h"
 #include "nsAtom.h"
+#include "nsAttrValueOrString.h"
 #include "nsCOMPtr.h"
 #include "nsCaseTreatment.h"
 #include "nsComputedDOMStyle.h"
@@ -721,9 +723,11 @@ void nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                         bool aNotify) {
   if (aNamespaceID == kNameSpaceID_None) {
     if (IsEventAttributeName(aName) && aValue) {
-      MOZ_ASSERT(aValue->Type() == nsAttrValue::eString,
-                 "Expected string value for script body");
-      SetEventHandler(GetEventNameForAttr(aName), aValue->GetStringValue());
+      MOZ_ASSERT(aValue->Type() == nsAttrValue::eString ||
+                     aValue->Type() == nsAttrValue::eAtom,
+                 "Expected string or atom value for script body");
+      SetEventHandler(GetEventNameForAttr(aName),
+                      nsAttrValueOrString(aValue).String());
     } else if (aNotify && aName == nsGkAtoms::spellcheck) {
       SyncEditorsOnSubtree(this);
     } else if (aName == nsGkAtoms::popover) {
@@ -853,14 +857,20 @@ void nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
               IMEStateManager::GetActiveContentObserver();
           if (observer && observer->IsObserving(*presContext, this)) {
             if (const RefPtr<EditorBase> editorBase = GetExtantEditor()) {
-              IMEState newState;
-              editorBase->GetPreferredIMEState(&newState);
-              OwningNonNull<nsGenericHTMLElement> kungFuDeathGrip(*this);
-              IMEStateManager::UpdateIMEState(
-                  newState, kungFuDeathGrip, *editorBase,
-                  {IMEStateManager::UpdateIMEStateOption::ForceUpdate,
-                   IMEStateManager::UpdateIMEStateOption::
-                       DontCommitComposition});
+              // If the TextControlState does not have a bound frame,
+              // TextEditor::GetPreferredIMEState() may fail.  In such case,
+              // TextEditor will update IME state when it's (re)initialized
+              // later.
+              Result<IMEState, nsresult> newStateOrError =
+                  editorBase->GetPreferredIMEState();
+              if (MOZ_LIKELY(newStateOrError.isOk())) {
+                OwningNonNull<nsGenericHTMLElement> kungFuDeathGrip(*this);
+                IMEStateManager::UpdateIMEState(
+                    newStateOrError.unwrap(), kungFuDeathGrip, *editorBase,
+                    {IMEStateManager::UpdateIMEStateOption::ForceUpdate,
+                     IMEStateManager::UpdateIMEStateOption::
+                         DontCommitComposition});
+              }
             }
           }
         }
@@ -872,7 +882,7 @@ void nsGenericHTMLElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
     // the CSP list contains a header-delivered CSP.
     if (nsGkAtoms::nonce == aName) {
       if (aValue) {
-        SetNonce(aValue->GetStringValue());
+        SetNonce(nsAttrValueOrString(aValue).String());
         if (OwnerDoc()->GetHasCSPDeliveredThroughHeader()) {
           SetFlags(NODE_HAS_NONCE_AND_HEADER_CSP);
         }
@@ -1272,10 +1282,41 @@ static inline void MapLangAttributeInto(MappedDeclarationsBuilder& aBuilder) {
     return;
   }
   MOZ_ASSERT(langValue->Type() == nsAttrValue::eAtom);
-  aBuilder.SetIdentAtomValueIfUnset(eCSSProperty__x_lang,
-                                    langValue->GetAtomValue());
+
+  // Adaptor for nsCString to expose the Buffer interface to Locale::ToString.
+  class BufferAdaptor {
+   public:
+    using CharType = char;
+
+    explicit BufferAdaptor(nsCString& aString) : mString(aString) {}
+    CharType* data() { return mString.BeginWriting(); }
+    size_t capacity() const { return mString.Length(); }
+    bool reserve(size_t aLen) { return mString.SetLength(aLen, fallible); }
+    void written(size_t aLen) { mString.SetLength(aLen); }
+
+   private:
+    nsCString& mString;
+  };
+
+  // Try parsing lang as a Locale and canonicalizing the subtags; if parsing
+  // succeeds, we record the canonicalized version rather than the original,
+  // so that code checking for particular codes can assume canonical casing.
+  // Note that in some cases this will also map 3-character ISO 639-3 tags to
+  // their corresponding 2-char ISO 639-1 tags.
+  RefPtr<nsAtom> lang = langValue->GetAtomValue();
+  nsAtomCString langStr(lang);
+  intl::Locale loc;
+  if (intl::LocaleParser::TryParse(langStr, loc).isOk() &&
+      loc.Canonicalize().isOk()) {
+    nsAutoCString canonical;
+    BufferAdaptor buffer(canonical);
+    if (loc.ToString(buffer).isOk() && canonical != langStr) {
+      lang = NS_Atomize(canonical);
+    }
+  }
+
+  aBuilder.SetIdentAtomValueIfUnset(eCSSProperty__x_lang, lang);
   if (!aBuilder.PropertyIsSet(eCSSProperty_text_emphasis_position)) {
-    const nsAtom* lang = langValue->GetAtomValue();
     if (nsStyleUtil::MatchesLanguagePrefix(lang, u"zh")) {
       aBuilder.SetKeywordValue(eCSSProperty_text_emphasis_position,
                                StyleTextEmphasisPosition::UNDER._0);
@@ -1401,7 +1442,7 @@ void nsGenericHTMLElement::MapVAlignAttributeInto(
 }
 
 void nsGenericHTMLElement::MapDimensionAttributeInto(
-    MappedDeclarationsBuilder& aBuilder, nsCSSPropertyID aProp,
+    MappedDeclarationsBuilder& aBuilder, NonCustomCSSPropertyId aProp,
     const nsAttrValue& aValue) {
   MOZ_ASSERT(!aBuilder.PropertyIsSet(aProp),
              "Why mapping the same property twice?");
@@ -1677,8 +1718,8 @@ const nsAttrValue* nsGenericHTMLElement::GetURIAttr(nsAtom* aAttr,
 
   // Don't care about return value.  If it fails, we still want to
   // return true, and *aURI will be null.
-  nsContentUtils::NewURIWithDocumentCharset(aURI, attr->GetStringValue(),
-                                            OwnerDoc(), baseURI);
+  nsContentUtils::NewURIWithDocumentCharset(
+      aURI, nsAttrValueOrString(attr).String(), OwnerDoc(), baseURI);
   return attr;
 }
 
@@ -2538,12 +2579,11 @@ nsIContent::IMEState nsGenericHTMLFormControlElement::GetDesiredIMEState() {
   if (!textEditor) {
     return nsGenericHTMLFormElement::GetDesiredIMEState();
   }
-  IMEState state;
-  nsresult rv = textEditor->GetPreferredIMEState(&state);
-  if (NS_FAILED(rv)) {
+  Result<IMEState, nsresult> stateOrError = textEditor->GetPreferredIMEState();
+  if (MOZ_UNLIKELY(stateOrError.isErr())) {
     return nsGenericHTMLFormElement::GetDesiredIMEState();
   }
-  return state;
+  return stateOrError.unwrap();
 }
 
 void nsGenericHTMLFormControlElement::GetAutocapitalize(

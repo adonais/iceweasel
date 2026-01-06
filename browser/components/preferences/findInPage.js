@@ -9,9 +9,12 @@
 // inside the button, which allows the text to be highlighted when the user
 // is searching.
 
-const MozButton = customElements.get("button");
-class HighlightableButton extends MozButton {
+/** @import MozInputSearch from "chrome://global/content/elements/moz-input-search.mjs" */
+
+const MozButtonClass = customElements.get("button");
+class HighlightableButton extends MozButtonClass {
   static get inheritedAttributes() {
+    // @ts-expect-error super is MozButton from toolkit/content/widgets/button.js
     return Object.assign({}, super.inheritedAttributes, {
       ".button-text": "text=label,accesskey,crop",
     });
@@ -22,9 +25,14 @@ customElements.define("highlightable-button", HighlightableButton, {
 });
 
 var gSearchResultsPane = {
+  /** @type {string} */
+  query: undefined,
   listSearchTooltips: new Set(),
   listSearchMenuitemIndicators: new Set(),
+  /** @type {MozInputSearch} */
   searchInput: null,
+  /** @type {HTMLDivElement} */
+  searchTooltipContainer: null,
   // A map of DOM Elements to a string of keywords used in search
   // XXX: We should invalidate this cache on `intl:app-locales-changed`
   searchKeywords: new WeakMap(),
@@ -49,9 +57,11 @@ var gSearchResultsPane = {
       return;
     }
     this.inited = true;
-    this.searchInput = document.getElementById("searchInput");
-    this.searchTooltipContainer = document.getElementById(
-      "search-tooltip-container"
+    this.searchInput = /** @type {MozInputSearch} */ (
+      document.getElementById("searchInput")
+    );
+    this.searchTooltipContainer = /** @type {HTMLDivElement} */ (
+      document.getElementById("search-tooltip-container")
     );
 
     window.addEventListener("resize", () => {
@@ -71,6 +81,7 @@ var gSearchResultsPane = {
     ensureScrollPadding();
   },
 
+  /** @param {InputEvent} event */
   async handleEvent(event) {
     // Ensure categories are initialized if idle callback didn't run sooo enough.
     await this.initializeCategories();
@@ -157,6 +168,7 @@ var gSearchResultsPane = {
    * We pass in the nodeSizes to tell exactly where highlighting need be done.
    * When creating the range for highlighting, if the nodes are section is split
    * by an access key, it is important to have the size of each of the nodes summed.
+   *
    * @param Array textNodes
    *    List of DOM elements
    * @param Array nodeSizes
@@ -396,6 +408,16 @@ var gSearchResultsPane = {
   },
 
   /**
+   * Determine if the given element is an anchor tag.
+   *
+   * @param {HTMLElement} el The element.
+   * @returns {boolean} Whether or not the element is an anchor tag.
+   */
+  _isAnchor(el) {
+    return (el.prefix === null || el.prefix === "html") && el.localName === "a";
+  },
+
+  /**
    * Finding leaf nodes and checking their content for words to search,
    * It is a recursive function
    *
@@ -409,6 +431,8 @@ var gSearchResultsPane = {
     let matchesFound = false;
     if (
       nodeObject.childElementCount == 0 ||
+      (typeof nodeObject.children !== "undefined" &&
+        Array.prototype.every.call(nodeObject.children, this._isAnchor)) ||
       this.searchableNodes.has(nodeObject.localName) ||
       (nodeObject.localName?.startsWith("moz-") &&
         nodeObject.localName !== "moz-input-box")

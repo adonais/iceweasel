@@ -145,6 +145,7 @@ ExtensionManager = {
 
         isPrivileged: extension.isPrivileged,
         ignoreQuarantine: extension.ignoreQuarantine,
+        hasRecommendedState: extension.hasRecommendedState,
         temporarilyInstalled: extension.temporarilyInstalled,
         permissions: extension.permissions,
         allowedOrigins: extension.allowedOrigins,

@@ -8,8 +8,6 @@
 #include <wrl.h>
 #include <wrl/client.h>
 
-#include <vector>
-
 #include "MFCDMExtra.h"
 #include "MediaEventSource.h"
 #include "mozilla/KeySystemConfig.h"

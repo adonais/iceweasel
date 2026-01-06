@@ -119,6 +119,7 @@ DEBIAN_DISTROS = (
     "pureos",
     "deepin",
     "tuxedo",
+    "zorin",
 )
 
 FEDORA_DISTROS = (

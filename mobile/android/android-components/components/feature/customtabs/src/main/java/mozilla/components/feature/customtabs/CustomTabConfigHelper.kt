@@ -279,7 +279,10 @@ private fun getDarkColorSchemeParams(safeIntent: SafeIntent) =
  *
  * @see [CustomTabsIntent.Builder.setColorSchemeParams].
  */
-private fun getColorSchemeParams(safeIntent: SafeIntent, @ColorScheme colorScheme: Int): ColorSchemeParams? {
+private fun getColorSchemeParams(
+    safeIntent: SafeIntent,
+    @ColorScheme colorScheme: Int,
+): ColorSchemeParams? {
     val bundle = safeIntent.getColorSchemeParamsBundle()?.get(colorScheme)
 
     val toolbarColor = bundle?.getNullableSafeValue(EXTRA_TOOLBAR_COLOR)

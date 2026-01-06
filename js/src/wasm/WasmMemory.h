@@ -22,6 +22,7 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"
 
+#include <compare>  // std::strong_ordering
 #include <stdint.h>
 
 #include "js/Value.h"
@@ -124,12 +125,7 @@ struct Pages {
 
   // Implement pass-through comparison operators so that Pages can be compared.
 
-  bool operator==(Pages other) const { return value_ == other.value_; }
-  bool operator!=(Pages other) const { return value_ != other.value_; }
-  bool operator<=(Pages other) const { return value_ <= other.value_; }
-  bool operator<(Pages other) const { return value_ < other.value_; }
-  bool operator>=(Pages other) const { return value_ >= other.value_; }
-  bool operator>(Pages other) const { return value_ > other.value_; }
+  constexpr auto operator<=>(const Pages& other) const = default;
 };
 
 // The largest number of pages the application can request.
@@ -140,10 +136,7 @@ static inline size_t MaxMemoryBytes(AddressType t) {
   return MaxMemoryPages(t).byteLength();
 }
 
-// A value at least as large as MaxMemoryBytes(t) representing the largest valid
-// bounds check limit on the system.  (It can be larger than MaxMemoryBytes()
-// because bounds check limits are rounded up to fit formal requirements on some
-// platforms.  Also see ComputeMappedSize().)
+// A value representing the largest valid value for boundsCheckLimit.
 extern size_t MaxMemoryBoundsCheckLimit(AddressType t);
 
 static inline uint64_t MaxMemoryPagesValidation(AddressType addressType) {
@@ -170,18 +163,9 @@ extern size_t ComputeMappedSize(Pages clampedMaxPages);
 
 extern uint64_t GetMaxOffsetGuardLimit(bool hugeMemory);
 
-// Return whether the given immediate satisfies the constraints of the platform.
-extern bool IsValidBoundsCheckImmediate(uint32_t i);
-
-// Return whether the given immediate is valid on arm.
-extern bool IsValidARMImmediate(uint32_t i);
-
 // Return the next higher valid immediate that satisfies the constraints of the
 // platform.
 extern uint64_t RoundUpToNextValidBoundsCheckImmediate(uint64_t i);
-
-// Return the next higher valid immediate for arm.
-extern uint64_t RoundUpToNextValidARMImmediate(uint64_t i);
 
 #ifdef WASM_SUPPORTS_HUGE_MEMORY
 // On WASM_SUPPORTS_HUGE_MEMORY platforms, every asm.js or WebAssembly 32-bit

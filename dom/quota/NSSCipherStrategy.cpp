@@ -9,8 +9,6 @@
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
-#include <memory>
-#include <type_traits>
 #include <utility>
 
 #include "mozilla/Assertions.h"

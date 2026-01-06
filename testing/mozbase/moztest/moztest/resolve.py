@@ -69,7 +69,7 @@ TEST_SUITES = {
         "mach_command": "firefox-ui-update",
         "kwargs": {},
     },
-    "marionette": {
+    "marionette-integration": {
         "aliases": ("mn",),
         "build_flavor": "marionette",
         "mach_command": "marionette-test",
@@ -447,7 +447,8 @@ _test_flavors = {
     "crashtest": "crashtest",
     "firefox-ui-functional": "firefox-ui-functional",
     "firefox-ui-update": "firefox-ui-update",
-    "marionette": "marionette",
+    "marionette-integration": "marionette-integration",
+    "marionette-unittest": "marionette-unittest",
     "mochitest": "mochitest-plain",
     "puppeteer": "puppeteer",
     "python": "python",

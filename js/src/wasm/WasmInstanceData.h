@@ -150,9 +150,9 @@ struct MemoryInstanceData {
   // Pointer to the base of the memory.
   uint8_t* base;
 
-  // Bounds check limit in bytes (or zero if there is no memory).  This is
-  // 64-bits on 64-bit systems so as to allow for heap lengths up to and beyond
-  // 4GB, and 32-bits on 32-bit systems, where heaps are limited to 2GB.
+  // Bounds check limit in bytes. This is 64 bits on 64-bit systems so as to
+  // allow for heap lengths up to and beyond 4GB, and 32 bits on 32-bit systems,
+  // where heaps are limited to 2GB.
   //
   // See "Linear memory addresses and bounds checking" in WasmMemory.cpp.
   uintptr_t boundsCheckLimit;

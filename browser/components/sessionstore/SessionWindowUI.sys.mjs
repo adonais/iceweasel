@@ -49,6 +49,7 @@ export var SessionWindowUI = {
 
   /**
    * Re-open a closed tab into the current window.
+   *
    * @param window
    *        Window reference
    * @param [aIndex]
@@ -139,6 +140,7 @@ export var SessionWindowUI = {
 
   /**
    * Re-open a closed window.
+   *
    * @param aIndex
    *        The index of the window (via SessionStore.getClosedWindowData)
    * @returns a reference to the reopened window.

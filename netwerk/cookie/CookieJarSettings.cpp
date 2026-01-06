@@ -233,7 +233,7 @@ CookieJarSettings::InitWithURI(nsIURI* aURI, bool aIsPrivate) {
 
   mCookieBehavior = nsICookieManager::GetCookieBehavior(aIsPrivate);
 
-  SetPartitionKey(aURI, false);
+  SetPartitionKey(aURI);
   return NS_OK;
 }
 
@@ -560,12 +560,11 @@ already_AddRefed<nsICookieJarSettings> CookieJarSettings::Merge(
   return newCookieJarSettings.forget();
 }
 
-void CookieJarSettings::SetPartitionKey(nsIURI* aURI,
-                                        bool aForeignByAncestorContext) {
+void CookieJarSettings::SetPartitionKey(nsIURI* aURI) {
   MOZ_ASSERT(aURI);
 
   OriginAttributes attrs;
-  attrs.SetPartitionKey(aURI, aForeignByAncestorContext);
+  attrs.SetPartitionKey(aURI, false);
   mPartitionKey = std::move(attrs.mPartitionKey);
 
   mToBeMerged = true;

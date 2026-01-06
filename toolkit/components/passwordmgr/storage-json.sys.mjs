@@ -750,12 +750,11 @@ export class LoginManagerStorage_json {
   /**
    * Checks if the given login item matches the specified matchData.
    *
-   * @param {Object} aLoginItem The login item to check.
-   * @param {Object} aMatchData The match data to compare against. keyed by
-   * @param {Object} [aOptions] Additional options for matching
+   * @param {object} aLoginItem The login item to check.
+   * @param {object} aMatchData The match data to compare against. keyed by
+   * @param {object} [aOptions] Additional options for matching
    *
    * @returns {boolean} - Returns true if the login item matches the match data,
-   *
    */
   #matchLogin(
     aLoginItem,

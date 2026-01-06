@@ -10,7 +10,7 @@ resolver = "2"
 
 [workspace.dependencies]
 gleam = "0.15.1"
-glean = "=66.1.2"
+glean = "=66.2.0"
 
 [profile.release]
 debug = true

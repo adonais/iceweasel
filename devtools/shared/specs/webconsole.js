@@ -165,13 +165,13 @@ const webconsoleSpecPrototype = {
     /**
      * Autocomplete a JavaScript expression.
      *
-     * @Arg {String} string
+     * @Arg {string} string
      *      The code you want to autocomplete.
-     * @Arg {Number} cursor
+     * @Arg {number} cursor
      *      Cursor location inside the string. Index starts from 0.
-     * @Arg {String} frameActor
+     * @Arg {string} frameActor
      *      The id of the frame actor that made the call.
-     * @Arg {String} selectedNodeActor: Actor id of the selected node in the inspector.
+     * @Arg {string} selectedNodeActor: Actor id of the selected node in the inspector.
      * @Arg {Array} authorizedEvaluations
      *      Array of the properties access which can be executed by the engine.
      *      Example: [["x", "myGetter"], ["x", "myGetter", "y", "anotherGetter"]] to

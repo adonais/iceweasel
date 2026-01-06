@@ -173,7 +173,7 @@ bool SVGEllipseElement::IsLengthChangedViaCSS(const ComputedStyle& aNewStyle,
          newSVGReset.mRy != oldSVGReset.mRy;
 }
 
-nsCSSPropertyID SVGEllipseElement::GetCSSPropertyIdForAttrEnum(
+NonCustomCSSPropertyId SVGEllipseElement::GetCSSPropertyIdForAttrEnum(
     uint8_t aAttrEnum) {
   switch (aAttrEnum) {
     case CX:

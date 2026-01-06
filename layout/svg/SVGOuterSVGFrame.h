@@ -52,7 +52,7 @@ class SVGOuterSVGFrame final : public SVGDisplayContainerFrame,
   AspectRatio GetIntrinsicRatio() const override;
 
   SizeComputationResult ComputeSize(
-      gfxContext* aRenderingContext, WritingMode aWritingMode,
+      const SizeComputationInput& aSizingInput, WritingMode aWritingMode,
       const LogicalSize& aCBSize, nscoord aAvailableISize,
       const LogicalSize& aMargin, const LogicalSize& aBorderPadding,
       const mozilla::StyleSizeOverrides& aSizeOverrides,

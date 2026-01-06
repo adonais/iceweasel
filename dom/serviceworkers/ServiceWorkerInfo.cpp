@@ -232,16 +232,15 @@ void ServiceWorkerInfo::UpdateState(ServiceWorkerState aState) {
   }
 }
 
-ServiceWorkerInfo::ServiceWorkerInfo(nsIPrincipal* aPrincipal,
-                                     const nsACString& aScope,
-                                     uint64_t aRegistrationId,
-                                     uint64_t aRegistrationVersion,
-                                     const nsACString& aScriptSpec,
-                                     const nsAString& aCacheName,
-                                     nsLoadFlags aImportsLoadFlags)
+ServiceWorkerInfo::ServiceWorkerInfo(
+    nsIPrincipal* aPrincipal, const nsACString& aScope, const WorkerType& aType,
+    uint64_t aRegistrationId, uint64_t aRegistrationVersion,
+    const nsACString& aScriptSpec, const nsAString& aCacheName,
+    nsLoadFlags aImportsLoadFlags)
     : mPrincipal(aPrincipal),
       mDescriptor(GetNextID(), aRegistrationId, aRegistrationVersion,
-                  aPrincipal, aScope, aScriptSpec, ServiceWorkerState::Parsed),
+                  aPrincipal, aScope, aType, aScriptSpec,
+                  ServiceWorkerState::Parsed),
       mCacheName(aCacheName),
       mWorkerPrivateId(ComputeWorkerPrivateId()),
       mImportsLoadFlags(aImportsLoadFlags),

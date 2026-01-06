@@ -191,6 +191,7 @@ function waitForMutation(target, opts, cb) {
 
 /**
  * Creates observer that waits for and then compares all perm-changes with the observances in order.
+ *
  * @param {Array} observances permission changes to observe (order is important)
  * @returns {Promise} Promise object that resolves once all permission changes have been observed
  */
@@ -247,6 +248,7 @@ function createObserveAllPromise(observances) {
 
 /**
  * Waits for preference to be set and asserts the value.
+ *
  * @param {string} pref - Preference key.
  * @param {*} expectedValue - Expected value of the preference.
  * @param {string} message - Assertion message.
@@ -267,11 +269,12 @@ async function waitForAndAssertPrefState(pref, expectedValue, message) {
  * dummy address by the test harness, filling the prefs with a "user value."
  * This temporarily sets the default value equal to the dummy value, so that
  * Firefox thinks we've configured the correct FxA server.
+ *
  * @returns {Promise<MockFxAUtilityFunctions>} { mock, unmock }
  */
 async function mockDefaultFxAInstance() {
   /**
-   * @typedef {Object} MockFxAUtilityFunctions
+   * @typedef {object} MockFxAUtilityFunctions
    * @property {function():void} mock - Makes the dummy values default, creating
    *                             the illusion of a production FxA instance.
    * @property {function():void} unmock - Restores the true defaults, creating
@@ -415,8 +418,8 @@ const DEFAULT_LABS_RECIPES = [
     targeting: "true",
     isRollout: true,
     isFirefoxLabsOptIn: true,
-    firefoxLabsTitle: "experimental-features-auto-pip",
-    firefoxLabsDescription: "experimental-features-auto-pip-description",
+    firefoxLabsTitle: "experimental-features-ime-search",
+    firefoxLabsDescription: "experimental-features-ime-search-description",
     firefoxLabsDescriptionLinks: null,
     firefoxLabsGroup: "experimental-features-group-customize-browsing",
     requiresRestart: false,
@@ -558,6 +561,7 @@ function enrollByClick(el, wantedActive) {
 
 /**
  * Clicks a checkbox and waits for the associated preference to change to the expected value.
+ *
  * @param {Document} doc - The content document.
  * @param {string} checkboxId - The checkbox element id.
  * @param {string} prefName - The preference name.
@@ -586,6 +590,7 @@ async function clickCheckboxAndWaitForPrefChange(
 
 /**
  * Clicks a checkbox that triggers a confirmation dialog and handles the dialog response.
+ *
  * @param {Document} doc - The document containing the checkbox.
  * @param {string} checkboxId - The ID of the checkbox to click.
  * @param {string} prefName - The name of the preference that should change.
@@ -631,4 +636,99 @@ async function clickCheckboxWithConfirmDialog(
   );
 
   return checkbox;
+}
+
+/**
+ * Select the given history mode via dropdown in the privacy pane.
+ *
+ * @param {Window} win - The preferences window which contains the
+ * dropdown.
+ * @param {string} value - The history mode to select.
+ */
+async function selectHistoryMode(win, value) {
+  let historyMode = win.document.getElementById("historyMode").inputEl;
+
+  // Find the index of the option with the given value. Do this before the first
+  // click so we can bail out early if the option does not exist.
+  let optionIndexStr = Array.from(historyMode.children)
+    .findIndex(option => option.value == value)
+    ?.toString();
+  if (optionIndexStr == null) {
+    throw new Error(
+      "Could not find history mode option item for value: " + value
+    );
+  }
+
+  // Scroll into view for click to succeed.
+  historyMode.scrollIntoView();
+
+  let popupShownPromise = BrowserTestUtils.waitForSelectPopupShown(window);
+
+  await EventUtils.synthesizeMouseAtCenter(
+    historyMode,
+    {},
+    historyMode.ownerGlobal
+  );
+
+  let popup = await popupShownPromise;
+  let popupItems = Array.from(popup.children);
+
+  let targetItem = popupItems.find(item => item.value == optionIndexStr);
+
+  if (!targetItem) {
+    throw new Error(
+      "Could not find history mode popup item for value: " + value
+    );
+  }
+
+  let popupHiddenPromise = BrowserTestUtils.waitForPopupEvent(popup, "hidden");
+
+  EventUtils.synthesizeMouseAtCenter(targetItem, {}, targetItem.ownerGlobal);
+
+  await popupHiddenPromise;
+}
+
+async function updateCheckBox(win, id, value) {
+  let checkbox = win.document.getElementById(id);
+  ok(checkbox, "the " + id + " checkbox should exist");
+  is_element_visible(checkbox, "the " + id + " checkbox should be visible");
+
+  // No need to click if we're already in the desired state.
+  if (checkbox.checked === value) {
+    return;
+  }
+
+  // Scroll into view for click to succeed.
+  checkbox.scrollIntoView();
+
+  // Toggle the state.
+  await EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.ownerGlobal);
+}
+
+function waitForSettingChange(setting) {
+  return new Promise(resolve => {
+    setting.on("change", function handler() {
+      setting.off("change", handler);
+      resolve();
+    });
+  });
+}
+
+async function waitForSettingControlChange(control) {
+  await waitForSettingChange(control.setting);
+  await new Promise(resolve => requestAnimationFrame(resolve));
+}
+
+/**
+ * Wait for the current setting pane to change.
+ *
+ * @param {string} paneId
+ */
+async function waitForPaneChange(paneId) {
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  let event = await BrowserTestUtils.waitForEvent(doc, "paneshown");
+  let expectId = paneId.startsWith("pane")
+    ? paneId
+    : `pane${paneId[0].toUpperCase()}${paneId.substring(1)}`;
+  is(event.detail.category, expectId, "Loaded the correct pane");
 }

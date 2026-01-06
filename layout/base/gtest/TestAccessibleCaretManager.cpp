@@ -75,10 +75,9 @@ class AccessibleCaretManagerTester : public ::testing::Test {
       return static_cast<MockAccessibleCaret&>(*mCarets.GetSecond());
     }
 
-    bool CompareTreePosition(const nsIFrame* aStartFrame,
+    bool CompareTreePosition(const nsIFrame* aStartFrame, int32_t aStartOffset,
                              const nsIFrame* aEndFrame,
-                             const nsIContent* aStartContent,
-                             const nsIContent* aEndContent) const override {
+                             int32_t aEndOffset) const override {
       return true;
     }
 

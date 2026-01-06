@@ -8,6 +8,10 @@
 
 "use strict";
 
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
 const CONFIG = [
   {
     identifier: "defaultEngine",
@@ -142,6 +146,10 @@ async function doDelayedUpdatePlaceholderTest({ defaultEngine }) {
   info("Clear placeholder cache");
   Services.prefs.clearUserPref("browser.urlbar.placeholderName");
 
+  info("Pretend we're on startup and the search service hasn't started yet.");
+  let stub = sinon.stub(Services.search.wrappedJSObject, "isInitialized");
+  stub.get(() => false);
+
   info("Open a new window");
   let newWin = await BrowserTestUtils.openNewBrowserWindow();
 
@@ -155,6 +163,9 @@ async function doDelayedUpdatePlaceholderTest({ defaultEngine }) {
     { id: "urlbar-placeholder", args: null },
     "Placeholder data should be unchanged."
   );
+
+  info("Pretend the search service has finished initializing.");
+  stub.restore();
 
   info("Simulate user interaction");
   let urlTab = BrowserTestUtils.addTab(newWin.gBrowser, "about:mozilla");

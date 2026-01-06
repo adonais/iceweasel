@@ -213,7 +213,7 @@ void CSSTransition::Tick(TickState& aState) {
   QueueEvents();
 }
 
-const AnimatedPropertyID& CSSTransition::TransitionProperty() const {
+const CSSPropertyId& CSSTransition::TransitionProperty() const {
   MOZ_ASSERT(mTransitionProperty.IsValid(),
              "Transition property should be initialized");
   return mTransitionProperty;

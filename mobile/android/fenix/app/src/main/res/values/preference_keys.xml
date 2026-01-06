@@ -176,8 +176,9 @@
     <string name="pref_key_app_icon">pref_key_app_icon</string>
     <string name="pref_key_app_icon_selection_enabled" translatable="false">pref_key_app_icon_selection_enabled</string>
 
-    <!-- Menu -->
+    <!-- Cfr -->
     <string name="pref_key_menu_cfr" translatable="false">pref_key_menu_cfr</string>
+    <string name="pref_key_toolbar_cfr" translatable="false">pref_key_toolbar_cfr</string>
 
     <!-- Privacy Pop Window -->
     <string name="pref_key_privacy_pop_window" translatable="false">pref_key_privacy_pop_window</string>
@@ -197,6 +198,7 @@
     <string name="pref_key_tab_strip_show" translatable="false">pref_key_tab_strip_show</string>
     <string name="pref_key_tab_strip_message" translatable="false">pref_key_tab_strip_message</string>
     <string name="pref_key_dynamic_toolbar" translatable="false">pref_key_dynamic_toolbar</string>
+    <string name="pref_key_use_scroll_data_for_dynamic_toolbar" translatable="false">pref_key_use_scroll_data_for_dynamic_toolbar</string>
     <string name="pref_key_swipe_toolbar_switch_tabs" translatable="false">pref_key_swipe_toolbar_switch_tabs</string>
     <string name="pref_key_swipe_toolbar_show_tabs" translatable="false">pref_key_swipe_toolbar_show_tabs</string>
     <string name="pref_key_recent_tabs" translatable="false">pref_key_recent_tabs</string>
@@ -205,7 +207,8 @@
     <string name="pref_key_customization_category_toolbar_layout" translatable="false">pref_key_customization_category_toolbar_layout</string>
     <string name="pref_key_customization_category_app_icon" translatable="false">pref_key_customization_category_app_icon</string>
     <string name="pref_key_customization_category_toolbar_shortcut" translatable="false">pref_key_customization_category_toolbar_shortcut</string>
-    <string name="pref_key_toolbar_shortcut" translatable="false">pref_key_toolbar_shortcut</string>
+    <string name="pref_key_toolbar_simple_shortcut" translatable="false">pref_key_toolbar_simple_shortcut</string>
+    <string name="pref_key_toolbar_expanded_shortcut" translatable="false">pref_key_toolbar_expanded_shortcut</string>
 
     <!-- HTTPS Only Settings -->
     <string name="pref_key_https_only_settings" translatable="false">pref_key_https_only_settings</string>
@@ -230,8 +233,10 @@
     <string name="pref_key_tracking_protection_exceptions" translatable="false">pref_key_tracking_protection_exceptions</string>
     <string name="pref_key_tracking_protection_standard_option" translatable="false">pref_key_tracking_protection_standard_option</string>
     <string name="pref_key_tracking_protection_strict_default" translatable="false">pref_key_tracking_protection_strict_default</string>
+    <string name="pref_key_tracking_protection_strict_allow_list_subheader" translatable="false">pref_key_tracking_protection_strict_allow_list_subheader</string>
     <string name="pref_key_tracking_protection_strict_allow_list_baseline" translatable="false">pref_key_tracking_protection_strict_allow_list_baseline</string>
     <string name="pref_key_tracking_protection_strict_allow_list_convenience" translatable="false">pref_key_tracking_protection_strict_allow_list_convenience</string>
+    <string name="pref_key_tracking_protection_custom_allow_list_subheader" translatable="false">pref_key_tracking_protection_custom_allow_list_subheader</string>
     <string name="pref_key_tracking_protection_custom_allow_list_baseline" translatable="false">pref_key_tracking_protection_custom_allow_list_baseline</string>
     <string name="pref_key_tracking_protection_custom_allow_list_convenience" translatable="false">pref_key_tracking_protection_custom_allow_list_convenience</string>
     <string name="pref_key_tracking_protection_custom_option" translatable="false">pref_key_tracking_protection_custom_option</string>
@@ -270,6 +275,8 @@
     <string name="pref_key_addresses_save_and_autofill_addresses" translatable="false">pref_key_addresses_save_and_autofill_addresses</string>
     <!-- Key for the "Sync addresses across devices" preference in the "Autofill" fragment -->
     <string name="pref_key_addresses_sync_cards_across_devices" translatable="false">pref_key_addresses_sync_cards_across_devices</string>
+    <!-- Key for the enabling compose autofill preference in settings -->
+    <string name="pref_key_enable_compose_autofill_settings" translatable="false">pref_key_enable_compose_autofill_settings</string>
 
     <!-- Privacy Settings -->
     <string name="pref_key_privacy_security_category" translatable="false">pref_key_privacy_security_category</string>
@@ -430,15 +437,18 @@
     <string name="pref_key_custom_sponsored_stories_city" translatable="false">pref_key_custom_sponsored_stories_city</string>
     <string name="pref_key_enable_homepage_searchbar" translatable="false">pref_key_enable_homepage_searchbar</string>
     <string name="pref_key_enable_menu_redesign" translatable="false">pref_key_enable_menu_redesign</string>
+    <string name="pref_key_should_show_custom_tab_extensions" translatable="false">pref_key_should_show_custom_tab_extensions</string>
     <string name="pref_key_enable_homepage_as_new_tab" translatable="false">pref_key_enable_homepage_as_new_tab</string>
     <string name="pref_key_enable_discover_more_stories" translatable="false">pref_key_enable_discover_more_stories</string>
-    <string name="pref_key_enable_private_browsing_mode_redesign" translatable="false">pref_key_enable_private_browsing_mode_redesign</string>
+    <string name="pref_key_enable_mozilla_ads_client" translatable="false">pref_key_enable_mozilla_ads_client</string>
     <string name="pref_key_enable_unified_trust_panel" translatable="false">pref_key_enable_unified_trust_panel</string>
     <string name="pref_key_enable_composable_toolbar" translatable="false">pref_key_enable_composable_toolbar</string>"
     <string name="pref_key_enable_toolbar_redesign" translatable="false">pref_key_enable_toolbar_redesign</string>"
     <string name="pref_key_enable_address_sync" translatable="false">pref_key_enable_address_sync</string>"
     <string name="pref_key_enable_toolbar_customization">pref_key_enable_toolbar_customization</string>
     <string name="pref_key_enable_lna_blocking_enabled" translatable="false">pref_key_enable_lna_blocking_enabled</string>
+    <string name="pref_key_enable_lna_tracker_blocking_enabled" translatable="false">pref_key_enable_lna_tracker_blocking_enabled</string>
+    <string name="pref_key_enable_lna_feature_enabled" translatable="false">pref_key_enable_lna_feature_enabled</string>
     <string name="pref_key_enable_isolated_process" translatable="false">pref_key_enable_isolated_process</string>
     <string name="pref_key_enable_app_zygote_process" translatable="false">pref_key_enable_app_zygote_process</string>
 

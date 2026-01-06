@@ -78,7 +78,7 @@ internal class BookmarksMiddleware(
 
     private val scope = CoroutineScope(ioDispatcher)
 
-    @Suppress("LongMethod", "ComplexMethod")
+    @Suppress("LongMethod", "CognitiveComplexMethod", "CyclomaticComplexMethod")
     override fun invoke(
         context: MiddlewareContext<BookmarksState, BookmarksAction>,
         next: (BookmarksAction) -> Unit,

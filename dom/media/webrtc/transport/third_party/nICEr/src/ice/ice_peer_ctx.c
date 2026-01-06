@@ -462,30 +462,6 @@ int nr_ice_peer_ctx_pair_new_trickle_candidate(nr_ice_ctx *ctx, nr_ice_peer_ctx 
     return _status;
   }
 
-int nr_ice_peer_ctx_disable_component(nr_ice_peer_ctx *pctx, nr_ice_media_stream *lstream, int component_id)
-  {
-    int r, _status;
-    nr_ice_media_stream *pstream;
-    nr_ice_component *component;
-
-    if ((r=nr_ice_peer_ctx_find_pstream(pctx, lstream, &pstream)))
-      ABORT(r);
-
-    /* We shouldn't be calling this after we have started pairing */
-    if (pstream->ice_state != NR_ICE_MEDIA_STREAM_UNPAIRED)
-      ABORT(R_FAILED);
-
-    if ((r=nr_ice_media_stream_find_component(pstream, component_id,
-                                              &component)))
-      ABORT(r);
-
-    component->state = NR_ICE_COMPONENT_DISABLED;
-
-    _status=0;
- abort:
-    return(_status);
-  }
-
   void nr_ice_peer_ctx_destroy(nr_ice_peer_ctx** pctxp) {
     if (!pctxp || !*pctxp) return;
 

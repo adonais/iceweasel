@@ -9,7 +9,6 @@
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/WindowContext.h"
 #include "mozilla/dom/WindowGlobalParent.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "nsBaseClipboard.h"
 #include "nsIClipboard.h"

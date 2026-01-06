@@ -17,6 +17,7 @@
 #include "nsINotificationStorage.h"
 #include "nsIPermissionManager.h"
 #include "nsIPushService.h"
+#include "nsNetUtil.h"
 #include "nsServiceManagerUtils.h"
 
 static bool gTriedStorageCleanup = false;
@@ -409,8 +410,13 @@ NS_IMETHODIMP NotificationStorageEntry::GetTag(nsAString& aTag) {
   return NS_OK;
 }
 
-NS_IMETHODIMP NotificationStorageEntry::GetIcon(nsAString& aIcon) {
-  aIcon = mIPCNotification.options().icon();
+NS_IMETHODIMP NotificationStorageEntry::GetIcon(nsACString& aIcon) {
+  nsIURI* iconUri = mIPCNotification.options().icon();
+  if (!iconUri) {
+    aIcon.Truncate();
+    return NS_OK;
+  }
+  iconUri->GetSpec(aIcon);
   return NS_OK;
 }
 
@@ -469,7 +475,13 @@ Result<IPCNotification, nsresult> NotificationStorageEntry::ToIPC(
   MOZ_TRY(aEntry.GetLang(options.lang()));
   MOZ_TRY(aEntry.GetBody(options.body()));
   MOZ_TRY(aEntry.GetTag(options.tag()));
-  MOZ_TRY(aEntry.GetIcon(options.icon()));
+
+  nsAutoCString iconUrl;
+  MOZ_TRY(aEntry.GetIcon(iconUrl));
+  if (!iconUrl.IsEmpty()) {
+    MOZ_TRY(NS_NewURI(getter_AddRefs(notification.options().icon()), iconUrl));
+  }
+
   MOZ_TRY(aEntry.GetRequireInteraction(&options.requireInteraction()));
   MOZ_TRY(aEntry.GetSilent(&options.silent()));
   MOZ_TRY(aEntry.GetDataSerialized(options.dataSerialized()));

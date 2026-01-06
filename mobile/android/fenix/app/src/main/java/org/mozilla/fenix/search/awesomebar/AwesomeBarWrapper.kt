@@ -8,11 +8,9 @@ import android.content.Context
 import android.util.AttributeSet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.AbstractComposeView
 import mozilla.components.browser.state.action.AwesomeBarAction
 import mozilla.components.compose.browser.awesomebar.AwesomeBar
-import mozilla.components.compose.browser.awesomebar.AwesomeBarDefaults
 import mozilla.components.compose.browser.awesomebar.AwesomeBarOrientation
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.support.ktx.android.view.hideKeyboard
@@ -55,13 +53,6 @@ class AwesomeBarWrapper @JvmOverloads constructor(
                 text = text.value,
                 providers = providers.value,
                 orientation = orientation,
-                colors = AwesomeBarDefaults.colors(
-                    background = Color.Transparent,
-                    title = FirefoxTheme.colors.textPrimary,
-                    description = FirefoxTheme.colors.textSecondary,
-                    autocompleteIcon = FirefoxTheme.colors.textSecondary,
-                    groupTitle = FirefoxTheme.colors.textSecondary,
-                ),
                 onSuggestionClicked = { suggestion ->
                     context.components.core.store.dispatch(AwesomeBarAction.SuggestionClicked(suggestion))
                     suggestion.onSuggestionClicked?.invoke()

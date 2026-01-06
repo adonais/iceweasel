@@ -44,14 +44,15 @@ import mozilla.components.support.ktx.kotlin.applyRegistrableDomainSpan
 import mozilla.components.support.ktx.kotlin.isContentUrl
 import mozilla.components.support.ktx.util.URLStringUtils
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.appstate.OrientationMode
 import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.databinding.TabPreviewBinding
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.isLargeWindow
+import org.mozilla.fenix.ext.isTallWindow
+import org.mozilla.fenix.ext.isWideWindow
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.toolbar.BrowserSimpleToolbar
 import org.mozilla.fenix.search.BrowserToolbarSearchMiddleware
+import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.ThemeManager
 import kotlin.math.min
@@ -88,6 +89,8 @@ class TabPreview @JvmOverloads constructor(
         Bookmark,
         EditBookmark,
         Share,
+        Translate,
+        Homepage,
     }
 
     private data class ToolbarActionConfig(
@@ -95,7 +98,7 @@ class TabPreview @JvmOverloads constructor(
         val isVisible: () -> Boolean = { true },
     )
 
-    @Suppress("LongMethod", "CyclomaticComplexMethod")
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
     private fun buildAction(
         toolbarAction: ToolbarAction,
         tab: TabSessionState?,
@@ -215,6 +218,23 @@ class TabPreview @JvmOverloads constructor(
                     )
                 }
             }
+
+            ToolbarAction.Translate -> ActionButtonRes(
+                drawableResId = iconsR.drawable.mozac_ic_translate_24,
+                contentDescription = R.string.browser_toolbar_translate,
+                state = if (tab?.translationsState?.isTranslated == true) {
+                    ActionButton.State.ACTIVE
+                } else {
+                    ActionButton.State.DEFAULT
+                },
+                onClick = object : BrowserToolbarEvent {},
+            )
+
+            ToolbarAction.Homepage -> ActionButtonRes(
+                drawableResId = iconsR.drawable.mozac_ic_home_24,
+                contentDescription = R.string.browser_menu_homepage,
+                onClick = object : BrowserToolbarEvent {},
+            )
         }
     }
     private fun buildSearchEngineSelector(selectedSearchEngine: SearchEngine?): List<Action> {
@@ -420,6 +440,7 @@ class TabPreview @JvmOverloads constructor(
              }
      }
 
+     @Suppress("CognitiveComplexMethod")
      private fun buildBottomComposableToolbar(): ComposeView {
          return binding.composableBottomToolbar.apply {
              setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -463,13 +484,14 @@ class TabPreview @JvmOverloads constructor(
     }
 
     private fun buildComposableToolbarPageEndActions(tab: TabSessionState?): List<Action> {
-        val isLargeWindowOrLandscape = context?.isLargeWindow() == true ||
-                context.components.appStore.state.orientation == OrientationMode.Landscape
+        val settings = context.settings()
+        val isWideScreen = context.isWideWindow()
+        val tabStripEnabled = settings.isTabStripEnabled
+        val shareShortcutEnabled = ShortcutType.fromValue(settings.toolbarSimpleShortcut) == ShortcutType.SHARE
 
         return listOf(
             ToolbarActionConfig(ToolbarAction.Share) {
-                isLargeWindowOrLandscape && !context.settings().isTabStripEnabled &&
-                        !context.settings().shouldUseExpandedToolbar
+                isWideScreen && !tabStripEnabled && !shareShortcutEnabled
             },
         ).filter { config ->
             config.isVisible()
@@ -479,15 +501,12 @@ class TabPreview @JvmOverloads constructor(
     }
 
     private fun buildComposableToolbarBrowserStartActions(tab: TabSessionState?): List<Action> {
-        val isLargeWindow = context.isLargeWindow()
-        val isLandscape = context.components.appStore.state.orientation == OrientationMode.Landscape
-        val shouldNavigationButtonBeVisible = isLargeWindow ||
-                (context.settings().shouldUseExpandedToolbar && isLandscape)
+        val isWideScreen = context.isWideWindow()
 
         return listOf(
-            ToolbarActionConfig(ToolbarAction.Back) { shouldNavigationButtonBeVisible },
-            ToolbarActionConfig(ToolbarAction.Forward) { shouldNavigationButtonBeVisible },
-            ToolbarActionConfig(ToolbarAction.RefreshOrStop) { shouldNavigationButtonBeVisible },
+            ToolbarActionConfig(ToolbarAction.Back) { isWideScreen },
+            ToolbarActionConfig(ToolbarAction.Forward) { isWideScreen },
+            ToolbarActionConfig(ToolbarAction.RefreshOrStop) { isWideScreen },
         ).filter { config ->
             config.isVisible()
         }.map { config ->
@@ -495,25 +514,26 @@ class TabPreview @JvmOverloads constructor(
         }
     }
 
-    private fun buildComposableToolbarBrowserEndActions(tab: TabSessionState?): List<Action> {
-        val isLargeWindowOrLandscape = context.isLargeWindow() ||
-                context.components.appStore.state.orientation == OrientationMode.Landscape
-        val isExpandedAndPortrait = context.settings().shouldUseExpandedToolbar &&
-                context.components.appStore.state.orientation == OrientationMode.Portrait
+    private suspend fun buildComposableToolbarBrowserEndActions(tab: TabSessionState?): List<Action> {
+        val settings = context.settings()
+        val isWideWindow = context.isWideWindow()
+        val isTallWindow = context.isTallWindow()
+        val shouldUseExpandedToolbar = settings.shouldUseExpandedToolbar
+
+        val primarySlotAction = ShortcutType.fromValue(settings.toolbarSimpleShortcut)
+            ?.toToolbarAction(tab) ?: ToolbarAction.NewTab
 
         return listOf(
-            ToolbarActionConfig(ToolbarAction.NewTab) {
-                !context.settings().isTabStripEnabled && !isExpandedAndPortrait &&
+            ToolbarActionConfig(primarySlotAction) {
+                (!shouldUseExpandedToolbar || !isTallWindow || isWideWindow) &&
                         tab?.content?.url != ABOUT_HOME_URL
             },
             ToolbarActionConfig(ToolbarAction.TabCounter) {
-                !context.settings().isTabStripEnabled && !isExpandedAndPortrait
+                !shouldUseExpandedToolbar || !isTallWindow || isWideWindow
             },
-            ToolbarActionConfig(ToolbarAction.Share) {
-                isLargeWindowOrLandscape && context.settings().isTabStripEnabled &&
-                        !context.settings().shouldUseExpandedToolbar
+            ToolbarActionConfig(ToolbarAction.Menu) {
+                !shouldUseExpandedToolbar || !isTallWindow || isWideWindow
             },
-            ToolbarActionConfig(ToolbarAction.Menu) { !isExpandedAndPortrait },
         ).filter { config ->
             config.isVisible()
         }.map { config ->
@@ -522,25 +542,20 @@ class TabPreview @JvmOverloads constructor(
     }
 
     private suspend fun buildNavigationActions(tab: TabSessionState): List<Action> {
-        val isBookmarked = context.components.core.bookmarksStorage
-            .getBookmarksWithUrl(tab.content.url)
-            .getOrDefault(listOf())
-            .isNotEmpty()
+        val settings = context.settings()
+        val isWideWindow = context.isWideWindow()
+        val isTallWindow = context.isTallWindow()
+        val shouldUseExpandedToolbar = settings.shouldUseExpandedToolbar
 
-        val isExpandedAndPortrait = context.settings().shouldUseExpandedToolbar &&
-                context.components.appStore.state.orientation == OrientationMode.Portrait
+        val primarySlotAction = ShortcutType.fromValue(settings.toolbarExpandedShortcut)
+            ?.toToolbarAction(tab) ?: getBookmarkAction(tab)
 
         return listOf(
-            ToolbarActionConfig(ToolbarAction.Bookmark) {
-                isExpandedAndPortrait && !isBookmarked
-            },
-            ToolbarActionConfig(ToolbarAction.EditBookmark) {
-                isExpandedAndPortrait && isBookmarked
-            },
-            ToolbarActionConfig(ToolbarAction.Share) { isExpandedAndPortrait },
-            ToolbarActionConfig(ToolbarAction.NewTab) { isExpandedAndPortrait },
-            ToolbarActionConfig(ToolbarAction.TabCounter) { isExpandedAndPortrait },
-            ToolbarActionConfig(ToolbarAction.Menu) { isExpandedAndPortrait },
+            ToolbarActionConfig(primarySlotAction) { shouldUseExpandedToolbar && isTallWindow && !isWideWindow },
+            ToolbarActionConfig(ToolbarAction.Share) { shouldUseExpandedToolbar && isTallWindow && !isWideWindow },
+            ToolbarActionConfig(ToolbarAction.NewTab) { shouldUseExpandedToolbar && isTallWindow && !isWideWindow },
+            ToolbarActionConfig(ToolbarAction.TabCounter) { shouldUseExpandedToolbar && isTallWindow && !isWideWindow },
+            ToolbarActionConfig(ToolbarAction.Menu) { shouldUseExpandedToolbar && isTallWindow && !isWideWindow },
         ).filter { config ->
             config.isVisible()
         }.map { config ->
@@ -576,5 +591,25 @@ class TabPreview @JvmOverloads constructor(
     ): T = when (context.settings().shouldUseComposableToolbar) {
         true -> new()
         false -> old()
+    }
+
+    private suspend fun getBookmarkAction(tab: TabSessionState?): ToolbarAction {
+        val isBookmarked = tab?.content?.url?.let { url ->
+            context.components.core.bookmarksStorage
+                .getBookmarksWithUrl(url)
+                .getOrDefault(emptyList())
+                .isNotEmpty()
+        } ?: return ToolbarAction.Bookmark
+
+        return if (isBookmarked) ToolbarAction.EditBookmark else ToolbarAction.Bookmark
+    }
+
+    private suspend fun ShortcutType.toToolbarAction(tab: TabSessionState?) = when (this) {
+        ShortcutType.NEW_TAB -> ToolbarAction.NewTab
+        ShortcutType.SHARE -> ToolbarAction.Share
+        ShortcutType.BOOKMARK -> getBookmarkAction(tab)
+        ShortcutType.TRANSLATE -> ToolbarAction.Translate
+        ShortcutType.HOMEPAGE -> ToolbarAction.Homepage
+        ShortcutType.BACK -> ToolbarAction.Back
     }
 }

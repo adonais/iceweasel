@@ -179,10 +179,4 @@ interface nsIAutoCompleteController : nsISupports
    * session.
    */
   [can_run_script] void resetInternalState();
-
-  /*
-   * Informs `nsIAutoCompleteSearch` implementations to reset their session, if
-   * they have one. Typically used on blur of the autocomplete component.
-   */
-  [can_run_script] void resetSession();
 };

@@ -14,6 +14,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///toolkit/profile/ProfilesDatastoreService.sys.mjs",
   RemoteSettingsSyncError:
     "resource://nimbus/lib/RemoteSettingsExperimentLoader.sys.mjs",
+  UnenrollmentCause: "resource://nimbus/lib/ExperimentManager.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "log", () => {
@@ -23,6 +24,14 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
   return new Logger("NimbusMigrations");
 });
 
+function isBackgroundTaskMode() {
+  const bts = Cc["@mozilla.org/backgroundtasks;1"]?.getService(
+    Ci.nsIBackgroundTasks
+  );
+
+  return bts?.isBackgroundTaskMode ?? false;
+}
+
 /**
  * A named migration.
  *
@@ -31,14 +40,14 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
  * @property {string} name The name of the migration. This will be reported in
  * telemetry.
  *
- * @property {function(): void} fn The migration implementation.
+ * @property {function(string): void} fn The migration implementation.
  */
 
 /**
  * Construct a {@link Migration} with a specific name.
  *
  * @param {string} name The name of the migration.
- * @param {function(): void} fn The migration function.
+ * @param {function(name: string): void} fn The migration function.
  *
  * @returns {Migration} The migration.
  */
@@ -246,6 +255,39 @@ async function migrateEnrollmentsToSql() {
 }
 
 /**
+ * Migrate enrollment from the firefox-labs-auto-pip rolloutl.
+ *
+ * This feature is becoming a regular setting in about:preferences in Firefox
+ * 147. We need to unenroll users without resetting the prefs controlled by the
+ * feature.
+ *
+ * This migration must run before the `ExperimentManager.onStartup` has run
+ * because this feature might be removed and we cannot guarantee that users will
+ * update to exactly 145.
+ */
+function migrateGraduateFirefoxLabsAutoPip(migration) {
+  if (isBackgroundTaskMode()) {
+    // This migration does not apply to background task mode.
+    lazy.log.debug(`${migration}: skipping (is background task mode)`);
+    return;
+  }
+
+  const enrollment = lazy.ExperimentAPI.manager.store.get(
+    "firefox-labs-auto-pip"
+  );
+  if (!enrollment?.active) {
+    lazy.log.debug(`${migration}: skipping (no or inactive enrollment)`);
+    return;
+  }
+
+  lazy.ExperimentAPI.manager._unenroll(
+    enrollment,
+    lazy.UnenrollmentCause.Migration(migration),
+    { unsetEnrollmentPrefs: false }
+  );
+}
+
+/**
  * Migrate the pre-Nimbus Firefox Labs experiences into Nimbus enrollments.
  *
  * Previously Firefox Labs had a one-to-one correlation between Labs Experiments
@@ -258,11 +300,7 @@ async function migrateEnrollmentsToSql() {
  * replaced with a no-op.
  */
 async function migrateFirefoxLabsEnrollments() {
-  const bts = Cc["@mozilla.org/backgroundtasks;1"]?.getService(
-    Ci.nsIBackgroundTasks
-  );
-
-  if (bts?.isBackgroundTaskMode) {
+  if (isBackgroundTaskMode()) {
     // This migration does not apply to background task mode.
     return;
   }
@@ -355,7 +393,6 @@ export const NimbusMigrations = {
    * application of further migrations in the phase.
    *
    * @param {Phase} phase The phase of migrations to apply.
-   *
    */
   async applyMigrations(phase) {
     const phasePref = NIMBUS_MIGRATION_PREFS[phase];
@@ -374,7 +411,7 @@ export const NimbusMigrations = {
       );
 
       try {
-        await migration.fn();
+        await migration.fn(migration.name);
       } catch (e) {
         lazy.log.error(
           `applyMigrations: error running migration ${i} (${migration.name}): ${e}`
@@ -452,6 +489,10 @@ export const NimbusMigrations = {
       // the migration to ensure recipe was never null.
       migration("noop", migrateNoop),
       migration("import-enrollments-to-sql", migrateEnrollmentsToSql),
+      migration(
+        "graduate-firefox-labs-auto-pip",
+        migrateGraduateFirefoxLabsAutoPip
+      ),
     ],
 
     [Phase.AFTER_REMOTE_SETTINGS_UPDATE]: [

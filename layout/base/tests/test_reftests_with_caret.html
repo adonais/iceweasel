@@ -314,7 +314,7 @@ if (AppConstants.platform != "android") {
   is(SpecialPowers.getIntPref("layout.spellcheckDefault"), 0, "Spellcheck should be turned off for this platform or this if..else check removed");
 }
 
-if (AppConstants.platform == "linux") {
+if (AppConstants.platform == "linux" || AppConstants.platform == "win") {
   tests = tests.concat([
     // Turn off accessiblecaret to prevent it from interfering with the
     // multi-range selection.

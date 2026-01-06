@@ -61,6 +61,7 @@
     "MS UI Gothic",
     "MV Boli",
     "Myanmar Text",
+    "Nirmala Text",
     "Nirmala UI",
     "Nirmala UI Semilight",
     "NSimSun",

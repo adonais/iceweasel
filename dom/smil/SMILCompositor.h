@@ -9,12 +9,12 @@
 
 #include <utility>
 
+#include "NonCustomCSSPropertyId.h"
 #include "PLDHashTable.h"
 #include "SMILTargetIdentifier.h"
 #include "mozilla/SMILAnimationFunction.h"
 #include "mozilla/SMILCompositorTable.h"
 #include "mozilla/UniquePtr.h"
-#include "nsCSSPropertyID.h"
 #include "nsString.h"
 #include "nsTHashtable.h"
 
@@ -87,7 +87,7 @@ class SMILCompositor : public PLDHashEntryHdr {
 
   // Returns the CSS property this compositor should animate, or
   // eCSSProperty_UNKNOWN if this compositor does not animate a CSS property.
-  nsCSSPropertyID GetCSSPropertyToAnimate() const;
+  NonCustomCSSPropertyId GetCSSPropertyToAnimate() const;
 
   // Returns true if we might need to refer to base styles (i.e. we are
   // targeting a CSS property and have one or more animation functions that

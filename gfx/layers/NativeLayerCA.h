@@ -9,7 +9,6 @@
 #include <IOSurface/IOSurfaceRef.h>
 
 #include <deque>
-#include <unordered_map>
 #include <ostream>
 
 #include "mozilla/Mutex.h"

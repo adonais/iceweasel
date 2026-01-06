@@ -7,7 +7,6 @@
 #ifndef SharedThreadPool_h_
 #define SharedThreadPool_h_
 
-#include <utility>
 #include <type_traits>
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/MaybeLeakRefPtr.h"

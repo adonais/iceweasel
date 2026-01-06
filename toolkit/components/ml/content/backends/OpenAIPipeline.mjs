@@ -327,9 +327,16 @@ export class OpenAIPipeline {
     lazy.console.debug("Running OpenAI pipeline");
     try {
       const { baseURL, apiKey, modelId } = this.#options;
+      const fxAccountToken = request.fxAccountToken
+        ? request.fxAccountToken
+        : null;
+      const defaultHeaders = fxAccountToken
+        ? { Authorization: `Bearer ${fxAccountToken}` }
+        : undefined;
       const client = new OpenAIPipeline.OpenAILib.OpenAI({
         baseURL: baseURL ? baseURL : "http://localhost:11434/v1",
         apiKey: apiKey || "ollama",
+        ...(defaultHeaders ? { defaultHeaders } : {}),
       });
       const stream = request.streamOptions?.enabled || false;
       const tools = request.tools || [];
@@ -349,11 +356,9 @@ export class OpenAIPipeline {
         port,
       };
 
-      if (stream) {
-        return await this.#handleStreamingResponse(args);
-      }
-
-      return await this.#handleNonStreamingResponse(args);
+      return stream
+        ? await this.#handleStreamingResponse(args)
+        : await this.#handleNonStreamingResponse(args);
     } catch (error) {
       const backendError = this.#errorFactory(error);
       port?.postMessage({ done: true, ok: false, error: backendError });

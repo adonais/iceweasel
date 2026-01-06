@@ -68,6 +68,15 @@ nsresult NetworkLoadHandler::DataReceivedFromNetwork(nsIStreamLoader* aLoader,
                                                      const uint8_t* aString) {
   AssertIsOnMainThread();
   MOZ_ASSERT(!mRequestHandle->IsEmpty());
+
+  if (aStringLen > GetWorkerScriptMaxSizeInBytes()) {
+    Document* parentDoc = mWorkerRef->Private()->GetDocument();
+    nsContentUtils::ReportToConsole(nsIScriptError::errorFlag, "DOM"_ns,
+                                    parentDoc, nsContentUtils::eDOM_PROPERTIES,
+                                    "WorkerScriptTooLargeError");
+    return NS_ERROR_DOM_ABORT_ERR;
+  }
+
   WorkerLoadContext* loadContext = mRequestHandle->GetContext();
 
   if (!loadContext->mChannel) {
@@ -309,19 +318,23 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
     nsAutoCString mimeType;
     channel->GetContentType(mimeType);
 
-    if (!nsContentUtils::IsJavascriptMIMEType(
-            NS_ConvertUTF8toUTF16(mimeType))) {
-      const nsCString& scope = mWorkerRef->Private()
-                                   ->GetServiceWorkerRegistrationDescriptor()
-                                   .Scope();
+    auto mimeTypeUTF16 = NS_ConvertUTF8toUTF16(mimeType);
+    if (!nsContentUtils::IsJavascriptMIMEType(mimeTypeUTF16)) {
+      // JSON is allowed as a non-toplevel.
+      if (loadContext->IsTopLevel() ||
+          !nsContentUtils::IsJsonMimeType(mimeTypeUTF16)) {
+        const nsCString& scope = mWorkerRef->Private()
+                                     ->GetServiceWorkerRegistrationDescriptor()
+                                     .Scope();
 
-      ServiceWorkerManager::LocalizeAndReportToAllClients(
-          scope, "ServiceWorkerRegisterMimeTypeError2",
-          nsTArray<nsString>{
-              NS_ConvertUTF8toUTF16(scope), NS_ConvertUTF8toUTF16(mimeType),
-              NS_ConvertUTF8toUTF16(loadContext->mRequest->mURL)});
+        ServiceWorkerManager::LocalizeAndReportToAllClients(
+            scope, "ServiceWorkerRegisterMimeTypeError2",
+            nsTArray<nsString>{
+                NS_ConvertUTF8toUTF16(scope), NS_ConvertUTF8toUTF16(mimeType),
+                NS_ConvertUTF8toUTF16(loadContext->mRequest->mURL)});
 
-      return NS_ERROR_DOM_NETWORK_ERR;
+        return NS_ERROR_DOM_NETWORK_ERR;
+      }
     }
   }
 

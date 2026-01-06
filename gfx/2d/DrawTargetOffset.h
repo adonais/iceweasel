@@ -12,8 +12,6 @@
 #include "Filters.h"
 #include "Logging.h"
 
-#include <vector>
-
 namespace mozilla {
 namespace gfx {
 

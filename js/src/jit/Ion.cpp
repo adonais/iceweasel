@@ -535,10 +535,10 @@ void JitZone::traceWeak(JSTracer* trc, Zone* zone) {
   baselineCacheIRStubCodes_.traceWeak(trc);
   inlinedCompilations_.traceWeak(trc);
 
-  TraceWeakEdge(trc, &lastStubFoldingBailoutChild_,
-                "JitZone::lastStubFoldingBailoutChild_");
-  TraceWeakEdge(trc, &lastStubFoldingBailoutParent_,
-                "JitZone::lastStubFoldingBailoutParent_");
+  TraceWeakEdge(trc, &lastStubFoldingBailoutInner_,
+                "JitZone::lastStubFoldingBailoutInner_");
+  TraceWeakEdge(trc, &lastStubFoldingBailoutOuter_,
+                "JitZone::lastStubFoldingBailoutOuter_");
 }
 
 void JitZone::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
@@ -1080,6 +1080,21 @@ bool OptimizeMIR(MIRGenerator* mir) {
     // No spew: graph not changed.
 
     if (mir->shouldCancel("Phi reverse mapping")) {
+      return false;
+    }
+  }
+
+  if (!JitOptions.disableRecoverIns &&
+      mir->optimizationInfo().scalarReplacementEnabled() &&
+      !JitOptions.disableObjectKeysScalarReplacement) {
+    JitSpewCont(JitSpew_Escape, "\n");
+    if (!ReplaceObjectKeys(mir, graph)) {
+      return false;
+    }
+    mir->spewPass("Replace ObjectKeys");
+    AssertGraphCoherency(graph);
+
+    if (mir->shouldCancel("Replace ObjectKeys")) {
       return false;
     }
   }

@@ -23,6 +23,7 @@ exports.ConsoleFileActivityListener = ConsoleFileActivityListener;
 ConsoleFileActivityListener.prototype = {
   /**
    * Tells if the console progress listener is initialized or not.
+   *
    * @private
    * @type boolean
    */
@@ -37,6 +38,7 @@ ConsoleFileActivityListener.prototype = {
 
   /**
    * Initialize the ConsoleFileActivityListener.
+   *
    * @private
    */
   _init() {
@@ -80,6 +82,7 @@ ConsoleFileActivityListener.prototype = {
    * Check if there is any file load, given the arguments of
    * nsIWebProgressListener.onStateChange. If the state change tells that a file
    * URI has been loaded, then the remote Web Console instance is notified.
+   *
    * @private
    */
   _checkFileActivity(progress, request, state) {

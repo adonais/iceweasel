@@ -354,9 +354,9 @@ LoginManager.prototype = {
   /**
    * Get a list of all origins for which logins are disabled.
    *
-   * @param {Number} count - only needed for XPCOM.
+   * @param {number} count - only needed for XPCOM.
    *
-   * @return {String[]} of disabled origins. If there are no disabled origins,
+   * @return {string[]} of disabled origins. If there are no disabled origins,
    *                    the array is empty.
    */
   getAllDisabledHosts() {

@@ -268,11 +268,11 @@ uint64_t Assembler::ExtractLoad64Value(Instruction* inst0) {
   InstImm* i5 = (InstImm*)i3->next()->next();
 
   MOZ_ASSERT(i0->extractOpcode() == ((uint32_t)op_lui >> OpcodeShift));
-  MOZ_ASSERT(i1->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
+  MOZ_ASSERT(i1->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift) ||
+             i1->extractOpcode() == ((uint32_t)op_daddiu >> OpcodeShift));
   MOZ_ASSERT(i3->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
 
-  if ((i2->extractOpcode() == ((uint32_t)op_special >> OpcodeShift)) &&
-      (i2->extractFunctionField() == ff_dsrl32)) {
+  if (i1->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift)) {
     uint64_t value = (uint64_t(i0->extractImm16Value()) << 32) |
                      (uint64_t(i1->extractImm16Value()) << 16) |
                      uint64_t(i3->extractImm16Value());
@@ -280,8 +280,8 @@ uint64_t Assembler::ExtractLoad64Value(Instruction* inst0) {
   }
 
   MOZ_ASSERT(i5->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
-  uint64_t value = (uint64_t(i0->extractImm16Value()) << 48) |
-                   (uint64_t(i1->extractImm16Value()) << 32) |
+  uint64_t value = ((uint64_t(i0->extractImm16Value()) << 48) +
+                    ((int64_t(i1->extractImm16Value()) << 48) >> 16)) |
                    (uint64_t(i3->extractImm16Value()) << 16) |
                    uint64_t(i5->extractImm16Value());
   return value;
@@ -295,11 +295,11 @@ void Assembler::UpdateLoad64Value(Instruction* inst0, uint64_t value) {
   InstImm* i5 = (InstImm*)i3->next()->next();
 
   MOZ_ASSERT(i0->extractOpcode() == ((uint32_t)op_lui >> OpcodeShift));
-  MOZ_ASSERT(i1->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
+  MOZ_ASSERT(i1->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift) ||
+             i1->extractOpcode() == ((uint32_t)op_daddiu >> OpcodeShift));
   MOZ_ASSERT(i3->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
 
-  if ((i2->extractOpcode() == ((uint32_t)op_special >> OpcodeShift)) &&
-      (i2->extractFunctionField() == ff_dsrl32)) {
+  if (i1->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift)) {
     i0->setImm16(Imm16::Lower(Imm32(value >> 32)));
     i1->setImm16(Imm16::Upper(Imm32(value)));
     i3->setImm16(Imm16::Lower(Imm32(value)));
@@ -308,7 +308,7 @@ void Assembler::UpdateLoad64Value(Instruction* inst0, uint64_t value) {
 
   MOZ_ASSERT(i5->extractOpcode() == ((uint32_t)op_ori >> OpcodeShift));
 
-  i0->setImm16(Imm16::Upper(Imm32(value >> 32)));
+  i0->setImm16(Imm16::Upper(Imm32((value >> 32) + 0x8000)));
   i1->setImm16(Imm16::Lower(Imm32(value >> 32)));
   i3->setImm16(Imm16::Upper(Imm32(value)));
   i5->setImm16(Imm16::Lower(Imm32(value)));
@@ -322,7 +322,7 @@ void Assembler::WriteLoad64Instructions(Instruction* inst0, Register reg,
 
   *inst0 = InstImm(op_lui, zero, reg, Imm16::Lower(Imm32(value >> 32)));
   *inst1 = InstImm(op_ori, reg, reg, Imm16::Upper(Imm32(value)));
-  *inst2 = InstReg(op_special, rs_one, reg, reg, 48 - 32, ff_dsrl32);
+  *inst2 = InstReg(op_special, rs_zero, reg, reg, 16, ff_dsll);
   *inst3 = InstImm(op_ori, reg, reg, Imm16::Lower(Imm32(value)));
 }
 

@@ -1804,6 +1804,58 @@ describe("<TopSiteList>", () => {
     );
     assert.lengthOf(wrapper.find("li.hide-for-narrow"), 2);
   });
+
+  describe("Keyboard navigation", () => {
+    let sandbox;
+    let wrapper;
+    let instance;
+    let mockAnchor;
+    let mockTargetSibling;
+
+    beforeEach(() => {
+      sandbox = sinon.createSandbox();
+      const rows = [
+        { url: "https://foo.com" },
+        { url: "https://bar.com" },
+        { url: "https://baz.com" },
+      ];
+      wrapper = shallow(
+        <TopSiteList {...DEFAULT_PROPS} TopSites={{ rows }} App={APP} />
+      );
+      instance = wrapper.instance();
+
+      mockAnchor = { focus: sandbox.spy(), tabIndex: -1 };
+      mockTargetSibling = { querySelector: sandbox.stub().returns(mockAnchor) };
+    });
+
+    afterEach(() => {
+      sandbox.restore();
+    });
+
+    it("should navigate to next site with ArrowRight", () => {
+      instance.focusedRef = { nextSibling: mockTargetSibling };
+      const mockEvent = { key: "ArrowRight" };
+
+      instance.onKeyDown(mockEvent);
+
+      assert.calledOnce(mockTargetSibling.querySelector);
+      assert.calledWith(mockTargetSibling.querySelector, "a");
+      assert.calledOnce(mockAnchor.focus);
+      assert.equal(mockAnchor.tabIndex, 0);
+    });
+
+    it("should navigate to previous site with ArrowLeft", () => {
+      instance.focusedRef = { previousSibling: mockTargetSibling };
+      const mockEvent = { key: "ArrowLeft" };
+
+      instance.onKeyDown(mockEvent);
+
+      assert.calledOnce(mockTargetSibling.querySelector);
+      assert.calledWith(mockTargetSibling.querySelector, "a");
+      assert.calledOnce(mockAnchor.focus);
+      assert.equal(mockAnchor.tabIndex, 0);
+    });
+  });
 });
 
 describe("TopSiteAddButton", () => {

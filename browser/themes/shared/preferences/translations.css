@@ -60,7 +60,7 @@
   flex-wrap: wrap;
   align-items: center;
   padding: var(--space-small) 0;
-  border-top: 1px solid var(--in-content-border-color);
+  border-top: 1px solid var(--border-color);
   label {
     margin: 0 calc(2 * var(--space-small));
   }

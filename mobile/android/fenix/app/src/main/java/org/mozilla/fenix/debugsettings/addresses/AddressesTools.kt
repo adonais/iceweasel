@@ -4,8 +4,6 @@
 
 package org.mozilla.fenix.debugsettings.addresses
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,6 +11,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -35,6 +36,8 @@ import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.compose.list.RadioButtonListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Addresses UI for the debug drawer that displays various addresses related tools.
@@ -78,14 +81,16 @@ fun AddressesTools(
         }
     }
 
-    AddressesContent(
-        debugRegionStates = possibleDebugRegions,
-        onRegionToggled = onRegionToggled,
-        addresses = addresses,
-        onAddAddressClick = onAddAddress,
-        onDeleteAddressClick = onDeleteAddress,
-        onDeleteAllAddressesClick = onDeleteAllAddresses,
-    )
+    Surface {
+        AddressesContent(
+            debugRegionStates = possibleDebugRegions,
+            onRegionToggled = onRegionToggled,
+            addresses = addresses,
+            onAddAddressClick = onAddAddress,
+            onDeleteAddressClick = onDeleteAddress,
+            onDeleteAllAddressesClick = onDeleteAllAddresses,
+        )
+    }
 }
 
 @Composable
@@ -104,7 +109,6 @@ private fun AddressesContent(
     ) {
         Text(
             text = stringResource(R.string.debug_drawer_addresses_title),
-            color = FirefoxTheme.colors.textPrimary,
             style = FirefoxTheme.typography.headline5,
         )
 
@@ -133,7 +137,7 @@ private fun DebugRegionsToEnableSection(
 ) {
     Text(
         text = stringResource(R.string.debug_drawer_addresses_debug_locales_header),
-        color = FirefoxTheme.colors.textSecondary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         style = FirefoxTheme.typography.headline7,
     )
 
@@ -161,7 +165,7 @@ private fun AddressesManagementSection(
     Column {
         Text(
             text = stringResource(R.string.debug_drawer_addresses_management_header),
-            color = FirefoxTheme.colors.textSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = FirefoxTheme.typography.headline7,
         )
 
@@ -196,7 +200,7 @@ private fun AddressesManagementSection(
                 TextListItem(
                     label = address.name,
                     description = address.addressLabel,
-                    iconPainter = painterResource(R.drawable.ic_delete),
+                    iconPainter = painterResource(iconsR.drawable.mozac_ic_delete_24),
                     onIconClick = { onDeleteAddressClick(address) },
                 )
             }
@@ -230,13 +234,20 @@ private fun List<DebugRegionEnabledState>.updateRegionEnabled(regionToUpdate: De
 @PreviewLightDark
 private fun AddressesScreenPreview() {
     FirefoxTheme {
-        Box(
-            modifier = Modifier.background(color = FirefoxTheme.colors.layer1),
-        ) {
-            AddressesTools(
-                debugRegionRepository = FakeAddressesDebugRegionRepository(),
-                creditCardsAddressesStorage = FakeCreditCardsAddressesStorage(),
-            )
-        }
+        AddressesTools(
+            debugRegionRepository = FakeAddressesDebugRegionRepository(),
+            creditCardsAddressesStorage = FakeCreditCardsAddressesStorage(),
+        )
+    }
+}
+
+@Composable
+@Preview
+private fun AddressesScreenPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        AddressesTools(
+            debugRegionRepository = FakeAddressesDebugRegionRepository(),
+            creditCardsAddressesStorage = FakeCreditCardsAddressesStorage(),
+        )
     }
 }

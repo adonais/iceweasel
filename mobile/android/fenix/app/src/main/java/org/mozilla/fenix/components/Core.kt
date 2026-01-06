@@ -167,7 +167,7 @@ class Core(
             enterpriseRootsEnabled = context.settings().allowThirdPartyRootCerts,
             clearColor = ContextCompat.getColor(
                 context,
-                R.color.fx_mobile_layer_color_1,
+                R.color.fx_mobile_surface,
             ),
             httpsOnlyMode = context.settings().getHttpsOnlyMode(),
             dohSettingsMode = context.settings().getDohSettingsMode(),
@@ -186,14 +186,17 @@ class Core(
             getDesktopMode = {
                 store.state.desktopMode
             },
-            webContentIsolationStrategy = WebContentIsolationStrategy.ISOLATE_HIGH_VALUE,
-            fetchPriorityEnabled = FxNimbus.features.networking.value().fetchPriorityEnabled,
+            webContentIsolationStrategy =
+                WebContentIsolationStrategy.fromValue(FxNimbus.features.fission.value().isolationStrategy),
+            fetchPriorityEnabled = true,
             parallelMarkingEnabled = FxNimbus.features.javascript.value().parallelMarkingEnabled,
             certificateTransparencyMode = FxNimbus.features.pki.value().certificateTransparencyMode,
             postQuantumKeyExchangeEnabled = FxNimbus.features.pqcrypto.value().postQuantumKeyExchangeEnabled,
             dohAutoselectEnabled = FxNimbus.features.doh.value().autoselectEnabled,
             bannedPorts = FxNimbus.features.networkingBannedPorts.value().bannedPortList,
             lnaBlockingEnabled = context.settings().isLnaBlockingEnabled,
+            lnaFeatureEnabled = context.settings().isLnaFeatureEnabled,
+            lnaTrackerBlockingEnabled = context.settings().isLnaTrackerBlockingEnabled,
             crliteChannel = FxNimbus.features.pki.value().crliteChannel,
         )
 

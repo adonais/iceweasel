@@ -129,7 +129,7 @@ bool wasm::CreateStackMapForFunctionEntryTrap(
   }
 #endif
 
-  *result = stackMap;
+  *result = stackMaps.finalize(stackMap);
   return true;
 }
 

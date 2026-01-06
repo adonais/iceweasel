@@ -22,7 +22,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
-@Suppress("LongParameterList")
+@Suppress("LongParameterList", "CognitiveComplexMethod")
 @Composable
 internal fun MoreSettingsSubmenu(
     isPinned: Boolean,

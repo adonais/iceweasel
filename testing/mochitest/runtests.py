@@ -2965,7 +2965,7 @@ toolbar#nav-bar {
                     "thread": None,
                     "pid": None,
                     "source": "mochitest",
-                    "time": int(time.time()) * 1000,
+                    "time": int(time.time() * 1000),
                     "test": self.lastTestSeen,
                     "message": "Application shut down (without crashing) in the middle of a test!",
                 }
@@ -2990,7 +2990,7 @@ toolbar#nav-bar {
                         "thread": None,
                         "pid": None,
                         "source": "mochitest",
-                        "time": int(time.time()) * 1000,
+                        "time": int(time.time() * 1000),
                         "test": self.lastTestSeen,
                         "message": msg,
                     }
@@ -3056,7 +3056,7 @@ toolbar#nav-bar {
                     "thread": None,
                     "pid": None,
                     "source": "mochitest",
-                    "time": int(time.time()) * 1000,
+                    "time": int(time.time() * 1000),
                     "test": self.lastTestSeen,
                     "message": "application terminated with exit code %s" % status,
                 }
@@ -3524,11 +3524,7 @@ toolbar#nav-bar {
                 # Currently for automation, the pref defaults to true (but can be
                 # overridden with --setpref).
                 "sessionHistoryInParent": not options.disable_fission
-                or not self.extraPrefs.get(
-                    "fission.disableSessionHistoryInParent",
-                    mozinfo.info["os"] == "android"
-                    and not mozinfo.info.get("early_beta_or_earlier", False),
-                ),
+                or not self.extraPrefs.get("fission.disableSessionHistoryInParent"),
                 "socketprocess_e10s": self.extraPrefs.get(
                     "network.process.enabled", False
                 ),
@@ -4012,7 +4008,7 @@ toolbar#nav-bar {
             "thread": None,
             "pid": None,
             "source": "mochitest",
-            "time": int(time.time()) * 1000,
+            "time": int(time.time() * 1000),
             "test": self.lastTestSeen,
             "message": "application timed out after %d seconds with no output"
             % int(timeout),
@@ -4227,7 +4223,7 @@ toolbar#nav-bar {
                         "thread": None,
                         "pid": None,
                         "source": "mochitest",
-                        "time": int(time.time()) * 1000,
+                        "time": int(time.time() * 1000),
                         "test": message["test"],
                         "message": message["msg"],
                     }

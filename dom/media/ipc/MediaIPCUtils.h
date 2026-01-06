@@ -7,8 +7,6 @@
 #ifndef mozilla_dom_media_MediaIPCUtils_h
 #define mozilla_dom_media_MediaIPCUtils_h
 
-#include <type_traits>
-
 #include "DecoderDoctorDiagnostics.h"
 #include "EncoderConfig.h"
 #include "MediaTrackConstraints.h"

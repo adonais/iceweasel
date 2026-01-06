@@ -22,7 +22,9 @@ from taskgraph.main import (
     command,
     commands,
     dump_output,
+    format_kind_graph_mermaid,
     generate_taskgraph,
+    get_taskgraph_generator,
 )
 
 from gecko_taskgraph import GECKO
@@ -45,6 +47,80 @@ def format_taskgraph_yaml(taskgraph):
 
 
 FORMAT_METHODS["yaml"] = format_taskgraph_yaml
+
+
+@command(
+    "kind-graph",
+    help="Show the kind dependency graph as a Mermaid flowchart diagram.",
+)
+@argument("--root", "-r", help="root of the taskgraph definition relative to topsrcdir")
+@argument("--quiet", "-q", action="store_true", help="suppress all logging output")
+@argument(
+    "--verbose", "-v", action="store_true", help="include debug-level logging output"
+)
+@argument(
+    "--parameters",
+    "-p",
+    default=None,
+    help="Parameters to use for the generation. Can be a path to file (.yml or "
+    ".json; see `taskcluster/docs/parameters.rst`), a url, of the form "
+    "`project=mozilla-central` to download latest parameters file for the specified "
+    "project from CI, or of the form `task-id=<decision task id>` to download "
+    "parameters from the specified decision task.",
+)
+@argument(
+    "-o",
+    "--output-file",
+    default=None,
+    help="file path to store generated output.",
+)
+@argument(
+    "-k",
+    "--target-kind",
+    dest="target_kinds",
+    action="append",
+    default=[],
+    help="only return kinds and their dependencies.",
+)
+def show_kinds(options):
+    from taskgraph.parameters import parameters_loader  # noqa: PLC0415
+
+    if options.pop("verbose", False):
+        logging.root.setLevel(logging.DEBUG)
+
+    setup_logging()
+
+    target_kinds = options.get("target_kinds", [])
+    parameters = options.get("parameters")
+    if not parameters:
+        parameters = parameters_loader(
+            None, strict=False, overrides={"target-kinds": target_kinds}
+        )
+    elif isinstance(parameters, str):
+        parameters = parameters_loader(
+            parameters,
+            overrides={"target-kinds": target_kinds},
+            strict=False,
+        )
+    else:
+        # Parameters object already exists (from tests)
+        if target_kinds:
+            parameters["target-kinds"] = target_kinds
+
+    tgg = get_taskgraph_generator(options.get("root"), parameters)
+    kind_graph = tgg.kind_graph
+
+    output = format_kind_graph_mermaid(kind_graph)
+
+    output_file = options.get("output_file")
+    if output_file:
+        with open(output_file, "w") as fh:
+            print(output, file=fh)
+        print(f"Kind graph written to {output_file}", file=sys.stderr)
+    else:
+        print(output)
+
+    return 0
 
 
 @command(

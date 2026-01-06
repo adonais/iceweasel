@@ -63,7 +63,6 @@ class NodeListFront extends FrontClassWithSpec(nodeListSpec) {
   }
 }
 
-exports.NodeListFront = NodeListFront;
 registerFront(NodeListFront);
 
 /**
@@ -289,10 +288,24 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
     return this._form.nodeName;
   }
   get displayName() {
-    const { displayName, nodeName } = this._form;
+    // @backward-compat { version 147 } When 147 reaches release, we can remove this 'if' block.
+    // The form's displayName will be populated correctly for pseudo elements.
+    if (
+      this.isPseudoElement &&
+      !this.traits.hasPseudoElementNameInDisplayName
+    ) {
+      if (this.isMarkerPseudoElement) {
+        return "::marker";
+      }
+      if (this.isBeforePseudoElement) {
+        return "::before";
+      }
+      if (this.isAfterPseudoElement) {
+        return "::after";
+      }
+    }
 
-    // Keep `nodeName.toLowerCase()` for backward compatibility
-    return displayName || nodeName.toLowerCase();
+    return this._form.displayName;
   }
   get doctypeString() {
     return (
@@ -369,14 +382,21 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
     return this._form.isAfterPseudoElement;
   }
   get isPseudoElement() {
-    return (
-      this.isBeforePseudoElement ||
-      this.isAfterPseudoElement ||
-      this.isMarkerPseudoElement
-    );
+    // @backward-compat { version 147 } When 147 reaches release, we can remove this 'if' block,
+    // as well as the isXXXPseudoElement getters.
+    // The form isPseudoElement property will be populated correctly.
+    if (!this.traits.hasPseudoElementNameInDisplayName) {
+      return (
+        this.isBeforePseudoElement ||
+        this.isAfterPseudoElement ||
+        this.isMarkerPseudoElement
+      );
+    }
+
+    return this._form.isPseudoElement;
   }
-  get isAnonymous() {
-    return this._form.isAnonymous;
+  get isNativeAnonymous() {
+    return this._form.isNativeAnonymous;
   }
   get isInHTMLDocument() {
     return this._form.isInHTMLDocument;
@@ -471,6 +491,10 @@ class NodeFront extends FrontClassWithSpec(nodeSpec) {
 
   get containerType() {
     return this._form.containerType;
+  }
+
+  get anchorName() {
+    return this._form.anchorName;
   }
 
   get isTreeDisplayed() {

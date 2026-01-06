@@ -27,6 +27,7 @@
             <html:img class="tab-icon-image" role="presentation" decoding="sync" />
             <image class="tab-sharing-icon-overlay" role="presentation"/>
             <image class="tab-icon-overlay" role="presentation"/>
+            <image class="tab-note-icon-overlay" role="presentation"/>
           </stack>
           <html:moz-button type="icon ghost" size="small" class="tab-audio-button" tabindex="-1"></html:moz-button>
           <vbox class="tab-label-container"
@@ -38,6 +39,7 @@
               <label class="tab-icon-sound-label tab-icon-sound-pip-label" data-l10n-id="browser-tab-audio-pip" role="presentation"/>
             </hbox>
           </vbox>
+          <image class="tab-note-icon" role="presentation"/>
           <image class="tab-close-button close-icon" role="button" data-l10n-id="tabbrowser-close-tabs-button" data-l10n-args='{"tabCount": 1}' keyNav="false"/>
         </hbox>
       </stack>
@@ -151,7 +153,7 @@
         throw new Error("Tab is not visible, so does not have an elementIndex");
       }
       // Make sure the index is up to date.
-      this.container.ariaFocusableItems;
+      this.container.dragAndDropElements;
       return this.#elementIndex;
     }
 
@@ -390,6 +392,20 @@
         return this.parentElement;
       }
       return null;
+    }
+
+    /**
+     * @returns {boolean}
+     */
+    get hasTabNote() {
+      return this.hasAttribute("tab-note");
+    }
+
+    /**
+     * @param {boolean} val
+     */
+    set hasTabNote(val) {
+      this.toggleAttribute("tab-note", val);
     }
 
     updateLastAccessed(aDate) {

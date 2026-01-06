@@ -4,23 +4,24 @@
 
 package org.mozilla.fenix.settings.address.ui.list
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.concept.storage.Address
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.settings.address.ext.getAddressLabel
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -57,31 +58,47 @@ fun AddressList(
     }
 }
 
-@Preview
+private val addresses = listOf(
+    Address(
+        guid = "1",
+        name = "Banana Apple",
+        organization = "Mozilla",
+        streetAddress = "123 Sesame Street",
+        addressLevel3 = "",
+        addressLevel2 = "",
+        addressLevel1 = "",
+        postalCode = "90210",
+        country = "US",
+        tel = "+1 519 555-5555",
+        email = "foo@bar.com",
+        timeCreated = 0L,
+        timeLastUsed = 0L,
+        timeLastModified = 0L,
+        timesUsed = 0L,
+    ),
+)
+
+@FlexibleWindowLightDarkPreview
 @Composable
 private fun AddressListPreview() {
     FirefoxTheme {
-        Box(Modifier.background(FirefoxTheme.colors.layer2)) {
+        Surface {
             AddressList(
-                addresses = listOf(
-                    Address(
-                        guid = "1",
-                        name = "Banana Apple",
-                        organization = "Mozilla",
-                        streetAddress = "123 Sesame Street",
-                        addressLevel3 = "",
-                        addressLevel2 = "",
-                        addressLevel1 = "",
-                        postalCode = "90210",
-                        country = "US",
-                        tel = "+1 519 555-5555",
-                        email = "foo@bar.com",
-                        timeCreated = 0L,
-                        timeLastUsed = 0L,
-                        timeLastModified = 0L,
-                        timesUsed = 0L,
-                    ),
-                ),
+                addresses = addresses,
+                onAddressClick = {},
+                onAddAddressButtonClick = {},
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun AddressListPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        Surface {
+            AddressList(
+                addresses = addresses,
                 onAddressClick = {},
                 onAddAddressButtonClick = {},
             )

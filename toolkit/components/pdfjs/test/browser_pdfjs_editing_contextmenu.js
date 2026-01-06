@@ -30,8 +30,9 @@ async function openContextMenuAt(browser, x, y) {
 
 /**
  * Open a context menu and get the pdfjs entries
- * @param {Object} browser
- * @param {Object} box
+ *
+ * @param {object} browser
+ * @param {object} box
  * @returns {Promise<Map<string,HTMLElement>>} the pdfjs menu entries.
  */
 function getContextMenuItems(browser, box) {
@@ -68,7 +69,8 @@ function getContextMenuItems(browser, box) {
 /**
  * Open a context menu on the element corresponding to the given selector
  * and returs the pdfjs menu entries.
- * @param {Object} browser
+ *
+ * @param {object} browser
  * @param {string} selector
  * @returns {Promise<Map<string,HTMLElement>>} the pdfjs menu entries.
  */
@@ -87,7 +89,8 @@ async function getContextMenuItemsOn(browser, selector) {
 
 /**
  * Hide the context menu.
- * @param {Object} browser
+ *
+ * @param {object} browser
  */
 async function hideContextMenu(browser) {
   await new Promise(resolve =>
@@ -121,6 +124,7 @@ async function clickOnItem(browser, items, entry) {
 
 /**
  * Asserts that the enabled pdfjs menuitems are the expected ones.
+ *
  * @param {Map<string,HTMLElement>} menuitems
  * @param {Array<string>} expected
  */

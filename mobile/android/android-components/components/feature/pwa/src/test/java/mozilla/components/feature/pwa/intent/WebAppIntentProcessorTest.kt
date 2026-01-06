@@ -77,7 +77,6 @@ class WebAppIntentProcessorTest {
                     enableUrlbarHiding = true,
                     showCloseButton = false,
                     showShareMenuItem = true,
-
                 ),
                 webAppManifest = manifest,
             ),
@@ -118,7 +117,6 @@ class WebAppIntentProcessorTest {
                 enableUrlbarHiding = true,
                 showCloseButton = false,
                 showShareMenuItem = true,
-
             ),
             webAppManifest = manifest,
         )

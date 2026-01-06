@@ -4,10 +4,14 @@
 
 package mozilla.components.compose.browser.toolbar
 
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin
 import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.SearchQueryUpdated
@@ -18,8 +22,32 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.DisplayState
 import mozilla.components.compose.browser.toolbar.store.EditState
 import mozilla.components.compose.browser.toolbar.store.Mode
+import mozilla.components.compose.browser.toolbar.store.ToolbarGravity
 import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
+import mozilla.components.compose.cfr.CFRPopup
+import mozilla.components.compose.cfr.CFRPopupLayout
+import mozilla.components.compose.cfr.CFRPopupProperties
 import mozilla.components.lib.state.ext.observeAsComposableState
+
+private const val CFR_HORIZONTAL_OFFSET = 160
+private const val CFR_VERTICAL_OFFSET = 0
+
+/**
+ * Represents the state and behavior of a CFR shown in the browser toolbar.
+ *
+ * @property enabled Whether the CFR is currently active and should be displayed.
+ * @property title The headline text displayed in the CFR banner.
+ * @property description A short descriptive message explaining the feature or action.
+ * @property onShown Callback invoked when the CFR is first shown to the user.
+ * @property onDismiss Callback invoked when the CFR is dismissed.
+ */
+data class BrowserToolbarCFR(
+    val enabled: Boolean,
+    val title: String,
+    val description: String,
+    val onShown: () -> Unit = {},
+    val onDismiss: (Boolean) -> Unit = {},
+)
 
 /**
  * A customizable toolbar for browsers.
@@ -29,12 +57,15 @@ import mozilla.components.lib.state.ext.observeAsComposableState
  * implemented by the [BrowserDisplayToolbar] and [BrowserEditToolbar] composables.
  *
  * @param store The [BrowserToolbarStore] to observe the UI state from.
+ * @param cfr The [BrowserToolbarCFR] to hold properties of Toolbar's CFR.
  */
 @Composable
 fun BrowserToolbar(
     store: BrowserToolbarStore,
+    cfr: BrowserToolbarCFR? = null,
 ) {
     val uiState by store.observeAsComposableState { it }
+    val cfrProperties = browserToolbarCFRProperties(uiState.gravity)
 
     if (uiState.isEditMode()) {
         BrowserEditToolbar(
@@ -51,15 +82,65 @@ fun BrowserToolbar(
             onInteraction = { store.dispatch(it) },
         )
     } else {
-        BrowserDisplayToolbar(
-            pageOrigin = uiState.displayState.pageOrigin,
-            progressBarConfig = uiState.displayState.progressBarConfig,
-            gravity = uiState.gravity,
-            browserActionsStart = uiState.displayState.browserActionsStart,
-            pageActionsStart = uiState.displayState.pageActionsStart,
-            pageActionsEnd = uiState.displayState.pageActionsEnd,
-            browserActionsEnd = uiState.displayState.browserActionsEnd,
-            onInteraction = { store.dispatch(it) },
+        CFRPopupLayout(
+            showCFR = cfr?.enabled == true,
+            properties = cfrProperties,
+            onCFRShown = { cfr?.onShown?.invoke() },
+            onDismiss = { explicit -> cfr?.onDismiss?.invoke(explicit) },
+            title = {
+                cfr?.title?.let {
+                    Text(
+                        text = it,
+                        color = AcornTheme.colors.textOnColorPrimary,
+                        style = AcornTheme.typography.subtitle2,
+                    )
+                }
+            },
+            text = {
+                cfr?.description?.let {
+                    Text(
+                        text = it,
+                        color = AcornTheme.colors.textOnColorPrimary,
+                        style = AcornTheme.typography.body2,
+                    )
+                }
+            },
+        ) {
+            BrowserDisplayToolbar(
+                pageOrigin = uiState.displayState.pageOrigin,
+                progressBarConfig = uiState.displayState.progressBarConfig,
+                gravity = uiState.gravity,
+                browserActionsStart = uiState.displayState.browserActionsStart,
+                pageActionsStart = uiState.displayState.pageActionsStart,
+                pageActionsEnd = uiState.displayState.pageActionsEnd,
+                browserActionsEnd = uiState.displayState.browserActionsEnd,
+                onInteraction = { store.dispatch(it) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun browserToolbarCFRProperties(
+    gravity: ToolbarGravity,
+): CFRPopupProperties {
+    val isBottom = gravity == ToolbarGravity.Bottom
+    val indicatorDir =
+        if (isBottom) CFRPopup.IndicatorDirection.DOWN else CFRPopup.IndicatorDirection.UP
+
+    val colors = AcornTheme.colors
+
+    return remember(isBottom) {
+        CFRPopupProperties(
+            popupAlignment = CFRPopup.PopupAlignment.INDICATOR_CENTERED_IN_ANCHOR,
+            popupBodyColors = listOf(
+                colors.layerGradientEnd.toArgb(),
+                colors.layerGradientStart.toArgb(),
+            ),
+            dismissButtonColor = colors.iconOnColor.toArgb(),
+            indicatorDirection = indicatorDir,
+            popupVerticalOffset = CFR_VERTICAL_OFFSET.dp,
+            indicatorArrowStartOffset = CFR_HORIZONTAL_OFFSET.dp,
         )
     }
 }

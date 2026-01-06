@@ -62,7 +62,7 @@ namespace gfx {
   _(WMF_HW_DRM, Feature, "Windows Media Foundation hardware DRM")            \
   _(GL_NORM16_TEXTURES, Feature, "OpenGL normalized 16-bit texture formats") \
   _(WEBGPU_EXTERNAL_TEXTURE, Feature, "WebGPU external textures")            \
-  _(MESA_THREADING, Feature, "Mesa glthread enabled")            \
+  _(MESA_THREADING, Feature, "Mesa glthread enabled")                        \
   /* Add new entries above this comment */
 
 enum class Feature : uint32_t {

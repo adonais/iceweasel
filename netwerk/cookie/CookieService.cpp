@@ -726,46 +726,10 @@ CookieService::Add(const nsACString& aHost, const nsACString& aPath,
   }
 
   nsCOMPtr<nsICookieValidation> validation;
-  nsresult rv =
-      AddInternal(nullptr, aHost, aPath, aName, aValue, aIsSecure, aIsHttpOnly,
-                  aIsSession, aExpiry, &attrs, aSameSite, aSchemeMap,
-                  aIsPartitioned, /* from-http: */ true, nullptr,
-                  /* reject when invalid: */ true, getter_AddRefs(validation));
-  if (rv != NS_ERROR_ILLEGAL_VALUE || !validation ||
-      CookieValidation::Cast(validation)->Result() ==
-          nsICookieValidation::eOK) {
-    validation.forget(aValidation);
-    return rv;
-  }
-
-  validation.forget(aValidation);
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-CookieService::AddForAddOn(const nsACString& aHost, const nsACString& aPath,
-                           const nsACString& aName, const nsACString& aValue,
-                           bool aIsSecure, bool aIsHttpOnly, bool aIsSession,
-                           int64_t aExpiry,
-                           JS::Handle<JS::Value> aOriginAttributes,
-                           int32_t aSameSite, nsICookie::schemeType aSchemeMap,
-                           bool aIsPartitioned, JSContext* aCx,
-                           nsICookieValidation** aValidation) {
-  NS_ENSURE_ARG_POINTER(aCx);
-  NS_ENSURE_ARG_POINTER(aValidation);
-
-  OriginAttributes attrs;
-
-  if (!aOriginAttributes.isObject() || !attrs.Init(aCx, aOriginAttributes)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  nsCOMPtr<nsICookieValidation> validation;
   nsresult rv = AddInternal(nullptr, aHost, aPath, aName, aValue, aIsSecure,
                             aIsHttpOnly, aIsSession, aExpiry, &attrs, aSameSite,
-                            aSchemeMap, aIsPartitioned, /* from-http: */
-                            true, nullptr, /* reject when invalid: */ false,
-                            getter_AddRefs(validation));
+                            aSchemeMap, aIsPartitioned, /* from-http: */ true,
+                            nullptr, getter_AddRefs(validation));
   if (rv != NS_ERROR_ILLEGAL_VALUE || !validation ||
       CookieValidation::Cast(validation)->Result() ==
           nsICookieValidation::eOK) {
@@ -789,8 +753,7 @@ CookieService::AddNative(nsIURI* aCookieURI, const nsACString& aHost,
   return AddInternal(aCookieURI, aHost, aPath, aName, aValue, aIsSecure,
                      aIsHttpOnly, aIsSession, aExpiry, aOriginAttributes,
                      aSameSite, aSchemeMap, aIsPartitioned, aFromHttp,
-                     aOperationID,
-                     /* reject when invalid: */ true, aValidation);
+                     aOperationID, aValidation);
 }
 
 nsresult CookieService::AddInternal(
@@ -799,8 +762,7 @@ nsresult CookieService::AddInternal(
     bool aIsHttpOnly, bool aIsSession, int64_t aExpiry,
     OriginAttributes* aOriginAttributes, int32_t aSameSite,
     nsICookie::schemeType aSchemeMap, bool aIsPartitioned, bool aFromHttp,
-    const nsID* aOperationID, bool aRejectWhenInvalid,
-    nsICookieValidation** aValidation) {
+    const nsID* aOperationID, nsICookieValidation** aValidation) {
   NS_ENSURE_ARG_POINTER(aValidation);
 
   if (NS_WARN_IF(!aOriginAttributes)) {
@@ -834,7 +796,7 @@ nsresult CookieService::AddInternal(
 
   RefPtr<CookieValidation> cv = CookieValidation::Validate(cookieData);
 
-  if (aRejectWhenInvalid && cv->Result() != nsICookieValidation::eOK) {
+  if (cv->Result() != nsICookieValidation::eOK) {
     cv.forget(aValidation);
     return NS_ERROR_ILLEGAL_VALUE;
   }

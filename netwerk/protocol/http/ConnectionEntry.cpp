@@ -717,6 +717,23 @@ HttpConnectionBase* ConnectionEntry::GetH2orH3ActiveConn() {
   return nullptr;
 }
 
+already_AddRefed<nsHttpConnection> ConnectionEntry::GetH2TunnelActiveConn() {
+  MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+  for (const auto& conn : mActiveConns) {
+    RefPtr<nsHttpConnection> connTCP = do_QueryObject(conn);
+    if (connTCP && connTCP->UsingSpdy() && connTCP->CanDirectlyActivate()) {
+      LOG(
+          ("GetH2TunnelActiveConn() request for ent %p %s "
+           "found an H2 tunnel connection %p\n",
+           this, mConnInfo->HashKey().get(), connTCP.get()));
+      return connTCP.forget();
+    }
+  }
+
+  return nullptr;
+}
+
 void ConnectionEntry::CloseActiveConnections() {
   while (mActiveConns.Length()) {
     RefPtr<HttpConnectionBase> conn(mActiveConns[0]);

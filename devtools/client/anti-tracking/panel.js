@@ -12,7 +12,7 @@ class AntiTrackingPanel {
    *        The frame/window dedicated to this panel.
    * @param {Toolbox} toolbox
    *        The toolbox instance responsible for this panel.
-   * @param {Object} commands
+   * @param {object} commands
    *        The commands object with all interfaces defined from devtools/shared/commands/
    */
   constructor(panelWin, toolbox, commands) {

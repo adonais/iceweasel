@@ -226,31 +226,79 @@ void RemoteAccessible::ApplyCache(CacheUpdateType aUpdateType,
 
 ENameValueFlag RemoteAccessible::Name(nsString& aName) const {
   if (RequestDomainsIfInactive(CacheDomain::NameAndDescription |
-                               CacheDomain::Text)) {
+                               CacheDomain::Text | CacheDomain::Relations) ||
+      !mCachedFields) {
     aName.SetIsVoid(true);
     return eNameOK;
   }
 
-  ENameValueFlag nameFlag = eNameOK;
-  if (mCachedFields) {
-    if (IsText()) {
-      mCachedFields->GetAttribute(CacheKey::Text, aName);
-      return eNameOK;
+  if (IsText()) {
+    mCachedFields->GetAttribute(CacheKey::Text, aName);
+    return eNameOK;
+  }
+
+  if (mCachedFields->GetAttribute(CacheKey::Name, aName)) {
+    VERIFY_CACHE(CacheDomain::NameAndDescription);
+    return eNameOK;
+  }
+
+  if (auto maybeAriaLabelIds = mCachedFields->GetAttribute<nsTArray<uint64_t>>(
+          nsGkAtoms::aria_labelledby)) {
+    RemoteAccIterator iter(*maybeAriaLabelIds, Document());
+    nsTextEquivUtils::GetTextEquivFromAccIterable(this, &iter, aName);
+    aName.CompressWhitespace();
+  }
+
+  if (!aName.IsEmpty()) {
+    return eNameFromRelations;
+  }
+
+  if (auto accRelMapEntry = mDoc->mReverseRelations.Lookup(ID())) {
+    nsTArray<uint64_t> relationCandidateIds;
+    for (const auto& data : kRelationTypeAtoms) {
+      if (data.mAtom != nsGkAtoms::_for || data.mValidTag != nsGkAtoms::label) {
+        continue;
+      }
+
+      if (auto labelIds = accRelMapEntry.Data().Lookup(&data)) {
+        RemoteAccIterator iter(*labelIds, Document());
+        nsTextEquivUtils::GetTextEquivFromAccIterable(this, &iter, aName);
+        aName.CompressWhitespace();
+      }
     }
-    auto cachedNameFlag =
-        mCachedFields->GetAttribute<int32_t>(CacheKey::NameValueFlag);
-    if (cachedNameFlag) {
-      nameFlag = static_cast<ENameValueFlag>(*cachedNameFlag);
-    }
-    if (mCachedFields->GetAttribute(CacheKey::Name, aName)) {
-      VERIFY_CACHE(CacheDomain::NameAndDescription);
-      return nameFlag;
-    }
+    aName.CompressWhitespace();
+  }
+
+  if (!aName.IsEmpty()) {
+    return eNameFromRelations;
+  }
+
+  ArrayAccIterator iter(LegendsOrCaptions());
+  nsTextEquivUtils::GetTextEquivFromAccIterable(this, &iter, aName);
+  aName.CompressWhitespace();
+
+  if (!aName.IsEmpty()) {
+    return eNameFromRelations;
+  }
+
+  nsTextEquivUtils::GetNameFromSubtree(this, aName);
+  if (!aName.IsEmpty()) {
+    return eNameFromSubtree;
+  }
+
+  if (mCachedFields->GetAttribute(CacheKey::Tooltip, aName)) {
+    VERIFY_CACHE(CacheDomain::NameAndDescription);
+    return eNameFromTooltip;
+  }
+
+  if (mCachedFields->GetAttribute(CacheKey::CssAltContent, aName)) {
+    VERIFY_CACHE(CacheDomain::NameAndDescription);
+    return eNameOK;
   }
 
   MOZ_ASSERT(aName.IsEmpty());
   aName.SetIsVoid(true);
-  return nameFlag;
+  return eNameOK;
 }
 
 EDescriptionValueFlag RemoteAccessible::Description(
@@ -711,16 +759,11 @@ Maybe<nsRect> RemoteAccessible::RetrieveCachedBounds() const {
   }
 
   ASSERT_DOMAINS_ACTIVE(CacheDomain::Bounds);
-  Maybe<const nsTArray<int32_t>&> maybeArray =
-      mCachedFields->GetAttribute<nsTArray<int32_t>>(
+  Maybe<const UniquePtr<nsRect>&> maybeRect =
+      mCachedFields->GetAttribute<UniquePtr<nsRect>>(
           CacheKey::ParentRelativeBounds);
-  if (maybeArray) {
-    const nsTArray<int32_t>& relativeBoundsArr = *maybeArray;
-    MOZ_ASSERT(relativeBoundsArr.Length() == 4,
-               "Incorrectly sized bounds array");
-    nsRect relativeBoundsRect(relativeBoundsArr[0], relativeBoundsArr[1],
-                              relativeBoundsArr[2], relativeBoundsArr[3]);
-    return Some(relativeBoundsRect);
+  if (maybeRect) {
+    return Some(*(*maybeRect));
   }
 
   return Nothing();
@@ -1278,41 +1321,65 @@ Relation RemoteAccessible::RelationByType(RelationType aType) const {
   // the cached relations need to take precedence. For example, a <figure> with
   // both aria-labelledby and a <figcaption> must return two LABELLED_BY
   // targets: the aria-labelledby and then the <figcaption>.
-  auto AddChildWithTag = [this, &rel](nsAtom* aTarget) {
-    uint32_t count = ChildCount();
-    for (uint32_t c = 0; c < count; ++c) {
-      RemoteAccessible* child = RemoteChildAt(c);
-      MOZ_ASSERT(child);
-      if (child->TagName() == aTarget) {
-        rel.AppendTarget(child);
-      }
-    }
-  };
   if (aType == RelationType::LABELLED_BY) {
-    auto tag = TagName();
-    if (tag == nsGkAtoms::figure) {
-      AddChildWithTag(nsGkAtoms::figcaption);
-    } else if (tag == nsGkAtoms::fieldset) {
-      AddChildWithTag(nsGkAtoms::legend);
-    }
+    rel.AppendIter(new ArrayAccIterator(LegendsOrCaptions()));
   } else if (aType == RelationType::LABEL_FOR) {
-    auto tag = TagName();
-    if (tag == nsGkAtoms::figcaption) {
-      if (RemoteAccessible* parent = RemoteParent()) {
-        if (parent->TagName() == nsGkAtoms::figure) {
-          rel.AppendTarget(parent);
-        }
-      }
-    } else if (tag == nsGkAtoms::legend) {
-      if (RemoteAccessible* parent = RemoteParent()) {
-        if (parent->TagName() == nsGkAtoms::fieldset) {
-          rel.AppendTarget(parent);
-        }
-      }
+    if (RemoteAccessible* labelTarget = LegendOrCaptionFor()) {
+      rel.AppendTarget(labelTarget);
     }
   }
 
   return rel;
+}
+
+nsTArray<Accessible*> RemoteAccessible::LegendsOrCaptions() const {
+  nsTArray<Accessible*> children;
+  auto AddChildWithTag = [this, &children](nsAtom* aTarget) {
+    uint32_t count = ChildCount();
+    for (uint32_t c = 0; c < count; ++c) {
+      Accessible* child = ChildAt(c);
+      MOZ_ASSERT(child);
+      if (child->TagName() == aTarget) {
+        children.AppendElement(child);
+      }
+    }
+  };
+
+  auto tag = TagName();
+  if (tag == nsGkAtoms::figure) {
+    AddChildWithTag(nsGkAtoms::figcaption);
+  } else if (tag == nsGkAtoms::fieldset) {
+    AddChildWithTag(nsGkAtoms::legend);
+  } else if (tag == nsGkAtoms::table) {
+    AddChildWithTag(nsGkAtoms::caption);
+  }
+
+  return children;
+}
+
+RemoteAccessible* RemoteAccessible::LegendOrCaptionFor() const {
+  auto tag = TagName();
+  if (tag == nsGkAtoms::figcaption) {
+    if (RemoteAccessible* parent = RemoteParent()) {
+      if (parent->TagName() == nsGkAtoms::figure) {
+        return parent;
+      }
+    }
+  } else if (tag == nsGkAtoms::legend) {
+    if (RemoteAccessible* parent = RemoteParent()) {
+      if (parent->TagName() == nsGkAtoms::fieldset) {
+        return parent;
+      }
+    }
+  } else if (tag == nsGkAtoms::caption) {
+    if (RemoteAccessible* parent = RemoteParent()) {
+      if (parent->TagName() == nsGkAtoms::table) {
+        return parent;
+      }
+    }
+  }
+
+  return nullptr;
 }
 
 void RemoteAccessible::AppendTextTo(nsAString& aText, uint32_t aStartOffset,
@@ -1641,11 +1708,23 @@ already_AddRefed<AccAttributes> RemoteAccessible::DefaultTextAttributes() {
   if (RequestDomainsIfInactive(CacheDomain::Text)) {
     return nullptr;
   }
-  RefPtr<const AccAttributes> attrs = GetCachedTextAttributes();
+
   RefPtr<AccAttributes> result = new AccAttributes();
-  if (attrs) {
-    attrs->CopyTo(result);
+  for (RemoteAccessible* parent = this; parent;
+       parent = parent->RemoteParent()) {
+    if (!parent->IsHyperText()) {
+      // We are only interested in hypertext nodes for defaults, not in text
+      // leafs or non hypertext nodes.
+      continue;
+    }
+
+    if (RefPtr<const AccAttributes> parentAttrs =
+            parent->GetCachedTextAttributes()) {
+      // Update our text attributes with any parent entries we don't have.
+      parentAttrs->CopyTo(result, true);
+    }
   }
+
   return result.forget();
 }
 
@@ -2550,15 +2629,13 @@ void RemoteAccessible::Language(nsAString& aLocale) {
   }
 
   if (IsHyperText() || IsText()) {
-    if (auto attrs = GetCachedTextAttributes()) {
-      attrs->GetAttribute(nsGkAtoms::language, aLocale);
-    }
-    if (IsText() && aLocale.IsEmpty()) {
-      // If a leaf has the same language as its parent HyperTextAccessible, it
-      // won't be cached in the leaf's text attributes. Check the parent.
-      if (RemoteAccessible* parent = RemoteParent()) {
-        if (auto attrs = parent->GetCachedTextAttributes()) {
-          attrs->GetAttribute(nsGkAtoms::language, aLocale);
+    for (RemoteAccessible* parent = this; parent;
+         parent = parent->RemoteParent()) {
+      // Climb up the tree to find where the nearest language attribute is.
+      if (RefPtr<const AccAttributes> attrs =
+              parent->GetCachedTextAttributes()) {
+        if (attrs->GetAttribute(nsGkAtoms::language, aLocale)) {
+          return;
         }
       }
     }

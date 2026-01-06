@@ -33,7 +33,7 @@
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Доступ к вашим данных на других доменах</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
   <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">Доступ к вашим данным для сайтов в домене %1$d</string>
-  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2" tools:ignore="MissingQuantity">
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
     <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
     <item quantity="one">Доступ к вашим данным для сайтов в %1$d домене</item>
     <item quantity="few">Доступ к вашим данным для сайтов в %1$d доменах</item>
@@ -64,9 +64,9 @@
   <!-- Description for the "declarativeNetRequestFeedback" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description">Чтение истории браузера</string>
   <!-- Description for the "downloads" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_downloads_description">Загрузку файлов, чтение и изменение истории загрузок браузера</string>
+  <string name="mozac_feature_addons_permissions_downloads_description">Скачивание файлов, чтение и изменение истории скачиваний браузера</string>
   <!-- Description for the "downloads.open" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_downloads_open_description">Открытие файлов, загруженных на ваше устройство</string>
+  <string name="mozac_feature_addons_permissions_downloads_open_description">Открытие файлов, скачанных на ваше устройство</string>
   <!-- Description for the "find" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_find_description">Чтение текста во всех открытых вкладках</string>
   <!-- Description for the "geolocation" WebExtensions API permission. -->
@@ -90,7 +90,7 @@
   <!-- Description for the "topSites" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_top_sites_description">Доступ к истории браузера</string>
   <!-- Description for the "trialML" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_trial_ml_description">Загрузите и запускайте модели ИИ на вашем устройстве</string>
+  <string name="mozac_feature_addons_permissions_trial_ml_description">Скачайте и запускайте ИИ-модели на вашем устройстве</string>
   <!-- Description for the "userScripts" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_user_scripts_description">Разрешить непроверенным сторонним скриптам доступ к вашим данным</string>
   <!-- Description for the "devtools" WebExtensions API permission. -->
@@ -118,9 +118,9 @@
   <!-- Description for the "declarativeNetRequestFeedback" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_declarative_net_request_feedback_description_for_update">Чтение истории просмотра.</string>
   <!-- Description for the "downloads" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_downloads_description_for_update">Загрузка файлов, чтение и изменение истории загрузок браузера.</string>
+  <string name="mozac_feature_addons_permissions_downloads_description_for_update">Скачивание файлов, чтение и изменение истории скачиваний браузера.</string>
   <!-- Description for the "downloads.open" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_downloads_open_description_for_update">Открытие файлов, загруженных на ваше устройство.</string>
+  <string name="mozac_feature_addons_permissions_downloads_open_description_for_update">Открытие файлов, скачанных на ваше устройство.</string>
   <!-- Description for the "find" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_find_description_for_update">Чтение текста во всех открытых вкладках.</string>
   <!-- Description for the "geolocation" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
@@ -144,7 +144,7 @@
   <!-- Description for the "topSites" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_top_sites_description_for_update">Доступ к истории просмотра.</string>
   <!-- Description for the "trialML" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
-  <string name="mozac_feature_addons_permissions_trial_ml_description_for_update">Загрузка и запуск ИИ-модели на вашем устройстве.</string>
+  <string name="mozac_feature_addons_permissions_trial_ml_description_for_update">Скачайте и запускайте ИИ-модели на вашем устройстве.</string>
   <!-- Description for the "userScripts" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_user_scripts_description_for_update">Разрешение на доступ непроверенным сторонним скриптам к вашим данным.</string>
   <!-- Description for the "devtools" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
@@ -216,7 +216,7 @@
   <!-- Long description for the browsingActivity data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_browsingActivity_long_description">Предоставлять данные об интернет-активности разработчику расширения</string>
   <!-- Long description for the financialAndPaymentInfo data collection permission -->
-  <string name="mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_long_description">Поделиться финансовой и платежной информацией с разработчиком расширения</string>
+  <string name="mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_long_description">Поделиться финансовой и платёжной информацией с разработчиком расширения</string>
   <!-- Long description for the healthInfo data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_healthInfo_long_description">Предоставлять данные о здоровье разработчику расширения</string>
   <!-- Long description for the locationInfo data collection permission -->
@@ -354,7 +354,7 @@
   <!-- This is the caption for not yet supported screen caption -->
   <string name="mozac_feature_addons_not_yet_supported_caption2">В данное время мы подготавливаем первоначальную систему выбора предлагаемых расширений.</string>
   <!-- This is the caption for the extension installation progress overlay -->
-  <string name="mozac_extension_install_progress_caption">Загрузка и проверка расширения…</string>
+  <string name="mozac_extension_install_progress_caption">Скачивание и проверка расширения…</string>
   <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
   <string name="mozac_feature_addons_failed_to_query_extensions">Не удалось загрузить список расширений!</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
@@ -368,7 +368,7 @@
   <!-- Text shown when installing an add-on has failed. -->
   <string name="mozac_feature_addons_cant_install_extension">Не удалось установить расширение</string>
   <!-- Text shown when attempting to install an extension and a network error happened. -->
-  <string name="mozac_feature_addons_extension_failed_to_install_network_error">Это расширение не может быть загружено из-за ошибки соединения.</string>
+  <string name="mozac_feature_addons_extension_failed_to_install_network_error">Это расширение не может быть скачано из-за ошибки соединения.</string>
   <!-- Text shown when attempting to install an extension and the downloaded file is corrupted. -->
   <string name="mozac_feature_addons_extension_failed_to_install_corrupt_error">Это расширение не может быть установлено, так как оно, по-видимому, повреждено.</string>
   <!-- Text shown when attempting to install an add-on and an error occurred because the extension was not signed. -->

@@ -76,6 +76,7 @@ function resolveDisplayNamesInternals(lazyDisplayNamesData) {
   }
 
   if (mozExtensions) {
+    // Note that special casing applies in DateTimeFormat.
     internalProps.calendar = r.ca;
   }
 
@@ -178,7 +179,7 @@ function InitializeDisplayNames(displayNames, locales, options, mozExtensions) {
   }
 
   // Step 5.
-  var opt = new_Record();
+  var opt = NEW_RECORD();
   lazyDisplayNamesData.opt = opt;
   lazyDisplayNamesData.mozExtensions = mozExtensions;
 

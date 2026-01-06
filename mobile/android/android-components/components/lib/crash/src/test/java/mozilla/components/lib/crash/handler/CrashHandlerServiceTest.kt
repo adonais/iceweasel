@@ -18,6 +18,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mockito.Mockito.doAnswer
 import org.mockito.Mockito.doNothing
 import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
@@ -76,7 +77,7 @@ class CrashHandlerServiceTest {
 
     @Test
     fun `CrashHandlerService forwards main process native code crash to crash reporter`() = runTestOnMain {
-        doNothing().`when`(reporter)!!.sendCrashReport(any(), any())
+        doAnswer {}.`when`(reporter)!!.sendCrashReport(any(), any())
 
         intent.putExtra("processVisibility", "MAIN")
         service!!.handleCrashIntent(intent, coroutinesTestRule.scope)
@@ -87,7 +88,7 @@ class CrashHandlerServiceTest {
 
     @Test
     fun `CrashHandlerService forwards foreground child process native code crash to crash reporter`() = runTestOnMain {
-        doNothing().`when`(reporter)!!.sendCrashReport(any(), any())
+        doAnswer {}.`when`(reporter)!!.sendCrashReport(any(), any())
 
         intent.putExtra("processVisibility", "FOREGROUND_CHILD")
         service!!.handleCrashIntent(intent, coroutinesTestRule.scope)
@@ -98,7 +99,7 @@ class CrashHandlerServiceTest {
 
     @Test
     fun `CrashHandlerService forwards background child process native code crash to crash reporter`() = runTestOnMain {
-        doNothing().`when`(reporter)!!.sendCrashReport(any(), any())
+        doAnswer {}.`when`(reporter)!!.sendCrashReport(any(), any())
 
         intent.putExtra("processVisibility", "BACKGROUND_CHILD")
         service!!.handleCrashIntent(intent, coroutinesTestRule.scope)

@@ -6,7 +6,6 @@
 #include "WebGLTextureUpload.h"
 
 #include <algorithm>
-#include <limits>
 
 #include "CanvasUtils.h"
 #include "ClientWebGLContext.h"

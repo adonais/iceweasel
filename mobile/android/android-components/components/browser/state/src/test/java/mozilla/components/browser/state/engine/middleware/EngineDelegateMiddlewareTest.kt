@@ -16,8 +16,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.support.test.any
-import mozilla.components.support.test.ext.joinBlocking
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
@@ -60,10 +58,9 @@ class EngineDelegateMiddlewareTest {
                 "test-tab",
                 "https://www.firefox.com",
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).loadUrl("https://www.firefox.com")
@@ -92,10 +89,9 @@ class EngineDelegateMiddlewareTest {
                 "test-tab",
                 "https://www.firefox.com",
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = true, contextId = null)
         verify(engineSession, times(1)).loadUrl("https://www.firefox.com")
@@ -124,10 +120,9 @@ class EngineDelegateMiddlewareTest {
                 "test-tab",
                 "https://www.firefox.com",
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = "test-container")
         verify(engineSession, times(1)).loadUrl("https://www.firefox.com")
@@ -158,10 +153,9 @@ class EngineDelegateMiddlewareTest {
                 "test-tab",
                 "https://www.firefox.com",
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine, never()).createSession(ArgumentMatchers.anyBoolean(), ArgumentMatchers.anyString())
         verify(engineSession, times(1)).loadUrl("https://www.firefox.com")
@@ -192,10 +186,9 @@ class EngineDelegateMiddlewareTest {
                 "test-tab",
                 "https://www.firefox.com",
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine, never()).createSession(ArgumentMatchers.anyBoolean(), ArgumentMatchers.anyString())
         verify(engineSession, times(1)).loadUrl("https://www.firefox.com")
@@ -226,10 +219,9 @@ class EngineDelegateMiddlewareTest {
                 "test-tab",
                 "https://www.firefox.com",
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine, never()).createSession(ArgumentMatchers.anyBoolean(), ArgumentMatchers.anyString())
         verify(engineSession, times(1)).loadUrl("https://www.firefox.com")
@@ -265,10 +257,9 @@ class EngineDelegateMiddlewareTest {
                 "https://www.firefox.com",
                 includeParent = false,
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).loadUrl("https://www.firefox.com", null)
@@ -305,10 +296,9 @@ class EngineDelegateMiddlewareTest {
                 "https://www.firefox.com",
                 includeParent = true,
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).loadUrl("https://www.firefox.com", parentEngineSession)
@@ -340,10 +330,9 @@ class EngineDelegateMiddlewareTest {
                 "test-tab",
                 "https://www.firefox.com",
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine, times(1)).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).loadUrl("https://www.firefox.com")
@@ -378,10 +367,9 @@ class EngineDelegateMiddlewareTest {
                     "X-Sugar" to "None",
                 ),
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engineSession, times(1)).loadUrl(
             "https://www.firefox.com",
@@ -417,10 +405,9 @@ class EngineDelegateMiddlewareTest {
                 "test-tab",
                 "https://www.mozilla.org",
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).loadUrl("https://www.mozilla.org")
@@ -449,10 +436,9 @@ class EngineDelegateMiddlewareTest {
                 "unknown-tab",
                 "https://www.mozilla.org",
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine, never()).createSession(ArgumentMatchers.anyBoolean(), ArgumentMatchers.anyString())
         assertNull(store.state.tabs[0].engineState.engineSession)
@@ -482,10 +468,9 @@ class EngineDelegateMiddlewareTest {
                 mimeType = "something/important",
                 encoding = "UTF-16",
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).loadData(
@@ -518,10 +503,9 @@ class EngineDelegateMiddlewareTest {
                 "test-tab",
                 flags = EngineSession.LoadUrlFlags.select(EngineSession.LoadUrlFlags.BYPASS_CACHE),
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).reload(
@@ -551,10 +535,9 @@ class EngineDelegateMiddlewareTest {
             EngineAction.GoForwardAction(
                 "test-tab",
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).goForward()
@@ -582,10 +565,9 @@ class EngineDelegateMiddlewareTest {
             EngineAction.GoBackAction(
                 "test-tab",
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).goBack()
@@ -614,10 +596,9 @@ class EngineDelegateMiddlewareTest {
                 "test-tab",
                 index = 42,
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).goToHistoryIndex(42)
@@ -646,10 +627,9 @@ class EngineDelegateMiddlewareTest {
                 "test-tab",
                 enable = true,
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).toggleDesktopMode(enable = true, reload = true)
@@ -678,10 +658,9 @@ class EngineDelegateMiddlewareTest {
                 "test-tab",
                 enable = false,
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).toggleDesktopMode(enable = false, reload = true)
@@ -709,10 +688,9 @@ class EngineDelegateMiddlewareTest {
             EngineAction.ExitFullScreenModeAction(
                 "test-tab",
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).exitFullScreenMode()
@@ -741,10 +719,9 @@ class EngineDelegateMiddlewareTest {
                 "test-tab",
                 data = Engine.BrowsingData.allCaches(),
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engine).createSession(private = false, contextId = null)
         verify(engineSession, times(1)).clearData(Engine.BrowsingData.allCaches())
@@ -781,7 +758,7 @@ class EngineDelegateMiddlewareTest {
             ),
         )
 
-        store.dispatch(EngineAction.PurgeHistoryAction).joinBlocking()
+        store.dispatch(EngineAction.PurgeHistoryAction)
 
         dispatcher.scheduler.advanceUntilIdle()
 
@@ -814,10 +791,9 @@ class EngineDelegateMiddlewareTest {
                 toLanguage = "en",
                 options = null,
             ),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engineSession).requestTranslate(any(), any(), any())
         assertTrue(store.state.findTab(tab.id)?.translationsState?.isTranslateProcessing!!)
@@ -843,10 +819,9 @@ class EngineDelegateMiddlewareTest {
 
         store.dispatch(
             TranslationsAction.TranslateRestoreAction(tabId = tab.id),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engineSession).requestTranslationRestore()
         assertTrue(store.state.findTab(tab.id)?.translationsState?.isRestoreProcessing!!)
@@ -870,10 +845,9 @@ class EngineDelegateMiddlewareTest {
 
         store.dispatch(
             EngineAction.FlushEngineSessionStateAction(tabId = tab.id),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engineSession).flushSessionState()
     }
@@ -896,10 +870,9 @@ class EngineDelegateMiddlewareTest {
 
         store.dispatch(
             EngineAction.FlushEngineSessionStateAction(tabId = tab.id),
-        ).joinBlocking()
+        )
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(engineSession).flushSessionState()
     }

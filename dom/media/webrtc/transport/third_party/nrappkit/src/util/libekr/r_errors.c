@@ -91,19 +91,6 @@ static struct {
     char  *str;
 } errors[] = NR_ERROR_MAPPING;
 
-int nr_verr_exit(char *fmt,...)
-  {
-    va_list ap;
-
-    va_start(ap,fmt);
-    vfprintf(stderr,fmt,ap);
-
-    if (fmt[0] != '\0' && fmt[strlen(fmt)-1] != '\n')
-        fprintf(stderr,"\n");
-
-    exit(1);
-  }
-
 char *
 nr_strerror(int errnum)
 {

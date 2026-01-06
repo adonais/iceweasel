@@ -24,6 +24,12 @@ document.addEventListener(
         case "context_ungroupTab":
           TabContextMenu.ungroupTabs();
           break;
+        case "context_moveSplitViewToNewGroup":
+          TabContextMenu.moveSplitViewToNewGroup();
+          break;
+        case "context_ungroupSplitView":
+          TabContextMenu.ungroupSplitViews();
+          break;
         case "context_moveTabToSplitView":
           TabContextMenu.moveTabsToSplitView();
           break;
@@ -77,6 +83,10 @@ document.addEventListener(
           break;
         case "context_bookmarkTab":
           PlacesCommandHook.bookmarkTabs([TabContextMenu.contextTab]);
+          break;
+        case "context_addNote":
+        case "context_editNote":
+          gBrowser.tabNoteMenu.openPanel(TabContextMenu.contextTab);
           break;
         case "context_moveToStart":
           gBrowser.moveTabsToStart(TabContextMenu.contextTab);

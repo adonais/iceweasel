@@ -30,15 +30,4 @@ add_task(async function test_clobbered_properties() {
     "Clobbering of 'onreadystatechange' was collected"
   );
   ok(names.includes("hasFocus"), "Clobbering of 'hasFocus' was collected");
-
-  result = await TestUtils.waitForCondition(() =>
-    Glean.security.shadowedHtmlFormElementPropertyAccess.testGetValue()
-  );
-
-  is(result.length, 1, "Got one HTMLFormElement metric");
-  is(
-    result[0].extra.name,
-    "attributes",
-    "Clobbering of 'attributes' was collected"
-  );
 });

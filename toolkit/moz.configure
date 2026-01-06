@@ -1312,9 +1312,9 @@ set_define("MOZ_WEBSPEECH_TEST_BACKEND", webspeech_test_backend)
 
 # Graphics
 # ==============================================================
-@depends(target, milestone)
-def skia_pdf_default(target, milestone):
-    return milestone.is_nightly and target.os != "WINNT"
+@depends(milestone)
+def skia_pdf_default(milestone):
+    return milestone.is_nightly
 
 
 option("--enable-skia-pdf", default=skia_pdf_default, help="{Enable|Disable} Skia PDF")
@@ -3903,7 +3903,9 @@ with only_when(compile_environment):
     def default_user_appdir(target):
         if target.kernel in ("WINNT", "Darwin"):
             return "Mozilla"
-        return ".mozilla"
+        elif target.os == "Android":
+            return ".mozilla"
+        return "mozilla"
 
     option(
         "--with-user-appdir",
@@ -3920,7 +3922,12 @@ with only_when(compile_environment):
             die("--with-user-appdir must be a single relative path.")
         return '"{}"'.format(appdir[0])
 
+    @depends(depends("--with-user-appdir")(lambda x: x), when=toolkit_gtk)
+    def forced_or_dotted_user_appdir(value):
+        return value.origin != "default" or value[0].startswith(".")
+
     set_define("MOZ_USER_DIR", user_appdir)
+    set_define("MOZ_LEGACY_HOME", True, when=forced_or_dotted_user_appdir)
 
 
 # Check for sin_len and sin6_len - used by SCTP; only appears in Mac/*BSD generally

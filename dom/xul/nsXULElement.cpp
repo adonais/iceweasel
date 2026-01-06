@@ -102,6 +102,7 @@
 #include "nsIObjectOutputStream.h"
 #include "nsIRunnable.h"
 #include "nsIScriptContext.h"
+#include "nsISizeOf.h"
 #include "nsISupportsUtils.h"
 #include "nsIURI.h"
 #include "nsIXPConnect.h"
@@ -2010,6 +2011,13 @@ nsresult nsXULPrototypeScript::InstantiateScript(
 }
 
 void nsXULPrototypeScript::Set(JS::Stencil* aStencil) { mStencil = aStencil; }
+
+void nsXULPrototypeScript::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
+                                                  size_t* aNodeSize) const {
+  if (nsCOMPtr<nsISizeOf> iface = do_QueryInterface(mSrcURI)) {
+    *aNodeSize += iface->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
+  }
+}
 
 //----------------------------------------------------------------------
 //

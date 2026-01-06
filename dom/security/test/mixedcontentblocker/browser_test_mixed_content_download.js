@@ -61,6 +61,7 @@ const downloadMonitoringView = {
  * will simply be saved, so resolve when the view is notified of the new
  * download. Otherwise, it waits until a prompt is shown, selects the choosen
  * <action>, then accepts the dialog
+ *
  * @param [action] Which action to select, either:
  *        "handleInternally", "save" or "open".
  * @returns {Promise} Resolved once done.

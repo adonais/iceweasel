@@ -10,7 +10,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Maybe.h"
 
-#include <iterator>
 #include <stdint.h>
 
 #include "jspubtd.h"

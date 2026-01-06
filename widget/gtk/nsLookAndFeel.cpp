@@ -36,6 +36,7 @@
 #include "mozilla/WidgetUtilsGtk.h"
 #include "ScreenHelperGTK.h"
 #include "ScrollbarDrawing.h"
+#include "nsAppShell.h"
 
 #include "GtkWidgets.h"
 #include "nsString.h"
@@ -124,6 +125,7 @@ static float GetGtkTextScaleFactor() {
 
 static bool sCSDAvailable;
 
+#ifdef MOZ_ENABLE_DBUS
 static nsCString GVariantToString(GVariant* aVariant) {
   nsCString ret;
   gchar* s = g_variant_print(aVariant, TRUE);
@@ -244,6 +246,7 @@ bool nsLookAndFeel::RecomputeDBusSettings() {
   g_variant_builder_add(&namespacesBuilder, "s", "org.freedesktop.appearance");
 
   GUniquePtr<GError> error;
+  nsAppShell::DBusConnectionCheck();
   RefPtr<GVariant> variant = dont_AddRef(g_dbus_proxy_call_sync(
       mDBusSettingsProxy, "ReadAll", g_variant_new("(as)", &namespacesBuilder),
       G_DBUS_CALL_FLAGS_NONE,
@@ -293,6 +296,7 @@ bool nsLookAndFeel::RecomputeDBusSettings() {
 void nsLookAndFeel::WatchDBus() {
   LOGLNF("nsLookAndFeel::WatchDBus");
   GUniquePtr<GError> error;
+  nsAppShell::DBusConnectionCheck();
   mDBusSettingsProxy = dont_AddRef(g_dbus_proxy_new_for_bus_sync(
       G_BUS_TYPE_SESSION, G_DBUS_PROXY_FLAGS_NONE, nullptr,
       "org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop",
@@ -320,7 +324,9 @@ void nsLookAndFeel::UnwatchDBus() {
   g_signal_handlers_disconnect_by_func(
       mDBusSettingsProxy, FuncToGpointer(settings_changed_signal_cb), this);
   mDBusSettingsProxy = nullptr;
+  nsAppShell::DBusConnectionCheck();
 }
+#endif
 
 nsLookAndFeel::nsLookAndFeel() {
   static constexpr nsLiteralCString kObservedSettings[] = {
@@ -366,6 +372,7 @@ nsLookAndFeel::nsLookAndFeel() {
   sCSDAvailable =
       nsWindow::GetSystemGtkWindowDecoration() != nsWindow::GTK_DECORATION_NONE;
 
+#ifdef MOZ_ENABLE_DBUS
   if (ShouldUsePortal(PortalKind::Settings)) {
     mDBusID = g_bus_watch_name(
         G_BUS_TYPE_SESSION, "org.freedesktop.portal.Desktop",
@@ -381,6 +388,7 @@ nsLookAndFeel::nsLookAndFeel() {
         },
         this, nullptr);
   }
+#endif
   if (IsKdeDesktopEnvironment()) {
     GUniquePtr<gchar> path(
         g_strconcat(g_get_user_config_dir(), "/gtk-3.0/colors.css", NULL));
@@ -398,11 +406,13 @@ nsLookAndFeel::nsLookAndFeel() {
 
 nsLookAndFeel::~nsLookAndFeel() {
   ClearRoundedCornerProvider();
+#ifdef MOZ_ENABLE_DBUS
   if (mDBusID) {
     g_bus_unwatch_name(mDBusID);
     mDBusID = 0;
   }
   UnwatchDBus();
+#endif
   if (GtkSettings* settings = gtk_settings_get_default()) {
     g_signal_handlers_disconnect_by_func(
         settings, FuncToGpointer(settings_changed_cb), nullptr);

@@ -13,7 +13,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.rule.runTestOnMain
@@ -44,7 +43,6 @@ class VoiceSearchFeatureTest {
         every { voiceSearchLauncher.launch(any()) } throws ActivityNotFoundException()
 
         appStore.dispatch(VoiceInputRequested)
-        appStore.waitUntilIdle()
 
         verify { appStore.dispatch(VoiceSearchAction.VoiceInputResultReceived(null)) }
     }
@@ -54,7 +52,6 @@ class VoiceSearchFeatureTest {
         every { voiceSearchLauncher.launch(any()) } throws SecurityException()
 
         appStore.dispatch(VoiceSearchAction.VoiceInputRequested)
-        appStore.waitUntilIdle()
 
         verify { appStore.dispatch(VoiceSearchAction.VoiceInputResultReceived(null)) }
     }

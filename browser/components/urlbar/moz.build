@@ -20,7 +20,6 @@ MOZ_SRC_FILES += [
     "SearchModeSwitcher.sys.mjs",
     "UrlbarController.sys.mjs",
     "UrlbarEventBufferer.sys.mjs",
-    "UrlbarInput.sys.mjs",
     "UrlbarMuxerStandard.sys.mjs",
     "UrlbarPrefs.sys.mjs",
     "UrlbarProviderAboutPages.sys.mjs",
@@ -108,3 +107,5 @@ XPCSHELL_TESTS_MANIFESTS += [
 ]
 
 SPHINX_TREES["/browser/urlbar"] = "docs"
+
+JAR_MANIFESTS += ["jar.mn"]

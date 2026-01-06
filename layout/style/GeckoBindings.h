@@ -147,11 +147,15 @@ const mozilla::PreferenceSheet::Prefs* Gecko_GetPrefSheetPrefs(
 
 bool Gecko_IsTableBorderNonzero(const mozilla::dom::Element* element);
 bool Gecko_IsSelectListBox(const mozilla::dom::Element* element);
+bool Gecko_HasActiveViewTransitionTypes(
+    const mozilla::dom::Document*, const nsTArray<mozilla::StyleCustomIdent>*);
 
 // Attributes.
 #define SERVO_DECLARE_ELEMENT_ATTR_MATCHING_FUNCTIONS(prefix_, implementor_) \
   nsAtom* prefix_##LangValue(implementor_ element);
 
+bool Gecko_LookupAttrValue(const mozilla::dom::Element* aElement,
+                           const nsAtom& aName, nsAString& aResult);
 bool Gecko_AttrEquals(const nsAttrValue*, const nsAtom*, bool aIgnoreCase);
 bool Gecko_AttrDashEquals(const nsAttrValue*, const nsAtom*, bool aIgnoreCase);
 bool Gecko_AttrIncludes(const nsAttrValue*, const nsAtom*, bool aIgnoreCase);
@@ -237,7 +241,7 @@ bool Gecko_ElementHasWebAnimations(
 size_t Gecko_ElementTransitions_Length(
     const mozilla::dom::Element* aElementOrPseudo);
 
-nsCSSPropertyID Gecko_ElementTransitions_PropertyAt(
+NonCustomCSSPropertyId Gecko_ElementTransitions_PropertyAt(
     const mozilla::dom::Element* aElementOrPseudo, size_t aIndex);
 
 const mozilla::StyleAnimationValue* Gecko_ElementTransitions_EndValueAt(
@@ -250,13 +254,13 @@ double Gecko_GetPositionInSegment(const mozilla::AnimationPropertySegment*,
 
 // Get servo's AnimationValue for |aProperty| from the cached base style
 // |aBaseStyles|.
-// |aBaseStyles| is nsRefPtrHashtable<nsGenericHashKey<AnimatedPropertyID>,
+// |aBaseStyles| is nsRefPtrHashtable<nsGenericHashKey<CSSPropertyId>,
 // StyleAnimationValue>.
 // We use RawServoAnimationValueTableBorrowed to avoid exposing
 // nsRefPtrHashtable in FFI.
 const mozilla::StyleAnimationValue* Gecko_AnimationGetBaseStyle(
     const RawServoAnimationValueTable* aBaseStyles,
-    const mozilla::AnimatedPropertyID* aProperty);
+    const mozilla::CSSPropertyId* aProperty);
 
 void Gecko_StyleTransition_SetUnsupportedProperty(
     mozilla::StyleTransition* aTransition, nsAtom* aAtom);
@@ -499,7 +503,7 @@ nscolor Gecko_ComputeSystemColor(mozilla::StyleSystemColor,
 int32_t Gecko_GetLookAndFeelInt(int32_t int_id);
 float Gecko_GetLookAndFeelFloat(int32_t float_id);
 
-void Gecko_AddPropertyToSet(nsCSSPropertyIDSet*, nsCSSPropertyID);
+void Gecko_AddPropertyToSet(nsCSSPropertyIDSet*, NonCustomCSSPropertyId);
 
 // Style-struct management.
 #define DECLARE_GECKO_FUNCTIONS(name)                                        \

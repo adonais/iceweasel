@@ -34,6 +34,7 @@
 #include "nsCOMPtr.h"
 #include "nsCRTGlue.h"
 #include "nsCSSProps.h"
+#include "nsContainerFrame.h"
 #include "nsDeviceContext.h"
 #include "nsIURI.h"
 #include "nsIURIMutator.h"
@@ -411,18 +412,13 @@ nsStyleBorder::nsStyleBorder()
                          StyleBorderImageRepeatKeyword::Stretch},
       mFloatEdge(StyleFloatEdge::ContentBox),
       mBoxDecorationBreak(StyleBoxDecorationBreak::Slice),
+      mBorderStyle(StyleRectWithAllSides(StyleBorderStyle::None)),
+      mBorder(StyleRectWithAllSides(kMediumBorderWidth)),
       mBorderTopColor(StyleColor::CurrentColor()),
       mBorderRightColor(StyleColor::CurrentColor()),
       mBorderBottomColor(StyleColor::CurrentColor()),
-      mBorderLeftColor(StyleColor::CurrentColor()),
-      mComputedBorder(0, 0, 0, 0) {
+      mBorderLeftColor(StyleColor::CurrentColor()) {
   MOZ_COUNT_CTOR(nsStyleBorder);
-
-  nscoord medium = kMediumBorderWidth;
-  for (const auto side : mozilla::AllPhysicalSides()) {
-    mBorder.Side(side) = medium;
-    mBorderStyle[side] = StyleBorderStyle::None;
-  }
 }
 
 nsStyleBorder::nsStyleBorder(const nsStyleBorder& aSrc)
@@ -434,16 +430,13 @@ nsStyleBorder::nsStyleBorder(const nsStyleBorder& aSrc)
       mBorderImageRepeat(aSrc.mBorderImageRepeat),
       mFloatEdge(aSrc.mFloatEdge),
       mBoxDecorationBreak(aSrc.mBoxDecorationBreak),
+      mBorderStyle(aSrc.mBorderStyle),
+      mBorder(aSrc.mBorder),
       mBorderTopColor(aSrc.mBorderTopColor),
       mBorderRightColor(aSrc.mBorderRightColor),
       mBorderBottomColor(aSrc.mBorderBottomColor),
-      mBorderLeftColor(aSrc.mBorderLeftColor),
-      mComputedBorder(aSrc.mComputedBorder),
-      mBorder(aSrc.mBorder) {
+      mBorderLeftColor(aSrc.mBorderLeftColor) {
   MOZ_COUNT_CTOR(nsStyleBorder);
-  for (const auto side : mozilla::AllPhysicalSides()) {
-    mBorderStyle[side] = aSrc.mBorderStyle[side];
-  }
 }
 
 void nsStyleBorder::TriggerImageLoads(Document& aDocument,
@@ -459,6 +452,7 @@ nsMargin nsStyleBorder::GetImageOutset() const {
   // the initial values yields 0 outset) so that we don't have to
   // reflow to update overflow areas when an image loads.
   nsMargin outset;
+  auto computedBorder = GetComputedBorder();
   for (const auto s : mozilla::AllPhysicalSides()) {
     const auto& coord = mBorderImageOutset.Get(s);
     nscoord value;
@@ -466,7 +460,7 @@ nsMargin nsStyleBorder::GetImageOutset() const {
       value = coord.AsLength().ToAppUnits();
     } else {
       MOZ_ASSERT(coord.IsNumber());
-      value = coord.AsNumber() * mComputedBorder.Side(s);
+      value = coord.AsNumber() * computedBorder.Side(s);
     }
     outset.Side(s) = value;
   }
@@ -490,23 +484,7 @@ nsChangeHint nsStyleBorder::CalcDifference(
   }
 
   for (const auto ix : mozilla::AllPhysicalSides()) {
-    // See the explanation in nsChangeHint.h of
-    // nsChangeHint_BorderStyleNoneChange .
-    // Furthermore, even though we know *this* side is 0 width, just
-    // assume a repaint hint for some other change rather than bother
-    // tracking this result through the rest of the function.
-    if (HasVisibleStyle(ix) != aNewData.HasVisibleStyle(ix)) {
-      return nsChangeHint_RepaintFrame | nsChangeHint_BorderStyleNoneChange;
-    }
-  }
-
-  // Note that mBorderStyle stores not only the border style but also
-  // color-related flags.  Given that we've already done an mComputedBorder
-  // comparison, border-style differences can only lead to a repaint hint.  So
-  // it's OK to just compare the values directly -- if either the actual
-  // style or the color flags differ we want to repaint.
-  for (const auto ix : mozilla::AllPhysicalSides()) {
-    if (mBorderStyle[ix] != aNewData.mBorderStyle[ix] ||
+    if (mBorderStyle.Get(ix) != aNewData.mBorderStyle.Get(ix) ||
         BorderColorFor(ix) != aNewData.BorderColorFor(ix)) {
       return nsChangeHint_RepaintFrame;
     }
@@ -535,12 +513,9 @@ nsChangeHint nsStyleBorder::CalcDifference(
   // mBorder is the specified border value.  Changes to this don't
   // need any change processing, since we operate on the computed
   // border values instead.
-  if (mBorder != aNewData.mBorder) {
-    return nsChangeHint_NeutralChange;
-  }
-
   // mBorderImage* fields are checked only when border-image is not 'none'.
-  if (mBorderImageSource != aNewData.mBorderImageSource ||
+  if (mBorder != aNewData.mBorder ||
+      mBorderImageSource != aNewData.mBorderImageSource ||
       mBorderImageRepeat != aNewData.mBorderImageRepeat ||
       mBorderImageSlice != aNewData.mBorderImageSlice ||
       mBorderImageWidth != aNewData.mBorderImageWidth) {
@@ -554,8 +529,7 @@ nsStyleOutline::nsStyleOutline()
     : mOutlineWidth(kMediumBorderWidth),
       mOutlineOffset(0),
       mOutlineColor(StyleColor::CurrentColor()),
-      mOutlineStyle(StyleOutlineStyle::BorderStyle(StyleBorderStyle::None)),
-      mActualOutlineWidth(0) {
+      mOutlineStyle(StyleOutlineStyle::BorderStyle(StyleBorderStyle::None)) {
   MOZ_COUNT_CTOR(nsStyleOutline);
 }
 
@@ -563,8 +537,7 @@ nsStyleOutline::nsStyleOutline(const nsStyleOutline& aSrc)
     : mOutlineWidth(aSrc.mOutlineWidth),
       mOutlineOffset(aSrc.mOutlineOffset),
       mOutlineColor(aSrc.mOutlineColor),
-      mOutlineStyle(aSrc.mOutlineStyle),
-      mActualOutlineWidth(aSrc.mActualOutlineWidth) {
+      mOutlineStyle(aSrc.mOutlineStyle) {
   MOZ_COUNT_CTOR(nsStyleOutline);
 }
 
@@ -574,7 +547,7 @@ nsChangeHint nsStyleOutline::CalcDifference(
   // We need the explicit 'outline-style: auto' check because
   // 'outline-style: auto' effectively also changes 'outline-width'.
   if (shouldPaintOutline != aNewData.ShouldPaintOutline() ||
-      mActualOutlineWidth != aNewData.mActualOutlineWidth ||
+      mOutlineWidth != aNewData.mOutlineWidth ||
       mOutlineStyle.IsAuto() != aNewData.mOutlineStyle.IsAuto() ||
       (shouldPaintOutline && mOutlineOffset != aNewData.mOutlineOffset)) {
     return nsChangeHint_UpdateOverflow | nsChangeHint_SchedulePaint |
@@ -702,8 +675,7 @@ nsStyleColumn::nsStyleColumn()
     : mColumnWidth(LengthOrAuto::Auto()),
       mColumnRuleColor(StyleColor::CurrentColor()),
       mColumnRuleStyle(StyleBorderStyle::None),
-      mColumnRuleWidth(kMediumBorderWidth),
-      mActualColumnRuleWidth(0) {
+      mColumnRuleWidth(kMediumBorderWidth) {
   MOZ_COUNT_CTOR(nsStyleColumn);
 }
 
@@ -714,8 +686,7 @@ nsStyleColumn::nsStyleColumn(const nsStyleColumn& aSource)
       mColumnRuleStyle(aSource.mColumnRuleStyle),
       mColumnFill(aSource.mColumnFill),
       mColumnSpan(aSource.mColumnSpan),
-      mColumnRuleWidth(aSource.mColumnRuleWidth),
-      mActualColumnRuleWidth(aSource.mActualColumnRuleWidth) {
+      mColumnRuleWidth(aSource.mColumnRuleWidth) {
   MOZ_COUNT_CTOR(nsStyleColumn);
 }
 
@@ -736,14 +707,10 @@ nsChangeHint nsStyleColumn::CalcDifference(
     return NS_STYLE_HINT_REFLOW;
   }
 
-  if (mActualColumnRuleWidth != aNewData.mActualColumnRuleWidth ||
+  if (mColumnRuleWidth != aNewData.mColumnRuleWidth ||
       mColumnRuleStyle != aNewData.mColumnRuleStyle ||
       mColumnRuleColor != aNewData.mColumnRuleColor) {
     return NS_STYLE_HINT_VISUAL;
-  }
-
-  if (mColumnRuleWidth != aNewData.mColumnRuleWidth) {
-    return nsChangeHint_NeutralChange;
   }
 
   return nsChangeHint(0);
@@ -1047,8 +1014,8 @@ nsStylePosition::nsStylePosition()
       mHeight(StyleSize::Auto()),
       mMinHeight(StyleSize::Auto()),
       mMaxHeight(StyleMaxSize::None()),
-      mPositionAnchor(StylePositionAnchor::Auto()),
-      mPositionVisibility(StylePositionVisibility::ALWAYS),
+      mPositionAnchor(StylePositionAnchor::None()),
+      mPositionVisibility(StylePositionVisibility::ANCHORS_VISIBLE),
       mPositionTryFallbacks(StylePositionTryFallbacks()),
       mPositionTryOrder(StylePositionTryOrder::Normal),
       mFlexBasis(StyleFlexBasis::Size(StyleSize::Auto())),
@@ -1291,7 +1258,7 @@ nsChangeHint nsStylePosition::CalcDifference(
       mPositionArea != aNewData.mPositionArea) {
     // We need to reflow in order to update the `AnchorPosReferences`
     // property at minimum.
-    hint |= nsChangeHint_NeedReflow;
+    hint |= nsChangeHint_NeedReflow | nsChangeHint_ReflowChangesSizeOrPosition;
   }
 
   if (mAspectRatio != aNewData.mAspectRatio) {
@@ -1358,6 +1325,25 @@ StyleSelfAlignment nsStylePosition::UsedJustifySelf(
     return {inheritedJustifyItems._0 & ~StyleAlignFlags::LEGACY};
   }
   return {StyleAlignFlags::NORMAL};
+}
+
+bool AnchorResolvedInsetHelper::SideUsesAnchorCenter(
+    mozilla::Side aSide, const AnchorPosOffsetResolutionParams& aParams) {
+  const nsIFrame* frame = aParams.mBaseParams.mFrame;
+  if (!frame) {
+    return false;
+  }
+  const nsIFrame* parent = frame->GetParent();
+  if (!parent) {
+    return false;
+  }
+
+  WritingMode wm = parent->GetWritingMode();
+  LogicalSide logicalSide = wm.LogicalSideForPhysicalSide(aSide);
+  LogicalAxis axis = GetAxis(logicalSide);
+
+  return axis == LogicalAxis::Inline ? aParams.mBaseParams.mIAnchorCenter
+                                     : aParams.mBaseParams.mBAnchorCenter;
 }
 
 AnchorResolvedInset AnchorResolvedInsetHelper::ResolveAnchor(
@@ -1712,7 +1698,7 @@ ImageResolution StyleImage::GetResolution(
 // nsStyleImageLayers
 //
 
-const nsCSSPropertyID nsStyleImageLayers::kBackgroundLayerTable[] = {
+const NonCustomCSSPropertyId nsStyleImageLayers::kBackgroundLayerTable[] = {
     eCSSProperty_background,             // shorthand
     eCSSProperty_background_color,       // color
     eCSSProperty_background_image,       // image
@@ -1727,7 +1713,7 @@ const nsCSSPropertyID nsStyleImageLayers::kBackgroundLayerTable[] = {
     eCSSProperty_UNKNOWN                 // composite
 };
 
-const nsCSSPropertyID nsStyleImageLayers::kMaskLayerTable[] = {
+const NonCustomCSSPropertyId nsStyleImageLayers::kMaskLayerTable[] = {
     eCSSProperty_mask,             // shorthand
     eCSSProperty_UNKNOWN,          // color
     eCSSProperty_mask_image,       // image

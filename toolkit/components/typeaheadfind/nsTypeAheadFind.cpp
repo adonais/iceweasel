@@ -954,23 +954,30 @@ nsresult nsTypeAheadFind::FindInternal(uint32_t aMode,
 void nsTypeAheadFind::GetSelection(PresShell* aPresShell,
                                    nsISelectionController** aSelCon,
                                    Selection** aDOMSel) {
-  if (!aPresShell) return;
-
-  // if aCurrentNode is nullptr, get selection for document
+  *aSelCon = nullptr;
   *aDOMSel = nullptr;
 
-  nsPresContext* presContext = aPresShell->GetPresContext();
-
-  nsIFrame* frame = aPresShell->GetRootFrame();
-
-  if (presContext && frame) {
-    frame->GetSelectionController(presContext, aSelCon);
-    if (*aSelCon) {
-      RefPtr<Selection> sel =
-          (*aSelCon)->GetSelection(nsISelectionController::SELECTION_NORMAL);
-      sel.forget(aDOMSel);
-    }
+  if (MOZ_UNLIKELY(!aPresShell)) {
+    return;
   }
+
+  nsPresContext* const presContext = aPresShell->GetPresContext();
+  if (MOZ_UNLIKELY(!presContext)) {
+    return;
+  }
+
+  nsIFrame* const frame = aPresShell->GetRootFrame();
+  if (MOZ_UNLIKELY(!frame)) {
+    return;
+  }
+
+  nsCOMPtr<nsISelectionController> selCon = frame->GetSelectionController();
+  RefPtr<Selection> sel;
+  if (selCon) {
+    sel = selCon->GetSelection(nsISelectionController::SELECTION_NORMAL);
+  }
+  selCon.forget(aSelCon);
+  sel.forget(aDOMSel);
 }
 
 NS_IMETHODIMP

@@ -22,7 +22,7 @@
         <hbox id="trustpanel-header-row">
           <hbox id="trustpanel-popup-host-wrapper">
             <image id="trustpanel-popup-icon"></image>
-            <label id="trustpanel-popup-host"></label>
+            <label id="trustpanel-popup-host" crop="start"></label>
           </hbox>
           <toolbarbutton id="trustpanel-popup-connection" class="subviewbutton subviewbutton-nav">
             <image id="trustpanel-connection-icon"></image>
@@ -87,6 +87,14 @@
                class="PanelUI-subView"
                role="document">
       <toolbarseparator></toolbarseparator>
+      <html:moz-message-bar id="trustpanel-smartblock-section">
+        <div slot="message">
+          <vbox>
+            <description data-l10n-id="protections-panel-smartblock-desc-label"></description>
+            <vbox id="trustpanel-smartblock-toggle-container" class="trustpanel-smartblock-toggle-box"></vbox>
+          </vbox>
+        </div>
+      </html:moz-message-bar>
       <vbox class="trustpanel-blocker-section" id="trustpanel-blocked">
         <label class="trustpanel-header" id="trustpanel-blocked-header" data-l10n-id="trustpanel-blocked-header"></label>
         <vbox class="trustpanel-blocker-buttons"></vbox>

@@ -61,6 +61,8 @@
   <string name="tab_manager_empty_synced_tabs_page_description">Jelentkezzen be az összes eszközéről szinkronizált lapok kezeléséhez.</string>
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
   <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">Bejelentkezés</string>
+  <!-- Text for the button used to show all stories -->
+  <string name="homepage_all_stories">Összes történet</string>
   <!--
     Home - Bookmarks
 
@@ -622,6 +624,10 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Ossza meg a Mozilla marketinges partnereivel, hogy miként fedezte fel, és hogyan használja a Firefoxot. Ezeket az adatokat sosem adjuk el.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Elfogadás, és a böngészés megkezdése</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Válassza ki az eszköztár elhelyezését</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -820,8 +826,6 @@
   <string name="preferences_gestures">Kézmozdulatok</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Testreszabás</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Jelentkezzen be a lapok, könyvjelzők, jelszavak és sok más szinkronizálásához.</string>
   <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
   <string name="preferences_sign_in_description">Szinkronizálja a lapjait, könyvjelzőit, jelszavait és egyebeket.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
@@ -1065,6 +1069,8 @@
   <string name="restart_warning_dialog_title">Lecseréli az alkalmazásikont?</string>
   <!-- Message to warn users that applying an alternative app icon may require an app restart. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
   <string name="restart_warning_dialog_body_2">Az alkalmazás bezáródhat. Csak koppintson a csillogó új ikonjára a %1$s újranyitásához.</string>
+  <!-- Message to warn users that applying an alternative app icon may require an app restart and will remove existing shortcuts because of the OS limitations. Whether or not the app closes depends on what version of Android it is, so we use the word "may" instead of "will". %1$s is replaced by the brand name (e.g. Firefox). -->
+  <string name="restart_and_shortcuts_removal_warning_dialog_body">Az ikon módosítása eltávolítja a Kezdőképernyőre mentett webhelyeket és indítókat. \n\nA %1$s bezárhatja. Koppintson az új ikonra az újranyitáshoz.</string>
   <!-- Dialog button text for confirming the possible app restart and new icon selection -->
   <string name="restart_warning_dialog_button_positive_2">Ikon módosítása</string>
   <!-- Dialog button text for cancelling app icon change -->
@@ -1215,10 +1221,8 @@
   <!--
     Turn On Sync Preferences
 
-    Header of the Sync and save your data preference view
+    Header of the Sign in preference view
   -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Szinkronizálja és mentse adatait</string>
-  <!-- Header of the Sign in preference view -->
   <string name="preferences_sign_in">Bejelentkezés</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Jelentkezzen be az újrakapcsolódáshoz</string>
@@ -1467,6 +1471,8 @@
   <string name="tab_drawer_fab_content">Privát</string>
   <!-- Text for the new tab button to indicate syncing command on the synced tabs page -->
   <string name="tab_drawer_fab_sync">Szinkronizálás</string>
+  <!-- Text for the tab search bar placeholder -->
+  <string name="tab_manager_search_bar_placeholder">Lapok keresése</string>
   <!-- Text shown in the menu for sharing all tabs -->
   <string name="tab_tray_menu_item_share">Az összes lap megosztása</string>
   <!-- Text shown in the menu to view recently closed tabs -->
@@ -1479,6 +1485,14 @@
   <string name="tab_tray_menu_tab_settings">Lapbeállítások</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">Az összes lap bezárása</string>
+  <!-- Text shown as the title of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_title">Bezárja az összes lapot?</string>
+  <!-- Text shown in the body of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_body">Ez bezárja az összes nyitott lapot.</string>
+  <!-- Text shown on the confirm button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_confirm">Lapok bezárása</string>
+  <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_cancel">Mégse</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
   <string name="tab_tray_multiselect_menu_item_bookmark">Könyvjelzőzés</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
@@ -1497,8 +1511,6 @@
   <string name="tab_tray_multiselect_menu_content_description">Kijelölt lapok menü</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
   <string name="tab_tray_homepage_tab">Honlap</string>
-  <!-- Title text displayed for a homepage tab in the tabs tray. %s is a placeholder that will be replaced by app name. -->
-  <string name="tab_tray_homepage_tab_2" tools:ignore="UnusedResources" moz:removedIn="145">%s kezdőlap</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">Lap eltávolítása a gyűjteményből</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -1509,6 +1521,8 @@
   <string name="close_tab_title">%s lap bezárása</string>
   <!-- Content description (not visible, for screen readers etc.): Opens the open tabs menu when pressed -->
   <string name="open_tabs_menu">Lapok menü megnyitása</string>
+  <!-- Content description (not visible, for screen readers etc.): Return to tab manager -->
+  <string name="tab_manager_search_bar_back_content_description">Vissza a lapkezelőhöz</string>
   <!-- Open tabs menu item to save tabs to collection -->
   <string name="tabs_menu_save_to_collection1">Lapok gyűjteménybe mentése</string>
   <!-- Text for the menu button to delete a collection -->
@@ -1525,6 +1539,8 @@
   <string name="delete_from_history">Törlés az előzményekből</string>
   <!-- Postfix for private WebApp titles. %1$s is the name of the app (for example "Firefox"). -->
   <string name="pwa_site_controls_title_private">%1$s (privát mód)</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
+  <string name="tab_manager_open_tab_search">Lapkeresés megnyitása</string>
   <!--
     History
 
@@ -2099,8 +2115,6 @@
   <string name="toast_copy_link_to_clipboard">Vágólapra másolva</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Jelentkezzen be a Syncbe</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Adatok szinkronizálása és mentése</string>
   <!-- An option from the three dot menu to sign in -->
   <string name="sync_menu_sign_in">Bejelentkezés</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
@@ -2221,7 +2235,7 @@
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">Betűméret</string>
   <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
-  <string name="a11y_preference_accessibility_font_size_percentage">%d%%.</string>
+  <string name="a11y_preference_accessibility_font_size_percentage" tools:ignore="UnusedResources" moz:removedIn="148">%d%%.</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">Automatikus betűméret</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
@@ -2346,7 +2360,7 @@
   <!-- Preference for enhanced tracking protection for the standard protection settings -->
   <string name="preference_enhanced_tracking_protection_standard_default_1">Normál (alapértelmezett)</string>
   <!-- Preference description for enhanced tracking protection for the standard protection settings -->
-  <string name="preference_enhanced_tracking_protection_standard_description_5">A lapok normálisan betöltenek, de néhány nyomkövető blokkolása.</string>
+  <string name="preference_enhanced_tracking_protection_standard_description_5">Az oldalak normálisan betöltődnek, de kevesebb nyomkövető lesz blokkolva.</string>
   <!-- Accessibility text for the Standard protection information icon -->
   <string name="preference_enhanced_tracking_protection_standard_info_button">Mit blokkol a szokásos követésvédelem</string>
   <!-- Preference for enhanced tracking protection for the strict protection settings -->
@@ -2462,7 +2476,7 @@
   -->
   <string name="open_source_licenses_title">%s | Nyílt forráskódú programkönyvtárak</string>
   <!-- Category of trackers (redirect trackers) that can be blocked by Enhanced Tracking Protection -->
-  <string name="etp_redirect_trackers_title">Nyomkövetők átirányítása</string>
+  <string name="etp_redirect_trackers_title">Átirányító nyomkövetők</string>
   <!-- Description of redirect tracker cookies that can be blocked by Enhanced Tracking Protection -->
   <string name="etp_redirect_trackers_description">Törli az ismert nyomkövető webhelyekre történő átirányítással beállított sütiket.</string>
   <!-- Preference for fingerprinting protection for the custom protection settings -->
@@ -2689,6 +2703,10 @@
   <string name="edit_login_navigate_back_button_content_description">Navigálás visszafelé</string>
   <!-- Content description, used by tools like screenreaders, to press on the edit login button. -->
   <string name="edit_login_button_content_description">Bejelentkezés szerkesztése</string>
+  <!-- Content description, used by tools like screenreaders, to press on the add new login button. -->
+  <string name="saved_logins_add_new_login_button_content_description">Új bejelentkezés hozzáadása</string>
+  <!-- Content description, used by tools like screenreaders, to press on the clear search text button. -->
+  <string name="saved_logins_clear_search_text_button_content_description">Keresési szöveg törlése</string>
   <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
   <string name="saved_login_open_site">Oldal megnyitása böngészőben</string>
   <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
@@ -2755,8 +2773,12 @@
   <string name="preferences_addresses_sync_addresses_across_devices">Címek szinkronizálása az eszközök közt</string>
   <!-- Preference option for syncing addresses across devices. This is displayed when the user is signed into sync -->
   <string name="preferences_addresses_sync_addresses">Címek szinkronizálása</string>
+  <!-- Content description navigating back from autofill settings screen. -->
+  <string name="autofill_settings_navigate_back_button_content_description">Vissza</string>
   <!-- Title of the "Add card" screen -->
   <string name="credit_cards_add_card">Kártya hozzáadása</string>
+  <!-- Content description for the "credit card feature" top bar back button -->
+  <string name="credit_cards_navigate_back_button_content_description">Navigálás visszafelé</string>
   <!-- Title of the "Edit card" screen -->
   <string name="credit_cards_edit_card">Kártya szerkesztése</string>
   <!-- The header for the card number of a credit card -->
@@ -3887,7 +3909,7 @@
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Nincsenek legutóbbi keresések</string>
   <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message">Hiba történt</string>
+  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Hiba történt</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Összes törlése</string>
   <!-- Section header for recent search results -->
@@ -3896,11 +3918,9 @@
   <string name="settings_search_no_results_title">Nincs találat</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">Próbáljon meg egy másik keresést?</string>
-  <!--
-    Terms of use pop up prompt
+  <!-- ==== Terms of use pop up prompt ==== -->
 
-    Title for the pop up prompt
-  -->
+  <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">Van egy hírünk</string>
   <!--
     Message for the terms of use pop up prompt
@@ -3924,4 +3944,20 @@
   <string name="terms_of_use_prompt_accept">Elfogadás</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Figyelmeztetés később</string>
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
+
+  <!--
+    Privacy notice homepage banner
+
+    A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link using privacy_notice_updated_homepage_message_privacy_notice as text (Privacy Notice)
+    %2$s is replaced by an active link using privacy_notice_updated_homepage_message_learn_more as text (Learn more)
+  -->
+  <string name="privacy_notice_updated_homepage_message" tools:ignore="BrandUsage,UnusedResources">Frissítettük az %1$sunkat, hogy tükrözze a Firefox legújabb funkcióit. %2$s</string>
+  <!-- The first active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Adatvédelmi nyilatkozat</string>
+  <!-- The second active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">További tudnivalók</string>
 </resources>

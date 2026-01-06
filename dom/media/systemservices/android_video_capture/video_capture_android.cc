@@ -19,7 +19,6 @@
 
 static JavaVM* g_jvm_capture = NULL;
 static jclass g_java_capturer_class = NULL;  // VideoCaptureAndroid.class.
-static jobject g_context = NULL;             // Owned android.content.Context.
 
 namespace webrtc {
 
@@ -32,12 +31,6 @@ jobject JniCommon_allocateNativeByteBuffer(JNIEnv* env, jclass, jint size) {
 void JniCommon_freeNativeByteBuffer(JNIEnv* env, jclass, jobject byte_buffer) {
   void* data = env->GetDirectBufferAddress(byte_buffer);
   ::operator delete(data);
-}
-
-// Called by Java to get the global application context.
-jobject JNICALL GetContext(JNIEnv* env, jclass) {
-  assert(g_context);
-  return g_context;
 }
 
 // Called by Java when the camera has a new frame to deliver.
@@ -76,8 +69,6 @@ int32_t SetCaptureAndroidVM(JavaVM* javaVM) {
     g_jvm_capture = javaVM;
     AttachThreadScoped ats(g_jvm_capture);
 
-    g_context = mozilla::AndroidBridge::Bridge()->GetGlobalContextRef();
-
     videocapturemodule::DeviceInfoAndroid::Initialize(g_jvm_capture);
 
     {
@@ -89,14 +80,12 @@ int32_t SetCaptureAndroidVM(JavaVM* javaVM) {
       assert(g_java_capturer_class);
 
       JNINativeMethod native_methods[] = {
-          {"GetContext", "()Landroid/content/Context;",
-           reinterpret_cast<void*>(&GetContext)},
           {"ProvideCameraFrame",
            "(IILjava/nio/ByteBuffer;ILjava/nio/ByteBuffer;ILjava/nio/"
            "ByteBuffer;IIJJ)V",
            reinterpret_cast<void*>(&ProvideCameraFrame)}};
       if (ats.env()->RegisterNatives(g_java_capturer_class, native_methods,
-                                     2) != 0)
+                                     1) != 0)
         assert(false);
     }
 
@@ -118,7 +107,6 @@ int32_t SetCaptureAndroidVM(JavaVM* javaVM) {
       ats.env()->UnregisterNatives(g_java_capturer_class);
       ats.env()->DeleteGlobalRef(g_java_capturer_class);
       g_java_capturer_class = NULL;
-      g_context = NULL;
       videocapturemodule::DeviceInfoAndroid::DeInitialize();
       g_jvm_capture = NULL;
     }

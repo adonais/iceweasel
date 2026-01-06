@@ -80,7 +80,6 @@ add_setup(async function () {
     set: [
       ["test.wait300msAfterTabSwitch", true],
       ["browser.search.separatePrivateDefault.ui.enabled", true],
-      ["dom.text_fragments.create_text_fragment.enabled", true],
     ],
   });
 });
@@ -2591,7 +2590,7 @@ add_task(async function test_strip_on_share_on_secure_about_page() {
 /**
  * Selects the text of the element that matches the provided `selector`
  *
- * @param {String} selector
+ * @param {string} selector
  *        A selector passed to querySelector to find
  *        the element that will be referenced.
  */
@@ -2616,6 +2615,7 @@ async function selectText(selector) {
 
 /**
  * Not all platforms support text recognition.
+ *
  * @returns {string[]}
  */
 function getTextRecognitionItems() {

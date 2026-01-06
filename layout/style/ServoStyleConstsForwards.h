@@ -17,17 +17,15 @@
 
 #  include <atomic>
 
+#  include "NonCustomCSSPropertyId.h"
 #  include "Units.h"
 #  include "mozilla/AtomArray.h"
 #  include "mozilla/CORSMode.h"
-#  include "mozilla/IntegerRange.h"
 #  include "mozilla/MemoryReporting.h"
 #  include "mozilla/ServoBindingTypes.h"
 #  include "mozilla/ServoTypes.h"
-#  include "mozilla/Span.h"
 #  include "mozilla/gfx/Types.h"
 #  include "mozilla/image/Resolution.h"
-#  include "nsCSSPropertyID.h"
 #  include "nsColor.h"
 #  include "nsCompatibility.h"
 #  include "nsCoord.h"
@@ -102,10 +100,10 @@ class StyleParserState;
 template <typename T>
 struct StyleForgottenArcSlicePtr;
 
-struct AnimatedPropertyID;
 struct AnimationPropertySegment;
 struct AspectRatio;
 struct ComputedTiming;
+struct CSSPropertyId;
 struct URLExtraData;
 
 enum HalfCorner : uint8_t;

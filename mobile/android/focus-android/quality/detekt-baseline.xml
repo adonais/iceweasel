@@ -2,6 +2,10 @@
 <SmellBaseline>
   <ManuallySuppressedIssues/>
   <CurrentIssues>
+    <ID>ForbiddenSuppress:AppReducer.kt$@Suppress("CyclomaticComplexMethod", "ReturnCount")</ID>
+    <ID>ForbiddenSuppress:IntentProcessor.kt$IntentProcessor$@Suppress("ReturnCount", "CognitiveComplexMethod")</ID>
+    <ID>ForbiddenSuppress:MainActivityNavigation.kt$MainActivityNavigation$@Suppress("CyclomaticComplexMethod")</ID>
+    <ID>ForbiddenSuppress:UrlInputFragment.kt$UrlInputFragment$@Suppress("CognitiveComplexMethod")</ID>
     <ID>UndocumentedPublicClass:AdvancedSettingsFragment.kt$AdvancedSettingsFragment : BaseSettingsFragmentOnSharedPreferenceChangeListener</ID>
     <ID>UndocumentedPublicClass:AppAction.kt$AppAction$NavigateUp : AppAction</ID>
     <ID>UndocumentedPublicClass:AppAction.kt$AppAction$OpenSettings : AppAction</ID>
@@ -42,7 +46,6 @@
     <ID>UndocumentedPublicClass:FenixProductDetector.kt$FenixProductDetector</ID>
     <ID>UndocumentedPublicClass:FenixProductDetector.kt$FenixProductDetector$FenixVersion</ID>
     <ID>UndocumentedPublicClass:FindInPageIntegration.kt$FindInPageIntegration : LifecycleAwareFeatureUserInteractionHandler</ID>
-    <ID>UndocumentedPublicClass:FocusApplication.kt$FocusApplication : LocaleAwareApplicationProviderCoroutineScope</ID>
     <ID>UndocumentedPublicClass:FocusSnackbar.kt$FocusSnackbar : BaseTransientBottomBar</ID>
     <ID>UndocumentedPublicClass:FocusSnackbarDelegate.kt$FocusSnackbarDelegate : SnackbarDelegate</ID>
     <ID>UndocumentedPublicClass:FullScreenIntegration.kt$FullScreenIntegration : LifecycleAwareFeatureUserInteractionHandler</ID>
@@ -59,7 +62,7 @@
     <ID>UndocumentedPublicClass:IntentProcessor.kt$IntentProcessor.Result$None : Result</ID>
     <ID>UndocumentedPublicClass:IntentProcessor.kt$IntentProcessor.Result$Tab : Result</ID>
     <ID>UndocumentedPublicClass:LocaleDescriptor.kt$LocaleDescriptor : Comparable</ID>
-    <ID>UndocumentedPublicClass:MainActivity.kt$MainActivity$AppOpenType</ID>
+    <ID>UndocumentedPublicClass:MainActivity.kt$MainActivity : EdgeToEdgeActivity</ID>
     <ID>UndocumentedPublicClass:ManualAddSearchEnginePreference.kt$ManualAddSearchEnginePreference : Preference</ID>
     <ID>UndocumentedPublicClass:ManualAddSearchEngineSettingsFragment.kt$ManualAddSearchEngineSettingsFragment : BaseSettingsFragment</ID>
     <ID>UndocumentedPublicClass:MozillaPreference.kt$MozillaPreference : Preference</ID>
@@ -94,7 +97,6 @@
     <ID>UndocumentedPublicClass:SearchWidgetProvider.kt$SearchWidgetProvider : AppSearchWidgetProvider</ID>
     <ID>UndocumentedPublicClass:SearchWidgetUtils.kt$SearchWidgetUtils</ID>
     <ID>UndocumentedPublicClass:SecretSettingsFragment.kt$SecretSettingsFragment : BaseSettingsFragmentOnSharedPreferenceChangeListener</ID>
-    <ID>UndocumentedPublicFunction:SitePermissionOptionsStorage.kt$SitePermissionOptionsStorage$fun getSitePermissionLabel(sitePermission: SitePermission): String</ID>
     <ID>UndocumentedPublicClass:SitePermission.kt$SitePermission : Parcelable</ID>
     <ID>UndocumentedPublicClass:SitePermissionOption.kt$AutoplayOption</ID>
     <ID>UndocumentedPublicClass:SitePermissionOption.kt$AutoplayOption$AllowAudioVideo : SitePermissionOption</ID>
@@ -105,7 +107,6 @@
     <ID>UndocumentedPublicClass:SitePermissionOption.kt$SitePermissionOption$AskToAllow : SitePermissionOption</ID>
     <ID>UndocumentedPublicClass:SitePermissionOption.kt$SitePermissionOption$Blocked : SitePermissionOption</ID>
     <ID>UndocumentedPublicClass:SitePermissionOptionListItem.kt$SitePermissionOptionListItem</ID>
-    <ID>UndocumentedPublicClass:SitePermissionOptionsFragment.kt$SitePermissionOptionsFragment : BaseComposeFragment</ID>
     <ID>UndocumentedPublicClass:SitePermissionOptionsScreenStore.kt$SitePermissionOptionsScreenAction : Action</ID>
     <ID>UndocumentedPublicClass:SitePermissionOptionsScreenStore.kt$SitePermissionOptionsScreenAction$AndroidPermission : SitePermissionOptionsScreenAction</ID>
     <ID>UndocumentedPublicClass:SitePermissionOptionsScreenStore.kt$SitePermissionOptionsScreenAction$InitSitePermissionOptions : SitePermissionOptionsScreenAction</ID>
@@ -153,17 +154,12 @@
     <ID>UndocumentedPublicFunction:FenixProductDetector.kt$FenixProductDetector$fun isFenixDefaultBrowser(defaultBrowser: ActivityInfo?): Boolean</ID>
     <ID>UndocumentedPublicFunction:FindInPageIntegration.kt$FindInPageIntegration$fun hide()</ID>
     <ID>UndocumentedPublicFunction:FindInPageIntegration.kt$FindInPageIntegration$fun show(sessionState: SessionState)</ID>
-    <ID>UndocumentedPublicFunction:FocusApplication.kt$FocusApplication$open fun updateLeakCanaryState(isEnabled: Boolean)</ID>
     <ID>UndocumentedPublicFunction:FocusSnackbar.kt$FocusSnackbar$fun setText(text: String)</ID>
     <ID>UndocumentedPublicFunction:FocusTheme.kt$fun phoneDimensions()</ID>
     <ID>UndocumentedPublicFunction:FocusTheme.kt$fun tabletDimensions()</ID>
     <ID>UndocumentedPublicFunction:HomeMenu.kt$HomeMenu$fun getMenuBuilder(): BrowserMenuBuilder</ID>
     <ID>UndocumentedPublicFunction:LocaleDescriptor.kt$LocaleDescriptor$fun getNativeName(): String?</ID>
     <ID>UndocumentedPublicFunction:LocaleDescriptor.kt$LocaleDescriptor$fun getTag(): String</ID>
-    <ID>UndocumentedPublicFunction:MainActivity.kt$MainActivity$fun getToolbar(): ActionBar</ID>
-    <ID>UndocumentedPublicFunction:MainActivityNavigation.kt$MainActivityNavigation$@Suppress("CyclomaticComplexMethod") fun settings(page: Screen.Settings.Page)</ID>
-    <ID>UndocumentedPublicFunction:MainActivityNavigation.kt$MainActivityNavigation$fun showOnBoardingSecondScreen()</ID>
-    <ID>UndocumentedPublicFunction:MainActivityNavigation.kt$MainActivityNavigation$fun sitePermissionOptionsFragment(sitePermission: SitePermission)</ID>
     <ID>UndocumentedPublicFunction:ManualAddSearchEnginePreference.kt$ManualAddSearchEnginePreference$fun setProgressViewShown(isShown: Boolean)</ID>
     <ID>UndocumentedPublicFunction:ManualAddSearchEnginePreference.kt$ManualAddSearchEnginePreference$fun setSearchQueryErrorText(err: String)</ID>
     <ID>UndocumentedPublicFunction:ManualAddSearchEnginePreference.kt$ManualAddSearchEnginePreference$fun validateEngineNameAndShowError(engineName: String, existingEngines: List&lt;SearchEngine&gt;): Boolean</ID>
@@ -184,7 +180,6 @@
     <ID>UndocumentedPublicFunction:RadioButtonPreference.kt$GroupableRadioButton$fun updateRadioValue(isChecked: Boolean)</ID>
     <ID>UndocumentedPublicFunction:RadioButtonPreference.kt$RadioButtonPreference$fun onClickListener(listener: (() -&gt; Unit))</ID>
     <ID>UndocumentedPublicFunction:RadioButtonPreference.kt$fun Iterable&lt;GroupableRadioButton&gt;.uncheckAll()</ID>
-    <ID>UndocumentedPublicFunction:SearchEngineListPreference.kt$SearchEngineListPreference$fun refetchSearchEngines()</ID>
     <ID>UndocumentedPublicFunction:SearchSuggestionsPreferences.kt$SearchSuggestionsPreferences$fun disableSearchSuggestions()</ID>
     <ID>UndocumentedPublicFunction:SearchSuggestionsPreferences.kt$SearchSuggestionsPreferences$fun dismissNoSuggestionsMessage()</ID>
     <ID>UndocumentedPublicFunction:SearchSuggestionsPreferences.kt$SearchSuggestionsPreferences$fun enableSearchSuggestions()</ID>
@@ -202,6 +197,7 @@
     <ID>UndocumentedPublicFunction:SearchSuggestionsViewModel.kt$SearchSuggestionsViewModel$fun setSearchQuery(query: String)</ID>
     <ID>UndocumentedPublicFunction:SearchUtils.kt$SearchUtils$fun createSearchUrl(context: Context?, text: String): String</ID>
     <ID>UndocumentedPublicFunction:SecretSettingsUnlocker.kt$SecretSettingsUnlocker$fun increment()</ID>
+    <ID>UndocumentedPublicFunction:SitePermissionOptionsStorage.kt$SitePermissionOptionsStorage$fun getSitePermissionLabel(sitePermission: SitePermission): String</ID>
     <ID>UndocumentedPublicFunction:SitePermissionOptionsStorage.kt$SitePermissionOptionsStorage$fun getSitePermissionsSettingsRules()</ID>
     <ID>UndocumentedPublicFunction:SitePermissionOptionsStorage.kt$SitePermissionOptionsStorage$fun isAndroidPermissionGranted(sitePermission: SitePermission): Boolean</ID>
     <ID>UndocumentedPublicFunction:SitePermissionOptionsStorage.kt$SitePermissionOptionsStorage$fun isSitePermissionNotBlocked(permissionsList: Array&lt;String&gt;): Boolean</ID>

@@ -141,8 +141,8 @@ export class TopStoriesFeed {
    *                   but clear stories if none are available. Because of this, if no
    *                   stories are passed, we instead use the existing stories in state.
    *
-   * @param {Object} This is an object with potential new stories or topics.
-   * @param {Boolean} shouldBroadcast If we should update existing tabs or not. For first page
+   * @param {object} This is an object with potential new stories or topics.
+   * @param {boolean} shouldBroadcast If we should update existing tabs or not. For first page
    *                  loads or pref changes, we want to update existing tabs,
    *                  for system tick or other updates we do not.
    */

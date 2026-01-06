@@ -110,7 +110,7 @@ class MtransportTest : public ::testing::Test {
     NSS_NoDB_Init(nullptr);
     NSS_SetDomesticPolicy();
 
-    NR_reg_init(NR_REG_MODE_LOCAL);
+    NR_reg_init();
 
     // Attempt to load env vars used by tests.
     GetEnvironment("TURN_SERVER_ADDRESS", turn_server_);

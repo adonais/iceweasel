@@ -160,6 +160,8 @@ class CacheKey {
   // CSS position; e.g. fixed.
   static constexpr nsStaticAtom* CssPosition = nsGkAtoms::position;
   // nsString, CacheDomain::NameAndDescription
+  static constexpr nsStaticAtom* CssAltContent = nsGkAtoms::content;
+  // nsString, CacheDomain::NameAndDescription
   static constexpr nsStaticAtom* Description = nsGkAtoms::description;
   // EDescriptionValueFlag, CacheDomain::NameAndDescription
   // Returned by Accessible::Description.
@@ -207,9 +209,6 @@ class CacheKey {
   static constexpr nsStaticAtom* MinValue = nsGkAtoms::min;
   // nsString, CacheDomain::NameAndDescription
   static constexpr nsStaticAtom* Name = nsGkAtoms::name;
-  // ENameValueFlag, CacheDomain::NameAndDescription
-  // Returned by Accessible::Name.
-  static constexpr nsStaticAtom* NameValueFlag = nsGkAtoms::explicit_name;
   // double, CacheDomain::Value
   // The numeric value returned by Accessible::CurValue.
   static constexpr nsStaticAtom* NumericValue = nsGkAtoms::value;
@@ -268,6 +267,8 @@ class CacheKey {
   // The textual value returned by Accessible::Value (as opposed to
   // the numeric value returned by Accessible::CurValue).
   static constexpr nsStaticAtom* TextValue = nsGkAtoms::aria_valuetext;
+  // nsString, CacheDomain::NameAndDescription
+  static constexpr nsStaticAtom* Tooltip = nsGkAtoms::tooltip;
   // gfx::Matrix4x4, CacheDomain::TransformMatrix
   static constexpr nsStaticAtom* TransformMatrix = nsGkAtoms::transform;
   // int32_t, CacheDomain::Value

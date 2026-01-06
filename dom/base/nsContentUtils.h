@@ -21,7 +21,6 @@
 #include <cstdint>
 #include <functional>
 #include <tuple>
-#include <utility>
 
 #include "ErrorList.h"
 #include "Units.h"
@@ -118,7 +117,6 @@ class nsNodeInfoManager;
 class nsParser;
 class nsPIWindowRoot;
 class nsPresContext;
-class nsView;
 class nsWrapperCache;
 enum class WindowMediatorFilter : uint8_t;
 
@@ -551,8 +549,8 @@ class nsContentUtils {
    * Returns the common flattened tree ancestor from the point of view of
    * the selection system, if any, for two given content nodes.
    */
-  static nsIContent* GetCommonFlattenedTreeAncestorForSelection(
-      nsIContent* aContent1, nsIContent* aContent2);
+  static nsINode* GetCommonFlattenedTreeAncestorForSelection(nsINode* aNode1,
+                                                             nsINode* aNode2);
 
   /**
    * Returns the common flattened tree ancestor from the point of view of the
@@ -2977,14 +2975,6 @@ class nsContentUtils {
           aCallback);
 
   /**
-   * Given an IPCDataTransferImageContainer construct an imgIContainer for the
-   * image encoded by the transfer item.
-   */
-  static nsresult DeserializeTransferableDataImageContainer(
-      const mozilla::dom::IPCTransferableDataImageContainer& aData,
-      imgIContainer** aContainer);
-
-  /**
    * Given a flavor obtained from an IPCDataTransferItem or nsITransferable,
    * returns true if we should treat the data as an image.
    */
@@ -3032,6 +3022,8 @@ class nsContentUtils {
   static mozilla::Maybe<mozilla::dom::IPCImage> SurfaceToIPCImage(
       mozilla::gfx::DataSourceSurface&);
   static already_AddRefed<mozilla::gfx::DataSourceSurface> IPCImageToSurface(
+      const mozilla::dom::IPCImage&);
+  static already_AddRefed<imgIContainer> IPCImageToImage(
       const mozilla::dom::IPCImage&);
 
   // Helpers shared by the implementations of nsContentUtils methods and

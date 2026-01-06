@@ -6,13 +6,17 @@
 
 #include "AnchorPositioningUtils.h"
 
+#include "DisplayPortUtils.h"
 #include "ScrollContainerFrame.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_apz.h"
+#include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "nsCanvasFrame.h"
 #include "nsContainerFrame.h"
+#include "nsDisplayList.h"
 #include "nsIContent.h"
 #include "nsIFrame.h"
 #include "nsIFrameInlines.h"
@@ -25,6 +29,16 @@
 namespace mozilla {
 
 namespace {
+
+bool IsScrolled(const nsIFrame* aFrame) {
+  switch (aFrame->Style()->GetPseudoType()) {
+    case PseudoStyleType::scrolledContent:
+    case PseudoStyleType::scrolledCanvas:
+      return true;
+    default:
+      return false;
+  }
+}
 
 bool DoTreeScopedPropertiesOfElementApplyToContent(
     const nsINode* aStylePropertyElement, const nsINode* aStyledContent) {
@@ -49,40 +63,43 @@ bool IsAnchorInScopeForPositionedElement(const nsAtom* aName,
       aPositionedFrame->GetParent()->GetContent();
 
   auto getAnchorPosNearestScope =
-      [&positionedContainingBlockContent](
-          const nsAtom* aName, const nsIFrame* aFrame) -> const nsIContent* {
+      [&](const nsAtom* aName, const nsIFrame* aFrame) -> const nsIContent* {
     // We need to traverse the DOM, not the frame tree, since `anchor-scope`
     // may be present on elements with `display: contents` (in which case its
     // frame is in the `::before` list and won't be found by walking the frame
     // tree parent chain).
-    for (const nsIContent* cp = aFrame->GetContent();
+    for (nsIContent* cp = aFrame->GetContent();
          cp && cp != positionedContainingBlockContent;
          cp = cp->GetFlattenedTreeParentElementForStyle()) {
-      // TODO: The case when no frame is generated needs to be
-      // handled, e.g. `display: contents`, see bug 1987086.
-      const nsIFrame* f = cp->GetPrimaryFrame();
-      if (!f) {
+      const auto* anchorScope = [&]() -> const StyleAnchorScope* {
+        const nsIFrame* f = nsLayoutUtils::GetStyleFrame(cp);
+        if (MOZ_LIKELY(f)) {
+          return &f->StyleDisplay()->mAnchorScope;
+        }
+        if (cp->AsElement()->IsDisplayContents()) {
+          const auto* style =
+              Servo_Element_GetMaybeOutOfDateStyle(cp->AsElement());
+          MOZ_ASSERT(style);
+          return &style->StyleDisplay()->mAnchorScope;
+        }
+        return nullptr;
+      }();
+
+      if (!anchorScope || anchorScope->IsNone()) {
         continue;
       }
 
-      const StyleAnchorScope& anchorScope = f->StyleDisplay()->mAnchorScope;
-      if (anchorScope.IsNone()) {
-        continue;
-      }
-
-      if (anchorScope.IsAll()) {
+      if (anchorScope->IsAll()) {
         return cp;
       }
 
-      MOZ_ASSERT(anchorScope.IsIdents());
-      for (const StyleAtom& ident : anchorScope.AsIdents().AsSpan()) {
-        const auto* id = ident.AsAtom();
-        if (aName->Equals(id->GetUTF16String(), id->GetLength())) {
+      MOZ_ASSERT(anchorScope->IsIdents());
+      for (const StyleAtom& ident : anchorScope->AsIdents().AsSpan()) {
+        if (aName == ident.AsAtom()) {
           return cp;
         }
       }
     }
-
     return nullptr;
   };
 
@@ -496,12 +513,15 @@ Maybe<AnchorPosInfo> AnchorPositioningUtils::ResolveAnchorPosRect(
     const nsIFrame* aPositioned, const nsIFrame* aAbsoluteContainingBlock,
     const nsAtom* aAnchorName, bool aCBRectIsvalid,
     AnchorPosResolutionCache* aResolutionCache) {
-  MOZ_ASSERT(aPositioned->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW));
-  MOZ_ASSERT(aPositioned->GetParent() == aAbsoluteContainingBlock);
-
   if (!aPositioned) {
     return Nothing{};
   }
+
+  if (!aPositioned->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+    return Nothing{};
+  }
+
+  MOZ_ASSERT(aPositioned->GetParent() == aAbsoluteContainingBlock);
 
   const auto* anchorName = GetUsedAnchorName(aPositioned, aAnchorName);
   if (!anchorName) {
@@ -762,13 +782,21 @@ void DeleteAnchorPosReferenceData(AnchorPosReferenceData* aData) {
   delete aData;
 }
 
+void DeleteLastSuccessfulPositionData(LastSuccessfulPositionData* aData) {
+  delete aData;
+}
+
 const nsAtom* AnchorPositioningUtils::GetUsedAnchorName(
     const nsIFrame* aPositioned, const nsAtom* aAnchorName) {
   if (aAnchorName && !aAnchorName->IsEmpty()) {
     return aAnchorName;
   }
 
-  const auto defaultAnchor = aPositioned->StylePosition()->mPositionAnchor;
+  const auto& defaultAnchor = aPositioned->StylePosition()->mPositionAnchor;
+  if (defaultAnchor.IsNone()) {
+    return nullptr;
+  }
+
   if (defaultAnchor.IsIdent()) {
     return defaultAnchor.AsIdent().AsAtom();
   }
@@ -788,7 +816,7 @@ const nsAtom* AnchorPositioningUtils::GetUsedAnchorName(
   return nullptr;
 }
 
-const nsIFrame* AnchorPositioningUtils::GetAnchorPosImplicitAnchor(
+nsIFrame* AnchorPositioningUtils::GetAnchorPosImplicitAnchor(
     const nsIFrame* aFrame) {
   const auto* frameContent = aFrame->GetContent();
   const bool hasElement = frameContent && frameContent->IsElement();
@@ -812,7 +840,7 @@ const nsIFrame* AnchorPositioningUtils::GetAnchorPosImplicitAnchor(
     return nullptr;
   }
 
-  const auto* pseudoRootFrame = pseudoRoot->GetPrimaryFrame();
+  auto* pseudoRootFrame = pseudoRoot->GetPrimaryFrame();
   if (!pseudoRootFrame) {
     return nullptr;
   }
@@ -836,35 +864,218 @@ AnchorPositioningUtils::ContainingBlockInfo::UseCBFrameSize(
   // TODO(dshin, bug 1989292): This just gets local containing block.
   const auto* cb = aPositioned->GetParent();
   MOZ_ASSERT(cb);
-  if (cb->Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
+  if (IsScrolled(cb)) {
     cb = aPositioned->GetParent();
   }
   return ContainingBlockInfo{cb->GetPaddingRectRelativeToSelf()};
 }
 
 bool AnchorPositioningUtils::FitsInContainingBlock(
-    const ContainingBlockInfo& aContainingBlockInfo,
-    const nsIFrame* aPositioned, const AnchorPosReferenceData* aReferenceData) {
+    const nsIFrame* aPositioned, const AnchorPosReferenceData& aReferenceData) {
   MOZ_ASSERT(aPositioned->GetProperty(nsIFrame::AnchorPosReferences()) ==
-             aReferenceData);
-  const auto originalContainingBlockRect =
-      aContainingBlockInfo.GetContainingBlockRect();
-  const auto overflowCheckRect = aReferenceData->mContainingBlockRect -
-                                 aReferenceData->mDefaultScrollShift;
-  const auto rect = [&]() {
-    auto rect = aPositioned->GetMarginRect();
-    const auto* cb = aPositioned->GetParent();
-    if (cb->Style()->GetPseudoType() != PseudoStyleType::scrolledContent) {
-      return rect;
-    }
-    const ScrollContainerFrame* scrollContainer =
-        do_QueryFrame(cb->GetParent());
-    return rect - scrollContainer->GetScrollPosition();
-  }();
+             &aReferenceData);
+  return aReferenceData.mOriginalContainingBlockRect.Contains(
+      aPositioned->GetMarginRect());
+}
 
-  return overflowCheckRect.Intersect(originalContainingBlockRect)
-      .Union(originalContainingBlockRect)
-      .Contains(rect);
+nsIFrame* AnchorPositioningUtils::GetAnchorThatFrameScrollsWith(
+    nsIFrame* aFrame, nsDisplayListBuilder* aBuilder,
+    bool aSkipAsserts /* = false */) {
+#ifdef DEBUG
+  if (!aSkipAsserts) {
+    MOZ_ASSERT(!aBuilder || aBuilder->IsPaintingToWindow());
+    MOZ_ASSERT_IF(!aBuilder, aFrame->PresContext()->LayoutPhaseCount(
+                                 nsLayoutPhase::DisplayListBuilding) == 0);
+  }
+#endif
+
+  if (!StaticPrefs::apz_async_scroll_css_anchor_pos_AtStartup()) {
+    return nullptr;
+  }
+  PhysicalAxes axes = aFrame->GetAnchorPosCompensatingForScroll();
+  if (axes.isEmpty()) {
+    return nullptr;
+  }
+
+  const auto* pos = aFrame->StylePosition();
+  if (!pos->mPositionAnchor.IsIdent()) {
+    return nullptr;
+  }
+
+  const nsAtom* defaultAnchorName = pos->mPositionAnchor.AsIdent().AsAtom();
+  nsIFrame* anchor = const_cast<nsIFrame*>(
+      aFrame->PresShell()->GetAnchorPosAnchor(defaultAnchorName, aFrame));
+  // TODO Bug 1997026 We need to update the anchor finding code so this can't
+  // happen. For now we just detect it and reject it.
+  if (anchor && !nsLayoutUtils::IsProperAncestorFrameConsideringContinuations(
+                    aFrame->GetParent(), anchor)) {
+    return nullptr;
+  }
+  if (!aBuilder) {
+    return anchor;
+  }
+  // TODO for now ShouldAsyncScrollWithAnchor will return false if we are
+  // compensating in only one axis and there is a scroll frame between the
+  // anchor and the positioned's containing block that can scroll in the "wrong"
+  // axis so that we don't async scroll in the wrong axis because ASRs/APZ only
+  // support scrolling in both axes. This is not fully spec compliant, bug
+  // 1988034 tracks this.
+  return DisplayPortUtils::ShouldAsyncScrollWithAnchor(aFrame, anchor, aBuilder,
+                                                       axes)
+             ? anchor
+             : nullptr;
+}
+
+static bool TriggerFallbackReflow(PresShell* aPresShell, nsIFrame* aPositioned,
+                                  AnchorPosReferenceData& aReferencedAnchors,
+                                  bool aEvaluateAllFallbacksIfNeeded) {
+  auto totalFallbacks =
+      aPositioned->StylePosition()->mPositionTryFallbacks._0.Length();
+  if (!totalFallbacks) {
+    // No fallbacks specified.
+    return false;
+  }
+
+  const bool positionedFitsInCB = AnchorPositioningUtils::FitsInContainingBlock(
+      aPositioned, aReferencedAnchors);
+  if (positionedFitsInCB) {
+    return false;
+  }
+
+  // TODO(bug 1987964): Try to only do this when the scroll offset changes?
+  auto* lastSuccessfulPosition =
+      aPositioned->GetProperty(nsIFrame::LastSuccessfulPositionFallback());
+  const bool needsRetry =
+      aEvaluateAllFallbacksIfNeeded ||
+      (lastSuccessfulPosition && !lastSuccessfulPosition->mTriedAllFallbacks);
+  if (!needsRetry) {
+    return false;
+  }
+  // We want to retry from the first position; remove the last position
+  // property so all potential positions are re-evaluated.
+  aPositioned->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
+  aPresShell->MarkPositionedFrameForReflow(aPositioned);
+  return true;
+}
+
+static bool AnchorIsEffectivelyHidden(nsIFrame* aAnchor) {
+  if (!aAnchor->StyleVisibility()->IsVisible()) {
+    return true;
+  }
+  for (auto* anchor = aAnchor; anchor; anchor = anchor->GetParent()) {
+    if (anchor->HasAnyStateBits(NS_FRAME_POSITION_VISIBILITY_HIDDEN)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool ComputePositionVisibility(
+    PresShell* aPresShell, nsIFrame* aPositioned,
+    AnchorPosReferenceData& aReferencedAnchors) {
+  auto vis = aPositioned->StylePosition()->mPositionVisibility;
+  if (vis & StylePositionVisibility::ALWAYS) {
+    MOZ_ASSERT(vis == StylePositionVisibility::ALWAYS,
+               "always can't be combined");
+    return true;
+  }
+  if (vis & StylePositionVisibility::ANCHORS_VALID) {
+    for (const auto& ref : aReferencedAnchors) {
+      if (ref.GetData().isNothing()) {
+        return false;
+      }
+    }
+  }
+  if (vis & StylePositionVisibility::NO_OVERFLOW) {
+    const bool positionedFitsInCB =
+        AnchorPositioningUtils::FitsInContainingBlock(aPositioned,
+                                                      aReferencedAnchors);
+    if (!positionedFitsInCB) {
+      return false;
+    }
+  }
+  if (vis & StylePositionVisibility::ANCHORS_VISIBLE) {
+    const auto* defaultAnchorName = aReferencedAnchors.mDefaultAnchorName.get();
+    if (defaultAnchorName) {
+      auto* defaultAnchor =
+          aPresShell->GetAnchorPosAnchor(defaultAnchorName, aPositioned);
+      if (defaultAnchor && AnchorIsEffectivelyHidden(defaultAnchor)) {
+        return false;
+      }
+      // If both are in the same cb the expectation is that this doesn't apply
+      // because there are no intervening clips. I think that's broken, see
+      // https://github.com/w3c/csswg-drafts/issues/13176
+      if (defaultAnchor &&
+          defaultAnchor->GetParent() != aPositioned->GetParent()) {
+        auto* intersectionRoot = aPositioned->GetParent();
+        nsRect rootRect = intersectionRoot->InkOverflowRectRelativeToSelf();
+        if (IsScrolled(intersectionRoot)) {
+          intersectionRoot = intersectionRoot->GetParent();
+          ScrollContainerFrame* sc = do_QueryFrame(intersectionRoot);
+          rootRect = sc->GetScrollPortRectAccountingForDynamicToolbar();
+        }
+        const auto* doc = aPositioned->PresContext()->Document();
+        const nsINode* root =
+            intersectionRoot->GetContent()
+                ? static_cast<nsINode*>(intersectionRoot->GetContent())
+                : doc;
+        rootRect = nsLayoutUtils::TransformFrameRectToAncestor(
+            intersectionRoot, rootRect,
+            nsLayoutUtils::GetContainingBlockForClientRect(intersectionRoot));
+        const auto input = dom::IntersectionInput{
+            .mIsImplicitRoot = false,
+            .mRootNode = root,
+            .mRootFrame = intersectionRoot,
+            .mRootRect = rootRect,
+            .mRootMargin = {},
+            .mScrollMargin = {},
+            .mRemoteDocumentVisibleRect = {},
+        };
+        const auto output =
+            dom::DOMIntersectionObserver::Intersect(input, defaultAnchor);
+        // NOTE(emilio): It is a bit weird to also check that mIntersectionRect
+        // is non-empty, see https://github.com/w3c/csswg-drafts/issues/13176.
+        if (!output.Intersects() || (output.mIntersectionRect->IsEmpty() &&
+                                     !defaultAnchor->GetRect().IsEmpty())) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
+bool AnchorPositioningUtils::TriggerLayoutOnOverflow(
+    PresShell* aPresShell, bool aEvaluateAllFallbacksIfNeeded) {
+  bool didLayoutPositionedItems = false;
+
+  for (auto* positioned : aPresShell->GetAnchorPosPositioned()) {
+    AnchorPosReferenceData* referencedAnchors =
+        positioned->GetProperty(nsIFrame::AnchorPosReferences());
+    if (NS_WARN_IF(!referencedAnchors)) {
+      continue;
+    }
+
+    if (TriggerFallbackReflow(aPresShell, positioned, *referencedAnchors,
+                              aEvaluateAllFallbacksIfNeeded)) {
+      didLayoutPositionedItems = true;
+    }
+
+    if (didLayoutPositionedItems) {
+      // We'll come back to evaluate position-visibility later.
+      continue;
+    }
+    const bool shouldBeVisible =
+        ComputePositionVisibility(aPresShell, positioned, *referencedAnchors);
+    const bool isVisible =
+        !positioned->HasAnyStateBits(NS_FRAME_POSITION_VISIBILITY_HIDDEN);
+    if (shouldBeVisible != isVisible) {
+      positioned->AddOrRemoveStateBits(NS_FRAME_POSITION_VISIBILITY_HIDDEN,
+                                       !shouldBeVisible);
+      positioned->InvalidateFrameSubtree();
+    }
+  }
+  return didLayoutPositionedItems;
 }
 
 }  // namespace mozilla

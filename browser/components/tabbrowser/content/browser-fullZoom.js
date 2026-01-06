@@ -635,6 +635,7 @@ var FullZoom = {
 
   /**
    * Returns the browser that the supplied zoom event is associated with.
+   *
    * @param event  The zoom event.
    * @return  The associated browser element, if one exists, otherwise null.
    */

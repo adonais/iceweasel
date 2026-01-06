@@ -71,7 +71,7 @@ class UpdateProcess {
    *        Timeouts will be set on this window when appropriate.
    * @param {Array} array
    *        The array of items to process.
-   * @param {Object} options
+   * @param {object} options
    *        Options for the update process:
    *          onItem {function} Will be called with the value of each iteration.
    *          onBatch {function} Will be called after each batch of iterations,
@@ -279,9 +279,9 @@ class CssComputedView {
   /**
    * Lookup a l10n string in the shared styleinspector string bundle.
    *
-   * @param {String} name
+   * @param {string} name
    *        The key to lookup.
-   * @returns {String} localized version of the given key.
+   * @returns {string} localized version of the given key.
    */
   static l10n(name) {
     try {
@@ -414,7 +414,7 @@ class CssComputedView {
    *
    * @param {DOMNode} node
    *        The node which we want information about
-   * @return {Object} The type information object contains the following props:
+   * @return {object} The type information object contains the following props:
    * - view {String} Always "computed" to indicate the computed view.
    * - type {String} One of the VIEW_NODE_XXX_TYPE const in
    *   client/inspector/shared/node-types
@@ -759,7 +759,8 @@ class CssComputedView {
 
   /**
    * Set the filter style search value.
-   * @param {String} value
+   *
+   * @param {string} value
    *        The search value.
    */
   setFilterStyles(value = "") {
@@ -992,7 +993,7 @@ class PropertyInfo {
   /**
    * @param {CssComputedView} tree
    *        The CssComputedView instance we are working with.
-   * @param {String} name
+   * @param {string} name
    *        The CSS property name
    */
   constructor(tree, name) {
@@ -1026,10 +1027,10 @@ class PropertyView {
   /**
    * @param {CssComputedView} tree
    *        The CssComputedView instance we are working with.
-   * @param {String} name
+   * @param {string} name
    *        The CSS property name for which this PropertyView
    *        instance will render the rules.
-   * @param {Boolean} isCustomProperty
+   * @param {boolean} isCustomProperty
    *        Set to true if this will represent a custom property.
    */
   constructor(tree, name, isCustomProperty = false) {
@@ -1039,7 +1040,9 @@ class PropertyView {
     this.isCustomProperty = isCustomProperty;
 
     if (!this.isCustomProperty) {
-      this.link = "https://developer.mozilla.org/docs/Web/CSS/" + name;
+      this.link =
+        "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/" +
+        name;
     }
 
     this.#propertyInfo = new PropertyInfo(tree, name);
@@ -1082,7 +1085,7 @@ class PropertyView {
   /**
    * Get the computed style for the current property.
    *
-   * @return {String} the computed style for the current property of the
+   * @return {string} the computed style for the current property of the
    * currently highlighted element.
    */
   get value() {
@@ -1131,7 +1134,7 @@ class PropertyView {
   /**
    * Returns the className that should be assigned to the propertyView.
    *
-   * @return {String}
+   * @return {string}
    */
   get propertyHeaderClassName() {
     return this.visible ? "computed-property-view" : "computed-property-hidden";
@@ -1140,7 +1143,7 @@ class PropertyView {
   /**
    * Is the property invalid at computed value time
    *
-   * @returns {Boolean}
+   * @returns {boolean}
    */
   get invalidAtComputedValueTime() {
     return this.#tree.computed[this.name].invalidAtComputedValueTime;
@@ -1494,8 +1497,8 @@ class PropertyView {
   /**
    * Parse a property value using the OutputParser.
    *
-   * @param {String} value
-   * @param {String} baseURI
+   * @param {string} value
+   * @param {string} baseURI
    * @returns {DocumentFragment|Element}
    */
   #parseValue(value, baseURI) {
@@ -1635,6 +1638,7 @@ class SelectorView {
 
   /**
    * Decode for cssInfo.rule.status
+   *
    * @see SelectorView.prototype.#cacheStatusNames
    * @see CssLogic.STATUS
    */
@@ -1649,6 +1653,7 @@ class SelectorView {
    *
    * These statuses are localized inside the styleinspector.properties string
    * bundle.
+   *
    * @see css-logic.js - the CssLogic.STATUS array.
    */
   #cacheStatusNames() {
@@ -1702,7 +1707,7 @@ class SelectorView {
    * original sources or not.  This is a callback for
    * SourceMapURLService.subscribe, which see.
    *
-   * @param {Object | null} originalLocation
+   * @param {object | null} originalLocation
    *        The original position object (url/line/column) or null.
    */
   #updateLocation = originalLocation => {

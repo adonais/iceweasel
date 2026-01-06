@@ -274,6 +274,18 @@ namespace ChromeUtils {
   undefined clearResourceCache(optional ClearResourceCacheOptions options = {});
 
   /**
+   * Invalidates the resource cache which supports invalidation.
+   *
+   * In contrast to the clearResourceCache, this doesn't immediately clear
+   * the cache.  It can validate the cache entry on the next request and
+   * revive if the cache is confirmed to be still valid.
+   *
+   * Currently only JavaScripts supports.
+   */
+  [Throws]
+  undefined invalidateResourceCache();
+
+  /**
    * Clears the bfcache (backward-forward cache)
    */
   [Throws]

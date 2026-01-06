@@ -9,7 +9,6 @@
 
 #include "mozilla/Assertions.h"
 
-#include <iterator>
 #include <stddef.h>
 #include <stdint.h>
 

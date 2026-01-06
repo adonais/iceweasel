@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.bindings
 
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -25,13 +27,16 @@ import org.mozilla.fenix.utils.Settings
  * @param appLinksUseCases The use cases for handling app links.
  * @param appStore The application store for dispatching actions.
  * @param browserStore The browser store to observe state changes.
+ * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur.
+ *                       Defaults to [Dispatchers.Main].
  */
 class ExternalAppLinkStatusBinding(
     private val settings: Settings,
     private val appLinksUseCases: AppLinksUseCases,
     private val appStore: AppStore,
     browserStore: BrowserStore,
-) : AbstractBinding<BrowserState>(browserStore) {
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+) : AbstractBinding<BrowserState>(browserStore, mainDispatcher) {
 
     override suspend fun onState(flow: Flow<BrowserState>) {
         flow

@@ -71,10 +71,12 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
 
   static const nscolor kBlack = NS_RGB(0, 0, 0);
   static const nscolor kWhite = NS_RGB(255, 255, 255);
+#ifdef MOZ_ENABLE_DBUS
   // Returns whether any setting changed.
   bool RecomputeDBusSettings();
   // Returns whether the setting really changed.
   bool RecomputeDBusAppearanceSetting(const nsACString& aKey, GVariant* aValue);
+#endif
 
   struct ColorPair {
     nscolor mBg = kWhite;
@@ -107,8 +109,10 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   static bool ShouldHonorThemeScrollbarColors();
   mozilla::Maybe<ColorScheme> ComputeColorSchemeSetting();
 
+#ifdef MOZ_ENABLE_DBUS
   void WatchDBus();
   void UnwatchDBus();
+#endif
 
   // We use up to two themes (one light, one dark), which might have different
   // sets of fonts and colors.

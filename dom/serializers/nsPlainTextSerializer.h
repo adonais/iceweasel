@@ -283,7 +283,12 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     void Append(const CurrentLine& aCurrentLine,
                 StripTrailingWhitespaces aStripTrailingWhitespaces);
 
-    void AppendLineBreak();
+    /**
+     * @param aString Last character is expected to not be a line break.
+     */
+    void Append(const nsAString& aString);
+
+    void AppendLineBreak(bool aForceCRLF = false);
 
     /**
      * This empties the current line cache without adding a NEWLINE.
@@ -300,11 +305,6 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     uint32_t GetOutputLength() const;
 
    private:
-    /**
-     * @param aString Last character is expected to not be a line break.
-     */
-    void Append(const nsAString& aString);
-
     // As defined in nsIDocumentEncoder.idl.
     const int32_t mFlags;
 

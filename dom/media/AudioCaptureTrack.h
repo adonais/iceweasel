@@ -6,8 +6,6 @@
 #ifndef MOZILLA_AUDIOCAPTURETRACK_H_
 #define MOZILLA_AUDIOCAPTURETRACK_H_
 
-#include <algorithm>
-
 #include "AudioMixer.h"
 #include "MediaTrackGraph.h"
 

@@ -59,7 +59,7 @@ class BrowserToolbarSyncToHistoryMiddlewareTest {
             middleware = listOf(BrowserToolbarSyncToHistoryMiddleware(historyStore)),
         )
 
-        toolbarStore.dispatch(EnterEditMode)
+        toolbarStore.dispatch(EnterEditMode(false))
 
         verify(exactly = 0) { historyStore.dispatch(any()) }
     }

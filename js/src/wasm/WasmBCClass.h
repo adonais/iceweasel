@@ -310,6 +310,9 @@ struct BaseCompiler final {
   // emitted at the end of compilation.
   Vector<OutOfLineCode*, 8, SystemAllocPolicy> outOfLine_;
 
+  // The stack maps for this compilation.
+  StackMaps* stackMaps_;
+
   // Stack map state.  This keeps track of live pointer slots and allows precise
   // stack maps to be generated at safe points.
   StackMapGenerator stackMapGenerator_;
@@ -953,12 +956,6 @@ struct BaseCompiler final {
   // DebugFrame on the stack.
   [[nodiscard]] bool createStackMap(
       const char* who, HasDebugFrameWithLiveRefs debugFrameWithLiveRefs);
-
-  // The most general stackmap construction.
-  [[nodiscard]] bool createStackMap(
-      const char* who, const ExitStubMapVector& extras,
-      uint32_t assemblerOffset,
-      HasDebugFrameWithLiveRefs debugFrameWithLiveRefs);
 
   ////////////////////////////////////////////////////////////
   //

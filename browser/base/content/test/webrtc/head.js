@@ -667,6 +667,7 @@ async function getBrowsingContextsAndFrameIdsForSubFrames(
 
 /**
  * Test helper for getUserMedia calls.
+ *
  * @param {boolean} aRequestAudio - Whether to request audio
  * @param {boolean} aRequestVideo - Whether to request video
  * @param {string} aFrameId - The ID of the frame
@@ -934,10 +935,11 @@ function checkDeviceSelectors(aExpectedTypes, aWindow = window) {
 /**
  * Tests the siteIdentity icons, the permission panel and the global indicator
  * UI state.
- * @param {Object} aExpected - Expected state for the current tab.
+ *
+ * @param {object} aExpected - Expected state for the current tab.
  * @param {window} [aWin] - Top level chrome window to test state of.
- * @param {Object} [aExpectedGlobal] - Expected state for all tabs.
- * @param {Object} [aExpectedPerm] - Expected permission states keyed by device
+ * @param {object} [aExpectedGlobal] - Expected state for all tabs.
+ * @param {object} [aExpectedPerm] - Expected permission states keyed by device
  * type.
  */
 async function checkSharingUI(
@@ -1303,7 +1305,7 @@ async function runTests(tests, options = {}) {
  * @param {<xul:browser} browser - The browser to share devices with.
  * @param {boolean} camera - True to share a camera device.
  * @param {boolean} mic - True to share a microphone device.
- * @param {Number} [screenOrWin] - One of either SHARE_WINDOW or SHARE_SCREEN
+ * @param {number} [screenOrWin] - One of either SHARE_WINDOW or SHARE_SCREEN
  *   to share a window or screen. Defaults to neither.
  * @param {boolean} remember - True to persist the permission to the
  *   SitePermissions database as SitePermissions.SCOPE_PERSISTENT. Note that

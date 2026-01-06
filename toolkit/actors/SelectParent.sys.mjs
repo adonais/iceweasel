@@ -72,13 +72,13 @@ export var SelectParentHelper = {
    *
    * @param {Element}        menulist
    * @param {Array<Element>} items
-   * @param {Array<Object>}  uniqueItemStyles
-   * @param {Number}         selectedIndex
-   * @param {Number}         zoom
-   * @param {Boolean}        custom
-   * @param {Boolean}        isDarkBackground
-   * @param {Object}         uaStyle
-   * @param {Object}         selectStyle
+   * @param {Array<object>}  uniqueItemStyles
+   * @param {number}         selectedIndex
+   * @param {number}         zoom
+   * @param {boolean}        custom
+   * @param {boolean}        isDarkBackground
+   * @param {object}         uaStyle
+   * @param {object}         selectStyle
    */
   populate(
     menulist,
@@ -488,13 +488,13 @@ export var SelectParentHelper = {
    *
    * @param {Element}        menulist
    * @param {Array<Element>} options
-   * @param {Array<Object>}  uniqueOptionStyles
-   * @param {Number}         selectedIndex
+   * @param {Array<object>}  uniqueOptionStyles
+   * @param {number}         selectedIndex
    * @param {Element}        parentElement
-   * @param {Boolean}        isGroupDisabled
-   * @param {Boolean}        addSearch
-   * @param {Number}         nthChildIndex
-   * @returns {Number}
+   * @param {boolean}        isGroupDisabled
+   * @param {boolean}        addSearch
+   * @param {number}         nthChildIndex
+   * @returns {number}
    */
   populateChildren(
     menulist,

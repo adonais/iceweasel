@@ -37,8 +37,8 @@
     <style name="BottomSheetPrivate" parent="BottomSheetBasePrivate">
         <item name="android:windowIsFloating">false</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">?attr/layer1</item>
-        <item name="android:colorBackground">?attr/layer1</item>
+        <item name="android:navigationBarColor">?attr/colorSurface</item>
+        <item name="android:colorBackground">?attr/colorSurface</item>
         <!-- Style the navigation bar -->
         <item name="android:navigationBarDividerColor">@android:color/transparent</item>
         <item name="android:windowLightNavigationBar">false</item>
@@ -47,8 +47,8 @@
     <style name="BottomSheet" parent="BottomSheetBase">
         <item name="android:windowIsFloating">false</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">?attr/layer1</item>
-        <item name="android:colorBackground">?attr/layer1</item>
+        <item name="android:navigationBarColor">?attr/colorSurface</item>
+        <item name="android:colorBackground">?attr/colorSurface</item>
         <!-- Style the navigation bar -->
         <item name="android:windowLightNavigationBar">@bool/theme_is_light</item>
         <item name="android:navigationBarDividerColor">@android:color/transparent</item>
@@ -57,6 +57,6 @@
     <style name="TabTrayDialogStyle" parent="TabTrayDialogStyleBase">
         <item name="android:navigationBarDividerColor">@android:color/transparent</item>
         <item name="android:windowLightNavigationBar">@bool/theme_is_light</item>
-        <item name="android:navigationBarColor">@color/fx_mobile_layer_color_1</item>
+        <item name="android:navigationBarColor">@color/fx_mobile_surface</item>
     </style>
 </resources>

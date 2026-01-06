@@ -13,6 +13,8 @@ var { AppConstants } = ChromeUtils.importESModule(
 // lazy module getters
 
 ChromeUtils.defineESModuleGetters(this, {
+  AIWindow:
+    "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   AMTelemetry: "resource://gre/modules/AddonManager.sys.mjs",
   AboutNewTab: "resource:///modules/AboutNewTab.sys.mjs",
   AboutReaderParent: "resource:///actors/AboutReaderParent.sys.mjs",
@@ -105,7 +107,6 @@ ChromeUtils.defineESModuleGetters(this, {
   UITour: "moz-src:///browser/components/uitour/UITour.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
   URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
-  UrlbarInput: "moz-src:///browser/components/urlbar/UrlbarInput.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderSearchTips:
     "moz-src:///browser/components/urlbar/UrlbarProviderSearchTips.sys.mjs",
@@ -368,10 +369,7 @@ ChromeUtils.defineLazyGetter(this, "gNavToolbox", () => {
 });
 
 ChromeUtils.defineLazyGetter(this, "gURLBar", () => {
-  let urlbar = new UrlbarInput({
-    textbox: document.getElementById("urlbar"),
-    sapName: "urlbar",
-  });
+  let urlbar = document.getElementById("urlbar");
 
   let beforeFocusOrSelect = event => {
     // In customize mode, the url bar is disabled. If a new tab is opened or the
@@ -627,9 +625,9 @@ customElements.setElementCreationCallback("screenshots-buttons", () => {
   );
 });
 
-customElements.setElementCreationCallback("fxa-menu-message", () => {
+customElements.setElementCreationCallback("menu-message", () => {
   ChromeUtils.importESModule(
-    "chrome://browser/content/asrouter/components/fxa-menu-message.mjs",
+    "chrome://browser/content/asrouter/components/menu-message.mjs",
     { global: "current" }
   );
 });
@@ -1681,20 +1679,20 @@ function toOpenWindowByType(inType, uri, features) {
     );
   }
 }
-
 /**
  * Open a new browser window. See `BrowserWindowTracker.openWindow` for
  * options.
  *
  * @return a reference to the new window.
  */
-function OpenBrowserWindow(options = {}) {
+function OpenBrowserWindow(options) {
   let timerId = Glean.browserTimings.newWindow.start();
+  options ??= {};
+  options.openerWindow ??= window;
 
-  let win = BrowserWindowTracker.openWindow({
-    openerWindow: window,
-    ...options,
-  });
+  AIWindow.handleAIWindowOptions(window, options);
+
+  let win = BrowserWindowTracker.openWindow(options);
 
   win.addEventListener(
     "MozAfterPaint",
@@ -1863,6 +1861,16 @@ let gFileMenu = {
       );
     }
     PrintUtils.updatePrintSetupMenuHiddenState();
+
+    const aiWindowMenu = event.target.querySelector("#menu_newAIWindow");
+    const classicWindowMenu = event.target.querySelector(
+      "#menu_newClassicWindow"
+    );
+
+    aiWindowMenu.hidden =
+      !AIWindow.isAIWindowEnabled() || AIWindow.isAIWindowActive(window);
+    classicWindowMenu.hidden =
+      !AIWindow.isAIWindowEnabled() || !AIWindow.isAIWindowActive(window);
   },
 };
 
@@ -1947,9 +1955,9 @@ var XULBrowserWindow = {
   /**
    * Tells the UI what link we are currently over.
    *
-   * @param {String} url
+   * @param {string} url
    *   The URL of the link.
-   * @param {Object} [options]
+   * @param {object} [options]
    *   This is an extension of nsIXULBrowserWindow for JS callers, will be
    *   passed on to LinkTargetDisplay.
    */
@@ -1965,6 +1973,7 @@ var XULBrowserWindow = {
 
       /**
        * Encode bidirectional formatting characters.
+       *
        * @see https://url.spec.whatwg.org/#url-rendering-i18n
        * @see https://www.unicode.org/reports/tr9/#Directional_Formatting_Characters
        */
@@ -2210,13 +2219,12 @@ var XULBrowserWindow = {
     // via simulated locationchange events such as switching between tabs, however
     // if this is a document navigation then PopupNotifications will be updated
     // via TabsProgressListener.onLocationChange and we do not want it called twice
-    gURLBar.setURI(
-      aLocationURI,
-      aIsSimulated,
-      isSessionRestore,
-      false,
-      isSameDocument
-    );
+    gURLBar.setURI({
+      uri: aLocationURI,
+      dueToTabSwitch: aIsSimulated,
+      dueToSessionRestore: isSessionRestore,
+      isSameDocument,
+    });
 
     BookmarkingUI.onLocationChange();
     // If we've actually changed document, update the toolbar visibility.
@@ -2240,7 +2248,7 @@ var XULBrowserWindow = {
 
     // Ensure we close any remaining open locationspecific panels
     if (!isSameDocument) {
-      closeOpenPanels("panel[locationspecific='true']");
+      closeOpenPanels(":is(panel, menupopup)[locationspecific='true']");
     }
 
     gPermissionPanel.onLocationChange();
@@ -2381,6 +2389,7 @@ var XULBrowserWindow = {
    * Updates macOS platform code with the current URI and page title.
    * From there, we update the current NSUserActivity, enabling Handoff to other
    * Apple devices.
+   *
    * @param {Window} window
    *   The window in which the navigation occurred.
    * @param {nsIURI} uri
@@ -2412,6 +2421,7 @@ var XULBrowserWindow = {
    * identity panel. For browsers whose content does not have a principal,
    * this tries the precursor. If this is null, we should not override the
    * browser's currentURI.
+   *
    * @param {MozBrowser} browser
    *   The browser that we need a URI to show the user in the
    *   identity panel.
@@ -4261,7 +4271,7 @@ var PanicButtonNotifier = {
 class TabDialogBox {
   static _containerFor(browser) {
     return browser.closest(
-      ".browserStack, .webextension-popup-stack, .sidebar-browser-stack"
+      ".browserSidebarContainer, .webextension-popup-stack, .sidebar-browser-stack"
     );
   }
 
@@ -4292,28 +4302,29 @@ class TabDialogBox {
 
   /**
    * Open a dialog on tab or content level.
-   * @param {String} aURL - URL of the dialog to load in the tab box.
-   * @param {Object} [aOptions]
-   * @param {String} [aOptions.features] - Comma separated list of window
+   *
+   * @param {string} aURL - URL of the dialog to load in the tab box.
+   * @param {object} [aOptions]
+   * @param {string} [aOptions.features] - Comma separated list of window
    * features.
-   * @param {Boolean} [aOptions.allowDuplicateDialogs] - Whether to allow
+   * @param {boolean} [aOptions.allowDuplicateDialogs] - Whether to allow
    * showing multiple dialogs with aURL at the same time. If false calls for
    * duplicate dialogs will be dropped.
-   * @param {String} [aOptions.sizeTo] - Pass "available" to stretch dialog to
+   * @param {string} [aOptions.sizeTo] - Pass "available" to stretch dialog to
    * roughly content size. Any max-width or max-height style values on the document root
    * will also be applied to the dialog box.
-   * @param {Boolean} [aOptions.keepOpenSameOriginNav] - By default dialogs are
+   * @param {boolean} [aOptions.keepOpenSameOriginNav] - By default dialogs are
    * aborted on any navigation.
    * Set to true to keep the dialog open for same origin navigation.
-   * @param {Number} [aOptions.modalType] - The modal type to create the dialog for.
+   * @param {number} [aOptions.modalType] - The modal type to create the dialog for.
    * By default, we show the dialog for tab prompts.
-   * @param {Boolean} [aOptions.hideContent] - When true, we are about to show a prompt that is requesting the
+   * @param {boolean} [aOptions.hideContent] - When true, we are about to show a prompt that is requesting the
    * users credentials for a toplevel load of a resource from a base domain different from the base domain of the currently loaded page.
    * To avoid auth prompt spoofing (see bug 791594) we hide the current sites content
    * (among other protection mechanisms, that are not handled here, see the bug for reference).
    * @param {nsIWebProgress} [aOptions.webProgress] - If passed, use to detect when a site is being
    * navigated to in order to close the dialog. By default, this.browser.webProgress is used.
-   * @returns {Object} [result] Returns an object { closedPromise, dialog }.
+   * @returns {object} [result] Returns an object { closedPromise, dialog }.
    * @returns {Promise} [result.closedPromise] Resolves once the dialog has been closed.
    * @returns {SubDialog} [result.dialog] A reference to the opened SubDialog.
    */

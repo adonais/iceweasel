@@ -8,8 +8,10 @@
 #define builtin_OrderedHashTableObject_h
 
 /*
- * This file defines js::OrderedHashMapObject (a base class of js::MapObject)
- * and js::OrderedHashSetObject (a base class of js::SetObject).
+ * [SMDOC] OrderedHashTableObject (JS Map/Set implementation)
+ *
+ * This file defines js::OrderedHashMapObject (js::MapObject base class) and
+ * js::OrderedHashSetObject (js::SetObject base class).
  *
  * It also defines two templates, js::OrderedHashMapImpl and
  * js::OrderedHashSetImpl, that operate on these objects and implement the
@@ -17,31 +19,92 @@
  * the JS object types because it lets us switch between different template
  * instantiations to enable or disable GC barriers.
  *
- * The implemented hash table algorithm is also different from HashMap and
- * HashSet:
+ * The implemented hash table algorithm is different from HashMap and HashSet in
+ * MFBT:
  *
- *   - Iterating over an Ordered hash table visits the entries in the order in
- *     which they were inserted. This means that unlike a HashMap, the behavior
- *     of an OrderedHashMapImpl is deterministic (as long as the HashPolicy
- *     methods are effect-free and consistent); the hashing is a pure
- *     performance optimization.
+ *   - JS Map/Set iterators must visit entries in insertion order. The hashing
+ *     is a pure performance optimization and does not affect iteration order.
  *
- *   - Iterator objects remain valid even when entries are added or removed or
- *     the table is resized.
+ *   - Iterator objects must remain valid even when entries are added, removed,
+ *     or the table is resized.
  *
- * Hash policies
+ * Implementation
+ * ==============
+ * The hash table contains two arrays: an array of data entries that stores all
+ * entries (in insertion/enumeration order) and a separate array of hash buckets
+ * that provides O(1) lookup performance instead of O(n).
  *
- * See the comment about "Hash policy" in HashTable.h for general features that
- * hash policy classes must provide. Hash policies for OrderedHashMapImpl and
- * Sets differ in that the hash() method takes an extra argument:
+ * As an optimization, we allocate a single buffer that stores both of these
+ * arrays (and the HashCodeScrambler). We allocate this buffer when the first
+ * entry is added to the table.
  *
- *     static js::HashNumber hash(Lookup, const HashCodeScrambler&);
+ * The capacity of the data array is based on the number of hash buckets and the
+ * FillFactor constant (currently 8.0/3.0).
  *
- * They must additionally provide a distinguished "empty" key value and the
- * following static member functions:
+ * For example, consider the following JS code:
  *
- *     bool isEmpty(const Key&);
- *     void makeEmpty(Key*);
+ *   var m = new Map();
+ *   m.set(1, "a");
+ *   m.set(2, "b");
+ *   m.set(3, "c");
+ *   m.set(4, "d");
+ *   m.delete(2);
+ *
+ * After this, the Map object might look like this:
+ *
+ *   HashTableSlot
+ *     |    +---------+---------+
+ *     +--> | Data #3 | Data #2 |
+ *          +-----+---+-----+---+
+ *                |         |
+ *                +---------|----------------------------+
+ *                          +----------------+           |
+ *                                           |           |
+ *   DataSlot                                v           v
+ *     |    +------------+------------+------------+------------+------------+
+ *     |    | Data #0    | Data #1    | Data #2    | Data #3    | Data #4    |
+ *     +--> | key: 1     | key: $empty| key: 3     | key: 4     | <free>     |
+ *          | value: "a" | value: #   | value: "c" | value: "d" |            |
+ *          | chain: null| chain: null| chain: #0  | chain: #1  |            |
+ *          +------------+------------+------+-----+------+-----+------------+
+ *                 ^            ^            |            |
+ *                 |            |            |            |
+ *                 |            +------------|------------+
+ *                 +-------------------------+
+ *
+ *   LiveCountSlot = 3    (number of entries in the table)
+ *   DataCapacitySlot = 5 (total capacity of the data array)
+ *   DataLengthSlot = 4   (number of entries used, including deleted items)
+ *   HashShiftSlot = 31   (2 hash buckets; see hashShiftToNumHashBuckets)
+ *
+ * In this case we have only two hash buckets and each bucket contains two Data
+ * entries. Entries in the same bucket form a linked list using the |chain|
+ * field. This implements separate chaining for hash collisions.
+ *
+ * When an entry is deleted from the table, we set its key to the
+ * MagicValue(JS_HASH_KEY_EMPTY) tombstone Value, shown as $empty in this
+ * diagram. Deleted entries are removed when the table is resized or compacted.
+ *
+ * Iterators
+ * =========
+ * Each hash table has a doubly linked list of iterators for it. This is used to
+ * update active iterators when we remove an entry, when we compact the table,
+ * or when we clear the table. See TableIteratorObject and IterOps.
+ *
+ * HashCodeScrambler
+ * =================
+ * Each table has a HashCodeScrambler, used to avoid revealing JSObject*
+ * addresses. See bug 1312001 and HashValue in MapObject.cpp
+ *
+ * Nursery GC Optimizations
+ * ========================
+ * Each table has a list of keys allocated in the nursery that's traced by the
+ * OrderedHashTableRef store buffer entry. This avoids tracing all non-nursery
+ * entries during a nursery GC.
+ *
+ * Similarly, each table has a separate list of nursery-allocated iterators.
+ * This list is cleared at the start of a nursery GC and rebuilt when iterators
+ * are promoted. See Nursery::clearMapAndSetNurseryIterators.
  */
 
 #include "mozilla/HashFunctions.h"

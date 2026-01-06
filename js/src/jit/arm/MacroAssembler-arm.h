@@ -875,6 +875,11 @@ class MacroAssemblerARMCompat : public MacroAssemblerARM {
   void unboxGCThingForGCBarrier(const Address& src, Register dest) {
     load32(ToPayload(src), dest);
   }
+  void unboxGCThingForGCBarrier(const ValueOperand& src, Register dest) {
+    if (src.payloadReg() != dest) {
+      ma_mov(src.payloadReg(), dest);
+    }
+  }
 
   void unboxWasmAnyRefGCThingForGCBarrier(const Address& src, Register dest) {
     load32(ToPayload(src), dest);

@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Gune iruzurtia</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>%1$s gune iruzurti gisa dago salatuta eta blokeatu egin da zure segurtasun-ezarpenetan oinarrituta.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Gunea blokeatu da zure babeserako</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>%1$s helbideko web orria blokeatu egin da zure gehigarrietako bat berau irekitzen saiatu delako. Gune hau zure informazioa lapurtzeko erabil liteke — hala nola pasahitzak edo kreditu-txartel zenbakiak.</p>\n]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Gune segurua ez dago erabilgarri</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

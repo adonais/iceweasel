@@ -126,6 +126,7 @@ add_task(async function test_link_contextmenu() {
     "context-savelink",
     "context-copylink",
     ...(expectStripOnShareLink ? ["context-stripOnShareLink"] : []),
+    "context-sep-copylink",
     "context-sendlinktodevice",
     "context-sep-sendlinktodevice",
     "context-searchselect",

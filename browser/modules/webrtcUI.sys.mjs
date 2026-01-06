@@ -537,7 +537,7 @@ export var webrtcUI = {
    * For camera and microphone streams, this will also revoke any associated
    * permissions from SitePermissions.
    *
-   * @param {Array<Object>} activeStreams - An array of streams obtained via webrtcUI.getActiveStreams.
+   * @param {Array<object>} activeStreams - An array of streams obtained via webrtcUI.getActiveStreams.
    * @param {boolean} stopCameras - True to stop the camera streams (defaults to true)
    * @param {boolean} stopMics - True to stop the microphone streams (defaults to true)
    * @param {boolean} stopScreens - True to stop the screen streams (defaults to true)
@@ -597,6 +597,7 @@ export var webrtcUI = {
   /**
    * Clears permissions and stops sharing (if active) for a list of device types
    * and a specific tab.
+   *
    * @param {("camera"|"microphone"|"screen")[]} types - Device types to stop
    * and clear permissions for.
    * @param tab - Tab of the devices to stop and clear permissions.
@@ -700,6 +701,7 @@ export var webrtcUI = {
    * child frames.
    * Note: activePerms is an internal WebRTC UI permission map and does not
    * reflect the PermissionManager or SitePermissions state.
+   *
    * @param aBrowser - Browser to clear active permissions for.
    */
   forgetActivePermissionsFromBrowser(aBrowser) {
@@ -714,6 +716,7 @@ export var webrtcUI = {
   /**
    * Shows the Permission Panel for the tab associated with the provided
    * active stream.
+   *
    * @param aActiveStream - The stream that the user wants to see permissions for.
    * @param aEvent - The user input event that is invoking the panel. This can be
    *        undefined / null if no such event exists.

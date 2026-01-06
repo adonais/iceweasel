@@ -594,6 +594,10 @@ void nsHTMLDocument::NamedGetter(JSContext* aCx, const nsAString& aName,
         aRv.NoteJSContextException(aCx);
         return;
       }
+
+      if (v.isNullOrUndefined()) {
+        return;
+      }
     } else {
       // Step 3. Otherwise, if elements has only one element, return that
       // element.

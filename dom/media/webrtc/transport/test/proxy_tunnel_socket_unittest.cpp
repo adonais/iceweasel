@@ -7,7 +7,6 @@
 // Original authors: ekr@rtfm.com; ryan@tokbox.com
 
 #include <numeric>
-#include <vector>
 
 #include "WebrtcTCPSocketWrapper.h"
 #include "nr_socket_tcp.h"

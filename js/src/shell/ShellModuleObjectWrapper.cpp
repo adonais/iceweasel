@@ -569,7 +569,28 @@ DEFINE_NATIVE_CREATE(ImportEntry, ShellImportEntryWrapper_accessors, nullptr)
 DEFINE_NATIVE_CREATE(ExportEntry, ShellExportEntryWrapper_accessors, nullptr)
 DEFINE_NATIVE_CREATE(RequestedModule, ShellRequestedModuleWrapper_accessors,
                      nullptr)
-DEFINE_CREATE(ModuleObject, ShellModuleObjectWrapper_accessors, nullptr)
 
 #undef DEFINE_CREATE
 #undef DEFINE_NATIVE_CREATE
+
+JS::ModuleType ShellModuleObjectWrapper::getModuleType() {
+  return static_cast<JS::ModuleType>(getReservedSlot(ModuleTypeSlot).toInt32());
+}
+
+ShellModuleObjectWrapper* ShellModuleObjectWrapper::create(
+    JSContext* cx, JS::Handle<ModuleObject*> target,
+    JS::ModuleType moduleType) {
+  JS::Rooted<JSObject*> obj(cx, JS_NewObject(cx, &class_));
+  if (!obj) {
+    return nullptr;
+  }
+  if (!DefinePropertiesAndFunctions(cx, obj, ShellModuleObjectWrapper_accessors,
+                                    nullptr)) {
+    return nullptr;
+  }
+  auto* wrapper = &obj->as<ShellModuleObjectWrapper>();
+  wrapper->initReservedSlot(TargetSlot, ObjectValue(*target));
+  wrapper->initReservedSlot(ModuleTypeSlot,
+                            Int32Value(static_cast<int32_t>(moduleType)));
+  return wrapper;
+}

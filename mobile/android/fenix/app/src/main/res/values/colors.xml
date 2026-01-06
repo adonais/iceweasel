@@ -52,8 +52,6 @@
     <!-- Design system color variables -->
 
     <!-- Layers -->
-    <!-- Default Screen background, Frontlayer background, App Bar Top, App Bar Bottom, Frontlayer header -->
-    <color name="fx_mobile_layer_color_1">@color/photonLightGrey10</color>
     <!-- Card background, Menu background, Dialog, Banner -->
     <color name="fx_mobile_layer_color_2">@color/photonWhite</color>
     <!-- Search -->
@@ -251,19 +249,11 @@
     <color name="fx_mobile_private_on_tertiary_fixed_variant">@color/photonDarkGrey90</color>
 
     <!-- Layers -->
-    <!-- Default Screen background, Frontlayer background, App Bar Top, App Bar Bottom, Frontlayer header -->
-    <color name="fx_mobile_private_layer_color_1">@color/photonViolet90</color>
     <!-- Card background, Menu background, Dialog, Banner -->
     <color name="fx_mobile_private_layer_color_2">@color/photonViolet90</color>
     <!-- Search -->
     <color name="fx_mobile_private_layer_color_3">@color/photonInk90</color>
     <color name="fx_mobile_private_layer_color_search">@color/photonInk90</color>
-    <!-- Homescreen background, Toolbar -->
-    <color name="fx_mobile_private_layer_color_4_start">@color/photonPurple70</color>
-    <!-- Homescreen background, Toolbar -->
-    <color name="fx_mobile_private_layer_color_4_center">@color/photonViolet80</color>
-    <!-- Homescreen background, Toolbar -->
-    <color name="fx_mobile_private_layer_color_4_end">@color/photonInk05</color>
     <!-- App Bar Top (edit), Text Cursor, Selected Tab Check -->
     <color name="fx_mobile_private_layer_color_accent" tools:ignore="UnusedResources">@color/photonViolet40</color>
     <!-- Selected tab -->
@@ -467,8 +457,8 @@
     <!-- App Spinners colors -->
     <color name="spinner_selected_item">#1415141A</color>
 
-    <!-- Material Design colors -->
-    <color name="material_scrim_color" tools:ignore="UnusedResources">#52000000</color>
+    <!-- Icon colors -->
+    <color name="mozac_ui_icons_fill">@color/fx_mobile_on_surface</color>
 
     <!-- Add-ons colors -->
     <color name="mozac_feature_addons_messagebar_error_background_color" tools:ignore="UnusedResources">@color/fx_mobile_layer_color_critical</color>

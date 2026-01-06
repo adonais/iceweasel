@@ -171,6 +171,20 @@ void SVGSVGElement::PauseAnimations() {
   // else we're not the outermost <svg> or not bound to a tree, so silently fail
 }
 
+static SMILTime SecondsToSMILTime(float aSeconds) {
+  double milliseconds = double(aSeconds) * PR_MSEC_PER_SEC;
+  // Round to nearest whole number before converting, to avoid precision
+  // errors
+  return SVGUtils::ClampToInt64(NS_round(milliseconds));
+}
+
+void SVGSVGElement::PauseAnimationsAt(float aSeconds) {
+  if (mTimedDocumentRoot) {
+    mTimedDocumentRoot->PauseAt(SecondsToSMILTime(aSeconds));
+  }
+  // else we're not the outermost <svg> or not bound to a tree, so silently fail
+}
+
 void SVGSVGElement::UnpauseAnimations() {
   if (mTimedDocumentRoot) {
     mTimedDocumentRoot->Resume(SMILTimeContainer::PAUSE_SCRIPT);
@@ -205,11 +219,7 @@ void SVGSVGElement::SetCurrentTime(float seconds) {
     return;
   }
   FlushAnimations();
-  double fMilliseconds = double(seconds) * PR_MSEC_PER_SEC;
-  // Round to nearest whole number before converting, to avoid precision
-  // errors
-  SMILTime lMilliseconds = SVGUtils::ClampToInt64(NS_round(fMilliseconds));
-  mTimedDocumentRoot->SetCurrentTime(lMilliseconds);
+  mTimedDocumentRoot->SetCurrentTime(SecondsToSMILTime(seconds));
   AnimationNeedsResample();
   // Trigger synchronous sample now, to:
   //  - Make sure we get an up-to-date paint after this method

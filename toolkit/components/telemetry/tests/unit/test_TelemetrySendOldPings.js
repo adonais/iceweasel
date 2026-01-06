@@ -55,6 +55,7 @@ var createSavedPings = async function (aPingInfos) {
 
 /**
  * Fakes the pending pings storage quota.
+ *
  * @param {Integer} aPendingQuota The new quota, in bytes.
  */
 function fakePendingPingsQuota(aPendingQuota) {

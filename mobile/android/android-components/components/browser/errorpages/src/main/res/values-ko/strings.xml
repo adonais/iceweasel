@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">사기 사이트 문제</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>%1$s의 이 웹페이지는 사기 사이트로 보고되었으며, 사용자의 보안 설정에 따라 차단되었습니다.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">안전을 위해 사이트 차단됨</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>이 웹페이지(%1$s)는 부가 기능이 열려고 했기 때문에 차단되었습니다. 이 사이트는 비밀번호나 신용카드 번호와 같은 정보를 탈취하는 데 사용될 수 있습니다.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">보안 사이트를 사용할 수 없음</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

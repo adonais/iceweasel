@@ -89,7 +89,7 @@ tasks:
                     win32-devedition: win32-devedition-opt
                     win64-devedition: win64-devedition-opt
                     win64-aarch64-devedition: win64-aarch64-devedition-opt
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         treeherder:
             symbol: L10n(B)
             tier: 1

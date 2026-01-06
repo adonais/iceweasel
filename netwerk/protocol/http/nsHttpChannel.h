@@ -385,7 +385,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   [[nodiscard]] nsresult ContinueOnStartRequest1(nsresult);
   [[nodiscard]] nsresult ContinueOnStartRequest2(nsresult);
   [[nodiscard]] nsresult ContinueOnStartRequest3(nsresult);
-  [[nodiscard]] nsresult ContinueOnStartRequest4(nsresult);
 
   void OnClassOfServiceUpdated();
 

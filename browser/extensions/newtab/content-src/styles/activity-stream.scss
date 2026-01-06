@@ -34,7 +34,7 @@ body {
   // rules for HNT wallpapers
   background-repeat: no-repeat;
   background-size: cover;
-  background-position: center;
+  background-position: var(--newtab-wallpaper-backgroundPosition);
   background-attachment: fixed;
   background-image:
     var(--newtab-wallpaper, ''),
@@ -202,6 +202,5 @@ input {
 @import '../components/DiscoveryStreamComponents/InterestPicker/InterestPicker';
 @import '../components/DiscoveryStreamComponents/ReportContent/ReportContent';
 @import '../components/DiscoveryStreamComponents/PersonalizedCard/PersonalizedCard';
-@import '../components/DiscoveryStreamComponents/TrendingSearches/TrendingSearches';
 
 // stylelint-enable no-invalid-position-at-import-rule

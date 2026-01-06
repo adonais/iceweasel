@@ -1,69 +1,83 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Fri, 18 Jul 2025 16:07:00 -0500
-Subject: Bug 1971201 - (fix-70fb834e8c) most all of libwebrtc has converted
- from rtc:: to webrtc::
+From: Michael Froman <mjfroman@mac.com>
+Date: Mon, 15 Sep 2025 14:53:58 -0500
+Subject: Bug 1973648 - move applicable libwebrtc changes to our new
+ libwebrtc_overrides location. r=ng
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/d51a82971b9e755d5514572fcd8ddc557153c8ef
+Differential Revision: https://phabricator.services.mozilla.com/D258499
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/19164e58323d59c1f66f7fcf671b8d0b6366f708
 ---
- modules/rtp_rtcp/source/rtp_header_extensions.h | 4 ++--
- modules/video_capture/video_capture.h           | 2 +-
- modules/video_capture/video_capture_impl.cc     | 2 +-
- modules/video_capture/video_capture_impl.h      | 2 +-
- 4 files changed, 5 insertions(+), 5 deletions(-)
+ call/call.cc                     | 13 -------------
+ call/call.h                      | 12 ++----------
+ modules/desktop_capture/BUILD.gn |  5 +++++
+ 3 files changed, 7 insertions(+), 23 deletions(-)
 
-diff --git a/modules/rtp_rtcp/source/rtp_header_extensions.h b/modules/rtp_rtcp/source/rtp_header_extensions.h
-index cc811cae3a..46d80e424a 100644
---- a/modules/rtp_rtcp/source/rtp_header_extensions.h
-+++ b/modules/rtp_rtcp/source/rtp_header_extensions.h
-@@ -321,10 +321,10 @@ class CsrcAudioLevel {
-   static constexpr const char* kUri =
-       "urn:ietf:params:rtp-hdrext:csrc-audio-level";
- 
--  static bool Parse(rtc::ArrayView<const uint8_t> data,
-+  static bool Parse(webrtc::ArrayView<const uint8_t> data,
-                     CsrcAudioLevelList* csrcAudioLevels);
-   static size_t ValueSize(const CsrcAudioLevelList& csrcAudioLevels);
--  static bool Write(rtc::ArrayView<uint8_t> data,
-+  static bool Write(webrtc::ArrayView<uint8_t> data,
-                     const CsrcAudioLevelList& csrcAudioLevels);
+diff --git a/call/call.cc b/call/call.cc
+index 91ec1a54bc..e41922dffa 100644
+--- a/call/call.cc
++++ b/call/call.cc
+@@ -513,19 +513,6 @@ class Call final : public webrtc::Call,
  };
- #endif
-diff --git a/modules/video_capture/video_capture.h b/modules/video_capture/video_capture.h
-index a7c1764c51..8a91ca2f83 100644
---- a/modules/video_capture/video_capture.h
-+++ b/modules/video_capture/video_capture.h
-@@ -123,7 +123,7 @@ class VideoCaptureModule : public RefCountInterface {
+ }  // namespace internal
  
-   //  Remove capture data callback
-   virtual void DeRegisterCaptureDataCallback(
--      rtc::VideoSinkInterface<VideoFrame> *dataCallback) = 0;
-+      webrtc::VideoSinkInterface<VideoFrame> *dataCallback) = 0;
+-std::string Call::Stats::ToString(int64_t time_ms) const {
+-  char buf[1024];
+-  SimpleStringBuilder ss(buf);
+-  ss << "Call stats: " << time_ms << ", {";
+-  ss << "send_bw_bps: " << send_bandwidth_bps << ", ";
+-  ss << "recv_bw_bps: " << recv_bandwidth_bps << ", ";
+-  ss << "max_pad_bps: " << max_padding_bitrate_bps << ", ";
+-  ss << "pacer_delay_ms: " << pacer_delay_ms << ", ";
+-  ss << "rtt_ms: " << rtt_ms;
+-  ss << '}';
+-  return ss.str();
+-}
+-
+ std::unique_ptr<Call> Call::Create(CallConfig config) {
+   std::unique_ptr<RtpTransportControllerSendInterface> transport_send;
+   if (config.rtp_transport_controller_send_factory != nullptr) {
+diff --git a/call/call.h b/call/call.h
+index b2146118ff..cda8733859 100644
+--- a/call/call.h
++++ b/call/call.h
+@@ -26,6 +26,7 @@
+ #include "api/transport/bitrate_settings.h"
+ #include "call/audio_receive_stream.h"
+ #include "call/audio_send_stream.h"
++#include "call/call_basic_stats.h"
+ #include "call/call_config.h"
+ #include "call/flexfec_receive_stream.h"
+ #include "call/packet_receiver.h"
+@@ -51,16 +52,7 @@ namespace webrtc {
  
-   // Start capture device
-   virtual int32_t StartCapture(const VideoCaptureCapability& capability) = 0;
-diff --git a/modules/video_capture/video_capture_impl.cc b/modules/video_capture/video_capture_impl.cc
-index 62a4b21a5f..98d7081b1d 100644
---- a/modules/video_capture/video_capture_impl.cc
-+++ b/modules/video_capture/video_capture_impl.cc
-@@ -120,7 +120,7 @@ void VideoCaptureImpl::RegisterCaptureDataCallback(
- }
+ class Call {
+  public:
+-  struct Stats {
+-    std::string ToString(int64_t time_ms) const;
+-
+-    int send_bandwidth_bps = 0;       // Estimated available send bandwidth.
+-    int max_padding_bitrate_bps = 0;  // Cumulative configured max padding.
+-    int recv_bandwidth_bps = 0;       // Estimated available receive bandwidth.
+-    int64_t pacer_delay_ms = 0;
+-    int64_t rtt_ms = -1;
+-    std::optional<int64_t> ccfb_messages_received = std::nullopt;
+-  };
++  using Stats = CallBasicStats;
  
- void VideoCaptureImpl::DeRegisterCaptureDataCallback(
--    rtc::VideoSinkInterface<VideoFrame>* dataCallBack) {
-+    webrtc::VideoSinkInterface<VideoFrame>* dataCallBack) {
-   MutexLock lock(&api_lock_);
-   auto it = _dataCallBacks.find(dataCallBack);
-   if (it != _dataCallBacks.end()) {
-diff --git a/modules/video_capture/video_capture_impl.h b/modules/video_capture/video_capture_impl.h
-index 4d5b83547f..220b8cff27 100644
---- a/modules/video_capture/video_capture_impl.h
-+++ b/modules/video_capture/video_capture_impl.h
-@@ -63,7 +63,7 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
-   virtual void RegisterCaptureDataCallback(
-       RawVideoSinkInterface* dataCallback) override;
-   void DeRegisterCaptureDataCallback(
--      rtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
-+      webrtc::VideoSinkInterface<VideoFrame>* dataCallback) override;
+   static std::unique_ptr<Call> Create(CallConfig config);
  
-   int32_t StopCaptureIfAllClientsClose() override;
-   int32_t SetCaptureRotation(VideoRotation rotation) override;
+diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
+index 85aecb7b1e..8447de5d9f 100644
+--- a/modules/desktop_capture/BUILD.gn
++++ b/modules/desktop_capture/BUILD.gn
+@@ -391,6 +391,11 @@ rtc_library("desktop_capture") {
+     ]
+     if (build_with_mozilla) {
+       libs -= [ "Xtst" ]
++      # Mozilla provides custom impl of x_error_trap.*
++      sources -= [
++        "linux/x11/x_error_trap.cc",
++        "linux/x11/x_error_trap.h",
++      ]
+     }
+   }
+ 

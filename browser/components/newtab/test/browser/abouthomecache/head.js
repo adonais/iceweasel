@@ -28,7 +28,7 @@ const { PREFS_CONFIG } = ChromeUtils.importESModule(
  */
 async function withFullyLoadedAboutHome(taskFn) {
   // Some Activity Stream preferences are JSON encoded, and quite complex.
-  // Hard-coding them here or in browser.ini makes them brittle to change.
+  // Hard-coding them here or in browser.toml makes them brittle to change.
   // Instead, we pull the default prefs structures and set the values that
   // we need and write them to preferences here dynamically.
   let defaultDSConfig = JSON.parse(

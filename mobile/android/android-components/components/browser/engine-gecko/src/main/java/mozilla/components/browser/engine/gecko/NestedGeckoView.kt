@@ -69,6 +69,7 @@ open class NestedGeckoView(context: Context) : GeckoView(context), NestedScrolli
     }
 
     @SuppressLint("ClickableViewAccessibility")
+    @Suppress("CognitiveComplexMethod")
     override fun onTouchEvent(ev: MotionEvent): Boolean {
         val event = MotionEvent.obtain(ev)
         val action = ev.actionMasked
@@ -155,6 +156,7 @@ open class NestedGeckoView(context: Context) : GeckoView(context), NestedScrolli
     }
 
     @SuppressLint("WrongThread") // Lint complains startNestedScroll() needs to be called on the main thread
+    @Suppress("CognitiveComplexMethod")
     @VisibleForTesting
     internal fun updateInputResult(event: MotionEvent) {
         val eventAction = event.actionMasked

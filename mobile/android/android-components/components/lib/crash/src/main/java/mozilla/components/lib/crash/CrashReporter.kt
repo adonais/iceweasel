@@ -4,9 +4,11 @@
 
 package mozilla.components.lib.crash
 
+import android.app.ForegroundServiceStartNotAllowedException
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.BadParcelableException
 import android.os.Build
 import androidx.annotation.StyleRes
 import androidx.annotation.VisibleForTesting
@@ -19,6 +21,7 @@ import kotlinx.coroutines.withContext
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.lib.crash.db.CrashDatabase
+import mozilla.components.lib.crash.db.forceSerializable
 import mozilla.components.lib.crash.db.insertCrashSafely
 import mozilla.components.lib.crash.db.insertReportSafely
 import mozilla.components.lib.crash.db.toCrash
@@ -382,13 +385,51 @@ class CrashReporter internal constructor(
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal fun sendCrashReport(context: Context, crash: Crash) {
+    internal fun sendCrashReport(context: Context, crash: Crash) = try {
         ContextCompat.startForegroundService(context, SendCrashReportService.createReportIntent(context, crash))
+    } catch (e: BadParcelableException) {
+        (crash as? Crash.UncaughtExceptionCrash)?.let {
+            // We may end up with a throwable that isn't completely serializable, which will cause
+            // a crash when the service tries to unbundle it.
+            val updatedCrash = it.copy(throwable = it.throwable.forceSerializable())
+            ContextCompat.startForegroundService(
+                context,
+                SendCrashReportService.createReportIntent(context, updatedCrash),
+            )
+            logger.warn("replaced throwable for crash that could not be serialized")
+        }
+    } catch (e: IllegalStateException) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S &&
+            e is ForegroundServiceStartNotAllowedException
+        ) {
+            logger.warn("ignored failed service start while backgrounded")
+        } else {
+            throw e
+        }
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal fun sendCrashTelemetry(context: Context, crash: Crash) {
+    internal fun sendCrashTelemetry(context: Context, crash: Crash) = try {
         ContextCompat.startForegroundService(context, SendCrashTelemetryService.createReportIntent(context, crash))
+    } catch (e: BadParcelableException) {
+        (crash as? Crash.UncaughtExceptionCrash)?.let {
+            // We may end up with a throwable that isn't completely serializable, which will cause
+            // a crash when the service tries to unbundle it.
+            val updatedCrash = it.copy(throwable = it.throwable.forceSerializable())
+            ContextCompat.startForegroundService(
+                context,
+                SendCrashTelemetryService.createReportIntent(context, updatedCrash),
+            )
+            logger.warn("replaced throwable for crash that could not be serialized")
+        }
+    } catch (e: IllegalStateException) {
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.S &&
+            e is ForegroundServiceStartNotAllowedException
+        ) {
+            logger.warn("ignored failed service start while backgrounded")
+        } else {
+            throw e
+        }
     }
 
     @VisibleForTesting

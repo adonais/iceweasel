@@ -13,16 +13,14 @@ const PREF_SYSTEM_STORIES_ENABLED = "feeds.system.topstories";
  * A custom react hook that sets up an IntersectionObserver to observe a single
  * or list of elements and triggers a callback when the element comes into the viewport
  * Note: The refs used should be an array type
+ *
  * @function useIntersectionObserver
  * @param {function} callback - The function to call when an element comes into the viewport
- * @param {Object} options - Options object passed to Intersection Observer:
+ * @param {object} options - Options object passed to Intersection Observer:
  * https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver/IntersectionObserver#options
- * @param {Boolean} [isSingle = false] Boolean if the elements are an array or single element
+ * @param {boolean} [isSingle = false] Boolean if the elements are an array or single element
  *
  * @returns {React.MutableRefObject} a ref containing an array of elements or single element
- *
- *
- *
  */
 function useIntersectionObserver(callback, threshold = 0.3) {
   const elementsRef = useRef([]);
@@ -59,6 +57,7 @@ function useIntersectionObserver(callback, threshold = 0.3) {
 
 /**
  * Determines which column layout is active based on the screen width
+ *
  * @param {number} screenWidth - The current window width (in pixels)
  * @returns {string} The active column layout (e.g. "col-3", "col-2", "col-1")
  */

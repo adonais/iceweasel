@@ -55,7 +55,6 @@ const SUPPORTED_OPTIONS = {
  * and stored as THREAD_CONFIGURATION data entries.
  *
  * @constructor
- *
  */
 class ThreadConfigurationActor extends Actor {
   constructor(watcherActor) {

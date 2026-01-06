@@ -10,17 +10,14 @@ package org.mozilla.fenix.settings.settingssearch
  * @property title Title [String] of the settings item.
  * @property summary Summary [String] of the settings item.
  * @property preferenceKey Preference key [String] of the settings item.
- * @property breadcrumbs Breadcrumbs [List] of [String]s that leads to the settings item.
- *                  [0] is the section on the main Settings page
- *                  [1] is the subPage title, if any
- *                  [2] is the subPage section, if any
+ * @property categoryHeader Category header [String] of the settings item.
  * @property preferenceFileInformation Preference file information [PreferenceFileInformation] of the settings item.
  */
 data class SettingsSearchItem(
     val title: String,
     val summary: String,
     val preferenceKey: String,
-    val breadcrumbs: List<String>,
+    val categoryHeader: String,
     val preferenceFileInformation: PreferenceFileInformation,
 ) {
 
@@ -30,7 +27,7 @@ data class SettingsSearchItem(
      * @param title New title [String].
      * @param summary New summary [String].
      * @param preferenceKey New preference key [String].
-     * @param breadcrumbs New breadcrumbs [List] of [String]s.
+     * @param categoryHeader New category header [String].
      * @param preferenceFileInformation New preference file information [PreferenceFileInformation].
      * @return New [SettingsSearchItem] with the given parameters replaced.
      */
@@ -38,14 +35,14 @@ data class SettingsSearchItem(
         title: String? = null,
         summary: String? = null,
         preferenceKey: String? = null,
-        breadcrumbs: List<String>? = null,
+        categoryHeader: String? = null,
         preferenceFileInformation: PreferenceFileInformation? = null,
     ): SettingsSearchItem {
         return SettingsSearchItem(
             title = title ?: this.title,
             summary = summary ?: this.summary,
             preferenceKey = preferenceKey ?: this.preferenceKey,
-            breadcrumbs = breadcrumbs ?: this.breadcrumbs,
+            categoryHeader = categoryHeader ?: this.categoryHeader,
             preferenceFileInformation = preferenceFileInformation ?: this.preferenceFileInformation,
         )
     }

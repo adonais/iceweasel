@@ -222,14 +222,13 @@ static inline bool jemalloc_ptr_is_freed_page(jemalloc_ptr_info_t* info) {
 
 // The result of purging memory from a sigle arena
 enum ArenaPurgeResult {
-  // The stop threshold of dirty pages was reached.
-  ReachedThreshold,
+  // The stop threshold of dirty pages was reached or all the remaining chunks
+  // that may have dirty pages are busy.  The allocator can't always tell the
+  // difference between these conditions.
+  ReachedThresholdOrBusy,
 
   // There's more chunks in this arena that could be purged.
   NotDone,
-
-  // The only chunks with dirty pages are busy being purged by other threads.
-  Busy,
 
   // The arena needs to be destroyed by the caller.
   Dying,

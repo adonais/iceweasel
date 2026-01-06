@@ -318,7 +318,7 @@ add_task(async function checkClearSearch() {
 
   // check that the rule view is filtered as expected
   await checkRuleViewContent(view, [
-    { selector: "element", declarations: [] },
+    { selector: "element", selectorEditable: false, declarations: [] },
     {
       selector: "h1",
       declarations: [
@@ -345,7 +345,7 @@ add_task(async function checkClearSearch() {
 
   // check that the rule view is no longer filtered
   await checkRuleViewContent(view, [
-    { selector: "element", declarations: [] },
+    { selector: "element", selectorEditable: false, declarations: [] },
     { selector: "h1#title", declarations: fillerDeclarations },
     {
       selector: "h1",
@@ -391,6 +391,7 @@ add_task(async function checkJumpToUnusedVariable() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -423,6 +424,7 @@ add_task(async function checkJumpToUnusedVariable() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -462,8 +464,8 @@ function getJumpToDefinitionButtonForDeclaration(rule, declaration) {
  *
  * @param {RuleView} view
  * @param {Element} jumpToDefinitionButton
- * @param {String} expectedPropertyName: The name of the property that should be highlighted
- * @param {String} expectedPropertyValue: The value of the property that should be highlighted
+ * @param {string} expectedPropertyName: The name of the property that should be highlighted
+ * @param {string} expectedPropertyValue: The value of the property that should be highlighted
  */
 async function highlightProperty(
   view,

@@ -53,6 +53,7 @@ function log(msg) {
 
 /**
  * Each Transport instance owns a single UDPSocket.
+ *
  * @param port integer
  *        The port to listen on for incoming UDP multicast packets.
  */
@@ -74,6 +75,7 @@ function Transport(port) {
 Transport.prototype = {
   /**
    * Send a object to some UDP port.
+   *
    * @param object object
    *        Object which is the message to send
    * @param port integer
@@ -189,6 +191,7 @@ function Discovery() {
 Discovery.prototype = {
   /**
    * Add a new service offered by this device.
+   *
    * @param service string
    *        Name of the service
    * @param info object
@@ -204,6 +207,7 @@ Discovery.prototype = {
 
   /**
    * Remove a service offered by this device.
+   *
    * @param service string
    *        Name of the service
    */

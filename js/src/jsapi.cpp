@@ -20,7 +20,6 @@
 #ifdef __linux__
 #  include <dlfcn.h>
 #endif
-#include <iterator>
 #include <stdarg.h>
 #include <string.h>
 

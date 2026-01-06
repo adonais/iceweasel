@@ -84,18 +84,28 @@ void MacroAssembler::notPtr(Register reg) { notq(reg); }
 
 void MacroAssembler::andPtr(Register src, Register dest) { andq(src, dest); }
 
-void MacroAssembler::andPtr(Imm32 imm, Register dest) { andq(imm, dest); }
+void MacroAssembler::andPtr(Imm32 imm, Register dest) {
+  if (imm.value >= 0) {
+    andl(imm, dest);
+  } else {
+    andq(imm, dest);
+  }
+}
 
 void MacroAssembler::andPtr(Imm32 imm, Register src, Register dest) {
   if (src != dest) {
     movq(src, dest);
   }
-  andq(imm, dest);
+  andPtr(imm, dest);
 }
 
 void MacroAssembler::and64(Imm64 imm, Register64 dest) {
   if (INT32_MIN <= int64_t(imm.value) && int64_t(imm.value) <= INT32_MAX) {
-    andq(Imm32(imm.value), dest.reg);
+    if (int32_t(imm.value) >= 0) {
+      andl(Imm32(imm.value), dest.reg);
+    } else {
+      andq(Imm32(imm.value), dest.reg);
+    }
   } else {
     ScratchRegisterScope scratch(*this);
     movq(ImmWord(uintptr_t(imm.value)), scratch);

@@ -720,13 +720,9 @@ TimeStamp TimerThread::ComputeWakeupTimeFromTimers() const {
     MOZ_ASSERT(bundleWakeup <= cutoffTime);
   }
 
-#if !defined(XP_WIN)
-  // Due to the fact that, on Windows, each TimeStamp object holds two distinct
-  // "values", this assert is not valid there. See bug 1829983 for the details.
   MOZ_ASSERT(bundleWakeup - mTimers[0].mTimeout <=
              ComputeAcceptableFiringDelay(mTimers[0].mDelay, minTimerDelay,
                                           maxTimerDelay));
-#endif
 
   return bundleWakeup;
 }
@@ -1230,25 +1226,25 @@ void TimerThread::PostTimerEvent(Entry& aPostMe) {
   // event, so we can avoid firing a timer that was re-initialized after being
   // canceled.
 
-  nsCOMPtr<nsIEventTarget> target = timer->mEventTarget;
-
   void* p = nsTimerEvent::operator new(sizeof(nsTimerEvent));
   if (!p) {
     return;
   }
-  RefPtr<nsTimerEvent> event = ::new (KnownNotNull, p)
-      nsTimerEvent(timer.forget(), aPostMe.mTimerSeq, mProfilerThreadId);
 
+  // We need to release mMonitor around the Dispatch because if the Dispatch
+  // or any Release of our objects interacts with the timer API we'll deadlock.
+
+  nsCOMPtr<nsIEventTarget> lockedTargetPtr = timer->mEventTarget;
+  RefPtr<nsTimerEvent> lockedEventPtr = ::new (KnownNotNull, p)
+      nsTimerEvent(timer.forget(), aPostMe.mTimerSeq, mProfilerThreadId);
   {
-    // We release mMonitor around the Dispatch because if the Dispatch interacts
-    // with the timer API we'll deadlock.
     MonitorAutoUnlock unlock(mMonitor);
-    if (NS_WARN_IF(NS_FAILED(target->Dispatch(event, NS_DISPATCH_NORMAL)))) {
-      // Dispatch may fail for an already shut down target. In that case
-      // we can't do much about it but drop the timer. We already removed
-      // its reference from our book-keeping, anyways.
-      RefPtr<nsTimerImpl> dropMe = event->ForgetTimer();
-    }
+    // Ensure references are released while we're unlocked.
+    nsCOMPtr<nsIEventTarget> target = lockedTargetPtr.forget();
+    RefPtr<nsTimerEvent> event = lockedEventPtr.forget();
+    // If we fail we have no way to report an error, but fallible dispatch
+    // will take care of releasing our event and timer.
+    target->Dispatch(event.forget(), NS_DISPATCH_FALLIBLE);
   }
 }
 

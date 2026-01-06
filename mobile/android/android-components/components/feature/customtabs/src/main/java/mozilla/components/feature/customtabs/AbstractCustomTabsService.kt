@@ -23,6 +23,7 @@ import mozilla.components.feature.customtabs.store.SaveCreatorPackageNameAction
 import mozilla.components.service.digitalassetlinks.RelationChecker
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ext.getParcelableCompat
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 
 /**
  * Maximum number of speculative connections we will open when an app calls into
@@ -44,7 +45,10 @@ abstract class AbstractCustomTabsService : CustomTabsService() {
     @VisibleForTesting
     internal val verifier by lazy {
         relationChecker?.let { checker ->
-            OriginVerifierFeature(packageManager, checker) { customTabsServiceStore.dispatch(it) }
+            OriginVerifierFeature(
+                packageManagerCompatHelper,
+                checker,
+            ) { customTabsServiceStore.dispatch(it) }
         }
     }
 

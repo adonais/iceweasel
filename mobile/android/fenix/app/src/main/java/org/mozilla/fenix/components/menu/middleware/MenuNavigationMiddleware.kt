@@ -76,7 +76,7 @@ class MenuNavigationMiddleware(
     private val webCompatReporterMoreInfoSender: WebCompatReporterMoreInfoSender,
 ) : Middleware<MenuState, MenuAction> {
 
-    @Suppress("CyclomaticComplexMethod", "LongMethod")
+    @Suppress("CyclomaticComplexMethod", "LongMethod", "CognitiveComplexMethod")
     override fun invoke(
         context: MiddlewareContext<MenuState, MenuAction>,
         next: (MenuAction) -> Unit,

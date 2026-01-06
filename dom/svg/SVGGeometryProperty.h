@@ -278,10 +278,10 @@ bool ResolveAll(const SVGElement* aElement,
 #undef SVGGEOMETRYPROPERTY_EVAL_ALL
 
 nsCSSUnit SpecifiedUnitTypeToCSSUnit(uint8_t aSpecifiedUnit);
-nsCSSPropertyID AttrEnumToCSSPropId(const SVGElement* aElement,
-                                    uint8_t aAttrEnum);
+NonCustomCSSPropertyId AttrEnumToCSSPropId(const SVGElement* aElement,
+                                           uint8_t aAttrEnum);
 
-bool IsNonNegativeGeometryProperty(nsCSSPropertyID aProp);
+bool IsNonNegativeGeometryProperty(NonCustomCSSPropertyId aProp);
 bool ElementMapsLengthsToStyle(SVGElement const* aElement);
 
 }  // namespace mozilla::dom::SVGGeometryProperty

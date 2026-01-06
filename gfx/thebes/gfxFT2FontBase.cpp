@@ -133,6 +133,19 @@ uint32_t gfxFT2FontEntryBase::GetGlyph(uint32_t aCharCode,
   return slot.mGlyphIndex;
 }
 
+size_t gfxFT2FontEntryBase::ComputedSizeOfExcludingThis(
+    MallocSizeOf aMallocSizeOf) {
+  size_t result = gfxFontEntry::ComputedSizeOfExcludingThis(aMallocSizeOf);
+
+  if (const auto* data = GetUserFontData()) {
+    if (data->FontData()) {
+      result += aMallocSizeOf(data->FontData());
+    }
+  }
+
+  return result;
+}
+
 // aScale is intended for a 16.16 x/y_scale of an FT_Size_Metrics
 static inline FT_Long ScaleRoundDesignUnits(FT_Short aDesignMetric,
                                             FT_Fixed aScale) {

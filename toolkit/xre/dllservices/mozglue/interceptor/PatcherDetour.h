@@ -937,6 +937,8 @@ class WindowsDllDetourPatcher final
   }
 #endif  // defined(_M_X64)
 
+  // Note that *aOutTramp is not set until CreateTrampoline has completed
+  // successfully, so callers can use that to check for success.
   void CreateTrampoline(ReadOnlyTargetFunction<MMPolicyT>& origBytes,
                         TrampPoolT* aTrampPool, Trampoline<MMPolicyT>& aTramp,
                         intptr_t aDest, void** aOutTramp) {
@@ -964,8 +966,7 @@ class WindowsDllDetourPatcher final
 
     auto clearInstanceOnFailure = MakeScopeExit([this, aOutTramp, &tramp,
                                                  &origBytes]() -> void {
-      // *aOutTramp is not set until CreateTrampoline has completed
-      // successfully, so we can use that to check for success.
+      // If *aOutTramp was set this method ran successfully.
       if (*aOutTramp) {
         return;
       }
@@ -1699,6 +1700,23 @@ class WindowsDllDetourPatcher final
         break;
       }
 
+      if (pcRelInfo.inspect().mType == arm64::LoadOrBranch::Type::Branch) {
+        // We need to branch to the original target of this instruction.
+        // This is a problem because on the first pass
+        // GetCurrentRemoteAddress() is 0, so the offset may be too large for
+        // BuildUnconditionalBranchImm. We don't need this for now on ARM64.
+        // so just behave like we don't have a decoder.
+
+        // origBytes is now pointing one instruction past the one that we
+        // need the trampoline to jump back to.
+        if (!origBytes.BackUpOneInstruction()) {
+          return;
+        }
+
+        break;
+      }
+
+      MOZ_ASSERT(pcRelInfo.inspect().mType == arm64::LoadOrBranch::Type::Load);
       // We need to load an absolute address into a particular register
       tramp.WriteLoadLiteral(pcRelInfo.inspect().mAbsAddress,
                              pcRelInfo.inspect().mDestReg);

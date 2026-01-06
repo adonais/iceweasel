@@ -286,12 +286,6 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   bool HasCreatedMediaController() const;
 
   // Attempts to start loading the given load state in this BrowsingContext,
-  // without requiring any communication from a docshell. This will handle
-  // computing the right process to load in, and organising handoff to
-  // the right docshell when we get a response.
-  bool LoadInParent(nsDocShellLoadState* aLoadState, bool aSetNavigating);
-
-  // Attempts to start loading the given load state in this BrowsingContext,
   // in parallel with a DocumentChannelChild being created in the docshell.
   // Requires the DocumentChannel to connect with this load for it to
   // complete successfully.
@@ -458,6 +452,9 @@ class CanonicalBrowsingContext final : public BrowsingContext {
 
   void MaybeReconstructActiveEntryList();
 
+  // Get the load listener for the current load in this browsing context.
+  already_AddRefed<net::DocumentLoadListener> GetCurrentLoad();
+
  protected:
   // Called when the browsing context is being discarded.
   void CanonicalDiscard();
@@ -585,10 +582,12 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   }
 
   already_AddRefed<nsDocShellLoadState> CreateLoadInfo(
-      SessionHistoryEntry* aEntry);
+      SessionHistoryEntry* aEntry, NavigationType aNavigationType);
 
   void GetContiguousEntriesForLoad(LoadingSessionHistoryInfo& aLoadingInfo,
                                    const RefPtr<SessionHistoryEntry>& aEntry);
+
+  void MaybeReuseNavigationKeyFromActiveEntry(SessionHistoryEntry* aEntry);
 
   EntryList* GetActiveEntries();
 

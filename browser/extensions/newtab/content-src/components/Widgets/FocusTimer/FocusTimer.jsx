@@ -104,7 +104,11 @@ export const getClipPath = progress => {
   return `polygon(${points.join(", ")})`;
 };
 
-export const FocusTimer = ({ dispatch, handleUserInteraction }) => {
+export const FocusTimer = ({
+  dispatch,
+  handleUserInteraction,
+  isMaximized,
+}) => {
   const [timeLeft, setTimeLeft] = useState(0);
   // calculated value for the progress circle; 1 = 100%
   const [progress, setProgress] = useState(0);
@@ -530,7 +534,7 @@ export const FocusTimer = ({ dispatch, handleUserInteraction }) => {
 
   return timerData ? (
     <article
-      className="focus-timer"
+      className={`focus-timer ${isMaximized ? "is-maximized" : ""}`}
       ref={el => {
         timerRef.current = [el];
       }}

@@ -88,7 +88,61 @@ add_task(async function test_isEnabled() {
     },
   };
 
-  info("TimerFeed should be enabled");
+  info("TimerFeed should be enabled via system pref");
+  Assert.ok(feed.enabled);
+});
+
+add_task(async function test_isEnabled() {
+  let feed = new TimerFeed();
+
+  feed.store = {
+    getState() {
+      return this.state;
+    },
+    dispatch: sinon.spy(),
+    state: {
+      Prefs: {
+        values: {
+          [PREF_TIMER_ENABLED]: true,
+          trainhopConfig: {
+            widgets: {
+              enabled: true,
+              listsEnabled: false,
+              timerEnabled: true,
+            },
+          },
+        },
+      },
+    },
+  };
+
+  info("TimerFeed should be enabled via trainhopConfig");
+  Assert.ok(feed.enabled);
+});
+
+add_task(async function test_isEnabled() {
+  let feed = new TimerFeed();
+
+  feed.store = {
+    getState() {
+      return this.state;
+    },
+    dispatch: sinon.spy(),
+    state: {
+      Prefs: {
+        values: {
+          [PREF_TIMER_ENABLED]: true,
+          widgetsConfig: {
+            enabled: true,
+            listsEnabled: false,
+            timerEnabled: true,
+          },
+        },
+      },
+    },
+  };
+
+  info("TimerFeed should be enabled via trainhowidgetsConfigpConfig");
   Assert.ok(feed.enabled);
 });
 

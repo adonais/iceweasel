@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Ζήτημα παραπλανητικού ιστοτόπου</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Η ιστοσελίδα στο %1$s έχει αναφερθεί ως παραπλανητικός ιστότοπος και έχει αποκλειστεί βάσει των προτιμήσεων ασφαλείας σας.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Για λόγους ασφαλείας ο ιστότοπος αποκλείστηκε</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Η ιστοσελίδα στο %1$s έχει αποκλειστεί επειδή ένα από τα πρόσθετά σας προσπάθησε να την ανοίξει. Αυτός ο ιστότοπος θα μπορούσε να χρησιμοποιηθεί για την κλοπή πληροφοριών σας, όπως κωδικούς πρόσβασης ή αριθμούς πιστωτικών καρτών.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Δεν διατίθεται ασφαλής ιστότοπος</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

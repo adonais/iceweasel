@@ -7,35 +7,96 @@
 }
 
 .widgets-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+  margin-inline: auto;
   padding-block-end: var(--space-large);
+  max-width: max-content;
 }
 
-.widgets-container {
-  &:has(.lists),
-  &:has(.focus-timer) {
-    display: grid;
-    align-items: flex-start;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 300px));
-    gap: var(--space-large);
-    justify-content: center;
-    width: 100%;
+.widgets-section-container {
+  padding-block: var(--space-xsmall) var(--space-large);
+  padding-inline: var(--space-large);
+  background-color: var(--button-background-color);
+  border-radius: var(--border-radius-large);
+  // Bug 1908010 - This overwrites the design system color because of a
+  // known transparency issue with color-mix syntax when a wallpaper is set
+  .lightWallpaper &,
+  .darkWallpaper & {
+    background-color: var(--newtab-weather-background-color); // stylelint-disable-line stylelint-plugin-mozilla/use-background-color-tokens
 
-    // Mirrors the grid-gap spacing used on
-    // .ds-outer-wrapper-breakpoint-override .ds-card-grid
-    @media(min-width: $break-point-widest) {
-      gap: var(--space-xlarge);
+    @media (prefers-contrast) {
+      background-color: var(--background-color-box);
     }
+  }
+
+  .widgets-title-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--space-medium);
+
+    h1 {
+      margin-inline-end: auto;
+    }
+  }
+
+  // Mirrors the grid-gap spacing used on
+  // .ds-outer-wrapper-breakpoint-override .ds-card-grid
+  @media(min-width: $break-point-widest) {
+    padding-block-end: var(--space-xlarge);
+    padding-inline: var(--space-xlarge);
   }
 
   // Sections Layout Override
   .has-sections-grid & {
     @media(min-width: $break-point-widest) {
-      gap: var(--space-large);
+      padding-block-end: var(--space-large);
+      padding-inline: var(--space-large);
+    }
+  }
+
+  h1 {
+    font-size: var(--font-size-large);
+    font-weight: var(--font-weight-bold);
+  }
+}
+
+// Bug 1996308: This layout is somewhat brittle as the design dictates the parent container (.widgets-wrapper)
+// be only as wide as the width of this container (.widgets-container) while still being responsive.
+// Once we have four widgets, we can revert most of this logic as the container will be 100%.
+.widgets-container {
+  --widgets-card-width: var(--newtab-card-grid-layout-width);
+  // This is the maximum number of widgets the Widgets row can support
+  --widgets-max-cols: 2;
+  --widgets-grid-gap: var(--space-large);
+
+  // Update the card width when Sections is enabled
+  .has-sections-grid & {
+    --widgets-card-width: var(--newtab-card-width-medium);
+  }
+
+  &:has(.lists),
+  &:has(.focus-timer) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, var(--widgets-card-width));
+    gap: var(--widgets-grid-gap);
+
+    // The max-width logic is only necessary when displaying more than one column
+    @media(min-width: $break-point-medium) {
+      max-width: calc(var(--widgets-max-cols) * var(--widgets-card-width) + (var(--widgets-max-cols) - 1) * var(--widgets-grid-gap));
+      justify-content: center;
+    }
+
+    // Mirrors the grid-gap spacing used on
+    // .ds-outer-wrapper-breakpoint-override .ds-card-grid
+    @media(min-width: $break-point-widest) {
+      --widgets-grid-gap: var(--space-xlarge);
+    }
+
+    // Sections Layout Override
+    .has-sections-grid & {
+      @media(min-width: $break-point-widest) {
+        --widgets-grid-gap: var(--space-large);
+      }
     }
   }
 }

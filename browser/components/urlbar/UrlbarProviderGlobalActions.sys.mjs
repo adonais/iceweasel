@@ -220,12 +220,12 @@ export class UrlbarProviderGlobalActions extends UrlbarProvider {
     let viewUpdate = {};
     if (result.payload.showOnboardingLabel) {
       viewUpdate["press-tab-label"] = {
-        l10n: { id: "press-tab-label", cacheable: true },
+        l10n: { id: "press-tab-label" },
       };
     }
     result.payload.actionsResults.forEach((action, i) => {
       viewUpdate[`label-${i}`] = {
-        l10n: { id: action.l10nId, args: action.l10nArgs, cacheable: true },
+        l10n: { id: action.l10nId, args: action.l10nArgs },
       };
     });
     return viewUpdate;

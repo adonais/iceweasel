@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">ਭਰਮਪੂਰਨ ਸਾਈਟ ਮਸਲਾ</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>%1$s ਤੋਂ ਇਸ ਵੈੱਬ ਸਫ਼ੇ ਨੂੰ ਭਰਮਪੂਰਕ ਸਾਈਟ ਵਜੋਂ ਇਤਲਾਹ ਦਿੱਤੀ ਗਈ ਹੈ ਅਤੇ ਤੁਹਾਡੀਆਂ ਸੁਰੱਖਿਆ ਪਸੰਦਾਂ ਦੇ ਮੁਤਾਬਕ ਪਾਬੰਦੀ ਲਗਾਈ ਹੈ।</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">ਤੁਹਾਡੀ ਸੁਰੱਖਿਆ ਲਈ ਸਾਈਟ ਉੱਤੇ ਪਾਬੰਦੀ ਲਾਈ</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>ਤੁਹਾਡੀ ਐਡ-ਆਨ ਨੇ %1$s ਤੋਂ ਵੈੱਬ ਸਫ਼ੇ ਨੂੰ ਖੋਲ੍ਹਣ ਦੀ ਕੋਸ਼ਿਸ ਕੀਤੇ ਜਾਣ ਕਰਕੇ ਇਸ ਉੱਤੇ ਪਾਬੰਦੀ ਲਾਈ ਗਈ ਹੈ। ਇਹ ਸਾਈਟ ਤੁਹਾਡੀ ਜਾਣਕਾਰੀ — ਜਿਵੇਂ ਕਿ ਪਾਸਵਰਡ ਜਾਂ ਕਰੈਡਿਟ ਕਾਰਡ ਨੰਬਰ ਆਦਿ ਨੂੰ ਚੋਰੀ ਕਰਨ ਲਈ ਵਰਤੀ ਜਾ ਸਕਦੀ ਹੈ।</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">ਸੁਰੱਖਿਅਤ ਸਾਈਟ ਮੌਜੂਦ ਨਹੀਂ ਹੈ</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

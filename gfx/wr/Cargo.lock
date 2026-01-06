@@ -903,9 +903,9 @@ checksum = "52ba6eb47c2131e784a38b726eb54c1e1484904f013e576a25354d0124161af6"
 
 [[package]]
 name = "dwrote"
-version = "0.11.0"
+version = "0.11.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "439a1c2ba5611ad3ed731280541d36d2e9c4ac5e7fb818a27b604bdc5a6aa65b"
+checksum = "9e1b35532432acc8b19ceed096e35dfa088d3ea037fe4f3c085f1f97f33b4d02"
 dependencies = [
  "lazy_static",
  "libc",
@@ -1232,9 +1232,9 @@ dependencies = [
 
 [[package]]
 name = "glean"
-version = "66.1.2"
+version = "66.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16967309c8c9320aa752fbb700db55b543983845ad5309cb981c0df9650a530f"
+checksum = "3bd66fe38baf2f972ca9fb63015533f05a11c971462a289c923270803da68b91"
 dependencies = [
  "crossbeam-channel",
  "glean-core",
@@ -1247,9 +1247,9 @@ dependencies = [
 
 [[package]]
 name = "glean-core"
-version = "66.1.2"
+version = "66.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8d8cb0e35e0bc8472cf75cd3ca4d448f208003ea49a524deb623bdfd7c6c882"
+checksum = "416be389bdbac4b784bc226950607acaa9e56888e6fbc91ee2ac9ba5f6bbee1c"
 dependencies = [
  "android_logger",
  "bincode",

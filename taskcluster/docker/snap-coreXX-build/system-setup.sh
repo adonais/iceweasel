@@ -33,13 +33,12 @@ Types: deb
 URIs: http://ports.ubuntu.com
 Suites: noble noble-updates noble-security noble-backports
 Components: main multiverse universe
-Architectures: armhf arm64
+Architectures: arm64
 Signed-By: ${KEYRING_FILENAME}
 EOF
 
 # snapcraft 8.8+ will want both and will rewrite ubuntu.sources
 dpkg --add-architecture "arm64"
-dpkg --add-architecture "armhf"
 apt-get update
 apt-get --fix-broken install -y
 apt-get upgrade -y

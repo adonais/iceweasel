@@ -20,7 +20,6 @@
 #include "nsIDirectoryEnumerator.h"
 #include "nsEffectiveTLDService.h"
 #include "nsIObserverService.h"
-#include "nsISizeOf.h"
 #include "mozilla/net/MozURL.h"
 #include "mozilla/glean/NetwerkCache2Metrics.h"
 #include "mozilla/DebugOnly.h"
@@ -297,13 +296,6 @@ bool CacheFileHandle::SetPinned(bool aPinned) {
 size_t CacheFileHandle::SizeOfExcludingThis(
     mozilla::MallocSizeOf mallocSizeOf) const {
   size_t n = 0;
-  nsCOMPtr<nsISizeOf> sizeOf;
-
-  sizeOf = do_QueryInterface(mFile);
-  if (sizeOf) {
-    n += sizeOf->SizeOfIncludingThis(mallocSizeOf);
-  }
-
   n += mallocSizeOf(mFD);
   n += mKey.SizeOfExcludingThisIfUnshared(mallocSizeOf);
   return n;
@@ -807,13 +799,17 @@ class ReadEvent : public Runnable, public IOPerfReportEvent {
       nsCOMPtr<nsIEventTarget> ioTarget = CacheFileIOManager::IOTarget();
       ioTarget->Dispatch(NS_NewRunnableFunction(
           "net::ReadEvent::Callback", [self = RefPtr(this), rv]() {
-            self->mCallback->OnDataRead(self->mHandle, self->mBuf, rv);
+            // Prevent calling back twice
+            nsCOMPtr<CacheFileIOListener> cb = std::move(self->mCallback);
+            cb->OnDataRead(self->mHandle, self->mBuf, rv);
           }));
       return NS_OK;
     }
 #endif
 
-    mCallback->OnDataRead(mHandle, mBuf, rv);
+    // Prevent calling back twice
+    nsCOMPtr<CacheFileIOListener> cb = std::move(mCallback);
+    cb->OnDataRead(mHandle, mBuf, rv);
     return NS_OK;
   }
 
@@ -827,7 +823,9 @@ class ReadEvent : public Runnable, public IOPerfReportEvent {
       Report(CacheFileIOManager::gInstance->mIOThread);
     }
 
-    mCallback->OnDataRead(mHandle, mBuf, result);
+    // Prevent calling back twice
+    nsCOMPtr<CacheFileIOListener> cb = std::move(mCallback);
+    cb->OnDataRead(mHandle, mBuf, result);
     mHandle->EndAsyncOperation();
     return NS_OK;
   }
@@ -4635,15 +4633,13 @@ class SizeOfHandlesRunnable : public Runnable {
  public:
   SizeOfHandlesRunnable(mozilla::MallocSizeOf mallocSizeOf,
                         CacheFileHandles const& handles,
-                        nsTArray<CacheFileHandle*> const& specialHandles,
-                        nsCOMPtr<nsITimer> const& metadataWritesTimer)
+                        nsTArray<CacheFileHandle*> const& specialHandles)
       : Runnable("net::SizeOfHandlesRunnable"),
         mMonitor("SizeOfHandlesRunnable.mMonitor"),
         mMonitorNotified(false),
         mMallocSizeOf(mallocSizeOf),
         mHandles(handles),
         mSpecialHandles(specialHandles),
-        mMetadataWritesTimer(metadataWritesTimer),
         mSize(0) {}
 
   size_t Get(CacheIOThread* thread) {
@@ -4675,10 +4671,6 @@ class SizeOfHandlesRunnable : public Runnable {
     for (uint32_t i = 0; i < mSpecialHandles.Length(); ++i) {
       mSize += mSpecialHandles[i]->SizeOfIncludingThis(mMallocSizeOf);
     }
-    nsCOMPtr<nsISizeOf> sizeOf = do_QueryInterface(mMetadataWritesTimer);
-    if (sizeOf) {
-      mSize += sizeOf->SizeOfIncludingThis(mMallocSizeOf);
-    }
 
     mMonitorNotified = true;
     mon.Notify();
@@ -4691,7 +4683,6 @@ class SizeOfHandlesRunnable : public Runnable {
   mozilla::MallocSizeOf mMallocSizeOf;
   CacheFileHandles const& mHandles;
   nsTArray<CacheFileHandle*> const& mSpecialHandles;
-  nsCOMPtr<nsITimer> const& mMetadataWritesTimer;
   size_t mSize;
 };
 
@@ -4700,29 +4691,27 @@ class SizeOfHandlesRunnable : public Runnable {
 size_t CacheFileIOManager::SizeOfExcludingThisInternal(
     mozilla::MallocSizeOf mallocSizeOf) const {
   size_t n = 0;
-  nsCOMPtr<nsISizeOf> sizeOf;
 
   if (mIOThread) {
     n += mIOThread->SizeOfIncludingThis(mallocSizeOf);
 
-    // mHandles, mSpecialHandles and mMetadataWritesTimer must be accessed
-    // only on the I/O thread, must sync dispatch.
+    // mHandles and mSpecialHandles must be accessed only on the I/O thread,
+    // must sync dispatch.
     RefPtr<SizeOfHandlesRunnable> sizeOfHandlesRunnable =
-        new SizeOfHandlesRunnable(mallocSizeOf, mHandles, mSpecialHandles,
-                                  mMetadataWritesTimer);
+        new SizeOfHandlesRunnable(mallocSizeOf, mHandles, mSpecialHandles);
     n += sizeOfHandlesRunnable->Get(mIOThread);
   }
 
   // mHandlesByLastUsed just refers handles reported by mHandles.
 
-  sizeOf = do_QueryInterface(mCacheDirectory);
-  if (sizeOf) n += sizeOf->SizeOfIncludingThis(mallocSizeOf);
+  // mCacheDirectory is an nsIFile which we don't have reporting for.
 
-  sizeOf = do_QueryInterface(mTrashTimer);
-  if (sizeOf) n += sizeOf->SizeOfIncludingThis(mallocSizeOf);
+  // mMetadataWritesTimer is an nsITimer which we don't have reporting for.
+  // Note that it would need to be accessed on the I/O thread.
 
-  sizeOf = do_QueryInterface(mTrashDir);
-  if (sizeOf) n += sizeOf->SizeOfIncludingThis(mallocSizeOf);
+  // mTrashTimer is an nsITimer which we don't have reporting for.
+
+  // mTrashDir is an nsIFile which we don't have reporting for.
 
   for (uint32_t i = 0; i < mFailedTrashDirs.Length(); ++i) {
     n += mFailedTrashDirs[i].SizeOfExcludingThisIfUnshared(mallocSizeOf);

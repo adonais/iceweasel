@@ -20,20 +20,6 @@ registerCleanupFunction(function () {
   );
 });
 
-function waitForSettingChange(setting) {
-  return new Promise(resolve => {
-    setting.on("change", function handler() {
-      setting.off("change", handler);
-      resolve();
-    });
-  });
-}
-
-async function waitForSettingControlChange(control) {
-  await waitForSettingChange(control.setting);
-  await new Promise(resolve => requestAnimationFrame(resolve));
-}
-
 // This test only opens the Preferences once, and then reloads the page
 // each time that it wants to test various preference combinations. We
 // only use one tab (instead of opening/closing for each test) for all

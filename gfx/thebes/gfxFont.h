@@ -8,7 +8,6 @@
 #define GFX_FONT_H
 
 #include <new>
-#include <utility>
 #include <functional>
 #include "PLDHashTable.h"
 #include "ThebesRLBoxTypes.h"

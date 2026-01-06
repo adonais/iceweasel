@@ -173,14 +173,16 @@ def main(argv):
         "--args",
         dest="shell_args",
         metavar="ARGS",
-        default="",
+        default=[],
+        action="append",
         help="extra args to pass to the JS shell",
     )
     op.add_argument(
         "--feature-args",
         dest="feature_args",
         metavar="ARGS",
-        default="",
+        default=[],
+        action="append",
         help="even more args to pass to the JS shell "
         "(for compatibility with jstests.py)",
     )
@@ -510,8 +512,8 @@ def main(argv):
     else:
         options.ignore_timeouts = set()
 
-    prefix = (
-        [js_shell] + shlex.split(options.shell_args) + shlex.split(options.feature_args)
+    prefix = [js_shell] + split_extra_shell_args(
+        options.shell_args + options.feature_args
     )
     prologue = os.path.join(jittests.LIB_DIR, "prologue.js")
     if options.remote:
@@ -593,6 +595,13 @@ def main(argv):
             sys.exit(1)
         else:
             raise
+
+
+def split_extra_shell_args(args):
+    result = []
+    for option in args:
+        result.extend(shlex.split(option))
+    return result
 
 
 if __name__ == "__main__":

@@ -5,9 +5,7 @@
 package org.mozilla.fenix.debugsettings.tabs
 
 import androidx.annotation.VisibleForTesting
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +18,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -48,6 +49,7 @@ import org.mozilla.fenix.debugsettings.ui.DebugDrawer
 import org.mozilla.fenix.ext.maxActiveTime
 import org.mozilla.fenix.tabstray.ext.isNormalTabInactive
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 
 @VisibleForTesting
 internal const val MAX_TABS_GENERATED = 1000
@@ -75,24 +77,26 @@ fun TabTools(
     }
     val activeTabCount = remember(tabs) { totalTabCount - privateTabCount - inactiveTabCount }
 
-    TabToolsContent(
-        activeTabCount = activeTabCount,
-        inactiveTabCount = inactiveTabCount,
-        privateTabCount = privateTabCount,
-        totalTabCount = totalTabCount,
-        inactiveTabsEnabled = inactiveTabsEnabled,
-        onCreateTabsClick = { quantity, isInactive, isPrivate ->
-            store.dispatch(
-                TabListAction.AddMultipleTabsAction(
-                    tabs = generateTabList(
-                        quantity = quantity,
-                        isInactive = isInactive,
-                        isPrivate = isPrivate,
+    Surface {
+        TabToolsContent(
+            activeTabCount = activeTabCount,
+            inactiveTabCount = inactiveTabCount,
+            privateTabCount = privateTabCount,
+            totalTabCount = totalTabCount,
+            inactiveTabsEnabled = inactiveTabsEnabled,
+            onCreateTabsClick = { quantity, isInactive, isPrivate ->
+                store.dispatch(
+                    TabListAction.AddMultipleTabsAction(
+                        tabs = generateTabList(
+                            quantity = quantity,
+                            isInactive = isInactive,
+                            isPrivate = isPrivate,
+                        ),
                     ),
-                ),
-            )
-        },
-    )
+                )
+            },
+        )
+    }
 }
 
 private fun generateTabList(
@@ -149,7 +153,6 @@ private fun TabCounter(
     Column {
         Text(
             text = stringResource(R.string.debug_drawer_tab_tools_tab_count_title),
-            color = FirefoxTheme.colors.textPrimary,
             style = FirefoxTheme.typography.headline5,
         )
 
@@ -198,13 +201,13 @@ private fun TabCountRow(
     ) {
         Text(
             text = tabType,
-            color = FirefoxTheme.colors.textSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = FirefoxTheme.typography.headline6,
         )
 
         Text(
             text = count.toLocaleString(),
-            color = FirefoxTheme.colors.textSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = FirefoxTheme.typography.headline6,
         )
     }
@@ -226,7 +229,6 @@ private fun TabCreationTool(
     Column {
         Text(
             text = stringResource(R.string.debug_drawer_tab_tools_tab_creation_tool_title),
-            color = FirefoxTheme.colors.textPrimary,
             style = FirefoxTheme.typography.headline5,
         )
 
@@ -334,13 +336,22 @@ private fun TabToolsPreview(
     @PreviewParameter(TabToolsPreviewParameterProvider::class) model: TabToolsPreviewModel,
 ) {
     FirefoxTheme {
-        Box(
-            modifier = Modifier.background(color = FirefoxTheme.colors.layer1),
-        ) {
-            TabTools(
-                store = BrowserStore(),
-                inactiveTabsEnabled = model.inactiveTabsEnabled,
-            )
-        }
+        TabTools(
+            store = BrowserStore(),
+            inactiveTabsEnabled = model.inactiveTabsEnabled,
+        )
+    }
+}
+
+@Composable
+@Preview
+private fun TabToolsPrivatePreview(
+    @PreviewParameter(TabToolsPreviewParameterProvider::class) model: TabToolsPreviewModel,
+) {
+    FirefoxTheme(theme = Theme.Private) {
+        TabTools(
+            store = BrowserStore(),
+            inactiveTabsEnabled = model.inactiveTabsEnabled,
+        )
     }
 }

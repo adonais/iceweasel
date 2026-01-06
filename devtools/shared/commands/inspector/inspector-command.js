@@ -43,10 +43,10 @@ class InspectorCommand {
   /**
    * Search the document for the given string and return all the results.
    *
-   * @param {Object} walkerFront
-   * @param {String} query
+   * @param {object} walkerFront
+   * @param {string} query
    *        The string to search for.
-   * @param {Object} options
+   * @param {object} options
    *        {Boolean} options.reverse - search backwards
    * @returns {Array} The list of search results
    */
@@ -62,11 +62,11 @@ class InspectorCommand {
    * If a new query which does not match the current one all is reset and new search
    * is kicked off.
    *
-   * @param {String} query
+   * @param {string} query
    *         The string / selector searched for
-   * @param {Object} options
+   * @param {object} options
    *        {Boolean} reverse - determines if the search is done backwards
-   * @returns {Object} res
+   * @returns {object} res
    *          {String} res.type
    *          {String} res.query - The string / selector searched for
    *          {Object} res.node - the current node
@@ -113,11 +113,11 @@ class InspectorCommand {
   /**
    * Returns a list of matching results for CSS selector autocompletion.
    *
-   * @param {String} query
+   * @param {string} query
    *        The selector query being completed
-   * @param {String} firstPart
+   * @param {string} firstPart
    *        The exact token being completed out of the query
-   * @param {String} state
+   * @param {string} state
    *        One of "pseudo", "id", "tag", "class", "null"
    * @return {Array<string>} suggestions
    *        The list of suggested CSS selectors
@@ -333,7 +333,7 @@ class InspectorCommand {
    * it will return something like: ["body > iframe", "#sub-document-title"]
    *
    * @param {NodeFront} nodeFront: The nodefront to get the selectors for
-   * @returns {Promise<Array<String>>} A promise that resolves with an array of selectors (strings)
+   * @returns {Promise<Array<string>>} A promise that resolves with an array of selectors (strings)
    */
   async getNodeFrontSelectorsFromTopDocument(nodeFront) {
     const selectors = [];
@@ -361,10 +361,10 @@ class InspectorCommand {
   /**
    *  Get compatibility issues for given domRule declarations
    *
-   * @param {Array<Object>} domRuleDeclarations
+   * @param {Array<object>} domRuleDeclarations
    * @param {string} domRuleDeclarations[].name: Declaration name
    * @param {string} domRuleDeclarations[].value: Declaration value
-   * @returns {Promise<Array<Object>>}
+   * @returns {Promise<Array<object>>}
    */
   async getCSSDeclarationBlockIssues(domRuleDeclarations) {
     // Filter out custom property declarations as we can't have issue with those and
@@ -414,7 +414,8 @@ class InspectorCommand {
 
   /**
    * Get compatibility issues for all queued domRules declarations
-   * @returns {Promise<Array<Array<Object>>>}
+   *
+   * @returns {Promise<Array<Array<object>>>}
    */
   #batchedGetCSSDeclarationBlockIssues = async () => {
     const declarations =

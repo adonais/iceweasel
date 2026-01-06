@@ -146,7 +146,9 @@ add_task(async function test_tabInteractionsBasic() {
   );
   let tab1 = await addTab();
   await assertMetricEmpty("add");
-  window.gBrowser.moveTabToGroup(tab1, group, { isUserTriggered: true });
+  window.gBrowser.moveTabToExistingGroup(tab1, group, {
+    isUserTriggered: true,
+  });
   await assertMetricFoundFor("add");
 
   info(

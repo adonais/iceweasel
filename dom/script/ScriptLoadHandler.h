@@ -107,8 +107,8 @@ class ScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
                      uint32_t aDataLength, bool aEndOfStream);
 
   /*
-   * When streaming bytecode, we have the opportunity to fallback early if SRI
-   * does not match the expectation of the document.
+   * When streaming serialized Stencil, we have the opportunity to fallback
+   * early if SRI does not match the expectation of the document.
    *
    * If SRI hash is decoded, `sriLength` is set to the length of the hash.
    */

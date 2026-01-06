@@ -10,7 +10,7 @@ const HTTP_ORIGIN = "http://www.example.com";
  * Returns a list of new nsILoginInfo objects that are a subset of the test
  * data, built to match the specified query.
  *
- * @param {Object} aQuery
+ * @param {object} aQuery
  *        Each property and value of this object restricts the search to those
  *        entries from the test data that match the property exactly.
  */
@@ -33,10 +33,10 @@ function buildExpectedLogins(aQuery) {
 /**
  * Tests the searchLogins function.
  *
- * @param {Object} aQuery
+ * @param {object} aQuery
  *        Each property and value of this object is translated to an entry in
  *        the nsIPropertyBag parameter of searchLogins.
- * @param {Number} aExpectedCount
+ * @param {number} aExpectedCount
  *        Number of logins from the test data that should be found.  The actual
  *        list of logins is obtained using the buildExpectedLogins helper, and
  *        this value is just used to verify that modifications to the test data

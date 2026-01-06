@@ -292,11 +292,6 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // impression.
   ["quicksuggest.contextualOptIn.impressionDaysLimit", 5],
 
-  // TODO: Remove this pref, which is the old opt-in pref for online Firefox
-  // Suggest. We need to keep it for now because some live Nimbus experiments
-  // use a targeting filter that depends on it.
-  ["quicksuggest.dataCollection.enabled", false],
-
   // Comma-separated list of Suggest dynamic suggestion types to enable.
   ["quicksuggest.dynamicSuggestionTypes", ""],
 
@@ -684,6 +679,7 @@ const PREF_OTHER_DEFAULTS = new Map([
   ["browser.ml.enable", false],
   ["browser.search.suggest.enabled", true],
   ["browser.search.suggest.enabled.private", false],
+  ["browser.search.widget.new", false],
   ["keyword.enabled", true],
   ["security.insecure_connection_text.enabled", true],
   ["ui.popup.disable_autohide", false],

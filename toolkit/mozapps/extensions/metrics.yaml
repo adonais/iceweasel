@@ -27,12 +27,19 @@ addons:
       addons.activeAddons. Like its counterpart, it will only have data in
       Firefox Desktop and at times and on platforms where the environment would
       have values.
+
+      NOTE: this metric is available in both `metrics` and `addons` pings. However
+      the `addons` ping is the preferred source of data for add-ons related analyses,
+      whereas the `metrics` ping is better suited for analyses that correlates other
+      metrics with the add-ons listed in the `active_addons` metric.
     bugs:
       - https://bugzilla.mozilla.org/1950416
       - https://bugzilla.mozilla.org/1991924
+      - https://bugzilla.mozilla.org/2000866
     data_reviews:
       - https://bugzilla.mozilla.org/1950416
       - https://bugzilla.mozilla.org/1991924
+      - https://bugzilla.mozilla.org/2000866
     data_sensitivity:
       - technical
       - interaction
@@ -89,6 +96,7 @@ addons:
     send_in_pings:
       - metrics
       - heartbeat
+      - addons
 
   theme:
     type: object
@@ -105,12 +113,19 @@ addons:
       addons.theme. Like its counterpart, it will only have data in Firefox
       Desktop and at times and on platforms where the environment would have
       values.
+
+      NOTE: this metric is available in both `metrics` and `addons` pings. However
+      the `addons` ping is the preferred source of data for add-ons related analyses,
+      whereas the `metrics` ping is better suited for analyses that correlates other
+      metrics with the add-ons listed in the `theme` metric.
     bugs:
       - https://bugzilla.mozilla.org/1950416
       - https://bugzilla.mozilla.org/1991924
+      - https://bugzilla.mozilla.org/2000866
     data_reviews:
       - https://bugzilla.mozilla.org/1950416
       - https://bugzilla.mozilla.org/1991924
+      - https://bugzilla.mozilla.org/2000866
     data_sensitivity:
       - technical
       - interaction
@@ -148,6 +163,9 @@ addons:
            type: number
          signedTypes:
            type: string
+    send_in_pings:
+      - metrics
+      - addons
 
   active_g_m_plugins:
     type: object
@@ -167,9 +185,11 @@ addons:
     bugs:
       - https://bugzilla.mozilla.org/1950416
       - https://bugzilla.mozilla.org/1991924
+      - https://bugzilla.mozilla.org/2000866
     data_reviews:
       - https://bugzilla.mozilla.org/1950416
       - https://bugzilla.mozilla.org/1991924
+      - https://bugzilla.mozilla.org/2000866
     data_sensitivity:
       - technical
       - interaction
@@ -191,7 +211,9 @@ addons:
             type: boolean
           applyBackgroundUpdates:
             type: number
-
+    send_in_pings:
+      - metrics
+      - addons
 
 addons_manager:
   install: &install_update_event

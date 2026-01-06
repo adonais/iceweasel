@@ -8,6 +8,16 @@
 const kPasteMenuPopupId = "clipboardReadPasteMenuPopup";
 const kPasteMenuItemId = "clipboardReadPasteMenuItem";
 
+const kBaseUrlForContent = getRootDirectory(gTestPath).replace(
+  "chrome://mochitests/content",
+  "https://example.com"
+);
+
+Services.scriptloader.loadSubScript(
+  "chrome://mochitests/content/browser/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js",
+  this
+);
+
 function promiseWritingRandomTextToClipboard() {
   const clipboardText = "X" + Math.random();
   return navigator.clipboard.writeText(clipboardText).then(() => {

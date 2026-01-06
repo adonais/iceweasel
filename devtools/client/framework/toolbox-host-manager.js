@@ -92,9 +92,9 @@ ToolboxHostManager.prototype = {
   /**
    * Create a Toolbox
    *
-   * @param {String} toolId
+   * @param {string} toolId
    *        The id of the tool to show
-   * @param {Object} toolOptions
+   * @param {object} toolOptions
    *        Options that will be passed to the tool init function
    * @returns {Toolbox}
    */
@@ -243,9 +243,9 @@ ToolboxHostManager.prototype = {
    * Migrate the toolbox to a new host, while keeping it fully functional.
    * The toolbox's iframe will be moved as-is to the new host.
    *
-   * @param {String} hostType
+   * @param {string} hostType
    *        The new type of host to spawn
-   * @param {Boolean} destroyPreviousHost
+   * @param {boolean} destroyPreviousHost
    *        Defaults to true. If false is passed, we will avoid destroying
    *        the previous host. This is helpful for popup debugging,
    *        where we migrate the toolbox between two tabs. In this scenario
@@ -333,7 +333,7 @@ ToolboxHostManager.prototype = {
    * and popup tabs. This method will only move the host to a new tab, while
    * keeping the same host type.
    *
-   * @param {String} tabBrowsingContextID
+   * @param {string} tabBrowsingContextID
    *        The ID of the browsing context of the tab we want to move to.
    */
   async switchHostToTab(tabBrowsingContextID) {

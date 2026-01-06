@@ -835,7 +835,7 @@ browser.engagement:
     kind: uint
     notification_emails:
       - bmiroglio@mozilla.com
-      - aoprea@mozilla.com
+      - omc-core@mozilla.com
     release_channel_collection: opt-out
     products:
       - 'firefox'
@@ -868,7 +868,7 @@ browser.engagement:
     kind: uint
     notification_emails:
       - bmiroglio@mozilla.com
-      - aoprea@mozilla.com
+      - omc-core@mozilla.com
     release_channel_collection: opt-out
     products:
       - 'firefox'

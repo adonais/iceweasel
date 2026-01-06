@@ -9,7 +9,6 @@ import mozilla.components.service.fxa.store.Account
 import mozilla.components.service.fxa.store.SyncAction
 import mozilla.components.service.fxa.store.SyncStatus
 import mozilla.components.service.fxa.store.SyncStore
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.telemetry.glean.private.JobTimeoutException
 import org.junit.Assert.assertEquals
@@ -58,7 +57,7 @@ internal class FxAccountsPingTest {
             SyncAction.UpdateAccount(
                 account = mockAccount,
             ),
-        ).joinBlocking()
+        )
 
         job.join()
         assertEquals("123", syncStore.state.account?.uid)
@@ -74,7 +73,7 @@ internal class FxAccountsPingTest {
             SyncAction.UpdateAccount(
                 account = mockAccount,
             ),
-        ).joinBlocking()
+        )
         assertEquals(syncStore.state.account?.uid, "123")
         val job = fxAccounts.testBeforeNextSubmit {
             validatorRun = true
@@ -83,7 +82,7 @@ internal class FxAccountsPingTest {
             SyncAction.UpdateAccount(
                 account = mockAccount.copy(uid = null),
             ),
-        ).joinBlocking()
+        )
 
         try {
             job.join()
@@ -103,7 +102,7 @@ internal class FxAccountsPingTest {
             SyncAction.UpdateAccount(
                 account = mockAccount,
             ),
-        ).joinBlocking()
+        )
         assertEquals("123", syncStore.state.account?.uid)
         val job = fxAccounts.testBeforeNextSubmit {
             validatorRun = true
@@ -113,7 +112,7 @@ internal class FxAccountsPingTest {
             SyncAction.UpdateAccount(
                 account = mockAccount.copy(email = "newEmail@email.com"),
             ),
-        ).joinBlocking()
+        )
 
         try {
             job.join()

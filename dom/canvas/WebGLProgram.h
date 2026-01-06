@@ -9,7 +9,6 @@
 #include <bitset>
 #include <map>
 #include <memory>
-#include <set>
 #include <vector>
 
 #include "CacheInvalidator.h"

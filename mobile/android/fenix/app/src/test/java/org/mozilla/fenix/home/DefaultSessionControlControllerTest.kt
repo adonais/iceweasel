@@ -25,7 +25,6 @@ import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.service.nimbus.messaging.Message
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
@@ -224,9 +223,9 @@ class DefaultSessionControlControllerTest {
 
         val restoredTab = createTab(id = recoverableTab.state.id, url = recoverableTab.state.url)
         val otherTab = createTab(id = "otherTab", url = "https://mozilla.org")
-        store.dispatch(TabListAction.AddTabAction(otherTab)).joinBlocking()
-        store.dispatch(TabListAction.SelectTabAction(otherTab.id)).joinBlocking()
-        store.dispatch(TabListAction.AddTabAction(restoredTab)).joinBlocking()
+        store.dispatch(TabListAction.AddTabAction(otherTab))
+        store.dispatch(TabListAction.SelectTabAction(otherTab.id))
+        store.dispatch(TabListAction.AddTabAction(restoredTab))
 
         createController().handleCollectionOpenTabClicked(tab)
 
@@ -261,7 +260,7 @@ class DefaultSessionControlControllerTest {
         }
 
         val restoredTab = createTab(id = recoverableTab.state.id, url = recoverableTab.state.url)
-        store.dispatch(TabListAction.AddTabAction(restoredTab)).joinBlocking()
+        store.dispatch(TabListAction.AddTabAction(restoredTab))
 
         createController().handleCollectionOpenTabClicked(tab)
 

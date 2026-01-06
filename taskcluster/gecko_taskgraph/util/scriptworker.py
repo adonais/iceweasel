@@ -151,6 +151,15 @@ BEETMOVER_APT_REPO_SCOPES = {
     "default": "beetmover:apt-repo:dep",
 }
 
+"""Map the beetmover scope aliases to the actual scopes.
+These are the scopes needed to import artifacts into the product delivery YUM repos.
+"""
+BEETMOVER_YUM_REPO_SCOPES = {
+    "all-release-branches": "beetmover:yum-repo:release",
+    "all-nightly-branches": "beetmover:yum-repo:nightly",
+    "default": "beetmover:yum-repo:dep",
+}
+
 """Map the beetmover tasks aliases to the actual action scopes.
 """
 BEETMOVER_ACTION_SCOPES = {
@@ -398,6 +407,12 @@ get_beetmover_apt_repo_scope = functools.partial(
     alias_to_scope_map=BEETMOVER_APT_REPO_SCOPES,
 )
 
+get_beetmover_yum_repo_scope = functools.partial(
+    get_scope_from_project,
+    alias_to_project_map=BEETMOVER_SCOPE_ALIAS_TO_PROJECT,
+    alias_to_scope_map=BEETMOVER_YUM_REPO_SCOPES,
+)
+
 get_beetmover_repo_action_scope = functools.partial(
     get_scope_from_release_type,
     release_type_to_scope_map=BEETMOVER_REPO_ACTION_SCOPES,
@@ -535,6 +550,11 @@ def generate_beetmover_upstream_artifacts(
                 and platform in map_config["mapping"][filename]["not_for_platforms"]
             ):
                 continue
+            if (
+                "not_for_locales" in map_config["mapping"][filename]
+                and locale in map_config["mapping"][filename]["not_for_locales"]
+            ):
+                continue
             if "partials_only" in map_config["mapping"][filename]:
                 continue
             # The next time we look at this file it might be a different locale.
@@ -600,6 +620,22 @@ def generate_artifact_registry_gcs_sources(dep):
             gcs_sources.append(
                 config["paths"][repackage_deb_artifact]["destinations"][0]
             )
+    return gcs_sources
+
+
+def generate_artifact_registry_gcs_sources_rpm(dep):
+    """Generate GCS sources for RPM packages from beetmover-repackage-rpm task.
+
+    The beetmover-repackage-rpm task contains all RPM packages (firefox + langpacks)
+    for a given platform in its artifactMap. This function extracts all destinations
+    from that artifactMap to upload to the YUM repository.
+    """
+    gcs_sources = []
+    for config in dep.task["payload"]["artifactMap"]:
+        if config["taskId"]["task-reference"] == "<repackage-rpm>":
+            for path_info in config["paths"].values():
+                if "destinations" in path_info and path_info["destinations"]:
+                    gcs_sources.append(path_info["destinations"][0])
     return gcs_sources
 
 
@@ -674,6 +710,12 @@ def generate_beetmover_artifact_map(config, job, **kwargs):
                 and platform in map_config["mapping"][filename]["not_for_platforms"]
             ):
                 # This platform either doesn't produce or shouldn't upload this file.
+                continue
+            if (
+                "not_for_locales" in map_config["mapping"][filename]
+                and locale in map_config["mapping"][filename]["not_for_locales"]
+            ):
+                # This locale either doesn't produce or shouldn't upload this file
                 continue
             if "partials_only" in map_config["mapping"][filename]:
                 continue

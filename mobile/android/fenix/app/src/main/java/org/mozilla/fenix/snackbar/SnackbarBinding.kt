@@ -56,6 +56,8 @@ import org.mozilla.fenix.utils.getSnackbarTimeout
  * if the selected session should be used.
  * @param ioDispatcher The [CoroutineDispatcher] used for background operations executed when
  * the user starts a snackbar action.
+ * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur.
+ *                       Defaults to [Dispatchers.Main].
  */
 @Suppress("LongParameterList")
 class SnackbarBinding(
@@ -68,12 +70,13 @@ class SnackbarBinding(
     private val sendTabUseCases: SendTabUseCases?,
     private val customTabSessionId: String?,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-) : AbstractBinding<AppState>(appStore) {
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+) : AbstractBinding<AppState>(appStore, mainDispatcher) {
 
     private val currentSession
         get() = browserStore.state.findCustomTabOrSelectedTab(customTabSessionId)
 
-    @Suppress("LongMethod", "ComplexMethod")
+    @Suppress("LongMethod", "CognitiveComplexMethod", "CyclomaticComplexMethod")
     override suspend fun onState(flow: Flow<AppState>) {
         flow.map { state -> state.snackbarState }
             .distinctUntilChanged()

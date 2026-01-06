@@ -16,9 +16,9 @@ function stylesheetLoadPromise(styleSheet) {
  *
  * @param  {Document} doc
  *         The chrome document where the stylesheet should be appended.
- * @param  {String} url
+ * @param  {string} url
  *         The url of the stylesheet to load.
- * @return {Object}
+ * @return {object}
  *         - styleSheet {XMLStylesheetProcessingInstruction} the instruction node created.
  *         - loadPromise {Promise} that will resolve/reject when the stylesheet finishes
  *           or fails to load.

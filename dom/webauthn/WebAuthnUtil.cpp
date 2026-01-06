@@ -8,6 +8,8 @@
 
 #include "hasht.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/StaticPrefs_security.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozpkix/pkixutil.h"
 #include "nsComponentManagerUtils.h"
 #include "nsHTMLDocument.h"
@@ -117,19 +119,41 @@ bool IsWebAuthnAllowedInDocument(const nsCOMPtr<Document>& aDoc) {
   return aDoc->IsHTMLOrXHTML();
 }
 
-bool IsWebAuthnAllowedForPrincipal(const nsCOMPtr<nsIPrincipal>& aPrincipal) {
-  MOZ_ASSERT(aPrincipal);
-  if (aPrincipal->GetIsNullPrincipal()) {
+bool IsWebAuthnAllowedInContext(WindowGlobalParent* aContext) {
+  nsIPrincipal* principal = aContext->DocumentPrincipal();
+  MOZ_ASSERT(principal);
+
+  if (principal->GetIsNullPrincipal()) {
     return false;
   }
-  if (aPrincipal->GetIsIpAddress()) {
+
+  if (principal->GetIsIpAddress()) {
     return false;
   }
   // This next test is not strictly necessary since CredentialsContainer is
   // [SecureContext] in our webidl.
-  if (!aPrincipal->GetIsOriginPotentiallyTrustworthy()) {
+  if (!principal->GetIsOriginPotentiallyTrustworthy()) {
     return false;
   }
+
+  if (principal->GetIsLoopbackHost()) {
+    return true;
+  }
+
+  if (StaticPrefs::security_webauthn_allow_with_certificate_override()) {
+    return true;
+  }
+
+  WindowGlobalParent* windowContext = aContext;
+  while (windowContext) {
+    nsITransportSecurityInfo* securityInfo = windowContext->GetSecurityInfo();
+    if (securityInfo &&
+        !IsWebAuthnAllowedForTransportSecurityInfo(securityInfo)) {
+      return false;
+    }
+    windowContext = windowContext->GetParentWindowContext();
+  }
+
   return true;
 }
 

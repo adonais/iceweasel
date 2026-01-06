@@ -169,7 +169,7 @@ Tracker.prototype = {
    * Starts or stops listening for changes depending on the associated engine's
    * enabled state.
    *
-   * @param {Boolean} engineEnabled Whether the engine was enabled.
+   * @param {boolean} engineEnabled Whether the engine was enabled.
    */
   async onEngineEnabledChanged(engineEnabled) {
     if (engineEnabled == this._isTracking) {

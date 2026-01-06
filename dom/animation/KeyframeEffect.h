@@ -7,16 +7,16 @@
 #ifndef mozilla_dom_KeyframeEffect_h
 #define mozilla_dom_KeyframeEffect_h
 
-#include "mozilla/AnimatedPropertyID.h"
+#include "NonCustomCSSPropertyId.h"
 #include "mozilla/AnimatedPropertyIDSet.h"
 #include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/AnimationPropertySegment.h"
 #include "mozilla/AnimationTarget.h"
+#include "mozilla/CSSPropertyId.h"
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/Keyframe.h"
 #include "mozilla/KeyframeEffectParams.h"
 #include "mozilla/PostRestyleMode.h"
-#include "nsCSSPropertyID.h"
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSValue.h"
 #include "nsChangeHint.h"
@@ -56,7 +56,7 @@ struct AnimationPropertyDetails;
 }  // namespace dom
 
 struct AnimationProperty {
-  AnimatedPropertyID mProperty;
+  CSSPropertyId mProperty;
 
   // If true, the propery is currently being animated on the compositor.
   //
@@ -222,12 +222,12 @@ class KeyframeEffect : public AnimationEffect {
   // properties where an !important rule on another transform property may
   // cause all transform properties to be run on the main thread. That check is
   // performed by GetPropertiesForCompositor.
-  bool HasEffectiveAnimationOfProperty(const AnimatedPropertyID& aProperty,
+  bool HasEffectiveAnimationOfProperty(const CSSPropertyId& aProperty,
                                        const EffectSet& aEffect) const {
     return GetEffectiveAnimationOfProperty(aProperty, aEffect) != nullptr;
   }
   const AnimationProperty* GetEffectiveAnimationOfProperty(
-      const AnimatedPropertyID&, const EffectSet&) const;
+      const CSSPropertyId&, const EffectSet&) const;
 
   // Similar to HasEffectiveAnimationOfProperty, above, but for
   // an nsCSSPropertyIDSet. Returns true if this keyframe effect has at least
@@ -281,7 +281,8 @@ class KeyframeEffect : public AnimationEffect {
 
   // Returns true if at least one property is being animated on compositor.
   bool IsRunningOnCompositor() const;
-  void SetIsRunningOnCompositor(nsCSSPropertyID aProperty, bool aIsRunning);
+  void SetIsRunningOnCompositor(NonCustomCSSPropertyId aProperty,
+                                bool aIsRunning);
   void SetIsRunningOnCompositor(const nsCSSPropertyIDSet& aPropertySet,
                                 bool aIsRunning);
   void ResetIsRunningOnCompositor();
@@ -329,7 +330,7 @@ class KeyframeEffect : public AnimationEffect {
   // |aFrame| is used for calculation of scale values.
   bool ContainsAnimatedScale(const nsIFrame* aFrame) const;
 
-  AnimationValue BaseStyle(const AnimatedPropertyID& aProperty) const {
+  AnimationValue BaseStyle(const CSSPropertyId& aProperty) const {
     AnimationValue result;
     bool hasProperty = false;
     // We cannot use getters_AddRefs on StyleAnimationValue because it is
@@ -460,8 +461,7 @@ class KeyframeEffect : public AnimationEffect {
   // least one animation value that is composited with the underlying value
   // (i.e. it uses the additive or accumulate composite mode).
   using BaseValuesHashmap =
-      nsRefPtrHashtable<nsGenericHashKey<AnimatedPropertyID>,
-                        StyleAnimationValue>;
+      nsRefPtrHashtable<nsGenericHashKey<CSSPropertyId>, StyleAnimationValue>;
   BaseValuesHashmap mBaseValues;
 
  private:
@@ -493,7 +493,7 @@ class KeyframeEffect : public AnimationEffect {
                         const ComputedTiming& aComputedTiming);
 
   already_AddRefed<const ComputedStyle> CreateComputedStyleForAnimationValue(
-      nsCSSPropertyID aProperty, const AnimationValue& aValue,
+      NonCustomCSSPropertyId aProperty, const AnimationValue& aValue,
       nsPresContext* aPresContext, const ComputedStyle* aBaseComputedStyle);
 
   // Return the primary frame for the target (pseudo-)element.
@@ -516,7 +516,7 @@ class KeyframeEffect : public AnimationEffect {
   static bool CanAnimateTransformOnCompositor(
       const nsIFrame* aFrame,
       AnimationPerformanceWarning::Type& aPerformanceWarning /* out */);
-  static bool IsGeometricProperty(const nsCSSPropertyID aProperty);
+  static bool IsGeometricProperty(const NonCustomCSSPropertyId aProperty);
 
   static const TimeDuration OverflowRegionRefreshInterval();
 

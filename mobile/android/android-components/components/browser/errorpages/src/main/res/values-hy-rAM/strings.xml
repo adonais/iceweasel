@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Խաբուսիկ կայքի խնդիր</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p> %1$s վեբ էջը հաղորդվել է որպես խաբուսիկ կայք և արգելափակված է ըստ ձեր անվտանգության նախապատվությունների:</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Կայքն արգելափակված է ձեր անվտանգության համար</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>%1$s-ի այս վեբ էջն արգելափակվել է, քանի որ ձեր հավելումներից մեկը փորձել է այն բացել: Այս կայքը կարող է օգտագործվել ձեր տեղեկությունները գողանալու համար, օրինակ՝ գաղտնաբառերը կամ բանկային քարտերի համարները:</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Անվտանգ կայքը հասանելի չէ</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

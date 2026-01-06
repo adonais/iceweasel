@@ -12,7 +12,12 @@ from taskgraph.util.taskcluster import get_artifact_path
 from voluptuous import Extra, Optional, Required
 
 from gecko_taskgraph.transforms.job import configure_taskdesc_for_run, run_job_using
-from gecko_taskgraph.transforms.job.common import get_expiration, support_vcs_checkout
+from gecko_taskgraph.transforms.job.common import (
+    docker_worker_add_artifacts,
+    generic_worker_add_artifacts,
+    get_expiration,
+    support_vcs_checkout,
+)
 from gecko_taskgraph.transforms.test import normpath, test_description_schema
 from gecko_taskgraph.util.attributes import is_try
 from gecko_taskgraph.util.chunking import get_test_tags
@@ -134,6 +139,7 @@ def mozharness_test_on_docker(config, job, taskdesc):
             "expires-after": get_expiration(config, "default"),
         }
     )
+    docker_worker_add_artifacts(config, job, taskdesc)
 
     env = worker.setdefault("env", {})
     env.update(
@@ -287,6 +293,8 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
             "expires-after": get_expiration(config, "default"),
         }
     ]
+
+    generic_worker_add_artifacts(config, job, taskdesc)
 
     # jittest doesn't have blob_upload_dir
     if test["test-name"] != "jittest":

@@ -1,23 +1,22 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Wed, 8 Oct 2025 16:39:00 -0500
-Subject: Bug 1993083 - (fix-032f8c223e) add missing stub implementation for
- SSLStreamAdapter static method.
+From: Jan-Ivar Bruaroey <jib@mozilla.com>
+Date: Wed, 8 Oct 2025 17:05:00 +0000
+Subject: Bug 1868223 - Add api:frame_transformer_factory to BUILD.gn r=mjf
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/293f1877fead30723696b8f5cb354bdf819af5d3
+Differential Revision: https://phabricator.services.mozilla.com/D267541
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8e7778c59894c284b8bddd39b731e999fe2e807c
 ---
- rtc_base/ssl_stream_adapter.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ BUILD.gn | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/rtc_base/ssl_stream_adapter.h b/rtc_base/ssl_stream_adapter.h
-index 24fc299b82..ec16887eac 100644
---- a/rtc_base/ssl_stream_adapter.h
-+++ b/rtc_base/ssl_stream_adapter.h
-@@ -247,7 +247,7 @@ class SSLStreamAdapter : public StreamInterface {
-   static std::set<uint16_t> GetSupportedEphemeralKeyExchangeCipherGroups()
-       { return {}; }
-   static std::optional<std::string> GetEphemeralKeyExchangeCipherGroupName(
--      uint16_t group_id);
-+      uint16_t group_id) { return std::nullopt; }
-   static std::vector<uint16_t> GetDefaultEphemeralKeyExchangeCipherGroups(
-       const FieldTrialsView* field_trials) { return {}; }
+diff --git a/BUILD.gn b/BUILD.gn
+index a3b738a7e1..2b3e510f76 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -629,6 +629,7 @@ if (!build_with_chromium) {
  
+     if (build_with_mozilla) {
+       deps += [
++        "api:frame_transformer_factory",
+         "api/audio:builtin_audio_processing_builder",
+         "api/environment:environment_factory",
+         "api/video:video_frame",

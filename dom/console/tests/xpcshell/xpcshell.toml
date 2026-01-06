@@ -8,8 +8,7 @@ support-files = ""
 
 ["test_failing_console_listener.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan",
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan",
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan",
 ]
 
 ["test_formatting.js"]
@@ -20,4 +19,6 @@ skip-if = [
 support-files = [
   "worker.mjs",
 ]
-run-if = ["os != 'android'"] # Uses ChromeWorker.
+run-if = [
+  "os != 'android'", # Uses ChromeWorker.
+]

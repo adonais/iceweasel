@@ -12,7 +12,7 @@ async def is_state_beside_zip(client):
     return client.execute_script(
         """
         const [city, state] = [...arguments].map(arg => arg.getBoundingClientRect());
-        return city.right < state.left && parseInt(state.top) == parseInt(city.top);
+        return city.width > 100 && state.width > 100 && city.right < state.left && Math.abs(state.top - city.top) < 2;
       """,
         city,
         state,

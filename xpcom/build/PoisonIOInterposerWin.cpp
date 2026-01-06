@@ -6,9 +6,7 @@
 
 #include "PoisonIOInterposer.h"
 
-#include <algorithm>
 #include <stdio.h>
-#include <vector>
 
 #include <io.h>
 #include <windows.h>

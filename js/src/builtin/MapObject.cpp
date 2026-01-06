@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "builtin/MapObject-inl.h"
+#include "builtin/MapObject.h"
 
 #include "jsapi.h"
 
@@ -2028,4 +2029,56 @@ JS_PUBLIC_API bool JS::SetEntries(JSContext* cx, HandleObject obj,
 JS_PUBLIC_API bool JS::SetForEach(JSContext* cx, HandleObject obj,
                                   HandleValue callbackFn, HandleValue thisVal) {
   return forEach("SetForEach", cx, obj, callbackFn, thisVal);
+}
+
+JS_PUBLIC_API bool js::GetSetObjectKeys(
+    JSContext* cx, JS::HandleObject obj,
+    JS::MutableHandle<JS::GCVector<JS::Value>> keys) {
+  CHECK_THREAD(cx);
+  cx->check(obj);
+
+  if (obj->is<SetObject>()) {
+    return obj->as<SetObject>().keys(keys);
+  }
+
+  {
+    AutoEnterTableRealm<SetObject> enter(cx, obj);
+    if (!enter.unwrapped()->keys(keys)) {
+      return false;
+    }
+  }
+
+  for (uint32_t i = 0; i < keys.length(); i++) {
+    if (!JS_WrapValue(cx, keys[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+JS_PUBLIC_API bool js::GetMapObjectKeysAndValuesInterleaved(
+    JSContext* cx, JS::HandleObject obj,
+    JS::MutableHandle<JS::GCVector<JS::Value>> entries) {
+  CHECK_THREAD(cx);
+  cx->check(obj);
+
+  if (obj->is<MapObject>()) {
+    return obj->as<MapObject>().getKeysAndValuesInterleaved(entries);
+  }
+
+  {
+    AutoEnterTableRealm<MapObject> enter(cx, obj);
+    if (!enter.unwrapped()->getKeysAndValuesInterleaved(entries)) {
+      return false;
+    }
+  }
+
+  for (uint32_t i = 0; i < entries.length(); i++) {
+    if (!JS_WrapValue(cx, entries[i])) {
+      return false;
+    }
+  }
+
+  return true;
 }

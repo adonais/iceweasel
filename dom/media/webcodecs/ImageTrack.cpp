@@ -26,10 +26,12 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ImageTrack)
 NS_INTERFACE_MAP_END
 
 ImageTrack::ImageTrack(ImageTrackList* aTrackList, int32_t aIndex,
-                       bool aSelected, bool aAnimated, uint32_t aFrameCount,
+                       nsTArray<ImageSize>&& aNativeSizes, bool aSelected,
+                       bool aAnimated, uint32_t aFrameCount,
                        bool aFrameCountComplete, float aRepetitionCount)
     : mParent(aTrackList->GetParentObject()),
       mTrackList(aTrackList),
+      mNativeSizes(std::move(aNativeSizes)),
       mFramesTimestamp(image::FrameTimeout::Zero()),
       mIndex(aIndex),
       mRepetitionCount(aRepetitionCount),
@@ -52,6 +54,10 @@ void ImageTrack::SetSelected(bool aSelected) {
   if (mTrackList) {
     mTrackList->SetSelectedIndex(mIndex, aSelected);
   }
+}
+
+void ImageTrack::GetSizes(nsTArray<ImageSize>& aSizes) {
+  aSizes = mNativeSizes.Clone();
 }
 
 void ImageTrack::OnFrameCountSuccess(

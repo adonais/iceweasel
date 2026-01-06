@@ -32,7 +32,7 @@ task-defaults:
 tasks:
     lint-tidy:
         description: Runs linting checks on WebRender code
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             docker-image: {in-tree: webrender}
         run:
@@ -53,7 +53,7 @@ tasks:
 
     linux64-release:
         description: Runs release-mode WebRender CI tests on a Linux worker
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             docker-image: {in-tree: webrender}
         fetches:
@@ -77,7 +77,7 @@ tasks:
 
     linux64-debug:
         description: Runs debug-mode WebRender CI tests on a Linux worker
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             docker-image: {in-tree: webrender}
         fetches:
@@ -101,7 +101,7 @@ tasks:
 
     wrench-macos-build:
         description: Cross compilation of wrench for macOS on Linux
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             docker-image: {in-tree: webrender}
             chain-of-trust: true
@@ -166,7 +166,7 @@ tasks:
 
     cargotest-macos-build:
         description: Cross compilation of cargo tests for macOS on Linux
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             docker-image: {in-tree: webrender}
             chain-of-trust: true
@@ -248,7 +248,7 @@ tasks:
         description: Debug build of wrench for Android
         attributes:
             build_platform: android
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             max-run-time: 1800
             docker-image: {in-tree: webrender}
@@ -298,7 +298,7 @@ tasks:
         description: Release build of wrench for Android
         attributes:
             build_platform: android
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             max-run-time: 1800
             docker-image: {in-tree: webrender}

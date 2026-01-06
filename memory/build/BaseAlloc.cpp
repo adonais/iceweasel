@@ -27,7 +27,7 @@ bool BaseAlloc::pages_alloc(size_t minsize) MOZ_REQUIRES(mMutex) {
   mPastAddr = base_pages + csize;
   // Leave enough pages for minsize committed, since otherwise they would
   // have to be immediately recommitted.
-  size_t pminsize = PAGE_CEILING(minsize);
+  size_t pminsize = REAL_PAGE_CEILING(minsize);
   mNextDecommitted = base_pages + pminsize;
   if (pminsize < csize) {
     pages_decommit(reinterpret_cast<void*>(mNextDecommitted), csize - pminsize);
@@ -54,7 +54,7 @@ void* BaseAlloc::alloc(size_t aSize) {
   mNextAddr = mNextAddr + csize;
   // Make sure enough pages are committed for the new allocation.
   if (mNextAddr > mNextDecommitted) {
-    uintptr_t pbase_next_addr = PAGE_CEILING(mNextAddr);
+    uintptr_t pbase_next_addr = REAL_PAGE_CEILING(mNextAddr);
 
     if (!pages_commit(reinterpret_cast<void*>(mNextDecommitted),
                       mNextAddr - mNextDecommitted)) {

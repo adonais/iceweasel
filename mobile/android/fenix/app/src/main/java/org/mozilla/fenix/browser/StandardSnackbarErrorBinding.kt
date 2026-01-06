@@ -5,6 +5,8 @@
 package org.mozilla.fenix.browser
 
 import android.view.ViewGroup
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
@@ -25,13 +27,16 @@ import org.mozilla.fenix.compose.snackbar.SnackbarState
  * @param appStore The [AppStore] containing information about when to show a snackbar styled for errors.
  * @param snackbarFactory The [SnackbarFactory] used to create the snackbar.
  * @param dismissLabel The label for the dismiss action on the snackbar.
+ * @param mainDispatcher The [CoroutineDispatcher] on which the state observation and updates will occur.
+ *                       Defaults to [Dispatchers.Main].
  */
 class StandardSnackbarErrorBinding(
     private val snackbarParent: ViewGroup,
     private val appStore: AppStore,
     private val snackbarFactory: SnackbarFactory,
     private val dismissLabel: String,
-) : AbstractBinding<AppState>(appStore) {
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+) : AbstractBinding<AppState>(appStore, mainDispatcher) {
 
     override suspend fun onState(flow: Flow<AppState>) {
         flow.map { state -> state.standardSnackbarError }

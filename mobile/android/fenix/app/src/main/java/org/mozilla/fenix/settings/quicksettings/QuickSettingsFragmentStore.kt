@@ -192,7 +192,7 @@ class QuickSettingsFragmentStore(
                 WebsitePermission.Toggleable(
                     phoneFeature = this,
                     status = getActionLabel(context, permissions, settings),
-                    isVisible = settings.isLnaBlockingEnabled && shouldBeVisible(permissions, settings),
+                    isVisible = settings.isLnaFeatureEnabled && shouldBeVisible(permissions, settings),
                     isEnabled = shouldBeEnabled(context, permissions, settings),
                     isBlockedByAndroid = !isAndroidPermissionGranted(context),
                 )

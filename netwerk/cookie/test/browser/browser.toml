@@ -46,6 +46,15 @@ support-files = ["oversize.sjs"]
 ["browser_partitionedConsole.js"]
 support-files = ["partitioned.sjs"]
 
+["browser_redirect_ABA_chips.js"]
+support-files = [
+  "redirect_301.sjs",
+  "serviceWorker.js",
+  "set_cookie_cors.html",
+  "set_cookie_cors.html^headers^",
+  "sw_fetch.js"
+]
+
 ["browser_sameSiteConsole.js"]
 support-files = ["sameSite.sjs"]
 

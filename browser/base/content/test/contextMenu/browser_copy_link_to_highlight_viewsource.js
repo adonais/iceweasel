@@ -7,13 +7,6 @@ const TEST_PAGE =
   "data:text/html,<p id='p'>lorem&nbsp;ipsum&nbsp;dolor&nbsp;sit&nbsp;amet</p>";
 
 add_task(async function copyLinkHiddenInViewSource() {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["dom.text_fragments.enabled", true],
-      ["dom.text_fragments.create_text_fragment.enabled", true],
-    ],
-  });
-
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
 
   const viewSrcURI = "view-source:" + TEST_PAGE;

@@ -57,10 +57,6 @@ class MockWinWidget : public nsIWidget {
   LayoutDeviceIntPoint WidgetToScreenOffset() override {
     return LayoutDeviceIntPoint(0, 0);
   }
-  nsresult DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
-                         nsEventStatus& aStatus) override {
-    return NS_OK;
-  }
   void SetInputContext(const InputContext& aContext,
                        const InputContextAction& aAction) override {}
   InputContext GetInputContext() override { abort(); }

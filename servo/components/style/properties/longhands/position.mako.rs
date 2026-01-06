@@ -248,7 +248,7 @@ ${helpers.predefined_type(
 ${helpers.predefined_type(
     "position-anchor",
     "PositionAnchor",
-    "computed::PositionAnchor::auto()",
+    "computed::PositionAnchor::None",
     engines="gecko",
     animation_type="discrete",
     rule_types_allowed=DEFAULT_RULES_AND_POSITION_TRY,
@@ -273,9 +273,9 @@ ${helpers.predefined_type(
 ${helpers.predefined_type(
     "position-visibility",
     "PositionVisibility",
-    "computed::PositionVisibility::ALWAYS",
+    "computed::PositionVisibility::ANCHORS_VISIBLE",
     engines="gecko",
-    initial_specified_value="specified::PositionVisibility::ALWAYS",
+    initial_specified_value="specified::PositionVisibility::ANCHORS_VISIBLE",
     animation_type="discrete",
     gecko_pref="layout.css.anchor-positioning.enabled",
     spec="https://drafts.csswg.org/css-anchor-position-1/#propdef-position-visibility",
@@ -301,7 +301,7 @@ ${helpers.predefined_type(
     engines="gecko",
     initial_specified_value="specified::PositionTryOrder::normal()",
     animation_type="discrete",
-    gecko_pref="layout.css.anchor-positioning.enabled",
+    gecko_pref="layout.css.anchor-positioning.position-try-order.enabled",
     spec="https://drafts.csswg.org/css-anchor-position-1/#position-try-order-property",
     affects="layout",
 )}

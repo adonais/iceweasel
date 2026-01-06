@@ -348,7 +348,7 @@ add_task(async function test_send_device_submenu() {
     let panelList = await openContextMenuForItem(firstTab, cards[0]);
 
     let sendTabPanelItem = panelList.querySelector(
-      "panel-item[data-l10n-id=fxviewtabrow-send-tab]"
+      "panel-item[data-l10n-id=fxviewtabrow-send-to-device]"
     );
 
     ok(sendTabPanelItem, "Send tabs to device submenu panel item exists");

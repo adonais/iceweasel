@@ -67,7 +67,7 @@ class HTMLListBulletAccessible : public LeafAccessible {
   virtual ~HTMLListBulletAccessible() {}
 
   // LocalAccessible
-  virtual ENameValueFlag Name(nsString& aName) const override;
+  virtual ENameValueFlag DirectName(nsString& aName) const override;
   virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() const override;
   virtual already_AddRefed<AccAttributes> NativeAttributes() override;

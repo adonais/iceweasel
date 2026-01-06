@@ -28,7 +28,6 @@ add_task(async function tipIsSecondResult() {
       helpUrl: HELP_URL,
       descriptionL10n: {
         id: "urlbar-result-market-opt-in-description",
-        cacheable: true,
         parseMarkup: true,
       },
       descriptionLearnMoreTopic: LEARN_MORE_TOPIC,
@@ -146,7 +145,6 @@ add_task(async function tipIsOnlyResult() {
       helpUrl: HELP_URL,
       descriptionL10n: {
         id: "urlbar-result-market-opt-in-description",
-        cacheable: true,
         parseMarkup: true,
       },
       descriptionLearnMoreTopic: LEARN_MORE_TOPIC,
@@ -257,7 +255,6 @@ add_task(async function tipHasNoResultMenuButton() {
       buttonUrl: TIP_URL,
       descriptionL10n: {
         id: "urlbar-result-market-opt-in-description",
-        cacheable: true,
         parseMarkup: true,
       },
       descriptionLearnMoreTopic: LEARN_MORE_TOPIC,

@@ -32,7 +32,6 @@ class HTMLTableCellAccessible : public HyperTextAccessible {
   // LocalAccessible
   virtual a11y::role NativeRole() const override;
   virtual uint64_t NativeState() const override;
-  virtual uint64_t NativeInteractiveState() const override;
   virtual already_AddRefed<AccAttributes> NativeAttributes() override;
 
  protected:
@@ -84,9 +83,6 @@ class HTMLTableRowAccessible : public HyperTextAccessible {
 
  protected:
   virtual ~HTMLTableRowAccessible() {}
-
-  // LocalAccessible
-  virtual ENameValueFlag NativeName(nsString& aName) const override;
 };
 
 /**

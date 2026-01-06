@@ -4043,8 +4043,7 @@ AttachDecision HasPropIRGenerator::tryAttachSmallObjectVariableKey(
       return AttachDecision::NoAction;
     }
 
-    RootedValue key(cx_, StringValue(iter->key().toAtom()));
-    if (!keyListObj->append(cx_, key)) {
+    if (!keyListObj->append(cx_, StringValue(iter->key().toAtom()))) {
       cx_->recoverFromOutOfMemory();
       return AttachDecision::NoAction;
     }
@@ -7561,30 +7560,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachCanOptimizeArraySpecies() {
   return AttachDecision::Attach;
 }
 
-AttachDecision
-InlinableNativeIRGenerator::tryAttachCanOptimizeStringProtoSymbolLookup() {
-  // Self-hosted code calls this with no arguments.
-  MOZ_ASSERT(args_.length() == 0);
-
-  // Initialize the input operand.
-  initializeInputOperand();
-
-  // Note: we don't need to call emitNativeCalleeGuard for intrinsics.
-
-  if (cx_->realm()->realmFuses.optimizeStringPrototypeSymbolsFuse.intact()) {
-    writer.guardFuse(RealmFuses::FuseIndex::OptimizeStringPrototypeSymbolsFuse);
-    writer.loadBooleanResult(true);
-    writer.returnFromIC();
-    trackAttached("CanOptimizeStringProtoSymbolLookup.Optimized");
-  } else {
-    writer.loadBooleanResult(false);
-    writer.returnFromIC();
-    trackAttached("CanOptimizeStringProtoSymbolLookup.Deoptimized");
-  }
-
-  return AttachDecision::Attach;
-}
-
 AttachDecision InlinableNativeIRGenerator::tryAttachGuardToClass(
     InlinableNative native) {
   // Self-hosted code calls this with an object argument.
@@ -10445,6 +10420,13 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectKeys() {
     return AttachDecision::NoAction;
   }
 
+  Shape* expectedObjKeysShape =
+      GlobalObject::getArrayShapeWithDefaultProto(cx_);
+  if (!expectedObjKeysShape) {
+    cx_->recoverFromOutOfMemory();
+    return AttachDecision::NoAction;
+  }
+
   // Generate cache IR code to attach a new inline cache which will delegate the
   // call to Object.keys to the native function.
   Int32OperandId argcId = initializeInputOperand();
@@ -10465,7 +10447,7 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectKeys() {
   writer.guardIsNotProxy(argObjId);
 
   // Compute the keys array.
-  writer.objectKeysResult(argObjId);
+  writer.objectKeysResult(argObjId, expectedObjKeysShape);
 
   writer.returnFromIC();
 
@@ -13241,8 +13223,6 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachIsCrossRealmArrayConstructor();
     case InlinableNative::IntrinsicCanOptimizeArraySpecies:
       return tryAttachCanOptimizeArraySpecies();
-    case InlinableNative::IntrinsicCanOptimizeStringProtoSymbolLookup:
-      return tryAttachCanOptimizeStringProtoSymbolLookup();
     case InlinableNative::IntrinsicGuardToArrayIterator:
     case InlinableNative::IntrinsicGuardToMapIterator:
     case InlinableNative::IntrinsicGuardToSetIterator:

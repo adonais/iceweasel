@@ -6,7 +6,6 @@ package org.mozilla.fenix.downloads.listscreen.store
 
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
-import mozilla.components.lib.state.UiStore
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState.Mode
 
 /**
@@ -15,7 +14,7 @@ import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState.Mode
 class DownloadUIStore(
     initialState: DownloadUIState,
     middleware: List<Middleware<DownloadUIState, DownloadUIAction>> = emptyList(),
-) : UiStore<DownloadUIState, DownloadUIAction>(
+) : Store<DownloadUIState, DownloadUIAction>(
     initialState = initialState,
     reducer = ::downloadStateReducer,
     middleware = middleware,

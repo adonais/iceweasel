@@ -29,27 +29,25 @@ A diagram of all the main components is the following:
      subgraph Helpers
        IPPStartupCache["Startup Cache Helper"]
        IPPSignInWatcher["Sign-in Observer"]
+       IPProtectionServerlist
+       IPPEnrollAndEntitleManager["Enroll & Entitle Manager"]
+       IPPProxyManager
        UIHelper["UI Helper"]
-       AccountResetHelper["Account Reset Helper"]
-       VPNAddonHelper["VPN Add-on Helper"]
-       IPPNimbusHelper["Nimbus Eligibility Helper"]
+       IPPVPNAddonHelper["VPN Add-on Helper"]
        IPPAutoStart["Auto-Start Helper"]
        IPPEarlyStartupFilter["Early Startup Filter Helper"]
-       IPPEnrollAndEntitleManager["Enroll & Entitle Manager"]
+       IPPNimbusHelper["Nimbus Eligibility Helper"]
      end
 
      %% Proxy stack
      subgraph Proxy
-       IPPProxyManager
        IPPChannelFilter
        IPProtectionUsage
        IPPNetworkErrorObserver
-       IPProtectionServerlist
        GuardianClient
      end
 
      %% Service wiring
-     IPProtectionService --> IPPProxyManager
      IPProtectionService --> GuardianClient
      IPProtectionService --> Helpers
 
@@ -58,11 +56,9 @@ A diagram of all the main components is the following:
      IPProtection --> IPProtectionService
 
      %% Proxy wiring
-     IPPProxyManager --> GuardianClient
      IPPProxyManager --> IPPChannelFilter
      IPPProxyManager --> IPProtectionUsage
      IPPProxyManager --> IPPNetworkErrorObserver
-     IPPProxyManager --> IPProtectionServerlist
      IPPNetworkErrorObserver -- "error events (401)" --> IPPProxyManager
 
 
@@ -129,7 +125,7 @@ AccountResetHelper
   Resets stored account information and stops the proxy when the account becomes
   unavailable.
 
-VPNAddonHelper
+IPPVPNAddonHelper
   Monitors the installation of the Mozilla VPN add‑on and removes the UI when
   appropriate.
 
@@ -140,6 +136,10 @@ IPPNimbusHelper
 IPPEnrollAndEntitleManager
   Orchestrates the user enrollment flow with Guardian and updates the service
   when enrollment status changes.
+
+IPPProxyManager
+  Manages the proxy lifecycle: requests proxy passes, selects the active server,
+  and exposes the connection status to the rest of the feature.
 
 How to implement new components
 -------------------------------
@@ -157,5 +157,6 @@ Recommended steps:
    Be mindful of ordering if your helper depends on others. For example,
    ``IPPNimbusHelper`` is registered last to avoid premature state updates
    triggered by Nimbus’ immediate callback.
-4. If your component needs to trigger a recomputation, call
-   ``IPProtectionService.updateState``.
+4. If your component needs to recompute the service state, call
+   ``IPProtectionService.updateState()`` after updating the helper data it
+   relies on; the recomputation is synchronous.

@@ -18,6 +18,7 @@
 #include "mozilla/dom/DocumentTimeline.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/ViewTransitionBinding.h"
+#include "mozilla/dom/ViewTransitionTypeSet.h"
 #include "mozilla/image/WebRenderImageProvider.h"
 #include "mozilla/layers/RenderRootStateManager.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
@@ -30,7 +31,6 @@
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsString.h"
-#include "nsViewManager.h"
 
 namespace mozilla::dom {
 
@@ -245,7 +245,7 @@ static inline void ImplCycleCollectionTraverse(
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(ViewTransition, mDocument,
                                       mUpdateCallback,
                                       mUpdateCallbackDonePromise, mReadyPromise,
-                                      mFinishedPromise, mNamedElements,
+                                      mFinishedPromise, mNamedElements, mTypes,
                                       mSnapshotContainingBlock)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(ViewTransition)
@@ -257,8 +257,9 @@ NS_IMPL_CYCLE_COLLECTING_ADDREF(ViewTransition)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(ViewTransition)
 
 ViewTransition::ViewTransition(Document& aDoc,
-                               ViewTransitionUpdateCallback* aCb)
-    : mDocument(&aDoc), mUpdateCallback(aCb) {}
+                               ViewTransitionUpdateCallback* aCb,
+                               TypeList&& aTypeList)
+    : mDocument(&aDoc), mUpdateCallback(aCb), mTypeList(std::move(aTypeList)) {}
 
 ViewTransition::~ViewTransition() { ClearTimeoutTimer(); }
 
@@ -587,7 +588,7 @@ static already_AddRefed<Element> MakePseudo(Document& aDoc,
 }
 
 static bool SetProp(StyleLockedDeclarationBlock* aDecls, Document* aDoc,
-                    nsCSSPropertyID aProp, const nsACString& aValue) {
+                    NonCustomCSSPropertyId aProp, const nsACString& aValue) {
   return Servo_DeclarationBlock_SetPropertyById(
       aDecls, aProp, &aValue,
       /* is_important = */ false, aDoc->DefaultStyleAttrURLData(),
@@ -596,12 +597,14 @@ static bool SetProp(StyleLockedDeclarationBlock* aDecls, Document* aDoc,
 }
 
 static bool SetProp(StyleLockedDeclarationBlock* aDecls, Document*,
-                    nsCSSPropertyID aProp, float aLength, nsCSSUnit aUnit) {
+                    NonCustomCSSPropertyId aProp, float aLength,
+                    nsCSSUnit aUnit) {
   return Servo_DeclarationBlock_SetLengthValue(aDecls, aProp, aLength, aUnit);
 }
 
 static bool SetProp(StyleLockedDeclarationBlock* aDecls, Document*,
-                    nsCSSPropertyID aProp, const CSSToCSSMatrix4x4Flagged& aM) {
+                    NonCustomCSSPropertyId aProp,
+                    const CSSToCSSMatrix4x4Flagged& aM) {
   MOZ_ASSERT(aProp == eCSSProperty_transform);
   AutoTArray<StyleTransformOperation, 1> ops;
   ops.AppendElement(
@@ -612,37 +615,40 @@ static bool SetProp(StyleLockedDeclarationBlock* aDecls, Document*,
 }
 
 static bool SetProp(StyleLockedDeclarationBlock* aDecls, Document* aDoc,
-                    nsCSSPropertyID aProp, const StyleWritingModeProperty aWM) {
+                    NonCustomCSSPropertyId aProp,
+                    const StyleWritingModeProperty aWM) {
   return Servo_DeclarationBlock_SetKeywordValue(aDecls, aProp, (int32_t)aWM);
 }
 
 static bool SetProp(StyleLockedDeclarationBlock* aDecls, Document* aDoc,
-                    nsCSSPropertyID aProp, const StyleDirection aDirection) {
+                    NonCustomCSSPropertyId aProp,
+                    const StyleDirection aDirection) {
   return Servo_DeclarationBlock_SetKeywordValue(aDecls, aProp,
                                                 (int32_t)aDirection);
 }
 
 static bool SetProp(StyleLockedDeclarationBlock* aDecls, Document* aDoc,
-                    nsCSSPropertyID aProp,
+                    NonCustomCSSPropertyId aProp,
                     const StyleTextOrientation aTextOrientation) {
   return Servo_DeclarationBlock_SetKeywordValue(aDecls, aProp,
                                                 (int32_t)aTextOrientation);
 }
 
 static bool SetProp(StyleLockedDeclarationBlock* aDecls, Document* aDoc,
-                    nsCSSPropertyID aProp, const StyleBlend aBlend) {
+                    NonCustomCSSPropertyId aProp, const StyleBlend aBlend) {
   return Servo_DeclarationBlock_SetKeywordValue(aDecls, aProp, (int32_t)aBlend);
 }
 
 static bool SetProp(
-    StyleLockedDeclarationBlock* aDecls, Document*, nsCSSPropertyID aProp,
+    StyleLockedDeclarationBlock* aDecls, Document*,
+    NonCustomCSSPropertyId aProp,
     const StyleOwnedSlice<mozilla::StyleFilter>& aBackdropFilters) {
   return Servo_DeclarationBlock_SetBackdropFilter(aDecls, aProp,
                                                   &aBackdropFilters);
 }
 
 static bool SetProp(StyleLockedDeclarationBlock* aDecls, Document*,
-                    nsCSSPropertyID aProp,
+                    NonCustomCSSPropertyId aProp,
                     const StyleColorScheme& aColorScheme) {
   return Servo_DeclarationBlock_SetColorScheme(aDecls, aProp, &aColorScheme);
 }
@@ -661,26 +667,26 @@ static nsTArray<Keyframe> BuildGroupKeyframes(
   Keyframe firstKeyframe;
   firstKeyframe.mOffset = Some(0.0);
   PropertyValuePair transform{
-      AnimatedPropertyID(eCSSProperty_transform),
+      CSSPropertyId(eCSSProperty_transform),
       Servo_DeclarationBlock_CreateEmpty().Consume(),
   };
   SetProp(transform.mServoDeclarationBlock, aDoc, eCSSProperty_transform,
           aTransform);
   PropertyValuePair width{
-      AnimatedPropertyID(eCSSProperty_width),
+      CSSPropertyId(eCSSProperty_width),
       Servo_DeclarationBlock_CreateEmpty().Consume(),
   };
   CSSSize cssSize = CSSSize::FromAppUnits(aSize);
   SetProp(width.mServoDeclarationBlock, aDoc, eCSSProperty_width, cssSize.width,
           eCSSUnit_Pixel);
   PropertyValuePair height{
-      AnimatedPropertyID(eCSSProperty_height),
+      CSSPropertyId(eCSSProperty_height),
       Servo_DeclarationBlock_CreateEmpty().Consume(),
   };
   SetProp(height.mServoDeclarationBlock, aDoc, eCSSProperty_height,
           cssSize.height, eCSSUnit_Pixel);
   PropertyValuePair backdropFilters{
-      AnimatedPropertyID(eCSSProperty_backdrop_filter),
+      CSSPropertyId(eCSSProperty_backdrop_filter),
       Servo_DeclarationBlock_CreateEmpty().Consume(),
   };
   SetProp(backdropFilters.mServoDeclarationBlock, aDoc,
@@ -693,13 +699,13 @@ static nsTArray<Keyframe> BuildGroupKeyframes(
   Keyframe lastKeyframe;
   lastKeyframe.mOffset = Some(1.0);
   lastKeyframe.mPropertyValues.AppendElement(
-      PropertyValuePair{AnimatedPropertyID(eCSSProperty_transform)});
+      PropertyValuePair{CSSPropertyId(eCSSProperty_transform)});
   lastKeyframe.mPropertyValues.AppendElement(
-      PropertyValuePair{AnimatedPropertyID(eCSSProperty_width)});
+      PropertyValuePair{CSSPropertyId(eCSSProperty_width)});
   lastKeyframe.mPropertyValues.AppendElement(
-      PropertyValuePair{AnimatedPropertyID(eCSSProperty_height)});
+      PropertyValuePair{CSSPropertyId(eCSSProperty_height)});
   lastKeyframe.mPropertyValues.AppendElement(
-      PropertyValuePair{AnimatedPropertyID(eCSSProperty_backdrop_filter)});
+      PropertyValuePair{CSSPropertyId(eCSSProperty_backdrop_filter)});
 
   nsTArray<Keyframe> result;
   result.AppendElement(std::move(firstKeyframe));
@@ -884,9 +890,11 @@ void ViewTransition::SetupTransitionPseudoElements() {
     // If both of capturedElement's old image and new element are not null,
     // then:
     if (capturedElement.mOldState.mTriedImage && capturedElement.mNewElement) {
-      NS_ConvertUTF16toUTF8 dynamicAnimationName(
-          kGroupAnimPrefix + nsDependentAtomString(transitionName));
-
+      nsAutoCString dynamicAnimationName;
+      nsStyleUtil::AppendQuotedCSSString(
+          NS_ConvertUTF16toUTF8(kGroupAnimPrefix +
+                                nsDependentAtomString(transitionName)),
+          dynamicAnimationName);
       capturedElement.mGroupKeyframes =
           BuildGroupKeyframes(mDocument, capturedElement.mOldState.mTransform,
                               capturedElement.mOldState.mBorderBoxSize,
@@ -2004,6 +2012,17 @@ Maybe<nsRect> ViewTransition::GetNewActiveRect(nsAtom* aName) const {
   }
 
   return el->mNewActiveRect;
+}
+
+ViewTransitionTypeSet* ViewTransition::Types() {
+  if (!mTypes) {
+    mTypes = new ViewTransitionTypeSet(*this);
+    for (const auto& type : mTypeList) {
+      ViewTransitionTypeSet_Binding::SetlikeHelpers::Add(
+          mTypes, nsDependentAtomString(type), IgnoreErrors());
+    }
+  }
+  return mTypes;
 }
 
 };  // namespace mozilla::dom

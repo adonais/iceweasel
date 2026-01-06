@@ -49,6 +49,12 @@ async function runTest(win) {
       element.id === "dataIPProtectionGroup" &&
       ipProtectionExperiment !== "beta"
     ) {
+      is_element_hidden(element, "Disabled ipProtection should be hidden");
+      continue;
+    }
+
+    if (element.getAttribute("data-hidden-from-search") == "true") {
+      is_element_hidden(element, "Hidden from search element should be hidden");
       continue;
     }
 

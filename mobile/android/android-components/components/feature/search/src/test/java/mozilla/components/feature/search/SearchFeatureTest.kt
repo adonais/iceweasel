@@ -13,8 +13,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.search.SearchRequest
 import mozilla.components.support.test.any
 import mozilla.components.support.test.eq
-import mozilla.components.support.test.ext.joinBlocking
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.After
@@ -68,13 +66,13 @@ class SearchFeatureTest {
         verify(performSearch, times(0)).invoke(any(), eq(SELECTED_TAB_ID))
 
         val normalSearchRequest = SearchRequest(isPrivate = false, query = "query")
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, normalSearchRequest)).joinBlocking()
+        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, normalSearchRequest))
 
         verify(performSearch, times(1)).invoke(any(), eq(SELECTED_TAB_ID))
         verify(performSearch, times(1)).invoke(normalSearchRequest, SELECTED_TAB_ID)
 
         val privateSearchRequest = SearchRequest(isPrivate = true, query = "query")
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, privateSearchRequest)).joinBlocking()
+        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, privateSearchRequest))
 
         verify(performSearch, times(2)).invoke(any(), eq(SELECTED_TAB_ID))
         verify(performSearch, times(1)).invoke(privateSearchRequest, SELECTED_TAB_ID)
@@ -87,13 +85,13 @@ class SearchFeatureTest {
         verify(performSearch, times(0)).invoke(any(), eq(SELECTED_TAB_ID))
 
         val normalSearchRequest = SearchRequest(isPrivate = false, query = "query")
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, normalSearchRequest)).joinBlocking()
+        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, normalSearchRequest))
 
         verify(performSearch, times(0)).invoke(any(), eq(SELECTED_TAB_ID))
         verify(performSearch, times(0)).invoke(normalSearchRequest, SELECTED_TAB_ID)
 
         val privateSearchRequest = SearchRequest(isPrivate = true, query = "query")
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, privateSearchRequest)).joinBlocking()
+        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, privateSearchRequest))
 
         verify(performSearch, times(0)).invoke(any(), eq(SELECTED_TAB_ID))
         verify(performSearch, times(0)).invoke(privateSearchRequest, SELECTED_TAB_ID)
@@ -102,14 +100,12 @@ class SearchFeatureTest {
     @Test
     fun `WHEN a search request has been handled THEN that request should have been consumed`() {
         val normalSearchRequest = SearchRequest(isPrivate = false, query = "query")
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, normalSearchRequest)).joinBlocking()
-        store.waitUntilIdle()
+        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, normalSearchRequest))
 
         assertNull(store.state.selectedTab!!.content.searchRequest)
 
         val privateSearchRequest = SearchRequest(isPrivate = true, query = "query")
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, privateSearchRequest)).joinBlocking()
-        store.waitUntilIdle()
+        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, privateSearchRequest))
 
         assertNull(store.state.selectedTab!!.content.searchRequest)
     }
@@ -119,14 +115,12 @@ class SearchFeatureTest {
         val searchRequest = SearchRequest(isPrivate = false, query = "query")
         verify(performSearch, times(0)).invoke(searchRequest, SELECTED_TAB_ID)
 
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, searchRequest)).joinBlocking()
-        store.waitUntilIdle()
+        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, searchRequest))
 
         verify(performSearch, times(1)).invoke(searchRequest, SELECTED_TAB_ID)
         assertNull(store.state.selectedTab!!.content.searchRequest)
 
-        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, searchRequest)).joinBlocking()
-        store.waitUntilIdle()
+        store.dispatch(ContentAction.UpdateSearchRequestAction(SELECTED_TAB_ID, searchRequest))
 
         verify(performSearch, times(2)).invoke(searchRequest, SELECTED_TAB_ID)
         assertNull(store.state.selectedTab!!.content.searchRequest)

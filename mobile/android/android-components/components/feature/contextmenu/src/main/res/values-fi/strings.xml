@@ -21,6 +21,8 @@
   <string name="mozac_feature_contextmenu_share_image">Jaa kuva</string>
   <!-- Text for context menu item to copy the link to the clipboard. -->
   <string name="mozac_feature_contextmenu_copy_link">Kopioi linkki</string>
+  <!-- Text for context menu item to copy the link text to the clipboard. -->
+  <string name="mozac_feature_contextmenu_copy_link_text">Kopioi linkin teksti</string>
   <!-- Text for context menu item to copy the URL pointing to the image to the clipboard. -->
   <string name="mozac_feature_contextmenu_copy_image_location">Kopioi kuvan sijainti</string>
   <!-- Text for context menu item to save / download the image. -->
@@ -35,6 +37,8 @@
   <string name="mozac_feature_contextmenu_snackbar_new_private_tab_opened">Uusi yksityinen välilehti avattu</string>
   <!-- Text for confirmation "snackbar" shown after copying a link or image URL to the clipboard. -->
   <string name="mozac_feature_contextmenu_snackbar_link_copied">Linkki kopioitu leikepöydälle</string>
+  <!-- Text for confirmation "snackbar" shown after copying a link text to the clipboard. -->
+  <string name="mozac_feature_contextmenu_snackbar_link_text_copied">Linkin teksti kopioitu leikepöydälle</string>
   <!-- Action shown in a "snacbkar" after opening a new/private tab. Clicking this action will switch to the newly opened tab. -->
   <string name="mozac_feature_contextmenu_snackbar_action_switch">Vaihda</string>
   <!-- Text for context menu item to open the link in an external app. -->

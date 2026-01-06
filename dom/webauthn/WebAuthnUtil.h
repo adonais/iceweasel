@@ -12,12 +12,14 @@
 
 namespace mozilla::dom {
 
+class WindowGlobalParent;
+
 bool IsValidAppId(const nsCOMPtr<nsIPrincipal>& aPrincipal,
                   const nsCString& aAppId);
 
 bool IsWebAuthnAllowedInDocument(const nsCOMPtr<Document>& aDoc);
 
-bool IsWebAuthnAllowedForPrincipal(const nsCOMPtr<nsIPrincipal>& aPrincipal);
+bool IsWebAuthnAllowedInContext(WindowGlobalParent* aContext);
 
 bool IsWebAuthnAllowedForTransportSecurityInfo(
     nsITransportSecurityInfo* aSecurityInfo);

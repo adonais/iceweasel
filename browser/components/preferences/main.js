@@ -2,10 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/** @import MozButton from "chrome://global/content/elements/moz-button.mjs"; */
-/** @import { SettingGroup } from "./widgets/setting-group/setting-group.mjs" */
-/** @import { PreferencesSettingsConfig } from "chrome://global/content/preferences/Preferences.mjs" */
-
 /* import-globals-from extensionControlled.js */
 /* import-globals-from preferences.js */
 /* import-globals-from /toolkit/mozapps/preferences/fontbuilder.js */
@@ -22,6 +18,8 @@ ChromeUtils.defineESModuleGetters(this, {
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
   WindowsLaunchOnLogin: "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
+  FormAutofillPreferences:
+    "resource://autofill/FormAutofillPreferences.sys.mjs",
 });
 
 // Constants & Enumeration Values
@@ -105,6 +103,8 @@ Preferences.addAll([
   { id: "browser.tabs.hoverPreview.enabled", type: "bool" },
   { id: "browser.tabs.hoverPreview.showThumbnails", type: "bool" },
   { id: "browser.tabs.groups.smart.userEnabled", type: "bool" },
+  { id: "browser.tabs.groups.smart.enabled", type: "bool" },
+  { id: "privacy.userContext.ui.enabled", type: "bool" },
 
   { id: "sidebar.verticalTabs", type: "bool" },
   { id: "sidebar.revamp", type: "bool" },
@@ -191,6 +191,10 @@ Preferences.addAll([
     id: "media.videocontrols.picture-in-picture.video-toggle.enabled",
     type: "bool",
   },
+  {
+    id: "media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled",
+    type: "bool",
+  },
 
   // Media
   { id: "media.hardwaremediakeys.enabled", type: "bool" },
@@ -228,104 +232,122 @@ Preferences.addSetting({
   pref: "browser.privatebrowsing.autostart",
 });
 
-Preferences.addSetting({
-  id: "launchOnLoginApproved",
-  _getLaunchOnLoginApprovedCachedValue: true,
-  get() {
-    return this._getLaunchOnLoginApprovedCachedValue;
-  },
-  // Check for a launch on login registry key
-  // This accounts for if a user manually changes it in the registry
-  // Disabling in Task Manager works outside of just deleting the registry key
-  // in HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run
-  // but it is not possible to change it back to enabled as the disabled value is just a random
-  // hexadecimal number
-  async setup() {
-    if (AppConstants.platform !== "win") {
-      /**
-       * WindowsLaunchOnLogin isnt available if not on windows
-       * but this setup function still fires, so must prevent
-       * WindowsLaunchOnLogin.getLaunchOnLoginApproved
-       * below from executing unnecessarily.
-       */
-      return;
-    }
-    this._getLaunchOnLoginApprovedCachedValue =
-      await WindowsLaunchOnLogin.getLaunchOnLoginApproved();
-  },
-});
+Preferences.addSetting(
+  /** @type {{ _getLaunchOnLoginApprovedCachedValue: boolean } & SettingConfig} */ ({
+    id: "launchOnLoginApproved",
+    _getLaunchOnLoginApprovedCachedValue: true,
+    get() {
+      return this._getLaunchOnLoginApprovedCachedValue;
+    },
+    // Check for a launch on login registry key
+    // This accounts for if a user manually changes it in the registry
+    // Disabling in Task Manager works outside of just deleting the registry key
+    // in HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run
+    // but it is not possible to change it back to enabled as the disabled value is just a random
+    // hexadecimal number
+    setup() {
+      if (AppConstants.platform !== "win") {
+        /**
+         * WindowsLaunchOnLogin isnt available if not on windows
+         * but this setup function still fires, so must prevent
+         * WindowsLaunchOnLogin.getLaunchOnLoginApproved
+         * below from executing unnecessarily.
+         */
+        return;
+      }
+      // @ts-ignore bug 1996860
+      WindowsLaunchOnLogin.getLaunchOnLoginApproved().then(val => {
+        this._getLaunchOnLoginApprovedCachedValue = val;
+      });
+    },
+  })
+);
 
 Preferences.addSetting({
   id: "windowsLaunchOnLoginEnabled",
   pref: "browser.startup.windowsLaunchOnLogin.enabled",
 });
 
-Preferences.addSetting({
-  id: "windowsLaunchOnLogin",
-  deps: ["launchOnLoginApproved", "windowsLaunchOnLoginEnabled"],
-  _getLaunchOnLoginEnabledValue: false,
-  get startWithLastProfile() {
-    return Cc["@mozilla.org/toolkit/profile-service;1"].getService(
-      Ci.nsIToolkitProfileService
-    ).startWithLastProfile;
-  },
-  get() {
-    return this._getLaunchOnLoginEnabledValue;
-  },
-  async setup(emitChange) {
-    if (AppConstants.platform !== "win") {
-      /**
-       * WindowsLaunchOnLogin isnt available if not on windows
-       * but this setup function still fires, so must prevent
-       * WindowsLaunchOnLogin.getLaunchOnLoginEnabled
-       * below from executing unnecessarily.
-       */
-      return;
-    }
+Preferences.addSetting(
+  /** @type {{_getLaunchOnLoginEnabledValue: boolean, startWithLastProfile: boolean} & SettingConfig} */ ({
+    id: "windowsLaunchOnLogin",
+    deps: ["launchOnLoginApproved", "windowsLaunchOnLoginEnabled"],
+    _getLaunchOnLoginEnabledValue: false,
+    get startWithLastProfile() {
+      return Cc["@mozilla.org/toolkit/profile-service;1"].getService(
+        Ci.nsIToolkitProfileService
+      ).startWithLastProfile;
+    },
+    get() {
+      return this._getLaunchOnLoginEnabledValue;
+    },
+    setup(emitChange) {
+      if (AppConstants.platform !== "win") {
+        /**
+         * WindowsLaunchOnLogin isnt available if not on windows
+         * but this setup function still fires, so must prevent
+         * WindowsLaunchOnLogin.getLaunchOnLoginEnabled
+         * below from executing unnecessarily.
+         */
+        return;
+      }
 
-    let getLaunchOnLoginEnabledValue;
-    if (!this.startWithLastProfile) {
-      getLaunchOnLoginEnabledValue = false;
-    } else {
-      getLaunchOnLoginEnabledValue =
-        await WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
-    }
-    if (getLaunchOnLoginEnabledValue !== this._getLaunchOnLoginEnabledValue) {
-      this._getLaunchOnLoginEnabledValue = getLaunchOnLoginEnabledValue;
-      emitChange();
-    }
-  },
-  visible: ({ windowsLaunchOnLoginEnabled }) => {
-    let isVisible =
-      AppConstants.platform === "win" && windowsLaunchOnLoginEnabled.value;
-    if (isVisible) {
-      NimbusFeatures.windowsLaunchOnLogin.recordExposureEvent({
-        once: true,
-      });
-    }
-    return isVisible;
-  },
-  disabled({ launchOnLoginApproved }) {
-    return !this.startWithLastProfile || !launchOnLoginApproved.value;
-  },
-  onUserChange(checked) {
-    if (checked) {
-      // windowsLaunchOnLogin has been checked: create registry key or shortcut
-      // The shortcut is created with the same AUMID as Firefox itself. However,
-      // this is not set during browser tests and the fallback of checking the
-      // registry fails. As such we pass an arbitrary AUMID for the purpose
-      // of testing.
-      WindowsLaunchOnLogin.createLaunchOnLogin();
-      Services.prefs.setBoolPref(
-        "browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt",
-        true
-      );
-    } else {
-      // windowsLaunchOnLogin has been unchecked: delete registry key and shortcut
-      WindowsLaunchOnLogin.removeLaunchOnLogin();
-    }
-  },
-});
+      /** @type {boolean} */
+      let getLaunchOnLoginEnabledValue;
+      let maybeEmitChange = () => {
+        if (
+          getLaunchOnLoginEnabledValue !== this._getLaunchOnLoginEnabledValue
+        ) {
+          this._getLaunchOnLoginEnabledValue = getLaunchOnLoginEnabledValue;
+          emitChange();
+        }
+      };
+      if (!this.startWithLastProfile) {
+        getLaunchOnLoginEnabledValue = false;
+        maybeEmitChange();
+      } else {
+        // @ts-ignore bug 1996860
+        WindowsLaunchOnLogin.getLaunchOnLoginEnabled().then(val => {
+          getLaunchOnLoginEnabledValue = val;
+          maybeEmitChange();
+        });
+      }
+    },
+    visible: ({ windowsLaunchOnLoginEnabled }) => {
+      let isVisible =
+        AppConstants.platform === "win" && windowsLaunchOnLoginEnabled.value;
+      if (isVisible) {
+        // @ts-ignore bug 1996860
+        NimbusFeatures.windowsLaunchOnLogin.recordExposureEvent({
+          once: true,
+        });
+      }
+      return isVisible;
+    },
+    disabled({ launchOnLoginApproved }) {
+      return !this.startWithLastProfile || !launchOnLoginApproved.value;
+    },
+    onUserChange(checked) {
+      if (checked) {
+        // windowsLaunchOnLogin has been checked: create registry key or shortcut
+        // The shortcut is created with the same AUMID as Firefox itself. However,
+        // this is not set during browser tests and the fallback of checking the
+        // registry fails. As such we pass an arbitrary AUMID for the purpose
+        // of testing.
+        // @ts-ignore bug 1996860
+        WindowsLaunchOnLogin.createLaunchOnLogin();
+        Services.prefs.setBoolPref(
+          "browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt",
+          true
+        );
+      } else {
+        // windowsLaunchOnLogin has been unchecked: delete registry key and shortcut
+        // @ts-ignore bug 1996860
+        WindowsLaunchOnLogin.removeLaunchOnLogin();
+      }
+    },
+  })
+);
 
 Preferences.addSetting({
   id: "windowsLaunchOnLoginDisabledProfileBox",
@@ -393,6 +415,7 @@ Preferences.addSetting({
     if (checked) {
       // We need to restore the blank homepage setting in our other pref
       if (startupPref.value === gMainPane.STARTUP_PREF_BLANK) {
+        // @ts-ignore bug 1996860
         HomePage.safeSet("about:blank");
       }
       newValue = gMainPane.STARTUP_PREF_RESTORE_SESSION;
@@ -431,51 +454,56 @@ Preferences.addSetting({
   id: "useCursorNavigation",
   pref: "accessibility.browsewithcaret",
 });
-Preferences.addSetting({
-  id: "useFullKeyboardNavigation",
-  pref: "accessibility.tabfocus",
-  visible: () => AppConstants.platform == "macosx",
-  /**
-   * Returns true if any full keyboard nav is enabled and false otherwise, caching
-   * the current value to enable proper pref restoration if the checkbox is
-   * never changed.
-   *
-   * accessibility.tabfocus
-   * - an integer controlling the focusability of:
-   *     1  text controls
-   *     2  form elements
-   *     4  links
-   *     7  all of the above
-   */
-  get(prefVal) {
-    this._storedFullKeyboardNavigation = prefVal;
-    return prefVal == 7;
-  },
-  /**
-   * Returns the value of the full keyboard nav preference represented by UI,
-   * preserving the preference's "hidden" value if the preference is
-   * unchanged and represents a value not strictly allowed in UI.
-   */
-  set(checked) {
-    if (checked) {
-      return 7;
-    }
-    if (this._storedFullKeyboardNavigation != 7) {
-      // 1/2/4 values set via about:config should persist
-      return this._storedFullKeyboardNavigation;
-    }
-    // When the checkbox is unchecked, default to just text controls.
-    return 1;
-  },
-});
+Preferences.addSetting(
+  /** @type {{ _storedFullKeyboardNavigation: number } & SettingConfig} */ ({
+    _storedFullKeyboardNavigation: -1,
+    id: "useFullKeyboardNavigation",
+    pref: "accessibility.tabfocus",
+    visible: () => AppConstants.platform == "macosx",
+    /**
+     * Returns true if any full keyboard nav is enabled and false otherwise, caching
+     * the current value to enable proper pref restoration if the checkbox is
+     * never changed.
+     *
+     * accessibility.tabfocus
+     * - an integer controlling the focusability of:
+     *     1  text controls
+     *     2  form elements
+     *     4  links
+     *     7  all of the above
+     */
+    get(prefVal) {
+      this._storedFullKeyboardNavigation = prefVal;
+      return prefVal == 7;
+    },
+    /**
+     * Returns the value of the full keyboard nav preference represented by UI,
+     * preserving the preference's "hidden" value if the preference is
+     * unchanged and represents a value not strictly allowed in UI.
+     */
+    set(checked) {
+      if (checked) {
+        return 7;
+      }
+      if (this._storedFullKeyboardNavigation != 7) {
+        // 1/2/4 values set via about:config should persist
+        return this._storedFullKeyboardNavigation;
+      }
+      // When the checkbox is unchecked, default to just text controls.
+      return 1;
+    },
+  })
+);
 Preferences.addSetting({
   id: "linkPreviewEnabled",
   pref: "browser.ml.linkPreview.enabled",
+  // @ts-ignore bug 1996860
   visible: () => LinkPreview.canShowPreferences,
 });
 Preferences.addSetting({
   id: "linkPreviewKeyPoints",
   pref: "browser.ml.linkPreview.optin",
+  // @ts-ignore bug 1996860
   visible: () => LinkPreview.canShowKeyPoints,
 });
 Preferences.addSetting({
@@ -504,6 +532,16 @@ Preferences.addSetting({
   },
 });
 Preferences.addSetting({
+  id: "pictureInPictureEnableWhenSwitchingTabs",
+  pref: "media.videocontrols.picture-in-picture.enable-when-switching-tabs.enabled",
+  deps: ["pictureInPictureToggleEnabled"],
+  onUserChange(checked) {
+    if (checked) {
+      Glean.pictureinpictureSettings.enableAutotriggerSettings.record();
+    }
+  },
+});
+Preferences.addSetting({
   id: "mediaControlToggleEnabled",
   pref: "media.hardwaremediakeys.enabled",
   // For media control toggle button, we support it on Windows, macOS and
@@ -512,6 +550,23 @@ Preferences.addSetting({
     AppConstants.platform == "win" ||
     AppConstants.platform == "macosx" ||
     AppConstants.MOZ_WIDGET_GTK,
+});
+Preferences.addSetting({
+  id: "playDRMContent",
+  pref: "media.eme.enabled",
+  visible: () => {
+    if (!Services.prefs.getBoolPref("browser.eme.ui.enabled", false)) {
+      return false;
+    }
+    if (AppConstants.platform == "win") {
+      try {
+        return parseFloat(Services.sysinfo.get("version")) >= 6;
+      } catch (ex) {
+        return false;
+      }
+    }
+    return true;
+  },
 });
 Preferences.addSetting({
   id: "cfrRecommendations",
@@ -532,38 +587,46 @@ Preferences.addSetting({
   },
 });
 
-Preferences.addSetting({
-  id: "web-appearance-chooser",
-  themeNames: ["dark", "light", "auto"],
-  pref: "layout.css.prefers-color-scheme.content-override",
-  setup(emitChange) {
-    Services.obs.addObserver(emitChange, "look-and-feel-changed");
-    return () =>
-      Services.obs.removeObserver(emitChange, "look-and-feel-changed");
-  },
-  get(val, _, setting) {
-    return this.themeNames[val] || this.themeNames[setting.pref.defaultValue];
-  },
-  set(val) {
-    return this.themeNames.indexOf(val);
-  },
-  getControlConfig(config) {
-    // Set the auto theme image to the light/dark that matches.
-    let systemThemeIndex = Services.appinfo.contentThemeDerivedColorSchemeIsDark
-      ? 2
-      : 1;
-    config.options[0].controlAttrs = {
-      ...config.options[0].controlAttrs,
-      imagesrc: config.options[systemThemeIndex].controlAttrs.imagesrc,
-    };
-    return config;
-  },
-});
+Preferences.addSetting(
+  /** @type {{ themeNames: string[] } & SettingConfig}} */ ({
+    id: "web-appearance-chooser",
+    themeNames: ["dark", "light", "auto"],
+    pref: "layout.css.prefers-color-scheme.content-override",
+    setup(emitChange) {
+      Services.obs.addObserver(emitChange, "look-and-feel-changed");
+      return () =>
+        Services.obs.removeObserver(emitChange, "look-and-feel-changed");
+    },
+    get(val, _, setting) {
+      return (
+        this.themeNames[val] ||
+        this.themeNames[/** @type {number} */ (setting.pref.defaultValue)]
+      );
+    },
+    /** @param {string} val */
+    set(val) {
+      return this.themeNames.indexOf(val);
+    },
+    getControlConfig(config) {
+      // Set the auto theme image to the light/dark that matches.
+      let systemThemeIndex = Services.appinfo
+        .contentThemeDerivedColorSchemeIsDark
+        ? 2
+        : 1;
+      config.options[0].controlAttrs = {
+        ...config.options[0].controlAttrs,
+        imagesrc: config.options[systemThemeIndex].controlAttrs.imagesrc,
+      };
+      return config;
+    },
+  })
+);
 
 Preferences.addSetting({
   id: "web-appearance-manage-themes-link",
   onUserClick: e => {
     e.preventDefault();
+    // @ts-ignore topChromeWindow global
     window.browsingContext.topChromeWindow.BrowserAddonUI.openAddonsMgr(
       "addons://list/theme"
     );
@@ -581,8 +644,136 @@ Preferences.addSetting({
 Preferences.addSetting({ id: "containersPlaceholder" });
 
 Preferences.addSetting({
+  id: "data-migration",
+  visible: () =>
+    !Services.policies || Services.policies.isAllowed("profileImport"),
+  onUserClick() {
+    const browserWindow = window.browsingContext.topChromeWindow;
+    MigrationUtils.showMigrationWizard(browserWindow, {
+      entrypoint: MigrationUtils.MIGRATION_ENTRYPOINTS.PREFERENCES,
+    });
+  },
+});
+
+Preferences.addSetting({
   id: "connectionSettings",
   onUserClick: () => gMainPane.showConnections(),
+});
+
+Preferences.addSetting({
+  id: "profilesPane",
+  onUserClick(e) {
+    e.preventDefault();
+    gotoPref("paneProfiles");
+  },
+});
+Preferences.addSetting({
+  id: "profilesSettings",
+  visible() {
+    return SelectableProfileService.isEnabled;
+  },
+  onUserClick: e => {
+    e.preventDefault();
+    gotoPref("profiles");
+  },
+});
+Preferences.addSetting({
+  id: "manageProfiles",
+  onUserClick: e => {
+    e.preventDefault();
+    // Using the existing function for now, since privacy.js also calls it
+    gMainPane.manageProfiles();
+  },
+});
+Preferences.addSetting({
+  id: "copyProfile",
+  deps: ["copyProfileSelect"],
+  disabled: ({ copyProfileSelect }) => !copyProfileSelect.value,
+  onUserClick: (e, { copyProfileSelect }) => {
+    e.preventDefault();
+    SelectableProfileService.getProfile(copyProfileSelect.value).then(
+      profile => {
+        profile?.copyProfile();
+        copyProfileSelect.config.set("");
+      }
+    );
+  },
+});
+Preferences.addSetting({
+  id: "copyProfileBox",
+  visible: () => SelectableProfileService.initialized,
+});
+Preferences.addSetting({
+  id: "copyProfileError",
+  _hasError: false,
+  setup(emitChange) {
+    this.emitChange = emitChange;
+  },
+  visible() {
+    return this._hasError;
+  },
+  setError(value) {
+    this._hasError = !!value;
+    this.emitChange();
+  },
+});
+Preferences.addSetting(
+  class ProfileList extends Preferences.AsyncSetting {
+    static id = "profileList";
+    static PROFILE_UPDATED_OBS = "sps-profiles-updated";
+    setup() {
+      Services.obs.addObserver(
+        this.emitChange,
+        ProfileList.PROFILE_UPDATED_OBS
+      );
+      return () => {
+        Services.obs.removeObserver(
+          this.emitChange,
+          ProfileList.PROFILE_UPDATED_OBS
+        );
+      };
+    }
+
+    async get() {
+      let profiles = await SelectableProfileService.getAllProfiles();
+      return profiles;
+    }
+  }
+);
+Preferences.addSetting({
+  id: "copyProfileSelect",
+  deps: ["profileList"],
+  _selectedProfile: null,
+  setup(emitChange) {
+    this.emitChange = emitChange;
+    document.l10n
+      .formatValue("preferences-copy-profile-select")
+      .then(result => (this.placeholderString = result));
+  },
+  get() {
+    return this._selectedProfile;
+  },
+  set(inputVal) {
+    this._selectedProfile = inputVal;
+    this.emitChange();
+  },
+  getControlConfig(config, { profileList }) {
+    config.options = profileList.value.map(profile => {
+      return { controlAttrs: { label: profile.name }, value: profile.id };
+    });
+
+    // Put the placeholder at the front of the list.
+    config.options.unshift({
+      controlAttrs: { label: this.placeholderString },
+      value: "",
+    });
+
+    return config;
+  },
+});
+Preferences.addSetting({
+  id: "copyProfileHeader",
+  visible: () => SelectableProfileService.initialized,
 });
 
 // Downloads
@@ -893,7 +1084,11 @@ const DefaultBrowserHelper = {
    * @type {typeof import('../shell/ShellService.sys.mjs').ShellService | undefined}
    */
   get shellSvc() {
-    return AppConstants.HAVE_SHELL_SERVICE && getShellService();
+    return (
+      AppConstants.HAVE_SHELL_SERVICE &&
+      // @ts-ignore from utilityOverlay.js
+      getShellService()
+    );
   },
 
   /**
@@ -987,6 +1182,7 @@ const DefaultBrowserHelper = {
 
   /**
    * Checks whether the browser is capable of being made default.
+   *
    * @type {boolean}
    */
   get canCheck() {
@@ -1016,7 +1212,7 @@ Preferences.addSetting({
    * browser is already the default browser.
    */
   visible: () => DefaultBrowserHelper.canCheck,
-  disabled: (deps, setting) =>
+  disabled: (_, setting) =>
     !DefaultBrowserHelper.canCheck ||
     setting.locked ||
     DefaultBrowserHelper.isBrowserDefault,
@@ -1094,10 +1290,370 @@ Preferences.addSetting({
   },
 });
 
+Preferences.addSetting({
+  id: "payment-item",
+  async onUserClick(e) {
+    const action = e.target.getAttribute("action");
+    const guid = e.target.getAttribute("guid");
+    if (action === "remove") {
+      let [title, confirm, cancel] = await document.l10n.formatValues([
+        { id: "payments-remove-payment-prompt-title" },
+        { id: "payments-remove-payment-prompt-confirm-button" },
+        { id: "payments-remove-payment-prompt-cancel-button" },
+      ]);
+      FormAutofillPreferences.prototype.openRemovePaymentDialog(
+        guid,
+        window.browsingContext.topChromeWindow.browsingContext,
+        title,
+        confirm,
+        cancel
+      );
+    } else if (action === "edit") {
+      FormAutofillPreferences.prototype.openEditCreditCardDialog(guid, window);
+    }
+  },
+});
+
+Preferences.addSetting({
+  id: "add-payment-button",
+  deps: ["saveAndFillPayments"],
+  onUserClick: ({ target }) => {
+    target.ownerGlobal.gSubDialog.open(
+      "chrome://formautofill/content/editCreditCard.xhtml"
+    );
+  },
+  disabled: ({ saveAndFillPayments }) => !saveAndFillPayments.value,
+});
+
+Preferences.addSetting({
+  id: "payments-list-header",
+});
+
+Preferences.addSetting(
+  class extends Preferences.AsyncSetting {
+    static id = "payments-list";
+
+    /** @type {Promise<any[]>} */
+    paymentMethods;
+
+    beforeRefresh() {
+      this.paymentMethods = this.getPaymentMethods();
+    }
+
+    async getPaymentMethods() {
+      await FormAutofillPreferences.prototype.initializePaymentsStorage();
+      return FormAutofillPreferences.prototype.makePaymentsListItems();
+    }
+
+    async getControlConfig() {
+      return {
+        items: await this.paymentMethods,
+      };
+    }
+
+    async visible() {
+      return Boolean((await this.paymentMethods).length);
+    }
+
+    setup() {
+      Services.obs.addObserver(this.emitChange, "formautofill-storage-changed");
+      return () =>
+        Services.obs.removeObserver(
+          this.emitChange,
+          "formautofill-storage-changed"
+        );
+    }
+  }
+);
+
+// Tabs settings
+
+// "Opening" tabs settings
+Preferences.addSetting({
+  id: "tabsOpening",
+});
 /**
- * @type {Record<string, PreferencesSettingsConfig>} SettingConfig
+ * browser.link.open_newwindow - int
+ *   Determines where links targeting new windows should open.
+ *   Values:
+ *     1 - Open in the current window or tab.
+ *     2 - Open in a new window.
+ *     3 - Open in a new tab in the most recent window.
  */
-let SETTINGS_CONFIG = {
+Preferences.addSetting({
+  id: "linkTargeting",
+  pref: "browser.link.open_newwindow",
+  /**
+   * Determines where a link which opens a new window will open.
+   *
+   * @returns |true| if such links should be opened in new tabs
+   */
+  get: prefVal => {
+    return prefVal != 2;
+  },
+  /**
+   * Determines where a link which opens a new window will open.
+   *
+   * @returns 2 if such links should be opened in new windows,
+   *          3 if such links should be opened in new tabs
+   */
+  set: checked => {
+    return checked ? 3 : 2;
+  },
+});
+/**
+ * browser.tabs.loadInBackground - bool
+ *  True - Whether browser should switch to a new tab opened from a link.
+ */
+Preferences.addSetting({
+  id: "switchToNewTabs",
+  pref: "browser.tabs.loadInBackground",
+});
+Preferences.addSetting({
+  id: "openAppLinksNextToActiveTab",
+  pref: "browser.link.open_newwindow.override.external",
+  /**
+   * @returns {boolean}
+   *   Whether the "Open links in tabs instead of new windows" settings
+   *   checkbox should be checked. Should only be checked if the
+   *   `browser.link.open_newwindow.override.external` pref is set to the
+   *   value of 7 (nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT).
+   */
+  get: prefVal => {
+    return prefVal == Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT;
+  },
+  /**
+   * This pref has at least 8 valid values but we are offering a checkbox
+   * to set one specific value (`7`).
+   *
+   * @param {boolean} checked
+   * @returns {number}
+   *   - `7` (`nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT`) if checked
+   *   - the default value of
+   *     `browser.link.open_newwindow.override.external` if not checked
+   */
+  set: (checked, _, setting) => {
+    return checked
+      ? Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT
+      : setting.pref.defaultValue;
+  },
+  onUserChange: checked => {
+    Glean.linkHandling.openNextToActiveTabSettingsEnabled.set(checked);
+    Glean.linkHandling.openNextToActiveTabSettingsChange.record({
+      checked,
+    });
+  },
+});
+/**
+ * browser.tabs.warnOnOpen - bool
+ *   True - Whether the user should be warned when trying to open a lot of
+ *          tabs at once (e.g. a large folder of bookmarks), allowing to
+ *          cancel the action.
+ */
+Preferences.addSetting({
+  id: "warnOpenMany",
+  pref: "browser.tabs.warnOnOpen",
+  // The "opening multiple tabs might slow down Firefox" warning provides
+  // an option for not showing this warning again. When the user disables it,
+  // we provide checkboxes to re-enable the warning.
+  visible: () => TransientPrefs.prefShouldBeVisible("browser.tabs.warnOnOpen"),
+});
+
+// "Interaction" tabs settings
+Preferences.addSetting({
+  id: "tabsInteraction",
+});
+Preferences.addSetting({
+  id: "ctrlTabRecentlyUsedOrder",
+  pref: "browser.ctrlTab.sortByRecentlyUsed",
+  onUserClick: () => {
+    Services.prefs.clearUserPref("browser.ctrlTab.migrated");
+  },
+});
+Preferences.addSetting({
+  id: "tabHoverPreview",
+  pref: "browser.tabs.hoverPreview.enabled",
+});
+Preferences.addSetting({
+  id: "tabPreviewShowThumbnails",
+  pref: "browser.tabs.hoverPreview.showThumbnails",
+  deps: ["tabHoverPreview"],
+  visible: ({ tabHoverPreview }) => !!tabHoverPreview.value,
+});
+Preferences.addSetting({
+  id: "smartTabGroups",
+  pref: "browser.tabs.groups.smart.enabled",
+});
+Preferences.addSetting({
+  id: "tabGroupSuggestions",
+  pref: "browser.tabs.groups.smart.userEnabled",
+  deps: ["smartTabGroups"],
+  visible: ({ smartTabGroups }) =>
+    !!smartTabGroups.value && Services.locale.appLocaleAsBCP47.startsWith("en"),
+});
+if (AppConstants.platform === "win") {
+  /**
+   * browser.taskbar.previews.enable - bool
+   *   True - Tabs are to be shown in Windows 7 taskbar.
+   *   False - Only the window is to be shown in Windows 7 taskbar.
+   */
+  Preferences.addSetting({
+    id: "showTabsInTaskbar",
+    pref: "browser.taskbar.previews.enable",
+    // Functionality for "Show tabs in taskbar" on Windows 7 and up.
+    visible: () => {
+      if (AppConstants.platform !== "win") {
+        return false;
+      }
+
+      try {
+        let ver = parseFloat(Services.sysinfo.getProperty("version"));
+        return ver >= 6.1;
+      } catch (ex) {
+        return false;
+      }
+    },
+  });
+} else {
+  // Not supported unless we're on Windows
+  Preferences.addSetting({ id: "showTabsInTaskbar", visible: () => false });
+}
+
+// "Containers" tabs settings
+Preferences.addSetting({
+  id: "privacyUserContextUI",
+  pref: "privacy.userContext.ui.enabled",
+});
+Preferences.addSetting({
+  id: "browserContainersbox",
+  deps: ["privacyUserContextUI"],
+  visible: ({ privacyUserContextUI }) => !!privacyUserContextUI.value,
+});
+Preferences.addSetting({
+  id: "browserContainersCheckbox",
+  pref: "privacy.userContext.enabled",
+  controllingExtensionInfo: {
+    storeId: "privacy.containers",
+    l10nId: "extension-controlling-privacy-containers",
+  },
+  async promptToCloseTabsAndDisable(count, setting) {
+    let [title, message, okButton, cancelButton] =
+      await document.l10n.formatValues([
+        { id: "containers-disable-alert-title" },
+        { id: "containers-disable-alert-desc", args: { tabCount: count } },
+        { id: "containers-disable-alert-ok-button", args: { tabCount: count } },
+        { id: "containers-disable-alert-cancel-button" },
+      ]);
+
+    let buttonFlags =
+      Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_0 +
+      Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_1;
+
+    let rv = Services.prompt.confirmEx(
+      window,
+      title,
+      message,
+      buttonFlags,
+      okButton,
+      cancelButton,
+      null,
+      null,
+      {}
+    );
+
+    // User confirmed - disable containers and close container tabs.
+    if (rv == 0) {
+      await ContextualIdentityService.closeContainerTabs();
+      setting.pref.value = false;
+    }
+
+    // Keep the checkbox checked when the user opts not to close tabs.
+    return true;
+  },
+  set(val, _, setting) {
+    // When enabling container tabs, just set the pref value.
+    if (val) {
+      return val;
+    }
+
+    // When disabling container tabs, check if there are container tabs currently
+    // open. If there aren't, then proceed with disabling.
+    let count = ContextualIdentityService.countContainerTabs();
+    if (count == 0) {
+      return false;
+    }
+
+    // When disabling container tabs with container tabs currently open show a
+    // dialog to determine whether or not the tabs should be closed.
+    return this.promptToCloseTabsAndDisable(count, setting);
+  },
+});
+Preferences.addSetting({
+  id: "browserContainersSettings",
+  deps: ["browserContainersCheckbox"],
+  /**
+   * Displays container panel for customising and adding containers.
+   */
+  onUserClick: () => {
+    gotoPref("containers");
+  },
+  getControlConfig: config => {
+    let searchKeywords = [
+      "user-context-personal",
+      "user-context-work",
+      "user-context-banking",
+      "user-context-shopping",
+    ]
+      .map(ContextualIdentityService.formatContextLabel)
+      .join(" ");
+    config.controlAttrs.searchkeywords = searchKeywords;
+    return config;
+  },
+  disabled: ({ browserContainersCheckbox }) => !browserContainersCheckbox.value,
+});
+
+// "Closing" tabs settings
+Preferences.addSetting({
+  id: "tabsClosing",
+});
+/**
+ * browser.tabs.warnOnClose - bool
+ *   True - If when closing a window with multiple tabs the user is warned and
+ *          allowed to cancel the action, false to just close the window.
+ */
+Preferences.addSetting({
+  id: "warnCloseMultiple",
+  pref: "browser.tabs.warnOnClose",
+});
+/**
+ * browser.warnOnQuitShortcut - bool
+ *   True - If the keyboard shortcut (Ctrl/Cmd+Q) is pressed, the user should
+ *          be warned, false to just quit without prompting.
+ */
+Preferences.addSetting({
+  id: "warnOnQuitKey",
+  pref: "browser.warnOnQuitShortcut",
+  setup() {
+    let quitKeyElement =
+      window.browsingContext.topChromeWindow.document.getElementById(
+        "key_quitApplication"
+      );
+    if (quitKeyElement) {
+      this.quitKey = ShortcutUtils.prettifyShortcut(quitKeyElement);
+    }
+  },
+  visible() {
+    return AppConstants.platform !== "win" && this.quitKey;
+  },
+  getControlConfig(config) {
+    return {
+      ...config,
+      l10nArgs: { quitKey: this.quitKey },
+    };
+  },
+});
+
+SettingGroupManager.registerGroups({
   containers: {
     // This section is marked as in progress for testing purposes
     inProgress: true,
@@ -1108,6 +1664,62 @@ let SETTINGS_CONFIG = {
         controlAttrs: {
           message: "Placeholder for updated containers",
         },
+      },
+    ],
+  },
+  profilePane: {
+    headingLevel: 2,
+    id: "browserProfilesGroupPane",
+    l10nId: "preferences-profiles-subpane-description",
+    supportPage: "profile-management",
+    items: [
+      {
+        id: "manageProfiles",
+        control: "moz-box-button",
+        l10nId: "preferences-manage-profiles-button",
+      },
+      {
+        id: "copyProfileHeader",
+        l10nId: "preferences-copy-profile-header",
+        headingLevel: 2,
+        supportPage: "profile-management",
+        control: "moz-fieldset",
+        items: [
+          {
+            id: "copyProfileBox",
+            l10nId: "preferences-profile-to-copy",
+            control: "moz-box-item",
+            items: [
+              {
+                id: "copyProfileSelect",
+                control: "moz-select",
+                slot: "actions",
+              },
+              {
+                id: "copyProfile",
+                l10nId: "preferences-copy-profile-button",
+                control: "moz-button",
+                slot: "actions",
+                controlAttrs: {
+                  type: "primary",
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  profiles: {
+    id: "profilesGroup",
+    l10nId: "preferences-profiles-section-header",
+    headingLevel: 2,
+    supportPage: "profile-management",
+    items: [
+      {
+        id: "profilesSettings",
+        control: "moz-box-button",
+        l10nId: "preferences-profiles-settings-button",
       },
     ],
   },
@@ -1128,9 +1740,7 @@ let SETTINGS_CONFIG = {
           {
             control: "span",
             l10nId: "windows-launch-on-login-disabled",
-            controlAttrs: {
-              slot: "message",
-            },
+            slot: "message",
             options: [
               {
                 control: "a",
@@ -1167,10 +1777,173 @@ let SETTINGS_CONFIG = {
             control: "moz-button",
             l10nId: "set-as-my-default-browser",
             id: "setDefaultButton",
+            slot: "actions",
             controlAttrs: {
-              slot: "actions",
               type: "primary",
             },
+          },
+        ],
+      },
+    ],
+  },
+  importBrowserData: {
+    l10nId: "preferences-data-migration-group",
+    headingLevel: 2,
+    items: [
+      {
+        id: "data-migration",
+        l10nId: "preferences-data-migration-button",
+        control: "moz-box-button",
+      },
+    ],
+  },
+  home: {
+    inProgress: true,
+    headingLevel: 2,
+    l10nId: "home-prefs-content-header",
+    // Icons are not ready to be used yet.
+    // iconSrc: "chrome://browser/skin/home.svg",
+    items: [
+      {
+        id: "webSearch",
+        l10nId: "home-prefs-search-header2",
+        control: "moz-toggle",
+      },
+      {
+        id: "weather",
+        l10nId: "home-prefs-weather-header",
+        control: "moz-toggle",
+      },
+      {
+        id: "widgets",
+        l10nId: "home-prefs-widgets-header",
+        control: "moz-toggle",
+        items: [
+          {
+            id: "lists",
+            l10nId: "home-prefs-lists-header",
+          },
+          {
+            id: "timer",
+            l10nId: "home-prefs-timer-header",
+          },
+        ],
+      },
+      {
+        id: "shortcuts",
+        l10nId: "home-prefs-shortcuts-header",
+        control: "moz-toggle",
+        items: [
+          {
+            id: "shortcutsRows",
+            control: "moz-select",
+            options: [
+              {
+                value: 1,
+                l10nId: "home-prefs-sections-rows-option",
+                l10nArgs: { num: 1 },
+              },
+              {
+                value: 2,
+                l10nId: "home-prefs-sections-rows-option",
+                l10nArgs: { num: 2 },
+              },
+              {
+                value: 3,
+                l10nId: "home-prefs-sections-rows-option",
+                l10nArgs: { num: 3 },
+              },
+              {
+                value: 4,
+                l10nId: "home-prefs-sections-rows-option",
+                l10nArgs: { num: 4 },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "stories",
+        l10nId: "home-prefs-stories-header2",
+        control: "moz-toggle",
+      },
+      {
+        id: "supportFirefox",
+        l10nId: "home-prefs-support-firefox-header",
+        control: "moz-toggle",
+        items: [
+          {
+            id: "sponsoredShortcuts",
+            l10nId: "home-prefs-shortcuts-by-option-sponsored",
+          },
+          {
+            id: "sponsoredStories",
+            l10nId: "home-prefs-recommended-by-option-sponsored-stories",
+          },
+          {
+            id: "supportFirefoxPromo",
+            l10nId: "home-prefs-mission-message2",
+            control: "moz-promo",
+            options: [
+              {
+                control: "a",
+                l10nId: "home-prefs-mission-message-learn-more-link",
+                slot: "support-link",
+                controlAttrs: {
+                  is: "moz-support-link",
+                  "support-page": "sponsor-privacy",
+                  "utm-content": "inproduct",
+                },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "recentActivity",
+        l10nId: "home-prefs-recent-activity-header",
+        control: "moz-toggle",
+        items: [
+          {
+            id: "recentActivityRows",
+            control: "moz-select",
+            controlAttrs: {
+              class: "newtab-rows-select",
+            },
+            options: [
+              {
+                value: 1,
+                l10nId: "home-prefs-sections-rows-option",
+                l10nArgs: { num: 1 },
+              },
+              {
+                value: 2,
+                l10nId: "home-prefs-sections-rows-option",
+                l10nArgs: { num: 2 },
+              },
+              {
+                value: 3,
+                l10nId: "home-prefs-sections-rows-option",
+                l10nArgs: { num: 3 },
+              },
+              {
+                value: 4,
+                l10nId: "home-prefs-sections-rows-option",
+                l10nArgs: { num: 4 },
+              },
+            ],
+          },
+          {
+            id: "recentActivityVisited",
+            l10nId: "home-prefs-highlights-option-visited-pages",
+          },
+          {
+            id: "recentActivityBookmarks",
+            l10nId: "home-prefs-highlights-options-bookmarks",
+          },
+          {
+            id: "recentActivityDownloads",
+            l10nId: "home-prefs-highlights-option-most-recent-download",
           },
         ],
       },
@@ -1272,6 +2045,16 @@ let SETTINGS_CONFIG = {
       },
     ],
   },
+  drm: {
+    subcategory: "drm",
+    items: [
+      {
+        id: "playDRMContent",
+        l10nId: "play-drm-content",
+        supportPage: "drm-content",
+      },
+    ],
+  },
   browsing: {
     l10nId: "browsing-group-label",
     items: [
@@ -1311,6 +2094,12 @@ let SETTINGS_CONFIG = {
         id: "pictureInPictureToggleEnabled",
         l10nId: "browsing-picture-in-picture-toggle-enabled",
         supportPage: "picture-in-picture",
+        items: [
+          {
+            id: "pictureInPictureEnableWhenSwitchingTabs",
+            l10nId: "browsing-picture-in-picture-enable-when-switching-tabs",
+          },
+        ],
       },
       {
         id: "mediaControlToggleEnabled",
@@ -1656,7 +2445,651 @@ let SETTINGS_CONFIG = {
       },
     ],
   },
-};
+  passwords: {
+    inProgress: true,
+    id: "passwordsGroup",
+    l10nId: "forms-passwords-header",
+    headingLevel: 2,
+    items: [
+      {
+        id: "savePasswords",
+        l10nId: "forms-ask-to-save-passwords",
+        items: [
+          {
+            id: "managePasswordExceptions",
+            l10nId: "forms-manage-password-exceptions",
+            control: "moz-box-button",
+            controlAttrs: {
+              "search-l10n-ids":
+                "permissions-address,permissions-exceptions-saved-passwords-window.title,permissions-exceptions-saved-passwords-desc,",
+            },
+          },
+          {
+            id: "fillUsernameAndPasswords",
+            l10nId: "forms-fill-usernames-and-passwords-2",
+            controlAttrs: {
+              "search-l10n-ids": "forms-saved-passwords-searchkeywords",
+            },
+          },
+          {
+            id: "suggestStrongPasswords",
+            l10nId: "forms-suggest-passwords",
+            supportPage: "how-generate-secure-password-firefox",
+          },
+        ],
+      },
+      {
+        id: "requireOSAuthForPasswords",
+        l10nId: "forms-os-reauth",
+      },
+      {
+        id: "manageSavedPasswords",
+        l10nId: "forms-saved-passwords-2",
+        control: "moz-box-link",
+      },
+      {
+        id: "additionalProtectionsGroup",
+        l10nId: "forms-additional-protections-header",
+        control: "moz-fieldset",
+        controlAttrs: {
+          headingLevel: 2,
+        },
+        items: [
+          {
+            id: "primaryPasswordNotSet",
+            control: "moz-box-group",
+            items: [
+              {
+                id: "usePrimaryPassword",
+                l10nId: "forms-primary-pw-use",
+                control: "moz-box-item",
+                supportPage: "primary-password-stored-logins",
+              },
+              {
+                id: "addPrimaryPassword",
+                l10nId: "forms-primary-pw-set",
+                control: "moz-box-button",
+              },
+            ],
+          },
+          {
+            id: "primaryPasswordSet",
+            control: "moz-box-group",
+            items: [
+              {
+                id: "statusPrimaryPassword",
+                l10nId: "forms-primary-pw-on",
+                control: "moz-box-item",
+                controlAttrs: {
+                  iconsrc: "chrome://global/skin/icons/check-filled.svg",
+                },
+                options: [
+                  {
+                    id: "turnOffPrimaryPassword",
+                    l10nId: "forms-primary-pw-turn-off",
+                    control: "moz-button",
+                    slot: "actions",
+                  },
+                ],
+              },
+              {
+                id: "changePrimaryPassword",
+                l10nId: "forms-primary-pw-change-2",
+                control: "moz-box-button",
+              },
+            ],
+          },
+          {
+            id: "breachAlerts",
+            l10nId: "forms-breach-alerts",
+            supportPage: "lockwise-alerts",
+          },
+        ],
+      },
+    ],
+  },
+  history: {
+    items: [
+      {
+        id: "historyMode",
+        control: "moz-select",
+        options: [
+          {
+            value: "remember",
+            l10nId: "history-remember-option-all",
+          },
+          { value: "dontremember", l10nId: "history-remember-option-never" },
+          { value: "custom", l10nId: "history-remember-option-custom" },
+        ],
+        controlAttrs: {
+          "search-l10n-ids": `
+            history-remember-description3,
+            history-dontremember-description3,
+            history-private-browsing-permanent.label,
+            history-remember-browser-option.label,
+            history-remember-search-option.label,
+            history-clear-on-close-option.label,
+            history-clear-on-close-settings.label
+          `,
+        },
+      },
+      {
+        id: "privateBrowsingAutoStart",
+        l10nId: "history-private-browsing-permanent",
+      },
+      {
+        id: "rememberHistory",
+        l10nId: "history-remember-browser-option",
+      },
+      {
+        id: "rememberForms",
+        l10nId: "history-remember-search-option",
+      },
+      {
+        id: "alwaysClear",
+        l10nId: "history-clear-on-close-option",
+      },
+      {
+        id: "clearDataSettings",
+        l10nId: "history-clear-on-close-settings",
+        control: "moz-box-button",
+        controlAttrs: {
+          "search-l10n-ids": `
+            clear-data-settings-label,
+            history-section-label,
+            item-history-and-downloads.label,
+            item-cookies.label,
+            item-active-logins.label,
+            item-cache.label,
+            item-form-search-history.label,
+            data-section-label,
+            item-site-settings.label,
+            item-offline-apps.label
+          `,
+        },
+      },
+      {
+        id: "clearHistoryButton",
+        l10nId: "history-clear-button",
+        control: "moz-box-button",
+      },
+    ],
+  },
+  permissions: {
+    id: "permissions",
+    l10nId: "permissions-header2",
+    headingLevel: 2,
+    items: [
+      {
+        id: "permissionBox",
+        control: "moz-box-group",
+        controlAttrs: {
+          type: "list",
+        },
+        items: [
+          {
+            id: "locationSettingsButton",
+            control: "moz-box-button",
+            l10nId: "permissions-location2",
+            controlAttrs: {
+              ".iconSrc": "chrome://browser/skin/notification-icons/geo.svg",
+              "search-l10n-ids":
+                "permissions-remove.label,permissions-remove-all.label,permissions-site-location-window2.title,permissions-site-location-desc,permissions-site-location-disable-label,permissions-site-location-disable-desc",
+            },
+          },
+          {
+            id: "cameraSettingsButton",
+            control: "moz-box-button",
+            l10nId: "permissions-camera2",
+            controlAttrs: {
+              ".iconSrc": "chrome://browser/skin/notification-icons/camera.svg",
+              "search-l10n-ids":
+                "permissions-remove.label,permissions-remove-all.label,permissions-site-camera-window2.title,permissions-site-camera-desc,permissions-site-camera-disable-label,permissions-site-camera-disable-desc,",
+            },
+          },
+          {
+            id: "localHostSettingsButton",
+            control: "moz-box-button",
+            l10nId: "permissions-localhost2",
+            controlAttrs: {
+              ".iconSrc":
+                "chrome://browser/skin/notification-icons/local-host.svg",
+              "search-l10n-ids":
+                "permissions-remove.label,permissions-remove-all.label,permissions-site-localhost-window.title,permissions-site-localhost-desc,permissions-site-localhost-disable-label,permissions-site-localhost-disable-desc,",
+            },
+          },
+          {
+            id: "localNetworkSettingsButton",
+            control: "moz-box-button",
+            l10nId: "permissions-local-network2",
+            controlAttrs: {
+              ".iconSrc":
+                "chrome://browser/skin/notification-icons/local-network.svg",
+              "search-l10n-ids":
+                "permissions-remove.label,permissions-remove-all.label,permissions-site-local-network-window.title,permissions-site-local-network-desc,permissions-site-local-network-disable-label,permissions-site-local-network-disable-desc,",
+            },
+          },
+          {
+            id: "microphoneSettingsButton",
+            control: "moz-box-button",
+            l10nId: "permissions-microphone2",
+            controlAttrs: {
+              ".iconSrc":
+                "chrome://browser/skin/notification-icons/microphone.svg",
+              "search-l10n-ids":
+                "permissions-remove.label,permissions-remove-all.label,permissions-site-microphone-window2.title,permissions-site-microphone-desc,permissions-site-microphone-disable-label,permissions-site-microphone-disable-desc,",
+            },
+          },
+          {
+            id: "speakerSettingsButton",
+            control: "moz-box-button",
+            l10nId: "permissions-speaker2",
+            controlAttrs: {
+              ".iconSrc":
+                "chrome://browser/skin/notification-icons/speaker.svg",
+              "search-l10n-ids":
+                "permissions-remove.label,permissions-remove-all.label,permissions-site-speaker-window.title,permissions-site-speaker-desc,",
+            },
+          },
+          {
+            id: "notificationSettingsButton",
+            control: "moz-box-button",
+            l10nId: "permissions-notification2",
+            controlAttrs: {
+              ".iconSrc":
+                "chrome://browser/skin/notification-icons/desktop-notification.svg",
+              "search-l10n-ids":
+                "permissions-remove.label,permissions-remove-all.label,permissions-site-notification-window2.title,permissions-site-notification-desc,permissions-site-notification-disable-label,permissions-site-notification-disable-desc,",
+            },
+          },
+          {
+            id: "autoplaySettingsButton",
+            control: "moz-box-button",
+            l10nId: "permissions-autoplay2",
+            controlAttrs: {
+              ".iconSrc":
+                "chrome://browser/skin/notification-icons/autoplay-media.svg",
+              "search-l10n-ids":
+                "permissions-remove.label,permissions-remove-all.label,permissions-site-autoplay-window2.title,permissions-site-autoplay-desc,",
+            },
+          },
+          {
+            id: "xrSettingsButton",
+            control: "moz-box-button",
+            l10nId: "permissions-xr2",
+            controlAttrs: {
+              ".iconSrc": "chrome://browser/skin/notification-icons/xr.svg",
+              "search-l10n-ids":
+                "permissions-remove.label,permissions-remove-all.label,permissions-site-xr-window2.title,permissions-site-xr-desc,permissions-site-xr-disable-label,permissions-site-xr-disable-desc,",
+            },
+          },
+        ],
+      },
+      {
+        id: "popupPolicy",
+        l10nId: "permissions-block-popups2",
+        items: [
+          {
+            id: "popupPolicyButton",
+            l10nId: "permissions-block-popups-exceptions-button2",
+            control: "moz-box-button",
+            controlAttrs: {
+              "search-l10n-ids":
+                "permissions-address,permissions-exceptions-popup-window3.title,permissions-exceptions-popup-desc2",
+            },
+          },
+        ],
+      },
+      {
+        id: "warnAddonInstall",
+        l10nId: "permissions-addon-install-warning2",
+        items: [
+          {
+            id: "addonExceptions",
+            l10nId: "permissions-addon-exceptions2",
+            control: "moz-box-button",
+            controlAttrs: {
+              "search-l10n-ids":
+                "permissions-address,permissions-allow.label,permissions-remove.label,permissions-remove-all.label,permissions-exceptions-addons-window2.title,permissions-exceptions-addons-desc",
+            },
+          },
+        ],
+      },
+      {
+        id: "notificationsDoNotDisturb",
+        l10nId: "permissions-notification-pause",
+      },
+    ],
+  },
+  dnsOverHttps: {
+    inProgress: true,
+    items: [
+      {
+        id: "dohBox",
+        control: "moz-box-group",
+        items: [
+          {
+            id: "dohModeBoxItem",
+            control: "moz-box-item",
+          },
+          {
+            id: "dohAdvancedButton",
+            l10nId: "preferences-doh-advanced-button",
+            control: "moz-box-button",
+          },
+        ],
+      },
+    ],
+  },
+  defaultEngine: {
+    l10nId: "search-engine-group",
+    headingLevel: 2,
+    items: [
+      {
+        id: "defaultEngineNormal",
+        l10nId: "search-default-engine",
+        control: "moz-select",
+      },
+      {
+        id: "searchShowSearchTermCheckbox",
+        l10nId: "search-show-search-term-option-2",
+      },
+      {
+        id: "browserSeparateDefaultEngine",
+        l10nId: "search-separate-default-engine-2",
+        items: [
+          {
+            id: "defaultPrivateEngine",
+            l10nId: "search-separate-default-engine-dropdown",
+            control: "moz-select",
+          },
+        ],
+      },
+    ],
+  },
+  dnsOverHttpsAdvanced: {
+    inProgress: true,
+    l10nId: "preferences-doh-advanced-section",
+    supportPage: "dns-over-https",
+    headingLevel: 2,
+    items: [
+      {
+        id: "dohStatusBox",
+        control: "moz-message-bar",
+      },
+      {
+        id: "dohRadioGroup",
+        control: "moz-radio-group",
+        options: [
+          {
+            id: "dohRadioDefault",
+            value: "default",
+            l10nId: "preferences-doh-radio-default",
+          },
+          {
+            id: "dohRadioCustom",
+            value: "custom",
+            l10nId: "preferences-doh-radio-custom",
+            items: [
+              {
+                id: "dohFallbackIfCustom",
+                l10nId: "preferences-doh-fallback-label",
+              },
+              {
+                id: "dohProviderSelect",
+                l10nId: "preferences-doh-select-resolver-label",
+                control: "moz-select",
+              },
+              {
+                id: "dohCustomProvider",
+                control: "moz-input-text",
+                l10nId: "preferences-doh-custom-provider-label",
+              },
+            ],
+          },
+          {
+            id: "dohRadioOff",
+            value: "off",
+            l10nId: "preferences-doh-radio-off",
+          },
+        ],
+      },
+      {
+        id: "dohExceptionsButton",
+        l10nId: "preferences-doh-manage-exceptions2",
+        control: "moz-box-button",
+        controlAttrs: {
+          "search-l10n-ids":
+            "permissions-doh-entry-field,permissions-doh-add-exception.label,permissions-doh-remove.label,permissions-doh-remove-all.label,permissions-exceptions-doh-window.title,permissions-exceptions-manage-doh-desc,",
+        },
+      },
+    ],
+  },
+  managePayments: {
+    items: [
+      {
+        id: "add-payment-button",
+        control: "moz-button",
+        l10nId: "autofill-payment-methods-add-button",
+      },
+      {
+        id: "payments-list",
+        control: "moz-box-group",
+        l10nId: "payments-list-header",
+        controlAttrs: {
+          hasHeader: true,
+          type: "list",
+        },
+      },
+    ],
+  },
+  tabs: {
+    l10nId: "tabs-group-header2",
+    headingLevel: 2,
+    items: [
+      {
+        id: "tabsOpening",
+        control: "moz-fieldset",
+        l10nId: "tabs-opening-heading",
+        headingLevel: 3,
+        items: [
+          {
+            id: "linkTargeting",
+            l10nId: "open-new-link-as-tabs",
+          },
+          {
+            id: "switchToNewTabs",
+            l10nId: "switch-to-new-tabs",
+          },
+          {
+            id: "openAppLinksNextToActiveTab",
+            l10nId: "open-external-link-next-to-active-tab",
+          },
+          {
+            id: "warnOpenMany",
+            l10nId: "warn-on-open-many-tabs",
+          },
+        ],
+      },
+      {
+        id: "tabsInteraction",
+        control: "moz-fieldset",
+        l10nId: "tabs-interaction-heading",
+        headingLevel: 3,
+        items: [
+          {
+            id: "ctrlTabRecentlyUsedOrder",
+            l10nId: "ctrl-tab-recently-used-order",
+          },
+          {
+            id: "tabPreviewShowThumbnails",
+            l10nId: "settings-tabs-show-image-in-preview",
+          },
+          {
+            id: "tabGroupSuggestions",
+            l10nId: "settings-tabs-show-group-and-tab-suggestions",
+          },
+          {
+            id: "showTabsInTaskbar",
+            l10nId: "show-tabs-in-taskbar",
+          },
+        ],
+      },
+      {
+        id: "browserContainersbox",
+        control: "moz-fieldset",
+        l10nId: "tabs-containers-heading",
+        headingLevel: 3,
+        items: [
+          {
+            id: "browserContainersCheckbox",
+            l10nId: "browser-containers-enabled",
+            supportPage: "containers",
+          },
+          {
+            id: "browserContainersSettings",
+            l10nId: "browser-containers-settings",
+            control: "moz-box-button",
+            controlAttrs: {
+              "search-l10n-ids":
+                "containers-add-button.label, containers-settings-button.label, containers-remove-button.label, containers-new-tab-check.label",
+            },
+          },
+        ],
+      },
+      {
+        id: "tabsClosing",
+        control: "moz-fieldset",
+        l10nId: "tabs-closing-heading",
+        headingLevel: 3,
+        items: [
+          {
+            id: "warnCloseMultiple",
+            l10nId: "ask-on-close-multiple-tabs",
+          },
+          {
+            id: "warnOnQuitKey",
+            l10nId: "ask-on-quit-with-key",
+          },
+        ],
+      },
+    ],
+  },
+  etpStatus: {
+    inProgress: true,
+    headingLevel: 2,
+    l10nId: "preferences-etp-status-header",
+    supportPage: "enhanced-tracking-protection",
+    iconSrc: "chrome://browser/skin/controlcenter/tracking-protection.svg",
+    items: [
+      {
+        id: "etpStatusBoxGroup",
+        control: "moz-box-group",
+        items: [
+          {
+            id: "etpStatusItem",
+            l10nId: "preferences-etp-level-standard",
+            control: "moz-box-item",
+          },
+          {
+            id: "etpStatusAdvancedButton",
+            l10nId: "preferences-etp-status-advanced-button",
+            control: "moz-box-button",
+          },
+        ],
+      },
+      {
+        id: "protectionsDashboardLink",
+        l10nId: "preferences-etp-status-protections-dashboard-link",
+        control: "moz-box-link",
+        controlAttrs: {
+          href: "about:protections",
+        },
+      },
+    ],
+  },
+  etpBanner: {
+    inProgress: true,
+    items: [
+      {
+        id: "etpBannerEl",
+        control: "moz-card",
+      },
+    ],
+  },
+  etpAdvanced: {
+    inProgress: true,
+    headingLevel: 2,
+    l10nId: "preferences-etp-advanced-settings-group",
+    supportPage: "enhanced-tracking-protection",
+    items: [
+      {
+        id: "contentBlockingCategory",
+        control: "moz-radio-group",
+        options: [
+          {
+            id: "etpLevelStandard",
+            value: "standard",
+            l10nId: "preferences-etp-level-standard",
+          },
+          {
+            id: "etpLevelStrict",
+            value: "strict",
+            l10nId: "preferences-etp-level-strict",
+            items: [
+              {
+                id: "etpAllowListBaselineEnabled",
+                l10nId: "content-blocking-baseline-exceptions-3",
+                supportPage: "manage-enhanced-tracking-protection-exceptions",
+                control: "moz-checkbox",
+                items: [
+                  {
+                    id: "etpAllowListConvenienceEnabled",
+                    l10nId: "content-blocking-convenience-exceptions-3",
+                    control: "moz-checkbox",
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            id: "etpLevelCustom",
+            value: "custom",
+            l10nId: "preferences-etp-level-custom",
+            items: [
+              {
+                id: "etpCustomizeButton",
+                l10nId: "preferences-etp-customize-button",
+                control: "moz-box-button",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "rfpWarning",
+        control: "moz-message-bar",
+        l10nId: "preferences-etp-rfp-warning-message",
+        supportPage: "resist-fingerprinting",
+      },
+      {
+        id: "etpLevelWarning",
+        control: "moz-promo",
+        l10nId: "preferences-etp-level-warning-message",
+        controlAttrs: {
+          ".imageAlignment": "end",
+          ".imageSrc":
+            "chrome://browser/content/preferences/etp-toggle-promo.svg",
+        },
+      },
+      {
+        id: "etpManageExceptionsButton",
+        l10nId: "preferences-etp-manage-exceptions-button",
+        control: "moz-box-button",
+      },
+    ],
+  },
+});
 
 /**
  * @param {string} id - ID of {@link SettingGroup} custom element.
@@ -1664,7 +3097,7 @@ let SETTINGS_CONFIG = {
 function initSettingGroup(id) {
   /** @type {SettingGroup} */
   let group = document.querySelector(`setting-group[groupid=${id}]`);
-  const config = SETTINGS_CONFIG[id];
+  const config = SettingGroupManager.get(id);
   if (group && config) {
     if (config.inProgress && !srdSectionEnabled(id)) {
       group.remove();
@@ -1755,7 +3188,6 @@ var gMainPane = {
         .addEventListener(aEventType, aCallback.bind(gMainPane));
     }
 
-    this.initBrowserContainers();
     this.displayUseSystemLocale();
     this.updateProxySettingsUI();
     initializeProxyUI(gMainPane);
@@ -1774,66 +3206,17 @@ var gMainPane = {
     // Initialize settings groups from the config object.
     initSettingGroup("appearance");
     initSettingGroup("downloads");
+    initSettingGroup("drm");
     initSettingGroup("browsing");
     initSettingGroup("zoom");
     initSettingGroup("performance");
     initSettingGroup("startup");
+    initSettingGroup("importBrowserData");
     initSettingGroup("networkProxy");
+    initSettingGroup("tabs");
+    initSettingGroup("profiles");
+    initSettingGroup("profilePane");
 
-    if (AppConstants.platform == "win") {
-      // Functionality for "Show tabs in taskbar" on Windows 7 and up.
-      try {
-        let ver = parseFloat(Services.sysinfo.getProperty("version"));
-        let showTabsInTaskbar = document.getElementById("showTabsInTaskbar");
-        showTabsInTaskbar.hidden = ver < 6.1;
-      } catch (ex) {}
-    }
-
-    let thumbsCheckbox = document.getElementById("tabPreviewShowThumbnails");
-    let cardPreviewEnabledPref = Preferences.get(
-      "browser.tabs.hoverPreview.enabled"
-    );
-    let maybeShowThumbsCheckbox = () =>
-      (thumbsCheckbox.hidden = !cardPreviewEnabledPref.value);
-    cardPreviewEnabledPref.on("change", maybeShowThumbsCheckbox);
-    maybeShowThumbsCheckbox();
-
-    const tabGroupSuggestionsCheckbox = document.getElementById(
-      "tabGroupSuggestions"
-    );
-    const smartTabGroupFeatureEnabled =
-      Services.prefs.getBoolPref("browser.tabs.groups.smart.enabled", false);
-    tabGroupSuggestionsCheckbox.hidden = !smartTabGroupFeatureEnabled;
-
-    // The "opening multiple tabs might slow down Firefox" warning provides
-    // an option for not showing this warning again. When the user disables it,
-    // we provide checkboxes to re-enable the warning.
-    if (!TransientPrefs.prefShouldBeVisible("browser.tabs.warnOnOpen")) {
-      document.getElementById("warnOpenMany").hidden = true;
-    }
-
-    if (AppConstants.platform != "win") {
-      let quitKeyElement =
-        window.browsingContext.topChromeWindow.document.getElementById(
-          "key_quitApplication"
-        );
-      if (quitKeyElement) {
-        let quitKey = ShortcutUtils.prettifyShortcut(quitKeyElement);
-        document.l10n.setAttributes(
-          document.getElementById("warnOnQuitKey"),
-          "ask-on-quit-with-key",
-          { quitKey }
-        );
-      } else {
-        // If the quit key element does not exist, then the quit key has
-        // been disabled, so just hide the checkbox.
-        document.getElementById("warnOnQuitKey").hidden = true;
-      }
-    }
-
-    setEventListener("ctrlTabRecentlyUsedOrder", "command", function () {
-      Services.prefs.clearUserPref("browser.ctrlTab.migrated");
-    });
     setEventListener("manageBrowserLanguagesButton", "command", function () {
       gMainPane.showBrowserLanguagesSubDialog({ search: false });
     });
@@ -1859,11 +3242,6 @@ var gMainPane = {
       });
     }
 
-    setEventListener(
-      "disableContainersExtension",
-      "command",
-      makeDisableControllingExtension(PREF_SETTING_TYPE, CONTAINERS_KEY)
-    );
     setEventListener("chooseLanguage", "command", gMainPane.showLanguages);
     // TODO (Bug 1817084) Remove this code when we disable the extension
     setEventListener(
@@ -1882,21 +3260,6 @@ var gMainPane = {
       gMainPane.updateColorsButton.bind(gMainPane)
     );
     gMainPane.updateColorsButton();
-    setEventListener(
-      "browserContainersCheckbox",
-      "command",
-      gMainPane.checkBrowserContainers
-    );
-    setEventListener(
-      "browserContainersSettings",
-      "command",
-      gMainPane.showContainerSettings
-    );
-    setEventListener(
-      "data-migration",
-      "command",
-      gMainPane.onMigrationButtonCommand
-    );
 
     document
       .getElementById("browserLayoutShowSidebar")
@@ -1912,20 +3275,6 @@ var gMainPane = {
         e.currentTarget.close();
       });
 
-    if (Services.policies && !Services.policies.isAllowed("profileImport")) {
-      document.getElementById("dataMigrationGroup").remove();
-    }
-
-    if (!SelectableProfileService.isEnabled) {
-      // Don't want to rely on .hidden for the toplevel groupbox because
-      // of the pane hiding/showing code potentially interfering:
-      document
-        .getElementById("profilesGroup")
-        .setAttribute("style", "display: none !important");
-    } else {
-      setEventListener("manage-profiles", "command", gMainPane.manageProfiles);
-    }
-
     // Initializes the fonts dropdowns displayed in this pane.
     this._rebuildFonts();
 
@@ -1937,19 +3286,6 @@ var gMainPane = {
       fxtranslationRow.hidden = false;
     }
 
-    let emeUIEnabled = Services.prefs.getBoolPref("browser.eme.ui.enabled");
-    // Force-disable/hide on WinXP:
-    if (navigator.platform.toLowerCase().startsWith("win")) {
-      emeUIEnabled =
-        emeUIEnabled && parseFloat(Services.sysinfo.get("version")) >= 6;
-    }
-    if (!emeUIEnabled) {
-      // Don't want to rely on .hidden for the toplevel groupbox because
-      // of the pane hiding/showing code potentially interfering:
-      document
-        .getElementById("drmGroup")
-        .setAttribute("style", "display: none !important");
-    }
     // Initialize the Firefox Updates section.
     let version = AppConstants.MOZ_APP_VERSION_DISPLAY;
 
@@ -2100,16 +3436,6 @@ var gMainPane = {
       this._sortColumn = document.getElementById("typeColumn");
     }
 
-    appendSearchKeywords(
-      "browserContainersSettings",
-      [
-        "user-context-personal",
-        "user-context-work",
-        "user-context-banking",
-        "user-context-shopping",
-      ].map(ContextualIdentityService.formatContextLabel)
-    );
-
     // Notify observers that the UI is now ready
     Services.obs.notifyObservers(window, "main-pane-loaded");
 
@@ -2125,27 +3451,6 @@ var gMainPane = {
       document.getElementById("checkSpelling"),
       () => this.writeCheckSpelling()
     );
-    Preferences.addSyncFromPrefListener(
-      document.getElementById("linkTargeting"),
-      () => this.readLinkTarget()
-    );
-    Preferences.addSyncToPrefListener(
-      document.getElementById("linkTargeting"),
-      () => this.writeLinkTarget()
-    );
-    Preferences.addSyncFromPrefListener(
-      document.getElementById("openAppLinksNextToActiveTab"),
-      () => this.readExternalLinkNextToActiveTab()
-    );
-    Preferences.addSyncToPrefListener(
-      document.getElementById("openAppLinksNextToActiveTab"),
-      inputElement => this.writeExternalLinkNextToActiveTab(inputElement)
-    );
-    Preferences.addSyncFromPrefListener(
-      document.getElementById("browserContainersCheckbox"),
-      () => this.readBrowserContainersCheckbox()
-    );
-
     this.setInitialized();
   },
 
@@ -2213,47 +3518,6 @@ var gMainPane = {
    * privacy.userContext.enabled
    * - true if containers is enabled
    */
-
-  /**
-   * Enables/disables the Settings button used to configure containers
-   */
-  readBrowserContainersCheckbox() {
-    const pref = Preferences.get("privacy.userContext.enabled");
-    const settings = document.getElementById("browserContainersSettings");
-
-    settings.disabled = !pref.value;
-    const containersEnabled = Services.prefs.getBoolPref(
-      "privacy.userContext.enabled"
-    );
-    const containersCheckbox = document.getElementById(
-      "browserContainersCheckbox"
-    );
-    containersCheckbox.checked = containersEnabled;
-    handleControllingExtension(PREF_SETTING_TYPE, CONTAINERS_KEY).then(
-      isControlled => {
-        containersCheckbox.disabled = isControlled;
-      }
-    );
-  },
-
-  /**
-   * Show the Containers UI depending on the privacy.userContext.ui.enabled pref.
-   */
-  initBrowserContainers() {
-    if (!Services.prefs.getBoolPref("privacy.userContext.ui.enabled")) {
-      // The browserContainersGroup element has its own internal padding that
-      // is visible even if the browserContainersbox is visible, so hide the whole
-      // groupbox if the feature is disabled to prevent a gap in the preferences.
-      document
-        .getElementById("browserContainersbox")
-        .setAttribute("data-hidden-from-search", "true");
-      return;
-    }
-    Services.prefs.addObserver(PREF_CONTAINERS_EXTENSION, this);
-
-    document.getElementById("browserContainersbox").hidden = false;
-    this.readBrowserContainersCheckbox();
-  },
 
   async onGetStarted() {
     if (!AppConstants.MOZ_DEV_EDITION) {
@@ -2380,8 +3644,8 @@ var gMainPane = {
       /**
        * The fully initialized state.
        *
-       * @param {Object} supportedLanguages
-       * @param {Array<{ langTag: string, displayName: string}} languageList
+       * @param {object} supportedLanguages
+       * @param {Array<{ langTag: string, displayName: string}>} languageList
        * @param {Map<string, DownloadPhase>} downloadPhases
        */
       constructor(supportedLanguages, languageList, downloadPhases) {
@@ -2417,8 +3681,8 @@ var gMainPane = {
       /**
        * Determine the download phase of each language file.
        *
-       * @param {Array<{ langTag: string, displayName: string}} languageList.
-       * @returns {Map<string, DownloadPhase>} Map the language tag to whether it is downloaded.
+       * @param {Array<{ langTag: string, displayName: string}>} languageList
+       * @returns {Promise<Map<string, DownloadPhase>>} Map the language tag to whether it is downloaded.
        */
       static async createDownloadPhases(languageList) {
         const downloadPhases = new Map();
@@ -2608,6 +3872,7 @@ var gMainPane = {
 
       /**
        * Update the DownloadPhase for a single langTag.
+       *
        * @param {string} langTag
        * @param {DownloadPhase} downloadPhase
        */
@@ -2628,6 +3893,7 @@ var gMainPane = {
 
       /**
        * Set all the downloads.
+       *
        * @param {DownloadPhase} downloadPhase
        */
       markAllDownloadPhases(downloadPhase) {
@@ -2689,7 +3955,7 @@ var gMainPane = {
           case "loading":
             downloadButton.hidden = false;
             deleteButton.hidden = true;
-            downloadButton.setAttribute("disabled", true);
+            downloadButton.setAttribute("disabled", "true");
             break;
         }
       }
@@ -2992,98 +4258,6 @@ var gMainPane = {
     cps2.setGlobal(win.FullZoom.name, newZoom, nonPrivateLoadContext);
   },
 
-  // TABS
-
-  /*
-   * Preferences:
-   *
-   * browser.link.open_newwindow - int
-   *   Determines where links targeting new windows should open.
-   *   Values:
-   *     1 - Open in the current window or tab.
-   *     2 - Open in a new window.
-   *     3 - Open in a new tab in the most recent window.
-   * browser.tabs.loadInBackground - bool
-   *   True - Whether browser should switch to a new tab opened from a link.
-   * browser.tabs.warnOnClose - bool
-   *   True - If when closing a window with multiple tabs the user is warned and
-   *          allowed to cancel the action, false to just close the window.
-   * browser.warnOnQuitShortcut - bool
-   *   True - If the keyboard shortcut (Ctrl/Cmd+Q) is pressed, the user should
-   *          be warned, false to just quit without prompting.
-   * browser.tabs.warnOnOpen - bool
-   *   True - Whether the user should be warned when trying to open a lot of
-   *          tabs at once (e.g. a large folder of bookmarks), allowing to
-   *          cancel the action.
-   * browser.taskbar.previews.enable - bool
-   *   True - Tabs are to be shown in Windows 7 taskbar.
-   *   False - Only the window is to be shown in Windows 7 taskbar.
-   */
-
-  /**
-   * Determines where a link which opens a new window will open.
-   *
-   * @returns |true| if such links should be opened in new tabs
-   */
-  readLinkTarget() {
-    var openNewWindow = Preferences.get("browser.link.open_newwindow");
-    return openNewWindow.value != 2;
-  },
-
-  /**
-   * Determines where a link which opens a new window will open.
-   *
-   * @returns 2 if such links should be opened in new windows,
-   *          3 if such links should be opened in new tabs
-   */
-  writeLinkTarget() {
-    var linkTargeting = document.getElementById("linkTargeting");
-    return linkTargeting.checked ? 3 : 2;
-  },
-
-  /**
-   * @returns {boolean}
-   *   Whether the "Open links in tabs instead of new windows" settings
-   *   checkbox should be checked. Should only be checked if the
-   *   `browser.link.open_newwindow.override.external` pref is set to the
-   *   value of 7 (nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT).
-   */
-  readExternalLinkNextToActiveTab() {
-    const externalLinkOpenOverride = Preferences.get(
-      "browser.link.open_newwindow.override.external"
-    );
-
-    return (
-      externalLinkOpenOverride.value ==
-      Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT
-    );
-  },
-
-  /**
-   * This pref has at least 8 valid values but we are offering a checkbox
-   * to set one specific value (`7`).
-   *
-   * @param {HTMLInputElement} inputElement
-   * @returns {number}
-   *   - `7` (`nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT`) if checked
-   *   - the default value of
-   *     `browser.link.open_newwindow.override.external` if not checked
-   */
-  writeExternalLinkNextToActiveTab(inputElement) {
-    const externalLinkOpenOverride = Preferences.get(
-      "browser.link.open_newwindow.override.external"
-    );
-    Glean.linkHandling.openNextToActiveTabSettingsEnabled.set(
-      inputElement.checked
-    );
-    Glean.linkHandling.openNextToActiveTabSettingsChange.record({
-      checked: inputElement.checked,
-    });
-    return inputElement.checked
-      ? Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_AFTER_CURRENT
-      : externalLinkOpenOverride.defaultValue;
-  },
-
   /**
    *  Shows a subdialog containing the profile selector page.
    */
@@ -3113,7 +4287,7 @@ var gMainPane = {
    * The search mode is only available from the menu to change the primary browser
    * language.
    *
-   * @param {{ search: boolean }}
+   * @param {{ search: boolean }} search
    */
   showBrowserLanguagesSubDialog({ search }) {
     // Record the telemetry event with an id to associate related actions.
@@ -3329,57 +4503,6 @@ var gMainPane = {
     }
   },
 
-  async checkBrowserContainers() {
-    let checkbox = document.getElementById("browserContainersCheckbox");
-    if (checkbox.checked) {
-      Services.prefs.setBoolPref("privacy.userContext.enabled", true);
-      return;
-    }
-
-    let count = ContextualIdentityService.countContainerTabs();
-    if (count == 0) {
-      Services.prefs.setBoolPref("privacy.userContext.enabled", false);
-      return;
-    }
-
-    let [title, message, okButton, cancelButton] =
-      await document.l10n.formatValues([
-        { id: "containers-disable-alert-title" },
-        { id: "containers-disable-alert-desc", args: { tabCount: count } },
-        { id: "containers-disable-alert-ok-button", args: { tabCount: count } },
-        { id: "containers-disable-alert-cancel-button" },
-      ]);
-
-    let buttonFlags =
-      Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_0 +
-      Ci.nsIPrompt.BUTTON_TITLE_IS_STRING * Ci.nsIPrompt.BUTTON_POS_1;
-
-    let rv = Services.prompt.confirmEx(
-      window,
-      title,
-      message,
-      buttonFlags,
-      okButton,
-      cancelButton,
-      null,
-      null,
-      {}
-    );
-    if (rv == 0) {
-      Services.prefs.setBoolPref("privacy.userContext.enabled", false);
-      return;
-    }
-
-    checkbox.checked = true;
-  },
-
-  /**
-   * Displays container panel for customising and adding containers.
-   */
-  showContainerSettings() {
-    gotoPref("containers");
-  },
-
   // FONTS
 
   /**
@@ -3477,18 +4600,6 @@ var gMainPane = {
         }
       }
     })().catch(console.error);
-  },
-
-  onMigrationButtonCommand() {
-    // Even though we're going to be showing the migration wizard here in
-    // about:preferences, we'll delegate the call to
-    // `MigrationUtils.showMigrationWizard`, as this will allow us to
-    // properly measure entering the dialog from the PREFERENCES entrypoint.
-    const browserWindow = window.browsingContext.topChromeWindow;
-
-    MigrationUtils.showMigrationWizard(browserWindow, {
-      entrypoint: MigrationUtils.MIGRATION_ENTRYPOINTS.PREFERENCES,
-    });
   },
 
   /**
@@ -3790,7 +4901,6 @@ var gMainPane = {
 
   destroy() {
     window.removeEventListener("unload", this);
-    Services.prefs.removeObserver(PREF_CONTAINERS_EXTENSION, this);
     Services.obs.removeObserver(this, AUTO_UPDATE_CHANGED_TOPIC);
     Services.obs.removeObserver(this, BACKGROUND_UPDATE_CHANGED_TOPIC);
 
@@ -3810,7 +4920,6 @@ var gMainPane = {
   async observe(aSubject, aTopic, aData) {
     if (aTopic == "nsPref:changed") {
       if (aData == PREF_CONTAINERS_EXTENSION) {
-        this.readBrowserContainersCheckbox();
         return;
       }
       // Rebuild the list when there are changes to preferences that influence
@@ -4621,7 +5730,14 @@ var gMainPane = {
       /^https?$/.test(uri.scheme) &&
       Services.prefs.getBoolPref("browser.chrome.site_icons")
     ) {
-      return uri.prePath + "/favicon.ico";
+      // As the favicon originates from web content and is displayed in the parent process,
+      // use the moz-remote-image: protocol to safely re-encode it.
+      let params = new URLSearchParams({
+        url: uri.prePath + "/favicon.ico",
+        width: 16,
+        height: 16,
+      });
+      return "moz-remote-image://?" + params;
     }
 
     return "";

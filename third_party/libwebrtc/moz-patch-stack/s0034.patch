@@ -20,10 +20,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  11 files changed, 27 insertions(+), 27 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index 7131daa82c..8ad64af5c8 100644
+index cbfc05f243..ba0be681c7 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -440,12 +440,12 @@ config("common_config") {
+@@ -444,12 +444,12 @@ config("common_config") {
      }
    }
  
@@ -38,7 +38,7 @@ index 7131daa82c..8ad64af5c8 100644
      defines += [ "WEBRTC_ARCH_ARM" ]
      if (arm_version >= 7) {
        defines += [ "WEBRTC_ARCH_ARM_V7" ]
-@@ -455,7 +455,7 @@ config("common_config") {
+@@ -459,7 +459,7 @@ config("common_config") {
      }
    }
  
@@ -48,7 +48,7 @@ index 7131daa82c..8ad64af5c8 100644
      if (mips_float_abi == "hard") {
        defines += [ "MIPS_FPU_LE" ]
 diff --git a/common_audio/BUILD.gn b/common_audio/BUILD.gn
-index 7eb2aca444..1e17368bf8 100644
+index 9176dbcc47..a95c90df2c 100644
 --- a/common_audio/BUILD.gn
 +++ b/common_audio/BUILD.gn
 @@ -67,7 +67,7 @@ rtc_library("common_audio") {
@@ -60,7 +60,7 @@ index 7eb2aca444..1e17368bf8 100644
      deps += [ ":common_audio_sse2" ]
      deps += [ ":common_audio_avx2" ]
    }
-@@ -89,7 +89,7 @@ rtc_source_set("mock_common_audio") {
+@@ -90,7 +90,7 @@ rtc_source_set("mock_common_audio") {
  rtc_source_set("common_audio_c_arm_asm") {
    sources = []
    deps = []
@@ -69,7 +69,7 @@ index 7eb2aca444..1e17368bf8 100644
      sources += [ "signal_processing/complex_bit_reverse_arm.S" ]
  
      if (arm_version >= 7) {
-@@ -153,7 +153,7 @@ rtc_library("common_audio_c") {
+@@ -154,7 +154,7 @@ rtc_library("common_audio_c") {
      "vad/webrtc_vad.c",
    ]
  
@@ -78,7 +78,7 @@ index 7eb2aca444..1e17368bf8 100644
      sources += [
        "signal_processing/complex_bit_reverse_mips.c",
        "signal_processing/complex_fft_mips.c",
-@@ -171,7 +171,7 @@ rtc_library("common_audio_c") {
+@@ -172,7 +172,7 @@ rtc_library("common_audio_c") {
      sources += [ "signal_processing/complex_fft.c" ]
    }
  
@@ -87,7 +87,7 @@ index 7eb2aca444..1e17368bf8 100644
      sources += [
        "signal_processing/complex_bit_reverse.c",
        "signal_processing/filter_ar_fast_q12.c",
-@@ -229,7 +229,7 @@ rtc_library("fir_filter_factory") {
+@@ -230,7 +230,7 @@ rtc_library("fir_filter_factory") {
      "../rtc_base:cpu_info",
      "../rtc_base/system:arch",
    ]
@@ -96,7 +96,7 @@ index 7eb2aca444..1e17368bf8 100644
      deps += [ ":common_audio_sse2" ]
      deps += [ ":common_audio_avx2" ]
    }
-@@ -238,7 +238,7 @@ rtc_library("fir_filter_factory") {
+@@ -239,7 +239,7 @@ rtc_library("fir_filter_factory") {
    }
  }
  
@@ -105,7 +105,7 @@ index 7eb2aca444..1e17368bf8 100644
    rtc_library("common_audio_sse2") {
      sources = [
        "fir_filter_sse.cc",
-@@ -287,7 +287,7 @@ if (rtc_build_with_neon) {
+@@ -288,7 +288,7 @@ if (rtc_build_with_neon) {
        "resampler/sinc_resampler_neon.cc",
      ]
  
@@ -114,7 +114,7 @@ index 7eb2aca444..1e17368bf8 100644
        # Enable compilation for the NEON instruction set.
        suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
        cflags = [ "-mfpu=neon" ]
-@@ -310,7 +310,7 @@ if (rtc_build_with_neon) {
+@@ -311,7 +311,7 @@ if (rtc_build_with_neon) {
        "signal_processing/min_max_operations_neon.c",
      ]
  
@@ -263,7 +263,7 @@ index e90ef0e06a..0e96125f40 100644
      cflags = [ "-mfpu=neon" ]
    }
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index ff3f4d5b93..b95f1aa2d0 100644
+index f45c664600..4c4366dad2 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
 @@ -10,7 +10,7 @@ import("//build/config/linux/gtk/gtk.gni")
@@ -276,10 +276,10 @@ index ff3f4d5b93..b95f1aa2d0 100644
  config("x11_config") {
    if (rtc_use_x11_extensions) {
 diff --git a/webrtc.gni b/webrtc.gni
-index 1c85298081..b48581b93e 100644
+index 88e0441d9e..00032f4476 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
-@@ -169,13 +169,13 @@ declare_args() {
+@@ -156,13 +156,13 @@ declare_args() {
  
    # Selects fixed-point code where possible.
    rtc_prefer_fixed_point = false

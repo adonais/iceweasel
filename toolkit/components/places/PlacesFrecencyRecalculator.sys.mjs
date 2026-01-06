@@ -86,6 +86,8 @@ const DEFAULT_CHUNK_SIZE = 50;
 // Threshold used to evaluate whether the number of Places events from the last
 // recalculation is high enough to deserve a recalculation rate increase.
 const ACCELERATION_EVENTS_THRESHOLD = 250;
+// The number of buckets to split moz_origins results
+const BUCKETS = 2;
 
 /**
  * Recalculates and decays frecency scores in Places.
@@ -323,12 +325,15 @@ export class PlacesFrecencyRecalculator {
         `
         UPDATE moz_origins
         SET frecency = IFNULL((
-          SELECT sum(frecency)
-          FROM moz_places h
-          WHERE origin_id = moz_origins.id
-          AND last_visit_date >
-            strftime('%s','now','localtime','start of day',
-                     '-${lazy.originsFrecencyCutOffDays} day','utc') * 1000000
+          SELECT SUM(f) FROM (
+            SELECT CAST(AVG(h.frecency) AS INTEGER) AS f
+            FROM moz_places h
+            WHERE origin_id = moz_origins.id
+            AND last_visit_date >
+              strftime('%s','now','localtime','start of day',
+                       '-${lazy.originsFrecencyCutOffDays} day','utc') * 1000000
+            GROUP BY date(last_visit_date / 1000000, 'unixepoch')
+          )
         ), 1.0), recalc_frecency = 0
         WHERE id IN (
           SELECT id FROM moz_origins
@@ -347,8 +352,23 @@ export class PlacesFrecencyRecalculator {
       // emptied.
       // In case of NULL, the default threshold is 2, that is higher than the
       // default frecency set above.
+      // Bug 2002569: We should modify the query to use percentiles.
       let threshold = (
-        await db.executeCached(`SELECT avg(frecency) FROM moz_origins`)
+        await db.executeCached(
+          `
+        	WITH ntiled AS (
+            SELECT
+              host,
+              frecency,
+              NTILE(:buckets) OVER (ORDER BY frecency ASC) AS ntile
+	          FROM moz_origins
+	          WHERE frecency > 1)
+          SELECT MAX(frecency)
+          FROM ntiled
+          WHERE ntile = 1
+        `,
+          { buckets: BUCKETS }
+        )
       )[0].getResultByIndex(0);
       await lazy.PlacesUtils.metadata.set(
         "origin_frecency_threshold",
@@ -390,26 +410,16 @@ export class PlacesFrecencyRecalculator {
   }
 
   /**
-   * Decays frecency and adaptive history.
+   * Decays adaptive history.
    *
    * @returns {Promise<void>} once the process is complete. Never rejects.
    */
   async decay() {
-    lazy.logger.trace("Decay frecency");
+    lazy.logger.trace("Decay adaptive history.");
     let timerId = Glean.places.idleFrecencyDecayTime.start();
-    // Ensure moz_places_afterupdate_frecency_trigger ignores decaying
-    // frecency changes.
-    lazy.PlacesUtils.history.isFrecencyDecaying = true;
     try {
       let db = await lazy.PlacesUtils.promiseUnsafeWritableDBConnection();
       await db.executeTransaction(async function () {
-        // Decay all frecency rankings to reduce value of pages that haven't
-        // been visited in a while.
-        await db.executeCached(
-          `UPDATE moz_places SET frecency = ROUND(frecency * :decay_rate)
-            WHERE frecency > 0 AND recalc_frecency = 0`,
-          { decay_rate: lazy.frecencyDecayRate }
-        );
         // Decay potentially unused adaptive entries (e.g. those that are at 1)
         // to allow better chances for new entries that will start at 1.
         await db.executeCached(
@@ -428,14 +438,11 @@ export class PlacesFrecencyRecalculator {
         );
 
         Glean.places.idleFrecencyDecayTime.stopAndAccumulate(timerId);
-        PlacesObservers.notifyListeners([new PlacesRanking()]);
       });
     } catch (ex) {
       Glean.places.idleFrecencyDecayTime.cancel(timerId);
       console.error(ex);
       lazy.logger.error(ex);
-    } finally {
-      lazy.PlacesUtils.history.isFrecencyDecaying = false;
     }
   }
 

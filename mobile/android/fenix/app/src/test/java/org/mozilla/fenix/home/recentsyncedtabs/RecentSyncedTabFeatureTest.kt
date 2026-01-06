@@ -33,7 +33,6 @@ import mozilla.components.service.fxa.store.SyncAction
 import mozilla.components.service.fxa.store.SyncStatus
 import mozilla.components.service.fxa.store.SyncStore
 import mozilla.components.service.fxa.sync.SyncReason
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.telemetry.glean.testing.ErrorType
@@ -572,7 +571,6 @@ class RecentSyncedTabFeatureTest {
         account?.let {
             this.dispatch(SyncAction.UpdateAccount(account))
         }
-        this.waitUntilIdle()
     }
 
     private fun Tab.toVisitInfo(url: String, previewUrl: String?) = VisitInfo(

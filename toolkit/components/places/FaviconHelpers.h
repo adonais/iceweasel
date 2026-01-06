@@ -23,10 +23,9 @@ class nsIPrincipal;
 #include "mozilla/ipc/IPCCore.h"
 
 #define ICON_STATUS_UNKNOWN 0
-#define ICON_STATUS_CHANGED 1 << 0
-#define ICON_STATUS_SAVED 1 << 1
-#define ICON_STATUS_ASSOCIATED 1 << 2
-#define ICON_STATUS_CACHED 1 << 3
+#define ICON_STATUS_SAVED 1 << 0
+#define ICON_STATUS_ASSOCIATED 1 << 1
+#define ICON_STATUS_CACHED 1 << 2
 
 #define TO_CHARBUFFER(_buffer) \
   reinterpret_cast<char*>(const_cast<uint8_t*>(_buffer))

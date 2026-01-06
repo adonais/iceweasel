@@ -7,10 +7,10 @@
 
 #include "nsSpecialCasingData.h"
 #include <stdlib.h>       // for bsearch
-#include <array>
+#include <array>          // for std::size
 
-/* SpecialCasing-16.0.0.txt */
-/* Date: 2024-05-10, 22:49:00 GMT */
+/* SpecialCasing-17.0.0.txt */
+/* Date: 2025-07-31, 22:11:55 GMT */
 
 using mozilla::unicode::MultiCharMapping;
 

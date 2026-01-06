@@ -228,3 +228,12 @@ tar -c chromium | python3 $GECKO_PATH/taskcluster/scripts/misc/zstdpy > $ARTIFAC
 
 mkdir -p $UPLOAD_DIR
 mv "$ARTIFACT_NAME" "$UPLOAD_DIR"
+
+if [ "$IS_ANDROID" = true ]; then
+  # Package up symbols (lib.unstripped) from android build separately.
+  SYM_ARTIFACT="car_android_symbols.tar.zst"
+  SYM_DIR="src/out/Default/lib.unstripped"
+  tar -C "$(dirname "$SYM_DIR")" -c "$(basename "$SYM_DIR")" \
+    | python3 "$GECKO_PATH/taskcluster/scripts/misc/zstdpy" > "$SYM_ARTIFACT"
+  mv "$SYM_ARTIFACT" "$UPLOAD_DIR"
+fi

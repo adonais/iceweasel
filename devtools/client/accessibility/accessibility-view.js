@@ -60,7 +60,7 @@ AccessibilityView.prototype = {
    * Initialize accessibility view, create its top level component and set the
    * data store.
    *
-   * @param {Object}
+   * @param {object}
    *        Object that contains the following properties:
    * - supports                               {JSON}
    *                                          a collection of flags indicating
@@ -252,7 +252,7 @@ AccessibilityView.prototype = {
   /**
    * Process message from accessibility panel.
    *
-   * @param {Object} event  message type and data.
+   * @param {object} event  message type and data.
    */
   onMessage(event) {
     const data = event.data;

@@ -12,7 +12,6 @@ import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.history.HistoryItem
 import mozilla.components.concept.engine.utils.ABOUT_HOME_URL
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -43,7 +42,7 @@ class AboutHomeMiddlewareTest {
 
         store.dispatch(
             ContentAction.UpdateTitleAction(sessionId = tab.id, title = ""),
-        ).joinBlocking()
+        )
 
         assertEquals(
             homepageTitle,
@@ -61,7 +60,7 @@ class AboutHomeMiddlewareTest {
 
         store.dispatch(
             ContentAction.UpdateTitleAction(sessionId = tab.id, title = title),
-        ).joinBlocking()
+        )
 
         assertEquals(
             title,
@@ -90,7 +89,7 @@ class AboutHomeMiddlewareTest {
                 historyList = originalHistoryList,
                 currentIndex = 1,
             ),
-        ).joinBlocking()
+        )
 
         assertEquals(
             expectedHistoryList,

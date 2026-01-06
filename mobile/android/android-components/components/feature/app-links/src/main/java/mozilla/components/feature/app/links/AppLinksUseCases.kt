@@ -20,8 +20,7 @@ import mozilla.components.support.ktx.android.content.pm.isPackageInstalled
 import mozilla.components.support.ktx.android.net.isHttpOrHttps
 import mozilla.components.support.utils.Browsers
 import mozilla.components.support.utils.BrowsersCache
-import mozilla.components.support.utils.ext.queryIntentActivitiesCompat
-import mozilla.components.support.utils.ext.resolveActivityCompat
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import java.net.URISyntaxException
 
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -63,7 +62,7 @@ class AppLinksUseCases(
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal fun findActivities(intent: Intent): List<ResolveInfo> {
         return try {
-            context.packageManager
+            context.packageManagerCompatHelper
                 .queryIntentActivitiesCompat(intent, PackageManager.GET_RESOLVED_FILTER)
         } catch (e: RuntimeException) {
             Logger("AppLinksUseCases").error("failed to query activities", e)
@@ -72,7 +71,10 @@ class AppLinksUseCases(
     }
 
     private fun findDefaultActivity(intent: Intent): ResolveInfo? {
-        return context.packageManager.resolveActivityCompat(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        return context.packageManagerCompatHelper.resolveActivityCompat(
+            intent,
+            PackageManager.MATCH_DEFAULT_ONLY,
+        )
     }
 
     /**
@@ -85,11 +87,11 @@ class AppLinksUseCases(
      * @param includeInstallAppFallback If {true} then offer an app-link to the installed market app
      * if no web fallback is available.
      */
-    @Suppress("ComplexMethod")
     inner class GetAppLinkRedirect internal constructor(
         private val includeHttpAppLinks: Boolean = false,
         private val includeInstallAppFallback: Boolean = false,
     ) {
+        @Suppress("CyclomaticComplexMethod")
         operator fun invoke(url: String): AppLinkRedirect {
             val urlHash = (url + includeHttpAppLinks + includeHttpAppLinks).hashCode()
             val currentTimeStamp = SystemClock.elapsedRealtime()
@@ -143,7 +145,7 @@ class AppLinksUseCases(
 
             val marketplaceIntent = intent?.`package`?.let {
                 if (includeInstallAppFallback &&
-                    !context.packageManager.isPackageInstalled(it)
+                    !context.packageManagerCompatHelper.isPackageInstalled(it)
                 ) {
                     safeParseUri(MARKET_INTENT_URI_PACKAGE_PREFIX + it, 0)
                 } else {
@@ -331,8 +333,19 @@ class AppLinksUseCases(
 
         // list of scheme from https://searchfox.org/mozilla-central/source/netwerk/build/components.conf
         internal val ENGINE_SUPPORTED_SCHEMES: Set<String> = setOf(
-            "about", "data", "file", "ftp", "http",
-            "https", "moz-extension", "moz-safe-about", "resource", "view-source", "ws", "wss", "blob",
+            "about",
+            "data",
+            "file",
+            "ftp",
+            "http",
+            "https",
+            "moz-extension",
+            "moz-safe-about",
+            "resource",
+            "view-source",
+            "ws",
+            "wss",
+            "blob",
         )
 
         internal val ALWAYS_DENY_SCHEMES: Set<String> =

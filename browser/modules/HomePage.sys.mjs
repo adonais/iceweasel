@@ -255,7 +255,7 @@ export let HomePage = {
    * Handles updates of the ignore list, checking the existing preference and
    * correcting it as necessary.
    *
-   * @param {Object} eventData
+   * @param {object} eventData
    *   The event data as received from RemoteSettings.
    */
   async _handleIgnoreListUpdated({ data: { current } }) {

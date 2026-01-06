@@ -42,8 +42,6 @@ class nsThreadPool final : public mozilla::Runnable, public nsIThreadPool {
   struct MRUIdleEntry;  // forward declaration only, see nsThreadPool.cpp
 
   void ShutdownThread(nsIThread* aThread);
-  nsresult PutEvent(nsIRunnable* aEvent, mozilla::MutexAutoLock& aProofOfLock)
-      MOZ_REQUIRES(mMutex);
   nsresult PutEvent(already_AddRefed<nsIRunnable> aEvent, DispatchFlags aFlags,
                     mozilla::MutexAutoLock& aProofOfLock) MOZ_REQUIRES(mMutex);
   void NotifyChangeToAllIdleThreads() MOZ_REQUIRES(mMutex);

@@ -445,6 +445,17 @@ bool ComputedStyle::HasAnchorPosReference() const {
     return true;
   }
 
+  // Check if anchor-center is used in alignment properties, directly accessing
+  // members rather than using UsedAlign* because legacy values can't resolve to
+  // anchor-center.
+  const auto alignSelfValue = pos->mAlignSelf._0 & ~StyleAlignFlags::FLAG_BITS;
+  const auto justifySelfValue =
+      pos->mJustifySelf._0 & ~StyleAlignFlags::FLAG_BITS;
+  if (alignSelfValue == StyleAlignFlags::ANCHOR_CENTER ||
+      justifySelfValue == StyleAlignFlags::ANCHOR_CENTER) {
+    return true;
+  }
+
   // Now check if any property that can use anchor() or anchor-size()
   // does use any. Note that it's valid to specify e.g. left: anchor(left);
   // but without specifying position-anchor, in which case the function

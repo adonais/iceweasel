@@ -24,7 +24,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiScrollable
 import androidx.test.uiautomator.UiSelector
-import mozilla.components.support.utils.ext.getPackageInfoCompat
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.containsString
 import org.mozilla.fenix.R
@@ -50,7 +50,8 @@ class SettingsSubMenuAboutRobot {
     fun verifyVersionNumber() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
 
-        val packageInfo = context.packageManager.getPackageInfoCompat(context.packageName, 0)
+        val packageInfo =
+            context.packageManagerCompatHelper.getPackageInfoCompat(context.packageName, 0)
         val versionCode = PackageInfoCompat.getLongVersionCode(packageInfo).toString()
         val buildNVersion = "${packageInfo.versionName} (Build #$versionCode)\n"
         val geckoVersion =

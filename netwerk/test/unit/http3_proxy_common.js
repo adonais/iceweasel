@@ -16,6 +16,8 @@ const {
   NodeHTTPSServer,
   NodeHTTP2Server,
   NodeHTTP2ProxyServer,
+  NodeWebSocketHttp2Server,
+  WebSocketConnection,
 } = ChromeUtils.importESModule("resource://testing-common/NodeServer.sys.mjs");
 
 function makeChan(uri) {
@@ -429,6 +431,70 @@ async function test_http_connect_fallback() {
   await proxy.stop();
   pps.unregisterFilter(filter);
   await server.stop();
+}
+
+/**
+ * Helper function to open a WebSocket connection
+ */
+async function wsChannelOpenPromise(url, msg) {
+  let conn = new WebSocketConnection();
+  let statusObj = await Promise.race([conn.open(url), conn.finished()]);
+  if (statusObj && statusObj.status != Cr.NS_OK) {
+    return [statusObj.status, ""];
+  }
+  let finalStatusPromise = conn.finished();
+  conn.send(msg);
+  let res = await conn.receiveMessages();
+  conn.close();
+  let finalStatus = await finalStatusPromise;
+  return [finalStatus.status, res];
+}
+
+/**
+ * Test WebSocket through H3 proxy using H2 WebSocket server
+ */
+async function test_http_connect_websocket() {
+  info("Running test_http_connect_websocket");
+  Services.prefs.setBoolPref("network.http.http2.websockets", true);
+
+  let wss = new NodeWebSocketHttp2Server();
+  await wss.start();
+
+  registerCleanupFunction(async () => {
+    await wss.stop();
+  });
+
+  Assert.notEqual(wss.port(), null);
+  await wss.registerMessageHandler((data, ws) => {
+    ws.send(data);
+  });
+
+  let url = `wss://alt1.example.com:${wss.port()}`;
+  const msg = "test h2 websocket through h3 proxy";
+  let [status, res] = await wsChannelOpenPromise(url, msg);
+  Assert.equal(status, Cr.NS_OK);
+  Assert.deepEqual(res, [msg]);
+
+  // Test multiple messages
+  let conn = new WebSocketConnection();
+  await conn.open(url);
+  conn.send("message1");
+  let mess1 = await conn.receiveMessages();
+  Assert.deepEqual(mess1, ["message1"]);
+
+  conn.send("message2");
+  conn.send("message3");
+  let mess2 = [];
+  while (mess2.length < 2) {
+    mess2 = mess2.concat(await conn.receiveMessages());
+  }
+  Assert.deepEqual(mess2, ["message2", "message3"]);
+
+  conn.close();
+  let { status: finalStatus } = await conn.finished();
+  Assert.equal(finalStatus, Cr.NS_OK);
+
+  await wss.stop();
 }
 
 async function test_inner_connection_fallback() {

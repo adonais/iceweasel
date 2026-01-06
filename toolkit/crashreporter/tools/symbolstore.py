@@ -46,6 +46,11 @@ from mozpack.copier import FileRegistry
 from mozpack.manifests import InstallManifest, UnreadableInstallManifest
 from variables import get_buildid
 
+# Global variables
+
+RUST_GITHUB = "github.com/rust-lang/rust"
+FIREFOX_GITHUB = "github.com/mozilla-firefox/firefox"
+
 # Utility classes
 
 
@@ -320,11 +325,27 @@ def IsInDir(file, dir):
         return False
 
 
+def TryGetGitRepoInfoFromHg(srcdir):
+    rev = os.environ.get("MOZ_SOURCE_CHANGESET")
+    if rev:
+        git_commit = read_output(
+            "hg", "-R", srcdir, "log", "-r", rev, "-T", "{extras.git_commit}"
+        )
+        if git_commit:
+            git_root = f"https://{FIREFOX_GITHUB}"
+            return GitRepoInfo(srcdir, git_commit, git_root)
+    return None
+
+
 def GetVCSFilenameFromSrcdir(file, srcdir):
     if srcdir not in Dumper.srcdirRepoInfo:
-        # Not in cache, so find it adnd cache it
+        # Not in cache, so find it and cache it
         if os.path.isdir(os.path.join(srcdir, ".hg")):
-            Dumper.srcdirRepoInfo[srcdir] = HGRepoInfo(srcdir)
+            git_repo_info = TryGetGitRepoInfoFromHg(srcdir)
+            if git_repo_info:
+                Dumper.srcdirRepoInfo[srcdir] = git_repo_info
+            else:
+                Dumper.srcdirRepoInfo[srcdir] = HGRepoInfo(srcdir)
         else:
             # Unknown VCS or file is not in a repo.
             return None
@@ -433,7 +454,8 @@ def SourceIndex(fileStream, outputPath, vcs_root, s3_bucket):
         + "VERCTRL=http\r\n"
         + "SRCSRV: variables ------------------------------------------\r\n"
         + "SRCSRVVERCTRL=http\r\n"
-        + "RUST_GITHUB_TARGET=https://github.com/rust-lang/rust/raw/%var4%/%var3%\r\n"
+        + f"RUST_GITHUB_TARGET=https://{RUST_GITHUB}/raw/%var4%/%var3%\r\n"
+        + f"FIREFOX_GITHUB_TARGET=https://{FIREFOX_GITHUB}/raw/%var4%/%var3%\r\n"
     )
     pdbStreamFile.write("HGSERVER=" + vcs_root + "\r\n")
     pdbStreamFile.write("HG_TARGET=%hgserver%/raw-file/%var4%/%var3%\r\n")
@@ -443,7 +465,7 @@ def SourceIndex(fileStream, outputPath, vcs_root, s3_bucket):
         pdbStreamFile.write("S3_TARGET=https://%s3_bucket%.s3.amazonaws.com/%var3%\r\n")
 
     # Allow each entry to choose its template via "var2".
-    # Possible values for var2 are: HG_TARGET / S3_TARGET / RUST_GITHUB_TARGET
+    # Possible values for var2 are: HG_TARGET / S3_TARGET / RUST_GITHUB_TARGET / FIREFOX_GITHUB_TARGET
     pdbStreamFile.write("SRCSRVTRG=%fnvar%(%var2%)\r\n")
 
     pdbStreamFile.write(
@@ -512,7 +534,7 @@ class Dumper:
             rust_srcdir = "/rustc/" + rust_sha
             self.srcdirs.append(rust_srcdir)
             Dumper.srcdirRepoInfo[rust_srcdir] = GitRepoInfo(
-                rust_srcdir, rust_sha, "https://github.com/rust-lang/rust/"
+                rust_srcdir, rust_sha, f"https://{RUST_GITHUB}/"
             )
 
     # subclasses override this
@@ -691,9 +713,13 @@ class Dumper:
                             (vcs, bucket, source_file, nothing) = filename.split(":", 3)
                             sourceFileStream += sourcepath + "*S3_TARGET*"
                             sourceFileStream += source_file + "\r\n"
-                        elif filename.startswith("git:github.com/rust-lang/rust:"):
+                        elif filename.startswith(f"git:{RUST_GITHUB}:"):
                             (vcs, repo, source_file, revision) = filename.split(":", 3)
                             sourceFileStream += sourcepath + "*RUST_GITHUB_TARGET*"
+                            sourceFileStream += source_file + "*" + revision + "\r\n"
+                        elif filename.startswith(f"git:{FIREFOX_GITHUB}:"):
+                            (vcs, repo, source_file, revision) = filename.split(":", 3)
+                            sourceFileStream += sourcepath + "*FIREFOX_GITHUB_TARGET*"
                             sourceFileStream += source_file + "*" + revision + "\r\n"
                         f.write("FILE %s %s\n" % (index, filename))
                     elif line.startswith("INFO CODE_ID "):
@@ -783,7 +809,10 @@ class Dumper:
                 print(
                     "PERFHERDER_DATA: %s" % json.dumps(perfherder_data), file=sys.stderr
                 )
-                if "MOZ_AUTOMATION" in os.environ:
+                if (
+                    "MOZ_AUTOMATION" in os.environ
+                    or "SNAPCRAFT_BUILD_INFO" in os.environ
+                ):
                     upload_dir = Path(os.environ.get("UPLOAD_DIR"))
                     upload_dir.mkdir(parents=True, exist_ok=True)
                     upload_path = upload_dir / "perfherder-data-compiler-metrics.json"

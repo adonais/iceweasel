@@ -15,7 +15,7 @@ export const WEBEXTENSION_FALLBACK_DOC_URL =
  *        The WindowGlobal from which we want to extract the addonId. Either a
  *        WindowGlobalParent or a WindowGlobalChild depending on where this
  *        helper is used from.
- * @return {String} Returns the addon id if any could found, null otherwise.
+ * @return {string} Returns the addon id if any could found, null otherwise.
  */
 export function getAddonIdForWindowGlobal(windowGlobal) {
   const browsingContext = windowGlobal.browsingContext;
@@ -58,21 +58,21 @@ export function getAddonIdForWindowGlobal(windowGlobal) {
  *
  * @param {BrowsingContext} browsingContext
  *        The browsing context we want to check if it is part of debugged context
- * @param {Object} sessionContext
+ * @param {object} sessionContext
  *        The Session Context to help know what is debugged.
  *        See devtools/server/actors/watcher/session-context.js
- * @param {Object} options
+ * @param {object} options
  *        Optional arguments passed via a dictionary.
- * @param {Boolean} options.forceAcceptTopLevelTarget
+ * @param {boolean} options.forceAcceptTopLevelTarget
  *        If true, we will accept top level browsing context even when server target switching
  *        is disabled. In case of client side target switching, the top browsing context
  *        is debugged via a target actor that is being instantiated manually by the frontend.
  *        And this target actor isn't created, nor managed by the watcher actor.
- * @param {Boolean} options.acceptInitialDocument
+ * @param {boolean} options.acceptInitialDocument
  *        By default, we ignore initial about:blank documents/WindowGlobals.
  *        But some code cares about all the WindowGlobals, this flag allows to also accept them.
  *        (Used by _validateWindowGlobal)
- * @param {Boolean} options.acceptNoWindowGlobal
+ * @param {boolean} options.acceptNoWindowGlobal
  *        By default, we will reject BrowsingContext that don't have any WindowGlobal,
  *        either retrieved via BrowsingContext.currentWindowGlobal in the parent process,
  *        or via the options.windowGlobal argument.
@@ -202,7 +202,7 @@ export function isBrowsingContextPartOfContext(
  *
  * @param {BrowsingContext} browsingContext
  *        The browsing context we want to check if it is part of debugged context
- * @param {Object} sessionContext
+ * @param {object} sessionContext
  *        WatcherActor's session context. This helps know what is the overall debugged scope.
  *        See watcher actor constructor for more info.
  */
@@ -230,10 +230,10 @@ function isPopupToDebug(browsingContext, sessionContext) {
  *
  * @param {WindowGlobalParent|WindowGlobalChild} windowGlobal
  *        The WindowGlobal we want to check if it is part of debugged context
- * @param {Object} sessionContext
+ * @param {object} sessionContext
  *        The Session Context to help know what is debugged.
  *        See devtools/server/actors/watcher/session-context.js
- * @param {Object} options
+ * @param {object} options
  *        Optional arguments passed via a dictionary.
  *        See `isBrowsingContextPartOfContext` jsdoc.
  */
@@ -277,10 +277,10 @@ function _validateWindowGlobal(
  *
  * @param {WindowGlobalParent|WindowGlobalChild} windowGlobal
  *        The WindowGlobal we want to check if it is part of debugged context
- * @param {Object} sessionContext
+ * @param {object} sessionContext
  *        The Session Context to help know what is debugged.
  *        See devtools/server/actors/watcher/session-context.js
- * @param {Object} options
+ * @param {object} options
  *        Optional arguments passed via a dictionary.
  *        See `isBrowsingContextPartOfContext` jsdoc.
  */
@@ -308,7 +308,7 @@ export function isWindowGlobalPartOfContext(
  * - For all chrome *and* content contexts (privileged windows, as well as <browser> elements and their inner content documents)
  * - For all nested browsing context. We fetch the contexts recursively.
  *
- * @param {Object} sessionContext
+ * @param {object} sessionContext
  *        The Session Context to help know what is debugged.
  *        See devtools/server/actors/watcher/session-context.js
  */

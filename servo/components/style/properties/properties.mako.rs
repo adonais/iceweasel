@@ -6,13 +6,12 @@
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
 
-use app_units::Au;
 use servo_arc::{Arc, UniqueArc};
 use std::{ops, ptr};
 use std::{fmt, mem};
 
 #[cfg(feature = "servo")] use euclid::SideOffsets2D;
-#[cfg(feature = "gecko")] use crate::gecko_bindings::structs::{self, nsCSSPropertyID};
+#[cfg(feature = "gecko")] use crate::gecko_bindings::structs::{self, NonCustomCSSPropertyId};
 #[cfg(feature = "servo")] use crate::logical_geometry::LogicalMargin;
 #[cfg(feature = "servo")] use crate::computed_values;
 use crate::logical_geometry::WritingMode;
@@ -476,9 +475,9 @@ pub mod property_counts {
 
 % if engine == "gecko":
 #[allow(dead_code)]
-unsafe fn static_assert_nscsspropertyid() {
+unsafe fn static_assert_noncustomcsspropertyid() {
     % for i, property in enumerate(data.longhands + data.shorthands + data.all_aliases()):
-    std::mem::transmute::<[u8; ${i}], [u8; ${property.nscsspropertyid()} as usize]>([0; ${i}]); // ${property.name}
+    std::mem::transmute::<[u8; ${i}], [u8; ${property.noncustomcsspropertyid()} as usize]>([0; ${i}]); // ${property.name}
     % endfor
 }
 % endif
@@ -1820,7 +1819,7 @@ impl ComputedValues {
     pub fn computed_or_resolved_value(
         &self,
         property_id: LonghandId,
-        context: Option<&resolved::Context>,
+        context: Option<&mut resolved::Context>,
         dest: &mut CssStringWriter,
     ) -> fmt::Result {
         use crate::values::resolved::ToResolvedValue;
@@ -1839,6 +1838,7 @@ impl ComputedValues {
                     _ => unsafe { debug_unreachable!() },
                 };
                 if let Some(c) = context {
+                    c.current_longhand = Some(property_id);
                     value.to_resolved_value(c).to_css(&mut dest)
                 } else {
                     value.to_css(&mut dest)
@@ -1877,7 +1877,7 @@ impl ComputedValues {
     pub fn computed_or_resolved_declaration(
         &self,
         property_id: LonghandId,
-        context: Option<&resolved::Context>,
+        context: Option<&mut resolved::Context>,
     ) -> PropertyDeclaration {
         use crate::values::resolved::ToResolvedValue;
         use crate::values::computed::ToComputedValue;
@@ -1895,6 +1895,7 @@ impl ComputedValues {
                     _ => unsafe { debug_unreachable!() },
                 };
                 if let Some(c) = context {
+                    c.current_longhand = Some(physical_property_id);
                     let resolved = computed_value.to_resolved_value(c);
                     computed_value = ToResolvedValue::from_resolved_value(resolved);
                 }
@@ -2042,6 +2043,7 @@ impl ComputedValues {
                 let context = resolved::Context {
                     style: self,
                     for_property: id.into(),
+                    current_longhand: Some(id),
                 };
                 let mut s = String::new();
                 self.computed_or_resolved_value(
@@ -2486,7 +2488,7 @@ impl<'a> StyleBuilder<'a> {
     ///
     /// Do _not_ actually call this to construct a style, this should mostly be
     /// used for animations.
-    pub fn for_animation(
+    pub fn for_derived_style(
         device: &'a Device,
         stylist: Option<&'a Stylist>,
         style_to_derive_from: &'a ComputedValues,
@@ -2876,17 +2878,6 @@ pub static CASCADE_PROPERTY: [CascadePropertyFn; ${len(data.longhands)}] = [
         longhands::${property.ident}::cascade_property,
     % endfor
 ];
-
-/// See StyleAdjuster::adjust_for_border_width.
-pub fn adjust_border_width(style: &mut StyleBuilder) {
-    % for side in ["top", "right", "bottom", "left"]:
-        // Like calling to_computed_value, which wouldn't type check.
-        if style.get_border().clone_border_${side}_style().none_or_hidden() &&
-           style.get_border().border_${side}_has_nonzero_width() {
-            style.set_border_${side}_width(Au(0));
-        }
-    % endfor
-}
 
 /// An identifier for a given alias property.
 #[derive(Clone, Copy, Eq, PartialEq, MallocSizeOf)]

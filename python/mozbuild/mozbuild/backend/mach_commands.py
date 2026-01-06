@@ -9,7 +9,6 @@ import subprocess
 import sys
 
 import mozpack.path as mozpath
-from buildconfig import topsrcdir
 from mach.decorators import Command, CommandArgument
 from mozfile import which
 
@@ -49,7 +48,9 @@ def run(command_context, ide, no_interactive, args):
         return 1
 
     if ide == "vscode":
-        result = subprocess.run([sys.executable, "mach", "configure"], cwd=topsrcdir)
+        result = subprocess.run(
+            [sys.executable, "mach", "configure"], cwd=command_context.topsrcdir
+        )
         if result.returncode:
             return result.returncode
 
@@ -58,7 +59,7 @@ def run(command_context, ide, no_interactive, args):
         # export target, because we can't do anything better.
         result = subprocess.run(
             [sys.executable, "mach", "build", "pre-export", "export", "pre-compile"],
-            cwd=topsrcdir,
+            cwd=command_context.topsrcdir,
         )
         if result.returncode:
             return result.returncode
@@ -66,7 +67,9 @@ def run(command_context, ide, no_interactive, args):
         # Here we refresh the whole build. 'build export' is sufficient here and is
         # probably more correct but it's also nice having a single target to get a fully
         # built and indexed project (gives a easy target to use before go out to lunch).
-        result = subprocess.run([sys.executable, "mach", "build"], cwd=topsrcdir)
+        result = subprocess.run(
+            [sys.executable, "mach", "build"], cwd=command_context.topsrcdir
+        )
         if result.returncode:
             return result.returncode
 
@@ -82,7 +85,8 @@ def run(command_context, ide, no_interactive, args):
     if backend:
         # Generate or refresh the IDE backend.
         result = subprocess.run(
-            [sys.executable, "mach", "build-backend", "-b", backend], cwd=topsrcdir
+            [sys.executable, "mach", "build-backend", "-b", backend],
+            cwd=command_context.topsrcdir,
         )
         if result.returncode:
             return result.returncode
@@ -237,6 +241,7 @@ def setup_vscode_or_vscodium(ide, command_context, interactive):
             "[javascript][javascriptreact][typescript][typescriptreact][json]",
             "[javascript][javascriptreact][typescript][typescriptreact][json][html]",
             "[javascript][javascriptreact][typescript][typescriptreact][json][jsonc][html]",
+            "rust-analyzer.server.extraEnv",
         ]
         for entry in deprecated:
             if entry in old_settings:
@@ -399,7 +404,7 @@ def setup_clangd_rust_in_vscode(command_context):
             "--clang-tidy",
             "--header-insertion=never",
         ],
-        "rust-analyzer.server.extraEnv": {
+        "rust-analyzer.cargo.extraEnv": {
             # Point rust-analyzer at the real target directory used by our
             # build, so it can discover the files created when we run `./mach
             # cargo check`.

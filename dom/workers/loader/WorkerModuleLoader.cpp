@@ -128,6 +128,11 @@ bool WorkerModuleLoader::IsDynamicImportSupported() {
   return !workerPrivate->IsServiceWorker();
 }
 
+bool WorkerModuleLoader::IsForServiceWorker() const {
+  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+  return workerPrivate && workerPrivate->IsServiceWorker();
+}
+
 bool WorkerModuleLoader::CanStartLoad(ModuleLoadRequest* aRequest,
                                       nsresult* aRvOut) {
   return true;

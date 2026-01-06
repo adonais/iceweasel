@@ -5322,6 +5322,7 @@ var gCSSProperties = {
       "-moz-hyperlinktext",
       "-moz-visitedhyperlinktext",
       /* color-mix */
+      "color-mix(red, blue)",
       "color-mix(in srgb, red, blue)",
       "color-mix(in srgb, highlight, rgba(0, 0, 0, .5))",
       "color-mix(in srgb, color-mix(in srgb, red 10%, blue), green)",
@@ -5360,7 +5361,6 @@ var gCSSProperties = {
       "hsl(0 0% 0% /)",
       "hsl(0, 0%, 0% /)",
       /* color-mix */
-      "color-mix(red, blue)",
       "color-mix(red blue)",
       "color-mix(in srgb, red blue)",
       "color-mix(in srgb, red 10% blue)",
@@ -5438,6 +5438,7 @@ var gCSSProperties = {
     domProp: "counterIncrement",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
     initial_values: ["none"],
     other_values: [
       "foo 1",
@@ -5462,6 +5463,7 @@ var gCSSProperties = {
     domProp: "counterReset",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
     initial_values: ["none"],
     other_values: [
       "foo 1",
@@ -5485,6 +5487,7 @@ var gCSSProperties = {
     domProp: "counterSet",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
     initial_values: ["none"],
     other_values: [
       "foo 1",
@@ -7082,13 +7085,11 @@ var gCSSProperties = {
     initial_values: [
       "none",
       "medium",
-      "thin",
-      // XXX Should be invert, but currently currentcolor.
-      //"invert", "none medium invert"
       "currentColor",
       "none medium currentcolor",
     ],
     other_values: [
+      "thin",
       "solid",
       "medium solid",
       "green solid",
@@ -7531,6 +7532,7 @@ var gCSSProperties = {
     domProp: "quotes",
     inherited: true,
     type: CSS_TYPE_LONGHAND,
+    applies_to_marker: true,
     initial_values: ["auto"],
     other_values: [
       "none",
@@ -10311,6 +10313,9 @@ var gCSSProperties = {
       "calc(3em / 100% * 3em)",
       "calc(3em * (3em / 100%))",
       "calc(3em * 3em / 100%)",
+      "anchor-size()",
+      "anchor-size(--a width)",
+      "anchor-size(--a width, 10px)",
     ],
   },
   "flex-direction": {
@@ -11561,9 +11566,12 @@ var gCSSProperties = {
   "-webkit-transform": {
     domProp: "webkitTransform",
     inherited: false,
-    type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
+    type: CSS_TYPE_LEGACY_SHORTHAND,
     alias_for: "transform",
     subproperties: ["transform"],
+    initial_values: ["none"],
+    other_values: ["perspective(1000)", "perspective(25)"],
+    invalid_values: [],
   },
   "-webkit-transform-origin": {
     domProp: "webkitTransformOrigin",
@@ -11589,9 +11597,12 @@ var gCSSProperties = {
   "-webkit-perspective": {
     domProp: "webkitPerspective",
     inherited: false,
-    type: CSS_TYPE_SHORTHAND_AND_LONGHAND,
+    type: CSS_TYPE_LEGACY_SHORTHAND,
     alias_for: "perspective",
     subproperties: ["perspective"],
+    initial_values: ["none"],
+    other_values: ["1000", "25"],
+    invalid_values: ["calc(1000)", "calc(25)"],
   },
   "-webkit-perspective-origin": {
     domProp: "webkitPerspectiveOrigin",
@@ -13338,9 +13349,16 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
     domProp: "positionAnchor",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    initial_values: ["auto"],
-    other_values: ["--foo"],
-    invalid_values: ["none", "--foo, auto", "auto, --bar", "foo"],
+    initial_values: ["none"],
+    other_values: ["auto", "--foo"],
+    invalid_values: [
+      "normal",
+      "none, auto",
+      "--foo none",
+      "--foo, auto",
+      "auto, --bar",
+      "foo",
+    ],
   };
 
   gCSSProperties["position-area"] = {
@@ -13443,26 +13461,31 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
     invalid_values: ["foo", "none none", "span-y-start self-block-end"],
   };
 
-  gCSSProperties["position-try-order"] = {
-    domProp: "positionTryOrder",
-    inherited: false,
-    type: CSS_TYPE_LONGHAND,
-    initial_values: ["normal"],
-    other_values: [
-      "most-width",
-      "most-height",
-      "most-block-size",
-      "most-inline-size",
-    ],
-    invalid_values: ["auto", "none", "foo"],
-  };
+  const tryOrderEnabled = IsCSSPropertyPrefEnabled(
+    "layout.css.anchor-positioning.position-try-order.enabled"
+  );
+  if (tryOrderEnabled) {
+    gCSSProperties["position-try-order"] = {
+      domProp: "positionTryOrder",
+      inherited: false,
+      type: CSS_TYPE_LONGHAND,
+      initial_values: ["normal"],
+      other_values: [
+        "most-width",
+        "most-height",
+        "most-block-size",
+        "most-inline-size",
+      ],
+      invalid_values: ["auto", "none", "foo"],
+    };
+  }
 
   gCSSProperties["position-visibility"] = {
     domProp: "positionVisibility",
     inherited: false,
     type: CSS_TYPE_LONGHAND,
-    initial_values: ["always"],
-    other_values: ["anchors-valid", "anchors-visible", "no-overflow"],
+    initial_values: ["anchors-visible"],
+    other_values: ["anchors-valid", "always", "no-overflow"],
     invalid_values: [
       "none",
       "auto",
@@ -13475,7 +13498,7 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
     domProp: "positionTry",
     inherited: false,
     type: CSS_TYPE_TRUE_SHORTHAND,
-    subproperties: ["position-try-order", "position-try-fallbacks"],
+    subproperties: ["position-try-fallbacks"],
     initial_values: ["none"],
     other_values: [
       "--foo",
@@ -13490,54 +13513,6 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
       "span-all self-block-end",
       "end span-start",
       "center span-all",
-      "most-width --foo",
-      "most-width flip-block",
-      "most-width flip-inline",
-      "most-width flip-x",
-      "most-width flip-y",
-      "most-width flip-start",
-      "most-width left",
-      "most-width span-y-start",
-      "most-width span-block-start inline-end",
-      "most-width span-all self-block-end",
-      "most-width end span-start",
-      "most-width center span-all",
-      "most-height --foo",
-      "most-height flip-block",
-      "most-height flip-inline",
-      "most-height flip-x",
-      "most-height flip-y",
-      "most-height flip-start",
-      "most-height left",
-      "most-height span-y-start",
-      "most-height span-block-start inline-end",
-      "most-height span-all self-block-end",
-      "most-height end span-start",
-      "most-height center span-all",
-      "most-block-size --foo",
-      "most-block-size flip-block",
-      "most-block-size flip-inline",
-      "most-block-size flip-x",
-      "most-block-size flip-y",
-      "most-block-size flip-start",
-      "most-block-size left",
-      "most-block-size span-y-start",
-      "most-block-size span-block-start inline-end",
-      "most-block-size span-all self-block-end",
-      "most-block-size end span-start",
-      "most-block-size center span-all",
-      "most-inline-size --foo",
-      "most-inline-size flip-block",
-      "most-inline-size flip-inline",
-      "most-inline-size flip-x",
-      "most-inline-size flip-y",
-      "most-inline-size flip-start",
-      "most-inline-size left",
-      "most-inline-size span-y-start",
-      "most-inline-size span-block-start inline-end",
-      "most-inline-size span-all self-block-end",
-      "most-inline-size end span-start",
-      "most-inline-size center span-all",
     ],
     invalid_values: [
       "foo",
@@ -13545,6 +13520,63 @@ if (IsCSSPropertyPrefEnabled("layout.css.anchor-positioning.enabled")) {
       "--foo span-y-start self-block-end",
     ],
   };
+  if (tryOrderEnabled) {
+    gCSSProperties["position-try"].subproperties.push("position-try-order");
+  }
+  const positionTryValuesWithOrder = [
+    "most-width --foo",
+    "most-width flip-block",
+    "most-width flip-inline",
+    "most-width flip-x",
+    "most-width flip-y",
+    "most-width flip-start",
+    "most-width left",
+    "most-width span-y-start",
+    "most-width span-block-start inline-end",
+    "most-width span-all self-block-end",
+    "most-width end span-start",
+    "most-width center span-all",
+    "most-height --foo",
+    "most-height flip-block",
+    "most-height flip-inline",
+    "most-height flip-x",
+    "most-height flip-y",
+    "most-height flip-start",
+    "most-height left",
+    "most-height span-y-start",
+    "most-height span-block-start inline-end",
+    "most-height span-all self-block-end",
+    "most-height end span-start",
+    "most-height center span-all",
+    "most-block-size --foo",
+    "most-block-size flip-block",
+    "most-block-size flip-inline",
+    "most-block-size flip-x",
+    "most-block-size flip-y",
+    "most-block-size flip-start",
+    "most-block-size left",
+    "most-block-size span-y-start",
+    "most-block-size span-block-start inline-end",
+    "most-block-size span-all self-block-end",
+    "most-block-size end span-start",
+    "most-block-size center span-all",
+    "most-inline-size --foo",
+    "most-inline-size flip-block",
+    "most-inline-size flip-inline",
+    "most-inline-size flip-x",
+    "most-inline-size flip-y",
+    "most-inline-size flip-start",
+    "most-inline-size left",
+    "most-inline-size span-y-start",
+    "most-inline-size span-block-start inline-end",
+    "most-inline-size span-all self-block-end",
+    "most-inline-size end span-start",
+    "most-inline-size center span-all",
+  ];
+  (tryOrderEnabled
+    ? gCSSProperties["position-try"].other_values
+    : gCSSProperties["position-try"].invalid_values
+  ).push(...positionTryValuesWithOrder);
 }
 
 if (IsCSSPropertyPrefEnabled("layout.css.scroll-state.enabled")) {

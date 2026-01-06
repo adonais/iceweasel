@@ -40,12 +40,14 @@ class ConsoleServiceListener {
 
   /**
    * The content window for which we listen to page errors.
+   *
    * @type nsIDOMWindow
    */
   window = null;
 
   /**
    * The function which is notified of messages from the console service.
+   *
    * @type function
    */
   handler = null;

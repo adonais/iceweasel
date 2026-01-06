@@ -26,6 +26,7 @@ add_task(async function () {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {

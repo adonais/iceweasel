@@ -6,9 +6,9 @@
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use std::cmp::Ordering;
-use std::fs::File;
+use std::fs::{read_dir, File};
 use std::io::{BufRead, BufReader, BufWriter, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Eq, PartialEq)]
 struct TrustAnchor {
@@ -49,8 +49,26 @@ impl TrustAnchor {
     }
 }
 
-fn read_trust_anchors(trust_anchors_file: &File) -> Vec<TrustAnchor> {
-    let reader = BufReader::new(trust_anchors_file);
+fn read_trust_anchors(
+    trust_anchor_filename_or_directory: PathBuf,
+) -> std::io::Result<Vec<TrustAnchor>> {
+    let mut trust_anchors = if trust_anchor_filename_or_directory.is_dir() {
+        let mut trust_anchors = Vec::new();
+        for dir_entry in read_dir(trust_anchor_filename_or_directory)? {
+            trust_anchors.append(&mut read_trust_anchors_from(dir_entry?.path())?);
+        }
+        trust_anchors
+    } else {
+        read_trust_anchors_from(trust_anchor_filename_or_directory)?
+    };
+
+    trust_anchors.sort_by_cached_key(|trust_anchor| trust_anchor.subject.clone());
+    Ok(trust_anchors)
+}
+
+fn read_trust_anchors_from(trust_anchor_file_path: PathBuf) -> std::io::Result<Vec<TrustAnchor>> {
+    let trust_anchor_file = File::open(trust_anchor_file_path)?;
+    let reader = BufReader::new(trust_anchor_file);
     let mut maybe_current_trust_anchor: Option<Vec<String>> = None;
     let mut trust_anchors = Vec::new();
     for line in reader.lines() {
@@ -77,17 +95,16 @@ fn read_trust_anchors(trust_anchors_file: &File) -> Vec<TrustAnchor> {
             }
         }
     }
-    trust_anchors.sort_by_cached_key(|trust_anchor| trust_anchor.subject.clone());
-    trust_anchors
+    Ok(trust_anchors)
 }
 
 fn emit_trust_anchors(
     out: &mut dyn Write,
     prefix: &str,
-    trust_anchors_filename: &str,
+    trust_anchors_filename_or_directory: &str,
 ) -> std::io::Result<()> {
-    let trust_anchors_file = File::open(trust_anchors_filename)?;
-    let trust_anchors = read_trust_anchors(&trust_anchors_file);
+    let trust_anchors_path = Path::new(trust_anchors_filename_or_directory);
+    let trust_anchors = read_trust_anchors(trust_anchors_path.to_path_buf())?;
     for (index, trust_anchor) in trust_anchors.iter().enumerate() {
         writeln!(
             out,
@@ -120,7 +137,7 @@ fn emit_trust_anchors(
 
 fn main() -> std::io::Result<()> {
     let trust_anchors = "trust_anchors.pem";
-    let test_trust_anchors = "test_trust_anchors.pem";
+    let test_trust_anchors = "test_trust_anchors";
     println!("cargo:rerun-if-changed={}", trust_anchors);
     println!("cargo:rerun-if-changed={}", test_trust_anchors);
 

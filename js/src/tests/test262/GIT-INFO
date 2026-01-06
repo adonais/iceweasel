@@ -1,5 +1,8 @@
-commit d0cb9f80f70a924197d0b5e2160b07401ddfef4e
-Author: Daniel Minor <dminor@mozilla.com>
-Date:   Tue Aug 19 10:43:14 2025 -0400
+commit 2312907b9b426cb2e9ae50aff25119319ab4e2d4
+Author: Philip Chimento <pchimento@igalia.com>
+Date:   Tue Nov 11 10:21:00 2025 -0800
 
-    Add symbols-as-weakmap-keys to features
+    Intl Era Monthcode: Fix up locale frontmatter for Hijri fallback
+    
+    We don't require an en-u-ca-islamic locale to run this test, in fact
+    it's the intention that it will fall back to another Hijri calendar.

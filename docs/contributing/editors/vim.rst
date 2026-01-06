@@ -28,7 +28,7 @@ You also need to set some options to get full diagnostics:
 
 .. code ::
 
-   "rust-analyzer.server.extraEnv": {
+   "rust-analyzer.cargo.extraEnv": {
      "CARGO_TARGET_DIR": "/path/to/objdir"
    },
    "rust-analyzer.vfs.extraIncludes": ["/path/to/objdir", "/optional/path/to/windows_rs_dir"],
@@ -36,7 +36,7 @@ You also need to set some options to get full diagnostics:
    "rust-analyzer.cargo.buildScripts.overrideCommand": [ "/path/to/mach", "--log-no-times", "cargo", "check", "--all-crates", "--message-format-json" ],
 
 The easiest way to make these work out of the box is using
-`neoconf <https://github.com/folke/neoconf.nvim/>`__, which
+`codesettings.nvim <https://github.com/mrjones2014/codesettings.nvim>`__, which
 automatically supports importing VSCode configuration files.
 :code:`./mach ide vscode --no-interactive` will then generate the right
 configuration for you.

@@ -30,7 +30,7 @@ export function getActiveBrowserID() {
 }
 
 /**
- * @typedef {Object} ProfileCaptureResultAndAdditionalInformation
+ * @typedef {object} ProfileCaptureResultAndAdditionalInformation
  * @property {ProfileCaptureResult} profileCaptureResult
  * @property {MockedExports.ProfileGenerationAdditionalInformation} [additionalInformation]
  */

@@ -107,6 +107,7 @@ const OVERRIDE_NEW_MSTONE = 2;
 const OVERRIDE_NEW_BUILD_ID = 3;
 /**
  * Determines whether a home page override is needed.
+ *
  * @param {boolean} [updateMilestones=true]
  *   True if we should update the milestone prefs after comparing those prefs
  *   with the current platform version and build ID.
@@ -186,6 +187,7 @@ function needHomepageOverride(updateMilestones = true) {
 /**
  * Gets the override page for the first run after the application has been
  * updated.
+ *
  * @param  update
  *         The nsIUpdate for the update that has been applied.
  * @param  defaultOverridePage
@@ -832,6 +834,7 @@ nsBrowserContentHandler.prototype = {
              * or equal to the maxVersion set by the experiment, we'll try to use
              * the experiment override URL instead of the default or the
              * update-provided URL. Additional policy checks are done in
+             *
              * @see getPostUpdateOverridePage
              */
             const nimbusOverrideUrl = Services.urlFormatter.formatURLPref(

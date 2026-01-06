@@ -2,13 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-use std::{ffi::CString, hash::RandomState, process};
+use std::{ffi::CString, process};
 
-use windows_sys::Win32::Foundation::ERROR_ACCESS_DENIED;
+use windows_sys::Win32::Foundation::{ERROR_ACCESS_DENIED, ERROR_ADDRESS_ALREADY_ASSOCIATED};
 
 use crate::{
-    errors::IPCError,
-    platform::windows::{get_last_error, server_addr},
+    ipc_channel::IPCChannelError,
+    ipc_listener::IPCListenerError,
+    platform::windows::{server_addr, PlatformError},
     IPCConnector, IPCListener, Pid,
 };
 
@@ -22,7 +23,7 @@ impl IPCChannel {
     /// Create a new IPCChannel, this includes a listening endpoint that
     /// will use the current process PID as part of its address and two
     /// connected endpoints.
-    pub fn new() -> Result<IPCChannel, IPCError> {
+    pub fn new() -> Result<IPCChannel, IPCChannelError> {
         let pid = process::id() as Pid;
         let mut listener = IPCListener::new(server_addr(pid))?;
         listener.listen()?;
@@ -52,7 +53,7 @@ pub struct IPCClientChannel {
 impl IPCClientChannel {
     /// Create a new IPC channel for use between one of the browser's child
     /// processes and the crash helper.
-    pub fn new() -> Result<IPCClientChannel, IPCError> {
+    pub fn new() -> Result<IPCClientChannel, IPCChannelError> {
         let mut listener = Self::create_listener()?;
         listener.listen()?;
         let client_endpoint = IPCConnector::connect(listener.address())?;
@@ -64,14 +65,15 @@ impl IPCClientChannel {
         })
     }
 
-    fn create_listener() -> Result<IPCListener, IPCError> {
+    fn create_listener() -> Result<IPCListener, IPCListenerError> {
         const ATTEMPTS: u32 = 5;
 
         // We pick the listener name at random, as unlikely as it may be there
         // could be clashes so try a few times before giving up.
         for _i in 0..ATTEMPTS {
-            use std::hash::{BuildHasher, Hasher};
-            let random_id = RandomState::new().build_hasher().finish();
+            let Ok(random_id) = getrandom::u64() else {
+                continue;
+            };
 
             let pipe_name = CString::new(format!(
                 "\\\\.\\pipe\\gecko-crash-helper-child-pipe.{random_id:}"
@@ -79,14 +81,19 @@ impl IPCClientChannel {
             .unwrap();
             match IPCListener::new(pipe_name) {
                 Ok(listener) => return Ok(listener),
-                Err(_error @ IPCError::System(ERROR_ACCESS_DENIED)) => {} // Try again
+                Err(
+                    _error @ IPCListenerError::CreationError(PlatformError::CreatePipeFailure(
+                        ERROR_ACCESS_DENIED,
+                    )),
+                ) => {} // Try again
                 Err(error) => return Err(error),
             }
         }
 
-        // If we got to this point return whatever was the last error we
-        // encountered along the way.
-        Err(IPCError::System(get_last_error()))
+        // If we got to this point give up.
+        Err(IPCListenerError::CreationError(
+            PlatformError::CreatePipeFailure(ERROR_ADDRESS_ALREADY_ASSOCIATED),
+        ))
     }
 
     /// Deconstruct the IPC channel, returning the listening endpoint,

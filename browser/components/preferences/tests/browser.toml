@@ -14,17 +14,14 @@ support-files = [
   "addons/set_homepage.xpi",
   "addons/set_newtab.xpi",
 ]
-skip-if = [
-  "os == 'linux' && os_version == '18.04' && asan", # manifest runs too long
-  "os == 'linux' && os_version == '18.04' && tsan", # manifest runs too long
-  "win11_2009 && asan", # manifest runs too long
-]
 tags = "os_integration"
 
 ["browser_about_settings.js"]
 
 ["browser_advanced_update.js"]
-run-if = ["updater"]
+run-if = [
+  "updater",
+]
 
 ["browser_application_xml_handle_internally.js"]
 
@@ -35,7 +32,9 @@ run-if = ["updater"]
 ["browser_basic_rebuild_fonts_test.js"]
 
 ["browser_browser_languages_subdialog.js"]
-skip-if = ["tsan"]
+skip-if = [
+  "tsan",
+]
 
 ["browser_bug410900.js"]
 
@@ -57,7 +56,9 @@ support-files = ["browser_bug1184989_prevent_scrolling_when_preferences_flipped.
 ["browser_cert_export.js"]
 
 ["browser_change_app_handler.js"]
-run-if = ["os == 'win'"] # Windows-specific handler application selection dialog
+run-if = [
+  "os == 'win'", # Windows-specific handler application selection dialog
+]
 
 ["browser_checkspelling.js"]
 
@@ -72,7 +73,9 @@ run-if = ["os == 'win'"] # Windows-specific handler application selection dialog
 ["browser_connection_bug1505330.js"]
 
 ["browser_connection_system_wpad.js"]
-run-if = ["os == 'win'"]
+run-if = [
+  "os == 'win'",
+]
 
 ["browser_connection_telemetry.js"]
 
@@ -89,6 +92,10 @@ run-if = ["os == 'win'"]
 ["browser_cookie_exceptions_addRemove.js"]
 
 ["browser_cookies_exceptions.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt",
+]
+
 
 ["browser_defaultbrowser_alwayscheck.js"]
 
@@ -100,14 +107,17 @@ run-if = ["os == 'win'"]
 
 ["browser_etp_exceptions_dialog.js"]
 
+["browser_etp_status.js"]
+
 ["browser_experimental_features.js"]
 
 ["browser_experimental_features_filter.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64'", # Bug 1969933
-  "os == 'mac' && os_version == '10.15' && processor == 'x86_64' && opt", # Bug 1969933
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1969933
-  "os == 'win' && os_version == '11.26100' && processor == 'x86'", # Bug 1969933
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1969933
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1969933
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64' && opt", # Bug 1969933
+  "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1969933
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1969933
 ]
 
 ["browser_experimental_features_hidden_when_not_public.js"]
@@ -118,8 +128,8 @@ skip-if = [
 
 ["browser_extension_controlled.js"]
 skip-if = [
-  "ccov && os == 'linux'", # Linux: bug 1613530
-  "ccov && os == 'win'", # Windows: bug 1437051
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov", # Linux: bug 1613530
+  "os == 'win' && ccov", # Windows: bug 1437051
   "tsan",
 ]
 
@@ -143,14 +153,18 @@ https_first_disabled = true
 ["browser_ignore_invalid_capability.js"]
 
 ["browser_keyboardfocus.js"]
-run-if = ["os == 'mac'"]
+run-if = [
+  "os == 'mac'",
+]
 
 ["browser_languages_subdialog.js"]
 
 ["browser_layersacceleration.js"]
 
 ["browser_localSearchShortcuts.js"]
-fail-if = ["a11y_checks"] # Bug 1854636 clicked treechildren#engineChildren may not be focusable
+fail-if = [
+  "a11y_checks", # Bug 1854636 clicked treechildren#engineChildren may not be focusable
+]
 
 ["browser_moreFromMozilla.js"]
 
@@ -176,7 +190,9 @@ support-files = ["empty_pdf_file.pdf"]
 ["browser_performance_e10srollout.js"]
 
 ["browser_performance_non_e10s.js"]
-skip-if = ["true"]
+skip-if = [
+  "true",
+]
 
 ["browser_permissions_checkPermissionsWereAdded.js"]
 
@@ -191,7 +207,9 @@ skip-if = ["true"]
 ["browser_primaryPassword.js"]
 
 ["browser_privacy_allowListPreference.js"]
-skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && tsan"] # Bug 1984525
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1984525
+]
 
 ["browser_privacy_allowListPreference_dialog.js"]
 
@@ -222,8 +240,14 @@ skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && t
 ["browser_privacy_uploadEnabled.js"]
 
 ["browser_privacypane_2.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks",
+]
 
 ["browser_privacypane_3.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks",
+]
 
 ["browser_proxy_backup.js"]
 
@@ -243,7 +267,9 @@ support-files = ["!/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js
 ["browser_searchShowSuggestionsFirst.js"]
 
 ["browser_search_engineList.js"]
-fail-if = ["a11y_checks"] # Bug 1854636 clicked treechildren#engineChildren may not be focusable
+fail-if = [
+  "a11y_checks", # Bug 1854636 clicked treechildren#engineChildren may not be focusable
+]
 
 ["browser_search_firefoxSuggest.js"]
 
@@ -256,7 +282,9 @@ fail-if = ["a11y_checks"] # Bug 1854636 clicked treechildren#engineChildren may 
 ["browser_search_subdialog_tooltip_saved_addresses.js"]
 
 ["browser_search_subdialogs_within_preferences_1.js"]
-skip-if = ["tsan"] # Bug 1678829
+skip-if = [
+  "tsan", # Bug 1678829
+]
 
 ["browser_search_subdialogs_within_preferences_2.js"]
 
@@ -279,6 +307,9 @@ skip-if = ["tsan"] # Bug 1678829
 ["browser_search_userEngineDialog.js"]
 
 ["browser_search_within_preferences_1.js"]
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && ccov"
+]
 
 ["browser_search_within_preferences_2.js"]
 
@@ -293,6 +324,8 @@ skip-if = ["tsan"] # Bug 1678829
 ["browser_security-3.js"]
 
 ["browser_setting_group_in_progress.js"]
+
+["browser_setting_pane_sub_pane.js"]
 
 ["browser_site_login_exceptions.js"]
 
@@ -327,7 +360,11 @@ support-files = [
 ["browser_warning_permanent_private_browsing.js"]
 
 ["browser_windows_launch_on_login.js"]
-run-if = ["os == 'win' && !msix"]
+run-if = [
+  "os == 'win' && !msix",
+]
 
 ["browser_windows_launch_on_login_msix.js"]
-run-if = ["os == 'win' && msix"]
+run-if = [
+  "os == 'win' && msix",
+]

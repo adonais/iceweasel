@@ -107,9 +107,9 @@ class NetworkThrottleListener {
    * Allow some buffered data from this object to be forwarded to this
    * object's originalListener.
    *
-   * @param {Number} bytesPermitted The maximum number of bytes
+   * @param {number} bytesPermitted The maximum number of bytes
    *        permitted to be sent.
-   * @return {Object} an object of the form {length, done}, where
+   * @return {object} an object of the form {length, done}, where
    *         |length| is the number of bytes actually forwarded, and
    *         |done| is a boolean indicating whether this particular
    *         request has been completed.  (A NetworkThrottleListener
@@ -420,7 +420,7 @@ class NetworkThrottleQueue {
  * Construct a new object that can be used to throttle the network for
  * a group of related network requests.
  *
- * @param {Object} An object with the following attributes:
+ * @param {object} An object with the following attributes:
  * latencyMean {Number} Mean latency in milliseconds.
  * latencyMax {Number} Maximum latency in milliseconds.
  * downloadBPSMean {Number} Mean bytes per second for downloads.

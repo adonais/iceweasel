@@ -94,3 +94,27 @@ function testWeakSetThisGuard() {
   }
 }
 testWeakSetThisGuard();
+
+function testWeakMapEmptyGet() {
+  var obj = {};
+  var wm1 = new WeakMap([[obj, 1]]);
+  var wm2 = new WeakMap();
+  function get(wm) { return wm.get(obj); }
+  for (var i = 0; i < 100; i++) {
+    var val = get(i < 95 ? wm1 : wm2);
+    assertEq(val, i < 95 ? 1 : undefined);
+  }
+}
+testWeakMapEmptyGet();
+
+function testWeakMapEmptyHas() {
+  var obj = {};
+  var wm1 = new WeakMap([[obj, 1]]);
+  var wm2 = new WeakMap();
+  function has(wm) { return wm.has(obj); }
+  for (var i = 0; i < 100; i++) {
+    var val = has(i < 95 ? wm1 : wm2);
+    assertEq(val, i < 95);
+  }
+}
+testWeakMapEmptyHas();

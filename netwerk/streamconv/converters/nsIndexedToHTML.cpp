@@ -23,7 +23,6 @@
 #include "nsNativeCharsetUtils.h"
 #include "nsString.h"
 #include "nsContentUtils.h"
-#include <algorithm>
 #include "nsIChannel.h"
 #include "nsIURIMutator.h"
 #include "nsITextToSubURI.h"

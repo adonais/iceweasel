@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.settings.doh.root
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,6 +19,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,9 +34,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.Dropdown
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.text.Text
@@ -44,12 +48,14 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.button.RadioButton
+import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.doh.CustomProviderErrorState
 import org.mozilla.fenix.settings.doh.DohSettingsState
 import org.mozilla.fenix.settings.doh.ProtectionLevel
 import org.mozilla.fenix.settings.doh.Provider
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -79,34 +85,33 @@ internal fun DohSettingsScreen(
     onIncreasedInfoClicked: () -> Unit = {},
     onMaxInfoClicked: () -> Unit = {},
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(FirefoxTheme.colors.layer1)
-            .verticalScroll(rememberScrollState()),
-    ) {
-        DohSummary(
-            onLearnMoreClicked = onLearnMoreClicked,
-        )
-
-        DohSelection(
-            state = state,
-            onDohOptionSelected = onDohOptionSelected,
-            onCustomClicked = onCustomClicked,
-            onCustomCancelClicked = onCustomCancelClicked,
-            onCustomAddClicked = onCustomAddClicked,
-            onDefaultInfoClicked = onDefaultInfoClicked,
-            onIncreasedInfoClicked = onIncreasedInfoClicked,
-            onMaxInfoClicked = onMaxInfoClicked,
-        )
-
-        HorizontalDivider(
+    Surface {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-        )
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+        ) {
+            DohSummary(
+                onLearnMoreClicked = onLearnMoreClicked,
+            )
 
-        ExceptionsRow(onExceptionsClicked = onExceptionsClicked)
+            DohSelection(
+                state = state,
+                onDohOptionSelected = onDohOptionSelected,
+                onCustomClicked = onCustomClicked,
+                onCustomCancelClicked = onCustomCancelClicked,
+                onCustomAddClicked = onCustomAddClicked,
+                onDefaultInfoClicked = onDefaultInfoClicked,
+                onIncreasedInfoClicked = onIncreasedInfoClicked,
+                onMaxInfoClicked = onMaxInfoClicked,
+            )
+
+            HorizontalDivider(
+                modifier = Modifier.padding(8.dp),
+            )
+
+            ExceptionsRow(onExceptionsClicked = onExceptionsClicked)
+        }
     }
 }
 
@@ -130,12 +135,9 @@ private fun DohSummary(
             modifier = Modifier.weight(1f),
         ) {
             Text(
-                color = FirefoxTheme.colors.textPrimary,
-                style = FirefoxTheme.typography.subtitle1,
+                style = FirefoxTheme.typography.body1,
                 text = stringResource(R.string.preference_doh_title),
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             LinkText(
                 text = summary,
@@ -149,10 +151,7 @@ private fun DohSummary(
                     ),
                 ),
                 linkTextDecoration = TextDecoration.Underline,
-                style = FirefoxTheme.typography.body2.copy(
-                    textAlign = TextAlign.Left,
-                    color = FirefoxTheme.colors.textSecondary,
-                ),
+                textAlign = TextAlign.Start,
             )
         }
     }
@@ -185,7 +184,6 @@ private fun DohProtectionLevel(
         RadioButton(
             selected = selected,
             onClick = onClick,
-            modifier = Modifier.align(Alignment.Top),
         )
 
         Spacer(modifier = Modifier.width(8.dp))
@@ -202,17 +200,15 @@ private fun DohProtectionLevel(
         }
 
         if (showInfoIcon) {
-            Icon(
-                painter = painterResource(iconsR.drawable.mozac_ic_information_24),
+            IconButton(
+                onClick = onInfoClick,
                 contentDescription = stringResource(R.string.preference_doh_info_description),
-                tint = FirefoxTheme.colors.iconPrimary,
-                modifier = Modifier
-                    .padding(16.dp)
-                    .align(Alignment.Top)
-                    .clickable {
-                        onInfoClick()
-                    },
-            )
+            ) {
+                Icon(
+                    painter = painterResource(iconsR.drawable.mozac_ic_information_24),
+                    contentDescription = null,
+                )
+            }
         }
     }
 }
@@ -332,6 +328,7 @@ private fun DohSelection(
 
     if (state.selectedProvider is Provider.Custom && state.isCustomProviderDialogOn) {
         AlertDialogAddCustomProvider(
+            customProviderUrl = state.selectedProvider.url,
             customProviderErrorState = state.customProviderErrorState,
             onCustomCancelClicked = { onCustomCancelClicked() },
             onCustomAddClicked = { url ->
@@ -347,17 +344,14 @@ private fun ProviderSummary(
     summary: String,
 ) {
     Text(
-        color = FirefoxTheme.colors.textPrimary,
-        style = FirefoxTheme.typography.subtitle1,
         text = label,
+        style = FirefoxTheme.typography.body1,
     )
 
-    Spacer(modifier = Modifier.height(8.dp))
-
     Text(
-        color = FirefoxTheme.colors.textSecondary,
-        style = FirefoxTheme.typography.body2,
         text = summary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = FirefoxTheme.typography.body2,
     )
 }
 
@@ -443,11 +437,12 @@ private fun buildProviderMenuItems(
 
 @Composable
 private fun AlertDialogAddCustomProvider(
+    customProviderUrl: String,
     customProviderErrorState: CustomProviderErrorState,
     onCustomCancelClicked: () -> Unit,
     onCustomAddClicked: (String) -> Unit,
 ) {
-    var customProviderInput by remember { mutableStateOf("") }
+    var customProviderInput by remember { mutableStateOf(customProviderUrl) }
     val onCustomProviderInputChange: (String) -> Unit = { it -> customProviderInput = it }
     val nonHttpsString = stringResource(R.string.preference_doh_provider_custom_dialog_error_https)
     val invalidString = stringResource(R.string.preference_doh_provider_custom_dialog_error_invalid)
@@ -456,7 +451,7 @@ private fun AlertDialogAddCustomProvider(
         title = {
             Text(
                 text = stringResource(R.string.preference_doh_provider_custom_dialog_title),
-                style = FirefoxTheme.typography.headline7,
+                style = FirefoxTheme.typography.headline5,
             )
         },
         text = {
@@ -498,8 +493,7 @@ private fun TextWithUnderline(
     text: String,
     modifier: Modifier = Modifier,
     showCustomProviderDialog: () -> Unit = {},
-    textColor: Color = FirefoxTheme.colors.textPrimary,
-    underlineColor: Color = FirefoxTheme.colors.formDefault,
+    underlineColor: Color = MaterialTheme.colorScheme.outline,
 ) {
     Column(
         modifier = modifier,
@@ -510,7 +504,6 @@ private fun TextWithUnderline(
                 .clickable {
                     showCustomProviderDialog()
                 },
-            color = textColor,
             style = FirefoxTheme.typography.body2,
             text = text,
         )
@@ -528,24 +521,12 @@ private fun TextWithUnderline(
 
 @Composable
 private fun ExceptionsRow(onExceptionsClicked: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onExceptionsClicked() },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_internet),
-            contentDescription = stringResource(R.string.preference_doh_exceptions_description),
-            tint = FirefoxTheme.colors.iconPrimary,
-            modifier = Modifier.padding(16.dp),
-        )
-        Text(
-            text = stringResource(R.string.preference_doh_exceptions),
-            color = FirefoxTheme.colors.textPrimary,
-            style = FirefoxTheme.typography.subtitle1,
-        )
-    }
+    IconListItem(
+        label = stringResource(R.string.preference_doh_exceptions),
+        onClick = onExceptionsClicked,
+        beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_globe_24),
+        beforeIconDescription = stringResource(R.string.preference_doh_exceptions_description),
+    )
 }
 
 @Composable
@@ -598,6 +579,86 @@ private fun DohScreenCustomProviderPreview() {
                 exceptionsList = emptyList(),
                 isUserExceptionValid = true,
             ),
+        )
+    }
+}
+
+@Composable
+@Preview
+private fun DohScreenDefaultProviderPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        val provider = Provider.BuiltIn(
+            url = "https://mozilla.cloudflare-dns.com/dns-query",
+            name = "Cloudflare",
+            default = true,
+        )
+        DohSettingsScreen(
+            state = DohSettingsState(
+                allProtectionLevels = listOf(
+                    ProtectionLevel.Default,
+                    ProtectionLevel.Increased,
+                    ProtectionLevel.Max,
+                    ProtectionLevel.Off,
+                ),
+                selectedProtectionLevel = ProtectionLevel.Increased,
+                providers = listOf(
+                    provider,
+                ),
+                selectedProvider = provider,
+                exceptionsList = emptyList(),
+                isUserExceptionValid = true,
+            ),
+        )
+    }
+}
+
+@Composable
+@Preview
+private fun DohScreenCustomProviderPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        val provider = Provider.Custom(url = "")
+        DohSettingsScreen(
+            state = DohSettingsState(
+                allProtectionLevels = listOf(
+                    ProtectionLevel.Default,
+                    ProtectionLevel.Increased,
+                    ProtectionLevel.Max,
+                    ProtectionLevel.Off,
+                ),
+                selectedProtectionLevel = ProtectionLevel.Increased,
+                providers = listOf(
+                    provider,
+                ),
+                selectedProvider = provider,
+                exceptionsList = emptyList(),
+                isUserExceptionValid = true,
+            ),
+        )
+    }
+}
+
+@Composable
+@PreviewLightDark
+private fun AlertDialogAddCustomProviderPreview() {
+    FirefoxTheme {
+        AlertDialogAddCustomProvider(
+            customProviderUrl = "https://mozilla.cloudflare-dns.com/dns-query",
+            customProviderErrorState = CustomProviderErrorState.Valid,
+            onCustomCancelClicked = {},
+            onCustomAddClicked = {},
+        )
+    }
+}
+
+@Composable
+@Preview
+private fun AlertDialogAddCustomProviderPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        AlertDialogAddCustomProvider(
+            customProviderUrl = "https://mozilla.cloudflare-dns.com/dns-query",
+            customProviderErrorState = CustomProviderErrorState.Invalid,
+            onCustomCancelClicked = {},
+            onCustomAddClicked = {},
         )
     }
 }

@@ -83,7 +83,7 @@ internal class LinkingMiddleware(
         skipLoading: Boolean = true,
         includeParent: Boolean,
     ): Pair<String, EngineObserver> {
-        val observer = EngineObserver(tab.id, context.store)
+        val observer = EngineObserver(tab.id, context.store, scope)
         engineSession.register(observer)
 
         if (skipLoading) {

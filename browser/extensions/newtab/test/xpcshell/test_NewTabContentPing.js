@@ -24,7 +24,7 @@ add_setup(() => {
  */
 add_task(async function test_recordEvent_sanitizes_and_buffers() {
   let ping = new NewTabContentPing();
-  ping.resetStats();
+  ping.test_only_resetAllStats();
 
   // These fields are expected to be stripped before they get recorded in the
   // event.
@@ -106,14 +106,14 @@ add_task(async function test_recordEvent_sanitizes_and_buffers() {
 });
 
 /**
- * Tests that the recordEvent caps the maximum number of events posted to a maxiumum
+ * Tests that the recordEvent caps the maximum number of events
  */
-add_task(async function test_recordEvent_caps_events() {
+add_task(async function test_recordEventDaily_caps_events() {
   const MAX_EVENTS = 2;
 
   let ping = new NewTabContentPing();
   ping.setMaxEventsPerDay(MAX_EVENTS);
-  ping.resetStats();
+  ping.test_only_resetAllStats();
 
   // These fields are expected to survive the sanitization.
   let expectedFields = {
@@ -206,6 +206,165 @@ add_task(async function test_recordEvent_caps_events() {
     }
   );
   Assert.equal(ping.testOnlyCurInstanceEventCount, 1, "Event sending restored");
+  sandbox.restore();
+});
+
+/**
+ * Tests that the recordEvent caps the maximum number of click events
+ */
+add_task(async function test_recordEventDaily_caps_click_events() {
+  const MAX_DAILY_CLICK_EVENTS = 2;
+  const MAX_WEEKLY_CLICK_EVENTS = 10;
+
+  let ping = new NewTabContentPing();
+  ping.setMaxClickEventsPerDay(MAX_DAILY_CLICK_EVENTS);
+  ping.setMaxClickEventsPerWeek(MAX_WEEKLY_CLICK_EVENTS);
+  ping.test_only_resetAllStats();
+
+  // These fields are expected to survive the sanitization.
+  let expectedFields = {
+    section: "business",
+    corpus_item_id: "7fc404a1-74ec-450b-8eef-4f52b45ec510",
+    topic: "business",
+  };
+
+  for (let i = 0; i < MAX_DAILY_CLICK_EVENTS * 2; i++) {
+    ping.recordEvent("impression", {
+      ...expectedFields,
+    });
+  }
+  for (let i = 0; i < MAX_DAILY_CLICK_EVENTS; i++) {
+    ping.recordEvent("click", {
+      ...expectedFields,
+    });
+  }
+
+  let extraMetrics = {
+    utcOffset: "1",
+    experimentBranch: "some-branch",
+  };
+
+  ping.scheduleSubmission(extraMetrics);
+
+  await GleanPings.newtabContent.testSubmission(
+    () => {
+      // Test Callback
+      let [clickEvent] = Glean.newtabContent.click.testGetValue();
+      Assert.ok(clickEvent, "Found click event.");
+      let [impression] = Glean.newtabContent.impression.testGetValue();
+      Assert.ok(impression, "Found impression event.");
+    },
+    async () => {
+      // Submit Callback
+      await ping.testOnlyForceFlush();
+    }
+  );
+
+  const curTotalEvents = MAX_DAILY_CLICK_EVENTS * 3;
+  Assert.equal(
+    ping.testOnlyCurInstanceEventCount,
+    curTotalEvents,
+    "Expected number of events sent"
+  );
+
+  ping.recordEvent("click", {
+    ...expectedFields,
+  });
+  ping.scheduleSubmission(extraMetrics);
+  await ping.testOnlyForceFlush();
+
+  Assert.equal(
+    ping.testOnlyCurInstanceEventCount,
+    curTotalEvents,
+    "Click cap enforced, no new events sent"
+  );
+
+  ping = new NewTabContentPing();
+  ping.setMaxClickEventsPerDay(MAX_DAILY_CLICK_EVENTS);
+
+  Assert.equal(ping.testOnlyCurInstanceEventCount, 0, "Event count reset");
+
+  ping.recordEvent("click", {
+    ...expectedFields,
+  });
+  ping.scheduleSubmission(extraMetrics);
+  await ping.testOnlyForceFlush();
+
+  Assert.equal(
+    ping.testOnlyCurInstanceEventCount,
+    0,
+    "No new click events after re-creating NewTabContentPing class"
+  );
+
+  // Some time has passed
+  let sandbox = sinon.createSandbox();
+
+  sandbox.stub(NewTabContentPing.prototype, "Date").returns({
+    now: () => Date.now() + 3600 * 25 * 1000, // 25 hours in future
+  });
+
+  ping.scheduleSubmission(extraMetrics);
+
+  ping.recordEvent("click", {
+    ...expectedFields,
+  });
+
+  await GleanPings.newtabContent.testSubmission(
+    () => {
+      // Test Callback
+      let [click] = Glean.newtabContent.click.testGetValue();
+      Assert.ok(click, "Found click event.");
+    },
+    async () => {
+      // Submit Callback
+      await ping.testOnlyForceFlush();
+    }
+  );
+  Assert.equal(ping.testOnlyCurInstanceEventCount, 1, "Event sending restored");
+
+  let cur_events_sent = ping.testOnlyCurInstanceEventCount;
+  for (let i = 0; i < MAX_WEEKLY_CLICK_EVENTS; i++) {
+    ping.recordEvent("click", {
+      ...expectedFields,
+    });
+  }
+  ping.scheduleSubmission(extraMetrics);
+  await ping.testOnlyForceFlush();
+  // Assert that less than MAX_WEEKLY_CLICK_EVENTS events were sent using a difference check (less) to avoid timing issues
+  Assert.less(
+    ping.testOnlyCurInstanceEventCount - cur_events_sent,
+    MAX_WEEKLY_CLICK_EVENTS,
+    "Weekly click cap enforced, no new events sent"
+  );
+  // Assert that at least 1 item was sent before we reached the cap
+  Assert.greater(
+    ping.testOnlyCurInstanceEventCount - cur_events_sent,
+    0,
+    "At least one event was sent before reaching the weekly cap"
+  );
+
+  sandbox.restore();
+
+  // Some more time has passed - weekly reset
+  sandbox = sinon.createSandbox();
+  sandbox.stub(NewTabContentPing.prototype, "Date").returns({
+    now: () => Date.now() + 3600 * 24 * 1000 * 8, // 8 days in the future
+  });
+
+  cur_events_sent = ping.testOnlyCurInstanceEventCount;
+  for (let i = 0; i < MAX_WEEKLY_CLICK_EVENTS; i++) {
+    ping.recordEvent("click", {
+      ...expectedFields,
+    });
+  }
+  ping.scheduleSubmission(extraMetrics);
+  await ping.testOnlyForceFlush();
+  Assert.equal(
+    ping.testOnlyCurInstanceEventCount - cur_events_sent,
+    MAX_DAILY_CLICK_EVENTS, // Only daily cap should apply after weekly reset
+    "Event sending restored after weekly reset"
+  );
+
   sandbox.restore();
 });
 

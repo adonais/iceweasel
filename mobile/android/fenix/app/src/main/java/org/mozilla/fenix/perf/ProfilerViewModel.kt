@@ -52,7 +52,10 @@ sealed class ProfilerUiState {
     /**
      * A toast message should be displayed to the user.
      */
-    data class ShowToast(@param:StringRes val messageResId: Int, val extra: String = "") :
+    data class ShowToast(
+        @param:StringRes val messageResId: Int,
+        val extra: String = "",
+    ) :
         ProfilerUiState()
 
     /**
@@ -63,7 +66,10 @@ sealed class ProfilerUiState {
     /**
      * An error occurred during profiling.
      */
-    data class Error(@param:StringRes val messageResId: Int, val errorDetails: String = "") :
+    data class Error(
+        @param:StringRes val messageResId: Int,
+        val errorDetails: String = "",
+    ) :
         ProfilerUiState()
 
     /**
@@ -182,6 +188,7 @@ class ProfilerViewModel(
     /**
      * Polls the profiler status until it becomes active or the operation is cancelled.
      */
+    @Suppress("CognitiveComplexMethod")
     private fun pollUntilProfilerActiveAndThen(onActive: () -> Unit, onPollFail: () -> Unit) {
         pollingJob?.cancel()
         pollingJob = viewModelScope.launch(ioDispatcher) {

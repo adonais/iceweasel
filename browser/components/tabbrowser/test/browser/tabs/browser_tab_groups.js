@@ -42,6 +42,25 @@ add_task(async function test_tabGroupCreateAndAddTab() {
   await removeTabGroup(group);
 });
 
+add_task(async function test_tabGroupCreateAndAddSplitView() {
+  let tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+
+  let splitview = gBrowser.addTabSplitView([tab1, tab2]);
+
+  Assert.ok(splitview.splitViewId, "split view has id");
+  Assert.ok(
+    splitview.tabs.includes(tab1) && splitview.tabs.includes(tab2),
+    "tab1 and tab2 are in split view"
+  );
+
+  let group = gBrowser.addTabGroup([splitview]);
+
+  Assert.equal(group.tabs.length, 2, "group has 2 tabs");
+
+  await removeTabGroup(group);
+});
+
 add_task(async function test_tabGroupCreateAndAddTabAtPosition() {
   let tabs = createManyTabs(10);
   let tabToGroup = tabs[5];
@@ -157,7 +176,7 @@ add_task(async function test_tabGroupCollapseAndExpand() {
   group.collapsed = true;
   Assert.ok(group.collapsed, "group is collapsed via API");
 
-  gBrowser.moveTabToGroup(tab2, group);
+  gBrowser.moveTabToExistingGroup(tab2, group);
   Assert.ok(
     group.collapsed,
     "group stays collapsed after moving inactive tab into group"
@@ -260,11 +279,11 @@ add_task(async function test_tabGroupPreventScrollOnUncollapse() {
 
   info("scrolling to beginning of tabstrip");
   let arrowScrollbox = win.gBrowser.tabContainer.arrowScrollbox;
-  let scrolledToStart = BrowserTestUtils.waitForCondition(() =>
-    arrowScrollbox.hasAttribute("scrolledtostart")
-  );
+  let scrolledToStart = BrowserTestUtils.waitForCondition(() => {
+    return arrowScrollbox.hasAttribute("scrolledtostart");
+  }, "Waiting for tabstrip to be scrolled to start");
 
-  bigGroup.labelElement.scrollIntoView(true);
+  arrowScrollbox.ensureElementIsVisible(bigGroup.labelElement, true);
   await scrolledToStart;
   Assert.ok(!bigGroup.collapsed, "Group is expanded");
   Assert.ok(
@@ -356,6 +375,20 @@ add_task(async function test_groupHasActiveTab() {
   let group2 = gBrowser.addTabGroup([tab2]);
 
   async function activeTabTest(tabsMode) {
+    async function addTabToGroup(group, tab) {
+      if (tab.group == group) {
+        return;
+      }
+      let tabGrouped = BrowserTestUtils.waitForEvent(
+        group,
+        "TabGrouped",
+        false,
+        event => event.detail == tab
+      );
+      group.addTabs([tab]);
+      await tabGrouped;
+    }
+
     info(`hasactivetab test for ${tabsMode} tabs mode`);
     info("tab3 is ungrouped and active");
     gBrowser.selectedTab = tab3;
@@ -374,21 +407,23 @@ add_task(async function test_groupHasActiveTab() {
     Assert.ok(!group1.hasActiveTab, "group1 hasactivetab=false");
     Assert.ok(!group2.hasActiveTab, "group2 hasactivetab=false");
     info("tab3 enters group1 as the active tab");
-    let tab3InGroup1 = BrowserTestUtils.waitForEvent(group1, "TabGrouped");
-    group1.addTabs([tab3]);
-    await tab3InGroup1;
+    await addTabToGroup(group1, tab3);
     Assert.ok(group1.hasActiveTab, "group1 hasactivetab=true");
     Assert.ok(!group2.hasActiveTab, "group2 hasactivetab=false");
     info("tab3 enters group2 as the active tab");
-    let tab3InGroup2 = BrowserTestUtils.waitForEvent(group2, "TabGrouped");
-    group2.addTabs([tab3]);
-    await tab3InGroup2;
+    await addTabToGroup(group2, tab3);
     Assert.ok(!group1.hasActiveTab, "group1 hasactivetab=false");
     Assert.ok(group2.hasActiveTab, "group2 hasactivetab=true");
     info("tab3 becomes ungrouped again as the active tab");
     let tab3Moved = BrowserTestUtils.waitForEvent(tab3, "TabMove");
+    let tab3Ungrouped = BrowserTestUtils.waitForEvent(
+      group2,
+      "TabUngrouped",
+      false,
+      event => event.detail == tab3
+    );
     gBrowser.moveTabToEnd(tab3);
-    await tab3Moved;
+    await Promise.all([tab3Moved, tab3Ungrouped]);
     Assert.ok(!group1.hasActiveTab, "group1 hasactivetab=false");
     Assert.ok(!group2.hasActiveTab, "group2 hasactivetab=false");
   }
@@ -556,7 +591,9 @@ add_task(async function test_tabGroupDeletesWhenLastTabClosed() {
   let tab = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let group = gBrowser.addTabGroup([tab]);
 
+  let removePromise = BrowserTestUtils.waitForEvent(group, "TabGroupRemoved");
   gBrowser.removeTab(tab);
+  await removePromise;
 
   Assert.equal(group.parent, null, "group is removed from tabbrowser");
 });
@@ -719,11 +756,21 @@ add_task(async function test_moveTabGroup() {
 });
 
 add_task(async function test_moveTabBetweenGroups() {
-  let tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
-  let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
+  let tab1 = await addTab("about:blank");
+  let tab2 = await addTab("about:blank");
 
-  let tab1Added = BrowserTestUtils.waitForEvent(window, "TabGrouped");
-  let tab2Added = BrowserTestUtils.waitForEvent(window, "TabGrouped");
+  let tab1Added = BrowserTestUtils.waitForEvent(
+    window,
+    "TabGrouped",
+    false,
+    event => event.detail === tab1
+  );
+  let tab2Added = BrowserTestUtils.waitForEvent(
+    window,
+    "TabGrouped",
+    false,
+    event => event.detail === tab2
+  );
   let group1 = gBrowser.addTabGroup([tab1]);
   let group2 = gBrowser.addTabGroup([tab2]);
   await Promise.allSettled([tab1Added, tab2Added]);
@@ -1277,4 +1324,36 @@ add_task(async function test_bug1969925_adoptLastTabGroupFromWindow() {
   );
 
   await removeTabGroup(groupAfterAdopt);
+});
+
+/*
+ * Tests that if a new tab is opened via right click from the active tab in a collapsed group,
+ * the group auto-uncollapses so you can see the tab that was just opened.
+ */
+add_task(async function test_bug1997096_autoUncollapseOnRightClick() {
+  let groupedTab = await addTabTo(gBrowser);
+  let group = gBrowser.addTabGroup([groupedTab]);
+  gBrowser.selectedTab = groupedTab;
+  group.collapsed = true;
+
+  let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, null, true);
+
+  await BrowserTestUtils.synthesizeMouseAtCenter(
+    "a",
+    { type: "contextmenu", button: 2 },
+    groupedTab.linkedBrowser
+  );
+  document.getElementById("context-openlinkintab").click();
+
+  let newTab = await newTabPromise;
+
+  Assert.ok(newTab, "New tab opened via right click");
+  Assert.ok(
+    !group.collapsed,
+    "Group is automatically uncollapsed when opening tab via right click"
+  );
+
+  document.querySelector("#contentAreaContextMenu").hidePopup();
+  BrowserTestUtils.removeTab(newTab);
+  BrowserTestUtils.removeTab(groupedTab);
 });

@@ -570,6 +570,7 @@ browsertime-trr-performance-m:
             - trr-clou-m
             - trr-next-m
             - trr-natv-m
+            - trr-multm
             - trr-w-cl-m
             - trr-w-ne-m
 

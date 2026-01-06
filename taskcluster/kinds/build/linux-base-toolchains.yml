@@ -7,7 +7,7 @@
 # linux.yml would make using task-defaults there significantly less useful.
 ---
 task-defaults:
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     run:
         extra-config:
             extra_mozconfig_content:

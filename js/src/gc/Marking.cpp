@@ -573,17 +573,9 @@ template void js::TraceSameZoneCrossCompartmentEdge(
 template <typename T>
 void js::TraceWeakMapKeyEdgeInternal(JSTracer* trc, Zone* weakMapZone,
                                      T** thingp, const char* name) {
-  // We can't use ShouldTraceCrossCompartment here because that assumes the
-  // source of the edge is a CCW object which could be used to delay gray
-  // marking. Instead, assert that the weak map zone is in the same marking
-  // state as the target thing's zone and therefore we can go ahead and mark it.
-#ifdef DEBUG
-  auto thing = *thingp;
-  if (trc->isMarkingTracer()) {
-    MOZ_ASSERT(weakMapZone->isGCMarking());
-    MOZ_ASSERT(weakMapZone->gcState() == thing->zone()->gcState());
-  }
-#endif
+  // We'd like to assert that the the thing's zone is currently being marked but
+  // that's not always true when tracing debugger weak maps which have keys in
+  // other compartments.
 
   // Clear expected compartment for cross-compartment edge.
   AutoClearTracingSource acts(trc);
@@ -814,7 +806,7 @@ void GCMarker::markImplicitEdges(T* markedThing) {
   MOZ_ASSERT(!zone->isGCSweeping());
 
   auto& ephemeronTable = zone->gcEphemeronEdges();
-  auto p = ephemeronTable.lookup(markedThing);
+  auto p = ephemeronTable.lookup(&markedThing->asTenured());
   if (!p) {
     return;
   }
@@ -1226,7 +1218,12 @@ bool js::GCMarker::mark(T* thing) {
   }
 
   if constexpr (std::is_same_v<T, JS::Symbol>) {
-    if (IsOwnedByOtherRuntime(runtime(), thing)) {
+    // Don't mark symbols owned by other runtimes. Mark symbols black in
+    // uncollected zones for gray unmarking, but don't mark symbols gray in
+    // uncollected zones.
+    if (IsOwnedByOtherRuntime(runtime(), thing) ||
+        (markColor() == MarkColor::Gray &&
+         !thing->zone()->isGCMarkingOrVerifyingPreBarriers())) {
       return false;
     }
   }
@@ -2277,7 +2274,6 @@ void GCMarker::start() {
 static void ClearEphemeronEdges(JSRuntime* rt) {
   for (GCZonesIter zone(rt); !zone.done(); zone.next()) {
     zone->gcEphemeronEdges().clearAndCompact();
-    zone->gcNurseryEphemeronEdges().clearAndCompact();
   }
 }
 
@@ -2443,8 +2439,6 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
   if (!isGCMarking()) {
     return IncrementalProgress::Finished;
   }
-
-  MOZ_ASSERT(gcNurseryEphemeronEdges().count() == 0);
 
   for (auto r = gcEphemeronEdges().all(); !r.empty(); r.popFront()) {
     Cell* src = r.front().key();

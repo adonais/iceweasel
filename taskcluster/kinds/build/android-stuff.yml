@@ -20,7 +20,7 @@ android-geckoview-docs/opt:
         tier: 2
         symbol: A(gv-docs)
     run-on-projects: [mozilla-central-only]
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         docker-image: {in-tree: android-build}
         env:

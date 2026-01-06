@@ -35,7 +35,8 @@ class RootAccessible : public DocAccessibleWrap, public nsIDOMEventListener {
 
   // LocalAccessible
   virtual void Shutdown() override;
-  virtual mozilla::a11y::ENameValueFlag Name(nsString& aName) const override;
+  virtual mozilla::a11y::ENameValueFlag DirectName(
+      nsString& aName) const override;
   virtual Relation RelationByType(RelationType aType) const override;
   virtual uint64_t NativeState() const override;
 

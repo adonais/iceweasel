@@ -7,14 +7,12 @@ package org.mozilla.fenix.settings.search
 import android.graphics.Bitmap
 import android.graphics.Color
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,10 +20,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -36,8 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
@@ -46,6 +42,8 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.state.availableSearchEngines
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.menu.MenuItem.FixedItem.Level
@@ -53,6 +51,7 @@ import mozilla.components.compose.base.text.Text
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -80,53 +79,47 @@ fun SearchEngineShortcuts(
     }
     val disabledShortcutsIds = searchState.disabledSearchEngineIds
 
-    LazyColumn(
-        modifier = Modifier
-            .background(color = FirefoxTheme.colors.layer1)
-            .fillMaxSize(),
-    ) {
-        item {
-            Title(title = categoryTitle)
-
-            Spacer(modifier = Modifier.height(12.dp))
-        }
-
-        items(
-            items = searchEngines,
-            key = { engine -> engine.id },
+    Surface {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
         ) {
-            SearchItem(
-                engine = it,
-                name = it.name,
-                isEnabled = !disabledShortcutsIds.contains(it.id),
-                onCheckboxClicked = onCheckboxClicked,
-                onEditEngineClicked = onEditEngineClicked,
-                onDeleteEngineClicked = onDeleteEngineClicked,
-            )
-        }
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
 
-        item {
-            AddEngineButton(onAddEngineClicked = onAddEngineClicked)
+                Title(title = categoryTitle)
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            items(
+                items = searchEngines,
+                key = { engine -> engine.id },
+            ) {
+                SearchItem(
+                    engine = it,
+                    name = it.name,
+                    isEnabled = !disabledShortcutsIds.contains(it.id),
+                    onCheckboxClicked = onCheckboxClicked,
+                    onEditEngineClicked = onEditEngineClicked,
+                    onDeleteEngineClicked = onDeleteEngineClicked,
+                )
+            }
+
+            item {
+                AddEngineButton(onAddEngineClicked = onAddEngineClicked)
+            }
         }
     }
 }
 
 @Composable
 private fun Title(title: String) {
-    Box(
-        modifier = Modifier
-            .height(48.dp)
-            .fillMaxWidth(),
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        Text(
-            text = title,
-            color = MaterialTheme.colorScheme.tertiary,
-            fontWeight = FontWeight.W400,
-            modifier = Modifier.padding(horizontal = 16.dp),
-            style = FirefoxTheme.typography.headline8,
-        )
-    }
+    Text(
+        text = title,
+        modifier = Modifier.padding(horizontal = 16.dp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = FirefoxTheme.typography.headline8,
+    )
 }
 
 @Suppress("LongMethod")
@@ -150,10 +143,6 @@ private fun SearchItem(
             modifier = Modifier.align(Alignment.CenterVertically),
             checked = isEnabled,
             onCheckedChange = { onCheckboxClicked.invoke(engine, it) },
-            colors = CheckboxDefaults.colors(
-                checkedColor = FirefoxTheme.colors.formSelected,
-                uncheckedColor = FirefoxTheme.colors.formDefault,
-            ),
         )
 
         Spacer(modifier = Modifier.width(20.dp))
@@ -172,13 +161,12 @@ private fun SearchItem(
         Spacer(modifier = Modifier.width(16.dp))
 
         Text(
+            text = name,
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .padding(vertical = 8.dp)
                 .weight(1f),
-            text = name,
-            style = FirefoxTheme.typography.subtitle1,
-            color = FirefoxTheme.colors.textPrimary,
+            style = FirefoxTheme.typography.body1,
         )
 
         if (engine.type == SearchEngine.Type.CUSTOM) {
@@ -190,11 +178,11 @@ private fun SearchItem(
                     onClick = {
                         isMenuExpanded.value = true
                     },
+                    contentDescription = stringResource(id = R.string.content_description_menu),
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_menu),
-                        contentDescription = stringResource(id = R.string.content_description_menu),
-                        tint = FirefoxTheme.colors.iconPrimary,
+                        painter = painterResource(id = iconsR.drawable.mozac_ic_ellipsis_vertical_24),
+                        contentDescription = null,
                     )
 
                     DropdownMenu(
@@ -243,7 +231,6 @@ private fun AddEngineButton(
             contentDescription = stringResource(
                 id = R.string.search_engine_add_custom_search_engine_button_content_description,
             ),
-            tint = FirefoxTheme.colors.iconPrimary,
         )
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -254,40 +241,14 @@ private fun AddEngineButton(
                 .padding(vertical = 8.dp)
                 .weight(1f),
             text = stringResource(id = R.string.search_engine_add_custom_search_engine_title),
-            color = FirefoxTheme.colors.textPrimary,
-            style = FirefoxTheme.typography.subtitle1,
+            style = FirefoxTheme.typography.body1,
         )
 
         Spacer(modifier = Modifier.width(16.dp))
     }
 }
 
-@PreviewLightDark
-@Composable
-private fun SearchEngineShortcutsPreview() {
-    FirefoxTheme {
-        SearchEngineShortcuts(
-            categoryTitle = stringResource(id = R.string.preferences_category_engines_in_search_menu),
-            store = BrowserStore(
-                initialState = BrowserState(
-                    search = SearchState(
-                        regionSearchEngines = generateFakeEnginesList(),
-                        disabledSearchEngineIds = listOf("7", "8"),
-                    ),
-                ),
-            ),
-            onCheckboxClicked = { _, _ -> },
-            onEditEngineClicked = {},
-            onDeleteEngineClicked = {},
-            onAddEngineClicked = {},
-        )
-    }
-}
-
 private fun generateFakeEnginesList(): List<SearchEngine> {
-    val dummyBitmap = createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-    dummyBitmap.eraseColor(Color.BLUE)
-
     return listOf(
         generateFakeEngines("1", "Google"),
         generateFakeEngines("2", "Bing"),
@@ -315,4 +276,48 @@ private fun generateFakeEngines(
         type = type,
         isGeneral = true,
     )
+}
+
+@FlexibleWindowLightDarkPreview
+@Composable
+private fun SearchEngineShortcutsPreview() {
+    FirefoxTheme {
+        SearchEngineShortcuts(
+            categoryTitle = stringResource(id = R.string.preferences_category_engines_in_search_menu),
+            store = BrowserStore(
+                initialState = BrowserState(
+                    search = SearchState(
+                        regionSearchEngines = generateFakeEnginesList(),
+                        disabledSearchEngineIds = listOf("7", "8"),
+                    ),
+                ),
+            ),
+            onCheckboxClicked = { _, _ -> },
+            onEditEngineClicked = {},
+            onDeleteEngineClicked = {},
+            onAddEngineClicked = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun SearchEngineShortcutsPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        SearchEngineShortcuts(
+            categoryTitle = stringResource(id = R.string.preferences_category_engines_in_search_menu),
+            store = BrowserStore(
+                initialState = BrowserState(
+                    search = SearchState(
+                        regionSearchEngines = generateFakeEnginesList(),
+                        disabledSearchEngineIds = listOf("7", "8"),
+                    ),
+                ),
+            ),
+            onCheckboxClicked = { _, _ -> },
+            onEditEngineClicked = {},
+            onDeleteEngineClicked = {},
+            onAddEngineClicked = {},
+        )
+    }
 }

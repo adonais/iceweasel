@@ -238,7 +238,7 @@ export const SpecialMessageActions = {
   /**
    * Set prefs with special message actions
    *
-   * @param {Object} pref - A pref to be updated.
+   * @param {object} pref - A pref to be updated.
    * @param {string} pref.name - The name of the pref to be updated
    * @param {string} [pref.value] - The value of the pref to be updated. If not included, the pref will be reset.
    * @param {boolean} onImpression - Whether the setPref action was triggered on
@@ -251,6 +251,7 @@ export const SpecialMessageActions = {
       "browser.crashReports.unsubmittedCheck.autoSubmit2",
       "browser.dataFeatureRecommendations.enabled",
       "browser.ipProtection.enabled",
+      "browser.ipProtection.optedOut",
       "browser.migrate.content-modal.about-welcome-behavior",
       "browser.migrate.content-modal.import-all.enabled",
       "browser.migrate.preferences-entrypoint.enabled",

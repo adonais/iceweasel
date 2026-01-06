@@ -9,6 +9,8 @@ export const BUILTIN_ADDON_ID = "newtab@mozilla.org";
 export const DISABLE_NEWTAB_AS_ADDON_PREF =
   "browser.newtabpage.disableNewTabAsAddon";
 export const TRAINHOP_NIMBUS_FEATURE_ID = "newtabTrainhopAddon";
+export const TRAINHOP_NIMBUS_FIRST_STARTUP_FEATURE_ID =
+  "newtabTrainhopFirstStartup";
 export const TRAINHOP_XPI_BASE_URL_PREF =
   "browser.newtabpage.trainhopAddon.xpiBaseURL";
 export const TRAINHOP_XPI_VERSION_PREF =
@@ -28,6 +30,7 @@ const lazy = XPCOMUtils.declareLazy({
   AboutHomeStartupCache: "resource:///modules/AboutHomeStartupCache.sys.mjs",
   AsyncShutdown: "resource://gre/modules/AsyncShutdown.sys.mjs",
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
+  ExperimentAPI: "resource://nimbus/ExperimentAPI.sys.mjs",
   NewTabGleanUtils: "resource://newtab/lib/NewTabGleanUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
 
@@ -109,16 +112,7 @@ export var AboutNewTabResourceMapping = {
       return;
     }
 
-    this.logger = console.createInstance({
-      prefix: "AboutNewTabResourceMapping",
-      maxLogLevel: Services.prefs.getBoolPref(
-        "browser.newtabpage.resource-mapping.log",
-        false
-      )
-        ? "Debug"
-        : "Warn",
-    });
-    this.logger.debug("Initializing");
+    this.logger.debug("Initializing:");
 
     // NOTE: this pref is read only once per session on purpose
     // (and it is expected to be used by the resource mapping logic
@@ -341,13 +335,13 @@ export var AboutNewTabResourceMapping = {
       registry.updateSources([newtabFileSource]);
       this.logger.debug(
         "Newtab strings updated for ",
-        availableSupportedLocales
+        Array.from(availableSupportedLocales)
       );
     } else {
       registry.registerSources([newtabFileSource]);
       this.logger.debug(
         "Newtab strings registered for ",
-        availableSupportedLocales
+        Array.from(availableSupportedLocales)
       );
     }
   },
@@ -428,7 +422,7 @@ export var AboutNewTabResourceMapping = {
    *   installed or pending to be installed). Rejects on failures or unexpected cancellations
    *   during installation or uninstallation process.
    */
-  async updateTrainhopAddonState() {
+  async updateTrainhopAddonState(forceRestartlessInstall = false) {
     if (this.inSafeMode) {
       this.logger.debug(
         "train-hop add-on update state disabled while running in SafeMode"
@@ -441,6 +435,10 @@ export var AboutNewTabResourceMapping = {
     const { addon_version, xpi_download_path } = nimbusFeature.getAllVariables({
       defaultValues: { addon_version: null, xpi_download_path: null },
     });
+
+    this.logger.debug("Force restartless install: ", forceRestartlessInstall);
+    this.logger.debug("Received addon version:", addon_version);
+    this.logger.debug("Received XPI download path:", xpi_download_path);
 
     let addon = await lazy.AddonManager.getAddonByID(BUILTIN_ADDON_ID);
 
@@ -535,6 +533,7 @@ export var AboutNewTabResourceMapping = {
     await this._installTrainhopAddon({
       trainhopAddonVersion: addon_version,
       xpiDownloadURL,
+      forceRestartlessInstall,
     });
   },
 
@@ -545,12 +544,21 @@ export var AboutNewTabResourceMapping = {
    * @param {object} params
    * @param {string} params.trainhopAddonVersion - The version of the train-hop add-on to install.
    * @param {string} params.xpiDownloadURL - The URL from which to download the XPI file.
+   * @param {boolean} params.forceRestartlessInstall
+   *   After the XPI is downloaded, attempt to complete a restartless install. Note that if
+   *   AboutNewTabResourceMapping.init has been called by the time the XPI has finished
+   *   downloading, this directive is ignored, and we fallback to installing on the next
+   *   restart.
    *
    * @returns {Promise<void>}
    *   Resolves when the train-hop add-on installation is completed or not needed, or rejects
    *   on failures or unexpected cancellations hit during the installation process.
    */
-  async _installTrainhopAddon({ trainhopAddonVersion, xpiDownloadURL }) {
+  async _installTrainhopAddon({
+    trainhopAddonVersion,
+    xpiDownloadURL,
+    forceRestartlessInstall,
+  }) {
     if (
       this._builtinVersion &&
       Services.vc.compare(this._builtinVersion, trainhopAddonVersion) >= 0
@@ -603,7 +611,7 @@ export var AboutNewTabResourceMapping = {
       );
       const deferred = Promise.withResolvers();
       newInstall.addListener({
-        onDownloadEnded() {
+        onDownloadEnded: () => {
           if (
             newInstall.addon.id !== BUILTIN_ADDON_ID ||
             newInstall.addon.version !== trainhopAddonVersion
@@ -630,30 +638,51 @@ export var AboutNewTabResourceMapping = {
             );
             newInstall.cancel();
           }
+
+          this.logger.debug("Train-hop download ended");
         },
-        onInstallPostponed() {
-          deferred.resolve();
+        onInstallPostponed: () => {
+          this.logger.debug("Train-hop install postponed, as expected");
+          if (forceRestartlessInstall && !this.initialized) {
+            this.logger.debug("Forcing restartless install of train-hop");
+            newInstall.continuePostponedInstall();
+          } else {
+            this.logger.debug("Not forcing restartless install");
+            if (forceRestartlessInstall) {
+              this.logger.debug(
+                "We must have initialized before the XPI finished downloading."
+              );
+            }
+            deferred.resolve();
+          }
         },
-        onDownloadCancelled() {
+        onInstallEnded: () => {
+          this.logger.debug("Train-hop restartless install ended");
+          if (forceRestartlessInstall) {
+            this.logger.debug("Resolving train-hop install promise");
+            deferred.resolve();
+          }
+        },
+        onDownloadCancelled: () => {
           deferred.reject(
             new Error(
               `Unexpected download cancelled while downloading xpi from ${xpiDownloadURL}`
             )
           );
         },
-        onDownloadFailed() {
+        onDownloadFailed: () => {
           deferred.reject(
             new Error(`Failed to download xpi from ${xpiDownloadURL}`)
           );
         },
-        onInstallCancelled() {
+        onInstallCancelled: () => {
           deferred.reject(
             new Error(
               `Unexpected install cancelled while installing xpi from ${xpiDownloadURL}`
             )
           );
         },
-        onInstallFailed() {
+        onInstallFailed: () => {
           deferred.reject(
             new Error(`Failed to install xpi from ${xpiDownloadURL}`)
           );
@@ -661,9 +690,16 @@ export var AboutNewTabResourceMapping = {
       });
       newInstall.install();
       await deferred.promise;
-      this.logger.debug(
-        `train-hop add-on ${trainhopAddonVersion} downloaded and pending install on next startup`
-      );
+
+      if (forceRestartlessInstall) {
+        this.logger.debug(
+          `train-hop add-on ${trainhopAddonVersion} downloaded and we will attempt a restartless install`
+        );
+      } else {
+        this.logger.debug(
+          `train-hop add-on ${trainhopAddonVersion} downloaded and pending install on next startup`
+        );
+      }
     } catch (e) {
       this.logger.error(`train-hop add-on install failure: ${e}`);
     }
@@ -694,4 +730,54 @@ export var AboutNewTabResourceMapping = {
     }
     return false;
   },
+
+  /**
+   * This is registered to be called on first startup for new profiles on
+   * Windows. It is expected to be called very early on in the lifetime of
+   * new profiles, such that the AboutNewTabResourceMapping.init routine has
+   * not yet had a chance to run.
+   *
+   * @returns {Promise<void>}
+   */
+  async firstStartupNewProfile() {
+    if (this.initialized) {
+      this.logger.error(
+        "firstStartupNewProfile is being run after AboutNewTabResourceMapping initializes, so we're too late."
+      );
+      return;
+    }
+    this.logger.debug(
+      "First startup with a new profile. Checking for any train-hops to perform restartless install."
+    );
+    await lazy.ExperimentAPI.ready();
+
+    const nimbusFeature =
+      lazy.NimbusFeatures[TRAINHOP_NIMBUS_FIRST_STARTUP_FEATURE_ID];
+    await nimbusFeature.ready();
+    const { enabled } = nimbusFeature.getAllVariables({
+      defaultValues: { enabled: true },
+    });
+    if (!enabled) {
+      // We've been configured to bypass the FirstStartup install for
+      // train-hops, so exit now.
+      this.logger.debug(
+        "Not forcing install of any newtab XPIs, as we're currently configured not to."
+      );
+      return;
+    }
+
+    await lazy.AddonManager.readyPromise;
+    await this.updateTrainhopAddonState(true /* forceRestartlessInstall */);
+    this.logger.debug("First startup - new profile done");
+  },
 };
+
+AboutNewTabResourceMapping.logger = console.createInstance({
+  prefix: "AboutNewTabResourceMapping",
+  maxLogLevel: Services.prefs.getBoolPref(
+    "browser.newtabpage.resource-mapping.log",
+    false
+  )
+    ? "Debug"
+    : "Warn",
+});

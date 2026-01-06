@@ -36,6 +36,7 @@ class HTMLImageElement final : public nsGenericHTMLElement,
 
   // nsISupports
   NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
   bool Draggable() const override;
 

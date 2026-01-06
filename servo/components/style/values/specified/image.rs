@@ -49,9 +49,8 @@ size_of_test!(Image, 16);
 /// <https://drafts.csswg.org/css-images/#gradients>
 pub type Gradient = generic::Gradient<
     LineDirection,
+    Length,
     LengthPercentage,
-    NonNegativeLength,
-    NonNegativeLengthPercentage,
     Position,
     Angle,
     AngleOrPercentage,
@@ -104,7 +103,7 @@ fn default_color_interpolation_method<T>(
     });
 
     if has_modern_syntax_item {
-        ColorInterpolationMethod::oklab()
+        ColorInterpolationMethod::default()
     } else {
         ColorInterpolationMethod::srgb()
     }

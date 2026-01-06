@@ -18,7 +18,7 @@ webidl Node;
 
 class nsIWidget;
 class nsPresContext;
-class nsView;
+class nsSubDocumentFrame;
 class nsDOMNavigationTiming;
 namespace mozilla {
 class Encoding;
@@ -35,7 +35,7 @@ class RemotePrintJobChild;
 [ptr] native nsIWidgetPtr(nsIWidget);
 [ref] native LayoutDeviceIntRectRef(mozilla::LayoutDeviceIntRect);
 [ptr] native nsPresContextPtr(nsPresContext);
-[ptr] native nsViewPtr(nsView);
+[ptr] native nsSubDocumentFramePtr(nsSubDocumentFrame);
 [ptr] native nsDOMNavigationTimingPtr(nsDOMNavigationTiming);
 [ptr] native Encoding(const mozilla::Encoding);
 [ptr] native PresShellPtr(mozilla::PresShell);
@@ -251,7 +251,7 @@ interface nsIDocumentViewer : nsISupports
    * case, if mParentWidget is null then this document should not even
    * be displayed.
    */
-  [noscript,notxpcom,nostdcall] nsViewPtr findContainerView();
+  [noscript,notxpcom,nostdcall] nsSubDocumentFramePtr findContainerFrame();
   /**
    * Set collector for navigation timing data (load, unload events).
    */

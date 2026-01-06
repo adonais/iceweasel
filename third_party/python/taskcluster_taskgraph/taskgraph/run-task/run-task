@@ -824,7 +824,6 @@ def hg_checkout(
     head_repo: str,
     base_repo: Optional[str],
     store_path: str,
-    sparse_profile: Optional[str],
     branch: Optional[str],
     revision: Optional[str],
 ):
@@ -849,8 +848,6 @@ def hg_checkout(
 
     if base_repo:
         args.extend(["--upstream", base_repo])
-    if sparse_profile:
-        args.extend(["--sparseprofile", sparse_profile])
 
     # Specify method to checkout a revision. This defaults to revisions as
     # SHA-1 strings, but also supports symbolic revisions like `tip` via the
@@ -915,10 +912,6 @@ def add_vcs_arguments(parser, project, name):
         help=f"Directory where {name} checkout should be created",
     )
     parser.add_argument(
-        f"--{project}-sparse-profile",
-        help=f"Path to sparse profile for {name} checkout",
-    )
-    parser.add_argument(
         f"--{project}-shallow-clone",
         action="store_true",
         help=f"Use shallow clone for {name}",
@@ -927,7 +920,6 @@ def add_vcs_arguments(parser, project, name):
 
 def collect_vcs_options(args, project, name):
     checkout = getattr(args, f"{project}_checkout")
-    sparse_profile = getattr(args, f"{project}_sparse_profile")
     shallow_clone = getattr(args, f"{project}_shallow_clone")
 
     env_prefix = project.upper()
@@ -964,7 +956,6 @@ def collect_vcs_options(args, project, name):
         "name": name,
         "env-prefix": env_prefix,
         "checkout": checkout,
-        "sparse-profile": sparse_profile,
         "base-repo": base_repo,
         "base-rev": base_rev,
         "head-repo": head_repo,
@@ -1030,7 +1021,6 @@ def vcs_checkout_from_args(options):
                 options["head-repo"],
                 options["base-repo"],
                 options["store-path"],
-                options["sparse-profile"],
                 head_ref,
                 head_rev,
             )
@@ -1330,7 +1320,10 @@ def main(args):
     # Convert certain well known environment variables to absolute paths.
     for k in [
         "CARGO_HOME",
+        "GECKO_PATH",
         "MOZ_FETCHES_DIR",
+        "MOZ_PYTHON_HOME",
+        "MOZ_UV_HOME",
         "PIP_CACHE_DIR",
         "UPLOAD_DIR",
         "UV_CACHE_DIR",
@@ -1339,23 +1332,22 @@ def main(args):
         "{}_PATH".format(repository["project"].upper()) for repository in repositories
     ]:
         if k in os.environ:
-            os.environ[k] = os.path.abspath(os.environ[k])
+            # Normalize paths to use forward slashes. Some shell scripts
+            # tolerate that better on Windows.
+            os.environ[k] = os.path.abspath(os.environ[k]).replace(os.sep, "/")
+            print_line(
+                b"setup",
+                b"%s is %s\n" % (k.encode("utf-8"), os.environ[k].encode("utf-8")),
+            )
 
-    try:
-        if "MOZ_FETCHES" in os.environ:
-            fetch_artifacts()
+    if "MOZ_FETCHES" in os.environ:
+        fetch_artifacts()
 
-        # Install Python requirements after fetches in case tasks want to use
-        # fetches to grab dependencies.
-        install_pip_requirements(repositories)
+    # Install Python requirements after fetches in case tasks want to use
+    # fetches to grab dependencies.
+    install_pip_requirements(repositories)
 
-        return run_command(b"task", task_args, cwd=args.task_cwd)
-    finally:
-        fetches_dir = os.environ.get("MOZ_FETCHES_DIR")
-        if fetches_dir and os.path.isdir(fetches_dir):
-            print_line(b"fetches", b"removing %s\n" % fetches_dir.encode("utf-8"))
-            remove(fetches_dir)
-            print_line(b"fetches", b"finished\n")
+    return run_command(b"task", task_args, cwd=args.task_cwd)
 
 
 if __name__ == "__main__":

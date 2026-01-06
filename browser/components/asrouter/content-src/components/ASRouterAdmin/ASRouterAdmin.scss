@@ -181,14 +181,14 @@
 
     &.errorReporting {
       tr {
-        border: 1px solid var(--in-content-box-border-color);
+        border: 1px solid var(--border-color);
       }
 
       td {
         padding: 4px;
 
         &[rowspan] {
-          border: 1px solid var(--in-content-box-border-color);
+          border: 1px solid var(--border-color);
         }
       }
     }
@@ -197,13 +197,13 @@
       min-width: 100%;
 
       tr:first-child td {
-        border-top: 1px solid var(--in-content-box-border-color);
+        border-top: 1px solid var(--border-color);
       }
 
       td {
         vertical-align: top;
         padding: 8px;
-        border-bottom: 1px solid var(--in-content-box-border-color);
+        border-bottom: 1px solid var(--border-color);
 
         &.no-wrap {
           white-space: nowrap;
@@ -214,11 +214,11 @@
         }
 
         &:first-child {
-          border-inline-start: 1px solid var(--in-content-box-border-color);
+          border-inline-start: 1px solid var(--border-color);
         }
 
         &:last-child {
-          border-inline-end: 1px solid var(--in-content-box-border-color);
+          border-inline-end: 1px solid var(--border-color);
         }
       }
     }
@@ -397,7 +397,7 @@
 
   textarea[readonly] {
     color: var(--text-color-deemphasized);
-    border-color: var(--in-content-border-color);
+    border-color: var(--border-color);
   }
 
   .monospace {
@@ -432,7 +432,7 @@
       display: flex;
       flex-flow: column nowrap;
       padding: 8px;
-      border: 1px solid var(--in-content-box-border-color);
+      border: 1px solid var(--border-color);
       border-radius: 5px;
 
       .impressions-inner-box {

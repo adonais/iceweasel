@@ -13,6 +13,7 @@
 #include "AllocationPolicy.h"
 #include "DecoderTraits.h"
 #include "MP4Decoder.h"
+#include "MediaCapabilitiesValidation.h"
 #include "MediaInfo.h"
 #include "MediaRecorder.h"
 #include "PDMFactory.h"
@@ -36,12 +37,14 @@
 #include "mozilla/layers/KnowsCompositor.h"
 #include "nsContentUtils.h"
 
-static mozilla::LazyLogModule sMediaCapabilitiesLog("MediaCapabilities");
+mozilla::LazyLogModule sMediaCapabilitiesLog("MediaCapabilities");
 
 #define LOG(msg, ...) \
   DDMOZ_LOG(sMediaCapabilitiesLog, LogLevel::Debug, msg, ##__VA_ARGS__)
 
 namespace mozilla::dom {
+using mediacaps::IsValidMediaDecodingConfiguration;
+using mediacaps::IsValidMediaEncodingConfiguration;
 
 static bool
 MediaCapabilitiesKeySystemConfigurationToMediaKeySystemConfiguration(
@@ -184,6 +187,7 @@ MediaCapabilities::MediaCapabilities(nsIGlobalObject* aParent)
     : mParent(aParent) {}
 
 // https://w3c.github.io/media-capabilities/#dom-mediacapabilities-decodinginfo
+// Section 2.5.2 DecodingInfo() Method
 already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
     const MediaDecodingConfiguration& aConfiguration, ErrorResult& aRv) {
   RefPtr<Promise> promise = Promise::Create(mParent, aRv);
@@ -191,29 +195,28 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
     return nullptr;
   }
 
-  // If configuration is not a valid MediaConfiguration, return a Promise
-  // rejected with a TypeError.
-  if (!aConfiguration.mVideo.WasPassed() &&
-      !aConfiguration.mAudio.WasPassed()) {
-    promise->MaybeRejectWithTypeError(
-        "'audio' or 'video' member of argument of "
-        "MediaCapabilities.decodingInfo");
+  // Step 1: If configuration is not a valid MediaDecodingConfiguration,
+  // return a Promise rejected with a newly created TypeError.
+  if (auto configCheck = IsValidMediaDecodingConfiguration(aConfiguration);
+      configCheck.isErr()) {
+    RejectWithValidationResult(promise, configCheck.unwrapErr());
     return promise.forget();
   }
 
-  // If configuration.keySystemConfiguration exists, run the following substeps:
+  // Step 2: If configuration.keySystemConfiguration exists,
+  // run the following substeps:
   if (aConfiguration.mKeySystemConfiguration.WasPassed()) {
-    // If the global object is of type WorkerGlobalScope, return a Promise
-    // rejected with a newly created DOMException whose name is
-    // InvalidStateError.
+    // Step 2.1: If the global object is of type WorkerGlobalScope,
+    //           return a Promise rejected with a newly created DOMException
+    //           whose name is InvalidStateError.
     if (IsWorkerGlobal(mParent->GetGlobalJSObject())) {
       promise->MaybeRejectWithInvalidStateError(
           "key system configuration is not allowed in the worker scope");
       return promise.forget();
     }
-    // If the global object’s relevant settings object is a non-secure context,
-    // return a Promise rejected with a newly created DOMException whose name is
-    // SecurityError.
+    // Step 2.2 If the global object’s relevant settings object is a
+    //          non-secure context, return a Promise rejected with a newly
+    //          created DOMException whose name is SecurityError.
     if (auto* window = mParent->GetAsInnerWindow();
         window && !window->IsSecureContext()) {
       promise->MaybeRejectWithSecurityError(
@@ -222,8 +225,9 @@ already_AddRefed<Promise> MediaCapabilities::DecodingInfo(
     }
   }
 
-  // In parallel, run the Create a MediaCapabilitiesDecodingInfo algorithm with
-  // configuration and resolve p with its result.
+  // Step 3: Let p be a new Promise (already have it!)
+  // Step 4: In parallel, run the Create a MediaCapabilitiesDecodingInfo
+  //         algorithm with configuration and resolve p with its result.
   CreateMediaCapabilitiesDecodingInfo(aConfiguration, aRv, promise);
   return promise.forget();
 }
@@ -643,11 +647,9 @@ already_AddRefed<Promise> MediaCapabilities::EncodingInfo(
 
   // If configuration is not a valid MediaConfiguration, return a Promise
   // rejected with a TypeError.
-  if (!aConfiguration.mVideo.WasPassed() &&
-      !aConfiguration.mAudio.WasPassed()) {
-    aRv.ThrowTypeError<MSG_MISSING_REQUIRED_DICTIONARY_MEMBER>(
-        "'audio' or 'video' member of argument of "
-        "MediaCapabilities.encodingInfo");
+  if (auto configCheck = IsValidMediaEncodingConfiguration(aConfiguration);
+      configCheck.isErr()) {
+    ThrowWithValidationResult(aRv, configCheck.unwrapErr());
     return nullptr;
   }
 
@@ -788,3 +790,4 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(MediaCapabilities)
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(MediaCapabilities, mParent)
 
 }  // namespace mozilla::dom
+#undef LOG

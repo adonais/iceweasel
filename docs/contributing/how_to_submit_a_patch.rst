@@ -122,8 +122,7 @@ require.
 Testing
 -------
 
-All changes must be tested. In most cases, an `automated
-test <https://developer.mozilla.org/docs/Mozilla/QA/Automated_testing>`__ is required for every
+All changes must be tested. In most cases, :ref:`Automated Testing` is required for every
 change to the code.
 
 While we desire to have automated tests for all code, we also have a

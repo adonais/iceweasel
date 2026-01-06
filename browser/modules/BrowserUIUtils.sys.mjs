@@ -71,11 +71,11 @@ export var BrowserUIUtils = {
    * it is in use everywhere.
    *
    * @param {Document} doc
-   * @param {String}   msg
+   * @param {string}   msg
    *                   The string to put replacements in. Fetch from
    *                   a stringbundle using getString or GetStringFromName,
    *                   or even an inserted dtd string.
-   * @param {Node|String} nodesOrStrings
+   * @param {Node | string} nodesOrStrings
    *                   The replacement items. Can be a mix of Nodes
    *                   and Strings. However, for correct behaviour, the
    *                   number of items provided needs to exactly match

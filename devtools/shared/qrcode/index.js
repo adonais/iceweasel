@@ -39,6 +39,7 @@ Object.defineProperty(this, "decoder", {
  *
  * It expects you to pick a version large enough to contain your message.  Here
  * we search for the mimimum version based on the message length.
+ *
  * @param string message
  *        Text to encode
  * @param string quality
@@ -64,6 +65,7 @@ exports.findMinimumVersion = function (message, quality) {
 
 /**
  * Simple wrapper around the underlying encoder's API.
+ *
  * @param string  message
  *        Text to encode
  * @param string  quality (optional)
@@ -86,6 +88,7 @@ exports.encodeToDataURI = function (message, quality, version) {
 
 /**
  * Simple wrapper around the underlying decoder's API.
+ *
  * @param string URI
  *        URI of an image of a QR code
  * @return Promise
@@ -103,6 +106,7 @@ exports.decodeFromURI = function (URI) {
 
 /**
  * Decode a QR code that has been drawn to a canvas element.
+ *
  * @param Canvas canvas
  *        <canvas> element to read from
  * @return string

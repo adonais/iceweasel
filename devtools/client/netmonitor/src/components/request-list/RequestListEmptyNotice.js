@@ -61,7 +61,8 @@ class RequestListEmptyNotice extends Component {
       {
         className: "request-list-empty-notice",
       },
-      !toolbox.isBrowserToolbox
+      !toolbox.isBrowserToolbox &&
+        !toolbox.commands.descriptorFront.isWebExtensionDescriptor
         ? div(
             { className: "notice-reload-message empty-notice-element" },
             span(null, RELOAD_NOTICE_1),
@@ -79,7 +80,8 @@ class RequestListEmptyNotice extends Component {
             { className: "notice-reload-message empty-notice-element" },
             span(null, RELOAD_NOTICE_BT)
           ),
-      !toolbox.isBrowserToolbox
+      !toolbox.isBrowserToolbox &&
+        !toolbox.commands.descriptorFront.isWebExtensionDescriptor
         ? div(
             { className: "notice-perf-message empty-notice-element" },
             span(null, PERFORMANCE_NOTICE_1),

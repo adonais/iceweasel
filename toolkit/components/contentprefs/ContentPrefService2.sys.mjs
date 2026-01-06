@@ -70,6 +70,7 @@ function executeStatementsInTransaction(conn, stmts) {
 
 /**
  * Helper function to extract a non-empty group from a URI.
+ *
  * @param {nsIURI} uri The URI to extract from.
  * @returns {string} a non-empty group.
  * @throws if a non-empty group cannot be extracted.

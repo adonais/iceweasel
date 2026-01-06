@@ -1,11 +1,8 @@
-// |reftest| shell-option(--enable-temporal) skip-if(!this.hasOwnProperty('Temporal')||!xulRuntime.shell) -- Temporal is not enabled unconditionally, requires shell-options
+// |reftest| skip-if(!this.hasOwnProperty('Temporal')) -- Temporal is not enabled unconditionally
 // Copyright (C) 2024 Mozilla Corporation. All rights reserved.
 // This code is governed by the BSD license found in the LICENSE file.
 
 /*---
-includes: [sm/non262.js, sm/non262-shell.js, sm/non262-Temporal-PlainMonthDay-shell.js]
-flags:
-  - noStrict
 features:
   - Temporal
 description: |
@@ -42,7 +39,7 @@ esid: pending
     monthCode: "M01",
     day: 1,
   };
-  assertThrowsInstanceOf(() => Temporal.PlainMonthDay.from(fields), RangeError);
+  assert.throws(RangeError, () => Temporal.PlainMonthDay.from(fields));
 }
 
 // eraYear and year must be consistent when month is present.
@@ -55,7 +52,7 @@ esid: pending
     month: 1,
     day: 1,
   };
-  assertThrowsInstanceOf(() => Temporal.PlainMonthDay.from(fields), RangeError);
+  assert.throws(RangeError, () => Temporal.PlainMonthDay.from(fields));
 }
 
 // monthCode and month must be consistent.
@@ -67,7 +64,7 @@ esid: pending
     month: 2,
     day: 1,
   };
-  assertThrowsInstanceOf(() => Temporal.PlainMonthDay.from(fields), RangeError);
+  assert.throws(RangeError, () => Temporal.PlainMonthDay.from(fields));
 }
 
 

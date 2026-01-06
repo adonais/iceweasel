@@ -17,7 +17,7 @@ internal object TabListReducer {
     /**
      * [TabListAction] Reducer function for modifying the list of [TabSessionState] objects in [BrowserState.tabs].
      */
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "CognitiveComplexMethod")
     fun reduce(state: BrowserState, action: TabListAction): BrowserState {
         return when (action) {
             is TabListAction.AddTabAction -> {

@@ -73,12 +73,16 @@
     <string name="preferences_debug_settings_compose_logins" translatable="false">Enable Compose Logins</string>
     <!-- Label for enabling Homepage as a New Tab -->
     <string name="preferences_debug_settings_homepage_as_new_tab" translatable="false">Enable Homepage as a New Tab</string>
+    <!-- Label for enabling Mozilla Ads Client -->
+    <string name="preferences_debug_settings_mozilla_ads_client" translatable="false">Enable Mozilla Ads Client</string>
     <!-- Label for enabling Discover more stories -->
     <string name="preferences_debug_settings_discover_more_stories" translatable="false">Enable Discover More Stories</string>
-    <!-- Label for enabling Private Browsing Mode redesign -->
-    <string name="preferences_debug_settings_private_browsing_mode_redesign" translatable="false">Enable Private Browsing Mode redesign</string>
     <!-- Label for enabling the menu redesign -->
     <string name="preferences_debug_settings_menu_redesign" translatable="false">Enable Menu Redesign</string>
+    <!-- Label for enabling the custom tab extension -->
+    <string name="preferences_debug_settings_custom_tab_extensions" translatable="false">Enable Custom Tab Extension List</string>
+    <!-- Label for a longer description of the custom tab extensions depending on the menu redesign or composable toolbar feature -->
+    <string name="preferences_debug_settings_custom_tab_extensions_summary" translatable="false">This needs the Menu Redesign or Composable Toolbar feature enabled</string>
     <!-- Label for enabling Firefox Suggest -->
     <string name="preferences_debug_settings_fxsuggest" translatable="false">Enable Firefox Suggest</string>
     <!-- Label for enabling the composable toolbar -->
@@ -93,6 +97,8 @@
     <string name="preferences_debug_settings_toolbar_customization">Enable Toolbar Customization</string>
     <!-- Label for a longer description of the redesigned toolbar depending on the composable toolbar feature -->
     <string name="preferences_debug_settings_toolbar_redesign_summary" translatable="false">This needs the Composable Toolbar feature enabled</string>
+    <!-- Label for the option of using new scroll data for animating the dynamic toolbar -->
+    <string name="preferences_debug_settings_use_scroll_data_for_dynamic_toolbar" translatable="false">Animate dynamic toolbars based on website scroll data</string>
     <!-- Label for a longer description of the redesigned toolbar depending on the redesigned toolbar options feature -->
     <string name="preferences_debug_settings_toolbar_customization_summary" translatable="false">This needs the Redesigned Toolbar Options feature enabled</string>
     <!-- Label for toggling Remote Crash Pull -->
@@ -123,7 +129,9 @@
     <string name="preferences_terms_of_use_debug_timer" translatable="false">30s ToU timer enabled</string>
 
     <!-- Label for enabling LNA blocking -->
-    <string name="preferences_debug_settings_enable_lna_blocking" translatable="false">Enable LNA blocking</string>
+    <string name="preferences_debug_settings_enable_lna_blocking" translatable="false">Enable LNA request blocking</string>
+    <string name="preferences_debug_settings_enable_lna_tracker_blocking" translatable="false">Enable LNA tracker blocking</string>
+    <string name="preferences_debug_settings_enable_lna_feature" translatable="false">Enable LNA blocking feature overall (required for anything LNA)</string>
 
     <!-- Label for enabling isolated content processes in secret settings. -->
     <string name="preferences_debug_settings_isolated_process" translatable="false">Enable Isolated Content Process (requires restart)</string>
@@ -161,6 +169,9 @@
     <string name="profiler_filter_networking_explain">Preset for investigating networking bugs in Firefox</string>
     <string name="profiler_filter_debug">Debug</string>
     <string name="profiler_filter_debug_explain">Preset for debugging. High overhead, do not use for performance work but use for focusing on understanding browser behavior.</string>
+    <string name="profiler_filter_web_compat">Web Compat</string>
+    <string name="profiler_filter_web_compat_explain">Recommended preset for debugging web compatibility issues in websites, rather than tracking performance.</string>
+
     <string name="profiler_start_dialog_started">Profiler started</string>
     <string name="profiler_start_cancel">Cancel</string>
     <string name="profiler_gathering">Gathering the profile</string>

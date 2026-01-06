@@ -54,7 +54,7 @@ class TelemetryMiddleware(
 
     private val logger = Logger("TelemetryMiddleware")
 
-    @Suppress("TooGenericExceptionCaught", "ComplexMethod", "NestedBlockDepth", "LongMethod")
+    @Suppress("TooGenericExceptionCaught", "CognitiveComplexMethod", "NestedBlockDepth", "LongMethod", "CyclomaticComplexMethod")
     override fun invoke(
         context: MiddlewareContext<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,

@@ -667,6 +667,7 @@ export default class LoginItem extends HTMLElement {
   /**
    * Helper to show the "Discard changes" confirmation dialog and delay the
    * received event after confirmation.
+   *
    * @param {object} event The event to be delayed.
    * @param {object} login The login to be shown on confirmation.
    */
@@ -691,6 +692,7 @@ export default class LoginItem extends HTMLElement {
 
   /**
    * Shows a confirmation dialog.
+   *
    * @param {string} type The type of confirmation dialog to display.
    * @param {boolean} onConfirm Optional, the function to execute when the confirm button is clicked.
    */

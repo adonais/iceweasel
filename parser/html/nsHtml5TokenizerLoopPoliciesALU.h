@@ -25,6 +25,51 @@ struct nsHtml5FastestPolicyALU {
     return 0;
   }
 
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementRawtext(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementScriptDataEscaped(nsHtml5Tokenizer* aTokenizer,
+                                         char16_t* buf, int32_t pos,
+                                         int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementComment(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementAttributeValueSingleQuoted(nsHtml5Tokenizer* aTokenizer,
+                                                  char16_t* buf, int32_t pos,
+                                                  int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementAttributeValueDoubleQuoted(nsHtml5Tokenizer* aTokenizer,
+                                                  char16_t* buf, int32_t pos,
+                                                  int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementCdataSection(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementPlaintext(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return 0;
+  }
+
   MOZ_ALWAYS_INLINE_EVEN_DEBUG static char16_t checkChar(
       nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos) {
     return buf[pos];
@@ -55,6 +100,51 @@ struct nsHtml5LineColPolicyALU {
       nsHtml5Highlighter* aHighlighter) {}
 
   MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementData(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementRawtext(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementScriptDataEscaped(nsHtml5Tokenizer* aTokenizer,
+                                         char16_t* buf, int32_t pos,
+                                         int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementComment(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementAttributeValueSingleQuoted(nsHtml5Tokenizer* aTokenizer,
+                                                  char16_t* buf, int32_t pos,
+                                                  int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementAttributeValueDoubleQuoted(nsHtml5Tokenizer* aTokenizer,
+                                                  char16_t* buf, int32_t pos,
+                                                  int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementCdataSection(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementPlaintext(
       nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
       int32_t endPos) {
     return 0;
@@ -125,6 +215,51 @@ struct nsHtml5ViewSourcePolicyALU {
   }
 
   MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementData(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementRawtext(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementScriptDataEscaped(nsHtml5Tokenizer* aTokenizer,
+                                         char16_t* buf, int32_t pos,
+                                         int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementComment(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementAttributeValueSingleQuoted(nsHtml5Tokenizer* aTokenizer,
+                                                  char16_t* buf, int32_t pos,
+                                                  int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t
+  accelerateAdvancementAttributeValueDoubleQuoted(nsHtml5Tokenizer* aTokenizer,
+                                                  char16_t* buf, int32_t pos,
+                                                  int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementCdataSection(
+      nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
+      int32_t endPos) {
+    return 0;
+  }
+
+  MOZ_ALWAYS_INLINE_EVEN_DEBUG static int32_t accelerateAdvancementPlaintext(
       nsHtml5Tokenizer* aTokenizer, char16_t* buf, int32_t pos,
       int32_t endPos) {
     return 0;

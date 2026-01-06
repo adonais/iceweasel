@@ -51,25 +51,6 @@ function mockServicesChromeScript() {
       }
     },
 
-    showAlertNotification(
-      imageUrl,
-      title,
-      text,
-      textClickable,
-      cookie,
-      alertListener,
-      name
-    ) {
-      this.showAlert(
-        {
-          name,
-          cookie,
-          title,
-        },
-        alertListener
-      );
-    },
-
     closeAlert(name) {
       let alertNotification = activeNotifications[name];
       if (alertNotification) {

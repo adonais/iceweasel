@@ -15,6 +15,7 @@ let bounceTrackingGracePeriodSec;
 
 /**
  * Wait for purge telemetry to be recorded for a list of site hosts.
+ *
  * @param {Array} siteHosts - List of site hosts to be purged.
  */
 function waitForPurgeTelemetry(siteHosts) {

@@ -151,17 +151,10 @@ add_setup(async function () {
     title: "Test",
     url: "https://example.com",
   });
-  // The page actions button is not normally visible, so we must
-  // unhide it.
-  BrowserPageActions.mainButtonNode.style.visibility = "visible";
 
   // Make sure the sidebar launcher is visible (when sidebar.revamp is true);
   // previous tests might have hidden it.
   await SidebarController.initializeUIState({ launcherVisible: true });
-
-  registerCleanupFunction(() => {
-    BrowserPageActions.mainButtonNode.style.removeProperty("visibility");
-  });
 });
 
 // Test tab stops with no page loaded.
@@ -199,9 +192,9 @@ add_task(async function testTabStopsNoPageWithHomeButton() {
 async function doTestTabStopsPageLoaded(aPageActionsVisible) {
   info(`doTestTabStopsPageLoaded(${aPageActionsVisible})`);
 
-  BrowserPageActions.mainButtonNode.style.visibility = aPageActionsVisible
-    ? "visible"
-    : "";
+  BrowserPageActions.mainButtonNode.style.display = aPageActionsVisible
+    ? "flex"
+    : "none";
   await BrowserTestUtils.withNewTab("https://example.com", async function () {
     let sidebar = document.querySelector("sidebar-main");
     await waitUntilReloadEnabled();
@@ -238,15 +231,11 @@ async function doTestTabStopsPageLoaded(aPageActionsVisible) {
     }
     await expectFocusAfterKey("Tab", gBrowser.selectedBrowser);
   });
+  BrowserPageActions.mainButtonNode.style.removeProperty("display");
 }
 
 // Test tab stops with a page loaded.
 add_task(async function testTabStopsPageLoaded() {
-  is(
-    BrowserPageActions.mainButtonNode.style.visibility,
-    "visible",
-    "explicitly shown at the beginning of test"
-  );
   await doTestTabStopsPageLoaded(false);
   await doTestTabStopsPageLoaded(true);
 });
@@ -384,12 +373,15 @@ add_task(async function testArrowsToolbarbuttons() {
 // Test that right/left arrows move through buttons which aren't toolbarbuttons
 // but have role="button".
 add_task(async function testArrowsRoleButton() {
+  BrowserPageActions.mainButtonNode.style.display = "flex";
+
   await BrowserTestUtils.withNewTab("https://example.com", async function () {
     startFromUrlBar();
     await expectFocusAfterKey("Tab", "pageActionButton");
     await expectFocusAfterKey("ArrowRight", "star-button-box");
     await expectFocusAfterKey("ArrowLeft", "pageActionButton");
   });
+  BrowserPageActions.mainButtonNode.style.removeProperty("display");
 });
 
 // Test that right/left arrows do not land on disabled buttons.
@@ -604,7 +596,7 @@ add_task(async function testCharacterNavigation() {
   await BrowserTestUtils.withNewTab("https://example.com", async function () {
     await waitUntilReloadEnabled();
     startFromUrlBar();
-    await expectFocusAfterKey("Tab", "pageActionButton");
+    await expectFocusAfterKey("Tab", "star-button-box");
     await expectFocusAfterKey("h", "home-button");
     // There's no button starting with "hs", so pressing s should do nothing.
     EventUtils.synthesizeKey("s");

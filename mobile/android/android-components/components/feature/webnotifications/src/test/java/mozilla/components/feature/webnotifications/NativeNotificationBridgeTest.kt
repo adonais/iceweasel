@@ -40,8 +40,17 @@ private const val TEST_CHANNEL = "testChannel"
 @RunWith(AndroidJUnit4::class)
 class NativeNotificationBridgeTest {
     private val blankNotification = WebNotification(
-        TEST_TITLE, TEST_TAG, TEST_TEXT, TEST_URL, null, null,
-        null, true, mock(), 0, privateBrowsing = false,
+        TEST_TITLE,
+        TEST_TAG,
+        TEST_TEXT,
+        TEST_URL,
+        null,
+        null,
+        null,
+        true,
+        mock(),
+        0,
+        privateBrowsing = false,
     )
 
     private lateinit var icons: BrowserIcons

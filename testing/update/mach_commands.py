@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, # You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
 import logging
 import re
 import subprocess
@@ -20,6 +21,12 @@ from mach.decorators import Command, CommandArgument
 from mozbuild.base import BinaryNotFoundException
 from mozlog.structured import commandline
 from mozrelease.update_verify import UpdateVerifyConfig
+
+STAGING_POLICY_PAYLOAD = {
+    "policies": {
+        "AppUpdateURL": "https://stage.balrog.nonprod.cloudops.mozgcp.net/update/6/Firefox/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%SYSTEM_CAPABILITIES%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml"
+    }
+}
 
 
 @dataclass
@@ -40,6 +47,7 @@ class UpdateTestConfig:
     config_source = None
     release_type: ReleaseType = ReleaseType.release
     esr_version = None
+    staging_update = False
 
     def __post_init__(self):
         if environ.get("UPLOAD_DIR"):
@@ -165,8 +173,16 @@ def get_valid_source_versions(config):
     """
     ftp_content = requests.get(config.ftp_server).content.decode()
     # All versions start with e.g. 140.0, so beta and release can be int'ed
-    latest_version = int(config.target_version.split(".")[0])
-    major_minor = ".".join(config.target_version.split(".")[:1])
+    ver_head, ver_tail = config.target_version.split(".", 1)
+    latest_version = int(ver_head)
+    latest_minor_str = ""
+    # Versions like 130.10.1 and 130.0 are possible, capture the minor number
+    for c in ver_tail:
+        try:
+            int(c)
+            latest_minor_str = latest_minor_str + c
+        except ValueError:
+            break
 
     valid_versions: list[str] = []
     for major in range(latest_version - config.major_version_range, latest_version + 1):
@@ -174,17 +190,20 @@ def get_valid_source_versions(config):
         if config.release_type == ReleaseType.esr and major != latest_version:
             continue
         for minor in range(0, 11):
-            if f"{major}.{minor}" == major_minor:
-                break
-            elif f"/{major}.{minor}/" in ftp_content:
-                minor_versions.append(minor)
-                valid_versions.append(f"{major}.{minor}")
-            elif (
-                config.release_type == ReleaseType.esr
-                and f"/{major}.{minor}esr/" in ftp_content
+            if (
+                config.release_type == ReleaseType.release
+                and f"/{major}.{minor}/" in ftp_content
             ):
+                if f"{major}.{minor}" == config.target_version:
+                    break
                 minor_versions.append(minor)
                 valid_versions.append(f"{major}.{minor}")
+            elif config.release_type == ReleaseType.esr and re.compile(
+                rf"/{major}\.{minor}.*/"
+            ).search(ftp_content):
+                minor_versions.append(minor)
+                if f"/{major}.{minor}esr" in ftp_content:
+                    valid_versions.append(f"{major}.{minor}")
             elif config.release_type == ReleaseType.beta and minor == 0:
                 # Release 1xx.0 is not available, but 1xx.0b1 is:
                 minor_versions.append(minor)
@@ -192,7 +211,7 @@ def get_valid_source_versions(config):
         sep = "b" if config.release_type == ReleaseType.beta else "."
 
         for minor in minor_versions:
-            for dot in range(1, 15):
+            for dot in range(0, 15):
                 if f"{major}.{minor}{sep}{dot}" == config.target_version:
                     break
                 if config.release_type == ReleaseType.esr:
@@ -275,6 +294,25 @@ def get_binary_path(config: UpdateTestConfig, **kwargs) -> str:
         fh.write(response.content)
     fx_location = mozinstall.install(installer_filename, installed_app_dir)
     print(f"Firefox installed to {fx_location}")
+
+    if config.staging_update:
+        print("Writing enterprise policy for update server")
+        fx_path = Path(fx_location)
+        policy_path = None
+        if mozinfo.os in ["linux", "win"]:
+            policy_path = fx_path / "distribution"
+        elif mozinfo.os == "mac":
+            policy_path = fx_path / "Contents" / "Resources" / "distribution"
+        else:
+            raise ValueError("Invalid OS.")
+        makedirs(policy_path)
+        policy_loc = policy_path / "policies.json"
+        print(f"Creating {policy_loc}...")
+        with policy_loc.open("w") as fh:
+            json.dump(STAGING_POLICY_PAYLOAD, fh, indent=2)
+        with policy_loc.open() as fh:
+            print(fh.read())
+
     return fx_location
 
 
@@ -299,6 +337,9 @@ def get_binary_path(config: UpdateTestConfig, **kwargs) -> str:
     help="ESR version, if set with --channel=esr, will only update within ESR major version",
 )
 @CommandArgument("--uv-config-file", help="Update Verify config file")
+@CommandArgument(
+    "--use-balrog-staging", action="store_true", help="Update from staging, not prod"
+)
 def build(command_context, binary_path, **kwargs):
     config = UpdateTestConfig()
 
@@ -318,6 +359,17 @@ def build(command_context, binary_path, **kwargs):
         # TODO: update tests to check against config version, not update server resp
         # kwargs["to_display_version"] = uv_config.to_display_version
 
+    if kwargs.get("source_locale"):
+        config.locale = kwargs["source_locale"]
+
+    if kwargs.get("source_versions_back"):
+        config.source_version_position = -int(kwargs["source_versions_back"])
+
+    if kwargs.get("source_version"):
+        config.source_version = kwargs["source_version"]
+    else:
+        config.source_version = None
+
     config.set_ftp_info()
 
     tempdir = tempfile.TemporaryDirectory()
@@ -325,6 +377,9 @@ def build(command_context, binary_path, **kwargs):
     tempdir_name = str(Path(tempdir.name).resolve())
     config.tempdir = tempdir_name
     test_type = kwargs.get("test_type")
+
+    if kwargs.get("use_balrog_staging"):
+        config.staging_update = True
 
     # Select update channel
     if kwargs.get("channel"):
@@ -346,17 +401,6 @@ def build(command_context, binary_path, **kwargs):
         else:
             logging.ERROR("Invalid test type")
             sys.exit(1)
-
-    if kwargs.get("source_locale"):
-        config.locale = kwargs["source_locale"]
-
-    if kwargs.get("source_versions_back"):
-        config.source_version_position = -int(kwargs["source_versions_back"])
-
-    if kwargs.get("source_version"):
-        config.source_version = kwargs["source_version"]
-    else:
-        config.source_version = None
 
     config.dir = command_context.topsrcdir
 
@@ -491,6 +535,9 @@ def bits_pretest():
 
 
 def bits_posttest(config):
+    if config.staging_update:
+        # If we are in try, we didn't run the full test and BITS will fail.
+        return None
     config.log_file_path.close()
     sys.stdout = sys.__stdout__
 
@@ -516,7 +563,7 @@ def bits_posttest(config):
             )
     except (UnicodeDecodeError, AssertionError) as e:
         failed = 1
-        print(e)
+        logging.error(e.__traceback__)
     finally:
         Path(config.log_file_path.name).unlink()
 

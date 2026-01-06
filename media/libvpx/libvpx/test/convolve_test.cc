@@ -1816,6 +1816,18 @@ WRAP12TAP(convolve12_vert_neon, 12)
 WRAP12TAP(convolve12_neon, 12)
 #endif  // HAVE_NEON
 
+#if HAVE_SVE2
+WRAP12TAP(convolve12_horiz_sve2, 8)
+WRAP12TAP(convolve12_vert_sve2, 8)
+WRAP12TAP(convolve12_sve2, 8)
+WRAP12TAP(convolve12_horiz_sve2, 10)
+WRAP12TAP(convolve12_vert_sve2, 10)
+WRAP12TAP(convolve12_sve2, 10)
+WRAP12TAP(convolve12_horiz_sve2, 12)
+WRAP12TAP(convolve12_vert_sve2, 12)
+WRAP12TAP(convolve12_sve2, 12)
+#endif  // HAVE_SVE2
+
 WRAP12TAP(convolve12_horiz_c, 8)
 WRAP12TAP(convolve12_vert_c, 8)
 WRAP12TAP(convolve12_c, 8)
@@ -2180,6 +2192,29 @@ const ConvolveParam kArrayConvolve_sve2[] = { ALL_SIZES(convolve8_sve2),
                                               ALL_SIZES(convolve12_sve2) };
 INSTANTIATE_TEST_SUITE_P(SVE2, ConvolveTest,
                          ::testing::ValuesIn(kArrayConvolve_sve2));
+
+#if !CONFIG_REALTIME_ONLY && CONFIG_VP9_ENCODER
+const ConvolveFunctions12Tap convolve12tap_8bit_sve2(
+    wrap_convolve12_horiz_sve2_8, wrap_convolve12_vert_sve2_8,
+    wrap_convolve12_sve2_8, 8);
+
+const ConvolveFunctions12Tap convolve12tap_10bit_sve2(
+    wrap_convolve12_horiz_sve2_10, wrap_convolve12_vert_sve2_10,
+    wrap_convolve12_sve2_10, 10);
+
+const ConvolveFunctions12Tap convolve12tap_12bit_sve2(
+    wrap_convolve12_horiz_sve2_12, wrap_convolve12_vert_sve2_12,
+    wrap_convolve12_sve2_12, 12);
+
+const Convolve12TapParam kArrayConvolve12Tap_sve2[] = {
+  ALL_SIZES_12TAP(convolve12tap_8bit_sve2),
+  ALL_SIZES_12TAP(convolve12tap_10bit_sve2),
+  ALL_SIZES_12TAP(convolve12tap_12bit_sve2)
+};
+
+INSTANTIATE_TEST_SUITE_P(SVE2, ConvolveTest12Tap,
+                         ::testing::ValuesIn(kArrayConvolve12Tap_sve2));
+#endif  // !CONFIG_REALTIME_ONLY && CONFIG_VP9_ENCODER
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // HAVE_SVE2
 

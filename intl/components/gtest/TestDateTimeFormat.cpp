@@ -234,7 +234,7 @@ TEST(IntlDateTimeFormat, ComponentsAll)
 
   TestBuffer<char16_t> buffer;
   ASSERT_TRUE(FormatComponents(buffer, components));
-  ASSERT_TRUE(buffer.verboseMatches(u"Mon, 9 23, 2002 AD, 20:07:30.000 GMT+3"));
+  ASSERT_TRUE(buffer.verboseMatches(u"Mon, 9/23/2002 AD, 20:07:30.000 GMT+3"));
 }
 
 TEST(IntlDateTimeFormat, ComponentsHour12Default)

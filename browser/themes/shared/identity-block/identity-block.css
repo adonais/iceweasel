@@ -79,6 +79,10 @@
   @media -moz-pref("browser.urlbar.searchModeSwitcher.featureGate") or -moz-pref("browser.urlbar.scotchBonnet.enableOverride") {
     margin-inline-end: var(--urlbar-searchmodeswitcher-margin-inline-end);
   }
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("browser.urlbar.trustPanel.featureGate") {
+    margin-inline-end: 0;
+  }
 }
 
 #identity-box[pageproxystate="valid"]:is(.notSecureText, .chromeUI, .extensionPage) > .identity-box-button,
@@ -295,22 +299,35 @@
 @media -moz-pref("browser.urlbar.trustPanel.featureGate") {
   #tracking-protection-icon-container,
   /* Keep displaying the moz-extension or chrome UI chicklet */
-  #identity-box[pageproxystate="valid"]:not(.chromeUI, .extensionPage) {
+  #identity-box[pageproxystate="valid"]:not(.chromeUI, .extensionPage) #identity-icon-box {
     display: none;
+  }
+
+  .searchmode-switcher,
+  #identity-box {
+    margin-inline-end: 0;
+  }
+
+  #urlbar-label-box,
+  .urlbar-input-box {
+    margin-inline-start: var(--identity-box-margin-inline);
   }
 
   #trust-icon-container {
     padding-inline: var(--urlbar-icon-padding);
     border-radius: var(--urlbar-inner-border-radius);
-    margin-inline-end: var(--identity-box-margin-inline);
     -moz-context-properties: fill, fill-opacity;
 
-    list-style-image: url(chrome://browser/skin/trust-icon-active.svg);
-
+    /* The urlbar will show insecure or secure icon by default depending
+       on the state of the connection, the further clauses may override that. */
     &:where(.insecure) {
       list-style-image: url(chrome://browser/skin/trust-icon-insecure.svg);
       background-color: var(--urlbar-box-bgcolor);
       color: var(--urlbar-box-text-color);
+    }
+
+    &.secure {
+      list-style-image: url(chrome://browser/skin/trust-icon-active.svg);
     }
 
     &.inactive {
@@ -326,7 +343,7 @@
     }
 
     .urlbar-input-container[pageproxystate="valid"] > &:not(.chickletShown) {
-      display: flex;
+      display: inline-flex;
     }
   }
 

@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Жалған сайт мәселесі</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>%1$s сайты жалған сайт екені туралы ақпарат бар, сондықтан қауіпсіздік баптауларыңызға сәйкес ол бұғатталды.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Бұл сайт сіздің қауіпсіздігіңіз үшін бұғатталған</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>%1$s веб-беті бұғатталған, себебі сіздің қосымшаларыңыздың бірі оны ашуға тырысты. Бұл сайт парольдер немесе несие карталарының нөмірлері сияқты ақпаратыңызды ұрлау үшін пайдаланылуы мүмкін.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Қауіпсіз сайт қолжетімді емес</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

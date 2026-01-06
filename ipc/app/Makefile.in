@@ -10,12 +10,6 @@ ifneq ($(MOZ_WIDGET_TOOLKIT),android)
 #LIBS += ../contentproc/$(LIB_PREFIX)plugin-container.$(LIB_SUFFIX)
 endif
 
-ifeq ($(OS_ARCH),WINNT) #{
-# Note the manifest file exists in the tree, so we use the explicit filename
-# here.
-EXTRA_DEPS += plugin-container.exe.manifest
-endif #}
-
 ifeq (cocoa,$(MOZ_WIDGET_TOOLKIT)) #{
 
 libs::

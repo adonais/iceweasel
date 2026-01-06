@@ -25,20 +25,26 @@ const TEST_DICTIONARIES = {
   },
   large: {
     id: "test-dict-large",
-    content: "A".repeat(1024 * 100), // 100KB dictionary
+    content: "C".repeat(1024 * 100), // 100KB dictionary
     pattern: "*.html",
     type: "raw",
   },
   large_url: {
     id: "test-dict-large-url",
     content: "large URL content",
-    pattern: "large",
+    pattern: "file",
     type: "raw",
   },
   too_large_url: {
     id: "test-dict-too-large-url",
     content: "too large URL content",
     pattern: "too_large",
+    type: "raw",
+  },
+  regexp_group: {
+    id: "test-regexp-group",
+    content: "content",
+    pattern: "api/:version(v[0-9]+)/*",
     type: "raw",
   },
 };
@@ -135,7 +141,7 @@ async function setupServer() {
       const TEST_DICTIONARIES = {
         large: {
           id: "test-dict-large",
-          content: "A".repeat(1024 * 100), // 100KB dictionary
+          content: "C".repeat(1024 * 100), // 100KB dictionary
           pattern: "*.html",
           type: "raw",
         },
@@ -160,7 +166,7 @@ async function setupServer() {
         large_url: {
           id: "test-dict-large-url",
           content: "large URL content",
-          pattern: "large",
+          pattern: "file",
           type: "raw",
         },
       };
@@ -190,6 +196,30 @@ async function setupServer() {
       };
 
       let dict = TEST_DICTIONARIES.too_large_url;
+      response.writeHead(200, {
+        "Content-Type": "application/octet-stream",
+        "Use-As-Dictionary": `match="${dict.pattern}", id="${dict.id}", type=${dict.type}`,
+        "Cache-Control": "max-age=3600",
+      });
+      response.end(dict.content, "binary");
+    }
+  );
+
+  // pattern with a regexp (should be ignored)
+  await httpServer.registerPathHandler(
+    "/api/regexp",
+    function (request, response) {
+      // Test data constants
+      const TEST_DICTIONARIES = {
+        regexp_group: {
+          id: "test-regexp-group",
+          content: "content",
+          pattern: "/api/:version(v[0-9]+)/*",
+          type: "raw",
+        },
+      };
+
+      let dict = TEST_DICTIONARIES.regexp_group;
       response.writeHead(200, {
         "Content-Type": "application/octet-stream",
         "Use-As-Dictionary": `match="${dict.pattern}", id="${dict.id}", type=${dict.type}`,
@@ -551,7 +581,7 @@ add_task(async function test_long_dictionary_url() {
   });
 
   // Verify Use-As-Dictionary header was processed and it's an active dictionary
-  url = `https://localhost:${server.port()}/large`;
+  url = `https://localhost:${server.port()}/dict/large/file`;
   chan = makeChan(url);
   [req, data] = await channelOpenPromise(chan);
 
@@ -601,6 +631,47 @@ add_task(async function test_too_long_dictionary_url() {
     Assert.ok(
       true,
       "Available-Dictionary header should not be present with a too-long URL for dictionary"
+    );
+  }
+});
+
+// Test that regexp groups cause it to not be stored as a dictionary
+add_task(async function test_regexp_group() {
+  // Clear any existing cache
+  evict_cache_entries("all");
+
+  let url = `https://localhost:${server.port()}/api/regexp`;
+  let dict = TEST_DICTIONARIES.regexp_group;
+
+  let chan = makeChan(url);
+  let [req, data] = await channelOpenPromise(chan);
+
+  Assert.equal(data, dict.content, "Dictionary content matches");
+
+  // Check that dictionary is stored in cache (even if it's not a dictionary)
+  await new Promise(resolve => {
+    verifyDictionaryStored(url, true, resolve);
+  });
+
+  // Verify Use-As-Dictionary header was NOT processed and active due to 64K limit to metadata
+  // Since we can't store it on disk, we can't offer it as a dictionary.  If we change the
+  // metadata limit, this will need to change
+  url = `https://localhost:${server.port()}/api/v2/test.js`;
+  chan = makeChan(url);
+  [req, data] = await channelOpenPromise(chan);
+
+  try {
+    // we're just looking to see if it throws
+    // eslint-disable-next-line no-unused-vars
+    let headerValue = req.getRequestHeader("Available-Dictionary");
+    Assert.ok(
+      false,
+      "Dictionary with regexp group was offered in Available-Dictionary"
+    );
+  } catch (e) {
+    Assert.ok(
+      true,
+      "Available-Dictionary header should not be present for a dictionary with regexp groups"
     );
   }
 });

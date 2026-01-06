@@ -163,7 +163,7 @@ class FlexItemActor extends Actor {
    *         The FlexboxActor instance.
    * @param  {DOMNode} element
    *         The flex item element.
-   * @param  {Object} flexItemSizing
+   * @param  {object} flexItemSizing
    *         The flex item sizing data.
    */
   constructor(flexboxActor, element, flexItemSizing) {
@@ -374,9 +374,9 @@ class LayoutActor extends Actor {
    *
    * @param  {Node|NodeActor} node
    *         The node to start iterating at.
-   * @param  {String} type
+   * @param  {string} type
    *         Can be "grid" or "flex", the display type we are searching for.
-   * @param  {Boolean} onlyLookAtContainer
+   * @param  {boolean} onlyLookAtContainer
    *         If true, only look at given node's container and iterate from there.
    * @return {GridActor|FlexboxActor|null}
    *         The GridActor or FlexboxActor of the grid/flex container of the given node.
@@ -459,7 +459,7 @@ class LayoutActor extends Actor {
    *
    * @param  {Node|NodeActor} node
    *         The node to start iterating at.
-   * @param  {Boolean|null} onlyLookAtParents
+   * @param  {boolean | null} onlyLookAtParents
    *         If true, skip the passed node and only start looking at its parent and up.
    * @return {FlexboxActor|null}
    *         The FlexboxActor of the flex container of the given node. Otherwise, returns

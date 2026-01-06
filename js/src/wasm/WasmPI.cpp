@@ -49,9 +49,16 @@
 #  include "jit/riscv64/Simulator-riscv64.h"
 #elif defined(JS_CODEGEN_LOONG64)
 #  include "jit/loong64/Simulator-loong64.h"
+#elif defined(JS_CODEGEN_MIPS64)
+#  include "jit/mips64/Simulator-mips64.h"
 #endif
 
 #ifdef XP_WIN
+// We only need the `windows.h` header, but this file can get unified built
+// with WasmSignalHandlers.cpp, which requires `winternal.h` to be included
+// before the `windows.h` header, and so we must include it here for that case.
+#  include <winternl.h>  // must include before util/WindowsWrapper.h's `#undef`s
+
 #  include "util/WindowsWrapper.h"
 #endif
 
@@ -128,7 +135,8 @@ void SuspenderObjectData::switchSimulatorToSuspendable() {
   Simulator::Current()->set_register(Simulator::fp, (int)suspendableFP_);
 }
 
-#  elif defined(JS_SIMULATOR_RISCV64) || defined(JS_SIMULATOR_LOONG64)
+#  elif defined(JS_SIMULATOR_RISCV64) || defined(JS_SIMULATOR_LOONG64) || \
+      defined(JS_SIMULATOR_MIPS64)
 void SuspenderObjectData::switchSimulatorToMain() {
   suspendableSP_ = (void*)Simulator::Current()->getRegister(Simulator::sp);
   suspendableFP_ = (void*)Simulator::Current()->getRegister(Simulator::fp);
@@ -433,7 +441,7 @@ void SuspenderObject::trace(JSTracer* trc, JSObject* obj) {
 
 void SuspenderObject::setMoribund(JSContext* cx) {
   MOZ_ASSERT(state() == SuspenderState::Active);
-  ResetInstanceStackLimits(cx);
+  cx->wasm().leaveSuspendableStack(cx);
 #  if defined(_WIN32)
   data()->restoreTIBStackFields();
 #  endif
@@ -448,7 +456,7 @@ void SuspenderObject::setMoribund(JSContext* cx) {
 
 void SuspenderObject::setActive(JSContext* cx) {
   data()->setState(SuspenderState::Active);
-  UpdateInstanceStackLimitsForSuspendableStack(cx, getStackMemoryLimit());
+  cx->wasm().enterSuspendableStack(getStackMemoryLimit());
 #  if defined(_WIN32)
   data()->updateTIBStackFields();
 #  endif
@@ -456,7 +464,7 @@ void SuspenderObject::setActive(JSContext* cx) {
 
 void SuspenderObject::setSuspended(JSContext* cx) {
   data()->setState(SuspenderState::Suspended);
-  ResetInstanceStackLimits(cx);
+  cx->wasm().leaveSuspendableStack(cx);
 #  if defined(_WIN32)
   data()->restoreTIBStackFields();
 #  endif
@@ -568,8 +576,9 @@ bool CallOnMainStack(JSContext* cx, CallOnMainStackFn fn, void* data) {
   MOZ_RELEASE_ASSERT(suspender->data()->suspendedBy() == nullptr);
 
 #  ifdef JS_SIMULATOR
-#    if defined(JS_SIMULATOR_ARM64) || defined(JS_SIMULATOR_ARM) || \
-        defined(JS_SIMULATOR_RISCV64) || defined(JS_SIMULATOR_LOONG64)
+#    if defined(JS_SIMULATOR_ARM64) || defined(JS_SIMULATOR_ARM) ||       \
+        defined(JS_SIMULATOR_RISCV64) || defined(JS_SIMULATOR_LOONG64) || \
+        defined(JS_SIMULATOR_MIPS64)
   // The simulator is using its own stack, however switching is needed for
   // virtual registers.
   stacks->switchSimulatorToMain();
@@ -847,6 +856,46 @@ bool CallOnMainStack(JSContext* cx, CallOnMainStackFn fn, void* data) {
           : "=r"(res)                                                     \
           : "r"(stacks), "r"(fn), "r"(data)                               \
           : "ra", "a0", "a3", CALLER_SAVED_REGS, "cc", "memory")
+  INLINED_ASM(24, 32, 40, 48);
+
+#  elif defined(__mips64)
+#    define CALLER_SAVED_REGS                                             \
+        "at", "v0", "v1",                                                 \
+        "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",                   \
+        "t0", "t1", "t2", "t3", /* Assemblers don't recognize t4-t7 */    \
+        "t8", "t9", "ra", "$f0", "$f1", "$f2", "$f3", "$f4", "$f5",       \
+        "$f6", "$f7", "$f8", "$f9", "$f10", "$f11", "$f12", "$f13",       \
+        "$f14", "$f15", "$f16", "$f17", "$f18", "$f19", "$f20", "$f21",   \
+        "$f22", "$f23"
+#    define INLINED_ASM(MAIN_FP, MAIN_SP, SUSPENDABLE_FP, SUSPENDABLE_SP) \
+      CHECK_OFFSETS(MAIN_FP, MAIN_SP, SUSPENDABLE_FP, SUSPENDABLE_SP);    \
+      asm volatile(                                                       \
+          "\n   move    $a0, %1"                                          \
+          "\n   move    $t9, %2" /* PIC function entry */                 \
+          "\n   sd      $fp, " #SUSPENDABLE_FP "($a0)"                    \
+          "\n   sd      $sp, " #SUSPENDABLE_SP "($a0)"                    \
+                                                                          \
+          "\n   ld      $fp, " #MAIN_FP "($a0)"                           \
+          "\n   ld      $sp, " #MAIN_SP "($a0)"                           \
+                                                                          \
+          "\n   daddiu  $sp, $sp, -16"                                    \
+          "\n   sd      $a0, 8($sp)"                                      \
+                                                                          \
+          "\n   move    $a0, %3"                                          \
+          "\n   jalr    $t9"                                              \
+                                                                          \
+          "\n   ld      $a3, 8($sp)"                                      \
+          "\n   daddiu  $sp, $sp, 16"                                     \
+                                                                          \
+          "\n   sd      $fp, " #MAIN_FP "($a3)"                           \
+          "\n   sd      $sp, " #MAIN_SP "($a3)"                           \
+                                                                          \
+          "\n   ld      $fp, " #SUSPENDABLE_FP "($a3)"                    \
+          "\n   ld      $sp, " #SUSPENDABLE_SP "($a3)"                    \
+          "\n   move    %0, $v0"                                          \
+          : "=r"(res)                                                     \
+          : "r"(stacks), "r"(fn), "r"(data)                               \
+          : CALLER_SAVED_REGS, "cc", "memory")
   INLINED_ASM(24, 32, 40, 48);
 
 #  else

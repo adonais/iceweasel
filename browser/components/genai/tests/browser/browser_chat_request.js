@@ -136,15 +136,24 @@ add_task(async function test_chat_auto_submit() {
       1,
       "Form is triggered by AutoSubmitClick"
     );
+  });
 
-    await ContentTaskUtils.waitForCondition(
-      () => content.document.getElementById("ta").textContent === "",
-      "Prompt was cleared"
-    );
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+    await ContentTaskUtils.waitForCondition(() => {
+      const editable = content.document.querySelector(
+        '[contenteditable="true"]'
+      );
+
+      return editable && editable.textContent.trim() === "";
+    }, "Prompt text was cleared by MutationObserver");
+  });
+
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+    const editable = content.document.querySelector('[contenteditable="true"]');
     Assert.equal(
-      content.document.getElementById("ta").textContent,
+      editable.textContent.trim(),
       "",
-      "Prompt text is cleared after auto submission"
+      "Prompt text was cleared after auto submission"
     );
   });
 

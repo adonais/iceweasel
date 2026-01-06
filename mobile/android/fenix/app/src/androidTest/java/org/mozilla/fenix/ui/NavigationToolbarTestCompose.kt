@@ -925,7 +925,10 @@ class NavigationToolbarTestCompose : TestSetup() {
                     composeTestRule = composeTestRule,
                     *generalEnginesList.toTypedArray(),
                     *topicEnginesList.toTypedArray(),
-                    "Bookmarks", "Tabs", "History", "Search settings",
+                    "Bookmarks",
+                    "Tabs",
+                    "History",
+                    "Search settings",
                 )
             }
         }

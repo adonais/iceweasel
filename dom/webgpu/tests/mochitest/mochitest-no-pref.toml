@@ -7,10 +7,11 @@ subsuite = "webgpu"
 # `mochitest.toml`, except for `verify`.
 skip-if = [
   "early_beta_or_earlier",
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
   "os == 'win'",
-  "os == 'mac' && arch == 'aarch64'",
-  # `test-verify` jobs don't guarantee a GPU, so skip them.
-  "verify",
+  "verify", # `test-verify` jobs don't guarantee a GPU, so skip them.
 ]
 prefs = [
   "gfx.webgpu.ignore-blocklist=true", # https://bugzilla.mozilla.org/show_bug.cgi?id=1985348

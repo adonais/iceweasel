@@ -1,4 +1,4 @@
-// |reftest| shell-option(--enable-upsert) skip-if(!Map.prototype.getOrInsertComputed||!xulRuntime.shell) -- upsert is not enabled unconditionally, requires shell-options
+// |reftest| shell-option(--enable-symbols-as-weakmap-keys) skip-if(!Map.prototype.getOrInsertComputed||!xulRuntime.shell) -- upsert is not enabled unconditionally, requires shell-options
 // Copyright (C) 2025 Daniel Minor. All rights reserved.
 // This code is governed by the BSD license found in the LICENSE file.
 /*---
@@ -12,7 +12,7 @@ info: |
 
   6. Let value be ? Call(callbackfn, key).
   ...
-features: [upsert, WeakMap, Symbol]
+features: [upsert, WeakMap, Symbol, symbols-as-weakmap-keys]
 ---*/
 var map = new WeakMap();
 const obj0 = {};

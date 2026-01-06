@@ -18,7 +18,7 @@ import mozilla.components.lib.crash.service.LIB_CRASH_INFO_PREFIX
 import mozilla.components.support.base.ext.getStacktraceAsJsonString
 import mozilla.components.support.base.ext.getStacktraceAsString
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.utils.ext.getPackageInfoCompat
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -380,7 +380,7 @@ class MozillaSocorroService(
         }
 
         fun sendPackageInstallTime(applicationContext: Context) {
-            val packageManager = applicationContext.packageManager
+            val packageManager = applicationContext.packageManagerCompatHelper
             try {
                 val packageInfo = packageManager.getPackageInfoCompat(applicationContext.packageName, 0)
                 sendAnnotation(

@@ -251,19 +251,19 @@ exports.evalWithDebugger = evalWithDebugger;
  * This focuses on calling Debugger.Frame or Debugger.Object eval methods.
  *
  * @param {Debugger} dbg
- * @param {String} string
+ * @param {string} string
  *        The string to evaluate.
- * @param {Object} evalOptions
+ * @param {object} evalOptions
  *        Spidermonkey options to pass to eval methods.
- * @param {Object} bindings
+ * @param {object} bindings
  *        Dictionary object with symbols to override in the evaluation.
  * @param {Debugger.Frame} frame
  *        If paused, the paused frame.
  * @param {Debugger.Object} dbgGlobal
  *        The target's global.
- * @param {Boolean} eager
+ * @param {boolean} eager
  *        Is this an eager evaluation?
- * @return {Object}
+ * @return {object}
  *        The evaluation result object.
  *        See `Debugger.Ojbect.executeInGlobalWithBindings` definition.
  */
@@ -342,7 +342,7 @@ function getEvalResult(
  * to undefined, making it possible for them to be redeclared.
  *
  * @param {DebuggerObject} dbgGlobal
- * @param {String} string: The expression that was evaluated and threw
+ * @param {string} string: The expression that was evaluated and threw
  * @returns
  */
 function forceLexicalInitForVariableDeclarationsInThrowingExpression(

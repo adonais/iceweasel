@@ -1,6 +1,10 @@
 /* Any copyright is dedicated to the Public Domain.
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+
 ChromeUtils.defineESModuleGetters(this, {
   PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
 });
@@ -8,7 +12,7 @@ ChromeUtils.defineESModuleGetters(this, {
 // Used in multiple tests for loading a page in the sidebar
 const TEST_CHAT_PROVIDER_URL = "http://mochi.test:8888/";
 
-registerCleanupFunction(() => {
+registerCleanupFunction(async () => {
   Services.prefs.clearUserPref("sidebar.old-sidebar.has-used");
 });
 
@@ -56,7 +60,7 @@ add_task(async function test_sidebar_render() {
     "Button container set not hidden"
   );
 
-  SidebarController.hide();
+  await SidebarController.hide();
 });
 
 /**
@@ -78,7 +82,7 @@ add_task(async function test_sidebar_providers() {
   const origCount = countVisible();
   Assert.equal(origCount, 5, "Rendered expected number of provider options");
 
-  SidebarController.hide();
+  await SidebarController.hide();
   await SpecialPowers.pushPrefEnv({
     set: [["browser.ml.chat.hideLocalhost", false]],
   });
@@ -86,7 +90,7 @@ add_task(async function test_sidebar_providers() {
 
   Assert.equal(countVisible(), origCount + 1, "Added localhost option");
 
-  SidebarController.hide();
+  await SidebarController.hide();
 });
 
 /**
@@ -96,7 +100,8 @@ add_task(async function test_sidebar_onboarding() {
   Services.fog.testResetFOG();
   await SidebarController.show("viewGenaiChatSidebar");
 
-  const { document, browserPromise } = SidebarController.browser.contentWindow;
+  const win = SidebarController.browser.contentWindow;
+  const { document, browserPromise } = win;
   const label = await TestUtils.waitForCondition(() =>
     document.querySelector("label:has(.localhost)")
   );
@@ -116,6 +121,21 @@ add_task(async function test_sidebar_onboarding() {
     () => browser.currentURI.spec != "about:blank",
     "Should have previewed provider"
   );
+
+  const link = await TestUtils.waitForCondition(() =>
+    document.querySelector(".link-paragraph a")
+  );
+  const expectedURL = link.href;
+
+  const sandbox = sinon.createSandbox();
+  const stub = sandbox.stub(win, "openLink");
+
+  link.click();
+
+  Assert.ok(stub.calledOnce, "openLink should call once");
+  Assert.equal(stub.firstCall.args[0], expectedURL);
+
+  sandbox.restore();
 
   const pickButton = await TestUtils.waitForCondition(() =>
     document.querySelector(".chat_pick .primary:not([disabled])")
@@ -149,7 +169,7 @@ add_task(async function test_sidebar_onboarding() {
   Assert.equal(events[0].extra.step, "1", "First step");
 
   Services.prefs.clearUserPref("browser.ml.chat.provider");
-  SidebarController.hide();
+  await SidebarController.hide();
 });
 
 /**
@@ -195,6 +215,7 @@ add_task(async function test_custom_onboarding() {
   );
 
   BrowserTestUtils.removeTab(tab);
+  await SidebarController.hide();
 });
 
 /**
@@ -260,7 +281,7 @@ add_task(async function test_sidebar_menu() {
   const hidden = BrowserTestUtils.waitForEvent(popup, "popuphidden");
   popup.hidePopup();
   await hidden;
-  SidebarController.hide();
+  await SidebarController.hide();
 });
 
 /**

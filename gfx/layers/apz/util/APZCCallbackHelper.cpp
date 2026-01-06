@@ -533,11 +533,10 @@ PresShell* APZCCallbackHelper::GetRootContentDocumentPresShellForContent(
 }
 
 nsEventStatus APZCCallbackHelper::DispatchWidgetEvent(WidgetGUIEvent& aEvent) {
-  nsEventStatus status = nsEventStatus_eConsumeNoDefault;
   if (aEvent.mWidget) {
-    aEvent.mWidget->DispatchEvent(&aEvent, status);
+    return aEvent.mWidget->DispatchEvent(&aEvent);
   }
-  return status;
+  return nsEventStatus_eConsumeNoDefault;
 }
 
 nsEventStatus APZCCallbackHelper::DispatchSynthesizedMouseEvent(

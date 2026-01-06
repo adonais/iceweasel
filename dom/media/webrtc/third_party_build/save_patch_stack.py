@@ -37,34 +37,50 @@ def build_repo_name_from_path(input_dir):
     return output_dir
 
 
-def save_patch_stack(
+def write_patch_files_with_prefix(
     github_path,
-    github_branch,
     patch_directory,
-    state_directory,
-    target_branch_head,
-    bug_number,
+    start_commit_sha,
+    end_commit_sha,
+    prefix,
 ):
-    # remove the current patch files
-    files_to_remove = os.listdir(patch_directory)
-    for file in files_to_remove:
-        os.remove(os.path.join(patch_directory, file))
+    cmd = f"git format-patch --keep-subject --no-signature --output-directory {patch_directory} {start_commit_sha}..{end_commit_sha}"
+    run_git(cmd, github_path)
 
-    # find the base of the patch stack
-    cmd = f"git merge-base {github_branch} {target_branch_head}"
-    stdout_lines = run_git(cmd, github_path)
-    merge_base = stdout_lines[0]
+    # remove the commit summary from the file name and add provided prefix
+    patches_to_rename = os.listdir(patch_directory)
+    for file in patches_to_rename:
+        shortened_name = re.sub(r"^(\d\d\d\d)-.*\.patch", f"{prefix}\\1.patch", file)
+        os.rename(
+            os.path.join(patch_directory, file),
+            os.path.join(patch_directory, shortened_name),
+        )
 
+
+def write_prestack_and_standard_patches(
+    github_path,
+    patch_directory,
+    start_commit_sha,
+    end_commit_sha,
+):
     # grab the log of our patches that live on top of libwebrtc, and find
     # the commit of our base patch.
-    cmd = f"cd {github_path} ; git log --oneline {merge_base}..{github_branch}"
+    cmd = f"cd {github_path} ; git log --oneline {start_commit_sha}..{end_commit_sha}"
     stdout_lines = run_shell(cmd)
     base_commit_summary = "Bug 1376873 - Rollup of local modifications"
     found_lines = [s for s in stdout_lines if base_commit_summary in s]
+    if len(found_lines) == 0:
+        global error_help
+        error_help = (
+            "The base commit for Mozilla's patch-stack was not found in the\n"
+            "git log.  The commit summary we're looking for is:\n"
+            f"{base_commit_summary}"
+        )
+        sys.exit(1)
     base_commit_sha = found_lines[0].split(" ")[0]
     print(f"Found base_commit_sha: {base_commit_sha}")
 
-    # First, a word about pre-stack and normal patches.  During the
+    # First, a word about pre-stack and standard patches.  During the
     # libwebrtc update process, there are 2 cases where we insert
     # patches between the upstream trunk commit we're current based on
     # and the Mozilla patch-stack:
@@ -86,37 +102,56 @@ def save_patch_stack(
     #    technique allows us to fix any potential rebase conflicts when
     #    the commit is eventually relanded the final time.
     #
-    # Pre-stack commits are everything that we insert between upstream and
-    # the Mozilla patch-stack from the two categories above.
+    # Pre-stack commits (written with a 'p' prefix) are everything that
+    # we insert between upstream and the Mozilla patch-stack from the
+    # two categories above.
     #
-    # Normal commits are the Mozilla patch-stack commits.
+    # Standard commits (written with a 's' prefix) are the Mozilla
+    # patch-stack commits.
+    #
+    # Note: the prefixes are also conveniently alphabetical so that
+    # restoring them can be done with a simple 'git am *.patch' command.
 
     # write only the pre-stack patches out
-    cmd = f"git format-patch --keep-subject --no-signature --output-directory {patch_directory} {merge_base}..{base_commit_sha}^"
+    write_patch_files_with_prefix(
+        github_path, patch_directory, f"{start_commit_sha}", f"{base_commit_sha}^", "p"
+    )
+
+    # write only the "standard" stack patches out
+    write_patch_files_with_prefix(
+        github_path, patch_directory, f"{base_commit_sha}^", f"{end_commit_sha}", "s"
+    )
+
+
+def save_patch_stack(
+    github_path,
+    github_branch,
+    patch_directory,
+    state_directory,
+    target_branch_head,
+    bug_number,
+    no_pre_stack,
+):
+    # remove the current patch files
+    files_to_remove = os.listdir(patch_directory)
+    for file in files_to_remove:
+        os.remove(os.path.join(patch_directory, file))
+
+    # find the base of the patch stack
+    cmd = f"git merge-base {github_branch} {target_branch_head}"
     stdout_lines = run_git(cmd, github_path)
+    merge_base = stdout_lines[0]
 
-    # remove the commit summary from the file name - also prefix the pre-stack
-    # patches with 'p'
-    patches_to_rename = os.listdir(patch_directory)
-    for file in patches_to_rename:
-        shortened_name = re.sub(r"^(\d\d\d\d)-.*\.patch", "p\\1.patch", file)
-        os.rename(
-            os.path.join(patch_directory, file),
-            os.path.join(patch_directory, shortened_name),
+    if no_pre_stack:
+        write_patch_files_with_prefix(
+            github_path, patch_directory, f"{merge_base}", f"{github_branch}", ""
         )
-
-    # write only the "normal" stack patches out
-    cmd = f"git format-patch --keep-subject --no-signature --output-directory {patch_directory} {base_commit_sha}^..{github_branch}"
-    run_git(cmd, github_path)
-
-    # remove the commit summary from the file name - also prefix the "normal"
-    # patches with 's'
-    patches_to_rename = os.listdir(patch_directory)
-    for file in patches_to_rename:
-        shortened_name = re.sub(r"^(\d\d\d\d)-.*\.patch", "s\\1.patch", file)
-        os.rename(
-            os.path.join(patch_directory, file),
-            os.path.join(patch_directory, shortened_name),
+    else:
+        write_prestack_and_standard_patches(
+            github_path,
+            patch_directory,
+            f"{merge_base}",
+            f"{github_branch}",
         )
 
     # remove the unhelpful first line of the patch files that only
@@ -211,6 +246,12 @@ if __name__ == "__main__":
         help="integer Bugzilla number (example: 1800920), if provided will write patch stack as separate commit",
     )
     parser.add_argument(
+        "--no-pre-stack",
+        action="store_true",
+        default=False,
+        help="don't look for pre-stack/standard patches, simply write the patches all sequentially",
+    )
+    parser.add_argument(
         "--skip-startup-sanity",
         action="store_true",
         default=False,
@@ -247,6 +288,7 @@ if __name__ == "__main__":
         args.state_path,
         args.target_branch_head,
         args.separate_commit_bug_number,
+        args.no_pre_stack,
     )
 
     # unregister the exit handler so the normal exit doesn't falsely

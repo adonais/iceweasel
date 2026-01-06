@@ -13,8 +13,6 @@
 #include "mozilla/PodOperations.h"
 #include "mozilla/Span.h"
 
-#include <algorithm>
-
 #include "jsnum.h"
 #include "jspubtd.h"
 

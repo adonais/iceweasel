@@ -65,7 +65,8 @@ class DocAccessible : public HyperTextAccessible,
   virtual nsINode* GetNode() const override;
   Document* DocumentNode() const { return mDocumentNode; }
 
-  virtual mozilla::a11y::ENameValueFlag Name(nsString& aName) const override;
+  virtual mozilla::a11y::ENameValueFlag DirectName(
+      nsString& aName) const override;
   virtual EDescriptionValueFlag Description(
       nsString& aDescription) const override;
   virtual Accessible* FocusedChild() override;

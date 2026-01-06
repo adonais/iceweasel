@@ -174,7 +174,7 @@ const UPDATED_REQ_ITEM_PROPS = [
   "isEventStream",
   "priority",
   "blockedReason",
-  "blockingExtension",
+  "extension",
 ];
 
 const UPDATED_REQ_PROPS = [

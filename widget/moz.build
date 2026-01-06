@@ -366,7 +366,6 @@ LOCAL_INCLUDES += [
     "/layout/painting",
     "/layout/xul",
     "/layout/xul/tree/",
-    "/view",
     "/widget",
     "/widget/headless",
 ]

@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Ìkọ̀kọ̀ %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -218,6 +218,10 @@
   <string name="search_engine_suggestions_description">Wá tààrà láti ààyè ìfi-àdírẹ̀sì-sí</string>
   <!-- Menu option in the search selector menu to open the search settings -->
   <string name="search_settings_menu_item">Àwọn ètò ìwádìí</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!--
     Search Widget
 
@@ -299,8 +303,6 @@
   <string name="preferences_gestures">Àwọn ìfarajúwèé</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Ìsọditaraẹni</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Wọlé láti so táàbù pọ̀, àwọn búkúmaakì, àwọn ọ̀rọ̀ ìpamọ́, àti díẹ̀ si.</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
   <string name="preferences_account_sync_error">Tún darapọ̀ láti tún bẹ̀rẹ̀ ìṣiṣẹ́pọ̀ padà</string>
   <!-- Preference for language -->
@@ -424,12 +426,6 @@
   <string name="preference_experiments_2">Àwọn àyẹ̀wò</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">Fàyègba Mozilla láàyè láti wọlé sórí ẹ̀rọ kó sì ṣe àwọn ayẹ̀wò</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Ṣe ìṣepọ̀ kí o sì fi dátà rẹ pamọ́</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Wọlé láti tún-un sopọ̀</string>
   <!-- Preference for removing FxA account -->
@@ -1470,4 +1466,10 @@
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

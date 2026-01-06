@@ -2374,7 +2374,6 @@ Instance::Instance(JSContext* cx, Handle<WasmInstanceObject*> object,
                    const SharedCode& code, SharedTableVector&& tables,
                    UniqueDebugState maybeDebug)
     : realm_(cx->realm()),
-      onSuspendableStack_(false),
       allocSites_(nullptr),
       jsJitExceptionHandler_(
           cx->runtime()->jitRuntime()->getExceptionTail().value),
@@ -2433,7 +2432,7 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
 
   cx_ = cx;
   valueBoxClass_ = AnyRef::valueBoxClass();
-  resetInterrupt(cx);
+  interrupt_ = false;
   jumpTable_ = code_->tieringJumpTable();
   debugFilter_ = nullptr;
   callRefMetrics_ = nullptr;
@@ -2826,39 +2825,11 @@ Instance::~Instance() {
   MOZ_ASSERT(pendingException_.isNull());
 }
 
-void Instance::setInterrupt() {
-  interrupt_ = true;
-  stackLimit_ = JS::NativeStackLimitMin;
-}
+void Instance::setInterrupt() { interrupt_ = true; }
 
-bool Instance::isInterrupted() const {
-  return interrupt_ || stackLimit_ == JS::NativeStackLimitMin;
-}
+bool Instance::isInterrupted() const { return interrupt_; }
 
-void Instance::resetInterrupt(JSContext* cx) {
-  interrupt_ = false;
-#ifdef ENABLE_WASM_JSPI
-  if (cx->wasm().suspendableStackLimit != JS::NativeStackLimitMin) {
-    stackLimit_ = cx->wasm().suspendableStackLimit;
-    return;
-  }
-#endif
-  stackLimit_ = cx->stackLimitForJitCode(JS::StackForUntrustedScript);
-}
-
-void Instance::setTemporaryStackLimit(JS::NativeStackLimit limit) {
-  if (!isInterrupted()) {
-    stackLimit_ = limit;
-  }
-  onSuspendableStack_ = true;
-}
-
-void Instance::resetTemporaryStackLimit(JSContext* cx) {
-  if (!isInterrupted()) {
-    stackLimit_ = cx->stackLimitForJitCode(JS::StackForUntrustedScript);
-  }
-  onSuspendableStack_ = false;
-}
+void Instance::resetInterrupt() { interrupt_ = false; }
 
 int32_t Instance::computeInitialHotnessCounter(uint32_t funcIndex,
                                                size_t codeSectionSize) {

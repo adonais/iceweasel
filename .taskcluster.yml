@@ -231,12 +231,12 @@ tasks:
 
                   # Note: This task is built server side without the context or tooling that
                   # exist in tree so we must hard code the hash
-                  image: 'mozillareleases/gecko_decision:5.0.0@sha256:9e000c9fd31ee1723927aeea2b82b95ff2ecf32ebdb7a5d893300281a1452670'
+                  image: 'mozillareleases/gecko_decision:5.1.0@sha256:8879ecb7f859e1001b0aa67de440a18c3a896446bfd0e2e87688bb367e590667'
 
                   maxRunTime: 3600
 
                   command:
-                      - /builds/worker/bin/run-task
+                      - /builds/worker/bin/run-task-hg
                       - '--gecko-checkout=/builds/worker/checkouts/gecko'
                       - '--gecko-sparse-profile=build/sparse-profiles/taskgraph'
                       - '--'
@@ -379,14 +379,20 @@ tasks:
                           description: 'The task that creates all of the other tasks in the task graph'
 
                       provisionerId: "${trustDomain}-${level}"
-                      workerType: "decision-gcp"
+                      workerType: "decision"
 
                       tags:
                           createdForUser: "${ownerEmail}"
                           kind: decision-task
 
                       routes:
-                          - checks
+                          $flattenDeep:
+                              - checks
+                              - $if: 'tasks_for == "github-push"'
+                                then:
+                                    - "tc-treeherder.v2.${project}.${head_sha}"
+                                    - "index.${trustDomain}.v2.${project}.latest.taskgraph.decision"
+                                    - "index.${trustDomain}.v2.${project}.revision.${head_sha}.taskgraph.decision"
                       scopes:
                           - 'assume:repo:${repoUrl[8:]}:branch:${short_head_ref}'
                       dependencies: []
@@ -413,7 +419,7 @@ tasks:
                               PYTHONDONTWRITEBYTECODE: '1'
                               MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: 'system'
                           cache:
-                              "${trustDomain}-level-${level}-checkouts-git-v1": /builds/worker/checkouts
+                              "${trustDomain}-level-${level}-${project}-checkouts-git-shallow-v1": /builds/worker/checkouts
 
                           features:
                               taskclusterProxy: true
@@ -464,5 +470,5 @@ tasks:
                               - treeherder:
                                     machine:
                                         platform: gecko-decision
-                                        symbol: D
+                                    symbol: D
                               - tasks_for: '${tasks_for}'

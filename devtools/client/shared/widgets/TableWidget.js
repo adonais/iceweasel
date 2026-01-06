@@ -181,7 +181,7 @@ TableWidget.prototype = {
   /**
    * Is a row currently selected?
    *
-   * @return {Boolean}
+   * @return {boolean}
    *         true or false.
    */
   get hasSelectedRow() {
@@ -524,9 +524,9 @@ TableWidget.prototype = {
   /**
    * Reset the editable fields engine if the currently edited row is removed.
    *
-   * @param  {String} event
+   * @param  {string} event
    *         The event name "event-removed."
-   * @param  {Object} row
+   * @param  {object} row
    *         The values from the removed row.
    */
   onRowRemoved(row) {
@@ -648,7 +648,7 @@ TableWidget.prototype = {
   /**
    * Make table fields editable.
    *
-   * @param  {String|Array} editableColumns
+   * @param  {string | Array} editableColumns
    *         An array or comma separated list of editable column names.
    */
   makeFieldsEditable(editableColumns) {
@@ -714,9 +714,9 @@ TableWidget.prototype = {
   /**
    * Sets the localization ID of the description to be shown when the table is empty.
    *
-   * @param {String} l10nID
+   * @param {string} l10nID
    *        The ID of the localization string.
-   * @param {String} learnMoreURL
+   * @param {string} learnMoreURL
    *        A URL referring to a website with further information related to
    *        the data shown in the table widget.
    */
@@ -815,11 +815,11 @@ TableWidget.prototype = {
    * Creates the columns in the table. Without calling this method, data cannot
    * be inserted into the table unless `initialColumns` was supplied.
    *
-   * @param {Object} columns
+   * @param {object} columns
    *        A key value pair representing the columns of the table. Where the
    *        key represents the id of the column and the value is the displayed
    *        label in the header of the column.
-   * @param {String} sortOn
+   * @param {string} sortOn
    *        The id of the column on which the table will be initially sorted on.
    * @param {Array} hiddenColumns
    *        Ids of all the columns that are hidden by default.
@@ -1069,7 +1069,7 @@ TableWidget.prototype = {
   /**
    * Filters the table based on a specific value
    *
-   * @param {String} value: The filter value
+   * @param {string} value: The filter value
    * @param {Array} ignoreProps: Props to ignore while filtering
    */
   filterItems(value, ignoreProps = []) {
@@ -1138,7 +1138,7 @@ module.exports.TableWidget = TableWidget;
  *        The table object to which the column belongs.
  * @param {string} id
  *        Id of the column.
- * @param {String} header
+ * @param {string} header
  *        The displayed string on the column's header.
  */
 function Column(table, id, header) {
@@ -1235,7 +1235,7 @@ Column.prototype = {
   /**
    * Set the private state of the column (visibility in the UI).
    *
-   * @param  {Boolean} state
+   * @param  {boolean} state
    *         Private (true or false)
    */
   set private(state) {
@@ -1829,7 +1829,7 @@ Cell.prototype = {
 /**
  * Simple widget to make nodes matching a CSS selector editable.
  *
- * @param {Object} options
+ * @param {object} options
  *        An object with the following format:
  *          {
  *            // The node that will act as a container for the editor e.g. a

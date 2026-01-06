@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
 task-defaults:
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         docker-image: {in-tree: android-build}
         max-run-time: 1800
@@ -39,7 +39,7 @@ linux64-android31-avd-x86_64-repack:
     description: "Android AVD (Linux) repack toolchain build"
     treeherder:
         symbol: TL(avd31-x86_64-linux)
-    worker-type: b-linux-kvm-gcp
+    worker-type: b-linux-kvm
     worker:
         kvm: true
     run:
@@ -59,7 +59,7 @@ linux64-android30-avd-x86-repack:
     description: "Android AVD (Linux) repack toolchain build"
     treeherder:
         symbol: TL(avd30-x86-linux)
-    worker-type: b-linux-kvm-gcp
+    worker-type: b-linux-kvm
     worker:
         kvm: true
     run:
@@ -79,7 +79,7 @@ linux64-android34-avd-x86_64-repack:
     description: "Android AVD (Linux) repack toolchain build"
     treeherder:
         symbol: TL(avd34-x86_64-linux)
-    worker-type: b-linux-kvm-gcp
+    worker-type: b-linux-kvm
     worker:
         kvm: true
     run:

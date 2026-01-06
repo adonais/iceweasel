@@ -100,11 +100,8 @@ int r_assoc_insert(r_assoc *assoc,char *key,int len,
 #define R_ASSOC_NEW		  0x2
 
 int r_assoc_fetch(r_assoc *assoc,char *key, int len, void **value);
-int r_assoc_delete(r_assoc *assoc,char *key, int len);
 
-int r_assoc_copy(r_assoc **knew,r_assoc *old);
 int r_assoc_destroy(r_assoc **assocp);
-int r_assoc_simple_hash_compute(char *key, int len,int bits);
 int r_assoc_crc32_hash_compute(char *key, int len,int bits);
 
 /*We need iterators, but I haven't written them yet*/

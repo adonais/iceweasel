@@ -455,7 +455,7 @@ class ResultsSink:
         result += " | " + test.path
         args = []
         if self.options.shell_args:
-            args.append(self.options.shell_args)
+            args.extend(self.options.shell_args)
         args += test.jitflags
         result += ' | (args: "{}")'.format(" ".join(args))
         if message:
@@ -469,7 +469,7 @@ class ResultsSink:
 
         details = {"extra": extra.copy() if extra else {}}
         if self.options.shell_args:
-            details["extra"]["shell_args"] = self.options.shell_args
+            details["extra"]["shell_args"] = shlex.join(self.options.shell_args)
         details["extra"]["jitflags"] = test.jitflags
         if message:
             details["message"] = message

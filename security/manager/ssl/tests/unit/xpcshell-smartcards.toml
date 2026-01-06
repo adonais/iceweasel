@@ -1,5 +1,7 @@
 [DEFAULT]
-run-if = ["os != 'android'"]
+run-if = [
+  "os != 'android'",
+]
 head = "head_psm.js"
 tags = "psm"
 support-files = [
@@ -9,8 +11,8 @@ support-files = [
 
 ["test_osclientcerts_module.js"]
 skip-if = [
-  "os == 'linux'",
-  "os == 'android'"
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'",
+  "os == 'linux' && os_version == '18.04' && arch == 'x86_64' && display == 'x11'", # 18.04 still used by comm-central
 ]
 
 ["test_pkcs11_module.js"]
@@ -19,7 +21,9 @@ skip-if = [
 
 ["test_pkcs11_module_client_auth.js"]
 run-sequentially = ["true"] # hardcoded ports
-skip-if = ["msix"] # Bug 1809477
+skip-if = [
+  "msix", # Bug 1809477
+]
 prefs = [
   "security.pki.certificate_transparency.mode=1",
 ]

@@ -1204,7 +1204,14 @@ class PermissionDelegateTest : BaseSessionTest() {
 
     @Test
     fun localDeviceAccessPermission() {
-        sessionRule.setPrefsUntilTestEnd(mapOf("network.lna.blocking" to true))
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf(
+                "network.lna.blocking" to true,
+                "network.lna.enabled" to true,
+                "network.lna.block_trackers" to true,
+            ),
+        )
+
         // enable LNA checks for local network to localhost checks
         sessionRule.setPrefsUntilTestEnd(mapOf("network.lna.local-network-to-localhost.skip-checks" to false))
 
@@ -1247,7 +1254,13 @@ class PermissionDelegateTest : BaseSessionTest() {
 
     @Test
     fun localDeviceAccessPermissionNotFiredIfPrefIsFalse() {
-        sessionRule.setPrefsUntilTestEnd(mapOf("network.lna.blocking" to false))
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf(
+                "network.lna.blocking" to false,
+                "network.lna.enabled" to false,
+                "network.lna.block_trackers" to false,
+            ),
+        )
 
         mainSession.loadUri("https://example.com/")
         mainSession.waitForPageStop()

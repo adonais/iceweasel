@@ -21,11 +21,8 @@ include protocol PTCPSocket;
 include protocol PTCPServerSocket;
 include protocol PUDPSocket;
 include protocol PDNSRequest;
-include protocol PDataChannel;
-include protocol PSimpleChannel;
 include protocol PTransportProvider;
 include protocol PStunAddrsRequest;
-include protocol PFileChannel;
 include protocol PWebrtcTCPSocket;
 include protocol PSocketProcessBridge;
 include protocol PDocumentChannel;
@@ -60,15 +57,12 @@ namespace net {
   manages PTCPServerSocket;
   manages PUDPSocket;
   manages PDNSRequest;
-  manages PDataChannel;
 #ifdef MOZ_WIDGET_GTK
   manages PGIOChannel;
 #endif
 #ifdef MOZ_WIDGET_ANDROID
   manages PGeckoViewContentChannel;
 #endif
-  manages PSimpleChannel;
-  manages PFileChannel;
   manages PTransportProvider;
   manages PAltDataOutputStream;
   manages PStunAddrsRequest;
@@ -117,21 +111,26 @@ parent:
                               DNSFlags flags, nsresult reason);
 
   /**
-   * channelId is used to establish a connection between redirect channels in
-   * the parent and the child when we're redirecting to a data: URI.
+   * Establish a connection between generic redirect channels which do not need
+   * specialized nsIParentChannel handling.
    */
-  async PDataChannel(uint32_t channelId);
+  async ConnectBaseChannel(uint32_t channelId);
+
 #ifdef MOZ_WIDGET_GTK
   async PGIOChannel(nullable PBrowser browser, SerializedLoadContext loadContext, GIOChannelCreationArgs args);
 #endif
-  async PSimpleChannel(uint32_t channelId);
-  async PFileChannel();
 
 #ifdef MOZ_WIDGET_ANDROID
   async PGeckoViewContentChannel(nullable PBrowser browser,
                                  SerializedLoadContext loadContext,
                                  GeckoViewContentChannelArgs args);
 #endif
+
+  /**
+   * When a nsFileChannel is opened within the content process, we notify
+   * "file-channel-opened" in the parent process using this IPC message.
+   */
+  async NotifyFileChannelOpened(FileChannelInfo info);
 
   async RequestContextLoadBegin(uint64_t rcid);
   async RequestContextAfterDOMContentLoaded(uint64_t rcid);

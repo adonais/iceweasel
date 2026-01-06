@@ -142,7 +142,6 @@ internal class SpeculativeEngineSession constructor(
  */
 internal class SpeculativeSessionObserver(
     private val factory: SpeculativeSessionFactory,
-
 ) : EngineSession.Observer {
     override fun onCrash() {
         factory.clear()

@@ -28,10 +28,12 @@ legacy.telemetry:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1755549
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1921440
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1938183
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2000866
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1755549
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1921440
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1938183
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2000866
     data_sensitivity:
       - technical
       - highly_sensitive
@@ -51,6 +53,7 @@ legacy.telemetry:
       - 'temp-fog-initial-state'
       - 'captcha-detection'
       - 'health'
+      - 'addons'
 
   profile_group_id:
     type: uuid
@@ -1266,7 +1269,7 @@ termsofuse:
       - metrics
     notification_emails:
       - mviar@mozilla.com
-      - omc@mozilla.com
+      - omc-core@mozilla.com
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1971184
     data_reviews:
@@ -1283,7 +1286,7 @@ termsofuse:
       - metrics
     notification_emails:
       - mviar@mozilla.com
-      - omc@mozilla.com
+      - omc-core@mozilla.com
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1971184
     data_reviews:

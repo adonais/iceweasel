@@ -107,7 +107,7 @@ async function getTargetBrowsers() {
  * Store the list of browser id and status that should be used for checking compatibility
  * issues.
  *
- * @param {Object[]} browsers
+ * @param {object[]} browsers
  * @param {string} browsers[].id: The browser id. Should be one of TARGET_BROWSER_ID
  * @param {string} browsers[].status: The browser status. Should be one of TARGET_BROWSER_STATUS
  */

@@ -25,7 +25,9 @@ prefs = [
 ["browser_initial_caching.js"]
 
 ["browser_inner_html_caching.js"]
-skip-if = ["os != 'win'"]
+skip-if = [
+  "os != 'win'",
+]
 
 ["browser_name_and_description_domain.js"]
 

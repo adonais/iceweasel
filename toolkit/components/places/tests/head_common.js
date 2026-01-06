@@ -900,3 +900,9 @@ async function assertNoOrphanPageAnnotations() {
     WHERE id NOT IN (SELECT anno_attribute_id FROM moz_annos) AND
           id NOT IN (SELECT anno_attribute_id FROM moz_items_annos)`);
 }
+
+function daysAgo(days) {
+  let date = new Date();
+  date.setDate(date.getDate() - days);
+  return date;
+}

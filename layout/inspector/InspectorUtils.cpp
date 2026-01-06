@@ -286,8 +286,8 @@ class ReadOnlyInspectorDeclaration final : public nsDOMCSSDeclaration {
   void GetPropertyValue(const nsACString& aPropName, nsACString& aValue) final {
     Servo_DeclarationBlock_GetPropertyValue(mRaw, &aPropName, &aValue);
   }
-  void GetPropertyValue(nsCSSPropertyID aId, nsACString& aValue) final {
-    Servo_DeclarationBlock_GetPropertyValueById(mRaw, aId, &aValue);
+  void GetPropertyValue(NonCustomCSSPropertyId aId, nsACString& aValue) final {
+    Servo_DeclarationBlock_GetPropertyValueByNonCustomId(mRaw, aId, &aValue);
   }
   void IndexedGetter(uint32_t aIndex, bool& aFound,
                      nsACString& aPropName) final {
@@ -302,7 +302,7 @@ class ReadOnlyInspectorDeclaration final : public nsDOMCSSDeclaration {
                    ErrorResult& aRv) final {
     aRv.ThrowInvalidModificationError("Can't mutate this declaration");
   }
-  void SetPropertyValue(nsCSSPropertyID aId, const nsACString& aValue,
+  void SetPropertyValue(NonCustomCSSPropertyId aId, const nsACString& aValue,
                         nsIPrincipal* aSubjectPrincipal,
                         ErrorResult& aRv) final {
     aRv.ThrowInvalidModificationError("Can't mutate this declaration");
@@ -568,6 +568,7 @@ static uint32_t CollectAtRules(ServoCSSRuleList& aRuleList,
       case StyleCssRuleType::Media:
       case StyleCssRuleType::Supports:
       case StyleCssRuleType::LayerBlock:
+      case StyleCssRuleType::PositionTry:
       case StyleCssRuleType::Property:
       case StyleCssRuleType::Container: {
         (void)aResult.AppendElement(OwningNonNull(*rule), fallible);
@@ -589,7 +590,6 @@ static uint32_t CollectAtRules(ServoCSSRuleList& aRuleList,
       case StyleCssRuleType::FontPaletteValues:
       case StyleCssRuleType::Scope:
       case StyleCssRuleType::StartingStyle:
-      case StyleCssRuleType::PositionTry:
       case StyleCssRuleType::NestedDeclarations:
         break;
     }
@@ -626,7 +626,7 @@ void InspectorUtils::GetCSSPropertyNames(GlobalObject& aGlobalObject,
                                      : CSSEnabledState::ForAllContent;
 
   auto appendProperty = [enabledState, &aResult](uint32_t prop) {
-    nsCSSPropertyID cssProp = nsCSSPropertyID(prop);
+    NonCustomCSSPropertyId cssProp = NonCustomCSSPropertyId(prop);
     if (nsCSSProps::IsEnabled(cssProp, enabledState)) {
       aResult.AppendElement(
           NS_ConvertASCIItoUTF16(nsCSSProps::GetStringValue(cssProp)));
@@ -635,7 +635,7 @@ void InspectorUtils::GetCSSPropertyNames(GlobalObject& aGlobalObject,
 
   uint32_t prop = 0;
   for (; prop < eCSSProperty_COUNT_no_shorthands; ++prop) {
-    if (!nsCSSProps::PropHasFlags(nsCSSPropertyID(prop),
+    if (!nsCSSProps::PropHasFlags(NonCustomCSSPropertyId(prop),
                                   CSSPropFlags::Inaccessible)) {
       appendProperty(prop);
     }
@@ -659,10 +659,10 @@ void InspectorUtils::GetCSSPropertyNames(GlobalObject& aGlobalObject,
 void InspectorUtils::GetCSSPropertyPrefs(GlobalObject& aGlobalObject,
                                          nsTArray<PropertyPref>& aResult) {
   for (const auto* src = nsCSSProps::kPropertyPrefTable;
-       src->mPropID != eCSSProperty_UNKNOWN; src++) {
+       src->mPropId != eCSSProperty_UNKNOWN; src++) {
     PropertyPref& dest = *aResult.AppendElement();
     dest.mName.Assign(
-        NS_ConvertASCIItoUTF16(nsCSSProps::GetStringValue(src->mPropID)));
+        NS_ConvertASCIItoUTF16(nsCSSProps::GetStringValue(src->mPropId)));
     dest.mPref.AssignASCII(src->mPref);
   }
 }
@@ -672,26 +672,26 @@ void InspectorUtils::GetSubpropertiesForCSSProperty(GlobalObject& aGlobal,
                                                     const nsACString& aProperty,
                                                     nsTArray<nsString>& aResult,
                                                     ErrorResult& aRv) {
-  nsCSSPropertyID propertyID = nsCSSProps::LookupProperty(aProperty);
+  NonCustomCSSPropertyId propertyId = nsCSSProps::LookupProperty(aProperty);
 
-  if (propertyID == eCSSProperty_UNKNOWN) {
+  if (propertyId == eCSSProperty_UNKNOWN) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
 
-  if (propertyID == eCSSPropertyExtra_variable) {
+  if (propertyId == eCSSPropertyExtra_variable) {
     aResult.AppendElement(NS_ConvertUTF8toUTF16(aProperty));
     return;
   }
 
-  if (!nsCSSProps::IsShorthand(propertyID)) {
+  if (!nsCSSProps::IsShorthand(propertyId)) {
     nsString* name = aResult.AppendElement();
-    CopyASCIItoUTF16(nsCSSProps::GetStringValue(propertyID), *name);
+    CopyASCIItoUTF16(nsCSSProps::GetStringValue(propertyId), *name);
     return;
   }
 
-  for (const nsCSSPropertyID* props =
-           nsCSSProps::SubpropertyEntryFor(propertyID);
+  for (const NonCustomCSSPropertyId* props =
+           nsCSSProps::SubpropertyEntryFor(propertyId);
        *props != eCSSProperty_UNKNOWN; ++props) {
     nsString* name = aResult.AppendElement();
     CopyASCIItoUTF16(nsCSSProps::GetStringValue(*props), *name);

@@ -9,7 +9,6 @@ import { AdBanner } from "../AdBanner/AdBanner.jsx";
 import { FluentOrText } from "../../FluentOrText/FluentOrText.jsx";
 import React, { useEffect, useRef } from "react";
 import { connect } from "react-redux";
-import { TrendingSearches } from "../TrendingSearches/TrendingSearches.jsx";
 const PREF_SECTIONS_CARDS_ENABLED = "discoverystream.sections.cards.enabled";
 const PREF_THUMBS_UP_DOWN_ENABLED = "discoverystream.thumbsUpDown.enabled";
 const PREF_TOPICS_ENABLED = "discoverystream.topicLabels.enabled";
@@ -21,10 +20,6 @@ const PREF_BILLBOARD_ENABLED = "newtabAdSize.billboard";
 const PREF_BILLBOARD_POSITION = "newtabAdSize.billboard.position";
 const PREF_LEADERBOARD_ENABLED = "newtabAdSize.leaderboard";
 const PREF_LEADERBOARD_POSITION = "newtabAdSize.leaderboard.position";
-const PREF_TRENDING_SEARCH = "trendingSearch.enabled";
-const PREF_TRENDING_SEARCH_SYSTEM = "system.trendingSearch.enabled";
-const PREF_SEARCH_ENGINE = "trendingSearch.defaultSearchEngine";
-const PREF_TRENDING_SEARCH_VARIANT = "trendingSearch.variant";
 const WIDGET_IDS = {
   TOPICS: 1,
 };
@@ -137,11 +132,6 @@ export class _CardGrid extends React.PureComponent {
     const spocsStartupCacheEnabled = prefs[PREF_SPOCS_STARTUPCACHE_ENABLED];
     const billboardEnabled = prefs[PREF_BILLBOARD_ENABLED];
     const leaderboardEnabled = prefs[PREF_LEADERBOARD_ENABLED];
-    const trendingEnabled =
-      prefs[PREF_TRENDING_SEARCH] &&
-      prefs[PREF_TRENDING_SEARCH_SYSTEM] &&
-      prefs[PREF_SEARCH_ENGINE]?.toLowerCase() === "google";
-    const trendingVariant = prefs[PREF_TRENDING_SEARCH_VARIANT];
 
     const recs = this.props.data.recommendations.slice(0, items);
     const cards = [];
@@ -247,14 +237,6 @@ export class _CardGrid extends React.PureComponent {
           cards.splice(position.index, 1, widgetComponent);
         }
       }
-    }
-    if (trendingEnabled && trendingVariant === "b") {
-      const firstSpocPosition = this.props.spocPositions[0]?.index;
-      // double check that a spoc/mrec is actually in the index it should be in
-      const format = cards[firstSpocPosition]?.props?.format;
-      const isSpoc = format === "spoc" || format === "rectangle";
-      // if the spoc is not in its position, place TrendingSearches in the 3rd position
-      cards.splice(isSpoc ? firstSpocPosition + 1 : 2, 1, <TrendingSearches />);
     }
 
     // if a banner ad is enabled and we have any available, place them in the grid

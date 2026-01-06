@@ -216,6 +216,7 @@ struct MOZ_STACK_CLASS CreateDecoderParams final {
                      mError ? mError->Description().get() : "null");
     str.AppendPrintf(", mKnowsCompositor = %p", mKnowsCompositor);
     str.AppendPrintf(", mCrashHelper = %p", mCrashHelper);
+    str.AppendPrintf(", mCDM = %p", mCDM);
     str.AppendPrintf(", mUseNullDecoder = %s",
                      mUseNullDecoder.mUse ? "yes" : "no");
     str.AppendPrintf(", mWrappers = %s", EnumSetToString(mWrappers).get());

@@ -40,9 +40,7 @@ class CookieBannerReducerMiddleware(
     ) {
         when (action) {
             is CookieBannerReducerAction.InitCookieBannerReducer -> {
-                /**
-                 * The initial CookieBannerReducerState when the user enters first in the screen
-                 */
+                // The initial CookieBannerReducerState when the user enters first in the screen
                 initCookieBannerReducer(context)
             }
 

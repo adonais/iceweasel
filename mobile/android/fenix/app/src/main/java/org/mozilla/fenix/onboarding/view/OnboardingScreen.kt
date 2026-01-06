@@ -5,7 +5,6 @@
 package org.mozilla.fenix.onboarding.view
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -13,6 +12,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -266,54 +266,55 @@ private fun OnboardingContent(
 ) {
     val nestedScrollConnection = remember { DisableForwardSwipeNestedScrollConnection(pagerState) }
 
-    Column(
-        modifier = Modifier
-            .background(FirefoxTheme.colors.layer1)
-            .statusBarsPadding(),
-    ) {
-        HorizontalPager(
-            state = pagerState,
-            key = { pagesToDisplay[it].type },
+    Surface {
+        Column(
             modifier = Modifier
-                .weight(1f)
-                .nestedScroll(nestedScrollConnection),
-        ) { pageIndex ->
-            // protect against a rare case where the user goes to the marketing screen at the same
-            // moment it gets removed by [MarketingPageRemovalSupport]
-            val pageUiState = pagesToDisplay.getOrElse(pageIndex) { pagesToDisplay[it.dec()] }
-            val onboardingPageState = mapToOnboardingPageState(
-                onboardingPageUiData = pageUiState,
-                onMakeFirefoxDefaultClick = onMakeFirefoxDefaultClick,
-                onMakeFirefoxDefaultSkipClick = onMakeFirefoxDefaultSkipClick,
-                onSignInButtonClick = onSignInButtonClick,
-                onSignInSkipClick = onSignInSkipClick,
-                onNotificationPermissionButtonClick = onNotificationPermissionButtonClick,
-                onNotificationPermissionSkipClick = onNotificationPermissionSkipClick,
-                onAddFirefoxWidgetClick = onAddFirefoxWidgetClick,
-                onAddFirefoxWidgetSkipClick = onSkipFirefoxWidgetClick,
-                onCustomizeToolbarButtonClick = onCustomizeToolbarButtonClick,
-                onCustomizeThemeClick = onCustomizeThemeButtonClick,
-                onTermsOfServiceButtonClick = onAgreeAndConfirmTermsOfService,
-            )
-            OnboardingPageForType(
-                type = pageUiState.type,
-                state = onboardingPageState,
-                onboardingStore = onboardingStore,
-                termsOfServiceEventHandler = termsOfServiceEventHandler,
-                onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
-                onMarketingOptInToggle = onMarketingOptInToggle,
-                onMarketingDataContinueClick = onMarketingDataContinueClick,
+                .statusBarsPadding(),
+        ) {
+            HorizontalPager(
+                state = pagerState,
+                key = { pagesToDisplay[it].type },
+                modifier = Modifier
+                    .weight(1f)
+                    .nestedScroll(nestedScrollConnection),
+            ) { pageIndex ->
+                // protect against a rare case where the user goes to the marketing screen at the same
+                // moment it gets removed by [MarketingPageRemovalSupport]
+                val pageUiState = pagesToDisplay.getOrElse(pageIndex) { pagesToDisplay[it.dec()] }
+                val onboardingPageState = mapToOnboardingPageState(
+                    onboardingPageUiData = pageUiState,
+                    onMakeFirefoxDefaultClick = onMakeFirefoxDefaultClick,
+                    onMakeFirefoxDefaultSkipClick = onMakeFirefoxDefaultSkipClick,
+                    onSignInButtonClick = onSignInButtonClick,
+                    onSignInSkipClick = onSignInSkipClick,
+                    onNotificationPermissionButtonClick = onNotificationPermissionButtonClick,
+                    onNotificationPermissionSkipClick = onNotificationPermissionSkipClick,
+                    onAddFirefoxWidgetClick = onAddFirefoxWidgetClick,
+                    onAddFirefoxWidgetSkipClick = onSkipFirefoxWidgetClick,
+                    onCustomizeToolbarButtonClick = onCustomizeToolbarButtonClick,
+                    onCustomizeThemeClick = onCustomizeThemeButtonClick,
+                    onTermsOfServiceButtonClick = onAgreeAndConfirmTermsOfService,
+                )
+                OnboardingPageForType(
+                    type = pageUiState.type,
+                    state = onboardingPageState,
+                    onboardingStore = onboardingStore,
+                    termsOfServiceEventHandler = termsOfServiceEventHandler,
+                    onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
+                    onMarketingOptInToggle = onMarketingOptInToggle,
+                    onMarketingDataContinueClick = onMarketingDataContinueClick,
+                )
+            }
+
+            PagerIndicator(
+                pagerState = pagerState,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(bottom = 16.dp),
+                inactiveColor = MaterialTheme.colorScheme.outlineVariant,
+                leaveTrail = true,
             )
         }
-
-        PagerIndicator(
-            pagerState = pagerState,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .padding(bottom = 16.dp),
-            inactiveColor = MaterialTheme.colorScheme.outlineVariant,
-            leaveTrail = true,
-        )
     }
 }
 

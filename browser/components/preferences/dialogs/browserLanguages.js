@@ -413,7 +413,7 @@ var gBrowserLanguagesDialog = {
 
   async onLoad() {
     /**
-     * @typedef {Object} Options - Options passed in to configure the subdialog.
+     * @typedef {object} Options - Options passed in to configure the subdialog.
      * @property {string} telemetryId,
      * @property {Array<string>} [selectedLocalesForRestart] The optional list of
      *   previously selected locales for when a restart is required. This list is

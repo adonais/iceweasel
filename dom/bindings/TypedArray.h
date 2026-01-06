@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_TypedArray_h
 #define mozilla_dom_TypedArray_h
 
-#include <string>
 #include <type_traits>
 #include <utility>
 

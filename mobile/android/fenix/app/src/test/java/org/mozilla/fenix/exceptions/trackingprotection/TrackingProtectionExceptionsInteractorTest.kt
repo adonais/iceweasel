@@ -17,7 +17,6 @@ import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.content.blocking.TrackingProtectionException
 import mozilla.components.concept.engine.content.blocking.TrackingProtectionExceptionStorage
 import mozilla.components.feature.session.TrackingProtectionUseCases
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -117,8 +116,6 @@ class TrackingProtectionExceptionsInteractorTest {
         assertTrue(removedAll)
         assertTrue(fetchedAll)
 
-        exceptionsStore.waitUntilIdle()
-
         capture.assertLastAction(ExceptionsFragmentAction.Change::class) {
             assertEquals(results, it.list)
         }
@@ -129,9 +126,6 @@ class TrackingProtectionExceptionsInteractorTest {
         interactor.onDeleteOne(exceptionsItem.invoke("https://mozilla.org"))
 
         assertTrue(fetchedAll)
-
-        exceptionsStore.waitUntilIdle()
-        store.waitUntilIdle()
 
         capture.assertLastAction(ExceptionsFragmentAction.Change::class) {
             assertEquals(results, it.list)

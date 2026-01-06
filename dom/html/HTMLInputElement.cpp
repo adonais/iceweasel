@@ -55,6 +55,7 @@
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/glean/DomMetrics.h"
 #include "nsAttrValueInlines.h"
+#include "nsAttrValueOrString.h"
 #include "nsBaseCommandController.h"
 #include "nsCRTGlue.h"
 #include "nsColorControlFrame.h"
@@ -100,7 +101,6 @@
 #include "nsIObserverService.h"
 
 // input type=image
-#include <limits>
 
 #include "HTMLSplitOnSpacesTokenizer.h"
 #include "imgRequestProxy.h"
@@ -826,7 +826,7 @@ nsresult HTMLInputElement::InitColorPicker() {
   rv = colorPicker->Open(callback);
   if (NS_SUCCEEDED(rv)) {
     mPickerRunning = true;
-    SetStates(ElementState::OPEN, true);
+    SetOpenState(true);
   }
 
   return rv;
@@ -912,6 +912,14 @@ nsresult HTMLInputElement::InitFilePicker(FilePickerType aType) {
   nsCOMPtr<nsIFilePickerShownCallback> callback =
       new HTMLInputElement::nsFilePickerShownCallback(this, filePicker);
 
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  if (obs) {
+    // Used by WebDriver BiDi to emit input.fileDialogOpened whenever an input
+    // type=file opens a file picker.
+    obs->NotifyObservers(ToSupports(this), "file-input-picker-opening",
+                         nullptr);
+  }
+
   if (!oldFiles.IsEmpty() && aType != FILE_PICKER_DIRECTORY) {
     nsAutoString path;
 
@@ -935,7 +943,7 @@ nsresult HTMLInputElement::InitFilePicker(FilePickerType aType) {
     rv = filePicker->Open(callback);
     if (NS_SUCCEEDED(rv)) {
       mPickerRunning = true;
-      SetStates(ElementState::OPEN, true);
+      SetOpenState(true);
     }
 
     return rv;
@@ -944,7 +952,7 @@ nsresult HTMLInputElement::InitFilePicker(FilePickerType aType) {
   HTMLInputElement::gUploadLastDir->FetchDirectoryAndDisplayPicker(
       doc, filePicker, callback);
   mPickerRunning = true;
-  SetStates(ElementState::OPEN, true);
+  SetOpenState(true);
   return NS_OK;
 }
 
@@ -1297,17 +1305,17 @@ void HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   if (aNameSpaceID == kNameSpaceID_None) {
     bool needValidityUpdate = false;
     if (aName == nsGkAtoms::src) {
+      nsAttrValueOrString value(aValue);
       mSrcTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
-          this, aValue ? aValue->GetStringValue() : EmptyString(),
-          aSubjectPrincipal);
+          this, value.String(), aSubjectPrincipal);
       if (aNotify && mType == FormControlType::InputImage) {
         if (aValue) {
           // Mark channel as urgent-start before load image if the image load is
           // initiated by a user interaction.
           mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
 
-          LoadImage(aValue->GetStringValue(), true, aNotify,
-                    eImageLoadType_Normal, mSrcTriggeringPrincipal);
+          LoadImage(value.String(), true, aNotify, eImageLoadType_Normal,
+                    mSrcTriggeringPrincipal);
         } else {
           // Null value means the attr got unset; drop the image
           CancelImageRequests(aNotify);
@@ -2326,7 +2334,7 @@ void HTMLInputElement::CloseDateTimePicker() {
                                       CanBubble::eYes, Cancelable::eYes);
 }
 
-void HTMLInputElement::SetDateTimePickerState(bool aIsOpen) {
+void HTMLInputElement::SetOpenState(bool aIsOpen) {
   SetStates(ElementState::OPEN, aIsOpen);
 }
 
@@ -7431,7 +7439,7 @@ void HTMLInputElement::UpdateHasRange(bool aNotify) {
 
 void HTMLInputElement::PickerClosed() {
   mPickerRunning = false;
-  SetStates(ElementState::OPEN, false);
+  SetOpenState(false);
 }
 
 JSObject* HTMLInputElement::WrapNode(JSContext* aCx,

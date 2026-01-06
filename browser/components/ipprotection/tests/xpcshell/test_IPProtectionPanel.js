@@ -6,12 +6,6 @@ https://creativecommons.org/publicdomain/zero/1.0/ */
 const { IPProtectionPanel } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPProtectionPanel.sys.mjs"
 );
-const { IPProtectionService, IPProtectionStates } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPProtectionService.sys.mjs"
-);
-const { IPPSignInWatcher } = ChromeUtils.importESModule(
-  "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs"
-);
 const { IPPEnrollAndEntitleManager } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs"
 );
@@ -255,12 +249,12 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
   IPProtectionService.updateState();
 
   let startedEventPromise = waitForEvent(
-    IPProtectionService,
-    "IPProtectionService:StateChanged",
-    () => IPProtectionService.state === IPProtectionStates.ACTIVE
+    IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    () => IPPProxyManager.state === IPPProxyStates.ACTIVE
   );
 
-  IPProtectionService.start();
+  IPPProxyManager.start();
 
   await startedEventPromise;
 
@@ -277,12 +271,12 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
   );
 
   let stoppedEventPromise = waitForEvent(
-    IPProtectionService,
-    "IPProtectionService:StateChanged",
-    () => IPProtectionService.state !== IPProtectionStates.ACTIVE
+    IPPProxyManager,
+    "IPPProxyManager:StateChanged",
+    () => IPPProxyManager.state !== IPPProxyStates.ACTIVE
   );
 
-  IPProtectionService.stop();
+  await IPPProxyManager.stop();
 
   await stoppedEventPromise;
 

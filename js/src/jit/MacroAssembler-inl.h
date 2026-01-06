@@ -1024,6 +1024,40 @@ void MacroAssembler::loadStringLength(Register str, Register dest) {
   load32(Address(str, JSString::offsetOfLength()), dest);
 }
 
+template <typename Table, typename Match>
+void MacroAssembler::lookupMFBT(Register hashTable, Register hashCode,
+                                Register scratch, Register scratch2,
+                                Register scratch3, Register scratch4,
+                                Register scratch5, Label* missing,
+                                Match match) {
+  // Inline implementation of |lookup| for mozilla::detail::HashTable
+
+  // Compute the primary hash address:
+  // HashNumber h1 = hash1(aKeyHash);
+  Register hash1 = scratch5;
+  computeHash1MFBT<Table>(hashTable, hashCode, hash1, scratch);
+
+  Label primaryCollision;
+  checkForMatchMFBT<Table>(hashTable, hash1, hashCode, scratch, scratch2,
+                           missing, &primaryCollision);
+  match();
+  bind(&primaryCollision);
+
+  // Otherwise, we've had a collision. Double-hash.
+  Register hash2 = scratch4;
+  Register sizeMask = scratch3;
+  computeHash2MFBT<Table>(hashTable, hashCode, hash2, sizeMask, scratch);
+
+  Label loop;
+  bind(&loop);
+
+  applyDoubleHashMFBT(hash1, hash2, sizeMask);
+  checkForMatchMFBT<Table>(hashTable, hash1, hashCode, scratch, scratch2,
+                           missing, &loop);
+  match();
+  jump(&loop);
+}
+
 void MacroAssembler::assertStackAlignment(uint32_t alignment,
                                           int32_t offset /* = 0 */) {
 #ifdef DEBUG

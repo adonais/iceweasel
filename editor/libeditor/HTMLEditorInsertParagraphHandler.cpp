@@ -1146,7 +1146,7 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInHeadingElement(
   MOZ_ASSERT(rightHeadingElement,
              "SplitNodeResult::GetNextContent() should return something if "
              "DidSplit() returns true");
-  return InsertParagraphResult(rightHeadingElement,
+  return InsertParagraphResult(*rightHeadingElement,
                                splitHeadingResult.UnwrapCaretPoint());
 }
 
@@ -1877,7 +1877,7 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInListItemElement(
         return moveListItemElementResult.propagateErr();
       }
       moveListItemElementResult.inspect().IgnoreCaretPointSuggestion();
-      return InsertParagraphResult(&aListItemElement,
+      return InsertParagraphResult(aListItemElement,
                                    EditorDOMPoint(&aListItemElement, 0u));
     }
 
@@ -1906,7 +1906,7 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInListItemElement(
     EditorDOMPoint pointToPutCaret(
         createNewParagraphElementResult.inspect().GetNewNode(), 0u);
     return InsertParagraphResult(
-        createNewParagraphElementResult.inspect().GetNewNode(),
+        *createNewParagraphElementResult.inspect().GetNewNode(),
         std::move(pointToPutCaret));
   }
 
@@ -1979,7 +1979,7 @@ HTMLEditor::AutoInsertParagraphHandler::HandleInListItemElement(
   }
   auto* const rightListItemElement =
       splitListItemElement.GetNextContentAs<Element>();
-  return InsertParagraphResult(rightListItemElement,
+  return InsertParagraphResult(*rightListItemElement,
                                std::move(pointToPutCaret));
 }
 

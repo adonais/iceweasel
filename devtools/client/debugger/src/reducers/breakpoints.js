@@ -4,6 +4,7 @@
 
 /**
  * Breakpoints reducer
+ *
  * @module reducers/breakpoints
  */
 

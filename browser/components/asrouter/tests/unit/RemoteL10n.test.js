@@ -84,7 +84,6 @@ describe("RemoteL10n", () => {
         "browser/profiles.ftl",
         "browser/termsofuse.ftl",
         "toolkit/branding/brandings.ftl",
-        "preview/termsOfUse.ftl",
       ]);
       assert.isFalse(args[1]);
       assert.calledOnce(l10nRegInstance.hasSource);
@@ -108,7 +107,6 @@ describe("RemoteL10n", () => {
         "browser/profiles.ftl",
         "browser/termsofuse.ftl",
         "toolkit/branding/brandings.ftl",
-        "preview/termsOfUse.ftl",
       ]);
       assert.isFalse(args[1]);
       assert.calledOnce(l10nRegInstance.hasSource);

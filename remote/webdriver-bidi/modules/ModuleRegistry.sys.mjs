@@ -41,6 +41,8 @@ ChromeUtils.defineESModuleGetters(modules.root, {
 ChromeUtils.defineESModuleGetters(modules["windowglobal-in-root"], {
   browsingContext:
     "chrome://remote/content/webdriver-bidi/modules/windowglobal-in-root/browsingContext.sys.mjs",
+  input:
+    "chrome://remote/content/webdriver-bidi/modules/windowglobal-in-root/input.sys.mjs",
   log: "chrome://remote/content/webdriver-bidi/modules/windowglobal-in-root/log.sys.mjs",
   network:
     "chrome://remote/content/webdriver-bidi/modules/windowglobal-in-root/network.sys.mjs",

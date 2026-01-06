@@ -42,6 +42,7 @@ export class PasswordRulesManagerParent extends JSWindowActorParent {
 
   /**
    * Generates a password based on rules from the origin parameters.
+   *
    * @param {nsIURI} uri
    * @return {string} password
    * @memberof PasswordRulesManagerParent

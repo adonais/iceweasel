@@ -57,6 +57,7 @@ export const logNameTable = {
   "TGPcmOWcHauI9h6KPd6uj6tEozd7X5uUw/uhnPzBviY=": "Cloudflare 'Nimbus2027'",
   "VCIlmPM9NkgFQtrs4Oa5TeFcDu6MWRTKSNdePEhOgD8=": "Mozilla Test RSA Log 1",
   "VmzVo3a+g9/jQrZ1xJwjJJinabrDgsurSaOHfZqzLQE=": "Sectigo 'Sabre2026h1'",
+  "VzRIzG4dLA3JS2nyh9Hv5IPHolxQxTILuzrep29usEE=": "TrustAsia Luoshu2027",
   "W/beU/H7+sSaGFl0aUWhpqconV5wpg9IRQ5Ya7mucrg=": "Let's Encrypt 'Sycamore2025h2d'",
   "WW5sM4aUsllyolbIoOjdkEp26Ag92oc7AQg4KBQ87lk=": "Geomys 'Tuscolo2027h1'",
   "XKV30pt/i69Bntjsq/tty67DhTcC1XRvF02tPJNKqWo=": "Sectigo 'Tiger2025h2'",

@@ -87,6 +87,20 @@ class nsSplittableFrame : public nsIFrame {
   // frame's Destroy() method.
   static void RemoveFromFlow(nsIFrame* aFrame);
 
+  /**
+   * A version of GetLogicalSkipSides() that is intended to be used inside
+   * Reflow before it's known if |this| frame will be COMPLETE or not.
+   * It returns a result that assumes this fragment is the last and thus
+   * should apply the block-end border/padding etc (except for "true" overflow
+   * containers which always skip block sides).  You're then expected to
+   * recalculate the block-end side (as needed) when you know |this| frame's
+   * reflow status is INCOMPLETE.
+   * This method is intended for frames that break in the block axis.
+   */
+  LogicalSides PreReflowBlockLevelLogicalSkipSides() const {
+    return GetBlockLevelLogicalSkipSides(false);
+  };
+
  protected:
   nsSplittableFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                     ClassID aID)
@@ -143,20 +157,6 @@ class nsSplittableFrame : public nsIFrame {
   }
 
   LogicalSides GetBlockLevelLogicalSkipSides(bool aAfterReflow) const;
-
-  /**
-   * A version of GetLogicalSkipSides() that is intended to be used inside
-   * Reflow before it's known if |this| frame will be COMPLETE or not.
-   * It returns a result that assumes this fragment is the last and thus
-   * should apply the block-end border/padding etc (except for "true" overflow
-   * containers which always skip block sides).  You're then expected to
-   * recalculate the block-end side (as needed) when you know |this| frame's
-   * reflow status is INCOMPLETE.
-   * This method is intended for frames that break in the block axis.
-   */
-  LogicalSides PreReflowBlockLevelLogicalSkipSides() const {
-    return GetBlockLevelLogicalSkipSides(false);
-  };
 
   nsIFrame* mPrevContinuation = nullptr;
   nsIFrame* mNextContinuation = nullptr;

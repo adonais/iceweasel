@@ -4,6 +4,7 @@
 
 /**
  * Ast reducer
+ *
  * @module reducers/ast
  */
 

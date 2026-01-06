@@ -140,24 +140,24 @@
   border-collapse: collapse;
 }
 .asrouter-admin table.errorReporting tr {
-  border: 1px solid var(--in-content-box-border-color);
+  border: 1px solid var(--border-color);
 }
 .asrouter-admin table.errorReporting td {
   padding: 4px;
 }
 .asrouter-admin table.errorReporting td[rowspan] {
-  border: 1px solid var(--in-content-box-border-color);
+  border: 1px solid var(--border-color);
 }
 .asrouter-admin table.bordered-table {
   min-width: 100%;
 }
 .asrouter-admin table.bordered-table tr:first-child td {
-  border-top: 1px solid var(--in-content-box-border-color);
+  border-top: 1px solid var(--border-color);
 }
 .asrouter-admin table.bordered-table td {
   vertical-align: top;
   padding: 8px;
-  border-bottom: 1px solid var(--in-content-box-border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 .asrouter-admin table.bordered-table td.no-wrap {
   white-space: nowrap;
@@ -166,10 +166,10 @@
   width: 0;
 }
 .asrouter-admin table.bordered-table td:first-child {
-  border-inline-start: 1px solid var(--in-content-box-border-color);
+  border-inline-start: 1px solid var(--border-color);
 }
 .asrouter-admin table.bordered-table td:last-child {
-  border-inline-end: 1px solid var(--in-content-box-border-color);
+  border-inline-end: 1px solid var(--border-color);
 }
 .asrouter-admin table input[type=checkbox], .asrouter-admin table input[type=radio] {
   margin: 0;
@@ -311,7 +311,7 @@
 }
 .asrouter-admin textarea[readonly] {
   color: var(--text-color-deemphasized);
-  border-color: var(--in-content-border-color);
+  border-color: var(--border-color);
 }
 .asrouter-admin .monospace {
   font-family: "SF Mono", "Monaco", "Inconsolata", "Fira Code", "Fira Mono", "Droid Sans Mono", "Source Code Pro", monospace;
@@ -340,7 +340,7 @@
   display: flex;
   flex-flow: column nowrap;
   padding: 8px;
-  border: 1px solid var(--in-content-box-border-color);
+  border: 1px solid var(--border-color);
   border-radius: 5px;
 }
 .asrouter-admin .impressions-section .impressions-item .impressions-inner-box {

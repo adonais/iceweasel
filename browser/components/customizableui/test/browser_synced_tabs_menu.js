@@ -57,12 +57,27 @@ let mockedInternal = {
 
 add_setup(async function () {
   const getSignedInUser = FxAccounts.config.getSignedInUser;
+
   FxAccounts.config.getSignedInUser = async () =>
     Promise.resolve({ uid: "uid", email: "foo@bar.com" });
+
   Services.prefs.setCharPref(
     "identity.fxaccounts.remote.root",
     "https://example.com/"
   );
+
+  // Mock the global fxAccounts object used by gSync
+  const origWindowFxAccounts = window.fxAccounts;
+  window.fxAccounts = {
+    getSignedInUser: async () => ({ uid: "uid", email: "foo@bar.com" }),
+    hasLocalSession: async () => true,
+    keys: {
+      canGetKeyForScope: async () => true,
+    },
+    device: {
+      recentDeviceList: null,
+    },
+  };
 
   let oldInternal = SyncedTabs._internal;
   SyncedTabs._internal = mockedInternal;
@@ -78,6 +93,7 @@ add_setup(async function () {
     FxAccounts.config.getSignedInUser = getSignedInUser;
     Services.prefs.clearUserPref("identity.fxaccounts.remote.root");
     UIState._internal.notifyStateUpdated = origNotifyStateUpdated;
+    window.fxAccounts = origWindowFxAccounts;
     SyncedTabs._internal = oldInternal;
   });
 });

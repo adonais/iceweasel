@@ -6,8 +6,6 @@
 
 #include "WorkerThread.h"
 
-#include <utility>
-
 #include "WorkerPrivate.h"
 #include "WorkerRunnable.h"
 #include "mozilla/Assertions.h"

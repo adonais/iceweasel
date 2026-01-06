@@ -146,7 +146,6 @@ void nsRubyTextContainerFrame::Reflow(nsPresContext* aPresContext,
       // Relative positioning hasn't happened yet.
       // So MovePositionBy should not be used here.
       child->SetPosition(rtcWM, pos, containerSize);
-      nsContainerFrame::PlaceFrameView(child);
     }
     aDesiredSize.SetSize(rtcWM, size);
   } else {

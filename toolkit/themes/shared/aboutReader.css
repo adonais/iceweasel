@@ -908,7 +908,7 @@ div[name="customtheme"] {
   }
 
   .contrast-button:before {
-    background-color: #000000;
+    background-color: black;
   }
 
   .gray-button:before {

@@ -233,10 +233,11 @@ class HTMLEditUtils final {
   [[nodiscard]] static bool IsDisplayInsideFlowRoot(const Element& aElement);
 
   /**
-   * Return true if aElement is a flex item or a grid item.  This works only
-   * when aElement has a primary frame.
+   * Return true if aContent is a flex item or a grid item.  Note that if
+   * aContent is the `Text` node in the following case, this returns `true`.
+   * <div style="display:flex"><span style="display:contents">text</span></div>
    */
-  [[nodiscard]] static bool IsFlexOrGridItem(const Element& aElement);
+  [[nodiscard]] static bool IsFlexOrGridItem(const nsIContent& aContent);
 
   /**
    * IsRemovableInlineStyleElement() returns true if aElement is an inline
@@ -2741,6 +2742,15 @@ class HTMLEditUtils final {
       const Element& aElement, const EditorDOMPointTypeInput& aCurrentPoint);
 
   /**
+   * Return a line break if aPoint is after a line break which is immediately
+   * before a block boundary.
+   */
+  template <typename EditorLineBreakType, typename EditorDOMPointType>
+  static Maybe<EditorLineBreakType>
+  GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem(
+      const EditorDOMPointType& aPoint, const Element& aEditingHost);
+
+  /**
    * Content-based query returns true if
    * <mHTMLProperty mAttribute=mAttributeValue> effects aContent.  If there is
    * such a element, but another element whose attribute value does not match
@@ -3214,6 +3224,15 @@ class HTMLEditUtils final {
    */
   static Element* GetElementOfImmediateBlockBoundary(
       const nsIContent& aContent, const WalkTreeDirection aDirection);
+
+  /**
+   * Return true if parent element is a grid or flex container.
+   * Note that even if the parent is a grid/flex container, the
+   * <display-outside> of aMaybeFlexOrGridItemContent may be "inline" if the
+   * parent is also a grid/flex item but has `display:contents`.
+   */
+  [[nodiscard]] static bool ParentElementIsGridOrFlexContainer(
+      const nsIContent& aMaybeFlexOrGridItemContent);
 };
 
 /**

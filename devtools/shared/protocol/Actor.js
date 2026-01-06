@@ -101,6 +101,7 @@ class Actor extends Pool {
 
   /**
    * Override this method in subclasses to serialize the actor.
+   *
    * @returns A jsonable object.
    */
   form() {
@@ -153,9 +154,10 @@ class Actor extends Pool {
   /**
    * Throw an error with the passed message and attach an `error` property to the Error
    * object so it can be consumed by the writeError function.
-   * @param {String} error: A string (usually a single word serving as an id) that will
+   *
+   * @param {string} error: A string (usually a single word serving as an id) that will
    *                        be assign to error.error.
-   * @param {String} message: The string that will be passed to the Error constructor.
+   * @param {string} message: The string that will be passed to the Error constructor.
    * @throws This always throw.
    */
   throwError(error, message) {
@@ -172,10 +174,10 @@ exports.Actor = Actor;
  * When a RDP packet is received for calling an actor method, this lookup for
  * the method name in this object and call the function holded on this attribute.
  *
- * @params {Object} actorSpec
+ * @params {object} actorSpec
  *         The procotol-js actor specific coming from devtools/shared/specs/*.js files
  *         This describes the types for methods and events implemented by all actors.
- * @return {Object} requestTypes
+ * @return {object} requestTypes
  *         An object where attributes are actor method names
  *         and values are function implementing these methods.
  *         These methods receive a RDP Packet (JSON-serializable object) and a DevToolsServerConnection.

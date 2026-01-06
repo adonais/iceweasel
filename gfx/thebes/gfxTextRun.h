@@ -552,6 +552,7 @@ class gfxTextRun : public gfxShapedText {
       case Script::KATAKANA_OR_HIRAGANA:
       case Script::SIMPLIFIED_HAN:
       case Script::TRADITIONAL_HAN:
+      case Script::TRADITIONAL_HAN_WITH_LATIN:
       case Script::JAPANESE:
       case Script::KOREAN:
       case Script::HAN_WITH_BOPOMOFO:

@@ -65,7 +65,7 @@ importReusableComponents();
  *  Storybook uses this internally to render stories. We call `story` in our
  *  render function so that the story contents have the same shadow root as
  *  `with-common-styles` and styles from `in-content/common` get applied.
- * @property {Object} context
+ * @property {object} context
  *  Another Storybook provided property containing additional data stories use
  *  to render. If we don't make this a reactive property Lit seems to optimize
  *  away any re-rendering of components inside `with-common-styles`.

@@ -930,6 +930,7 @@ export class AsyncTabSwitcher {
   /**
    * Check if the browser should be deactivated. If the browser is a print preview or
    * split view or PiP browser then we won't deactivate it.
+   *
    * @param browser The browser to check if it should be deactivated
    * @returns false if a print preview or PiP browser else true
    */

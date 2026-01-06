@@ -208,6 +208,32 @@ add_task(async function test_paste_after_opening_autocomplete_panel() {
   }
 });
 
+add_task(async function test_paste_onto_urlbar_on_website() {
+  // Deliberately use a page that is not about:blank to ensure that
+  // we correctly handle pasting while on a real webpage. We also use
+  // mochi.test to avoid any interfering with tests that use example.com.
+  let loaded = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    "http://mochi.test:8888/"
+  );
+  BrowserTestUtils.startLoadingURIString(
+    gBrowser.selectedBrowser,
+    "http://mochi.test:8888/"
+  );
+  await loaded;
+
+  for (const { input, expected } of TEST_DATA) {
+    gURLBar.handleRevert();
+    gURLBar.select();
+
+    await paste(input);
+    await assertResult(expected);
+
+    await UrlbarTestUtils.promisePopupClose(window);
+  }
+});
+
 async function assertResult(expected) {
   Assert.equal(gURLBar.value, expected.urlbar, "Pasted value is correct");
   Assert.ok(gURLBar.valueIsTyped, "Pasted value counts as typed.");
@@ -224,6 +250,11 @@ async function assertResult(expected) {
     Assert.ok(
       BrowserTestUtils.isVisible(gURLBar.goButton),
       "Go button should be visible"
+    );
+    Assert.equal(
+      gURLBar.getAttribute("pageproxystate"),
+      "invalid",
+      "Pageproxystate is invalid"
     );
   } else {
     Assert.ok(

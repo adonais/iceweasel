@@ -192,7 +192,7 @@ body:not(:fullscreen) #controls:hover .control-button:disabled {
   width: max-content;
   position: relative;
   padding: 0.4em 0.5em;
-  background: #000000;
+  background: black;
   color: #ffffff;
   border-radius: var(--border-radius-small);
   pointer-events: none;
@@ -348,7 +348,7 @@ body:not(:fullscreen) #controls:hover #timestamp {
 
   &::-moz-range-thumb {
     border-radius: var(--border-radius-medium);
-    background-color: #ffffff;
+    background-color: white;
     width: 8px;
     height: 8px;
     padding: 0;
@@ -359,7 +359,7 @@ body:not(:fullscreen) #controls:hover #timestamp {
   }
 
   &::-moz-range-progress {
-    background-color: #ffffff;
+    background-color: white;
   }
 
   &,
@@ -621,7 +621,7 @@ input:checked + .slider::before {
   }
 
   &::-moz-range-progress {
-    background-color: #ffffff;
+    background-color: white;
   }
 
   &,

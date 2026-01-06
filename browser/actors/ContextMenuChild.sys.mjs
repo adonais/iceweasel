@@ -268,15 +268,6 @@ export class ContextMenuChild extends JSWindowActorChild {
       }
 
       case "ContextMenu:GetTextDirective": {
-        if (
-          !Services.prefs.getBoolPref("dom.text_fragments.enabled", false) ||
-          !Services.prefs.getBoolPref(
-            "dom.text_fragments.create_text_fragment.enabled",
-            false
-          )
-        ) {
-          return null;
-        }
         const sel = this.contentWindow.getSelection();
         const ranges = !sel.isCollapsed
           ? Array.from({ length: sel.rangeCount }, (_, i) => sel.getRangeAt(i))
@@ -311,9 +302,10 @@ export class ContextMenuChild extends JSWindowActorChild {
    * Returns the event target of the context menu, using a locally stored
    * reference if possible. If not, and aMessage.objects is defined,
    * aMessage.objects[aKey] is returned. Otherwise null.
-   * @param  {Object} aMessage Message with a objects property
-   * @param  {String} aKey     Key for the target on aMessage.objects
-   * @return {Object}          Context menu target
+   *
+   * @param  {object} aMessage Message with a objects property
+   * @param  {string} aKey     Key for the target on aMessage.objects
+   * @return {object}          Context menu target
    */
   getTarget(aMessage, aKey = "target") {
     return this.target || (aMessage.objects && aMessage.objects[aKey]);

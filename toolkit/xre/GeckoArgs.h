@@ -10,7 +10,6 @@
 #include "mozilla/UniquePtrExtensions.h"
 #include "mozilla/ipc/SharedMemoryHandle.h"
 
-#include <array>
 #include <cctype>
 #include <charconv>
 #include <climits>

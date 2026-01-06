@@ -1,55 +1,23 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 10 Oct 2024 13:42:00 +0000
-Subject: Bug 1921707 - add filtering for new build directory location in
- third_party/libwebrtc/webrtc.gni r=ng,webrtc-reviewers
+Date: Tue, 15 Oct 2024 16:46:00 -0500
+Subject: Bug 1924098 - (fix-e432503389) upstream changed signature of
+ LibvpxVp9Encoder::InitAndSetControlSettings
 
-Differential Revision: https://phabricator.services.mozilla.com/D224545
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/f18c05287ce831369f44715a4174facff4f12652
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/fadad7695efe0d9cc6b999a613b9e1f536e660bd
 ---
- webrtc.gni | 14 ++++++++++++--
- 1 file changed, 12 insertions(+), 2 deletions(-)
+ modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/webrtc.gni b/webrtc.gni
-index 7759842c6f..86e324ffae 100644
---- a/webrtc.gni
-+++ b/webrtc.gni
-@@ -545,7 +545,7 @@ template("rtc_test") {
-       min_sdk_version = 21
-       target_sdk_version = 24
-       deps += [
--        "//build/android/gtest_apk:native_test_instrumentation_test_runner_java",
-+        "//chromium/build/android/gtest_apk:native_test_instrumentation_test_runner_java",
-         webrtc_root + "sdk/android:native_test_jni_onload",
-         webrtc_root + "sdk/android:base_java",
-         webrtc_root + "test:native_test_java",
-@@ -1000,11 +1000,21 @@ template("rtc_library") {
-       modified_deps = []
-       foreach (dep, deps) {
-         newdep = string_replace(dep, "//third_party/", "//libwebrtc/third_party/")
-+        newdep = string_replace(newdep, "//build", "//chromium/build")
-         modified_deps += [ newdep ]
-       }
-       deps = []
-       deps = modified_deps
-     }
-+    if (build_with_mozilla && defined(data_deps)) {
-+      modified_deps = []
-+      foreach (dep, data_deps) {
-+        newdep = string_replace(dep, "//build/", "//chromium/build/")
-+        modified_deps += [ newdep ]
-+      }
-+      data_deps = []
-+      data_deps = modified_deps
-+    }
-   }
- }
- 
-@@ -1042,7 +1052,7 @@ template("rtc_executable") {
-     if (is_win) {
-       deps += [
-         # Give executables the default manifest on Windows (a no-op elsewhere).
--        "//build/win:default_exe_manifest",
-+        "//chromium/build/win:default_exe_manifest",
-       ]
-     }
- 
+diff --git a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
+index 9b6336a327..dc09fb42f0 100644
+--- a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
++++ b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
+@@ -1338,7 +1338,7 @@ int LibvpxVp9Encoder::UpdateCodecFrameSize(
+   // bugs in trying to do it the "right" way, we basically re-do
+   // the initialization.
+   vpx_codec_destroy(encoder_); // clean up old state
+-  int result = InitAndSetControlSettings(&codec_);
++  int result = InitAndSetControlSettings();
+   if (result == WEBRTC_VIDEO_CODEC_OK) {
+     // TODO: Mozilla rates have become much more complicated, we need to store
+     // more state or find another way of doing this.

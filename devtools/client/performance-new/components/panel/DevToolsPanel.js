@@ -9,12 +9,12 @@
  */
 
 /**
- * @typedef {Object} StateProps
+ * @typedef {object} StateProps
  * @property {boolean?} isSupportedPlatform
  */
 
 /**
- * @typedef {Object} OwnProps
+ * @typedef {object} OwnProps
  * @property {import("../../@types/perf").PerfFront} perfFront
  * @property {import("../../@types/perf").OnProfileReceived} onProfileReceived
  * @property {() => void} onEditSettingsLinkClicked

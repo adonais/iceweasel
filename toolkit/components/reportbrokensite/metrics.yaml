@@ -796,6 +796,21 @@ webcompatreporting:
           * `hamburgerMenu`
           * `ETPShieldIconMenu`
         type: string
+  previewed:
+    type: event
+    description: |
+      The user clicked the report preview button.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1992050
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D267154
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - twisniewski@mozilla.com
+      - android-probes@mozilla.com
+      - webcompat-reporting-tool-telemetry@mozilla.com
+    expires: never
   reason_dropdown:
     type: event
     description: >

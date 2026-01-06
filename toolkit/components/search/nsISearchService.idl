@@ -440,13 +440,6 @@ interface nsISearchService : nsISupports
   Promise getAppProvidedEngines();
 
   /**
-   * Returns an array of search engines installed by a given extension.
-   *
-   * @returns an array of nsISearchEngine objects.
-   */
-  Promise getEnginesByExtensionID(in AString extensionID);
-
-  /**
    * Returns an engine definition if it's search url matches the host provided.
    *
    * @param   host
@@ -497,7 +490,9 @@ interface nsISearchService : nsISupports
    * @param  engine
    *         The engine to remove.
    */
-  Promise removeEngine(in nsISearchEngine engine);
+  Promise removeEngine(
+    in nsISearchEngine engine,
+    [optional] in unsigned short changeReason);
 
   /**
    * Notify nsSearchService that an extension has been removed. Removes any
@@ -602,14 +597,4 @@ interface nsISearchService : nsISupports
    *        "https://www.google.com/search?q=terms".
    */
   nsISearchParseSubmissionResult parseSubmissionURL(in AString url);
-
-  /**
-   * Returns a list of alternate domains for a given search engine domain.
-   *
-   * @param domain
-   *        The domain of the search engine.
-   * @returns {Array}
-   *          An array which contains all alternate domains.
-   */
-  Array<ACString> getAlternateDomains(in ACString domain);
 };

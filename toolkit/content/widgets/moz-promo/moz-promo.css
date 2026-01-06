@@ -61,6 +61,7 @@
   gap: var(--space-xsmall);
   min-height: 56px;
   align-items: center;
+  overflow: hidden;
 }
 
 .text-container {
@@ -74,7 +75,7 @@
 .image-container {
   background-image: var(--promo-image-url);
   background-size: cover;
-  background-position: center;
+  background-position: var(--promo-image-position, center);
   background-repeat: no-repeat;
   flex-basis: 25%;
   align-self: stretch;

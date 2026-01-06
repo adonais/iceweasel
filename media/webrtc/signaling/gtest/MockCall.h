@@ -309,18 +309,17 @@ class MockCall : public webrtc::Call {
     mEncoderInfo = aInfo;
   }
 
-  void EnableSendCongestionControlFeedbackAccordingToRfc8888() override {}
-  int FeedbackAccordingToRfc8888Count() override { return 0; }
-  int FeedbackAccordingToTransportCcCount() override { return 0; }
+  void SetPreferredRtcpCcAckType(
+      webrtc::RtcpFeedbackType preferred_rtcp_cc_ack_type) override {}
+  std::optional<int> FeedbackAccordingToRfc8888Count() override { return 0; }
+  std::optional<int> FeedbackAccordingToTransportCcCount() override {
+    return 0;
+  }
 
   std::vector<webrtc::VideoStream> CreateEncoderStreams(int width, int height) {
     mVideoSendEncoderConfig->video_stream_factory->SetEncoderInfo(mEncoderInfo);
     return mVideoSendEncoderConfig->video_stream_factory->CreateEncoderStreams(
         mUnusedConfig, width, height, *mVideoSendEncoderConfig);
-  }
-
-  virtual const webrtc::FieldTrialsView& trials() const override {
-    return mUnusedConfig;
   }
 
   virtual webrtc::TaskQueueBase* network_thread() const override {

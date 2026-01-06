@@ -49,7 +49,7 @@ export var DelayedInit = {
 
 // Maximum duration for each idling period. Pending inits are run until this
 // duration is exceeded; then we wait for next idling period.
-const MAX_IDLE_RUN_MS = 50;
+const MAX_IDLE_RUN_MS = 5;
 
 var Impl = {
   pendingInits: [],

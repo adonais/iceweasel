@@ -138,6 +138,24 @@ def get_test_run_build_metrics(objdir):
         return None
 
 
+def assert_success(returncode, output):
+    """Assert that a command succeeded, showing output on failure."""
+    if returncode != 0:
+        output_lines = output if isinstance(output, list) else output.splitlines()
+
+        if os.environ.get("MOZ_AUTOMATION"):
+            final_output = "\n".join(output_lines)
+        else:
+            tail_lines = (
+                output_lines[-100:] if len(output_lines) > 100 else output_lines
+            )
+            final_output = (
+                f"Last {len(tail_lines)} of {len(output_lines)} lines of output:\n\n"
+                + "\n".join(tail_lines)
+            )
+        pytest.fail(f"Command failed with return code: {returncode}\n{final_output}")
+
+
 def assert_all_task_statuses(objdir, acceptable_statuses, always_executed_tasks=None):
     """Asserts that all tasks in build metrics have acceptable statuses."""
 
@@ -210,9 +228,7 @@ def assert_ordered_task_outcomes(objdir, ordered_expected_task_statuses):
 
 
 def test_artifact_build(objdir, mozconfig, run_mach):
-    (returncode, output) = run_mach(["build"])
-    assert returncode == 0
-
+    assert_success(*run_mach(["build"]))
     # Order matters, since `mach build stage-package` depends on the
     # outputs of `mach build faster`.
     assert_ordered_task_outcomes(
@@ -223,10 +239,7 @@ def test_artifact_build(objdir, mozconfig, run_mach):
     assert len(omnijar_hash_to) == 1
     (omnijar_hash_orig,) = omnijar_hash_to.values()
 
-    (returncode, output) = run_mach(["gradle", "geckoview_example:assembleDebug"])
-
-    assert returncode == 0
-
+    assert_success(*run_mach(["gradle", "geckoview_example:assembleDebug"]))
     # Order matters, since `mach build stage-package` depends on the
     # outputs of `mach build faster`.
     assert_ordered_task_outcomes(
@@ -246,62 +259,40 @@ def test_minify_fenix_incremental_build(objdir, mozconfig, run_mach):
     """
 
     # Ensure a clean state
-    (returncode, output) = run_mach(["gradle", ":fenix:cleanMinifyFenixReleaseWithR8"])
-    assert returncode == 0
-
-    (returncode, output) = run_mach(["gradle", ":fenix:minifyFenixReleaseWithR8"])
-    assert returncode == 0
-
+    assert_success(*run_mach(["gradle", ":fenix:cleanMinifyFenixReleaseWithR8"]))
+    assert_success(*run_mach(["gradle", ":fenix:minifyFenixReleaseWithR8"]))
     assert_ordered_task_outcomes(
         objdir, [(":fenix:minifyFenixReleaseWithR8", "EXECUTED")]
     )
 
-    (returncode, output) = run_mach(["gradle", ":fenix:minifyFenixReleaseWithR8"])
-    assert returncode == 0
-
+    assert_success(*run_mach(["gradle", ":fenix:minifyFenixReleaseWithR8"]))
     assert_ordered_task_outcomes(
         objdir, [(":fenix:minifyFenixReleaseWithR8", "UP-TO-DATE")]
     )
 
 
 def test_geckoview_build(objdir, mozconfig, run_mach):
-    (returncode, output) = run_mach(["build"])
-    assert returncode == 0
-
-    (returncode, output) = run_mach(["gradle", "geckoview:clean"])
-    assert returncode == 0
-
-    (returncode, output) = run_mach(["gradle", "geckoview:assembleDebug"])
-    assert returncode == 0
-
+    assert_success(*run_mach(["build"]))
+    assert_success(*run_mach(["gradle", "geckoview:clean"]))
+    assert_success(*run_mach(["gradle", "geckoview:assembleDebug"]))
     assert_all_task_statuses(objdir, ["EXECUTED", "UP-TO-DATE", "SKIPPED"])
 
-    (returncode, output) = run_mach(["gradle", "geckoview:assembleDebug"])
-    assert returncode == 0
-
+    assert_success(*run_mach(["gradle", "geckoview:assembleDebug"]))
     assert_all_task_statuses(objdir, ["UP-TO-DATE", "SKIPPED"])
 
 
 def test_fenix_build(objdir, mozconfig, run_mach):
-    (returncode, output) = run_mach(["build"])
-    assert returncode == 0
-
-    (returncode, output) = run_mach(
-        ["gradle", "fenix:clean", ":components:support-base:clean"]
+    assert_success(*run_mach(["build"]))
+    assert_success(
+        *run_mach(["gradle", "fenix:clean", ":components:support-base:clean"])
     )
-    assert returncode == 0
-
-    (returncode, output) = run_mach(["gradle", "fenix:assembleDebug"])
-    assert returncode == 0
-
+    assert_success(*run_mach(["gradle", "fenix:assembleDebug"]))
     assert_ordered_task_outcomes(
         objdir, [(":components:support-base:generateComponentEnum", "EXECUTED")]
     )
     assert_all_task_statuses(objdir, ["EXECUTED", "UP-TO-DATE", "SKIPPED"])
 
-    (returncode, output) = run_mach(["gradle", "fenix:assembleDebug"])
-    assert returncode == 0
-
+    assert_success(*run_mach(["gradle", "fenix:assembleDebug"]))
     assert_ordered_task_outcomes(
         objdir, [(":components:support-base:generateComponentEnum", "UP-TO-DATE")]
     )
@@ -309,27 +300,35 @@ def test_fenix_build(objdir, mozconfig, run_mach):
 
 
 def test_focus_build(objdir, mozconfig, run_mach):
-    (returncode, output) = run_mach(["build"])
-    assert returncode == 0
-
-    (returncode, output) = run_mach(["gradle", "focus:clean"])
-    assert returncode == 0
-
-    (returncode, output) = run_mach(["gradle", "focus:assembleDebug"])
-    assert returncode == 0
-
+    assert_success(*run_mach(["build"]))
+    assert_success(*run_mach(["gradle", "focus:clean"]))
+    assert_success(*run_mach(["gradle", "focus:assembleDebug"]))
     assert_ordered_task_outcomes(
         objdir, [(":focus-android:generateLocaleList", "EXECUTED")]
     )
     assert_all_task_statuses(objdir, ["EXECUTED", "UP-TO-DATE", "SKIPPED"])
 
-    (returncode, output) = run_mach(["gradle", "focus:assembleDebug"])
-    assert returncode == 0
-
+    assert_success(*run_mach(["gradle", "focus:assembleDebug"]))
     assert_ordered_task_outcomes(
         objdir, [(":focus-android:generateLocaleList", "UP-TO-DATE")]
     )
     assert_all_task_statuses(objdir, ["UP-TO-DATE", "SKIPPED"])
+
+
+def test_android_export(objdir, mozconfig, run_mach):
+    # To ensure a consistent state, we delete the marker file
+    # to force the :verifyGleanVersion task to re-run.
+    marker_file = objdir / "gradle" / "build" / "glean" / "verifyGleanVersion.marker"
+    marker_file.unlink(missing_ok=True)
+
+    bindings_dir = Path(topsrcdir) / "widget" / "android" / "bindings"
+    inputs = list(bindings_dir.glob("*-classes.txt"))
+
+    assert_success(*run_mach(["android", "export"] + [str(f) for f in inputs]))
+    assert_ordered_task_outcomes(objdir, [(":verifyGleanVersion", "EXECUTED")])
+
+    assert_success(*run_mach(["android", "export"] + [str(f) for f in inputs]))
+    assert_ordered_task_outcomes(objdir, [(":verifyGleanVersion", "UP-TO-DATE")])
 
 
 if __name__ == "__main__":

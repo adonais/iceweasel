@@ -7,6 +7,8 @@
 with Files('**'):
     BUG_COMPONENT = ('Core', 'Machine Learning')
 
+AllowCompilerWarnings()
+
 include('sources.mozbuild')
 
 SOURCES += files["COMMON_SOURCES"]

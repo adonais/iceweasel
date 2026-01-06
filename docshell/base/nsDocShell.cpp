@@ -16,6 +16,7 @@
 #  include <unistd.h>  // for getpid()
 #endif
 
+#include "nsDeviceContext.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/BasePrincipal.h"
@@ -231,8 +232,6 @@
 #include "nsSubDocumentFrame.h"
 #include "nsURILoader.h"
 #include "nsURLHelper.h"
-#include "nsView.h"
-#include "nsViewManager.h"
 #include "nsViewSourceHandler.h"
 #include "nsWebBrowserFind.h"
 #include "nsWhitespaceTokenizer.h"
@@ -3523,6 +3522,7 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
   } else if (NS_ERROR_PHISHING_URI == aError ||
              NS_ERROR_MALWARE_URI == aError ||
              NS_ERROR_UNWANTED_URI == aError ||
+             NS_ERROR_HARMFULADDON_URI == aError ||
              NS_ERROR_HARMFUL_URI == aError) {
     nsAutoCString host;
     aURI->GetHost(host);
@@ -3545,6 +3545,8 @@ nsDocShell::DisplayLoadError(nsresult aError, nsIURI* aURI,
       error = "unwantedBlocked";
     } else if (NS_ERROR_HARMFUL_URI == aError) {
       error = "harmfulBlocked";
+    } else if (NS_ERROR_HARMFULADDON_URI == aError) {
+      error = "addonBlocked";
     }
 
     cssClass.AssignLiteral("blacklist");
@@ -3884,6 +3886,18 @@ nsresult nsDocShell::LoadErrorPage(nsIURI* aURI, const char16_t* aURL,
 
   errorPageUrl.AppendLiteral("&d=");
   errorPageUrl.AppendASCII(escapedDescription.get());
+
+  nsCOMPtr<nsIWritablePropertyBag2> props(do_QueryInterface(aFailedChannel));
+  if (props) {
+    nsAutoCString addonName;
+    props->GetPropertyAsACString(u"blockedExtension"_ns, addonName);
+
+    nsCString escapedAddonName;
+    SAFE_ESCAPE(escapedAddonName, addonName, url_Path);
+
+    errorPageUrl.AppendLiteral("&a=");
+    errorPageUrl.AppendASCII(escapedAddonName.get());
+  }
 
   nsCOMPtr<nsIURI> errorPageURI;
   nsresult rv = NS_NewURI(getter_AddRefs(errorPageURI), errorPageUrl);
@@ -4988,8 +5002,7 @@ nsresult nsDocShell::SetCurScrollPosEx(int32_t aCurHorizontalPos,
   ScrollContainerFrame* sf = GetRootScrollContainerFrame();
   NS_ENSURE_TRUE(sf, NS_ERROR_FAILURE);
 
-  ScrollMode scrollMode =
-      sf->IsSmoothScroll() ? ScrollMode::SmoothMsd : ScrollMode::Instant;
+  ScrollMode scrollMode = sf->ScrollModeForScrollBehavior();
 
   nsPoint targetPos(aCurHorizontalPos, aCurVerticalPos);
   sf->ScrollTo(targetPos, scrollMode);
@@ -5019,17 +5032,15 @@ nsresult nsDocShell::SetCurScrollPosEx(int32_t aCurHorizontalPos,
   return NS_OK;
 }
 
-void nsDocShell::RestoreScrollPosFromActiveSHE() {
+void nsDocShell::RestoreScrollPositionFromTargetSessionHistoryInfo(
+    SessionHistoryInfo* aTarget) {
+  MOZ_DIAGNOSTIC_ASSERT(mozilla::SessionHistoryInParent());
   nscoord bx = 0;
   nscoord by = 0;
-  if ((mozilla::SessionHistoryInParent() ? !!mActiveEntry : !!mOSHE)) {
-    if (mozilla::SessionHistoryInParent()) {
-      mActiveEntry->GetScrollPosition(&bx, &by);
-    } else {
-      mOSHE->GetScrollPosition(&bx, &by);
-    }
-    SetCurScrollPosEx(bx, by);
+  if (aTarget) {
+    aTarget->GetScrollPosition(&bx, &by);
   }
+  SetCurScrollPosEx(bx, by);
 }
 
 void nsDocShell::SetScrollbarPreference(mozilla::ScrollbarPreference aPref) {
@@ -6297,6 +6308,7 @@ nsresult nsDocShell::FilterStatusForErrorPage(
        aStatus == NS_ERROR_PROXY_AUTHENTICATION_FAILED ||
        aStatus == NS_ERROR_PROXY_TOO_MANY_REQUESTS ||
        aStatus == NS_ERROR_MALFORMED_URI ||
+       aStatus == NS_ERROR_HARMFULADDON_URI ||
        aStatus == NS_ERROR_BLOCKED_BY_POLICY ||
        aStatus == NS_ERROR_DOM_COOP_FAILED ||
        aStatus == NS_ERROR_DOM_COEP_FAILED ||
@@ -7468,10 +7480,7 @@ nsresult nsDocShell::RestoreFromHistory() {
 
   // In cases where we use a transient about:blank viewer between loads,
   // we never show the transient viewer, so _its_ previous viewer is never
-  // unhooked from the view hierarchy.  Destroy any such previous viewer now,
-  // before we grab the root view sibling, so that we don't grab a view
-  // that's about to go away.
-
+  // destroyed.  Destroy any such previous viewer now.
   if (mDocumentViewer) {
     // Make sure to hold a strong ref to previousViewer here while we
     // drop the reference to it from mDocumentViewer.
@@ -7483,38 +7492,12 @@ nsresult nsDocShell::RestoreFromHistory() {
     }
   }
 
-  // Save off the root view's parent and sibling so that we can insert the
-  // new content viewer's root view at the same position.  Also save the
-  // bounds of the root view's widget.
-
-  nsView* rootViewSibling = nullptr;
-  nsView* rootViewParent = nullptr;
+  // Save the bounds of the root view's widget.
   LayoutDeviceIntRect newBounds(0, 0, 0, 0);
 
   PresShell* oldPresShell = GetPresShell();
   if (oldPresShell) {
-    nsViewManager* vm = oldPresShell->GetViewManager();
-    if (vm) {
-      nsView* oldRootView = vm->GetRootView();
-
-      if (oldRootView) {
-        rootViewSibling = oldRootView->GetNextSibling();
-        rootViewParent = oldRootView->GetParent();
-
-        mDocumentViewer->GetBounds(newBounds);
-      }
-    }
-  }
-
-  nsCOMPtr<nsIContent> container;
-  RefPtr<Document> sibling;
-  if (rootViewParent && rootViewParent->GetParent()) {
-    nsIFrame* frame = rootViewParent->GetParent()->GetFrame();
-    container = frame ? frame->GetContent() : nullptr;
-  }
-  if (rootViewSibling) {
-    nsIFrame* frame = rootViewSibling->GetFrame();
-    sibling = frame ? frame->PresShell()->GetDocument() : nullptr;
+    mDocumentViewer->GetBounds(newBounds);
   }
 
   // Transfer ownership to mDocumentViewer.  By ensuring that either the
@@ -7714,42 +7697,6 @@ nsresult nsDocShell::RestoreFromHistory() {
     pc->RecomputeBrowsingContextDependentData();
   }
 
-  nsViewManager* newVM = presShell ? presShell->GetViewManager() : nullptr;
-  nsView* newRootView = newVM ? newVM->GetRootView() : nullptr;
-
-  // Insert the new root view at the correct location in the view tree.
-  if (container) {
-    nsSubDocumentFrame* subDocFrame =
-        do_QueryFrame(container->GetPrimaryFrame());
-    rootViewParent = subDocFrame ? subDocFrame->EnsureInnerView() : nullptr;
-  } else {
-    rootViewParent = nullptr;
-  }
-  if (sibling && sibling->GetPresShell() &&
-      sibling->GetPresShell()->GetViewManager()) {
-    rootViewSibling = sibling->GetPresShell()->GetViewManager()->GetRootView();
-  } else {
-    rootViewSibling = nullptr;
-  }
-  if (rootViewParent && newRootView &&
-      newRootView->GetParent() != rootViewParent) {
-    nsViewManager* parentVM = rootViewParent->GetViewManager();
-    if (parentVM) {
-      // InsertChild(parent, child, sib, true) inserts the child after
-      // sib in content order, which is before sib in view order. BUT
-      // when sib is null it inserts at the end of the the document
-      // order, i.e., first in view order.  But when oldRootSibling is
-      // null, the old root as at the end of the view list --- last in
-      // content order --- and we want to call InsertChild(parent, child,
-      // nullptr, false) in that case.
-      parentVM->InsertChild(rootViewParent, newRootView, rootViewSibling,
-                            rootViewSibling ? true : false);
-
-      NS_ASSERTION(newRootView->GetNextSibling() == rootViewSibling,
-                   "error in InsertChild");
-    }
-  }
-
   nsCOMPtr<nsPIDOMWindowInner> privWinInner = privWin->GetCurrentInnerWindow();
 
   // If parent is suspended, increase suspension count.
@@ -7786,16 +7733,7 @@ nsresult nsDocShell::RestoreFromHistory() {
   // presentation.  If this is not the same size we showed it at last time,
   // then we need to resize the widget.
 
-  // XXXbryner   This interacts poorly with Firefox's infobar.  If the old
-  // presentation had the infobar visible, then we will resize the new
-  // presentation to that smaller size.  However, firing the locationchanged
-  // event will hide the infobar, which will immediately resize the window
-  // back to the larger size.  A future optimization might be to restore
-  // the presentation at the "wrong" size, then fire the locationchanged
-  // event and check whether the docshell's new size is the same as the
-  // cached viewer size (skipping the resize if they are equal).
-
-  if (newRootView) {
+  if (presShell) {
     if (!newBounds.IsEmpty() &&
         !newBounds.ToUnknownRect().IsEqualEdges(oldBounds)) {
       MOZ_LOG(gPageCacheLog, LogLevel::Debug,
@@ -7807,11 +7745,6 @@ nsresult nsDocShell::RestoreFromHistory() {
       sf->PostScrolledAreaEventForCurrentArea();
     }
   }
-
-  // The FinishRestore call below can kill these, null them out so we don't
-  // have invalid pointer lying around.
-  newRootView = rootViewSibling = rootViewParent = nullptr;
-  newVM = nullptr;
 
   // If the IsUnderHiddenEmbedderElement() state has been changed, we need to
   // update it.
@@ -7911,6 +7844,30 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
   bool errorOnLocationChangeNeeded = false;
   nsCOMPtr<nsIChannel> failedChannel = mFailedChannel;
   nsCOMPtr<nsIURI> failedURI;
+
+  // https://html.spec.whatwg.org/#finalize-a-cross-document-navigation
+  // 9. If entryToReplace is null, then: ...
+  //    Otherwise: ...
+  //      4. If historyEntry's document state's origin is same origin with
+  //         entryToReplace's document state's origin, then set
+  //         historyEntry's navigation API key to entryToReplace's
+  //         navigation API key.
+  bool isReplace =
+      mActiveEntry && mLoadingEntry && IsValidLoadType(mLoadType) &&
+      NavigationUtils::NavigationTypeFromLoadType(mLoadType)
+          .map([](auto type) { return type == NavigationType::Replace; })
+          .valueOr(false);
+  if (isReplace) {
+    nsCOMPtr<nsIURI> uri = mActiveEntry->GetURIOrInheritedForAboutBlank();
+    nsCOMPtr<nsIURI> targetURI =
+        mLoadingEntry->mInfo.GetURIOrInheritedForAboutBlank();
+    bool sameOrigin =
+        NS_SUCCEEDED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
+            targetURI, uri, false, false));
+    if (sameOrigin) {
+      mLoadingEntry->mInfo.NavigationKey() = mActiveEntry->NavigationKey();
+    }
+  }
 
   if (mLoadType == LOAD_ERROR_PAGE) {
     // We need to set the SH entry and our current URI here and not
@@ -9330,10 +9287,31 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   nsCOMPtr<nsPIDOMWindowInner> win =
       scriptGlobal ? scriptGlobal->GetCurrentInnerWindow() : nullptr;
 
+  // https://html.spec.whatwg.org/#scroll-to-fragid
+  // 14. Update document for history step application given navigable's
+  //     active document, historyEntry, true, scriptHistoryIndex,
+  //     scriptHistoryLength, and historyHandling.
+  if (RefPtr navigation = win ? win->Navigation() : nullptr) {
+    MOZ_LOG(gNavigationAPILog, LogLevel::Debug,
+            ("nsDocShell %p triggering a navigation event from "
+             "HandleSameDocumentNavigation",
+             this));
+    // https://html.spec.whatwg.org/#update-document-for-history-step-application
+    // 6.4.2. Update the navigation API entries for a same-document
+    //        navigation given navigation, entry, and navigationType.
+    navigation->UpdateEntriesForSameDocumentNavigation(
+        mActiveEntry.get(),
+        NavigationUtils::NavigationTypeFromLoadType(mLoadType).valueOr(
+            NavigationType::Push));
+  }
+
   // The check for uninvoked directives must come before ScrollToAnchor() is
   // called.
   const bool hasTextDirectives =
       doc->FragmentDirective()->HasUninvokedDirectives();
+
+  // https://html.spec.whatwg.org/#scroll-to-fragid
+  // 15. Scroll to the fragment given navigable's active document.
 
   // ScrollToAnchor doesn't necessarily cause us to scroll the window;
   // the function decides whether a scroll is appropriate based on the
@@ -9368,19 +9346,6 @@ nsresult nsDocShell::HandleSameDocumentNavigation(
   // destroy the docshell, nulling out mScriptGlobal. Hold a stack
   // reference to avoid null derefs. See bug 914521.
   if (win) {
-    if (RefPtr navigation = win->Navigation()) {
-      MOZ_LOG(gNavigationAPILog, LogLevel::Debug,
-              ("nsDocShell %p triggering a navigation event from "
-               "HandleSameDocumentNavigation",
-               this));
-      // Corresponds to step 6.4.2 from the Updating the document algorithm:
-      // https://html.spec.whatwg.org/multipage/browsing-the-web.html#updating-the-document
-      navigation->UpdateEntriesForSameDocumentNavigation(
-          mActiveEntry.get(),
-          NavigationUtils::NavigationTypeFromLoadType(mLoadType).valueOr(
-              NavigationType::Push));
-    }
-
     // Fire a hashchange event URIs differ, and only in their hashes.
     // If the fragment contains a directive, compare hasRef.
     bool doHashchange = aState.mSameExceptHashes &&
@@ -9504,8 +9469,15 @@ static void MaybeConvertToReplaceLoad(nsDocShellLoadState* aLoadState,
                                                            *aExtantDocument))
                     ? "needs completely loaded document"
                     : "navigation must be a replace");
-    aLoadState->SetLoadType(MaybeAddLoadFlags(
-        aLoadState->LoadType(), nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY));
+    // There is no replace variant for LOAD_LINK, so we convert it to
+    // LOAD_NORMAL_REPLACE just like in nsDocShell::OnNewURI.
+    if (aLoadState->LoadType() == LOAD_LINK) {
+      aLoadState->SetLoadType(LOAD_NORMAL_REPLACE);
+    } else {
+      aLoadState->SetLoadType(
+          MaybeAddLoadFlags(aLoadState->LoadType(),
+                            nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY));
+    }
     aLoadState->SetHistoryBehavior(NavigationHistoryBehavior::Replace);
   } else {
     aLoadState->SetHistoryBehavior(NavigationHistoryBehavior::Push);
@@ -12621,7 +12593,7 @@ void nsDocShell::MaybeFireTraverseHistory(nsDocShellLoadState* aLoadState) {
                                     ->mInfo.GetURIOrInheritedForAboutBlank();
   if (NS_FAILED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
           activeURI, loadingURI,
-          /*reportError=*/true,
+          /*reportError=*/false,
           /*fromPrivateWindow=*/false))) {
     return;
   }
@@ -13428,6 +13400,7 @@ class OnLinkClickEvent : public Runnable {
     // concerned. (Bug 1930445)
     AutoJSAPI jsapi;
     if (jsapi.Init(mContent->OwnerDoc()->GetScopeObject())) {
+      mLoadState->SetSourceElement(mContent->AsElement());
       mHandler->OnLinkClickSync(mContent, mLoadState, mNoOpenerImplied,
                                 mTriggeringPrincipal);
     }
@@ -13778,7 +13751,6 @@ nsresult nsDocShell::OnLinkClickSync(nsIContent* aContent,
   aLoadState->SetInternalLoadFlags(flags);
   aLoadState->SetLoadType(loadType);
   aLoadState->SetSourceBrowsingContext(mBrowsingContext);
-  aLoadState->SetSourceElement(aContent->AsElement());
 
   nsresult rv = InternalLoad(aLoadState);
 
@@ -13810,8 +13782,21 @@ nsresult nsDocShell::OnOverLink(nsIContent* aContent, nsIURI* aURI,
 
   NS_ConvertUTF8toUTF16 uStr(spec);
 
-  PredictorPredict(aURI, mCurrentURI, nsINetworkPredictor::PREDICT_LINK,
-                   aContent->NodePrincipal()->OriginAttributesRef(), nullptr);
+  // The speculative connect used to go through the predictor, but we don't
+  // need all that just to initiate a speculative connect.
+  if ((StaticPrefs::network_predictor_enable_hover_on_ssl() &&
+       mCurrentURI->SchemeIs("https")) ||
+      mCurrentURI->SchemeIs("http")) {
+    if (nsCOMPtr<nsISpeculativeConnect> specService =
+            mozilla::components::IO::Service()) {
+      // This would be a navigation, so if this is cross origin the speculative
+      // connection needs to have the origin of the URL not the current page.
+      nsCOMPtr<nsIPrincipal> principal = BasePrincipal::CreateContentPrincipal(
+          aURI, aContent->NodePrincipal()->OriginAttributesRef());
+
+      specService->SpeculativeConnect(aURI, principal, nullptr, false);
+    }
+  }
 
   rv = browserChrome->SetLinkStatus(uStr);
   return rv;

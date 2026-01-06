@@ -148,10 +148,6 @@
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread.h"
 
-// TODO: bugs.webrtc.org/42220069 - Remove this include when users of this
-// function include "create_modular_peer_connection_factory.h" instead.
-#include "api/create_modular_peer_connection_factory_internal.h"  // IWYU pragma: keep
-
 namespace webrtc {
 // IWYU pragma: begin_keep
 // MediaFactory class definition is not part of the api.
@@ -660,16 +656,7 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
 
     // Defines advanced optional cryptographic settings related to SRTP and
     // frame encryption for native WebRTC.
-    std::optional<CryptoOptions> crypto_options;
-
-    // TODO: bugs.webrtc.org/42235111 - remove after converting callers that
-    // expect an optional.
-    CryptoOptions& GetWritableCryptoOptions() {
-      if (!crypto_options) {
-        crypto_options = CryptoOptions();
-      }
-      return *crypto_options;
-    }
+    CryptoOptions crypto_options;
 
     // Configure if we should include the SDP attribute extmap-allow-mixed in
     // our offer on session level.
@@ -1147,8 +1134,7 @@ class RTC_EXPORT PeerConnectionInterface : public RefCountInterface {
   // TODO(bugs.webrtc.org/8395): Use IceCandidate instead of
   // Candidate, which would avoid the transport_name oddity.
   [[deprecated("Use IceCandidate version")]]
-  virtual bool RemoveIceCandidates(
-      const std::vector<Candidate>& candidates) = 0;
+  virtual bool RemoveIceCandidates(const std::vector<Candidate>& candidates);
 
   // SetBitrate limits the bandwidth allocated for all RTP streams sent by
   // this PeerConnection. Other limitations might affect these limits and
@@ -1330,10 +1316,22 @@ class PeerConnectionObserver {
                                    const std::string& /* error_text */) {}
 
   // Ice candidates have been removed.
-  // TODO(honghaiz): Make this a pure virtual method when all its subclasses
-  // implement it.
+  [[deprecated("Implement OnIceCandidateRemoved")]]
   virtual void OnIceCandidatesRemoved(
       const std::vector<Candidate>& /* candidates */) {}
+
+  // Fired when an IceCandidate has been removed.
+  // TODO(tommi): Make pure virtual when `OnIceCandidatesRemoved` can be
+  // removed.
+  virtual void OnIceCandidateRemoved(const IceCandidate* candidate) {
+    // Backwards compatibility stub implementation while downstream code is
+    // migrated over to `OnIceCandidateRemoved` and away from
+    // `OnIceCandidatesRemoved`.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    OnIceCandidatesRemoved({candidate->candidate()});
+#pragma clang diagnostic pop
+  }
 
   // Called when the ICE connection receiving status changes.
   virtual void OnIceConnectionReceivingChange(bool /* receiving */) {}

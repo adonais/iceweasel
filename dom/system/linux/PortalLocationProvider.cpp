@@ -16,6 +16,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/XREAppData.h"
 #include "mozilla/dom/GeolocationPositionErrorBinding.h"
+#include "nsAppShell.h"
 #include "prtime.h"
 
 extern const mozilla::XREAppData* gAppData;
@@ -197,6 +198,7 @@ PortalLocationProvider::Startup() {
 
   // Create dbus proxy for the Location portal
   GUniquePtr<GError> error;
+  nsAppShell::DBusConnectionCheck();
   mDBUSLocationProxy = dont_AddRef(g_dbus_proxy_new_for_bus_sync(
       G_BUS_TYPE_SESSION, G_DBUS_PROXY_FLAGS_NONE,
       nullptr, /* GDBusInterfaceInfo */
@@ -320,6 +322,7 @@ PortalLocationProvider::Shutdown() {
   }
   mLastGeoPositionCoords = nullptr;
   if (mDBUSLocationProxy) {
+    nsAppShell::DBusConnectionCheck();
     g_signal_handler_disconnect(mDBUSLocationProxy, mDBUSSignalHandler);
     LOG_PORTAL("calling Close method to the session interface...\n");
     RefPtr<GDBusMessage> message = dont_AddRef(g_dbus_message_new_method_call(

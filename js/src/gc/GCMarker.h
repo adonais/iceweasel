@@ -71,21 +71,22 @@ class EphemeronEdge {
   uintptr_t taggedTarget;
 
  public:
-  EphemeronEdge(MarkColor color, Cell* cell)
+  EphemeronEdge(MarkColor color, TenuredCell* cell)
       : taggedTarget(uintptr_t(cell) | uintptr_t(color)) {
     MOZ_ASSERT((uintptr_t(cell) & ColorMask) == 0);
   }
 
   MarkColor color() const { return MarkColor(taggedTarget & ColorMask); }
-  Cell* target() const {
-    return reinterpret_cast<Cell*>(taggedTarget & ~ColorMask);
+  TenuredCell* target() const {
+    return reinterpret_cast<TenuredCell*>(taggedTarget & ~ColorMask);
   }
 };
 
 using EphemeronEdgeVector = Vector<EphemeronEdge, 2, js::SystemAllocPolicy>;
 
-using EphemeronEdgeTable = HashMap<Cell*, EphemeronEdgeVector,
-                                   PointerHasher<Cell*>, js::SystemAllocPolicy>;
+using EphemeronEdgeTable =
+    HashMap<TenuredCell*, EphemeronEdgeVector, PointerHasher<TenuredCell*>,
+            js::SystemAllocPolicy>;
 
 /*
  * The mark stack. Pointers in this stack are "gray" in the GC sense, but

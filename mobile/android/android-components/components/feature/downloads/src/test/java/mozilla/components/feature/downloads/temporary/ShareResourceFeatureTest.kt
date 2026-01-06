@@ -20,7 +20,6 @@ import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.Response
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
@@ -104,7 +103,7 @@ class ShareResourceFeatureTest {
         val action = ShareResourceAction.AddShareAction("123", download)
         shareFeature.start()
 
-        store.dispatch(action).joinBlocking()
+        store.dispatch(action)
         dispatcher.scheduler.advanceUntilIdle()
 
         verify(shareFeature).startSharing(download)

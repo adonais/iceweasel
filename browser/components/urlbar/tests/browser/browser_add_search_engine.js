@@ -29,7 +29,10 @@ add_task(async function context_none() {
 add_task(async function context_one() {
   info("Checks the context menu with a page that offers one engine.");
   let url = getRootDirectory(gTestPath) + "add_search_engine_one.html";
-  await BrowserTestUtils.withNewTab(url, async () => {
+  await BrowserTestUtils.withNewTab(url, async browser => {
+    info("Waiting for favicon to load");
+    await BrowserTestUtils.waitForCondition(() => !!browser.mIconURL);
+
     await UrlbarTestUtils.withContextMenu(window, async popup => {
       info("The separator and the add engine item should be present.");
       let elt = popup.parentNode.getMenuItem("add-engine-separator");
@@ -170,7 +173,10 @@ add_task(async function context_two() {
 add_task(async function context_many() {
   info("Checks the context menu with a page that offers many engines.");
   let url = getRootDirectory(gTestPath) + "add_search_engine_many.html";
-  await BrowserTestUtils.withNewTab(url, async () => {
+  await BrowserTestUtils.withNewTab(url, async browser => {
+    info("Waiting for favicon to load");
+    await BrowserTestUtils.waitForCondition(() => !!browser.mIconURL);
+
     await UrlbarTestUtils.withContextMenu(window, async popup => {
       info("The separator and the add engine menu should be present.");
       let separator = popup.parentNode.getMenuItem("add-engine-separator");
@@ -295,7 +301,7 @@ add_task(async function context_after_customize() {
     // menu. Otherwise the reframing might hide the context menu (this is a
     // long-standing XUL issue).
     await TestUtils.waitForCondition(() => {
-      return window.gURLBar.textbox.hasAttribute("breakout");
+      return window.gURLBar.hasAttribute("breakout");
     });
 
     await UrlbarTestUtils.withContextMenu(window, async popup => {

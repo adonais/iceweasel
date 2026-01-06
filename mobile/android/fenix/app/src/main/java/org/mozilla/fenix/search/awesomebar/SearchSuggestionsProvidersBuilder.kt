@@ -151,7 +151,7 @@ class SearchSuggestionsProvidersBuilder(
         searchSuggestionProviderMap = HashMap()
     }
 
-    @Suppress("ComplexMethod", "LongMethod")
+    @Suppress("CognitiveComplexMethod", "LongMethod", "CyclomaticComplexMethod")
     internal fun getProvidersToAdd(
         state: SearchProviderState,
     ): Set<AwesomeBar.SuggestionProvider> {

@@ -2646,6 +2646,8 @@ public class GeckoViewActivity extends AppCompatActivity
           return "ERROR_SAFEBROWSING_UNWANTED_URI";
         case WebRequestError.ERROR_SAFEBROWSING_HARMFUL_URI:
           return "ERROR_SAFEBROWSING_HARMFUL_URI";
+        case WebRequestError.ERROR_HARMFULADDON_URI:
+          return "ERROR_HARMFULADDON_URI";
         case WebRequestError.ERROR_CONTENT_CRASHED:
           return "ERROR_CONTENT_CRASHED";
         case WebRequestError.ERROR_OFFLINE:

@@ -326,3 +326,86 @@ testRule({
     },
   ],
 });
+
+testRule({
+  plugins: [plugin],
+  ruleName,
+  config: true,
+  fix: true,
+  reject: [
+    {
+      code: ".bg { background-color: #fff; }",
+      fixed: ".bg { background-color: white; }",
+      message: messages.rejected("#fff"),
+      description: "#fff should be fixed to white.",
+    },
+    {
+      code: ".bg { background-color: #ffffff; }",
+      fixed: ".bg { background-color: white; }",
+      message: messages.rejected("#ffffff"),
+      description: "#ffffff should be fixed to white.",
+    },
+    {
+      code: ".bg { background-color: #FFF; }",
+      fixed: ".bg { background-color: white; }",
+      message: messages.rejected("#FFF"),
+      description: "#FFF should be fixed to white.",
+    },
+    {
+      code: ".bg { background-color: #FFFFFF; }",
+      fixed: ".bg { background-color: white; }",
+      message: messages.rejected("#FFFFFF"),
+      description: "#FFFFFF should be fixed to white.",
+    },
+    {
+      code: ".bg { background-color: #000; }",
+      fixed: ".bg { background-color: black; }",
+      message: messages.rejected("#000"),
+      description: "#000 should be fixed to black.",
+    },
+    {
+      code: ".bg { background-color: #000000; }",
+      fixed: ".bg { background-color: black; }",
+      message: messages.rejected("#000000"),
+      description: "#000000 should be fixed to black.",
+    },
+    {
+      code: ".bg { background: #fff; }",
+      fixed: ".bg { background: white; }",
+      message: messages.rejected("#fff"),
+      description: "#fff should be fixed to white in background shorthand.",
+    },
+    {
+      code: ".bg { background: #ffffff; }",
+      fixed: ".bg { background: white; }",
+      message: messages.rejected("#ffffff"),
+      description: "#ffffff should be fixed to white in background shorthand.",
+    },
+    {
+      code: ".bg { background: #000; }",
+      fixed: ".bg { background: black; }",
+      message: messages.rejected("#000"),
+      description: "#000 should be fixed to black in background shorthand.",
+    },
+    {
+      code: ".bg { background: #000000; }",
+      fixed: ".bg { background: black; }",
+      message: messages.rejected("#000000"),
+      description: "#000000 should be fixed to black in background shorthand.",
+    },
+    {
+      code: ".bg { background: url('image.png') #fff; }",
+      fixed: ".bg { background: url('image.png') white; }",
+      message: messages.rejected("url('image.png') #fff"),
+      description:
+        "#fff should be fixed to white in background shorthand with other properties.",
+    },
+    {
+      code: ".bg { background: url('image.png') #000 repeat-y; }",
+      fixed: ".bg { background: url('image.png') black repeat-y; }",
+      message: messages.rejected("url('image.png') #000 repeat-y"),
+      description:
+        "#000 should be fixed to black in background shorthand with other properties.",
+    },
+  ],
+});

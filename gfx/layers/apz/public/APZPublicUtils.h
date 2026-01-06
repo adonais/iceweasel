@@ -11,7 +11,6 @@
 // of gfx/layers. For internal utilities, prefer APZUtils.h.
 
 #include <stdint.h>
-#include <utility>
 #include "ScrollAnimationBezierPhysics.h"
 #include "Units.h"
 #include "mozilla/DefineEnum.h"

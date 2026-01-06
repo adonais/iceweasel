@@ -684,6 +684,7 @@ const { TranslationsDocument, LRUCache } = ChromeUtils.importESModule(
  * @param {object} [options] - Optional configuration.
  * @param {string} [options.sourceLanguage="en"] - Source language code (default: "en").
  * @param {string} [options.targetLanguage="en"] - Target language code (default: "en").
+ * @param {DOMParserSupportedType} [options.parserType="text/html"] - Parser type for the source content.
  * @param {(message: string) => Promise<string>} [options.mockedTranslatorPort] - Optional mock translation function.
  * @param {() => void} [options.mockedReportVisibleChange] - Optional callback for visibility reporting.
  * @returns {Promise<void>} Resolves when the document translation is complete.
@@ -693,6 +694,7 @@ async function createTranslationsDoc(
   {
     sourceLanguage = "en",
     targetLanguage = "es",
+    parserType = "text/html",
     mockedTranslatorPort,
     mockedReportVisibleChange,
   } = {}
@@ -706,12 +708,14 @@ async function createTranslationsDoc(
   });
 
   const parser = new DOMParser();
-  const document = parser.parseFromString(html, "text/html");
+  const document = parser.parseFromString(html, parserType);
 
   // For some reason, the document <body> here from the DOMParser is "display: flex" by
   // default. Ensure that it is "display: block" instead, otherwise the children of the
   // <body> will not be "display: inline".
-  document.body.style.display = "block";
+  if (document.body) {
+    document.body.style.display = "block";
+  }
 
   let translationsDoc = null;
 
@@ -823,6 +827,12 @@ async function createTranslationsDoc(
 
     let didSimulateIntersectionObservation = false;
 
+    const getHTMLSource = () => {
+      return (
+        sourceDoc.body?.innerHTML ?? sourceDoc.documentElement?.outerHTML ?? ""
+      );
+    };
+
     try {
       await waitForCondition(async () => {
         await waitForCondition(
@@ -860,7 +870,7 @@ async function createTranslationsDoc(
           () => !translationsDoc.hasPendingCallbackOnEventLoop()
         );
 
-        const actualHtml = naivelyPrettify(sourceDoc.body.innerHTML);
+        const actualHtml = naivelyPrettify(getHTMLSource());
         const htmlMatches = expected.test(actualHtml);
 
         if (!htmlMatches && !didSimulateIntersectionObservation) {
@@ -893,7 +903,7 @@ async function createTranslationsDoc(
       console.error(error);
 
       // Provide a nice error message.
-      const actual = naivelyPrettify(sourceDoc.body.innerHTML);
+      const actual = naivelyPrettify(getHTMLSource());
       ok(
         false,
         `${message}\n\nExpected HTML:\n\n${

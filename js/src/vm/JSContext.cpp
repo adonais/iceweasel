@@ -20,7 +20,6 @@
 #ifdef ANDROID
 #  include <android/log.h>
 #  include <fstream>
-#  include <string>
 #endif  // ANDROID
 #ifdef XP_WIN
 #  include <processthreadsapi.h>
@@ -783,9 +782,15 @@ JSObject* InternalJobQueue::copyJobs(JSContext* cx) {
     auto& queues = cx->microTaskQueues;
     auto addToArray = [&](auto& queue) -> bool {
       for (const auto& e : queue) {
-        if (JS::GetExecutionGlobalFromJSMicroTask(e)) {
+        JS::JSMicroTask* task = JS::ToUnwrappedJSMicroTask(e);
+        if (task) {
           // All any test cares about is the global of the job so let's do it.
-          RootedObject global(cx, JS::GetExecutionGlobalFromJSMicroTask(e));
+          RootedObject global(cx, JS::GetExecutionGlobalFromJSMicroTask(task));
+          if (!global) {
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                      JSMSG_DEAD_OBJECT);
+            return false;
+          }
           if (!cx->compartment()->wrap(cx, &global)) {
             return false;
           }
@@ -825,11 +830,6 @@ JS_PUBLIC_API JSObject* js::GetJobsInInternalJobQueue(JSContext* cx) {
   return cx->internalJobQueue->copyJobs(cx);
 }
 #endif
-
-JS_PUBLIC_API bool js::EnqueueJob(JSContext* cx, JS::HandleObject job) {
-  MOZ_ASSERT(cx->jobQueue);
-  return cx->jobQueue->enqueuePromiseJob(cx, nullptr, job, nullptr, nullptr);
-}
 
 JS_PUBLIC_API void js::StopDrainingJobQueue(JSContext* cx) {
   MOZ_ASSERT(cx->internalJobQueue.ref());
@@ -890,7 +890,8 @@ void InternalJobQueue::runJobs(JSContext* cx) {
 
     if (JS::Prefs::use_js_microtask_queue()) {
       // Execute jobs in a loop until we've reached the end of the queue.
-      JS::Rooted<JS::MicroTask> job(cx);
+      JS::Rooted<JS::JSMicroTask*> job(cx);
+      JS::Rooted<JS::GenericMicroTask> dequeueJob(cx);
       while (JS::HasAnyMicroTasks(cx)) {
         MOZ_ASSERT(queue.empty());
         // A previous job might have set this flag. E.g., the js shell
@@ -901,8 +902,10 @@ void InternalJobQueue::runJobs(JSContext* cx) {
 
         cx->runtime()->offThreadPromiseState.ref().internalDrain(cx);
 
-        job = JS::DequeueNextMicroTask(cx);
-        MOZ_ASSERT(!job.isNull());
+        dequeueJob = JS::DequeueNextMicroTask(cx);
+        MOZ_ASSERT(!dequeueJob.isNull());
+        job = JS::ToMaybeWrappedJSMicroTask(dequeueJob);
+        MOZ_ASSERT(job);
 
         // If the next job is the last job in the job queue, allow
         // skipping the standard job queuing behavior.
@@ -910,7 +913,9 @@ void InternalJobQueue::runJobs(JSContext* cx) {
           JS::JobQueueIsEmpty(cx);
         }
 
-        MOZ_ASSERT(JS::GetExecutionGlobalFromJSMicroTask(job) != nullptr);
+        if (!JS::GetExecutionGlobalFromJSMicroTask(job)) {
+          continue;
+        }
         AutoRealm ar(cx, JS::GetExecutionGlobalFromJSMicroTask(job));
         {
           if (!JS::RunJSMicroTask(cx, job)) {
@@ -1055,7 +1060,20 @@ js::UniquePtr<JS::JobQueue::SavedJobQueue> InternalJobQueue::saveJobQueue(
   return saved;
 }
 
-JS::MicroTask js::MicroTaskQueueSet::popDebugFront() {
+void js::MicroTaskQueueElement::trace(JSTracer* trc) {
+  // For non-objects (like Private values), call the JobQueue hook
+  JSContext* cx = trc->runtime()->mainContextFromOwnThread();
+  MOZ_ASSERT(cx);
+  auto* queue = cx->jobQueue.ref();
+
+  if (!queue || value.isGCThing()) {
+    TraceRoot(trc, &value, "microtask-queue-entry");
+  } else {
+    queue->traceNonGCThingMicroTask(trc, &value);
+  }
+}
+
+JS::GenericMicroTask js::MicroTaskQueueSet::popDebugFront() {
   JS_LOG(mtq, Info, "JS Drain Queue: popDebugFront");
   if (!debugMicroTaskQueue.empty()) {
     JS::Value p = debugMicroTaskQueue.front();
@@ -1065,7 +1083,7 @@ JS::MicroTask js::MicroTaskQueueSet::popDebugFront() {
   return JS::NullValue();
 }
 
-JS::MicroTask js::MicroTaskQueueSet::popFront() {
+JS::GenericMicroTask js::MicroTaskQueueSet::popFront() {
   JS_LOG(mtq, Info, "JS Drain Queue");
   if (!debugMicroTaskQueue.empty()) {
     JS::Value p = debugMicroTaskQueue.front();
@@ -1082,49 +1100,52 @@ JS::MicroTask js::MicroTaskQueueSet::popFront() {
 }
 
 bool js::MicroTaskQueueSet::enqueueRegularMicroTask(
-    JSContext* cx, const JS::MicroTask& entry) {
+    JSContext* cx, const JS::GenericMicroTask& entry) {
   JS_LOG(mtq, Verbose, "JS: Enqueue Regular MT");
   JS::JobQueueMayNotBeEmpty(cx);
   return microTaskQueue.pushBack(entry);
 }
 
 bool js::MicroTaskQueueSet::prependRegularMicroTask(
-    JSContext* cx, const JS::MicroTask& entry) {
+    JSContext* cx, const JS::GenericMicroTask& entry) {
   JS_LOG(mtq, Verbose, "JS: Prepend Regular MT");
   JS::JobQueueMayNotBeEmpty(cx);
   return microTaskQueue.emplaceFront(entry);
 }
 
-bool js::MicroTaskQueueSet::enqueueDebugMicroTask(JSContext* cx,
-                                                  const JS::MicroTask& entry) {
+bool js::MicroTaskQueueSet::enqueueDebugMicroTask(
+    JSContext* cx, const JS::GenericMicroTask& entry) {
   JS_LOG(mtq, Verbose, "JS: Enqueue Debug MT");
   return debugMicroTaskQueue.pushBack(entry);
 }
 
-JS_PUBLIC_API bool JS::EnqueueMicroTask(JSContext* cx, const MicroTask& entry) {
+JS_PUBLIC_API bool JS::EnqueueMicroTask(JSContext* cx,
+                                        const JS::GenericMicroTask& entry) {
   JS_LOG(mtq, Info, "Enqueue of non JS MT");
 
   return cx->microTaskQueues->enqueueRegularMicroTask(cx, entry);
 }
 
-JS_PUBLIC_API bool JS::EnqueueDebugMicroTask(JSContext* cx,
-                                             const MicroTask& entry) {
+JS_PUBLIC_API bool JS::EnqueueDebugMicroTask(
+    JSContext* cx, const JS::GenericMicroTask& entry) {
   JS_LOG(mtq, Info, "Enqueue of non JS MT");
 
   return cx->microTaskQueues->enqueueDebugMicroTask(cx, entry);
 }
 
-JS_PUBLIC_API bool JS::PrependMicroTask(JSContext* cx, const MicroTask& entry) {
+JS_PUBLIC_API bool JS::PrependMicroTask(JSContext* cx,
+                                        const JS::GenericMicroTask& entry) {
   JS_LOG(mtq, Info, "Prepend job to MTQ");
 
   return cx->microTaskQueues->prependRegularMicroTask(cx, entry);
 }
 
-JS_PUBLIC_API JS::MicroTask JS::DequeueNextMicroTask(JSContext* cx) {
+JS_PUBLIC_API JS::GenericMicroTask JS::DequeueNextMicroTask(JSContext* cx) {
   return cx->microTaskQueues->popFront();
 }
 
-JS_PUBLIC_API JS::MicroTask JS::DequeueNextDebuggerMicroTask(JSContext* cx) {
+JS_PUBLIC_API JS::GenericMicroTask JS::DequeueNextDebuggerMicroTask(
+    JSContext* cx) {
   return cx->microTaskQueues->popDebugFront();
 }
 
@@ -1140,7 +1161,7 @@ JS_PUBLIC_API bool JS::HasDebuggerMicroTasks(JSContext* cx) {
 struct SavedMicroTaskQueueImpl : public JS::SavedMicroTaskQueue {
   explicit SavedMicroTaskQueueImpl(JSContext* cx) : savedQueues(cx) {
     savedQueues = js::MakeUnique<js::MicroTaskQueueSet>(cx);
-    std::swap(cx->microTaskQueues, savedQueues.get());
+    std::swap(cx->microTaskQueues.get(), savedQueues.get());
   }
   ~SavedMicroTaskQueueImpl() override = default;
   JS::PersistentRooted<js::UniquePtr<js::MicroTaskQueueSet>> savedQueues;
@@ -1163,7 +1184,7 @@ JS_PUBLIC_API void JS::RestoreMicroTaskQueue(
   // There's only one impl, so we know this is safe.
   SavedMicroTaskQueueImpl* savedQueueImpl =
       static_cast<SavedMicroTaskQueueImpl*>(savedQueue.get());
-  std::swap(savedQueueImpl->savedQueues.get(), cx->microTaskQueues);
+  std::swap(savedQueueImpl->savedQueues.get(), cx->microTaskQueues.get());
 }
 
 JS_PUBLIC_API size_t JS::GetRegularMicroTaskCount(JSContext* cx) {
@@ -1174,10 +1195,11 @@ JS_PUBLIC_API bool JS::HasRegularMicroTasks(JSContext* cx) {
   return !cx->microTaskQueues->microTaskQueue.empty();
 }
 
-JS_PUBLIC_API JS::MicroTask JS::DequeueNextRegularMicroTask(JSContext* cx) {
+JS_PUBLIC_API JS::GenericMicroTask JS::DequeueNextRegularMicroTask(
+    JSContext* cx) {
   auto& queue = cx->microTaskQueues->microTaskQueue;
   if (!queue.empty()) {
-    JS::MicroTask p = queue.front();
+    JS::GenericMicroTask p = queue.front();
     queue.popFront();
     return p;
   }
@@ -1268,20 +1290,12 @@ JSContext::JSContext(JSRuntime* runtime, const JS::ContextOptions& options)
       canSkipEnqueuingJobs(this, false),
       promiseRejectionTrackerCallback(this, nullptr),
       promiseRejectionTrackerCallbackData(this, nullptr),
-      insideExclusiveDebuggerOnEval(this, nullptr) {
+      bypassCSPForDebugger(this, false),
+      insideExclusiveDebuggerOnEval(this, nullptr),
+      microTaskQueues(this) {
   MOZ_ASSERT(static_cast<JS::RootingContext*>(this) ==
              JS::RootingContext::get(this));
 }
-
-#ifdef ENABLE_WASM_JSPI
-bool js::IsSuspendableStackActive(JSContext* cx) {
-  return cx->wasm().suspendableStackLimit != JS::NativeStackLimitMin;
-}
-
-JS::NativeStackLimit js::GetSuspendableStackLimit(JSContext* cx) {
-  return cx->wasm().suspendableStackLimit;
-}
-#endif
 
 JSContext::~JSContext() {
 #ifdef DEBUG
@@ -1524,12 +1538,6 @@ void JSContext::trace(JSTracer* trc) {
 #ifdef ENABLE_WASM_JSPI
   wasm().promiseIntegration.trace(trc);
 #endif
-
-  // Skip tracing the microtask queues on minor GC as we will be updating
-  // nursery pointers through the store buffer instead.
-  if (!trc->isTenuringTracer() && microTaskQueues) {
-    microTaskQueues->trace(trc);
-  }
 }
 
 JS::NativeStackLimit JSContext::stackLimitForJitCode(JS::StackKind kind) {
@@ -1552,7 +1560,10 @@ void JSContext::resetJitStackLimit() {
   jitStackLimitNoInterrupt = jitStackLimit;
 }
 
-void JSContext::initJitStackLimit() { resetJitStackLimit(); }
+void JSContext::initJitStackLimit() {
+  resetJitStackLimit();
+  wasm_.initStackLimit(this);
+}
 
 JSScript* JSContext::currentScript(jsbytecode** ppc,
                                    AllowCrossRealm allowCrossRealm) {

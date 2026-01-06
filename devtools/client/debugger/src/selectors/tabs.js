@@ -22,7 +22,7 @@ export function tabExists(state, source) {
  * For a given non-original source, returns true only if this source has been pretty printed
  * and has a tab currently opened with pretty printing enabled.
  *
- * @return {Boolean}
+ * @return {boolean}
  */
 export function isPrettyPrinted(state, source) {
   return source.url && state.tabs.prettyPrintedURLs.has(source.url);

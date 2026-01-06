@@ -466,6 +466,10 @@
   <string name="onboarding_marketing_title_1" tools:ignore="UnusedResources">Tiştekî dawî</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Piştrast bike û dest bi gerê bike</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding label for 'Save and continue' button, used by Nimbus experiments. -->
   <string name="onboarding_save_and_continue_button">Qeyd bike û dewam bike</string>
   <!-- Onboarding toolbar selection card label for 'top' option, used by Nimbus experiments. -->
@@ -624,8 +628,6 @@
   <string name="preferences_gestures">Hereketên tiliyan</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Taybet bike</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Ji bo senkronîzekirina hilpekînan, bijareyan, şîfreyan û tiştên din têkevê.</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
   <string name="preferences_account_sync_error">Ji bo senkronîzekirinê bidomînî, dîsa girê bide</string>
   <!-- Preference for language -->
@@ -873,12 +875,6 @@
   <string name="preference_experiments_2">Lêkolîn</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">Destûrê bide Mozillayê ku lêkolînan saz bike û bimeşîne</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Senkronîze bike û daneyên xwe qeyd bike</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Ji bo dîsa girê bibî, têkeve</string>
   <!-- Preference for removing FxA account -->
@@ -1465,8 +1461,6 @@
   <string name="toast_copy_link_to_clipboard">Li panoyê hat kopîkirin</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Têkeve Sync’ê</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Senkronîze bike û daneyan qeyd bike</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Ji hemû cîhazan re bişîne</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2444,4 +2438,10 @@
   -->
   <string name="beta_feature">BETA</string>
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

@@ -19,7 +19,13 @@
 #ifndef wasm_context_h
 #define wasm_context_h
 
-#include "mozilla/DoublyLinkedList.h"
+#ifdef ENABLE_WASM_JSPI
+#  include "mozilla/DoublyLinkedList.h"
+
+#  include "gc/Barrier.h"
+#endif  // ENABLE_WASM_JSPI
+
+#include "js/NativeStackLimits.h"
 
 namespace js::wasm {
 
@@ -51,24 +57,38 @@ class SuspenderContext {
 
 class Context {
  public:
-  Context()
-      : triedToInstallSignalHandlers(false),
-        haveSignalHandlers(false)
-#ifdef ENABLE_WASM_JSPI
-        ,
-        suspendableStackLimit(JS::NativeStackLimitMin),
-        suspendableStacksCount(0)
-#endif
-  {
+  Context();
+
+  static constexpr size_t offsetOfStackLimit() {
+    return offsetof(Context, stackLimit);
   }
+#ifdef ENABLE_WASM_JSPI
+  static constexpr size_t offsetOfOnSuspendableStack() {
+    return offsetof(Context, onSuspendableStack);
+  }
+#endif
+
+  void initStackLimit(JSContext* cx);
+
+#ifdef ENABLE_WASM_JSPI
+  void enterSuspendableStack(JS::NativeStackLimit newStackLimit);
+  void leaveSuspendableStack(JSContext* cx);
+#endif
 
   // Used by wasm::EnsureThreadSignalHandlers(cx) to install thread signal
   // handlers once per JSContext/thread.
   bool triedToInstallSignalHandlers;
   bool haveSignalHandlers;
 
+  // Like JSContext::jitStackLimit but used for wasm code. Wasm code doesn't
+  // use the stack limit for interrupts, but it does update it for stack
+  // switching.
+  JS::NativeStackLimit stackLimit;
+
 #ifdef ENABLE_WASM_JSPI
-  JS::NativeStackLimit suspendableStackLimit;
+  // Boolean value set to true when the top wasm frame is currently executed on
+  // a suspendable stack. Aligned to int32_t to be used on JIT code.
+  int32_t onSuspendableStack;
   mozilla::Atomic<uint32_t> suspendableStacksCount;
   SuspenderContext promiseIntegration;
 #endif

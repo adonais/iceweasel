@@ -1004,6 +1004,37 @@ add_task(async function test_svgs_more() {
   await cleanup();
 });
 
+add_task(async function test_standalone_svg_document() {
+  const svgSource = /* html */ `
+    <svg xmlns="http://www.w3.org/2000/svg">
+      <title>Test title</title>
+      <text x="10" y="20">Test text inside of standalone SVG.</text>
+    </svg>
+  `;
+
+  const { translate, htmlMatches, cleanup, document } =
+    await createTranslationsDoc(svgSource, { parserType: "image/svg+xml" });
+
+  translate();
+
+  await htmlMatches(
+    "Standalone SVG documents are translated.",
+    /* html */ `
+    <svg xmlns="http://www.w3.org/2000/svg">
+      <title>
+        TEST TITLE
+      </title>
+      <text x="10" y="20">
+        TEST TEXT INSIDE OF STANDALONE SVG.
+      </text>
+    </svg>
+    `,
+    document
+  );
+
+  await cleanup();
+});
+
 add_task(async function test_tables() {
   const { translate, htmlMatches, cleanup } =
     await createTranslationsDoc(/* html */ `

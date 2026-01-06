@@ -967,10 +967,6 @@ GetDateTimeFormat(const mozilla::intl::DateTimeFormat::ComponentsBag& options,
   }
 
   // Steps 13-14.
-  //
-  // Ignore "era" to workaround a spec bug.
-  //
-  // FIXME: spec bug - https://github.com/tc39/proposal-temporal/issues/3049
   bool anyPresent = options.weekday || options.year || options.month ||
                     options.day || options.dayPeriod || options.hour ||
                     options.minute || options.second ||

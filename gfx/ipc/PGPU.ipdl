@@ -66,7 +66,7 @@ parent:
              DevicePrefs devicePrefs,
              LayerTreeIdMapping[] mapping,
              GfxInfoFeatureStatus[] features,
-             uint32_t wrNamespace);
+             uint32_t wrNamespace) returns (GPUDeviceData data);
 
   async InitCompositorManager(Endpoint<PCompositorManagerParent> endpoint, uint32_t aNamespace);
   async InitVsyncBridge(Endpoint<PVsyncBridgeParent> endpoint);
@@ -138,10 +138,6 @@ parent:
   async CrashProcess();
 
 child:
-  // Sent when the GPU process has initialized devices. This occurs once, after
-  // Init().
-  async InitComplete(GPUDeviceData data);
-
   // Sent when APZ detects checkerboarding and apz checkerboard reporting is enabled.
   async ReportCheckerboard(uint32_t severity, nsCString log);
 

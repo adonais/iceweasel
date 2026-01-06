@@ -11,7 +11,6 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
-#include <iterator>
 
 #include "jit/arm64/vixl/Cpu-Features-vixl.h"
 #include "jit/arm64/vixl/Instructions-vixl.h"

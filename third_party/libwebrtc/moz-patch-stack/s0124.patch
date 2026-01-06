@@ -1,68 +1,44 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Thu, 18 Sep 2025 12:09:00 -0500
-Subject: Bug 1985396 - Cherry-pick upstream libwebrtc commit 63a59de808
+Date: Wed, 17 Sep 2025 15:41:00 +0000
+Subject: Bug 1988042 - android build fix in
+ third_party/libwebrtc/rtc_base/cpu_info.cc r?ng!
 
-Upstream commit: https://webrtc.googlesource.com/src/+/63a59de808ba7669e60bded703e71f360e5337e0
-       dcsctp: Avoid iterator invalidation
+Supports(...) is really used in unittests and outside of unittests
+it is only used when WEBRTC_ARCH_X86_FAMILY is defined.  For now,
+we'll return false when checking for arm/neon suport.
 
-       The ExpireOutstandingChunks method iterated through the
-       `outstanding_data_` container while conditionally calling
-       `AbandonAllFor`. The `AbandonAllFor` method can, in some cases, add new
-       elements to `outstanding_data_`, which invalidates the iterators used by
-       the loop in `ExpireOutstandingChunks`. This could lead to undefined
-       behavior.
-
-       This aligns the C++ implementation to the Rust dcsctp port, which
-       handles this correctly by using a two-pass approach.
-
-       Bug: chromium:443213199
-       Change-Id: Ib5ac73b743c5ed900a69806088780c213536a4a6
-       Reviewed-on: https://webrtc-review.googlesource.com/c/src/+/408002
-       Reviewed-by: Emil Lundmark <lndmrk@webrtc.org>
-       Commit-Queue: Emil Lundmark <lndmrk@webrtc.org>
-       Auto-Submit: Victor Boivie <boivie@webrtc.org>
-       Cr-Commit-Position: refs/heads/main@{#45566}
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b85c57c2d6f0604075bf639a9a7342ece543cdf1
+Differential Revision: https://phabricator.services.mozilla.com/D265018
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/eae7b6ec4f7ca191e8eaa8e36787142528f2c132
 ---
- net/dcsctp/tx/outstanding_data.cc | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
+ rtc_base/cpu_info.cc | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/net/dcsctp/tx/outstanding_data.cc b/net/dcsctp/tx/outstanding_data.cc
-index 074e3c0461..63e750b5fc 100644
---- a/net/dcsctp/tx/outstanding_data.cc
-+++ b/net/dcsctp/tx/outstanding_data.cc
-@@ -402,6 +402,7 @@ std::vector<std::pair<TSN, Data>> OutstandingData::GetChunksToBeRetransmitted(
- }
- 
- void OutstandingData::ExpireOutstandingChunks(Timestamp now) {
-+  std::vector<UnwrappedTSN> tsns_to_expire;
-   UnwrappedTSN tsn = last_cumulative_tsn_ack_;
-   for (const Item& item : outstanding_data_) {
-     tsn.Increment();
-@@ -411,15 +412,22 @@ void OutstandingData::ExpireOutstandingChunks(Timestamp now) {
-     if (item.is_abandoned()) {
-       // Already abandoned.
-     } else if (item.is_nacked() && item.has_expired(now)) {
--      RTC_DLOG(LS_VERBOSE) << "Marking nacked chunk " << *tsn.Wrap()
--                           << " and message " << *item.data().mid
--                           << " as expired";
--      AbandonAllFor(item);
-+      tsns_to_expire.push_back(tsn);
-     } else {
-       // A non-expired chunk. No need to iterate any further.
-       break;
-     }
-   }
-+
-+  for (UnwrappedTSN tsn_to_expire : tsns_to_expire) {
-+    // The item is retrieved by TSN, as AbandonAllFor may have modified
-+    // `outstanding_data_` and invalidated iterators from the first loop.
-+    Item& item = GetItem(tsn_to_expire);
-+    RTC_DLOG(LS_WARNING) << "Marking nacked chunk " << *tsn_to_expire.Wrap()
-+                         << " and message " << *item.data().mid
-+                         << " as expired";
-+    AbandonAllFor(item);
-+  }
-   RTC_DCHECK(IsConsistent());
- }
- 
+diff --git a/rtc_base/cpu_info.cc b/rtc_base/cpu_info.cc
+index f0bff56911..b51c9e950e 100644
+--- a/rtc_base/cpu_info.cc
++++ b/rtc_base/cpu_info.cc
+@@ -25,7 +25,9 @@
+ #elif defined(WEBRTC_MAC)
+ #include <sys/sysctl.h>
+ #elif defined(WEBRTC_ANDROID)
++#if !defined(WEBRTC_MOZILLA_BUILD)
+ #include <cpu-features.h>
++#endif
+ #include <unistd.h>
+ #elif defined(WEBRTC_FUCHSIA)
+ #include <zircon/syscalls.h>
+@@ -175,7 +177,14 @@ bool Supports(ISA instruction_set_architecture) {
+ #elif defined(WEBRTC_ARCH_ARM_FAMILY)
+   if (instruction_set_architecture == ISA::kNeon) {
+ #if defined(WEBRTC_ANDROID)
++#if defined(WEBRTC_MOZILLA_BUILD)
++    // We should revisit this if Supports(...) is ever more widely used.
++    // Currently, it is used in unittests and when WEBRTC_ARCH_X86_FAMILY
++    // is defined in non-unittest code.
++    return false;
++#else
+     return 0 != (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON);
++#endif
+ #elif defined(WEBRTC_BSD)
+     // OpenBSD does not have getauxval() and does not have /proc reading
+     return false;

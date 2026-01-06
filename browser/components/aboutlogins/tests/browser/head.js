@@ -200,6 +200,7 @@ add_setup(async function setup_head() {
 
 /**
  * Waits for the primary password prompt and performs an action.
+ *
  * @param {string} action Set to "authenticate" to log in or "cancel" to
  *        close the dialog without logging in.
  */

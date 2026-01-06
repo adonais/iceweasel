@@ -11,7 +11,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <new>
-#include <utility>
 
 #include "ErrorList.h"
 #include "MainThreadUtils.h"
@@ -105,7 +104,6 @@
 #include "nsURIHashKey.h"
 #include "nsWeakReference.h"
 #include "nsWindowSizes.h"
-#include "nsXULElement.h"
 #include "nscore.h"
 
 // XXX We need to include this here to ensure that DefaultDeleter for Servo
@@ -185,6 +183,7 @@ class nsTextNode;
 class nsViewManager;
 class nsViewportInfo;
 class nsXULPrototypeDocument;
+class nsXULPrototypeElement;
 struct JSContext;
 struct nsFont;
 
@@ -289,7 +288,7 @@ class TrustedHTMLOrString;
 class OwningTrustedHTMLOrString;
 enum class ViewportFitType : uint8_t;
 class ViewTransition;
-class ViewTransitionUpdateCallback;
+class ViewTransitionUpdateCallbackOrStartViewTransitionOptions;
 class WakeLockSentinel;
 class WindowContext;
 class WindowGlobalChild;
@@ -834,6 +833,16 @@ class Document : public nsINode,
   ReferrerPolicyEnum ReferrerPolicy() const { return GetReferrerPolicy(); }
 
   /**
+   * The referrer policy that was used for the fetch of this document, what the
+   * spec calls "request referrer policy". Not to be confused with the history
+   * policy container's referrer policy, which dictates the policy for fetches
+   * made by this document (see ReferrerPolicy()).
+   *
+   * See: https://html.spec.whatwg.org/#document-state-request-referrer-policy
+   */
+  ReferrerPolicyEnum ReferrerPolicyUsedToFetchThisDocument() const;
+
+  /**
    * If true, this flag indicates that all mixed content subresource
    * loads for this document (and also embeded browsing contexts) will
    * be blocked.
@@ -1175,7 +1184,7 @@ class Document : public nsINode,
    * presshell if the presshell should observe document mutations.
    */
   MOZ_CAN_RUN_SCRIPT already_AddRefed<PresShell> CreatePresShell(
-      nsPresContext* aContext, nsViewManager* aViewManager);
+      nsPresContext* aContext, nsSubDocumentFrame* aEmbedderFrame);
   void DeletePresShell();
 
   PresShell* GetPresShell() const {
@@ -3512,7 +3521,7 @@ class Document : public nsINode,
   MOZ_CAN_RUN_SCRIPT bool QueryCommandState(const nsAString& aHTMLCommandName,
                                             mozilla::ErrorResult& aRv);
   MOZ_CAN_RUN_SCRIPT bool QueryCommandSupported(
-      const nsAString& aHTMLCommandName, mozilla::dom::CallerType aCallerType,
+      const nsAString& aHTMLCommandName, nsIPrincipal& aSubjectPrincipal,
       mozilla::ErrorResult& aRv);
   MOZ_CAN_RUN_SCRIPT void QueryCommandValue(const nsAString& aHTMLCommandName,
                                             nsAString& aValue,
@@ -3769,10 +3778,10 @@ class Document : public nsINode,
   // effect once per document, and so is called during document destruction.
   void ReportDocumentUseCounters();
 
-  // Report the names of the HTMLDocument/HTMLFormElement properties that had
+  // Report the names of the HTMLDocument properties that had
   // been shadowed using ID/name, and which were subsequently accessed
   // ("DOM clobbering"). This data is collected by the corresponding NamedGetter
-  // methods and limited to 10 unique entries.
+  // method and limited to 10 unique entries.
   void ReportShadowedProperties();
 
   // Reports largest contentful paint via telemetry. We want the most up to
@@ -3899,7 +3908,10 @@ class Document : public nsINode,
 
   bool HasScriptsBlockedBySandbox() const;
 
-  void ReportHasScrollLinkedEffect(const TimeStamp& aTimeStamp);
+  enum class ReportToConsole : bool { No, Yes };
+  void ReportHasScrollLinkedEffect(
+      const TimeStamp& aTimeStamp,
+      ReportToConsole aReportToConsole = ReportToConsole::Yes);
   bool HasScrollLinkedEffect() const;
 
 #ifdef DEBUG
@@ -4028,7 +4040,7 @@ class Document : public nsINode,
   DetermineProximityToViewportAndNotifyResizeObservers();
 
   already_AddRefed<ViewTransition> StartViewTransition(
-      const Optional<OwningNonNull<ViewTransitionUpdateCallback>>&);
+      const ViewTransitionUpdateCallbackOrStartViewTransitionOptions&);
   ViewTransition* GetActiveViewTransition() const {
     return mActiveViewTransition;
   }
@@ -4729,6 +4741,10 @@ class Document : public nsINode,
 
   nsCOMPtr<nsIReferrerInfo> mPreloadReferrerInfo;
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
+  // A request referrer policy, which is a referrer policy, initially the
+  // default referrer policy.
+  ReferrerPolicyEnum mRequestReferrerPolicy =
+      ReferrerPolicyEnum::Strict_origin_when_cross_origin;
 
   nsString mLastModified;
 
@@ -5662,10 +5678,6 @@ class Document : public nsINode,
   // Used by the shadowed_html_document_property_access telemetry probe to
   // collected shadowed HTMLDocument properties. (Limited to 10 entries)
   nsTArray<nsString> mShadowedHTMLDocumentProperties;
-
-  // Used by the shadowed_html_form_element_property_access telemetry probe to
-  // collected shadowed HTMLFormElement properties. (Limited to 10 entries)
-  nsTArray<nsString> mShadowedHTMLFormElementProperties;
 
   // Collection of data used by the pageload event.
   PageloadEventData mPageloadEventData;

@@ -16,7 +16,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <iterator>
 
 #include "jsfriendapi.h"
 #include "jsnum.h"

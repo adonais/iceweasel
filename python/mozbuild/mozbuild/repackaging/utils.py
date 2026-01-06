@@ -6,7 +6,6 @@ import json
 import os
 import pathlib
 import shutil
-import subprocess
 import tarfile
 import zipfile
 from datetime import datetime
@@ -167,32 +166,13 @@ def inject_desktop_entry_file(
 def inject_distribution_folder(source_dir, source_type, app_name):
     distribution_ini_path = mozpath.join(source_dir, source_type, "distribution.ini")
 
-    # Check to see if a distribution.ini file is already supplied in the templates directory
-    # If not, continue to download default Firefox distribution.ini from GitHub
-    if os.path.exists(distribution_ini_path):
-        os.makedirs(
-            mozpath.join(source_dir, app_name.lower(), "distribution"), exist_ok=True
-        )
-        shutil.move(
-            distribution_ini_path,
-            mozpath.join(source_dir, app_name.lower(), "distribution"),
-        )
-
-        return
-
-    with TemporaryDirectory() as git_clone_dir:
-        subprocess.check_call(
-            [
-                "git",
-                "clone",
-                "https://github.com/mozilla-partners/deb.git",
-                git_clone_dir,
-            ],
-        )
-        shutil.copytree(
-            mozpath.join(git_clone_dir, "desktop/deb/distribution"),
-            mozpath.join(source_dir, app_name.lower(), "distribution"),
-        )
+    os.makedirs(
+        mozpath.join(source_dir, app_name.lower(), "distribution"), exist_ok=True
+    )
+    shutil.move(
+        distribution_ini_path,
+        mozpath.join(source_dir, app_name.lower(), "distribution"),
+    )
 
 
 def inject_prefs_file(source_dir, app_name, template_dir):

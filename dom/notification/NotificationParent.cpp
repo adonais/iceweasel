@@ -279,8 +279,12 @@ nsresult NotificationParent::Show() {
   }
 
   nsCOMPtr<nsIPrincipal> principal = mArgs.mPrincipal;
-  MOZ_TRY(alert->Init(options.tag(), options.icon(), options.title(),
-                      options.body(), true, obsoleteCookie,
+  nsAutoCString iconUrl;
+  if (RefPtr<nsIURI> iconUri = options.icon()) {
+    iconUri->GetSpec(iconUrl);
+  }
+  MOZ_TRY(alert->Init(options.tag(), NS_ConvertUTF8toUTF16(iconUrl),
+                      options.title(), options.body(), true, obsoleteCookie,
                       NS_ConvertASCIItoUTF16(GetEnumString(options.dir())),
                       options.lang(), options.dataSerialized(), principal,
                       principal->GetIsInPrivateBrowsing(), requireInteraction,

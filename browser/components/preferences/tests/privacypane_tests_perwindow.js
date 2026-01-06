@@ -22,33 +22,43 @@ function controlChanged(element) {
 }
 
 // We can only test the panes that don't trigger a preference update
-function test_pane_visibility(win) {
-  let modes = {
-    remember: "historyRememberPane",
-    custom: "historyCustomPane",
-  };
+async function test_pane_visibility(win) {
+  // Elements which should only be visible in history mode "custom".
+  let customElementIds = [
+    "privateBrowsingAutoStart",
+    "rememberHistory",
+    "rememberForms",
+    "alwaysClear",
+    "clearDataSettings",
+  ];
 
   let historymode = win.document.getElementById("historyMode");
   ok(historymode, "history mode menulist should exist");
-  let historypane = win.document.getElementById("historyPane");
-  ok(historypane, "history mode pane should exist");
 
-  for (let mode in modes) {
-    historymode.value = mode;
-    controlChanged(historymode);
-    is(
-      historypane.selectedPanel,
-      win.document.getElementById(modes[mode]),
-      "The correct pane should be selected for the " + mode + " mode"
-    );
+  await selectHistoryMode(win, "custom");
+
+  for (let id of customElementIds) {
+    let element = win.document.getElementById(id);
+    ok(element, `the ${id} element should exist`);
     is_element_visible(
-      historypane.selectedPanel,
-      "Correct pane should be visible for the " + mode + " mode"
+      element,
+      `the ${id} element should be visible in 'custom' mode`
+    );
+  }
+
+  await selectHistoryMode(win, "remember");
+
+  for (let id of customElementIds) {
+    let element = win.document.getElementById(id);
+    ok(element, `the ${id} element should exist`);
+    is_element_hidden(
+      element,
+      `the ${id} element should be hidden in 'remember' mode`
     );
   }
 }
 
-function test_dependent_elements(win) {
+async function test_dependent_elements(win) {
   let historymode = win.document.getElementById("historyMode");
   ok(historymode, "history mode menulist should exist");
   let pbautostart = win.document.getElementById("privateBrowsingAutoStart");
@@ -130,16 +140,16 @@ function test_dependent_elements(win) {
   }
 
   // controls should only change in custom mode
-  historymode.value = "remember";
-  controlChanged(historymode);
+  await selectHistoryMode(win, "remember");
   expect_disabled(false);
   check_independents(false);
 
   // setting the mode to custom shouldn't change anything
-  historymode.value = "custom";
-  controlChanged(historymode);
+  await selectHistoryMode(win, "custom");
   expect_disabled(false);
   check_independents(false);
+
+  await selectHistoryMode(win, "remember");
 }
 
 async function test_dependent_cookie_elements(win) {
@@ -203,13 +213,12 @@ async function test_dependent_cookie_elements(win) {
   await new Promise(resolve => requestAnimationFrame(resolve));
   expect_disabled(false);
 
-  let historymode = win.document.getElementById("historyMode");
-
   // The History mode setting for "never remember history" should still
   // disable the "keep cookies until..." menu.
-  historymode.value = "dontremember";
-  controlChanged(historymode);
-  await new Promise(resolve => requestAnimationFrame(resolve));
+
+  // Suppress restart prompt, because we can't restart in a mochitest.
+  win._shouldPromptForRestartPBM = false;
+  await selectHistoryMode(win, "dontremember");
   expect_disabled(true, [deleteOnCloseCheckbox]);
   is_element_visible(
     deleteOnCloseNote,
@@ -217,9 +226,10 @@ async function test_dependent_cookie_elements(win) {
   );
   expect_disabled(false, [blockCookiesMenu]);
 
-  historymode.value = "remember";
-  controlChanged(historymode);
-  await new Promise(resolve => requestAnimationFrame(resolve));
+  // Suppress restart prompt, because we can't restart in a mochitest.
+  win._shouldPromptForRestartPBM = false;
+
+  await selectHistoryMode(win, "remember");
   expect_disabled(false);
   is_element_hidden(
     deleteOnCloseNote,
@@ -227,7 +237,7 @@ async function test_dependent_cookie_elements(win) {
   );
 }
 
-function test_dependent_clearonclose_elements(win) {
+async function test_dependent_clearonclose_elements(win) {
   let historymode = win.document.getElementById("historyMode");
   ok(historymode, "history mode menulist should exist");
   let pbautostart = win.document.getElementById("privateBrowsingAutoStart");
@@ -247,20 +257,16 @@ function test_dependent_clearonclose_elements(win) {
     );
   }
 
-  historymode.value = "custom";
-  controlChanged(historymode);
-  pbautostart.checked = false;
-  controlChanged(pbautostart);
-  alwaysclear.checked = false;
-  controlChanged(alwaysclear);
+  await selectHistoryMode(win, "custom");
+  await updateCheckBox(win, "privateBrowsingAutoStart", false);
+
+  await updateCheckBox(win, "alwaysClear", false);
   expect_disabled(true);
 
-  alwaysclear.checked = true;
-  controlChanged(alwaysclear);
+  await updateCheckBox(win, "alwaysClear", true);
   expect_disabled(false);
 
-  alwaysclear.checked = false;
-  controlChanged(alwaysclear);
+  await updateCheckBox(win, "alwaysClear", false);
   expect_disabled(true);
 }
 
@@ -289,29 +295,24 @@ async function test_dependent_prefs(win) {
   }
 
   // controls should be checked in remember mode
-  historymode.value = "remember";
-  controlChanged(historymode);
+  await selectHistoryMode(win, "remember");
   // Initial updates from prefs are not sync, so wait:
-  await TestUtils.waitForCondition(
-    () => controls[0].getAttribute("checked") == "true"
-  );
+  await TestUtils.waitForCondition(() => controls[0].checked);
   expect_checked(true);
 
   // even if they're unchecked in custom mode
-  historymode.value = "custom";
-  controlChanged(historymode);
-  controls.forEach(function (control) {
-    control.checked = false;
-    controlChanged(control);
-  });
+  await selectHistoryMode(win, "custom");
+
+  for (let control of controls) {
+    await updateCheckBox(win, control.id, false);
+  }
   expect_checked(false);
-  historymode.value = "remember";
-  controlChanged(historymode);
+  await selectHistoryMode(win, "remember");
   expect_checked(true);
 }
 
 function test_historymode_retention(mode, expect) {
-  return function test_historymode_retention_fn(win) {
+  return async function test_historymode_retention_fn(win) {
     let historymode = win.document.getElementById("historyMode");
     ok(historymode, "history mode menulist should exist");
 
@@ -331,13 +332,12 @@ function test_historymode_retention(mode, expect) {
       );
     }
 
-    historymode.value = mode;
-    controlChanged(historymode);
+    await selectHistoryMode(win, mode);
   };
 }
 
 function test_custom_retention(controlToChange, expect, valueIncrement) {
-  return function test_custom_retention_fn(win) {
+  return async function test_custom_retention_fn(win) {
     let historymode = win.document.getElementById("historyMode");
     ok(historymode, "history mode menulist should exist");
 
@@ -349,20 +349,18 @@ function test_custom_retention(controlToChange, expect, valueIncrement) {
       );
     }
 
-    historymode.value = "custom";
-    controlChanged(historymode);
+    await selectHistoryMode(win, "custom");
 
     controlToChange = win.document.getElementById(controlToChange);
     ok(controlToChange, "the control to change should exist");
     switch (controlToChange.localName) {
       case "checkbox":
-        controlToChange.checked = !controlToChange.checked;
+        await updateCheckBox(win, controlToChange.id, !controlToChange.checked);
         break;
       case "menulist":
-        controlToChange.value = valueIncrement;
+        await selectHistoryMode(win, valueIncrement);
         break;
     }
-    controlChanged(controlToChange);
   };
 }
 

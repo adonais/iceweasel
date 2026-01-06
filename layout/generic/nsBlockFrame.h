@@ -155,11 +155,6 @@ class nsBlockFrame : public nsContainerFrame {
   nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
-#ifdef DEBUG
-  const char* LineReflowStatusToString(
-      LineReflowStatus aLineReflowStatus) const;
-#endif
-
 #ifdef ACCESSIBILITY
   mozilla::a11y::AccType AccessibleType() override;
 #endif
@@ -1075,8 +1070,6 @@ class nsBlockFrame : public nsContainerFrame {
   static bool gDisableResizeOpt;
 
   static int32_t gNoiseIndent;
-
-  static const char* kReflowCommandType[];
 
  protected:
   static void InitDebugFlags();

@@ -36,6 +36,7 @@ enum class FrameChildListID {
   Principal,
   ColGroup,
   Absolute,
+  PushedAbsolute,
   Fixed,
   Overflow,
   OverflowContainers,
@@ -400,13 +401,8 @@ class nsFrameList {
       return ret;
     }
 
-    bool operator==(const Iterator<FrameTraversal>& aOther) const {
-      return mCurrent == aOther.mCurrent;
-    }
-
-    bool operator!=(const Iterator<FrameTraversal>& aOther) const {
-      return !(*this == aOther);
-    }
+    bool operator==(const Iterator<FrameTraversal>& aOther) const = default;
+    bool operator!=(const Iterator<FrameTraversal>& aOther) const = default;
 
    private:
     nsIFrame* mCurrent;

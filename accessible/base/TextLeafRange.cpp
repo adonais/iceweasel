@@ -2014,14 +2014,10 @@ already_AddRefed<AccAttributes> TextLeafPoint::GetTextAttributes(
   if (mAcc->IsLocal()) {
     attrs = GetTextAttributesLocalAcc(aIncludeDefaults);
   } else {
-    attrs = new AccAttributes();
     if (aIncludeDefaults) {
-      Accessible* parent = mAcc->Parent();
-      if (parent && parent->IsRemote() && parent->IsHyperText()) {
-        if (auto defAttrs = parent->AsRemote()->GetCachedTextAttributes()) {
-          defAttrs->CopyTo(attrs);
-        }
-      }
+      attrs = mAcc->AsRemote()->DefaultTextAttributes();
+    } else {
+      attrs = new AccAttributes();
     }
     if (auto thisAttrs = mAcc->AsRemote()->GetCachedTextAttributes()) {
       thisAttrs->CopyTo(attrs);
@@ -2036,11 +2032,9 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
   if (mIsEndOfLineInsertionPoint) {
     return AdjustEndOfLine().FindTextAttrsStart(aDirection, aIncludeOrigin);
   }
-  const bool isRemote = mAcc->IsRemote();
   RefPtr<const AccAttributes> lastAttrs;
   if (mAcc->IsText()) {
-    lastAttrs = isRemote ? mAcc->AsRemote()->GetCachedTextAttributes()
-                         : GetTextAttributesLocalAcc();
+    lastAttrs = GetTextAttributes();
   }
   if (aIncludeOrigin && aDirection == eDirNext && mOffset == 0) {
     if (!mAcc->IsText()) {
@@ -2054,11 +2048,7 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
     if (!point.mAcc || !point.mAcc->IsText()) {
       return *this;
     }
-    // For RemoteAccessible, we can get attributes from the cache without any
-    // calculation or copying.
-    RefPtr<const AccAttributes> attrs =
-        isRemote ? point.mAcc->AsRemote()->GetCachedTextAttributes()
-                 : point.GetTextAttributesLocalAcc();
+    RefPtr<const AccAttributes> attrs = point.GetTextAttributes();
     if (attrs && lastAttrs && !attrs->Equal(lastAttrs)) {
       return *this;
     }
@@ -2100,10 +2090,9 @@ TextLeafPoint TextLeafPoint::FindTextAttrsStart(nsDirection aDirection,
     if (!point.mAcc || !point.mAcc->IsText()) {
       break;
     }
-    RefPtr<const AccAttributes> attrs =
-        isRemote ? point.mAcc->AsRemote()->GetCachedTextAttributes()
-                 : point.GetTextAttributesLocalAcc();
-    if (!lastAttrs || (attrs && !attrs->Equal(lastAttrs))) {
+    RefPtr<const AccAttributes> attrs = point.GetTextAttributes();
+    if (((!lastAttrs || !attrs) && attrs != lastAttrs) ||
+        (attrs && !attrs->Equal(lastAttrs))) {
       // The attributes change here. If we're moving forward, we want to return
       // this point.
       if (aDirection == eDirNext) {

@@ -45,7 +45,6 @@ PerformanceEventTiming::PerformanceEventTiming(Performance* aPerformance,
       mProcessingEnd(0),
       mStartTime(
           aPerformance->GetDOMTiming()->TimeStampToDOMHighRes(aStartTime)),
-      mDuration(0),
       mCancelable(aIsCancelable),
       mMessage(aMessage) {}
 
@@ -149,7 +148,7 @@ bool PerformanceEventTiming::ShouldAddEntryToBuffer(double aDuration) const {
     return true;
   }
   MOZ_ASSERT(GetEntryType() == nsGkAtoms::event);
-  return RawDuration() >= aDuration;
+  return RawDuration().valueOr(0) >= aDuration;
 }
 
 bool PerformanceEventTiming::ShouldAddEntryToObserverBuffer(

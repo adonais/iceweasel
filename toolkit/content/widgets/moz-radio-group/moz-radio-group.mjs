@@ -24,8 +24,6 @@ import { MozBaseInputElement } from "../lit-utils.mjs";
  * @property {string} value
  *  Selected value for the group. Changing the value updates the checked
  *  state of moz-radio children and vice versa.
- * @property {string} ariaLabel - The aria-label text when there is no visible label.
- * @property {string} ariaDescription - The aria-description text when there is no visible description.
  * @slot default - The radio group's content, intended for moz-radio elements.
  * @slot support-link - The radio group's support link intended for moz-radio elements.
  */
@@ -53,6 +51,8 @@ customElements.define("moz-radio-group", MozRadioGroup);
  *  Name of the input control, set by the associated moz-radio-group element.
  * @property {string} supportPage - Name of the SUMO support page to link to.
  * @property {string} value - Value of the radio input.
+ * @property {string} ariaLabel - The aria-label text when there is no visible label.
+ * @property {string} ariaDescription - The aria-description text when there is no visible description.
  */
 export class MozRadio extends SelectControlItemMixin(MozBaseInputElement) {
   static activatedProperty = "checked";

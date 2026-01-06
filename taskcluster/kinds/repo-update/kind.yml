@@ -53,7 +53,7 @@ tasks:
             platform: linux64/opt
             symbol: pfu
             tier: 1
-        worker-type: b-linux-xlarge-gcp
+        worker-type: b-linux-xlarge
         worker:
             implementation: docker-worker
             os: linux

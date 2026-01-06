@@ -25,6 +25,6 @@
         android:padding="10dp"
         android:scaleType="centerInside"
         android:src="@drawable/mozac_ic_microphone_24"
-        app:tint="?attr/colorOnSurface"
+        android:tint="@color/fx_mobile_icon_color_primary"
         tools:ignore="AndroidSrcXmlDetector,UseAppTint" />
 </LinearLayout>

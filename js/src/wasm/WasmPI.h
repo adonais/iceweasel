@@ -198,8 +198,9 @@ class SuspenderObjectData
   void restoreTIBStackFields();
 #endif
 
-#if defined(JS_SIMULATOR_ARM64) || defined(JS_SIMULATOR_ARM) || \
-    defined(JS_SIMULATOR_RISCV64) || defined(JS_SIMULATOR_LOONG64)
+#if defined(JS_SIMULATOR_ARM64) || defined(JS_SIMULATOR_ARM) ||       \
+    defined(JS_SIMULATOR_RISCV64) || defined(JS_SIMULATOR_LOONG64) || \
+    defined(JS_SIMULATOR_MIPS64)
   void switchSimulatorToMain();
   void switchSimulatorToSuspendable();
 #endif

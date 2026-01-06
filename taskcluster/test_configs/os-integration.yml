@@ -26,7 +26,7 @@
       - windows11-64-24h2/opt
       - windows11-64-24h2/debug
   unittest_suite: &unittest-suites
-      - marionette
+      - marionette-integration
       - mochitest-browser-chrome
       - mochitest-browser-media
       - mochitest-chrome
@@ -34,6 +34,7 @@
       - mochitest-plain
       - mochitest-remote
       - mochitest-webgl1-core
+      - mochitest-webgl2-core
       - mochitest-webgpu
       - xpcshell
   unittest_variant:
@@ -61,6 +62,15 @@
       - mochitest-remote
       - mochitest-webgl1-core
       - mochitest-webgpu
+  unittest_variant: null
+
+# win/gpu
+- kind: web-platform-tests
+  test_platform:
+      - windows11-64-24h2/opt
+      - windows11-64-24h2/debug
+  unittest_suite:
+      - web-platform-tests-reftest
   unittest_variant: null
 
 # asan
@@ -116,10 +126,10 @@
       - condprof
       - featuregates
       - firefox-ci
+      - manifest
       - mozbase
       - mozbuild
       - mozharness
-      - skip-fails
       - taskgraph-tests
       - telemetry-python
       - tryselect

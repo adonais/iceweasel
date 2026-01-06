@@ -9,7 +9,6 @@
 
 #include "Types.h"
 
-#include <vector>
 #include "Point.h"
 
 namespace mozilla {

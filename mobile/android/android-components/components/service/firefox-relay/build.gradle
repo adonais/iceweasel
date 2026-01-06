@@ -28,7 +28,7 @@ android {
 }
 
 dependencies {
-    api ComponentsDependencies.mozilla_appservices_fxrelay
+    implementation ComponentsDependencies.mozilla_appservices_fxrelay
     implementation project(':components:support-base')
     implementation libs.kotlinx.coroutines.core
 }

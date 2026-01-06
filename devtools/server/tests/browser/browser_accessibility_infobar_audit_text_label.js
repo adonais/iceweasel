@@ -48,9 +48,9 @@ add_task(async function () {
         /**
          * Checks for updated content for an infobar.
          *
-         * @param  {Object} infobar
+         * @param  {object} infobar
          *         Accessible highlighter's infobar component.
-         * @param  {Object} audit
+         * @param  {object} audit
          *         Audit information that is passed on highlighter show.
          */
         function checkTextLabel(infobar, audit) {

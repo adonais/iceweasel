@@ -1,5 +1,6 @@
 [
   "XPCOMUtils",
+  "AIWindow",
   "AppConstants",
   "gBrowser",
   "gContextMenu",
@@ -142,7 +143,6 @@
   "UITour",
   "UpdateUtils",
   "URILoadingHelper",
-  "UrlbarInput",
   "UrlbarPrefs",
   "UrlbarProviderSearchTips",
   "UrlbarTokenizer",

@@ -15,7 +15,8 @@ const ALLOW_LIST_CONVENIENCE_PREF =
 /**
  * Convert a JS object from RemoteSettings to an nsIUrlClassifierExceptionListEntry.
  * Copied from UrlClassifierExceptionListService.sys.mjs with modifications.
- * @param {Object} rsObject - The JS object from RemoteSettings to convert.
+ *
+ * @param {object} rsObject - The JS object from RemoteSettings to convert.
  * @returns {nsIUrlClassifierExceptionListEntry} The converted nsIUrlClassifierExceptionListEntry.
  */
 function rsObjectToEntry(rsObject) {

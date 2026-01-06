@@ -177,7 +177,7 @@ function destroyTargetsForWatcher(watcherDataObject, options) {
  * Instantiate a ContentScript target actor for a given content script sandbox
  * and a given watcher actor.
  *
- * @param {Object} watcherDataObject
+ * @param {object} watcherDataObject
  * @param {Sandbox} sandbox
  */
 function createContentScriptTargetActor(watcherDataObject, sandbox) {

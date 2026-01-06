@@ -5,6 +5,7 @@
   <title>Tests for the BackupSettings component</title>
   <script src="chrome://mochikit/content/tests/SimpleTest/SimpleTest.js"></script>
   <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
+  <script type="application/javascript" src="head.js"></script>
   <script
   src="chrome://browser/content/backup/backup-settings.mjs"
   type="module"
@@ -23,38 +24,26 @@
     add_task(async function test_backupTriggerStateChange() {
       let settings = document.getElementById("test-backup-settings");
 
-      settings.backupServiceState = {
-        defaultParent: {
-          path: PathUtils.join(PathUtils.tempDir, "test-default-path"),
-          fileName: "test-default-path",
-        },
+      settings.backupServiceState = createBackupServiceState({
         backupInProgress: true,
         scheduledBackupsEnabled: false,
-      }
+      });
       await settings.updateComplete;
 
       ok(!settings.triggerBackupButtonEl, "Trigger backup button is not visible when backup is off");
 
-      settings.backupServiceState = {
-        defaultParent: {
-          path: PathUtils.join(PathUtils.tempDir, "test-default-path"),
-          fileName: "test-default-path",
-        },
+      settings.backupServiceState = createBackupServiceState({
         backupInProgress: true,
         scheduledBackupsEnabled: true,
-      }
+      });
       await settings.updateComplete;
 
       ok(settings.triggerBackupButtonEl.disabled, "Trigger backup button should be disabled when backing up");
 
-      settings.backupServiceState = {
-        defaultParent: {
-          path: PathUtils.join(PathUtils.tempDir, "test-default-path"),
-          fileName: "test-default-path",
-        },
+      settings.backupServiceState = createBackupServiceState({
         backupInProgress: false,
         scheduledBackupsEnabled: true,
-      }
+      });
       await settings.updateComplete;
 
       ok(!settings.triggerBackupButtonEl.enabled, "Trigger backup button should be enabled");

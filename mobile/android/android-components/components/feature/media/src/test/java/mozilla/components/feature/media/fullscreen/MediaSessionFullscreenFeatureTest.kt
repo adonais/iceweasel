@@ -21,8 +21,6 @@ import mozilla.components.browser.state.state.createCustomTab
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.mediasession.MediaSession
-import mozilla.components.support.test.ext.joinBlocking
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.whenever
@@ -207,11 +205,9 @@ class MediaSessionFullscreenFeatureTest {
 
         feature.start()
         activity.enterPictureInPictureMode()
-        store.waitUntilIdle()
 
         assertTrue(activity.isInPictureInPictureMode)
         store.dispatch(ContentAction.PictureInPictureChangedAction("tab1", true))
-        store.waitUntilIdle()
 
         assertEquals(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, activity.requestedOrientation)
     }
@@ -246,9 +242,7 @@ class MediaSessionFullscreenFeatureTest {
 
         feature.start()
         activity.enterPictureInPictureMode()
-        store.waitUntilIdle()
         store.dispatch(ContentAction.PictureInPictureChangedAction("tab1", true))
-        store.waitUntilIdle()
         assertEquals(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, activity.requestedOrientation)
 
         val tab2 = createTab(
@@ -263,7 +257,6 @@ class MediaSessionFullscreenFeatureTest {
                 MediaSession.ElementMetadata(),
             ),
         )
-        store.waitUntilIdle()
         assertEquals(ActivityInfo.SCREEN_ORIENTATION_USER, activity.requestedOrientation)
         assertEquals(tab2.id, store.state.selectedTabId)
     }
@@ -298,11 +291,9 @@ class MediaSessionFullscreenFeatureTest {
 
         feature.start()
         activity.enterPictureInPictureMode()
-        store.waitUntilIdle()
 
         assertTrue(activity.isInPictureInPictureMode)
         store.dispatch(ContentAction.PictureInPictureChangedAction("tab1", true))
-        store.waitUntilIdle()
 
         assertEquals(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, activity.requestedOrientation)
 
@@ -313,7 +304,6 @@ class MediaSessionFullscreenFeatureTest {
                 MediaSession.ElementMetadata(),
             ),
         )
-        store.waitUntilIdle()
 
         assertEquals(ActivityInfo.SCREEN_ORIENTATION_USER, activity.requestedOrientation)
     }
@@ -349,10 +339,8 @@ class MediaSessionFullscreenFeatureTest {
 
         feature.start()
         activity.enterPictureInPictureMode()
-        store.waitUntilIdle()
 
         store.dispatch(ContentAction.PictureInPictureChangedAction("tab1", true))
-        store.waitUntilIdle()
         assertEquals(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, activity.requestedOrientation)
 
         val customTab = createCustomTab(
@@ -360,10 +348,9 @@ class MediaSessionFullscreenFeatureTest {
             source = SessionState.Source.Internal.CustomTab,
             id = "tab2",
         )
-        store.dispatch(CustomTabListAction.AddCustomTabAction(customTab)).joinBlocking()
+        store.dispatch(CustomTabListAction.AddCustomTabAction(customTab))
         val externalActivity = Robolectric.buildActivity(Activity::class.java).setup().get()
         assertEquals(1, store.state.customTabs.size)
-        store.waitUntilIdle()
         val featureForExternalAppBrowser = MediaSessionFullscreenFeature(
             externalActivity,
             store,
@@ -408,17 +395,14 @@ class MediaSessionFullscreenFeatureTest {
         verify(activity.window).addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         store.dispatch(MediaSessionAction.UpdateMediaPlaybackStateAction("tab1", MediaSession.PlaybackState.PAUSED))
-        store.waitUntilIdle()
         verify(activity.window).clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         clearInvocations(activity.window)
 
         store.dispatch(MediaSessionAction.UpdateMediaPlaybackStateAction("tab1", MediaSession.PlaybackState.PLAYING))
-        store.waitUntilIdle()
         verify(activity.window).addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         store.dispatch(MediaSessionAction.DeactivatedMediaSessionAction("tab1"))
-        store.waitUntilIdle()
         verify(activity.window).clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
@@ -456,13 +440,11 @@ class MediaSessionFullscreenFeatureTest {
         verify(activity.window, never()).addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         store.dispatch(MediaSessionAction.UpdateMediaFullscreenAction("tab1", true, elementMetadata))
-        store.waitUntilIdle()
         verify(activity.window).addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         clearInvocations(activity.window)
 
         store.dispatch(MediaSessionAction.UpdateMediaFullscreenAction("tab1", false, elementMetadata))
-        store.waitUntilIdle()
         verify(activity.window).clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
     }
 
@@ -506,7 +488,6 @@ class MediaSessionFullscreenFeatureTest {
         clearInvocations(activity.window)
         store.dispatch(TabListAction.AddTabAction(tab2, select = true))
         store.dispatch(MediaSessionAction.UpdateMediaFullscreenAction(store.state.tabs[0].id, false, elementMetadata))
-        store.waitUntilIdle()
         verify(activity.window).clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         assertEquals(tab2.id, store.state.selectedTabId)
     }

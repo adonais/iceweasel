@@ -350,7 +350,7 @@ nsresult UntrustedModulesDataSerializer::GetPerProcObject(
   }
 
   JS::Rooted<JS::Value> jsElapsed(mCx);
-  jsElapsed.setNumber(aData.mElapsed.ToSecondsSigDigits());
+  jsElapsed.setNumber(aData.mElapsed.ToSeconds());
   if (!JS_DefineProperty(mCx, aObj, "elapsed", jsElapsed, JSPROP_ENUMERATE)) {
     return NS_ERROR_FAILURE;
   }

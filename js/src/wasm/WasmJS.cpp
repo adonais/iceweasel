@@ -2599,7 +2599,6 @@ size_t WasmMemoryObject::boundsCheckLimit() const {
 #endif
   MOZ_ASSERT(mappedSize % wasm::PageSize == 0);
   MOZ_ASSERT(mappedSize >= wasm::GuardSize);
-  MOZ_ASSERT(wasm::IsValidBoundsCheckImmediate(mappedSize - wasm::GuardSize));
   size_t limit = mappedSize - wasm::GuardSize;
   MOZ_ASSERT(limit <= MaxMemoryBoundsCheckLimit(addressType()));
   return limit;

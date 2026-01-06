@@ -31,7 +31,7 @@ class LogMiddlewareTest {
         val actionMessages = listOf("one!", "two!", "buckle my shoe!")
         actionMessages.forEach { message ->
             val action = AAction(message)
-            store.dispatch(action).join()
+            store.dispatch(action)
             verify(logger).info(action.toString())
         }
     }
@@ -47,7 +47,7 @@ class LogMiddlewareTest {
 
         val actionMessages = listOf("one!", "two!", "buckle my shoe!")
         actionMessages.forEach { message ->
-            store.dispatch(AAction(message)).join()
+            store.dispatch(AAction(message))
         }
 
         verify(logger, times(3)).info(AAction::class.java.name)

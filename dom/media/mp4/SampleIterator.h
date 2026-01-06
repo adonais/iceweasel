@@ -44,7 +44,7 @@ class SampleIterator {
   // Gets the sample description entry for the current moof, or nullptr if
   // called without a valid current moof.
   SampleDescriptionEntry* GetSampleDescriptionEntry();
-  CencSampleEncryptionInfoEntry* GetSampleEncryptionEntry();
+  const CencSampleEncryptionInfoEntry* GetSampleEncryptionEntry() const;
 
   // Determines the encryption scheme in use for the current sample. If the
   // the scheme cannot be unambiguously determined, will return an error with

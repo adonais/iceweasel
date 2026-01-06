@@ -1035,6 +1035,7 @@ export var DownloadIntegration = {
 
   /**
    * Launches the specified file, unless overridden by regression tests.
+   *
    * @note Always use launchDownload() from the outside of this module, it is
    *       both more powerful and safer.
    */

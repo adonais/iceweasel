@@ -39,6 +39,7 @@ registerCleanupFunction(async () => {
   Services.prefs.clearUserPref(
     "network.dns.httpssvc.http3_fast_fallback_timeout"
   );
+  Services.prefs.clearUserPref("network.http.http3.pmtud");
   Services.prefs.clearUserPref(
     "network.http.http3.alt-svc-mapping-for-testing"
   );
@@ -72,6 +73,14 @@ function channelOpenPromise(chan, flags) {
 }
 
 async function H3CoalescingTest(host1, host2) {
+  // Disable PMTUD (Path MTU Discovery) to avoid race condition between DNS
+  // resolution (to validate whether we can coalesce) and new connection
+  // attempt. Long term one might not want to start the new connection attempt
+  // in the first place.
+  //
+  // See Bug 1909910 for more details.
+  Services.prefs.setBoolPref("network.http.http3.pmtud", false);
+
   Services.prefs.setCharPref(
     "network.http.http3.alt-svc-mapping-for-testing",
     `${host1};h3=:${h3Port}`

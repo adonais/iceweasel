@@ -6,8 +6,6 @@
 
 #include "ConnectionMainThread.h"
 
-#include <limits>
-
 #include "mozilla/Hal.h"
 
 namespace mozilla::dom::network {

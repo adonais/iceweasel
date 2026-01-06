@@ -29,7 +29,7 @@ functions that map well to CPU instructions without extensive compiler
 transformations. The resulting code is more predictable and robust to code
 changes/compiler updates than autovectorization.
 
-**Works on widely-used platforms**: Highway supports five architectures; the
+**Works on widely-used platforms**: Highway supports seven architectures; the
 same application code can target various instruction sets, including those with
 'scalable' vectors (size unknown at compile time). Highway only requires C++11
 and supports four families of compilers. If you would like to use Highway on
@@ -41,7 +41,7 @@ runtime. Alternatively, developers may choose to target a single instruction set
 without any runtime overhead. In both cases, the application code is the same
 except for swapping `HWY_STATIC_DISPATCH` with `HWY_DYNAMIC_DISPATCH` plus one
 line of code. See also @kfjahnke's
-[introduction to dispatching](https://github.com/kfjahnke/zimt/blob/multi_isa/examples/multi_isa_example/multi_simd_isa.md).
+[introduction to dispatching](https://github.com/kfjahnke/zimt/blob/main/examples/multi_isa_example/multi_simd_isa.md).
 
 **Suitable for a variety of domains**: Highway provides an extensive set of
 operations, used for image processing (floating-point), compression, video
@@ -82,30 +82,39 @@ us via the below email.
 *   Audio: [Zimtohrli perceptual metric](https://github.com/google/zimtohrli)
 *   Browsers: Chromium (+Vivaldi), Firefox (+floorp / foxhound / librewolf /
     Waterfox)
-*   Computational biology: [RNA analysis](https://github.com/bnprks/BPCells)
-*   Computer graphics: [Sparse voxel renderer](https://github.com/rools/voxl)
+*   Computational biology: [RNA analysis](https://github.com/bnprks/BPCells),
+    [long-sequence preprocessing](https://github.com/OpenGene/fastplong)
+*   Computer graphics: ghostty-org/ghostty,
+    [Sparse voxel renderer](https://github.com/rools/voxl),
+    [tgfx 2D Graphics library](https://github.com/Tencent/tgfx)
 *   Cryptography: google/distributed_point_functions, google/shell-encryption
 *   Data structures: bkille/BitLib
 *   Image codecs: eustas/2im,
     [Grok JPEG 2000](https://github.com/GrokImageCompression/grok),
     [JPEG XL](https://github.com/libjxl/libjxl),
     [JPEGenc](https://github.com/osamu620/JPEGenc),
-    [Jpegli](https://github.com/google/jpegli), OpenHTJ2K
-*   Image processing: cloudinary/ssimulacra2, m-ab-s/media-autobuild_suite,
-    [libvips](https://github.com/libvips/libvips)
+    [Jpegli](https://github.com/google/jpegli),
+    [libaom](https://aomedia.googlesource.com/aom/),
+    [OpenHTJ2K](https://github.com/osamu620/OpenHTJ2K)
+*   Image processing: awxkee/aire, cloudinary/ssimulacra2,
+    [libvips](https://github.com/libvips/libvips), m-ab-s/media-autobuild_suite,
 *   Image viewers: AlienCowEatCake/ImageViewer, diffractor/diffractor,
-    mirillis/jpegxl-wic,
-    [Lux panorama/image viewer](https://bitbucket.org/kfj/pv/)
+    [Lux panorama/image viewer](https://bitbucket.org/kfj/pv/),
+    mirillis/jpegxl-wic
 *   Information retrieval:
     [iresearch database index](https://github.com/iresearch-toolkit/iresearch),
     michaeljclark/zvec,
     [nebula interactive analytics / OLAP](https://github.com/varchar-io/nebula),
-    [ScaNN Scalable Nearest Neighbors](https://github.com/google-research/google-research/tree/7a269cb2ce0ae1db591fe11b62cbc0be7d72532a/scann),
-    [vectorlite vector search](https://github.com/1yefuwang1/vectorlite/)
-*   Machine learning: [gemma.cpp](https://github.com/google/gemma.cpp),
-    Tensorflow, Numpy, zpye/SimpleInfer
+    [`ScaNN` Scalable Nearest Neighbors](https://github.com/google-research/google-research/tree/7a269cb2ce0ae1db591fe11b62cbc0be7d72532a/scann),
+*   Machine learning: array2d/deepx,
+    [gemma.cpp](https://github.com/google/gemma.cpp), Tensorflow, Numpy,
+    zpye/SimpleInfer
+*   Programming languages:
+    [AOT-compiled python](https://github.com/exaloop/codon), oven-sh/bun, V8/V8,
+    yinqiwen/rapidudf
 *   Robotics:
     [MIT Model-Based Design and Verification](https://github.com/RobotLocomotion/drake)
+*   Vector search: 1yefuwang1/vectorlite, vespa-engine/vespa
 
 Other
 
@@ -144,12 +153,13 @@ See also the list at https://repology.org/project/highway-simd-library/versions
 
 ### Targets
 
-Highway supports 24 targets, listed in alphabetical order of platform:
+Highway supports 27 targets, listed in alphabetical order of platform:
 
 -   Any: `EMU128`, `SCALAR`;
 -   Armv7+: `NEON_WITHOUT_AES`, `NEON`, `NEON_BF16`, `SVE`, `SVE2`, `SVE_256`,
     `SVE2_128`;
 -   IBM Z: `Z14`, `Z15`;
+-   LoongArch: `LSX`, `LASX`;
 -   POWER: `PPC8` (v2.07), `PPC9` (v3.0), `PPC10` (v3.1B, not yet supported due
     to compiler bugs, see #1207; also requires QEMU 7.2);
 -   RISC-V: `RVV` (1.0);
@@ -168,6 +178,7 @@ Highway supports 24 targets, listed in alphabetical order of platform:
         by defining `HWY_WANT_AVX3_ZEN4` if compiling for static dispatch, but
         enabled by default for runtime dispatch),
     -   `AVX3_SPR` (~Sapphire Rapids, includes AVX-512FP16)
+    -   `AVX10_2` (~Diamond Rapids)
 
 Our policy is that unless otherwise specified, targets will remain supported as
 long as they can be (cross-)compiled with currently supported Clang or GCC, and

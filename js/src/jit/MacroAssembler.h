@@ -221,8 +221,6 @@ namespace js {
 class StaticStrings;
 class FixedLengthTypedArrayObject;
 
-enum class NativeIteratorIndices : uint32_t;
-
 namespace wasm {
 class CalleeDesc;
 class CallSiteDesc;
@@ -1114,6 +1112,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // explicitly requested. Instead use branch(Add|Sub|Mul|Neg) to test for
   // condition flags after performing arithmetic operations.
 
+  inline void add32(const Address& src, Register dest) PER_SHARED_ARCH;
   inline void add32(Register src, Register dest) PER_SHARED_ARCH;
   inline void add32(Imm32 imm, Register dest) PER_SHARED_ARCH;
   inline void add32(Imm32 imm, Register src, Register dest) PER_SHARED_ARCH;
@@ -3707,11 +3706,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void loadWasmPinnedRegsFromInstance(
       const wasm::MaybeTrapSiteDesc& trapSiteDesc);
 
-  // Returns a pair: the offset of the undefined (trapping) instruction, and
-  // the number of extra bytes of stack allocated prior to the trap
-  // instruction proper.
-  std::pair<CodeOffset, uint32_t> wasmReserveStackChecked(
-      uint32_t amount, const wasm::TrapSiteDesc& trapSiteDesc);
+  // Branches to the fail label if the stack would overflow the current stack
+  // limit. Returns the number of extra bytes of stack allocated prior to
+  // branching to the fail label.
+  uint32_t wasmReserveStackChecked(uint32_t amount, Label* fail);
 
   // Emit a bounds check against the wasm heap limit, jumping to 'ok' if 'cond'
   // holds; this can be the label either of the access or of the trap.  The
@@ -3987,10 +3985,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // Will select one of the other branchWasmRefIsSubtype* functions depending on
   // destType. See each function for the register allocation requirements, as
   // well as which registers will be preserved.
-  void branchWasmRefIsSubtype(Register ref, wasm::MaybeRefType sourceType,
-                              wasm::RefType destType, Label* label,
-                              bool onSuccess, Register superSTV,
-                              Register scratch1, Register scratch2);
+  //
+  // If this function returns a valid FaultingCodeOffset, then you must emit a
+  // trap site to catch the bad cast. It will never return a valid
+  // FaultingCodeOffset when signalNullChecks is false.
+  FaultingCodeOffset branchWasmRefIsSubtype(
+      Register ref, wasm::MaybeRefType sourceType, wasm::RefType destType,
+      Label* label, bool onSuccess, bool signalNullChecks, Register superSTV,
+      Register scratch1, Register scratch2);
 
   // Perform a subtype check that `ref` is a subtype of `type`, branching to
   // `label` depending on `onSuccess`. `type` must be in the `any` hierarchy.
@@ -4003,10 +4005,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
   //
   // `ref` and `superSTV` are preserved. Scratch registers are
   // clobbered.
-  void branchWasmRefIsSubtypeAny(Register ref, wasm::RefType sourceType,
-                                 wasm::RefType destType, Label* label,
-                                 bool onSuccess, Register superSTV,
-                                 Register scratch1, Register scratch2);
+  //
+  // If this function returns a valid FaultingCodeOffset, then you must emit a
+  // trap site to catch the bad cast. It will never return a valid
+  // FaultingCodeOffset when signalNullChecks is false.
+  FaultingCodeOffset branchWasmRefIsSubtypeAny(
+      Register ref, wasm::RefType sourceType, wasm::RefType destType,
+      Label* label, bool onSuccess, bool signalNullChecks, Register superSTV,
+      Register scratch1, Register scratch2);
 
   // Perform a subtype check that `ref` is a subtype of `type`, branching to
   // `label` depending on `onSuccess`. `type` must be in the `func` hierarchy.
@@ -4111,8 +4117,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                 const Address& dst, Register scratch);
 
   // Branch if the object `src` is or is not a WasmGcObject.
-  void branchObjectIsWasmGcObject(bool isGcObject, Register src,
-                                  Register scratch, Label* label);
+  FaultingCodeOffset branchObjectIsWasmGcObject(bool isGcObject, Register src,
+                                                Register scratch, Label* label);
 
   // `typeDefData` will be preserved. `instance` and `result` may be the same
   // register, in which case `instance` will be clobbered.
@@ -4185,8 +4191,16 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // ========================================================================
   // Barrier functions.
 
-  void emitPreBarrierFastPath(JSRuntime* rt, MIRType type, Register temp1,
-                              Register temp2, Register temp3, Label* noBarrier);
+  void emitPreBarrierFastPath(MIRType type, Register temp1, Register temp2,
+                              Register temp3, Label* noBarrier);
+  void emitValueReadBarrierFastPath(ValueOperand value, Register cell,
+                                    Register temp1, Register temp2,
+                                    Register temp3, Register temp4,
+                                    Label* barrier);
+
+ private:
+  void loadMarkBits(Register cell, Register chunk, Register markWord,
+                    Register bitIndex, Register temp, gc::ColorBit color);
 
  public:
   // ========================================================================
@@ -5396,16 +5410,17 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                                 Label* label);
 
   void branchIfNativeIteratorNotReusable(Register ni, Label* notReusable);
-  void branchNativeIteratorIndices(Condition cond, Register ni, Register temp,
-                                   NativeIteratorIndices kind, Label* label);
 
   void maybeLoadIteratorFromShape(Register obj, Register dest, Register temp,
                                   Register temp2, Register temp3,
-                                  Label* failure);
+                                  Label* failure, bool exclusive);
 
   void iteratorMore(Register obj, ValueOperand output, Register temp);
   void iteratorClose(Register obj, Register temp1, Register temp2,
                      Register temp3);
+  void iteratorLength(Register obj, Register output);
+  void iteratorLoadElement(Register obj, Register index, Register output);
+  void iteratorLoadElement(Register obj, int32_t index, Register output);
   void registerIterator(Register enumeratorsList, Register iter, Register temp);
 
   void prepareOOBStoreElement(Register object, Register index,
@@ -5423,6 +5438,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void scrambleHashCode(Register result);
 
  public:
+  void hashAndScrambleValue(ValueOperand value, Register result, Register temp);
   void prepareHashNonGCThing(ValueOperand value, Register result,
                              Register temp);
   void prepareHashString(Register str, Register result, Register temp);
@@ -5435,6 +5451,45 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void prepareHashValue(Register setObj, ValueOperand value, Register result,
                         Register temp1, Register temp2, Register temp3,
                         Register temp4);
+
+  // Helper functions used to implement mozilla::HashTable lookup inline
+  // in jitcode.
+  void prepareHashMFBT(Register hashCode, bool alreadyScrambled);
+  template <typename Table>
+  void computeHash1MFBT(Register hashTable, Register hashCode, Register hash1,
+                        Register scratch);
+  template <typename Table>
+  void computeHash2MFBT(Register hashTable, Register hashCode, Register hash2,
+                        Register sizeMask, Register scratch);
+  void applyDoubleHashMFBT(Register hash1, Register hash2, Register sizeMask);
+  template <typename Table>
+  void checkForMatchMFBT(Register hashTable, Register hashIndex,
+                         Register hashCode, Register scratch, Register scratch2,
+                         Label* missing, Label* collision);
+
+ public:
+  // This generates an inlined version of mozilla::detail::HashTable::lookup
+  // (ForNonAdd).
+  // Inputs/requirements:
+  // - hashTable: A register containing a pointer to a Table. The Table type
+  //              must define:
+  //              - Table::Entry
+  //              - Table::offsetOfHashShift()
+  //              - Table::offsetOfTable()
+  // - hashCode:  The 32-bit hash of the key to look up. This should already
+  //              have been scrambled using prepareHashMFBT.
+  // - match:     A lambda to generate code to compare keys. The code that it
+  //              generates can assume that `scratch` contains the address of
+  //              a Table::Entry with a matching hash value. `scratch2` can be
+  //              safely used without clobbering anything. If the keys don't
+  //              match, the generated code should fall through. If the keys
+  //              match, the generated code is responsible for jumping to the
+  //              correct continuation.
+  // - missing:   A label to jump to if the key does not exist in the table.
+  template <typename Table, typename Match>
+  void lookupMFBT(Register hashTable, Register hashCode, Register scratch,
+                  Register scratch2, Register scratch3, Register scratch4,
+                  Register scratch5, Label* missing, Match match);
 
  private:
   enum class IsBigInt { No, Yes, Maybe };
@@ -5724,6 +5779,10 @@ class MacroAssembler : public MacroAssemblerSpecific {
   void extractCurrentIndexAndKindFromIterator(Register iterator,
                                               Register outIndex,
                                               Register outKind);
+  void extractIndexAndKindFromIteratorByIterIndex(Register iterator,
+                                                  Register inOutIndex,
+                                                  Register outKind,
+                                                  Register scratch);
 
   template <typename IdType>
 #ifdef JS_CODEGEN_X86

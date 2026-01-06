@@ -10,7 +10,7 @@ import android.content.Context
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import mozilla.components.support.utils.ext.getPackageInfoCompat
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.mozilla.fenix.android.DefaultActivityLifecycleCallbacks
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.nimbus.FxNimbus
@@ -278,7 +278,7 @@ internal class DefaultMetricsStorage(
                 FxNimbus.features.growthData.value().enabled
         }
 
-        fun getInstalledTime(context: Context): Long = context.packageManager
+        fun getInstalledTime(context: Context): Long = context.packageManagerCompatHelper
             .getPackageInfoCompat(context.packageName, 0)
             .firstInstallTime
     }

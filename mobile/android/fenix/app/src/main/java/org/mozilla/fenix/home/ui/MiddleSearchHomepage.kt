@@ -48,7 +48,7 @@ private const val BOTTOM_PADDING = 47
  * @param onMiddleSearchBarVisibilityChanged Invoked when the middle search is shown/hidden.
  * @param onTopSitesItemBound Invoked during the composition of a top site item.
  */
-@Suppress("LongMethod", "CyclomaticComplexMethod")
+@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 @Composable
 internal fun MiddleSearchHomepage(
     state: HomepageState,

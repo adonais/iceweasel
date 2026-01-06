@@ -28,10 +28,10 @@ support-files = ["searchSuggestionEngine.xml", "searchSuggestionEngine.sjs"]
 ["browser_aboutHome_search_suggestion.js"]
 support-files = ["searchSuggestionEngine.xml", "searchSuggestionEngine.sjs"]
 skip-if = [
-  "os == 'mac'",
-  "os == 'linux' && os_version == '18.04' && !debug",
-  "os == 'linux' && os_version == '18.04' && bits == 64",
-  "win10_2009 && bits == 64 && !debug", # Bug 1399648, bug 1402502
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
+  "os == 'win' && os_version == '10.2009' && arch == 'x86_64' && opt", # Bug 1399648, bug 1402502
 ]
 
 ["browser_addSearchEngineFromForm.js"]
@@ -70,7 +70,7 @@ support-files = [
 
 ["browser_contextmenu.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && debug", # Bug 1937944
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1937944
 ]
 
 ["browser_contextmenu_whereToOpenLink.js"]
@@ -84,6 +84,8 @@ skip-if = [
 ["browser_hiddenOneOffs_diacritics.js"]
 
 ["browser_ime_composition.js"]
+
+["browser_new_searchbar_init.js"]
 
 ["browser_oneOff.js"]
 
@@ -118,13 +120,10 @@ support-files = ["trendingSuggestionEngine.sjs"]
 
 ["browser_searchbar_keyboard_navigation.js"]
 skip-if = [
-  "os == 'win' && debug", # Bug 1792718
-  "os == 'linux' && asan", # Bug 1792718
   "debug", # Bug 1792718
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1792718
   "tsan", # Bug 1792718
 ]
-
-["browser_searchbar_ohttpSessions.js"]
 
 ["browser_searchbar_openpopup.js"]
 

@@ -25,7 +25,7 @@ const URL_ROOT = CHROME_URL_ROOT.replace(
  *
  * @param {Browser} browser
  *     The browser element where the URL should be loaded.
- * @param {String} url
+ * @param {string} url
  *     The URL to load in the new tab
  */
 async function loadURL(browser, url) {
@@ -38,7 +38,7 @@ async function loadURL(browser, url) {
  * Create a new foreground tab loading the provided url.
  * Returns a promise which will resolve when the page is loaded.
  *
- * @param {String} url
+ * @param {string} url
  *     The URL to load in the new tab
  */
 async function addTab(url) {

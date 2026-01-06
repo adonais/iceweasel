@@ -154,8 +154,8 @@ def retrigger_action(parameters, graph_config, input, task_group_id, task_id):
     to_run = [label]
 
     if not input.get("force", None) and not _should_retrigger(full_task_graph, label):
-        logger.info(
-            f"Not retriggering task {label}, task should not be retrigged "
+        logger.error(
+            f"fatal error: Not retriggering task {label}, task should not be retriggered "
             "and force not specified."
         )
         sys.exit(1)

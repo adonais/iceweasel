@@ -10,7 +10,7 @@
   background-color: var(--background-color-box-info);
   margin: 24px 0;
   padding: 14px;
-  border: 1px solid var(--in-content-box-border-color);
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius-xsmall);
 }
 

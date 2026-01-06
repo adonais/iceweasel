@@ -65,7 +65,8 @@ def storybook_launch(command_context):
         argv=["http://localhost:5703"],
         setpref=[
             "svg.context-properties.content.enabled=true",
-            "layout.css.light-dark.enabled=true",
+            "layout.forms.input-type-search.enabled=true",
+            "layout.forms.reveal-password-button.enabled=true",
         ],
     )
 

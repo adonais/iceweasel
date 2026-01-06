@@ -85,6 +85,11 @@ class StickyScrollContainer final {
    */
   void MarkFramesForReflow();
 
+  void SetShouldFlatten(bool aShouldFlatten) {
+    mShouldFlatten = aShouldFlatten;
+  }
+  bool ShouldFlattenAway() const { return mShouldFlatten; }
+
   explicit StickyScrollContainer(ScrollContainerFrame* aScrollContainerFrame);
 
  private:
@@ -100,6 +105,7 @@ class StickyScrollContainer final {
   ScrollContainerFrame* const mScrollContainerFrame;
   DepthOrderedFrameList mFrames;
   nsPoint mScrollPosition;
+  bool mShouldFlatten = false;
 };
 
 }  // namespace mozilla

@@ -64,11 +64,19 @@ void CSSStyleValue::Stringify(nsAString& aRetVal) const {}
 // end of CSSStyleValue Web IDL implementation
 
 bool CSSStyleValue::IsCSSUnsupportedValue() const {
-  return mValueType == ValueType::Unsupported;
+  return mValueType == ValueType::UnsupportedValue;
 }
 
 bool CSSStyleValue::IsCSSKeywordValue() const {
-  return mValueType == ValueType::Keyword;
+  return mValueType == ValueType::KeywordValue;
+}
+
+bool CSSStyleValue::IsCSSUnitValue() const {
+  return mValueType == ValueType::UnitValue;
+}
+
+bool CSSStyleValue::IsCSSMathSum() const {
+  return mValueType == ValueType::MathSum;
 }
 
 }  // namespace mozilla::dom

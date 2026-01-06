@@ -479,7 +479,7 @@ messaging_system:
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1600335
     notification_emails:
-      - omc@mozilla.com
+      - omc-core@mozilla.com
       - dmosedale@mozilla.com
     expires: never
     telemetry_mirror: MS_MESSAGE_REQUEST_TIME_MS

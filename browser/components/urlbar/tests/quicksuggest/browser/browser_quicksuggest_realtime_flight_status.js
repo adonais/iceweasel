@@ -908,6 +908,26 @@ add_task(async function activate_multi() {
 });
 
 async function assertUI({ row, expectedList }) {
+  if (expectedList.length > 1) {
+    Assert.deepEqual(
+      document.l10n.getAttributes(row._content),
+      {
+        id: "urlbar-result-aria-group-flight-status",
+        args: null,
+      },
+      "ARIA group label should be set on the row inner"
+    );
+  } else {
+    Assert.deepEqual(
+      document.l10n.getAttributes(row._content),
+      {
+        id: null,
+        args: null,
+      },
+      "ARIA group label should not be set on the row inner"
+    );
+  }
+
   let items = row.querySelectorAll(".urlbarView-realtime-item");
   Assert.equal(items.length, expectedList.length);
 

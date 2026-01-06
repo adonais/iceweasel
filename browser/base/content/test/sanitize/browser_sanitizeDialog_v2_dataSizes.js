@@ -84,7 +84,7 @@ async function validateDataSizes(ClearHistoryDialogHelper) {
  * Helper function to simulate switching timespan selections and
  * validate data sizes before and after clearing
  *
- * @param {Object}
+ * @param {object}
  *    clearCookies - boolean
  *    clearDownloads - boolean
  *    clearCaches - boolean

@@ -18,7 +18,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -27,9 +26,9 @@ import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
 import androidx.navigation.fragment.findNavController
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.telemetry.glean.Glean
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.lazyStore
 import org.mozilla.fenix.debugsettings.gleandebugtools.ui.GleanDebugToolsScreen
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -40,12 +39,14 @@ import mozilla.components.ui.icons.R as iconsR
  */
 class GleanDebugToolsFragment : Fragment() {
 
-    private val store by lazyStore {
+    private val store by fragmentStore(
+        GleanDebugToolsState(
+            logPingsToConsoleEnabled = Glean.getLogPings(),
+            debugViewTag = Glean.getDebugViewTag() ?: "",
+        ),
+    ) {
         GleanDebugToolsStore(
-            initialState = GleanDebugToolsState(
-                logPingsToConsoleEnabled = Glean.getLogPings(),
-                debugViewTag = Glean.getDebugViewTag() ?: "",
-            ),
+            initialState = it,
             middlewares = listOf(
                 GleanDebugToolsMiddleware(
                     gleanDebugToolsStorage = DefaultGleanDebugToolsStorage(),
@@ -84,8 +85,7 @@ class GleanDebugToolsFragment : Fragment() {
                         title = {
                             Text(
                                 text = stringResource(R.string.glean_debug_tools_title),
-                                color = FirefoxTheme.colors.textPrimary,
-                                style = FirefoxTheme.typography.headline6,
+                                style = FirefoxTheme.typography.headline5,
                             )
                         },
                         navigationIcon = {
@@ -96,7 +96,6 @@ class GleanDebugToolsFragment : Fragment() {
                                     contentDescription = stringResource(
                                         R.string.bookmark_navigate_back_button_content_description,
                                     ),
-                                    tint = FirefoxTheme.colors.iconPrimary,
                                 )
                             }
                         },
@@ -104,10 +103,8 @@ class GleanDebugToolsFragment : Fragment() {
                             top = 0.dp,
                             bottom = 0.dp,
                         ),
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = FirefoxTheme.colors.layer1),
                     )
                 },
-                containerColor = FirefoxTheme.colors.layer1,
             ) { paddingValues ->
                 GleanDebugToolsScreen(
                     gleanDebugToolsStore = store,

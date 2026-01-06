@@ -466,13 +466,13 @@ nsresult EditorBase::PostCreateInternal() {
         NS_SUCCEEDED(rv),
         "EditorBase::FlushPendingSpellCheck() failed, but ignored");
 
-    IMEState newState;
-    rv = GetPreferredIMEState(&newState);
-    if (NS_FAILED(rv)) {
+    Result<IMEState, nsresult> newStateOrError = GetPreferredIMEState();
+    if (MOZ_UNLIKELY(newStateOrError.isErr())) {
       NS_WARNING("EditorBase::GetPreferredIMEState() failed");
       return NS_OK;
     }
-    IMEStateManager::UpdateIMEState(newState, focusedElement, *this);
+    IMEStateManager::UpdateIMEState(newStateOrError.unwrap(), focusedElement,
+                                    *this);
   }
 
   // FYI: This call might cause destroying this editor.
@@ -720,15 +720,14 @@ NS_IMETHODIMP EditorBase::SetFlags(uint32_t aFlags) {
   // Might be changing editable state, so, we need to reset current IME state
   // if we're focused and the flag change causes IME state change.
   if (RefPtr<Element> focusedElement = GetFocusedElement()) {
-    IMEState newState;
-    nsresult rv = GetPreferredIMEState(&newState);
-    NS_WARNING_ASSERTION(
-        NS_SUCCEEDED(rv),
-        "EditorBase::GetPreferredIMEState() failed, but ignored");
-    if (NS_SUCCEEDED(rv)) {
+    Result<IMEState, nsresult> newStateOrError = GetPreferredIMEState();
+    NS_WARNING_ASSERTION(newStateOrError.isOk(),
+                         "EditorBase::GetPreferredIMEState() failed");
+    if (MOZ_LIKELY(newStateOrError.isOk())) {
       // NOTE: When the enabled state isn't going to be modified, this method
       // is going to do nothing.
-      IMEStateManager::UpdateIMEState(newState, focusedElement, *this);
+      IMEStateManager::UpdateIMEState(newStateOrError.unwrap(), focusedElement,
+                                      *this);
     }
   }
 
@@ -1515,7 +1514,7 @@ already_AddRefed<nsIDocumentEncoder> EditorBase::GetAndInitDocEncoder(
   RefPtr<Document> doc = GetDocument();
   NS_ASSERTION(doc, "Need a document");
 
-  nsresult rv = docEncoder->NativeInit(
+  nsresult rv = docEncoder->Init(
       doc, aFormatType,
       aDocumentEncoderFlags | nsIDocumentEncoder::RequiresReinitAfterOutput);
   if (NS_FAILED(rv)) {
@@ -2535,7 +2534,7 @@ EditorBase::InsertNodeWithTransaction(ContentNodeType& aContentToInsert,
   }
 
   return CreateNodeResultBase<ContentNodeType>(
-      &aContentToInsert, transaction->SuggestPointToPutCaret<EditorDOMPoint>());
+      aContentToInsert, transaction->SuggestPointToPutCaret<EditorDOMPoint>());
 }
 
 Result<CreateElementResult, nsresult>
@@ -2687,7 +2686,7 @@ Result<CreateElementResult, nsresult> EditorBase::InsertBRElement(
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
   return CreateElementResult(
-      newBRElement,
+      *newBRElement,
       EditorDOMPoint(newBRElement, aBRElementType == BRElementType::Normal
                                        ? InterlinePosition::StartOfNextLine
                                        : InterlinePosition::EndOfLine));
@@ -3016,52 +3015,6 @@ nsresult EditorBase::CommitComposition() {
       IMEStateManager::NotifyIME(REQUEST_TO_COMMIT_COMPOSITION, presContext);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "IMEStateManager::NotifyIME() failed");
   return rv;
-}
-
-nsresult EditorBase::GetPreferredIMEState(IMEState* aState) {
-  if (NS_WARN_IF(!aState)) {
-    return NS_ERROR_INVALID_ARG;
-  }
-
-  aState->mEnabled = IMEEnabled::Enabled;
-  aState->mOpen = IMEState::DONT_CHANGE_OPEN_STATE;
-
-  if (IsReadonly()) {
-    aState->mEnabled = IMEEnabled::Disabled;
-    return NS_OK;
-  }
-
-  Element* rootElement = GetRoot();
-  if (NS_WARN_IF(!rootElement)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsIFrame* frameForRootElement = rootElement->GetPrimaryFrame();
-  if (NS_WARN_IF(!frameForRootElement)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  switch (frameForRootElement->StyleUIReset()->mIMEMode) {
-    case StyleImeMode::Auto:
-      if (IsPasswordEditor()) {
-        aState->mEnabled = IMEEnabled::Password;
-      }
-      break;
-    case StyleImeMode::Disabled:
-      // we should use password state for |ime-mode: disabled;|.
-      aState->mEnabled = IMEEnabled::Password;
-      break;
-    case StyleImeMode::Active:
-      aState->mOpen = IMEState::OPEN;
-      break;
-    case StyleImeMode::Inactive:
-      aState->mOpen = IMEState::CLOSED;
-      break;
-    case StyleImeMode::Normal:
-      break;
-  }
-
-  return NS_OK;
 }
 
 NS_IMETHODIMP EditorBase::GetComposing(bool* aResult) {

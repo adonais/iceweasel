@@ -7,7 +7,7 @@
  *
  * @param {Element} tab The <tab> that has had content dialogs opened
  * for it.
- * @param {Number} promptCount How many dialogs we expected to have been
+ * @param {number} promptCount How many dialogs we expected to have been
  * opened.
  *
  * @return {Promise}

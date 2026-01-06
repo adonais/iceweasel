@@ -6,7 +6,11 @@
 
 :root {
   --urlbar-container-min-width: 310px;
-  --urlbar-container-padding: 1px;
+  /* Usually we wouldn't need snapping border widths manually, but we use this
+   * for other layout calculations too */
+  --urlbar-container-border-width: max(env(hairline), round(down, 1px, env(hairline)));
+  --urlbar-container-padding: round(up, 1px, env(hairline));
+  --urlbar-container-border-padding: calc(var(--urlbar-container-border-width) + var(--urlbar-container-padding));
   --urlbar-margin-inline: 5px;
   --urlbar-padding-block: 4px;
 
@@ -44,7 +48,7 @@
 #urlbar:not([actiontype="switchtab"]) > .urlbar-input-container > #urlbar-label-box > #urlbar-label-switchtab,
 #urlbar:not([actiontype="extension"]) > .urlbar-input-container > #urlbar-label-box > #urlbar-label-extension,
 .urlbar-input-container[pageproxystate="invalid"] > #page-action-buttons > .urlbar-page-action,
-#identity-box.chromeUI ~ #page-action-buttons > .urlbar-page-action:not(#star-button-box),
+#identity-box.chromeUI ~ #page-action-buttons > .urlbar-page-action:not(#star-button-box, #split-view-button),
 #urlbar[usertyping] > .urlbar-input-container > #page-action-buttons > #urlbar-zoom-button,
 .urlbar:is(:not([usertyping]), :not([focused])) > .urlbar-input-container > .urlbar-go-button,
 .urlbar-revert-button-container {
@@ -123,7 +127,7 @@
 #searchbar {
   background-color: var(--toolbar-field-background-color);
   background-clip: border-box;
-  border: 1px solid var(--toolbar-field-border-color);
+  border: var(--urlbar-container-border-width) solid var(--toolbar-field-border-color);
   border-radius: var(--toolbarbutton-border-radius);
 }
 
@@ -289,8 +293,7 @@
 }
 
 .urlbar-input-container {
-  /* Match urlbar-background's border. */
-  border: 1px solid transparent;
+  border: var(--urlbar-container-border-width) solid transparent;
   padding: var(--urlbar-container-padding);
   min-width: 0;
 }
@@ -430,7 +433,8 @@
 /* The page actions menu is hidden by default, it is only shown in small
    windows as the overflow target of multiple page action buttons */
 #pageActionButton {
-  visibility: collapse;
+  /* TODO: display: none fixes browser_startup_images.js but breaks some tests. */
+  display: none;
 }
 
 /* 680px is just below half of popular 1366px wide screens, so when putting two
@@ -444,7 +448,7 @@
     display: none;
   }
   #pageActionButton[multiple-children] {
-    visibility: visible;
+    display: revert;
   }
 }
 
@@ -531,6 +535,24 @@
   height: 16px;
 }
 
+#split-view-button {
+  &[data-active-index="0"] > #split-view-button-icon {
+    list-style-image: url("chrome://browser/skin/split-view-left-16.svg");
+  }
+  &[data-active-index="1"] > #split-view-button-icon {
+    list-style-image: url("chrome://browser/skin/split-view-right-16.svg");
+  }
+
+  &:dir(rtl) {
+    &[data-active-index="0"] > #split-view-button-icon {
+      list-style-image: url("chrome://browser/skin/split-view-right-16.svg");
+    }
+    &[data-active-index="1"] > #split-view-button-icon {
+      list-style-image: url("chrome://browser/skin/split-view-left-16.svg");
+    }
+  }
+}
+
 #pageAction-panel-bookmark,
 #star-button {
   list-style-image: url("chrome://browser/skin/bookmark-hollow.svg");
@@ -586,8 +608,8 @@
 .urlbar-revert-button,
 .urlbar-go-button,
 .search-go-button {
-  width: calc(var(--urlbar-min-height) - 2px /* border */ - 2 * var(--urlbar-container-padding));
-  height: calc(var(--urlbar-min-height) - 2px /* border */ - 2 * var(--urlbar-container-padding));
+  width: calc(var(--urlbar-min-height) - 2 * var(--urlbar-container-border-padding));
+  height: calc(var(--urlbar-min-height) - 2 * var(--urlbar-container-border-padding));
   border-radius: var(--urlbar-inner-border-radius);
   padding: var(--urlbar-icon-padding);
   color: inherit;
@@ -690,6 +712,7 @@
   transition: margin-inline-start step-end var(--cfr-animation-duration);
 
   #urlbar[cfr-recommendation-state="expanded"] & {
+    width: auto;
     margin-inline-start: calc(var(--cfr-label-width) * -1);
     transition: margin-inline-start step-start var(--cfr-animation-duration);
   }
@@ -767,7 +790,7 @@
   transition-timing-function: ease-in-out, ease-in-out, step-end, step-end;
   transition-duration: var(--cfr-animation-duration);
   align-items: center;
-  margin-block: calc((var(--urlbar-min-height) - var(--urlbar-container-padding) - 2px /* border */ - 24px) / 2);
+  margin-block: calc((var(--urlbar-min-height) - 24px) / 2 - var(--urlbar-container-border-padding));
 
   &:-moz-locale-dir(rtl) {
     mask-position-x: calc(var(--cfr-label-width) * -1);
@@ -946,7 +969,7 @@
   border-radius: var(--urlbar-inner-border-radius);
   background-color: var(--urlbar-box-bgcolor);
   color: var(--urlbar-box-text-color);
-  margin-block: calc((var(--urlbar-min-height) - 20px) / 2 - 1px /* border */ - var(--urlbar-container-padding));
+  margin-block: calc((var(--urlbar-min-height) - 20px) / 2 - var(--urlbar-container-border-padding));
   overflow: hidden;
 
   :where(#urlbar[focused]) & {
@@ -1192,8 +1215,13 @@
   overflow: hidden;
   white-space: nowrap;
   max-width: var(--search-engine-name-max-width);
+  margin-inline-end: var(--urlbar-searchmodeswitcher-inline-padding);
 
   &:empty {
+    display: none;
+  }
+
+  #searchbar-new & {
     display: none;
   }
 }
@@ -1201,7 +1229,7 @@
 .searchmode-switcher-close {
   appearance: none;
   pointer-events: all;
-  margin-inline: var(--urlbar-searchmodeswitcher-inline-padding);
+  margin-inline-end: var(--urlbar-searchmodeswitcher-inline-padding);
 
   .urlbar[searchmode] & {
     display: inline-flex;

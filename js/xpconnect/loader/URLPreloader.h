@@ -13,7 +13,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Omnijar.h"
-#include "mozilla/Range.h"
 #include "mozilla/Result.h"
 #include "nsClassHashtable.h"
 #include "nsHashKeys.h"

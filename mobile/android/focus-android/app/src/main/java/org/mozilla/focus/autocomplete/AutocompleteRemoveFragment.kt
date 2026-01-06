@@ -8,10 +8,8 @@ import android.content.Context
 import android.view.Menu
 import android.view.MenuInflater
 import android.view.MenuItem
-import kotlinx.coroutines.CoroutineScope
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Dispatchers.Main
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.domains.CustomDomains
@@ -20,12 +18,15 @@ import org.mozilla.focus.R
 import org.mozilla.focus.ext.requireComponents
 import org.mozilla.focus.ext.showToolbar
 import org.mozilla.focus.state.AppAction
-import kotlin.coroutines.CoroutineContext
 
-class AutocompleteRemoveFragment : AutocompleteListFragment(), CoroutineScope {
-    private var job = Job()
-    override val coroutineContext: CoroutineContext
-        get() = job + Main
+/**
+ * A Fragment that allows the user to select and remove custom autocomplete domains.
+ *
+ * This fragment extends [AutocompleteListFragment] to display the list of domains but operates
+ * in a selection mode, allowing the user to pick specific items to delete from the [CustomDomains] storage.
+ * It inflates a specific menu containing a removal action and handles the deletion logic asynchronously.
+ */
+class AutocompleteRemoveFragment : AutocompleteListFragment() {
 
     override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
         menuInflater.inflate(R.menu.menu_autocomplete_remove, menu)
@@ -42,8 +43,8 @@ class AutocompleteRemoveFragment : AutocompleteListFragment(), CoroutineScope {
     private fun removeSelectedDomains(context: Context) {
         val domains = (binding.domainList.adapter as DomainListAdapter).selection()
         if (domains.isNotEmpty()) {
-            launch(Main) {
-                withContext(Dispatchers.Default) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                withContext(Dispatchers.IO) {
                     CustomDomains.remove(context, domains)
                     Autocomplete.domainRemoved.add()
                 }
@@ -59,16 +60,6 @@ class AutocompleteRemoveFragment : AutocompleteListFragment(), CoroutineScope {
 
     override fun onResume() {
         super.onResume()
-
-        if (job.isCancelled) {
-            job = Job()
-        }
-
         showToolbar(getString(R.string.preference_autocomplete_title_remove))
-    }
-
-    override fun onPause() {
-        job.cancel()
-        super.onPause()
     }
 }

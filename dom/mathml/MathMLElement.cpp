@@ -12,6 +12,7 @@
 #include "mozilla/TextUtils.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/Document.h"
+#include "nsAttrValueOrString.h"
 #include "nsCSSValue.h"
 #include "nsContentUtils.h"
 #include "nsGkAtoms.h"
@@ -356,9 +357,10 @@ void MathMLElement::MapMTableAttributesInto(
     const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::width);
     nsCSSValue width;
     // This does not handle auto and unitless values
-    if (value && value->Type() == nsAttrValue::eString) {
-      ParseNumericValue(value->GetStringValue(), width, 0,
-                        &aBuilder.Document());
+    if (value && (value->Type() == nsAttrValue::eString ||
+                  value->Type() == nsAttrValue::eAtom)) {
+      nsString str(nsAttrValueOrString(value).String());
+      ParseNumericValue(str, width, 0, &aBuilder.Document());
       if (width.GetUnit() == eCSSUnit_Percent) {
         aBuilder.SetPercentValue(eCSSProperty_width, width.GetPercentValue());
       } else if (width.GetUnit() != eCSSUnit_Null) {
@@ -374,10 +376,11 @@ void MathMLElement::MapMiAttributesInto(MappedDeclarationsBuilder& aBuilder) {
   // https://w3c.github.io/mathml-core/#dfn-mathvariant
   if (!aBuilder.PropertyIsSet(eCSSProperty_text_transform)) {
     const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::mathvariant);
-    if (value && value->Type() == nsAttrValue::eString) {
-      auto str = value->GetStringValue();
+    if (value && (value->Type() == nsAttrValue::eString ||
+                  value->Type() == nsAttrValue::eAtom)) {
+      nsString str(nsAttrValueOrString(value).String());
       str.CompressWhitespace();
-      if (value->GetStringValue().LowerCaseEqualsASCII("normal")) {
+      if (str.LowerCaseEqualsASCII("normal")) {
         aBuilder.SetKeywordValue(eCSSProperty_text_transform,
                                  StyleTextTransform::NONE._0);
       }
@@ -413,9 +416,11 @@ void MathMLElement::MapGlobalMathMLAttributesInto(
   // scriptlevel
   // https://w3c.github.io/mathml-core/#dfn-scriptlevel
   const nsAttrValue* value = aBuilder.GetAttr(nsGkAtoms::scriptlevel);
-  if (value && value->Type() == nsAttrValue::eString &&
+  if (value &&
+      (value->Type() == nsAttrValue::eString ||
+       value->Type() == nsAttrValue::eAtom) &&
       !aBuilder.PropertyIsSet(eCSSProperty_math_depth)) {
-    auto str = value->GetStringValue();
+    nsString str(nsAttrValueOrString(value).String());
     // FIXME: Should we remove whitespace trimming?
     // See https://github.com/w3c/mathml/issues/122
     str.CompressWhitespace();
@@ -448,9 +453,11 @@ void MathMLElement::MapGlobalMathMLAttributesInto(
   // mathsize
   // https://w3c.github.io/mathml-core/#dfn-mathsize
   value = aBuilder.GetAttr(nsGkAtoms::mathsize);
-  if (value && value->Type() == nsAttrValue::eString &&
+  if (value &&
+      (value->Type() == nsAttrValue::eString ||
+       value->Type() == nsAttrValue::eAtom) &&
       !aBuilder.PropertyIsSet(eCSSProperty_font_size)) {
-    auto str = value->GetStringValue();
+    nsString str(nsAttrValueOrString(value).String());
     nsCSSValue fontSize;
     ParseNumericValue(str, fontSize, 0, nullptr);
     if (fontSize.GetUnit() == eCSSUnit_Percent) {
@@ -474,9 +481,11 @@ void MathMLElement::MapGlobalMathMLAttributesInto(
     // default: normal (except on <mi>)
     //
     value = aBuilder.GetAttr(nsGkAtoms::mathvariant);
-    if (value && value->Type() == nsAttrValue::eString &&
+    if (value &&
+        (value->Type() == nsAttrValue::eString ||
+         value->Type() == nsAttrValue::eAtom) &&
         !aBuilder.PropertyIsSet(eCSSProperty__moz_math_variant)) {
-      auto str = value->GetStringValue();
+      nsString str(nsAttrValueOrString(value).String());
       str.CompressWhitespace();
 
       // Instead of a big table that holds all sizes, store a compressed version
@@ -577,9 +586,11 @@ void MathMLElement::MapGlobalMathMLAttributesInto(
   // dir
   // https://w3c.github.io/mathml-core/#dfn-dir
   value = aBuilder.GetAttr(nsGkAtoms::dir);
-  if (value && value->Type() == nsAttrValue::eString &&
+  if (value &&
+      (value->Type() == nsAttrValue::eString ||
+       value->Type() == nsAttrValue::eAtom) &&
       !aBuilder.PropertyIsSet(eCSSProperty_direction)) {
-    auto str = value->GetStringValue();
+    nsString str(nsAttrValueOrString(value).String());
     static const char dirs[][4] = {"ltr", "rtl"};
     static const StyleDirection dirValues[std::size(dirs)] = {
         StyleDirection::Ltr, StyleDirection::Rtl};
@@ -594,9 +605,11 @@ void MathMLElement::MapGlobalMathMLAttributesInto(
   // displaystyle
   // https://mathml-refresh.github.io/mathml-core/#dfn-displaystyle
   value = aBuilder.GetAttr(nsGkAtoms::displaystyle);
-  if (value && value->Type() == nsAttrValue::eString &&
+  if (value &&
+      (value->Type() == nsAttrValue::eString ||
+       value->Type() == nsAttrValue::eAtom) &&
       !aBuilder.PropertyIsSet(eCSSProperty_math_style)) {
-    auto str = value->GetStringValue();
+    nsString str(nsAttrValueOrString(value).String());
     static const char displaystyles[][6] = {"false", "true"};
     static const StyleMathStyle mathStyle[std::size(displaystyles)] = {
         StyleMathStyle::Compact, StyleMathStyle::Normal};
@@ -717,9 +730,11 @@ void MathMLElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
 
   if (aNameSpaceID == kNameSpaceID_None) {
     if (IsEventAttributeName(aName) && aValue) {
-      MOZ_ASSERT(aValue->Type() == nsAttrValue::eString,
-                 "Expected string value for script body");
-      SetEventHandler(GetEventNameForAttr(aName), aValue->GetStringValue());
+      MOZ_ASSERT(aValue->Type() == nsAttrValue::eString ||
+                     aValue->Type() == nsAttrValue::eAtom,
+                 "Expected string or atom value for script body");
+      SetEventHandler(GetEventNameForAttr(aName),
+                      nsAttrValueOrString(aValue).String());
     }
   }
 

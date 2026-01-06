@@ -8,15 +8,17 @@ import androidx.annotation.DrawableRes
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewLightDark
+import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.compose.base.theme.acornPrivateColorScheme
+import mozilla.components.compose.base.theme.privateColorPalette
 import mozilla.components.support.ktx.util.PromptAbuserDetector
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Reusable composable for a permission dialog.
@@ -55,32 +57,36 @@ fun PermissionDialog(
                 Icon(
                     painter = painterResource(icon),
                     contentDescription = null,
-                    tint = AcornTheme.colors.iconSecondary,
                 )
             }
         },
         title = {
             Text(
                 text = title,
-                textAlign = TextAlign.Center,
-                color = AcornTheme.colors.formDefault,
+                style = AcornTheme.typography.headline5,
             )
         },
         text = {
-            Text(text = message)
+            Text(
+                text = message,
+                style = AcornTheme.typography.body2,
+            )
         },
         confirmButton = {
-            DialogButton(text = positiveButtonLabel) {
-                if (promptAbuserDetector.areDialogsBeingAbused()) {
-                    promptAbuserDetector.updateJSDialogAbusedState()
-                } else {
-                    onConfirmRequest()
-                    onDismissRequest()
-                }
-            }
+            TextButton(
+                text = positiveButtonLabel,
+                onClick = {
+                    if (promptAbuserDetector.areDialogsBeingAbused()) {
+                        promptAbuserDetector.updateJSDialogAbusedState()
+                    } else {
+                        onConfirmRequest()
+                        onDismissRequest()
+                    }
+                },
+            )
         },
         dismissButton = {
-            DialogButton(
+            TextButton(
                 text = negativeButtonLabel,
                 onClick = onDismissRequest,
             )
@@ -89,40 +95,37 @@ fun PermissionDialog(
     )
 }
 
-/**
- * Reusable composable for a dialog button with text.
- */
+@PreviewLightDark
 @Composable
-private fun DialogButton(
-    text: String,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    onClick: () -> Unit,
-) {
-    TextButton(
-        onClick = onClick,
-        modifier = modifier,
-        enabled = enabled,
-    ) {
-        Text(
-            modifier = modifier,
-            text = text,
+private fun PermissionDialogPreview() {
+    AcornTheme {
+        PermissionDialog(
+            icon = iconsR.drawable.mozac_ic_notification_24,
+            message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer sodales laoreet commodo.",
+            title = "Dialog title",
+            positiveButtonLabel = "Go to settings",
+            negativeButtonLabel = "Cancel",
+            onConfirmRequest = {},
+            onDismissRequest = {},
         )
     }
 }
 
 @Preview
 @Composable
-private fun PermissionDialogPreview() {
-    AcornTheme {
+private fun PermissionDialogPrivatePreview() {
+    AcornTheme(
+        colors = privateColorPalette,
+        colorScheme = acornPrivateColorScheme(),
+    ) {
         PermissionDialog(
-            icon = R.drawable.ic_system_permission_dialog,
+            icon = iconsR.drawable.mozac_ic_notification_24,
             message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer sodales laoreet commodo.",
             title = "Dialog title",
             positiveButtonLabel = "Go to settings",
             negativeButtonLabel = "Cancel",
-            onConfirmRequest = { },
-            onDismissRequest = { },
+            onConfirmRequest = {},
+            onDismissRequest = {},
         )
     }
 }

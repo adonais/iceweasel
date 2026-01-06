@@ -9,9 +9,9 @@ import android.view.SoundEffectConstants
 import androidx.annotation.DrawableRes
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +58,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param icon A [Drawable] to display in the search selector. If null will use [fallbackIcon] instead.
  * @param contentDescription The content description to use.
  * @param menu The [BrowserToolbarMenu] to show when the search selector is clicked.
+ * @param modifier [Modifier] to apply to the background.
  * @param onInteraction Invoked for user interactions with the menu items.
  * @param fallbackIcon The resource id of the icon to use for this button if a [Drawable] is not provided.
  * @param shouldTint Whether the icon should have a default tint applied or not. Defaults to `true`.
@@ -68,6 +70,7 @@ fun SearchSelector(
     contentDescription: String,
     menu: BrowserToolbarMenu,
     onInteraction: (BrowserToolbarEvent) -> Unit,
+    modifier: Modifier = Modifier,
     @DrawableRes fallbackIcon: Int = iconsR.drawable.mozac_ic_search_24,
     shouldTint: Boolean = true,
     onClick: BrowserToolbarEvent? = null,
@@ -77,7 +80,7 @@ fun SearchSelector(
     var showMenu by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier
+        modifier = modifier
             .padding(horizontal = 4.dp)
             .width(52.dp)
             .height(40.dp)
@@ -94,7 +97,7 @@ fun SearchSelector(
             },
         shape = RoundedCornerShape(90.dp),
         colors = CardDefaults.cardColors(
-            containerColor = AcornTheme.colors.layer2,
+            containerColor = MaterialTheme.colorScheme.surfaceBright,
         ),
         elevation = CardDefaults.elevatedCardElevation(
             defaultElevation = 0.dp,
@@ -113,7 +116,7 @@ fun SearchSelector(
                     .clip(RoundedCornerShape(2.dp)),
                 contentScale = ContentScale.Crop,
                 colorFilter = when (shouldTint) {
-                    true -> ColorFilter.tint(AcornTheme.colors.iconPrimary)
+                    true -> ColorFilter.tint(MaterialTheme.colorScheme.onSurface)
                     else -> null
                 },
             )
@@ -123,7 +126,7 @@ fun SearchSelector(
             Icon(
                 painter = painterResource(R.drawable.mozac_compose_browser_toolbar_chevron_down_6),
                 contentDescription = null,
-                tint = AcornTheme.colors.iconPrimary,
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
 
@@ -147,15 +150,14 @@ fun SearchSelector(
 @Composable
 private fun SearchSelectorPreview() {
     AcornTheme {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            SearchSelector(
-                icon = null,
-                contentDescription = "test",
-                menu = object : BrowserToolbarMenu {
-                    override fun items() = emptyList<BrowserToolbarMenuItem>()
-                },
-                onInteraction = {},
-            )
-        }
+        SearchSelector(
+            icon = null,
+            contentDescription = "test",
+            modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceDim),
+            menu = object : BrowserToolbarMenu {
+                override fun items() = emptyList<BrowserToolbarMenuItem>()
+            },
+            onInteraction = {},
+        )
     }
 }

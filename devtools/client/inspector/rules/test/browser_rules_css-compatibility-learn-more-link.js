@@ -28,7 +28,7 @@ const TEST_DATA_INITIAL = [
           expected: COMPATIBILITY_TOOLTIP_MESSAGE.default,
           // MDN url
           expectedLearnMoreUrl:
-            "https://developer.mozilla.org/docs/Web/CSS/user-select?utm_source=devtools&utm_medium=inspector-css-compatibility&utm_campaign=default",
+            "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/user-select?utm_source=devtools&utm_medium=inspector-css-compatibility&utm_campaign=default",
         },
         "background-repeat-x": {
           value: "repeat",

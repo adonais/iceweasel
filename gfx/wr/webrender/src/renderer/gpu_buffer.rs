@@ -216,7 +216,7 @@ pub struct GpuBufferWriter<'a, T> {
     buffer: &'a mut FrameVec<T>,
     deferred: &'a mut Vec<DeferredBlock>,
     index: usize,
-    block_count: usize,
+    max_block_count: usize,
 }
 
 impl<'a, T> GpuBufferWriter<'a, T> where T: Texel {
@@ -224,13 +224,13 @@ impl<'a, T> GpuBufferWriter<'a, T> where T: Texel {
         buffer: &'a mut FrameVec<T>,
         deferred: &'a mut Vec<DeferredBlock>,
         index: usize,
-        block_count: usize,
+        max_block_count: usize,
     ) -> Self {
         GpuBufferWriter {
             buffer,
             deferred,
             index,
-            block_count,
+            max_block_count,
         }
     }
 
@@ -258,7 +258,7 @@ impl<'a, T> GpuBufferWriter<'a, T> where T: Texel {
 
     /// Close this writer, returning the GPU address of this set of block(s).
     pub fn finish(self) -> GpuBufferAddress {
-        assert_eq!(self.buffer.len(), self.index + self.block_count);
+        assert!(self.buffer.len() <= self.index + self.max_block_count);
 
         GpuBufferAddress {
             u: (self.index % MAX_VERTEX_TEXTURE_WIDTH) as u16,
@@ -269,7 +269,7 @@ impl<'a, T> GpuBufferWriter<'a, T> where T: Texel {
 
 impl<'a, T> Drop for GpuBufferWriter<'a, T> {
     fn drop(&mut self) {
-        assert_eq!(self.buffer.len(), self.index + self.block_count, "Claimed block_count was not written");
+        assert!(self.buffer.len() <= self.index + self.max_block_count, "Attempt to write too many GpuBuffer blocks");
     }
 }
 
@@ -316,11 +316,11 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
     /// Begin writing a specific number of blocks
     pub fn write_blocks(
         &mut self,
-        block_count: usize,
+        max_block_count: usize,
     ) -> GpuBufferWriter<T> {
-        assert!(block_count <= MAX_VERTEX_TEXTURE_WIDTH);
+        assert!(max_block_count <= MAX_VERTEX_TEXTURE_WIDTH);
 
-        if (self.data.len() % MAX_VERTEX_TEXTURE_WIDTH) + block_count > MAX_VERTEX_TEXTURE_WIDTH {
+        if (self.data.len() % MAX_VERTEX_TEXTURE_WIDTH) + max_block_count > MAX_VERTEX_TEXTURE_WIDTH {
             while self.data.len() % MAX_VERTEX_TEXTURE_WIDTH != 0 {
                 self.data.push(T::default());
             }
@@ -332,7 +332,7 @@ impl<T> GpuBufferBuilderImpl<T> where T: Texel + std::convert::From<DeviceIntRec
             &mut self.data,
             &mut self.deferred,
             index,
-            block_count,
+            max_block_count,
         )
     }
 

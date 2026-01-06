@@ -252,7 +252,7 @@ class UrlMatcher {
             return categoryMap
         }
 
-        @Suppress("ThrowsCount", "NestedBlockDepth")
+        @Suppress("ThrowsCount", "NestedBlockDepth", "CognitiveComplexMethod")
         private fun extractCategories(reader: JsonReader, categoryMap: MutableMap<String, Trie>, override: Boolean) {
             reader.beginObject()
 

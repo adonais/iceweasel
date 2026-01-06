@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
 task-defaults:
-    worker-type: b-linux-xlarge-amd
+    worker-type: b-linux-docker-xlarge-amd
     worker:
         max-run-time: 7200
     run:
@@ -36,7 +36,7 @@ macosx64-clang-14-raw:
     description: "Clang 14 toolchain build"
     treeherder:
         symbol: TM(clang-14-raw)
-    worker-type: b-linux-large-amd
+    worker-type: b-linux-docker-large-amd
     worker:
         max-run-time: 3600
     run:
@@ -63,7 +63,7 @@ linux64-clang-17-raw:
     description: "Clang 17 toolchain build"
     treeherder:
         symbol: TL(clang-17-raw)
-    worker-type: b-linux-large-amd
+    worker-type: b-linux-docker-large-amd
     run:
         script: build-clang.sh
         arguments:
@@ -85,7 +85,7 @@ linux64-clang-17:
     description: "Clang 17 toolchain build"
     treeherder:
         symbol: TL(clang-17)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
@@ -101,17 +101,13 @@ linux64-clang-19-mingw-x86:
     description: "MinGW-Clang 19 x86 toolchain build"
     treeherder:
         symbol: TMW(clang-19-x86)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     run:
         script: build-clang-mingw.sh
         arguments:
             - 'x86'
         resources:
             - 'taskcluster/scripts/misc/mingw-*.patch'
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default: linux64-clang-mingw-x86
         toolchain-artifact: public/build/clangmingw.tar.zst
     fetches:
         fetch:
@@ -127,17 +123,13 @@ linux64-clang-19-mingw-x64:
     treeherder:
         symbol: TMW(clang-19-x64)
         tier: 1
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     run:
         script: build-clang-mingw.sh
         arguments:
             - 'x64'
         resources:
             - 'taskcluster/scripts/misc/mingw-*.patch'
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default: linux64-clang-mingw-x64
         toolchain-artifact: public/build/clangmingw.tar.zst
     fetches:
         fetch:
@@ -163,10 +155,6 @@ linux64-clang-19-stage1:
             - 'build/build-clang/use-system-clang.json'
             - 'build/build-clang/clang-19.json'
             - 'build/build-clang/stage-1.json'
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default: linux64-clang-toolchain
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         fetch:
@@ -228,15 +216,11 @@ linux64-clang-19:
         local-toolchain: true
     treeherder:
         symbol: TL(clang-19)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
         script: repack-clang.sh
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default: linux64-clang
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         toolchain:
@@ -290,15 +274,11 @@ linux64-aarch64-clang-19:
         local-toolchain: true
     treeherder:
         symbol: TLA64(clang-19)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
         script: repack-clang.sh
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default: linux64-aarch64-clang
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         toolchain:
@@ -410,17 +390,11 @@ macosx64-clang-19:
         local-toolchain: true
     treeherder:
         symbol: TM(clang-19)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
         script: repack-clang.sh
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default:
-                    - macosx64-clang
-                    - macosx64-clang-toolchain
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         toolchain:
@@ -532,15 +506,11 @@ macosx64-aarch64-clang-19:
         local-toolchain: true
     treeherder:
         symbol: TMA64(clang-19)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
         script: repack-clang.sh
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default: macosx64-aarch64-clang
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         toolchain:
@@ -653,17 +623,11 @@ win64-clang-19:
         local-toolchain: true
     treeherder:
         symbol: TW64(clang-19)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
         script: repack-clang.sh
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default:
-                    - win64-clang
-                    - win64-clang-toolchain
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         toolchain:
@@ -720,15 +684,11 @@ win64-aarch64-clang-19:
         local-toolchain: true
     treeherder:
         symbol: TWA64(clang-19)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
         script: repack-clang.sh
-        toolchain-alias:
-            by-project:
-                toolchains: null
-                default: win64-aarch64-clang
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         toolchain:
@@ -754,13 +714,17 @@ linux64-clang-20-mingw-x86:
     description: "MinGW-Clang 20 x86 toolchain build"
     treeherder:
         symbol: TMW(clang-20-x86)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     run:
         script: build-clang-mingw.sh
         arguments:
             - 'x86'
         resources:
             - 'taskcluster/scripts/misc/mingw-*.patch'
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: linux64-clang-mingw-x86
         toolchain-artifact: public/build/clangmingw.tar.zst
     fetches:
         fetch:
@@ -776,13 +740,17 @@ linux64-clang-20-mingw-x64:
     treeherder:
         symbol: TMW(clang-20-x64)
         tier: 1
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     run:
         script: build-clang-mingw.sh
         arguments:
             - 'x64'
         resources:
             - 'taskcluster/scripts/misc/mingw-*.patch'
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: linux64-clang-mingw-x64
         toolchain-artifact: public/build/clangmingw.tar.zst
     fetches:
         fetch:
@@ -808,6 +776,10 @@ linux64-clang-20-stage1:
             - 'build/build-clang/use-system-clang.json'
             - 'build/build-clang/clang-20.json'
             - 'build/build-clang/stage-1.json'
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: linux64-clang-toolchain
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         fetch:
@@ -869,11 +841,15 @@ linux64-clang-20:
         local-toolchain: true
     treeherder:
         symbol: TL(clang-20)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
         script: repack-clang.sh
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: linux64-clang
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         toolchain:
@@ -927,11 +903,15 @@ linux64-aarch64-clang-20:
         local-toolchain: true
     treeherder:
         symbol: TLA64(clang-20)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
         script: repack-clang.sh
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: linux64-aarch64-clang
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         toolchain:
@@ -1043,11 +1023,17 @@ macosx64-clang-20:
         local-toolchain: true
     treeherder:
         symbol: TM(clang-20)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
         script: repack-clang.sh
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default:
+                    - macosx64-clang
+                    - macosx64-clang-toolchain
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         toolchain:
@@ -1159,11 +1145,15 @@ macosx64-aarch64-clang-20:
         local-toolchain: true
     treeherder:
         symbol: TMA64(clang-20)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
         script: repack-clang.sh
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: macosx64-aarch64-clang
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         toolchain:
@@ -1276,11 +1266,17 @@ win64-clang-20:
         local-toolchain: true
     treeherder:
         symbol: TW64(clang-20)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
         script: repack-clang.sh
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default:
+                    - win64-clang
+                    - win64-clang-toolchain
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         toolchain:
@@ -1337,11 +1333,15 @@ win64-aarch64-clang-20:
         local-toolchain: true
     treeherder:
         symbol: TWA64(clang-20)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
         script: repack-clang.sh
+        toolchain-alias:
+            by-project:
+                toolchains: null
+                default: win64-aarch64-clang
         toolchain-artifact: public/build/clang.tar.zst
     fetches:
         toolchain:
@@ -1369,7 +1369,7 @@ linux64-clang-trunk-mingw-x86:
         cached_task: false
     treeherder:
         symbol: TMW(clang-trunk-x86)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     run:
         script: build-clang-mingw.sh
         arguments:
@@ -1397,7 +1397,7 @@ linux64-clang-trunk-mingw-x64:
     treeherder:
         symbol: TMW(clang-trunk-x64)
         tier: 1
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     run:
         script: build-clang-mingw.sh
         arguments:
@@ -1506,7 +1506,7 @@ linux64-clang-trunk:
         cached_task: false
     treeherder:
         symbol: TL(clang-trunk)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
@@ -1570,7 +1570,7 @@ linux64-aarch64-clang-trunk:
         cached_task: false
     treeherder:
         symbol: TLA64(clang-trunk)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
@@ -1696,7 +1696,7 @@ macosx64-clang-trunk:
         cached_task: false
     treeherder:
         symbol: TM(clang-trunk)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
@@ -1824,7 +1824,7 @@ macosx64-aarch64-clang-trunk:
         cached_task: false
     treeherder:
         symbol: TMA64(clang-trunk)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
@@ -1949,7 +1949,7 @@ win64-clang-trunk:
         cached_task: false
     treeherder:
         symbol: TW64(clang-trunk)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:
@@ -2018,7 +2018,7 @@ win64-aarch64-clang-trunk:
         cached_task: false
     treeherder:
         symbol: TWA64(clang-trunk)
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 600
     run:

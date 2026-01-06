@@ -7,7 +7,6 @@
 #define mozilla_image_Image_h
 
 #include "mozilla/Attributes.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/SizeOfState.h"

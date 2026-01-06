@@ -39,9 +39,6 @@ struct Register;
 
 enum class ICAttachResult { Attached, DuplicateStub, TooLarge, OOM };
 
-bool TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback, JSScript* script,
-                     ICScript* icScript);
-
 ICAttachResult AttachBaselineCacheIRStub(JSContext* cx,
                                          const CacheIRWriter& writer,
                                          CacheKind kind, JSScript* outerScript,
@@ -168,19 +165,6 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
 
  private:
   CACHE_IR_COMPILER_UNSHARED_GENERATED
-};
-
-// Special object used for storing a list of shapes to guard against. These are
-// only used in the fields of CacheIR stubs and do not escape.
-class ShapeListObject : public ListObject {
- public:
-  static const JSClass class_;
-  static const JSClassOps classOps_;
-  static ShapeListObject* create(JSContext* cx);
-  static void trace(JSTracer* trc, JSObject* obj);
-
-  Shape* get(uint32_t index);
-  bool traceWeak(JSTracer* trc);
 };
 
 }  // namespace jit

@@ -103,8 +103,8 @@ genai-shortcuts-hide =
 genai-chatbot-title = AI chatbot
 genai-header-provider-menu =
     .title = Choose a chatbot
-genai-header-options-button =
-    .title = Open menu
+genai-header-settings-button =
+    .title = AI Chat settings
 genai-header-close-button =
     .title = Close
 

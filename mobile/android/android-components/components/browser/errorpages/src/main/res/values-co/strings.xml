@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Prublema di situ ingannatore</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>U situ web à l’indirizzu %1$s hè statu signalatu cum’è essendu ingannatore è hè statu bluccatu secondu à e vostre preferenze di sicurità.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Situ bluccatu per a vostra sicurità</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Sta pagina web à l’indirizzu %1$s hè stata bluccata perchè unu di i vostri moduli addiziunali hà pruvatu d’aprela. Stu situ puderia esse adupratu per arrubà e vostre infurmazioni, tale e parolle d’intesa o i numeri di carte bancarie.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">U situ sicurizatu ùn hè micca dispunibule</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

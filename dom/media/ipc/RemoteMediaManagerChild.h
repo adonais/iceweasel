@@ -165,7 +165,8 @@ class RemoteMediaManagerChild final
   explicit RemoteMediaManagerChild(RemoteMediaIn aLocation);
   ~RemoteMediaManagerChild() = default;
   static RefPtr<PlatformDecoderModule::CreateDecoderPromise> Construct(
-      RefPtr<RemoteDecoderChild>&& aChild, RemoteMediaIn aLocation);
+      RefPtr<RemoteDecoderChild>&& aChild,
+      CreateDecoderParamsForAsync&& aParams, RemoteMediaIn aLocation);
 
   static void OpenRemoteMediaManagerChildForProcess(
       Endpoint<PRemoteMediaManagerChild>&& aEndpoint, RemoteMediaIn aLocation);

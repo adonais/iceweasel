@@ -294,7 +294,7 @@ export var E10SUtils = {
    * Serialize csp data.
    *
    * @param {nsIContentSecurity} csp. The csp to serialize.
-   * @return {String} The base64 encoded csp data.
+   * @return {string} The base64 encoded csp data.
    */
   serializeCSP(csp) {
     let serializedCSP = null;
@@ -313,7 +313,7 @@ export var E10SUtils = {
    * Deserialize a base64 encoded csp (serialized with
    * Utils::serializeCSP).
    *
-   * @param {String} csp_b64 A base64 encoded serialized csp.
+   * @param {string} csp_b64 A base64 encoded serialized csp.
    * @return {nsIContentSecurityPolicy} A deserialized csp.
    */
   deserializeCSP(csp_b64) {
@@ -335,7 +335,7 @@ export var E10SUtils = {
    * Serialize policyContainer data.
    *
    * @param {nsIPolicyContainer} policyContainer. The policyContainer to serialize.
-   * @return {String} The base64 encoded policyContainer data.
+   * @return {string} The base64 encoded policyContainer data.
    */
   serializePolicyContainer(policyContainer) {
     let serializedPolicyContainer = null;
@@ -357,7 +357,7 @@ export var E10SUtils = {
    * Deserialize a base64 encoded policyContainer (serialized with
    * Utils::serializePolicyContainer).
    *
-   * @param {String} policyContainerB64 A base64 encoded serialized policyContainer.
+   * @param {string} policyContainerB64 A base64 encoded serialized policyContainer.
    * @return {nsIPolicyContainer} A deserialized policyContainer.
    */
   deserializePolicyContainer(policyContainerB64) {
@@ -644,7 +644,7 @@ export var E10SUtils = {
    * Serialize principal data.
    *
    * @param {nsIPrincipal} principal The principal to serialize.
-   * @return {String} The serialized principal data.
+   * @return {string} The serialized principal data.
    */
   serializePrincipal(principal) {
     let serializedPrincipal = null;
@@ -664,7 +664,7 @@ export var E10SUtils = {
   /**
    * Deserialize a principal (serialized with serializePrincipal).
    *
-   * @param {String} serializedPincipal A serialized principal.
+   * @param {string} serializedPincipal A serialized principal.
    * @return {nsIPrincipal} A deserialized principal.
    */
   deserializePrincipal(serializedPincipal, fallbackPrincipalCallback = null) {
@@ -721,7 +721,7 @@ export var E10SUtils = {
    *
    * @param {nsICookieJarSettings} cookieJarSettings The cookieJarSettings to
    *   serialize.
-   * @return {String} The base64 encoded cookieJarSettings data.
+   * @return {string} The base64 encoded cookieJarSettings data.
    */
   serializeCookieJarSettings(cookieJarSettings) {
     let serialized = null;
@@ -741,7 +741,7 @@ export var E10SUtils = {
   /**
    * Deserialize a base64 encoded cookieJarSettings
    *
-   * @param {String} cookieJarSettings_b64 A base64 encoded serialized cookieJarSettings.
+   * @param {string} cookieJarSettings_b64 A base64 encoded serialized cookieJarSettings.
    * @return {nsICookieJarSettings} A deserialized cookieJarSettings.
    */
   deserializeCookieJarSettings(cookieJarSettings_b64) {
@@ -775,7 +775,7 @@ export var E10SUtils = {
    * Serialize referrerInfo.
    *
    * @param {nsIReferrerInfo} The referrerInfo to serialize.
-   * @return {String} The base64 encoded referrerInfo.
+   * @return {string} The base64 encoded referrerInfo.
    */
   serializeReferrerInfo(referrerInfo) {
     let serialized = null;
@@ -793,7 +793,7 @@ export var E10SUtils = {
   /**
    * Deserialize a base64 encoded referrerInfo
    *
-   * @param {String} referrerInfo_b64 A base64 encoded serialized referrerInfo.
+   * @param {string} referrerInfo_b64 A base64 encoded serialized referrerInfo.
    * @return {nsIReferrerInfo} A deserialized referrerInfo.
    */
   deserializeReferrerInfo(referrerInfo_b64) {

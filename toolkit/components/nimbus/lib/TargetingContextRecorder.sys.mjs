@@ -226,7 +226,6 @@ export const PREFS = Object.freeze({
   "browser.startup.page": PREF_INT,
   "browser.toolbars.bookmarks.visibility": PREF_STRING,
   "browser.urlbar.lastUrlbarSearchSeconds": PREF_INT,
-  "browser.urlbar.quicksuggest.dataCollection.enabled": PREF_BOOL,
   "browser.urlbar.showSearchSuggestionsFirst": PREF_BOOL,
   "browser.urlbar.suggest.quicksuggest.sponsored": PREF_BOOL,
   "media.videocontrols.picture-in-picture.enabled": PREF_BOOL,

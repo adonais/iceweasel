@@ -280,6 +280,7 @@ TrackingDBService.prototype = {
 
   /**
    * Saves data rows to the DB.
+   *
    * @param data
    *        An array of JS objects representing row items to save.
    */

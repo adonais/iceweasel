@@ -2,19 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#defaultEngine,
+#defaultEngineNormal,
 #defaultPrivateEngine {
-  margin-inline-start: 0;
-  &,
-  & menupopup {
-    max-width: var(--search-engine-name-max-width);
-  }
-}
-
-#defaultEngine::part(icon),
-#defaultPrivateEngine::part(icon) {
-  height: 16px;
-  width: 16px;
+  max-width: var(--search-engine-name-max-width);
 }
 
 #engineList {

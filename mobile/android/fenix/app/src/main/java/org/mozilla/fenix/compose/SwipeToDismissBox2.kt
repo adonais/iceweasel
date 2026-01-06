@@ -24,8 +24,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,6 +52,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.displaySnackbar
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.math.abs
@@ -158,7 +161,7 @@ class SwipeToDismissState2(
 }
 
 // https://bugzilla.mozilla.org/show_bug.cgi?id=1957790
-@Suppress("DEPRECATION")
+@Suppress("DEPRECATION", "CognitiveComplexMethod")
 private fun Modifier.anchoredHorizontalDraggable(
     state: SwipeToDismissState2,
     scope: CoroutineScope,
@@ -214,6 +217,7 @@ private fun isReallyHorizontal(x: Float, y: Float) =
  * @param dismissContent The content that can be dismissed.
  */
 @Composable
+@Suppress("CognitiveComplexMethod")
 fun SwipeToDismissBox2(
     state: SwipeToDismissState2,
     modifier: Modifier = Modifier,
@@ -282,53 +286,57 @@ private fun SwipeToDismissBoxPreview() {
     val coroutineScope = rememberCoroutineScope()
 
     FirefoxTheme {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            Column {
-                SwipeableItem(
-                    text = "Swipe to right ->",
-                    enableDismissFromEndToStart = false,
-                    onSwipeToEnd = {
-                        coroutineScope.launch {
-                            snackbarState.displaySnackbar(message = "Dismiss")
-                        }
-                    },
-                )
+        Surface {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                Column {
+                    SwipeableItem(
+                        text = "Swipe to right ->",
+                        enableDismissFromEndToStart = false,
+                        onSwipeToEnd = {
+                            coroutineScope.launch {
+                                snackbarState.displaySnackbar(message = "Dismiss")
+                            }
+                        },
+                    )
 
-                Spacer(Modifier.height(30.dp))
+                    Spacer(Modifier.height(30.dp))
 
-                SwipeableItem(
-                    enableDismissFromStartToEnd = false,
-                    text = "<- Swipe to left",
-                    onSwipeToStart = {
-                        coroutineScope.launch {
-                            snackbarState.displaySnackbar(message = "Dismiss")
-                        }
-                    },
-                )
+                    SwipeableItem(
+                        enableDismissFromStartToEnd = false,
+                        text = "<- Swipe to left",
+                        onSwipeToStart = {
+                            coroutineScope.launch {
+                                snackbarState.displaySnackbar(message = "Dismiss")
+                            }
+                        },
+                    )
 
-                Spacer(Modifier.height(30.dp))
+                    Spacer(Modifier.height(30.dp))
 
-                SwipeableItem(
-                    text = "<- Swipe both ways ->",
-                    onSwipeToStart = {
-                        coroutineScope.launch {
-                            snackbarState.displaySnackbar(message = "Dismiss")
-                        }
-                    },
-                    onSwipeToEnd = {
-                        coroutineScope.launch {
-                            snackbarState.displaySnackbar(message = "Dismiss")
-                        }
-                    },
-                )
+                    SwipeableItem(
+                        text = "<- Swipe both ways ->",
+                        onSwipeToStart = {
+                            coroutineScope.launch {
+                                snackbarState.displaySnackbar(message = "Dismiss")
+                            }
+                        },
+                        onSwipeToEnd = {
+                            coroutineScope.launch {
+                                snackbarState.displaySnackbar(message = "Dismiss")
+                            }
+                        },
+                    )
+                }
+
+                SnackbarHost(
+                    hostState = snackbarState,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                ) {
+                    Snackbar(snackbarData = it)
+                }
             }
-
-            SnackbarHost(
-                hostState = snackbarState,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
         }
     }
 }
@@ -371,14 +379,12 @@ private fun SwipeableItem(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(FirefoxTheme.colors.layerAccent),
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             )
         },
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(FirefoxTheme.colors.layer1),
+            modifier = Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {

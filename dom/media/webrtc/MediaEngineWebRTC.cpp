@@ -299,6 +299,25 @@ RefPtr<MediaEngineSource> MediaEngineWebRTC::CreateSource(
   }
 }
 
+RefPtr<MediaEngineSource> MediaEngineWebRTC::CreateSourceFrom(
+    const MediaEngineSource* aSource, const MediaDevice* aMediaDevice) {
+  MOZ_ASSERT(aMediaDevice->mEngine == this);
+  if (MediaEngineSource::IsVideo(aMediaDevice->mMediaSource)) {
+    return MediaEngineRemoteVideoSource::CreateFrom(
+        static_cast<const MediaEngineRemoteVideoSource*>(aSource),
+        aMediaDevice);
+  }
+  switch (aMediaDevice->mMediaSource) {
+    case MediaSourceEnum::Microphone:
+      return MediaEngineWebRTCMicrophoneSource::CreateFrom(
+          static_cast<const MediaEngineWebRTCMicrophoneSource*>(aSource),
+          aMediaDevice);
+    default:
+      MOZ_CRASH("Unsupported source type");
+      return nullptr;
+  }
+}
+
 void MediaEngineWebRTC::Shutdown() {
   AssertIsOnOwningThread();
   mCameraListChangeListener.DisconnectIfExists();

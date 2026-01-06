@@ -14,12 +14,12 @@ tags = "searchconfig remote-settings"
 # They are also skipped for mobile and Thunderbird as these are specifically
 # testing the Firefox config at the moment.
 skip-if = [
-  "os == 'android'",
   "appname == 'thunderbird'",
   "asan",
-  "tsan",
   "debug",
+  "os == 'android'",
   "os == 'win' && ccov",
+  "tsan",
 ]
 
 ["test_distributions.js"]

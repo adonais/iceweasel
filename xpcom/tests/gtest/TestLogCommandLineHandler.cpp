@@ -6,7 +6,6 @@
 
 #include "LogCommandLineHandler.h"
 
-#include <iterator>
 #include "nsString.h"
 #include "nsTArray.h"
 #include "gtest/gtest.h"

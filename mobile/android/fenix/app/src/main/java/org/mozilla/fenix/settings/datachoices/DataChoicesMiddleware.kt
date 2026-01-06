@@ -46,6 +46,7 @@ internal class DataChoicesMiddleware(
                         telemetryEnabled = settings.isTelemetryEnabled,
                         usagePingEnabled = settings.isDailyUsagePingEnabled,
                         studiesEnabled = settings.isExperimentationEnabled,
+                        showMeasurementDataSection = settings.hasMadeMarketingTelemetrySelection,
                         measurementDataEnabled = settings.isMarketingTelemetryEnabled,
                         crashReportOption = crashReportCache.getReportOption(),
                     ),

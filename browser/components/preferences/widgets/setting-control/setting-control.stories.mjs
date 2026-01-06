@@ -133,6 +133,7 @@ ExtensionControlled.args = {
        * extension-controlled-message = <strong>{ $name }</strong> requires Container Tabs.
        * */
       l10nId: "extension-controlled-message",
+      supportPage: "preferences",
     },
   },
   setting: {
@@ -149,6 +150,7 @@ ExtensionControlled.args = {
       id: "extension-controlled-example",
       l10nId: "extension-controlled-message",
       name: "My Extension",
+      supportPage: "preferences",
     },
   },
 };

@@ -189,11 +189,11 @@ class GridInspector {
    *
    * @param  {NodeFront} nodeFront
    *         The NodeFront for which we need the color.
-   * @param  {String} customColor
+   * @param  {string} customColor
    *         The color fetched from the custom palette, if it exists.
-   * @param  {String} fallbackColor
+   * @param  {string} fallbackColor
    *         The color to use if no color could be found for the node front.
-   * @return {String} color
+   * @return {string} color
    *         The color to use.
    */
   getInitialGridColor(nodeFront, customColor, fallbackColor) {
@@ -243,7 +243,7 @@ class GridInspector {
    *
    * @param  {Array} newGridFronts
    *         A list of GridFront objects.
-   * @return {Boolean}
+   * @return {boolean}
    */
   haveCurrentFragmentsChanged(newGridFronts) {
     const gridHighlighters = this.highlighters.gridHighlighters;
@@ -429,7 +429,6 @@ class GridInspector {
   /**
    * Get all GridFront instances from the server(s).
    *
-   *
    * @return {Array} The list of GridFronts
    */
   async getGrids() {
@@ -480,7 +479,7 @@ class GridInspector {
    * @param  {NodeFront} nodeFront
    *         The NodeFront of the grid container element for which the grid highlighter
    *         is shown for.
-   * @param  {Boolean} highlighted
+   * @param  {boolean} highlighted
    *         If the grid should be updated to highlight or hide.
    */
   onHighlighterChange(nodeFront, highlighted) {
@@ -573,7 +572,7 @@ class GridInspector {
    * @param  {NodeFront} node
    *         The NodeFront of the grid container element for which the grid color is
    *         being updated.
-   * @param  {String} color
+   * @param  {string} color
    *         A hex string representing the color to use.
    */
   async onSetGridOverlayColor(node, color) {
@@ -659,7 +658,7 @@ class GridInspector {
    * component. Toggles on/off the option to show the grid areas in the grid highlighter.
    * Refreshes the shown grid highlighter for the grids currently highlighted.
    *
-   * @param  {Boolean} enabled
+   * @param  {boolean} enabled
    *         Whether or not the grid highlighter should show the grid areas.
    */
   onToggleShowGridAreas(enabled) {
@@ -681,7 +680,7 @@ class GridInspector {
    * numbers in the grid highlighter. Refreshes the shown grid highlighter for the
    * grids currently highlighted.
    *
-   * @param  {Boolean} enabled
+   * @param  {boolean} enabled
    *         Whether or not the grid highlighter should show the grid line numbers.
    */
   onToggleShowGridLineNumbers(enabled) {
@@ -703,7 +702,7 @@ class GridInspector {
    * lines infinitely in the grid highlighter. Refreshes the shown grid highlighter
    * for grids currently highlighted.
    *
-   * @param  {Boolean} enabled
+   * @param  {boolean} enabled
    *         Whether or not the grid highlighter should extend grid lines infinitely.
    */
   onToggleShowInfiniteLines(enabled) {
@@ -726,7 +725,7 @@ class GridInspector {
    *
    * @param {Error} error
    *        The original error object.
-   * @param {String} message
+   * @param {string} message
    *        The message to log in case the inspector is already destroyed and
    *        the error is swallowed.
    */
@@ -745,9 +744,9 @@ class GridInspector {
    *
    * @param {Array} grids
    *        A list of grid data.
-   * @param {Object} parent
+   * @param {object} parent
    *        A grid data of parent.
-   * @param {Number} zIndex
+   * @param {number} zIndex
    *        z-index for the parent.
    */
   _updateZOrder(grids, parent, zIndex = 0) {

@@ -88,6 +88,24 @@ The rule also allows these values non-token values:
 
 .. code-block:: css
 
+  .current-border-color {
+    border-color: currentColor;
+  }
+
+.. code-block:: css
+
+  .white-border-color {
+    border-color: white;
+  }
+
+.. code-block:: css
+
+  .black-border-color {
+    border-color: black;
+  }
+
+.. code-block:: css
+
   .inherited-border-color{
     border-colors: inherit;
   }
@@ -104,9 +122,86 @@ The rule also allows these values non-token values:
     border-color: initial;
   }
 
-
 .. code-block:: css
 
   .current-border-color {
     border-color: currentColor;
+  }
+
+Autofix functionality
+---------------------
+
+This rule can automatically fix some violations by replacing hex color values with
+appropriate color names. Examples of autofixable violations:
+
+.. code-block:: css
+
+  /* Before */
+  .a {
+    border-color: #fff;
+  }
+
+  /* After autofix */
+  .a {
+    border-color: white;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .a {
+    border-color: #ffffff;
+  }
+
+  /* After autofix */
+  .a {
+    border-color: white;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .a {
+    border-color: #FFF;
+  }
+
+  /* After autofix */
+  .a {
+    border-color: white;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .a {
+    border-color: #FFFFFF;
+  }
+
+  /* After autofix */
+  .a {
+    border-color: white;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .a {
+    border-color: #000;
+  }
+
+  /* After autofix */
+  .a {
+    border-color: black;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .a {
+    border-color: #000000;
+  }
+
+  /* After autofix */
+  .a {
+    border-color: black;
   }

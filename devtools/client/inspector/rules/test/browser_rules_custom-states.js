@@ -52,7 +52,12 @@ add_task(async function () {
 
   await selectNode("fx-test#no-state", inspector);
   await checkRuleViewContent(view, [
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
     {
       selector: `fx-test`,
       declarations: [{ name: "color", value: "lime" }],
@@ -61,7 +66,12 @@ add_task(async function () {
 
   await selectNode("fx-test#single-state", inspector);
   await checkRuleViewContent(view, [
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
     {
       selector: `fx-test:state(custom-state)`,
       declarations: [{ name: "color", value: "gold" }],
@@ -74,7 +84,12 @@ add_task(async function () {
 
   await selectNode("fx-test#multiple-state", inspector);
   await checkRuleViewContent(view, [
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
     {
       selector: `fx-test:state(another-custom-state)`,
       declarations: [{ name: "color", value: "tomato" }],

@@ -119,7 +119,7 @@ class CrashMiddleware(
      * @param next The next middleware in the chain.
      * @param action The current [CrashAction] to process in the middleware.
      */
-    @Suppress("CyclomaticComplexMethod", "LongMethod")
+    @Suppress("CyclomaticComplexMethod", "LongMethod", "CognitiveComplexMethod")
     fun invoke(
         middlewareContext: Pair<() -> CrashState, (CrashAction) -> Unit>,
         next: (CrashAction) -> Unit,

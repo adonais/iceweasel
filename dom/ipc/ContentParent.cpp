@@ -7912,21 +7912,14 @@ void ContentParent::StartRemoteWorkerService() {
 }
 
 IPCResult ContentParent::RecvRawMessage(
-    const JSActorMessageMeta& aMeta, const UniquePtr<ClonedMessageData>& aData,
+    const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
     const UniquePtr<ClonedMessageData>& aStack) {
-  UniquePtr<StructuredCloneData> data;
-  if (aData) {
-    data = MakeUnique<StructuredCloneData>();
-    data->BorrowFromClonedMessageData(*aData);
-  }
   UniquePtr<StructuredCloneData> stack;
   if (aStack) {
     stack = MakeUnique<StructuredCloneData>();
     stack->BorrowFromClonedMessageData(*aStack);
   }
-  MMPrinter::Print("ContentParent::RecvRawMessage", aMeta.actorName(),
-                   aMeta.messageName(), aData);
-  ReceiveRawMessage(aMeta, std::move(data), std::move(stack));
+  ReceiveRawMessage(aMeta, std::move(aData), std::move(stack));
   return IPC_OK();
 }
 

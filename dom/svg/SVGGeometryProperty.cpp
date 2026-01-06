@@ -15,8 +15,8 @@
 
 namespace mozilla::dom::SVGGeometryProperty {
 
-nsCSSPropertyID AttrEnumToCSSPropId(const SVGElement* aElement,
-                                    uint8_t aAttrEnum) {
+NonCustomCSSPropertyId AttrEnumToCSSPropId(const SVGElement* aElement,
+                                           uint8_t aAttrEnum) {
   // This is a very trivial function only applied to a few elements,
   // so we want to avoid making it virtual.
   if (aElement->IsSVGElement(nsGkAtoms::rect)) {
@@ -40,7 +40,7 @@ nsCSSPropertyID AttrEnumToCSSPropId(const SVGElement* aElement,
   return eCSSProperty_UNKNOWN;
 }
 
-bool IsNonNegativeGeometryProperty(nsCSSPropertyID aProp) {
+bool IsNonNegativeGeometryProperty(NonCustomCSSPropertyId aProp) {
   return aProp == eCSSProperty_r || aProp == eCSSProperty_rx ||
          aProp == eCSSProperty_ry || aProp == eCSSProperty_width ||
          aProp == eCSSProperty_height;

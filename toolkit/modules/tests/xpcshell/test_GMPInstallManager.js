@@ -1846,6 +1846,7 @@ mockRequest.prototype = {
 
 /**
  * Creates a new zip file containing a file with the specified data
+ *
  * @param zipName The name of the zip file
  * @param data The data to go inside the zip for the filename entry1.info
  */
@@ -1911,6 +1912,7 @@ function revertContentSigTestPrefs(previousUrlOverride) {
 
 /**
  * A helper to check that glean metrics have expected counts.
+ *
  * @param expectedGleanValues a object that has properties with names set to glean metrics to be checked
  * and the values are the expected count. Eg { cert_pin_success: 1 }.
  */

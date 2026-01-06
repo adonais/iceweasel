@@ -121,7 +121,7 @@ def fill_template(config, tasks):
         if task.get("arch", "") == "arm64":
             worker_type = "images-aarch64"
         else:
-            worker_type = "images-gcp"
+            worker_type = "images"
 
         # include some information that is useful in reconstructing this task
         # from JSON
@@ -171,9 +171,6 @@ def fill_template(config, tasks):
                 # FIXME: We aren't currently propagating the exit code
             },
         }
-        # Retry for 'funsize-update-generator' if exit status code is -1
-        if image_name in ["funsize-update-generator"]:
-            taskdesc["worker"]["retry-exit-status"] = [-1]
 
         worker = taskdesc["worker"]
 

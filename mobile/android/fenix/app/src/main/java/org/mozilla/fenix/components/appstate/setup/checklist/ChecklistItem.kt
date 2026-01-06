@@ -16,7 +16,9 @@ import mozilla.components.ui.icons.R as iconsR
  *
  * @property title the string resource for the checklist item title.
  */
-sealed class ChecklistItem(@param:StringRes open val title: Int) {
+sealed class ChecklistItem(
+    @param:StringRes open val title: Int,
+) {
     /**
      * A data class representing an individual task in the checklist.
      *

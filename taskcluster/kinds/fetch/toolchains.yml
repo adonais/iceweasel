@@ -114,14 +114,6 @@ gmp-6.1.0:
         strip-components: 1
         add-prefix: gmp-source/
 
-go-1.14.4:
-    description: Golang 1.14.4 build tools
-    fetch:
-        type: static-url
-        url: https://dl.google.com/go/go1.14.4.linux-amd64.tar.gz
-        sha256: aed845e4185a0b2a3c3d5e1d0a35491702c55889192bb9c30e67a3de6849c067
-        size: 123711003
-
 isl-0.16.1:
     description: ISL 0.16.1 source code
     fetch:
@@ -151,11 +143,11 @@ mpfr-3.1.4:
     description: mpfr 3.1.4 source code
     fetch:
         type: static-url
-        url: http://www.mpfr.org/mpfr-3.1.4/mpfr-3.1.4.tar.bz2
+        url: https://ftpmirror.gnu.org/gnu/mpfr/mpfr-3.1.4.tar.bz2
         sha256: d3103a80cdad2407ed581f3618c4bed04e0c92d1cf771a65ead662cc397f7775
         size: 1279284
         gpg-signature:
-            sig-url: "{url}.asc"
+            sig-url: "{url}.sig"
             key-path: build/unix/build-gcc/07F3DBBECC1A39605078094D980C197698C3739D.key
         artifact-name: mpfr-source.tar.zst
         strip-components: 1
@@ -169,13 +161,13 @@ nasm-2.14.02:
         sha256: e24ade3e928f7253aa8c14aa44726d1edf3f98643f87c9d72ec1df44b26be8f5
         size: 827620
 
-nasm-2.16.03:
-    description: nasm 2.16.03 source code
+nasm-3.01:
+    description: nasm 3.01 source code
     fetch:
         type: static-url
-        url: https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/nasm-2.16.03.tar.xz
-        sha256: 1412a1c760bbd05db026b6c0d1657affd6631cd0a63cddb6f73cc6d4aa616148
-        size: 1032388
+        url: https://www.nasm.us/pub/nasm/releasebuilds/3.01/nasm-3.01.tar.xz
+        sha256: b7324cbe86e767b65f26f467ed8b12ad80e124e3ccb89076855c98e43a9eddd4
+        size: 1499136
 
 wix-3.14.0:
     description: wix 3.14.0 binary release
@@ -230,9 +222,9 @@ wine:
     description: wine source code
     fetch:
         type: static-url
-        url: https://dl.winehq.org/wine/source/8.0/wine-8.0.2.tar.xz
-        sha256: 6ec8fb6f2c72d576cb11f52b2f8d59af64404802154651d122b98466d91dc847
-        size: 29060452
+        url: https://dl.winehq.org/wine/source/10.x/wine-10.18.tar.xz
+        sha256: 51fb7273d65d09dea032c4a5e2197b12724b27ca360e1a622b2373d1ee50ad7b
+        size: 32970828
         gpg-signature:
             sig-url: "{url}.sign"
             key-path: build/unix/build-gcc/DA23579A74D4AD9AF9D3F945CEFAC8EAAF17519D.key
@@ -291,6 +283,8 @@ hfsplus-tools:
         url: https://src.fedoraproject.org/repo/pkgs/hfsplus-tools/diskdev_cmds-540.1.linux3.tar.gz/0435afc389b919027b69616ad1b05709/diskdev_cmds-540.1.linux3.tar.gz
         sha256: b01b203a97f9a3bf36a027c13ddfc59292730552e62722d690d33bd5c24f5497
         size: 411205
+        headers:
+            - "Accept: application/octet-stream"
 
 xar:
     description: xar source code
@@ -416,31 +410,23 @@ clang-trunk:
 # We build stable rust from source so the resulting compiler acts as a nightly
 # rust compiler, allowing to use unstable features like -Zbuild-std and
 # sanitizers.
-rust-1.81.0:
-    description: Rust 1.81.0 source code
+rust-1.82.0:
+    description: Rust 1.82.0 source code
     fetch:
         type: git
         include-dot-git: true
         repo: https://github.com/rust-lang/rust/
-        # NOTE: This is 1.81.0 and then some, to accommodate compiling some 1.82.0 code without
-        # breaking patches we use for sanitizers. See
-        # <https://bugzilla.mozilla.org/show_bug.cgi?id=1915537> for follow-up.
-        revision: ab1527f1d6560168f9fd36fa8cd7ba677c1d36ad
+        revision: f6e511eec7342f59a25f7c0534f1dbea00d01b14
 
 rust-nightly:
     description: Rust nightly source code
+    attributes:
+        cached_task: false
     fetch:
         type: git
         include-dot-git: true
         repo: https://github.com/rust-lang/rust/
-        branch: master
-
-wasi-sdk-11:
-    description: wasi-sdk-11 source code
-    fetch:
-        type: git
-        repo: https://github.com/WebAssembly/wasi-sdk
-        revision: ceabbfe181599bca83d81e087a229797e472c09c
+        branch: main
 
 wasi-sdk:
     description: wasi-sdk-20 source code
@@ -450,43 +436,43 @@ wasi-sdk:
         revision: 935fe1acd2fcd7ea4aed2d5ee4527482862b6344
 
 macosx64-ninja:
-    description: ninja 1.12.1
+    description: ninja 1.13.1
     fetch:
         type: static-url
-        url: https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-mac.zip
-        sha256: 89a287444b5b3e98f88a945afa50ce937b8ffd1dcc59c555ad9b1baf855298c9
-        size: 281130
+        url: https://github.com/ninja-build/ninja/releases/download/v1.13.1/ninja-mac.zip
+        sha256: da7797794153629aca5570ef7c813342d0be214ba84632af886856e8f0063dd9
+        size: 314009
         artifact-name: ninja.tar.zst
         add-prefix: ninja/bin/
 
 win64-ninja:
-    description: ninja 1.12.1
+    description: ninja 1.13.1
     fetch:
         type: static-url
-        url: https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-win.zip
-        sha256: f550fec705b6d6ff58f2db3c374c2277a37691678d6aba463adcbb129108467a
-        size: 275425
+        url: https://github.com/ninja-build/ninja/releases/download/v1.13.1/ninja-win.zip
+        sha256: 26a40fa8595694dec2fad4911e62d29e10525d2133c9a4230b66397774ae25bf
+        size: 289808
         artifact-name: ninja.tar.zst
         add-prefix: ninja/bin/
 
 macosx64-cmake:
-    description: cmake 3.25.1
+    description: cmake 4.1.2
     fetch:
         type: static-url
-        url: https://github.com/Kitware/CMake/releases/download/v3.25.1/cmake-3.25.1-macos-universal.tar.gz
-        sha256: e95e75ea506189785355a7e8dd86b059780a5613b9e62ab6e7419d6bfba3510b
-        size: 74418897
+        url: https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2-macos-universal.tar.gz
+        sha256: 3be85f5b999e327b1ac7d804cbc9acd767059e9f603c42ec2765f6ab68fbd367
+        size: 80750689
         artifact-name: cmake.tar.zst
         strip-components: 3
         add-prefix: cmake/
 
 cmake:
-    description: cmake 3.25.1 source code
+    description: cmake 4.1.2 source code
     fetch:
         type: static-url
-        url: https://github.com/Kitware/CMake/releases/download/v3.25.1/cmake-3.25.1.tar.gz
-        sha256: 1c511d09516af493694ed9baf13c55947a36389674d657a2d5e0ccedc6b291d8
-        size: 10561054
+        url: https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2.tar.gz
+        sha256: 643f04182b7ba323ab31f526f785134fb79cba3188a852206ef0473fee282a15
+        size: 12048810
         artifact-name: cmake.tar.zst
         strip-components: 1
         add-prefix: cmake/
@@ -513,12 +499,12 @@ fix-stacks:
         revision: 1fb1bcc8cb4dd65fbe342853954651563a0a88e7
 
 7zz:
-    description: 7-zip 24.09 source code
+    description: 7-zip 25.01 source code
     fetch:
         type: static-url
-        url: https://downloads.sourceforge.net/sevenzip/7-Zip/24.09/7z2409-src.tar.xz
-        sha256: 49c05169f49572c1128453579af1632a952409ced028259381dac30726b6133a
-        size: 1511288
+        url: https://downloads.sourceforge.net/sevenzip/7-Zip/25.01/7z2501-src.tar.xz
+        sha256: ed087f83ee789c1ea5f39c464c55a5c9d4008deb0efe900814f2df262b82c36e
+        size: 1533240
         artifact-name: 7z-src.tar.zst
         add-prefix: 7zz/
 
@@ -673,12 +659,12 @@ msix-packaging:
         revision: 8164b7ac5a67688e18fa2497fb31ba13ce9bfb15
 
 pkgconf:
-    description: pkgconf 1.8.0
+    description: pkgconf 2.5.1
     fetch:
         type: static-url
-        url: https://distfiles.dereferenced.org/pkgconf/pkgconf-1.8.0.tar.xz
-        sha256: ef9c7e61822b7cb8356e6e9e1dca58d9556f3200d78acab35e4347e9d4c2bbaf
-        size: 296304
+        url: https://distfiles.ariadne.space/pkgconf/pkgconf-2.5.1.tar.xz
+        sha256: cd05c9589b9f86ecf044c10a2269822bc9eb001eced2582cfffd658b0a50c243
+        size: 328064
         artifact-name: pkgconf.tar.zst
         strip-components: 1
         add-prefix: pkgconf/
@@ -704,13 +690,13 @@ symbol-scrapers:
         repo: https://github.com/mozilla/symbol-scrapers
         revision: 4a589bc872995b76fa18b5f8746715e5c86fa4bb
 
-xz-5.4.4:
-    description: xz 5.4.4 source code
+xz-5.8.1:
+    description: xz 5.8.1 source code
     fetch:
         type: static-url
-        url: https://tukaani.org/xz/xz-5.4.4.tar.gz
-        sha256: aae39544e254cfd27e942d35a048d592959bd7a79f9a624afb0498bb5613bdf8
-        size: 2874706
+        url: https://github.com/tukaani-project/xz/releases/download/v5.8.1/xz-5.8.1.tar.xz
+        sha256: 0b54f79df85912504de0b14aec7971e3f964491af1812d83447005807513cd9e
+        size: 1461872
         artifact-name: xz-source.tar.zst
         strip-components: 1
         add-prefix: xz-source/
@@ -761,19 +747,19 @@ windows-rs:
         local-fetch: true
     fetch:
         type: static-url
-        url: https://crates.io/api/v1/crates/windows/0.58.0/download
-        sha256: dd04d41d93c4992d421894c18c8b43496aa748dd4c081bac0dc93eb0489272b6
-        size: 9744521
+        url: https://crates.io/api/v1/crates/windows/0.62.2/download
+        sha256: 527fadee13e0c05939a6a05d5bd6eec6cd2e3dbd648b9f8e447c6518133d8580
+        size: 9360572
         artifact-name: windows-rs.tar.zst
         strip-components: 1
         add-prefix: windows-rs/
 
 libxml2:
-    description: libxml2 2.9.12 source code
+    description: libxml2 2.15.1 source code
     fetch:
         type: git
         repo: https://gitlab.gnome.org/GNOME/libxml2
-        revision: b48e77cf4f6fa0792c5f4b639707a2b0675e461b
+        revision: b7fa62cbe8ef0df5869e000d5b690bdedd07f33e
 
 mozilla-pdf.js:
     description: Mozilla pdf.js Github repo

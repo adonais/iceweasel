@@ -33,109 +33,16 @@
 </groupbox>
 
 <!-- Data migration -->
-<groupbox id="dataMigrationGroup" data-category="paneGeneral" hidden="true">
-  <label><html:h2 data-l10n-id="preferences-data-migration-header"/></label>
-
-  <hbox id="dataMigration" flex="1">
-    <description flex="1" control="data-migration" data-l10n-id="preferences-data-migration-description"/>
-    <button id="data-migration"
-            is="highlightable-button"
-            class="accessory-button"
-            data-l10n-id="preferences-data-migration-button"/>
-  </hbox>
-</groupbox>
+<html:setting-group groupid="importBrowserData" id="dataMigrationGroup" data-category="paneGeneral" hidden="true" />
 
 <!-- Profiles -->
 <groupbox id="profilesGroup" data-category="paneGeneral" hidden="true">
-  <label><html:h2 data-l10n-id="preferences-profiles-header"/></label>
-
-  <hbox id="profiles" flex="1">
-    <description flex="1" class="description-deemphasized" control="manage-profiles">
-      <html:span data-l10n-id="preferences-manage-profiles-description"></html:span>
-      <html:a
-        is="moz-support-link"
-        id="profile-management-learn-more"
-        support-page="profile-management"
-        data-l10n-id="preferences-manage-profiles-learn-more"
-      />
-    </description>
-    <button id="manage-profiles"
-            is="highlightable-button"
-            class="accessory-button"
-            data-l10n-id="preferences-manage-profiles-button"/>
-  </hbox>
+  <html:setting-group groupid="profiles" data-category="paneGeneral"></html:setting-group>
 </groupbox>
 
 <!-- Tab preferences -->
-<groupbox data-category="paneGeneral"
-          hidden="true">
-    <label><html:h2 data-l10n-id="tabs-group-header"/></label>
-
-    <checkbox id="ctrlTabRecentlyUsedOrder" data-l10n-id="ctrl-tab-recently-used-order"
-              preference="browser.ctrlTab.sortByRecentlyUsed"/>
-
-    <checkbox id="linkTargeting" data-l10n-id="open-new-link-as-tabs"
-              preference="browser.link.open_newwindow"/>
-
-    <checkbox id="openAppLinksNextToActiveTab" data-l10n-id="open-external-link-next-to-active-tab"
-              preference="browser.link.open_newwindow.override.external"/>
-
-    <checkbox id="warnOpenMany" data-l10n-id="warn-on-open-many-tabs"
-              preference="browser.tabs.warnOnOpen"/>
-
-    <checkbox id="switchToNewTabs" data-l10n-id="switch-to-new-tabs"
-              preference="browser.tabs.loadInBackground"/>
-
-    <checkbox id="warnCloseMultiple" data-l10n-id="ask-on-close-multiple-tabs"
-              preference="browser.tabs.warnOnClose"/>
-
-#ifndef XP_WIN
-    <checkbox id="warnOnQuitKey" preference="browser.warnOnQuitShortcut"/>
-#endif
-
-#ifdef XP_WIN
-    <checkbox id="showTabsInTaskbar" data-l10n-id="show-tabs-in-taskbar"
-              preference="browser.taskbar.previews.enable"/>
-#endif
-
-    <checkbox id="tabPreviewShowThumbnails" data-l10n-id="settings-tabs-show-image-in-preview"
-              preference="browser.tabs.hoverPreview.showThumbnails" hidden="true"/>
-
-    <checkbox id="tabGroupSuggestions" data-l10n-id="settings-tabs-show-group-and-tab-suggestions"
-              preference="browser.tabs.groups.smart.userEnabled" hidden="true"/>
-
-    <vbox id="browserContainersbox" hidden="true">
-      <hbox id="browserContainersExtensionContent"
-            align="center" class="extension-controlled info-box-container">
-        <hbox flex="1">
-          <description control="disableContainersExtension" class="description-with-side-element" flex="1" />
-        </hbox>
-        <button id="disableContainersExtension"
-                is="highlightable-button"
-                class="extension-controlled-button accessory-button"
-                data-l10n-id="disable-extension" />
-      </hbox>
-      <hbox align="center">
-        <checkbox id="browserContainersCheckbox"
-                  class="tail-with-learn-more"
-                  data-l10n-id="browser-containers-enabled"
-                  preference="privacy.userContext.enabled"/>
-        <html:a
-          is="moz-support-link"
-          support-page="containers"
-          data-l10n-id="browser-containers-learn-more"
-        />
-        <spacer flex="1"/>
-        <button id="browserContainersSettings"
-                is="highlightable-button"
-                class="accessory-button"
-                data-l10n-id="browser-containers-settings"
-                search-l10n-ids="containers-add-button.label,
-                  containers-settings-button.label,
-                  containers-remove-button.label"
-                />
-      </hbox>
-    </vbox>
+<groupbox data-category="paneGeneral" hidden="true">
+  <html:setting-group groupid="tabs"></html:setting-group>
 </groupbox>
 
 <!-- Browser layout -->
@@ -439,15 +346,10 @@
 
 <!-- DRM Content -->
 <groupbox id="drmGroup" data-category="paneGeneral" data-subcategory="drm" hidden="true">
-  <label><html:h2 data-l10n-id="drm-content-header"/></label>
-  <hbox align="center">
-    <checkbox id="playDRMContent" preference="media.eme.enabled"
-              class="tail-with-learn-more" data-l10n-id="play-drm-content" />
-    <html:a is="moz-support-link"
-      data-l10n-id="play-drm-content-learn-more"
-      support-page="drm-content"
-    />
-  </hbox>
+  <label class="section-heading">
+    <html:h2 data-l10n-id="drm-content-header"/>
+  </label>
+  <html:setting-group groupid="drm" />
 </groupbox>
 
 <hbox id="updatesCategory"

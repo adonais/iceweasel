@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.paddingFromBaseline
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.toggleable
@@ -41,6 +42,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -49,10 +51,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -65,6 +69,8 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
@@ -99,11 +105,10 @@ import mozilla.components.compose.base.button.FloatingActionButton
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
+import mozilla.components.compose.base.snackbar.Snackbar
 import mozilla.components.compose.base.snackbar.displaySnackbar
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.textfield.TextField
-import mozilla.components.compose.base.textfield.TextFieldColors
-import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.utils.BackInvokedHandler
 import mozilla.components.compose.browser.awesomebar.AwesomeBar
 import mozilla.components.compose.browser.awesomebar.AwesomeBarDefaults
@@ -136,7 +141,6 @@ import org.mozilla.fenix.search.SearchFragmentStore
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
-private val IconButtonHeight = 48.dp
 private const val MATERIAL_DESIGN_SCRIM = "#52000000"
 
 /**
@@ -232,7 +236,7 @@ internal object BookmarksDestinations {
  * The Bookmarks list screen.
  */
 @OptIn(ExperimentalLayoutApi::class) // for WindowInsets.isImeVisible
-@Suppress("LongMethod", "ComplexMethod")
+@Suppress("LongMethod", "CognitiveComplexMethod", "CyclomaticComplexMethod")
 @Composable
 private fun BookmarksList(
     store: BookmarksStore,
@@ -246,7 +250,7 @@ private fun BookmarksList(
 ) {
     val state by store.observeAsState(store.state) { it }
     val searchState = searchStore.observeAsComposableState { it }.value
-    val awesomebarBackground = AcornTheme.colors.layer1
+    val awesomebarBackground = AwesomeBarDefaults.colors().background
     val awesomebarScrim by remember(searchState.query) {
         derivedStateOf {
             when (searchState.query.isNotEmpty()) {
@@ -276,6 +280,8 @@ private fun BookmarksList(
         is BookmarksSnackbarState.UndoDeletion -> stringResource(R.string.bookmark_undo_deletion)
         else -> null
     }
+
+    val fabHeight = remember { mutableIntStateOf(0) }
 
     LaunchedEffect(state.bookmarksSnackbarState) {
         when (state.bookmarksSnackbarState) {
@@ -345,12 +351,15 @@ private fun BookmarksList(
                 SnackbarHost(
                     hostState = snackbarHostState,
                     modifier = Modifier.align(Alignment.BottomCenter),
-                )
+                ) {
+                    Snackbar(snackbarData = it)
+                }
             }
         },
         floatingActionButton = {
             if (!state.isLoading && state.emptyListState() == null) {
                 FloatingActionButton(
+                    modifier = Modifier.onPlaced { fabHeight.intValue = it.size.height },
                     icon = painterResource(iconsR.drawable.mozac_ic_search_24),
                     contentDescription = stringResource(R.string.bookmark_search_button_content_description),
                     onClick = { store.dispatch(SearchClicked) },
@@ -364,7 +373,6 @@ private fun BookmarksList(
                 BookmarksListTopBar(store = store)
             }
         },
-        containerColor = FirefoxTheme.colors.layer1,
     ) { paddingValues ->
         if (state.isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -372,11 +380,13 @@ private fun BookmarksList(
             }
             return@Scaffold
         }
+
         val emptyListState = state.emptyListState()
         if (emptyListState != null) {
             EmptyList(state = emptyListState, dispatcher = store::dispatch)
             return@Scaffold
         }
+
         saveableStateHolder.SaveableStateProvider(state.currentFolder.guid) {
             LazyColumn(
                 modifier = Modifier
@@ -456,7 +466,6 @@ private fun BookmarksList(
                                             R.string.bookmark_item_menu_button_content_description,
                                             item.title,
                                         ),
-                                        tint = FirefoxTheme.colors.iconPrimary,
                                     )
                                 }
 
@@ -514,7 +523,6 @@ private fun BookmarksList(
                                         R.string.bookmark_item_menu_button_content_description,
                                         item.title,
                                     ),
-                                    tint = FirefoxTheme.colors.iconPrimary,
                                 )
                             }
 
@@ -527,6 +535,8 @@ private fun BookmarksList(
                         }
                     }
                 }
+
+                fabOffsetSpace(fabHeight.intValue)
             }
         }
 
@@ -552,13 +562,6 @@ private fun BookmarksList(
                         text = searchState.query,
                         providers = searchState.searchSuggestionsProviders,
                         orientation = AwesomeBarOrientation.TOP,
-                        colors = AwesomeBarDefaults.colors(
-                            background = Color.Transparent,
-                            title = FirefoxTheme.colors.textPrimary,
-                            description = FirefoxTheme.colors.textSecondary,
-                            autocompleteIcon = FirefoxTheme.colors.textSecondary,
-                            groupTitle = FirefoxTheme.colors.textSecondary,
-                        ),
                         onSuggestionClicked = { suggestion ->
                             searchStore.dispatch(SuggestionClicked(suggestion))
                         },
@@ -574,6 +577,15 @@ private fun BookmarksList(
                 }
             }
         }
+    }
+}
+
+private fun LazyListScope.fabOffsetSpace(fabHeight: Int) {
+    item {
+        val fabHeightDp = with(LocalDensity.current) {
+            fabHeight.toDp()
+        }
+        Spacer(modifier = Modifier.size(fabHeightDp))
     }
 }
 
@@ -596,13 +608,13 @@ private fun BookmarksListTopBar(
     val textColor = if (selectedItems.isEmpty()) {
         MaterialTheme.colorScheme.onSurface
     } else {
-        MaterialTheme.colorScheme.inverseOnSurface
+        MaterialTheme.colorScheme.onPrimary
     }
 
     val iconColor = if (selectedItems.isEmpty()) {
         MaterialTheme.colorScheme.onSurface
     } else {
-        MaterialTheme.colorScheme.inverseOnSurface
+        MaterialTheme.colorScheme.onPrimary
     }
 
     Box {
@@ -615,7 +627,7 @@ private fun BookmarksListTopBar(
             title = {
                 Text(
                     color = textColor,
-                    style = FirefoxTheme.typography.headline6,
+                    style = FirefoxTheme.typography.headline5,
                     text = if (selectedItems.isNotEmpty()) {
                         val total = selectedItems.size + (recursiveCount ?: 0)
                         stringResource(R.string.bookmarks_multi_select_title, total)
@@ -798,7 +810,7 @@ private fun BookmarksListTopBarActionsNoSelection(
             },
         ) {
             Icon(
-                painter = painterResource(iconsR.drawable.mozac_ic_filter),
+                painter = painterResource(iconsR.drawable.mozac_ic_sort_24),
                 contentDescription = stringResource(
                     R.string.bookmark_sort_menu_content_desc,
                 ),
@@ -836,7 +848,7 @@ private fun BookmarksListTopBarActionsNoSelection(
                 contentDescription = stringResource(
                     R.string.bookmark_close_button_content_description,
                 ),
-                tint = FirefoxTheme.colors.iconPrimary,
+                tint = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -886,9 +898,10 @@ private fun AlertDialogDeletionWarning(
     onDeleteTapped: () -> Unit,
 ) {
     AlertDialog(
-        title = {
+        text = {
             Text(
                 text = stringResource(R.string.bookmark_delete_folders_confirmation_dialog),
+                style = FirefoxTheme.typography.body2,
             )
         },
         onDismissRequest = onCancelTapped,
@@ -922,7 +935,6 @@ private fun SelectFolderScreen(
         topBar = {
             SelectFolderTopBar(store = store)
         },
-        containerColor = FirefoxTheme.colors.layer1,
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -1003,12 +1015,10 @@ private fun SelectFolderTopBar(store: BookmarksStore) {
         { store.dispatch(AddFolderClicked) }
     }
     TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = FirefoxTheme.colors.layer1),
         title = {
             Text(
                 text = stringResource(R.string.bookmark_select_folder_fragment_label),
-                color = FirefoxTheme.colors.textPrimary,
-                style = FirefoxTheme.typography.headline6,
+                style = FirefoxTheme.typography.headline5,
             )
         },
         navigationIcon = {
@@ -1016,7 +1026,6 @@ private fun SelectFolderTopBar(store: BookmarksStore) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                     contentDescription = stringResource(R.string.bookmark_navigate_back_button_content_description),
-                    tint = FirefoxTheme.colors.iconPrimary,
                 )
             }
         },
@@ -1026,15 +1035,17 @@ private fun SelectFolderTopBar(store: BookmarksStore) {
                     store.dispatch(BookmarksListMenuAction.SortMenu.SortMenuButtonClicked)
                 }) {
                     Icon(
-                        painter = painterResource(iconsR.drawable.mozac_ic_filter),
+                        painter = painterResource(iconsR.drawable.mozac_ic_sort_24),
                         contentDescription = stringResource(
                             R.string.bookmark_sort_menu_content_desc,
                         ),
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
                 SelectFolderSortOverflowMenu(store = store)
             }
+
             if (onNewFolderClick != null) {
                 IconButton(onClick = { onNewFolderClick() }) {
                     Icon(
@@ -1042,7 +1053,7 @@ private fun SelectFolderTopBar(store: BookmarksStore) {
                         contentDescription = stringResource(
                             R.string.bookmark_add_new_folder_button_content_description,
                         ),
-                        tint = FirefoxTheme.colors.iconPrimary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
@@ -1141,24 +1152,32 @@ private fun EmptyList(
         Column(
             modifier = Modifier.width(FirefoxTheme.layout.size.containerMaxWidth),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Image(
                 painter = painterResource(state.drawableId()),
                 contentDescription = null,
             )
+
+            Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
+
             Text(
                 text = stringResource(R.string.bookmark_empty_list_title),
-                style = FirefoxTheme.typography.headline7,
-                color = FirefoxTheme.colors.textPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = FirefoxTheme.typography.headline6,
             )
+
+            Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static100))
+
             Text(
                 text = stringResource(state.descriptionId()),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = FirefoxTheme.typography.body2,
-                color = FirefoxTheme.colors.textPrimary,
                 textAlign = TextAlign.Center,
             )
+
             if (state is EmptyListState.NotAuthenticated) {
+                Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static300))
+
                 FilledButton(
                     text = stringResource(R.string.bookmark_empty_list_guest_cta),
                     onClick = { dispatcher(SignIntoSyncClicked) },
@@ -1379,7 +1398,6 @@ private fun EditFolderScreen(
                 onDeleteClick = { store.dispatch(EditFolderAction.DeleteClicked) },
             )
         },
-        containerColor = FirefoxTheme.colors.layer1,
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -1409,7 +1427,7 @@ private fun EditFolderScreen(
 
                 Text(
                     stringResource(R.string.bookmark_save_in_label),
-                    color = FirefoxTheme.colors.textPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = FirefoxTheme.typography.body2,
                     modifier = Modifier.padding(start = 16.dp),
                 )
@@ -1430,12 +1448,10 @@ private fun EditFolderTopBar(
     onDeleteClick: () -> Unit,
 ) {
     TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = FirefoxTheme.colors.layer1),
         title = {
             Text(
                 text = stringResource(R.string.edit_bookmark_folder_fragment_title),
-                color = FirefoxTheme.colors.textPrimary,
-                style = FirefoxTheme.typography.headline6,
+                style = FirefoxTheme.typography.headline5,
             )
         },
         navigationIcon = {
@@ -1443,7 +1459,6 @@ private fun EditFolderTopBar(
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                     contentDescription = stringResource(R.string.bookmark_navigate_back_button_content_description),
-                    tint = FirefoxTheme.colors.iconPrimary,
                 )
             }
         },
@@ -1452,7 +1467,7 @@ private fun EditFolderTopBar(
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_delete_24),
                     contentDescription = stringResource(R.string.bookmark_delete_folder_content_description),
-                    tint = FirefoxTheme.colors.iconPrimary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
         },
@@ -1470,7 +1485,6 @@ private fun AddFolderScreen(
     val state by store.observeAsState(store.state.bookmarksAddFolderState) { it.bookmarksAddFolderState }
     Scaffold(
         topBar = { AddFolderTopBar(onBackClick = { store.dispatch(BackClicked) }) },
-        containerColor = FirefoxTheme.colors.layer1,
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -1502,8 +1516,8 @@ private fun AddFolderScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
-                    stringResource(R.string.bookmark_save_in_label),
-                    color = FirefoxTheme.colors.textPrimary,
+                    text = stringResource(R.string.bookmark_save_in_label),
+                    color = MaterialTheme.colorScheme.onSurface,
                     style = FirefoxTheme.typography.body2,
                     modifier = Modifier.padding(start = 16.dp),
                 )
@@ -1521,12 +1535,10 @@ private fun AddFolderScreen(
 @Composable
 private fun AddFolderTopBar(onBackClick: () -> Unit) {
     TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = FirefoxTheme.colors.layer1),
         title = {
             Text(
                 text = stringResource(R.string.bookmark_add_folder),
-                color = FirefoxTheme.colors.textPrimary,
-                style = FirefoxTheme.typography.headline6,
+                style = FirefoxTheme.typography.headline5,
             )
         },
         navigationIcon = {
@@ -1534,7 +1546,6 @@ private fun AddFolderTopBar(onBackClick: () -> Unit) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                     contentDescription = stringResource(R.string.bookmark_navigate_back_button_content_description),
-                    tint = FirefoxTheme.colors.iconPrimary,
                 )
             }
         },
@@ -1561,7 +1572,6 @@ private fun EditBookmarkScreen(
                 onDeleteClicked = { store.dispatch(EditBookmarkAction.DeleteClicked) },
             )
         },
-        containerColor = FirefoxTheme.colors.layer1,
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -1644,30 +1654,30 @@ private fun FolderInfo(
     onFolderClicked: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text(
-            text = stringResource(R.string.bookmark_save_in_label),
-            color = FirefoxTheme.colors.textPrimary,
-            style = FirefoxTheme.typography.body2,
-        )
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .height(40.dp)
-                .fillMaxWidth()
-                .clickable { onFolderClicked() },
-        ) {
-            Icon(
-                painter = painterResource(id = iconsR.drawable.mozac_ic_folder_24),
-                contentDescription = "",
-                tint = FirefoxTheme.colors.textPrimary,
-            )
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSurface) {
             Text(
-                text = folderTitle,
-                color = FirefoxTheme.colors.textPrimary,
+                text = stringResource(R.string.bookmark_save_in_label),
                 style = FirefoxTheme.typography.body2,
             )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .height(40.dp)
+                    .fillMaxWidth()
+                    .clickable { onFolderClicked() },
+            ) {
+                Icon(
+                    painter = painterResource(id = iconsR.drawable.mozac_ic_folder_24),
+                    contentDescription = "",
+                )
+
+                Text(
+                    text = folderTitle,
+                    style = FirefoxTheme.typography.body2,
+                )
+            }
         }
     }
 }
@@ -1690,15 +1700,11 @@ private fun ClearableTextField(
             .onFocusChanged { isFocused = it.isFocused }
             .padding(0.dp)
             .paddingFromBaseline(0.dp),
-        minHeight = IconButtonHeight,
-        trailingIcons = {
+        trailingIcon = {
             if (isFocused && value.isNotEmpty()) {
                 CrossTextFieldButton { onValueChange("") }
             }
         },
-        colors = TextFieldColors.default(
-            placeholderColor = FirefoxTheme.colors.textPrimary,
-        ),
     )
 }
 
@@ -1708,12 +1714,10 @@ private fun EditBookmarkTopBar(
     onDeleteClicked: () -> Unit,
 ) {
     TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = FirefoxTheme.colors.layer1),
         title = {
             Text(
                 text = stringResource(R.string.edit_bookmark_fragment_title),
-                color = FirefoxTheme.colors.textPrimary,
-                style = FirefoxTheme.typography.headline6,
+                style = FirefoxTheme.typography.headline5,
             )
         },
         navigationIcon = {
@@ -1721,7 +1725,6 @@ private fun EditBookmarkTopBar(
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                     contentDescription = stringResource(R.string.bookmark_navigate_back_button_content_description),
-                    tint = FirefoxTheme.colors.iconPrimary,
                 )
             }
         },
@@ -1730,7 +1733,7 @@ private fun EditBookmarkTopBar(
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_delete_24),
                     contentDescription = stringResource(R.string.bookmark_delete_bookmark_content_description),
-                    tint = FirefoxTheme.colors.iconPrimary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
         },
@@ -1781,9 +1784,7 @@ private fun EditBookmarkScreenPreview() {
     )
 
     FirefoxTheme {
-        Box(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
-            EditBookmarkScreen(store = store)
-        }
+        EditBookmarkScreen(store = store)
     }
 }
 
@@ -1889,17 +1890,15 @@ private fun BookmarksScreenPreview() {
     }
 
     FirefoxTheme {
-        Box(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
-            BookmarksScreen(
-                buildStore = store,
-                appStore = AppStore(),
-                browserStore = BrowserStore(),
-                toolbarStore = BrowserToolbarStore(),
-                searchStore = SearchFragmentStore(SearchFragmentState.EMPTY),
-                bookmarksSearchEngine = null,
-                profiler = null,
-            )
-        }
+        BookmarksScreen(
+            buildStore = store,
+            appStore = AppStore(),
+            browserStore = BrowserStore(),
+            toolbarStore = BrowserToolbarStore(),
+            searchStore = SearchFragmentStore(SearchFragmentState.EMPTY),
+            bookmarksSearchEngine = null,
+            profiler = null,
+        )
     }
 }
 
@@ -1936,17 +1935,15 @@ private fun EmptyBookmarksScreenPreview() {
     }
 
     FirefoxTheme {
-        Box(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
-            BookmarksScreen(
-                buildStore = store,
-                appStore = AppStore(),
-                browserStore = BrowserStore(),
-                toolbarStore = BrowserToolbarStore(),
-                searchStore = SearchFragmentStore(SearchFragmentState.EMPTY),
-                bookmarksSearchEngine = null,
-                profiler = null,
-            )
-        }
+        BookmarksScreen(
+            buildStore = store,
+            appStore = AppStore(),
+            browserStore = BrowserStore(),
+            toolbarStore = BrowserToolbarStore(),
+            searchStore = SearchFragmentStore(SearchFragmentState.EMPTY),
+            bookmarksSearchEngine = null,
+            profiler = null,
+        )
     }
 }
 
@@ -1989,9 +1986,7 @@ private fun AddFolderPreview() {
         ),
     )
     FirefoxTheme {
-        Box(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
-            AddFolderScreen(store)
-        }
+        AddFolderScreen(store)
     }
 }
 
@@ -2091,8 +2086,6 @@ private fun SelectFolderPreview() {
         ),
     )
     FirefoxTheme {
-        Box(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
-            SelectFolderScreen(store)
-        }
+        SelectFolderScreen(store)
     }
 }

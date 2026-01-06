@@ -63,10 +63,10 @@ The At-rules sidebar
 
 The Style Editor displays a sidebar on the right-hand side whenever the current sheet contains any of the following At-rules:
 
-- `@media <https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Using_media_queries>`_
-- `@supports <https://developer.mozilla.org/en-US/docs/Web/CSS/@supports>`_
-- `@layer <https://developer.mozilla.org/en-US/docs/Web/CSS/@layer>`_
-- `@container <https://developer.mozilla.org/en-US/docs/Web/CSS/Media_Queries/Using_media_queries>`_
+- `@media <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@media>`_
+- `@supports <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@supports>`_
+- `@layer <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@layer>`_
+- `@container <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@container>`_
 
 The sidebar lists the rules and provides a link to the line of the sheet where the rule is defined. Click an item to jump to that rule in the sheet. For ``@media`` rules, the condition text of the rule is greyed-out if the media query doesn’t currently apply.
 

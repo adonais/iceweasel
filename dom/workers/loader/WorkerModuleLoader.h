@@ -98,6 +98,8 @@ class WorkerModuleLoader : public JS::loader::ModuleLoaderBase {
     return aModuleType == JS::ModuleType::JavaScript ||
            aModuleType == JS::ModuleType::JSON;
   }
+
+  virtual bool IsForServiceWorker() const override;
 };
 
 }  // namespace mozilla::dom::workerinternals::loader

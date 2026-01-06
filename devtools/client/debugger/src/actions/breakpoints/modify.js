@@ -218,7 +218,7 @@ export function removeBreakpoint(initialBreakpoint) {
  * Remove all installed, pending, and client breakpoints associated with a
  * target generated location.
  *
- * @param {Object} target
+ * @param {object} target
  *        Location object where to remove breakpoints.
  */
 export function removeBreakpointAtGeneratedLocation(target) {
@@ -296,7 +296,7 @@ export function disableBreakpoint(initialBreakpoint) {
  * @static
  * @param {SourceLocation} location
  *        @see DebuggerController.Breakpoints.addBreakpoint
- * @param {Object} options
+ * @param {object} options
  *        Any options to set on the breakpoint
  */
 export function setBreakpointOptions(location, options = {}) {

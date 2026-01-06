@@ -145,6 +145,31 @@ template Result<EditorRawDOMPoint, nsresult>
 HTMLEditUtils::ComputePointToPutCaretInElementIfOutside(
     const Element& aElement, const EditorRawDOMPoint& aCurrentPoint);
 
+template Maybe<EditorLineBreak>
+HTMLEditUtils::GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem(
+    const EditorDOMPoint&, const Element&);
+template Maybe<EditorRawLineBreak>
+HTMLEditUtils::GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem(
+    const EditorDOMPoint&, const Element&);
+template Maybe<EditorLineBreak>
+HTMLEditUtils::GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem(
+    const EditorRawDOMPoint&, const Element&);
+template Maybe<EditorRawLineBreak>
+HTMLEditUtils::GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem(
+    const EditorRawDOMPoint&, const Element&);
+template Maybe<EditorLineBreak>
+HTMLEditUtils::GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem(
+    const EditorDOMPointInText&, const Element&);
+template Maybe<EditorRawLineBreak>
+HTMLEditUtils::GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem(
+    const EditorDOMPointInText&, const Element&);
+template Maybe<EditorLineBreak>
+HTMLEditUtils::GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem(
+    const EditorRawDOMPointInText&, const Element&);
+template Maybe<EditorRawLineBreak>
+HTMLEditUtils::GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem(
+    const EditorRawDOMPointInText&, const Element&);
+
 template bool HTMLEditUtils::IsSameCSSColorValue(const nsAString& aColorA,
                                                  const nsAString& aColorB);
 template bool HTMLEditUtils::IsSameCSSColorValue(const nsACString& aColorA,
@@ -279,6 +304,8 @@ bool HTMLEditUtils::IsBlockElement(const nsIContent& aContent,
   MOZ_ASSERT(aBlockInlineCheck != BlockInlineCheck::Auto);
 
   if (MOZ_UNLIKELY(!aContent.IsElement())) {
+    // FIXME: If aContent is a visible `Text` and a flex/grid item, we should
+    // treat it as block.
     return false;
   }
   // If it's a <br>, we should always treat it as an inline element because
@@ -309,13 +336,13 @@ bool HTMLEditUtils::IsBlockElement(const nsIContent& aContent,
     // structure as far as possible.
     return IsHTMLBlockElementByDefault(aContent);
   }
-  // Both Blink and WebKit treat ruby style as a block, see IsEnclosingBlock()
-  // in Chromium or isBlock() in WebKit.
-  if (styleDisplay->IsRubyDisplayType()) {
-    return true;
-  }
   // If the outside is not inline, treat it as block.
   if (!styleDisplay->IsInlineOutsideStyle()) {
+    return true;
+  }
+  // Special case.  If aContent is a grid or flex item, we want to treat it as a
+  // block to handle it with the general paths.
+  if (HTMLEditUtils::ParentElementIsGridOrFlexContainer(aContent)) {
     return true;
   }
   // If we're checking display-inside, inline-block, etc should be a block too.
@@ -332,6 +359,8 @@ bool HTMLEditUtils::IsInlineContent(const nsIContent& aContent,
   MOZ_ASSERT(aBlockInlineCheck != BlockInlineCheck::Auto);
 
   if (!aContent.IsElement()) {
+    // FIXME: If aContent is a visible `Text` and a flex/grid item, we should
+    // treat it as block.
     return true;
   }
   // If it's a <br>, we should always treat it as an inline element because
@@ -362,14 +391,28 @@ bool HTMLEditUtils::IsInlineContent(const nsIContent& aContent,
     // style if aContent.
     return !IsHTMLBlockElementByDefault(aContent);
   }
+  // Special case.  If aContent is a grid or flex item, we want to treat it as a
+  // block to handle it with the general paths.
+  if (HTMLEditUtils::ParentElementIsGridOrFlexContainer(aContent)) {
+    return false;
+  }
   // Different block IsBlockElement, when the display-outside is inline, it's
   // simply an inline element.
-  return styleDisplay->IsInlineOutsideStyle() ||
-         styleDisplay->IsRubyDisplayType();
+  return styleDisplay->IsInlineOutsideStyle();
 }
 
-bool HTMLEditUtils::IsFlexOrGridItem(const Element& aElement) {
-  Element* const parentElement = aElement.GetParentElement();
+bool HTMLEditUtils::ParentElementIsGridOrFlexContainer(
+    const nsIContent& aMaybeFlexOrGridItemContent) {
+  if (!aMaybeFlexOrGridItemContent.IsElement()) {
+    if (!aMaybeFlexOrGridItemContent.IsText() ||
+        !aMaybeFlexOrGridItemContent.AsText()->TextDataLength()) {
+      return false;
+    }
+    // FIXME: If aMaybeFlexOrGridItemContent has only collapsible white-spaces
+    // and next to a block boundary, it's invisible and shouldn't be a flex/grid
+    // item.  However, scanning block boundary requires to call this method.
+  }
+  Element* const parentElement = aMaybeFlexOrGridItemContent.GetParentElement();
   // Editable state does not affect to elements across shadow DOM boundaries.
   // Therefore, we don't need to treat aElement as an flex item nor a grid item
   // as so if aElement is a root element of a shadow DOM unless we'll support
@@ -382,8 +425,11 @@ bool HTMLEditUtils::IsFlexOrGridItem(const Element& aElement) {
   // We should consider whether the element is a flex item or a grid item
   // without nsIFrame since we don't want to refresh the layout while
   // `HTMLEditor` handles an action to avoid to run script.
-  RefPtr<const ComputedStyle> elementStyle =
-      nsComputedDOMStyle::GetComputedStyleNoFlush(&aElement);
+  const RefPtr<const ComputedStyle> elementStyle =
+      nsComputedDOMStyle::GetComputedStyleNoFlush(
+          aMaybeFlexOrGridItemContent.IsElement()
+              ? aMaybeFlexOrGridItemContent.AsElement()
+              : parentElement);
   if (MOZ_UNLIKELY(!elementStyle)) {
     return false;
   }
@@ -392,23 +438,30 @@ bool HTMLEditUtils::IsFlexOrGridItem(const Element& aElement) {
     return false;
   }
   const RefPtr<const ComputedStyle> parentElementStyle =
-      nsComputedDOMStyle::GetComputedStyleNoFlush(parentElement);
+      aMaybeFlexOrGridItemContent.IsElement()
+          ? nsComputedDOMStyle::GetComputedStyleNoFlush(parentElement)
+          : elementStyle;
   if (MOZ_UNLIKELY(!parentElementStyle)) {
     return false;
   }
-  const nsStyleDisplay* parentStyleDisplay = parentElementStyle->StyleDisplay();
-  const auto parentDisplayInside = parentStyleDisplay->DisplayInside();
-  const bool parentIsFlexContainerOrGridContainer =
-      parentDisplayInside == StyleDisplayInside::Flex ||
-      parentDisplayInside == StyleDisplayInside::Grid;
-  // We assume that the computed `display` value of a flex item and a grid item
-  // is "block".  If it would be false, we need to update
-  // HTMLEditUtils::IsBlockElement() and HTMLEditUtils::IsInlineContent().
-  // However, they are called a lot so that we need to be careful about changing
-  // them to check the parent style.
-  MOZ_ASSERT_IF(parentIsFlexContainerOrGridContainer,
-                styleDisplay->IsBlockOutsideStyle());
-  return parentIsFlexContainerOrGridContainer;
+  const auto parentDisplayInside =
+      parentElementStyle->StyleDisplay()->DisplayInside();
+  return parentDisplayInside == StyleDisplayInside::Flex ||
+         parentDisplayInside == StyleDisplayInside::Grid;
+}
+
+bool HTMLEditUtils::IsFlexOrGridItem(const nsIContent& aContent) {
+  if (!HTMLEditUtils::ParentElementIsGridOrFlexContainer(aContent)) {
+    return false;
+  }
+  // Note that if parent element's `display` is `contents`, the
+  // `display-outside` style of aElement may not be block.  However, even in
+  // such case, HTMLEditUtils::IsBlockElement() should return true.
+  MOZ_ASSERT_IF(aContent.IsElement(),
+                HTMLEditUtils::IsBlockElement(
+                    *aContent.AsElement(),
+                    BlockInlineCheck::UseComputedDisplayOutsideStyle));
+  return true;
 }
 
 bool HTMLEditUtils::IsInclusiveAncestorCSSDisplayNone(
@@ -2898,6 +2951,31 @@ HTMLEditUtils::ComputePointToPutCaretInElementIfOutside(
   }
   // XXX And shouldn't this be EditorDOMPointType(firstEditableContent)?
   return EditorDOMPointType(firstEditableContent, 0u);
+}
+
+// static
+template <typename EditorLineBreakType, typename EditorDOMPointType>
+Maybe<EditorLineBreakType>
+HTMLEditUtils::GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem(
+    const EditorDOMPointType& aPoint, const Element& aEditingHost) {
+  MOZ_ASSERT(aPoint.IsSet());
+  if (MOZ_UNLIKELY(!aPoint.IsInContentNode())) {
+    return Nothing{};
+  }
+  const WSScanResult previousThing =
+      WSRunScanner::ScanPreviousVisibleNodeOrBlockBoundary({}, aPoint,
+                                                           &aEditingHost);
+  if (!previousThing.ReachedLineBreak()) {
+    return Nothing{};  // No preceding line break.
+  }
+  const WSScanResult nextThing =
+      WSRunScanner::ScanInclusiveNextVisibleNodeOrBlockBoundary({}, aPoint,
+                                                                &aEditingHost);
+  if (!nextThing.ReachedBlockBoundary()) {
+    return Nothing{};  // The line break is not followed by a block boundary so
+                       // that it's a visible line break.
+  }
+  return Some(previousThing.CreateEditorLineBreak<EditorLineBreakType>());
 }
 
 // static

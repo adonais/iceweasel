@@ -1005,6 +1005,8 @@ static bool EvaluateInEnv(
 
   cx->check(envArg, frame);
 
+  AutoSetBypassCSPForDebugger setFlag(cx, evalOptions.bypassCSP());
+
   CompileOptions options(cx);
   const char* filename =
       evalOptions.filename() ? evalOptions.filename() : "debugger eval code";

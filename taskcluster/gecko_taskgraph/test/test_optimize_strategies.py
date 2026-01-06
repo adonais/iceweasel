@@ -24,7 +24,6 @@ from gecko_taskgraph.optimize.mozlint import SkipUnlessMozlint
 from gecko_taskgraph.optimize.strategies import SkipUnlessMissing, SkipUnlessSchedules
 from gecko_taskgraph.util.backstop import BACKSTOP_PUSH_INTERVAL
 from gecko_taskgraph.util.bugbug import (
-    BUGBUG_BASE_FALLBACK_URL,
     BUGBUG_BASE_URL,
     BugbugTimeoutException,
     push_schedules,
@@ -373,13 +372,6 @@ def test_bugbug_timeout(monkeypatch, responses, params):
         json={"ready": False},
         status=202,
     )
-    fallback_url = BUGBUG_BASE_FALLBACK_URL + query
-    responses.add(
-        responses.GET,
-        fallback_url,
-        json={"ready": False},
-        status=202,
-    )
 
     # Make sure the test runs fast.
     monkeypatch.setattr(time, "sleep", lambda i: None)
@@ -395,13 +387,6 @@ def test_bugbug_fallback(monkeypatch, responses, params):
     responses.add(
         responses.GET,
         url,
-        json={"ready": False},
-        status=202,
-    )
-    fallback_url = BUGBUG_BASE_FALLBACK_URL + query
-    responses.add(
-        responses.GET,
-        fallback_url,
         json={"ready": False},
         status=202,
     )

@@ -401,23 +401,6 @@ bool HeadlessWidget::GetEditCommands(NativeKeyBindingsType aType,
   return true;
 }
 
-nsresult HeadlessWidget::DispatchEvent(WidgetGUIEvent* aEvent,
-                                       nsEventStatus& aStatus) {
-#ifdef DEBUG
-  debug_DumpEvent(stdout, aEvent->mWidget, aEvent, "HeadlessWidget", 0);
-#endif
-
-  aStatus = nsEventStatus_eIgnore;
-
-  if (mAttachedWidgetListener) {
-    aStatus = mAttachedWidgetListener->HandleEvent(aEvent, mUseAttachedEvents);
-  } else if (mWidgetListener) {
-    aStatus = mWidgetListener->HandleEvent(aEvent, mUseAttachedEvents);
-  }
-
-  return NS_OK;
-}
-
 nsresult HeadlessWidget::SynthesizeNativeMouseEvent(
     LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
     MouseButton aButton, nsIWidget::Modifiers aModifierFlags,

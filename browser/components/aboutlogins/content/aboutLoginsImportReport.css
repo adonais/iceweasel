@@ -84,7 +84,7 @@
   grid-row-start: 3;
   display: grid;
   grid-template-columns: auto 1fr;
-  border-top: 1px solid var(--in-content-border-color);
+  border-top: 1px solid var(--border-color);
   grid-auto-rows: 28px;
   overflow-y: auto;
 }

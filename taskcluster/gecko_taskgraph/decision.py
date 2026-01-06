@@ -15,6 +15,7 @@ from redo import retry
 from taskgraph import create
 from taskgraph.create import create_tasks
 from taskgraph.generator import TaskGraphGenerator
+from taskgraph.main import format_kind_graph_mermaid
 from taskgraph.parameters import Parameters
 from taskgraph.taskgraph import TaskGraph
 from taskgraph.util import json
@@ -25,7 +26,6 @@ from taskgraph.util.yaml import load_yaml
 
 from . import GECKO
 from .actions import render_actions_json
-from .files_changed import get_changed_files
 from .parameters import get_app_version, get_version
 from .util.backstop import ANDROID_PERFTEST_BACKSTOP_INDEX, BACKSTOP_INDEX, is_backstop
 from .util.bugbug import push_schedules
@@ -204,6 +204,9 @@ def taskgraph_decision(options, parameters=None):
     full_task_json = tgg.full_task_graph.to_json()
     write_artifact("full-task-graph.json", full_task_json)
 
+    # write out kind graph
+    write_artifact("kind-graph.mm", format_kind_graph_mermaid(tgg.kind_graph))
+
     # write out the public/runnable-jobs.json file
     write_artifact(
         "runnable-jobs.json", full_task_graph_to_runnable_jobs(full_task_json)
@@ -311,9 +314,17 @@ def get_decision_parameters(graph_config, options):
             GECKO, revision=parameters["head_rev"]
         )
 
-        parameters["files_changed"] = sorted(
-            get_changed_files(parameters["head_repository"], parameters["head_rev"])
+        changed_files_since_base = set(
+            repo.get_changed_files(
+                rev=parameters["head_rev"], base=parameters["base_rev"]
+            )
         )
+        if "try" in parameters["project"] and options["tasks_for"] == "hg-push":
+            parameters["files_changed"] = sorted(
+                set(repo.get_outgoing_files()) | changed_files_since_base
+            )
+        else:
+            parameters["files_changed"] = sorted(changed_files_since_base)
 
     elif parameters["repository_type"] == "git":
         parameters["hg_branch"] = None
@@ -506,7 +517,8 @@ def write_artifact(filename, data):
         with gzip.open(path, "wb") as f:
             f.write(json.dumps(data).encode("utf-8"))
     else:
-        raise TypeError(f"Don't know how to write to {filename}")
+        with open(path, "w") as f:
+            f.write(data)
 
 
 def read_artifact(filename):

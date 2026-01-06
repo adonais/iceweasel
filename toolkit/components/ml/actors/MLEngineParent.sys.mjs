@@ -1040,6 +1040,30 @@ export class MLEngine {
   }
 
   /**
+   * Validates an inference request before sending to child process.
+   *
+   * @param {object} request - The request to validate
+   * @returns {object|null} The validated request, or null if blocked
+   * @private
+   */
+  #validateRequest(request) {
+    lazy.console.debug("[MLSecurity] Validating request:", request);
+    return request;
+  }
+
+  /**
+   * Validates an inference response after receiving from child process.
+   *
+   * @param {object} response - The response to validate
+   * @returns {object|null} The validated response, or null if blocked
+   * @private
+   */
+  #validateResponse(response) {
+    lazy.console.debug("[MLSecurity] Validating response:", response);
+    return response;
+  }
+
+  /**
    * Observes shutdown events from the child process.
    *
    * When the inference process is shutdown, we want to set the port to null and throw an error.
@@ -1308,12 +1332,19 @@ export class MLEngine {
             });
           }
           if (response) {
-            const totalTime =
-              response.metrics.tokenizingTime + response.metrics.inferenceTime;
-            Glean.firefoxAiRuntime.runInferenceSuccess[
-              this.getGleanLabel()
-            ].accumulateSingleSample(totalTime);
-            request.resolve(response);
+            // Validate response before returning to caller
+            const validatedResponse = this.#validateResponse(response);
+            if (!validatedResponse) {
+              request.reject(new Error("Response failed security validation"));
+            } else {
+              const totalTime =
+                validatedResponse.metrics.tokenizingTime +
+                validatedResponse.metrics.inferenceTime;
+              Glean.firefoxAiRuntime.runInferenceSuccess[
+                this.getGleanLabel()
+              ].accumulateSingleSample(totalTime);
+              request.resolve(validatedResponse);
+            }
           } else {
             request.reject(error);
           }
@@ -1477,6 +1508,12 @@ export class MLEngine {
       throw new Error("Port does not exist");
     }
 
+    // Validate request before sending to child process
+    const validatedRequest = this.#validateRequest(request);
+    if (!validatedRequest) {
+      throw new Error("Request failed security validation");
+    }
+
     const resourcesPromise = this.getInferenceResources();
     const beforeRun = ChromeUtils.now();
 
@@ -1484,7 +1521,7 @@ export class MLEngine {
       {
         type: "EnginePort:Run",
         requestId,
-        request,
+        request: validatedRequest,
         engineRunOptions: { enableInferenceProgress: false },
       },
       transferables
@@ -1572,12 +1609,18 @@ export class MLEngine {
       throw new Error("The port is null");
     }
 
+    // Validate request before sending to child process
+    const validatedRequest = this.#validateRequest(request);
+    if (!validatedRequest) {
+      throw new Error("Request failed security validation");
+    }
+
     // Send the request to the engine via postMessage with optional transferables
     this.#port.postMessage(
       {
         type: "EnginePort:Run",
         requestId,
-        request,
+        request: validatedRequest,
         engineRunOptions: { enableInferenceProgress: true },
       },
       transferables

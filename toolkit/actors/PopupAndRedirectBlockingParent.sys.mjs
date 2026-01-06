@@ -13,6 +13,7 @@ export class PopupAndRedirectBlocker {
    * in that browsing context. This allows tracking blocked popups per
    * frame/window without leaking memory, since keys are GC'd when
    * WindowGlobals go away.
+   *
    * @type {WeakMap<WindowGlobalParent, number>}
    */
   #mBlockedPopupCounts;
@@ -20,6 +21,7 @@ export class PopupAndRedirectBlocker {
    * WeakMap mapping the browser's top-level WindowGlobal to the
    * BrowsingContext that attempted a blocked redirect. This allows
    * identifying the source frame/window of a blocked redirect.
+   *
    * @type {WeakMap<WindowGlobalParent, BrowsingContext>}
    */
   #mBlockedRedirects;

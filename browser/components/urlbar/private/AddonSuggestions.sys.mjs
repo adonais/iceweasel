@@ -97,7 +97,6 @@ export class AddonSuggestions extends SuggestProvider {
       description: suggestion.description,
       bottomTextL10n: {
         id: "firefox-suggest-addons-recommended",
-        cacheable: true,
       },
       helpUrl: lazy.QuickSuggest.HELP_URL,
     };

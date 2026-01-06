@@ -56,8 +56,8 @@ tags = "search-telemetry"
 ["browser_telemetry_suggestMetrics.js"]
 tags = "search-telemetry"
 skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1971091
   "os == 'win' && os_version == '11.26100'", # Bug 1971091
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64'", # Bug 1971091
 ]
 
 ["browser_weather.js"]

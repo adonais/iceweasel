@@ -293,6 +293,7 @@ export class PlacesFeed {
 
   /**
    * Sends an attribution request for Top Sites interactions.
+   *
    * @param {object} data
    *   Attribution paramters from a Top Site.
    */
@@ -393,7 +394,7 @@ export class PlacesFeed {
   /**
    * Add the hostnames of the given urls to the Top Sites sponsor blocklist.
    *
-   * @param {array} urls
+   * @param {Array} urls
    *   An array of the objects structured as `{ url }`
    */
   addToBlockedTopSitesSponsors(urls) {
@@ -416,7 +417,7 @@ export class PlacesFeed {
    * to send back to the ads service when requesting new topsite ads
    * from the unified ads service
    *
-   * @param {array} block_key
+   * @param {Array} block_key
    *   An array of the (string) keys
    */
   addToUnifiedAdsBlockedAdsList(keysArray) {

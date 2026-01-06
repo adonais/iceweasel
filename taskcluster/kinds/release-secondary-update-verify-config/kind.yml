@@ -15,7 +15,7 @@ task-defaults:
     run-on-projects: []  # to make sure this never runs as part of CI
     shipping-product: firefox
     shipping-phase: promote
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     worker:
         docker-image:
             in-tree: "update-verify"
@@ -83,7 +83,7 @@ tasks:
     firefox-secondary-macosx64:
         treeherder:
             symbol: UVCS
-            platform: macosx64/opt
+            platform: osx-shippable/opt
             kind: test
             tier: 1
         attributes:

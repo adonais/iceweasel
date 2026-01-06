@@ -46,6 +46,9 @@ var gExceptionPaths = [
   "chrome://browser/content/asrouter/assets/fox-with-devices.svg",
   "chrome://browser/content/asrouter/assets/fox-with-locked-box.svg",
   "chrome://browser/content/asrouter/assets/fox-with-mobile.svg",
+  "chrome://browser/content/asrouter/assets/desktop-to-mobile-banner.svg",
+  "chrome://browser/content/asrouter/assets/desktop-to-mobile-non-eu-QR.svg",
+  "chrome://browser/content/asrouter/assets/desktop-to-mobile-eu-QR.svg",
 
   // toolkit/components/pdfjs/content/build/pdf.js
   "resource://pdf.js/web/images/",
@@ -327,6 +330,37 @@ var allowlist = [
   // and this file will be needed for that.
   {
     file: "resource://app/modules/backup/CookiesBackupResource.sys.mjs",
+  },
+
+  // Bug 2000725 importer lands (backed out due to unused file)
+  {
+    file: "moz-src:///browser/components/aiwindow/models/InsightsHistorySource.sys.mjs",
+  },
+
+  // Bug 2000945 - Move query intent detection to AI-window r?mardak (backed out due to unused file)
+  {
+    file: "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
+  },
+  // Bug 2002840 - add function to return real time info injection message & tests (backed out due to unused file)
+  {
+    file: "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs",
+  },
+  // Bug 2003328 - Implement createOpenAIEngine and prompt rendering (backed out due to unused file)
+  // Bug 2003832 - Change .mjs files to .sys.mjs (backed out due to unused file)
+  {
+    file: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
+  },
+  // Bug 2002906 - Add insights storage
+  {
+    file: "moz-src:///browser/components/aiwindow/services/InsightStore.sys.mjs",
+  },
+  // Bug 2003623 - Add assistant system prompt
+  {
+    file: "moz-src:///browser/components/aiwindow/models/prompts/assistantPrompts.sys.mjs",
+  },
+  // Bug 2002638 - Move search browsing history to AI-window r?mardak (backed out due to unused file)
+  {
+    file: "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs",
   },
 ];
 

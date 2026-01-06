@@ -12,7 +12,6 @@
 #define __nsconsoleservice_h__
 
 #include <cstdint>
-#include <utility>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/LinkedList.h"

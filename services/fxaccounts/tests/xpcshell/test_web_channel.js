@@ -3,14 +3,8 @@
 
 "use strict";
 
-const {
-  CLIENT_IS_THUNDERBIRD,
-  ON_PROFILE_CHANGE_NOTIFICATION,
-  WEBCHANNEL_ID,
-  log,
-} = ChromeUtils.importESModule(
-  "resource://gre/modules/FxAccountsCommon.sys.mjs"
-);
+const { ON_PROFILE_CHANGE_NOTIFICATION, WEBCHANNEL_ID, log } =
+  ChromeUtils.importESModule("resource://gre/modules/FxAccountsCommon.sys.mjs");
 const { CryptoUtils } = ChromeUtils.importESModule(
   "moz-src:///services/crypto/modules/utils.sys.mjs"
 );
@@ -677,49 +671,64 @@ add_task(async function test_helpers_login_another_user_signed_in() {
   Assert.ok(helpers._disconnect.called);
 });
 
-add_task(
-  async function test_helpers_login_dont_set_previous_account_name_hash_for_unverified_emails() {
-    let helpers = new FxAccountsWebChannelHelpers({
-      fxAccounts: {
-        _internal: {
-          setSignedInUser() {
-            return new Promise(resolve => {
-              // previously signed in user preference should not be updated.
-              Assert.equal(
-                helpers.getPreviousAccountNameHashPref(),
-                CryptoUtils.sha256Base64("lastuser@testuser.com")
-              );
-              resolve();
-            });
-          },
+// The FxA server sends the `login` command after the user is signed in
+// when upgrading from third-party auth to password + sync
+add_task(async function test_helpers_login_same_user_signed_in() {
+  let updateUserAccountDataCalled = false;
+  let setSignedInUserCalled = false;
+
+  let helpers = new FxAccountsWebChannelHelpers({
+    fxAccounts: {
+      getSignedInUser() {
+        return Promise.resolve({
+          uid: "testuser",
+          email: "testuser@testuser.com",
+        });
+      },
+      _internal: {
+        updateUserAccountData(accountData) {
+          updateUserAccountDataCalled = true;
+          Assert.equal(accountData.email, "testuser@testuser.com");
+          Assert.equal(accountData.uid, "testuser");
+          return Promise.resolve();
         },
-        getSignedInUser() {
-          return Promise.resolve(null);
-        },
-        telemetry: {
-          recordConnection() {},
+        setSignedInUser() {
+          setSignedInUserCalled = true;
+          return Promise.resolve();
         },
       },
-      weaveXPCOM: {
-        whenLoaded() {},
-        Weave: {
-          Service: {
-            configure() {},
-          },
+      telemetry: {
+        recordConnection: sinon.spy(),
+      },
+    },
+    weaveXPCOM: {
+      whenLoaded() {},
+      Weave: {
+        Service: {
+          configure() {},
         },
       },
-    });
+    },
+  });
+  helpers._disconnect = sinon.spy();
 
-    // ensure the previous account pref is overwritten.
-    helpers.setPreviousAccountNameHashPref("lastuser@testuser.com");
+  await helpers.login({
+    uid: "testuser",
+    email: "testuser@testuser.com",
+    verifiedCanLinkAccount: true,
+    customizeSync: false,
+  });
 
-    await helpers.login({
-      email: "newuser@testuser.com",
-      verifiedCanLinkAccount: true,
-      customizeSync: false,
-    });
-  }
-);
+  Assert.ok(
+    updateUserAccountDataCalled,
+    "updateUserAccountData should be called"
+  );
+  Assert.ok(!setSignedInUserCalled, "setSignedInUser should not be called");
+  Assert.ok(!helpers._disconnect.called, "_disconnect should not be called");
+  Assert.ok(
+    helpers._fxAccounts.telemetry.recordConnection.calledWith([], "webchannel")
+  );
+});
 
 add_task(async function test_helpers_login_with_customize_sync() {
   let helpers = new FxAccountsWebChannelHelpers({
@@ -764,245 +773,17 @@ add_task(async function test_helpers_login_with_customize_sync() {
   );
 });
 
-add_task(
-  { skip_if: () => CLIENT_IS_THUNDERBIRD },
-  async function test_helpers_login_with_customize_sync_and_declined_engines() {
-    ensureOauthNotConfigured();
-    let configured = false;
-    let helpers = new FxAccountsWebChannelHelpers({
-      fxAccounts: {
-        _internal: {
-          setSignedInUser(accountData) {
-            return new Promise(resolve => {
-              // ensure fxAccounts is informed of the new user being signed in.
-              Assert.equal(accountData.email, "testuser@testuser.com");
-
-              // customizeSync should be stripped in the data.
-              Assert.equal(false, "customizeSync" in accountData);
-              Assert.equal(false, "services" in accountData);
-              resolve();
-            });
-          },
-        },
-        getSignedInUser() {
-          return Promise.resolve(null);
-        },
-        telemetry: {
-          recordConnection: sinon.spy(),
-        },
-      },
-      weaveXPCOM: {
-        whenLoaded() {},
-        Weave: {
-          Service: {
-            configure() {
-              configured = true;
-            },
-          },
-        },
-      },
-    });
-
-    Assert.equal(
-      Services.prefs.getBoolPref("services.sync.engine.addons"),
-      true
-    );
-    Assert.equal(
-      Services.prefs.getBoolPref("services.sync.engine.bookmarks"),
-      true
-    );
-    Assert.equal(
-      Services.prefs.getBoolPref("services.sync.engine.history"),
-      true
-    );
-    Assert.equal(
-      Services.prefs.getBoolPref("services.sync.engine.passwords"),
-      true
-    );
-    Assert.equal(
-      Services.prefs.getBoolPref("services.sync.engine.prefs"),
-      true
-    );
-    Assert.equal(Services.prefs.getBoolPref("services.sync.engine.tabs"), true);
-    await helpers.login({
-      email: "testuser@testuser.com",
-      verifiedCanLinkAccount: true,
-      customizeSync: true,
-      services: {
-        sync: {
-          offeredEngines: [
-            "addons",
-            "bookmarks",
-            "history",
-            "passwords",
-            "prefs",
-          ],
-          declinedEngines: ["addons", "prefs"],
-        },
-      },
-    });
-    Assert.equal(
-      Services.prefs.getBoolPref("services.sync.engine.addons"),
-      false
-    );
-    Assert.equal(
-      Services.prefs.getBoolPref("services.sync.engine.bookmarks"),
-      true
-    );
-    Assert.equal(
-      Services.prefs.getBoolPref("services.sync.engine.history"),
-      true
-    );
-    Assert.equal(
-      Services.prefs.getBoolPref("services.sync.engine.passwords"),
-      true
-    );
-    Assert.equal(
-      Services.prefs.getBoolPref("services.sync.engine.prefs"),
-      false
-    );
-    Assert.equal(Services.prefs.getBoolPref("services.sync.engine.tabs"), true);
-    Assert.ok(configured, "sync was configured");
-    Assert.ok(
-      helpers._fxAccounts.telemetry.recordConnection.calledWith(
-        ["sync"],
-        "webchannel"
-      )
-    );
-  }
-);
-
-add_task(async function test_helpers_login_with_offered_sync_engines() {
-  let helpers;
-  let configured = false;
-  const setSignedInUserCalled = new Promise(resolve => {
-    helpers = new FxAccountsWebChannelHelpers({
-      fxAccounts: {
-        _internal: {
-          async setSignedInUser(accountData) {
-            resolve(accountData);
-          },
-        },
-        getSignedInUser() {
-          return Promise.resolve(null);
-        },
-        telemetry: {
-          recordConnection() {},
-        },
-      },
-      weaveXPCOM: {
-        whenLoaded() {},
-        Weave: {
-          Service: {
-            configure() {
-              configured = true;
-            },
-          },
-        },
-      },
-    });
-  });
-
-  Services.prefs.setBoolPref("services.sync.engine.creditcards", false);
-  Services.prefs.setBoolPref("services.sync.engine.addresses", false);
-
-  await helpers.login({
-    email: "testuser@testuser.com",
-    verifiedCanLinkAccount: true,
-    customizeSync: true,
-    services: {
-      sync: {
-        declinedEngines: ["addresses"],
-        offeredEngines: ["creditcards", "addresses"],
-      },
-    },
-  });
-
-  const accountData = await setSignedInUserCalled;
-
-  // ensure fxAccounts is informed of the new user being signed in.
-  equal(accountData.email, "testuser@testuser.com");
-
-  // services should be stripped in the data.
-  ok(!("services" in accountData));
-  // credit cards was offered but not declined.
-  equal(Services.prefs.getBoolPref("services.sync.engine.creditcards"), true);
-  // addresses was offered and explicitely declined.
-  equal(Services.prefs.getBoolPref("services.sync.engine.addresses"), false);
-  ok(configured);
-});
-
-add_task(async function test_helpers_login_nothing_offered() {
-  let helpers;
-  let configured = false;
-  const setSignedInUserCalled = new Promise(resolve => {
-    helpers = new FxAccountsWebChannelHelpers({
-      fxAccounts: {
-        _internal: {
-          async setSignedInUser(accountData) {
-            resolve(accountData);
-          },
-        },
-        getSignedInUser() {
-          return Promise.resolve(null);
-        },
-        telemetry: {
-          recordConnection() {},
-        },
-      },
-      weaveXPCOM: {
-        whenLoaded() {},
-        Weave: {
-          Service: {
-            configure() {
-              configured = true;
-            },
-          },
-        },
-      },
-    });
-  });
-
-  // doesn't really matter if it's *all* engines...
-  const allEngines = [
-    "addons",
-    "addresses",
-    "bookmarks",
-    "creditcards",
-    "history",
-    "passwords",
-    "prefs",
-  ];
-  for (let name of allEngines) {
-    Services.prefs.clearUserPref("services.sync.engine." + name);
-  }
-
-  await helpers.login({
-    email: "testuser@testuser.com",
-    verifiedCanLinkAccount: true,
-    services: {
-      sync: {},
-    },
-  });
-
-  const accountData = await setSignedInUserCalled;
-  // ensure fxAccounts is informed of the new user being signed in.
-  equal(accountData.email, "testuser@testuser.com");
-
-  for (let name of allEngines) {
-    Assert.ok(!Services.prefs.prefHasUserValue("services.sync.engine." + name));
-  }
-  Assert.ok(configured);
-});
-
 add_task(async function test_helpers_persist_requested_services() {
-  ensureOauthConfigured();
   let accountData = null;
   const helpers = new FxAccountsWebChannelHelpers({
     fxAccounts: {
       _internal: {
         async setSignedInUser(newAccountData) {
           accountData = newAccountData;
+          return accountData;
+        },
+        async updateUserAccountData(updatedFields) {
+          accountData = { ...accountData, ...updatedFields };
           return accountData;
         },
       },
@@ -1053,8 +834,46 @@ add_task(async function test_helpers_persist_requested_services() {
     sync: { important: true },
     new: { name: "opted in" },
   });
+});
 
-  resetOauthConfig();
+add_task(async function test_helpers_oauth_login_defers_sync_without_keys() {
+  const accountState = {
+    uid: "uid123",
+    sessionToken: "session-token",
+    email: "user@example.com",
+    requestedServices: "",
+  };
+  const destroyOAuthToken = sinon.stub().resolves();
+  const completeOAuthFlow = sinon
+    .stub()
+    .resolves({ scopedKeys: null, refreshToken: "refresh-token" });
+  const setScopedKeys = sinon.spy();
+  const setUserVerified = sinon.spy();
+  const updateUserAccountData = sinon.stub().resolves();
+
+  const helpers = new FxAccountsWebChannelHelpers({
+    fxAccounts: {
+      _internal: {
+        async getUserAccountData() {
+          return accountState;
+        },
+        completeOAuthFlow,
+        destroyOAuthToken,
+        setScopedKeys,
+        updateUserAccountData,
+        setUserVerified,
+      },
+    },
+  });
+
+  await helpers.oauthLogin({ code: "code", state: "state" });
+
+  Assert.ok(setScopedKeys.notCalled);
+  Assert.ok(updateUserAccountData.calledOnce);
+  Assert.deepEqual(
+    JSON.parse(updateUserAccountData.firstCall.args[0].requestedServices),
+    null
+  );
 });
 
 add_test(function test_helpers_open_sync_preferences() {
@@ -1073,40 +892,6 @@ add_test(function test_helpers_open_sync_preferences() {
   };
 
   helpers.openSyncPreferences(mockBrowser, "fxa:verification_complete");
-});
-
-add_task(async function test_helpers_getFxAStatus_extra_engines() {
-  let helpers = new FxAccountsWebChannelHelpers({
-    fxAccounts: {
-      _internal: {
-        getUserAccountData() {
-          return Promise.resolve({
-            email: "testuser@testuser.com",
-            sessionToken: "sessionToken",
-            uid: "uid",
-            verified: true,
-          });
-        },
-      },
-    },
-    privateBrowsingUtils: {
-      isBrowserPrivate: () => true,
-    },
-  });
-
-  ensureOauthNotConfigured();
-  Services.prefs.setBoolPref(
-    "services.sync.engine.creditcards.available",
-    true
-  );
-  // Not defining "services.sync.engine.addresses.available" on purpose.
-
-  let fxaStatus = await helpers.getFxaStatus("sync", mockSendingContext);
-  ok(!!fxaStatus);
-  ok(!!fxaStatus.signedInUser);
-  // in the non-oauth flows we only expect "extra" engines.
-  deepEqual(fxaStatus.capabilities.engines, ["creditcards"]);
-  resetOauthConfig();
 });
 
 add_task(async function test_helpers_getFxAStatus_engines_oauth() {
@@ -1130,7 +915,6 @@ add_task(async function test_helpers_getFxAStatus_engines_oauth() {
 
   // disable the "addresses" engine.
   Services.prefs.setBoolPref("services.sync.engine.addresses.available", false);
-  ensureOauthConfigured();
   let fxaStatus = await helpers.getFxaStatus("sync", mockSendingContext);
   ok(!!fxaStatus);
   ok(!!fxaStatus.signedInUser);
@@ -1158,8 +942,6 @@ add_task(async function test_helpers_getFxAStatus_engines_oauth() {
     "prefs",
     "tabs",
   ]);
-
-  resetOauthConfig();
 });
 
 add_task(async function test_helpers_getFxaStatus_allowed_signedInUser() {

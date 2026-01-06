@@ -4,8 +4,6 @@
 
 package org.mozilla.fenix.translations
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -21,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.concept.engine.translate.TranslationError
@@ -30,6 +30,7 @@ import org.mozilla.fenix.compose.InfoType
 import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 
 /**
  * Translation Settings Fragment.
@@ -43,7 +44,7 @@ import org.mozilla.fenix.theme.FirefoxTheme
  * @param onNeverTranslationClicked Invoked when the user clicks on the "Never Translation" button.
  * @param onDownloadLanguageClicked Invoked when the user clicks on the "Download Language" button.
  */
-@Suppress("LongMethod")
+@Suppress("LongMethod", "CognitiveComplexMethod")
 @Composable
 fun TranslationSettings(
     translationSwitchList: List<TranslationSwitchItem>,
@@ -56,12 +57,8 @@ fun TranslationSettings(
     onDownloadLanguageClicked: () -> Unit,
 ) {
     val showHeader = showAutomaticTranslations || showNeverTranslate || showDownloads
-    Column(
-        modifier = Modifier
-            .background(
-                color = FirefoxTheme.colors.layer1,
-            ),
-    ) {
+
+    Surface {
         LazyColumn {
             items(translationSwitchList) { item: TranslationSwitchItem ->
                 SwitchWithLabel(
@@ -96,7 +93,7 @@ fun TranslationSettings(
                                 .fillMaxWidth()
                                 .padding(start = 72.dp, end = 16.dp, bottom = 8.dp, top = 8.dp)
                                 .semantics { heading() },
-                            color = MaterialTheme.colorScheme.tertiary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = FirefoxTheme.typography.headline8,
                         )
                     }
@@ -203,6 +200,22 @@ internal fun getTranslationSettingsSwitchList(): List<TranslationSwitchItem> {
 @PreviewLightDark
 private fun TranslationSettingsPreview() {
     FirefoxTheme {
+        TranslationSettings(
+            translationSwitchList = getTranslationSettingsSwitchList(),
+            showAutomaticTranslations = true,
+            showNeverTranslate = true,
+            showDownloads = true,
+            onAutomaticTranslationClicked = {},
+            onDownloadLanguageClicked = {},
+            onNeverTranslationClicked = {},
+        )
+    }
+}
+
+@Composable
+@Preview
+private fun TranslationSettingPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
         TranslationSettings(
             translationSwitchList = getTranslationSettingsSwitchList(),
             showAutomaticTranslations = true,

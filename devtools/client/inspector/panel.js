@@ -18,7 +18,7 @@ class InspectorPanel {
   /**
    * Initialize the inspector
    *
-   * @param {Object} options: see Inspector.init
+   * @param {object} options: see Inspector.init
    * @returns {Inspector}
    */
   open(options = {}) {

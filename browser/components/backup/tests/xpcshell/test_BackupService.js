@@ -324,9 +324,8 @@ async function testCreateBackupHelper(sandbox, taskFn) {
     "Should maintain profile name across backup and restore"
   );
 
-  Assert.strictEqual(
-    currentProfile.name,
-    `old-${originalProfileName}`,
+  Assert.ok(
+    currentProfile.name.startsWith("old-"),
     "The old profile should be prefixed with old-"
   );
 

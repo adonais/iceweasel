@@ -57,7 +57,7 @@ namespace detail {
 #undef HWY_AVX3_HAVE_F32_TO_BF16C
 #if HWY_TARGET <= HWY_AVX3_ZEN4 && !HWY_COMPILER_CLANGCL &&           \
     (HWY_COMPILER_GCC_ACTUAL >= 1000 || HWY_COMPILER_CLANG >= 900) && \
-    !defined(HWY_AVX3_DISABLE_AVX512BF16)
+    HWY_AVX3_ENABLE_AVX512BF16
 #define HWY_AVX3_HAVE_F32_TO_BF16C 1
 #else
 #define HWY_AVX3_HAVE_F32_TO_BF16C 0
@@ -71,8 +71,9 @@ namespace detail {
 #endif
 
 #undef HWY_X86_HAVE_AVX10_2_OPS
-#if HWY_TARGET_IS_AVX10_2 && \
-    (HWY_COMPILER_GCC_ACTUAL >= 1501 || HWY_COMPILER3_CLANG >= 200103)
+#if HWY_TARGET_IS_AVX10_2 &&            \
+    (HWY_COMPILER_GCC_ACTUAL >= 1501 || \
+     (HWY_COMPILER3_CLANG >= 200103 && HWY_COMPILER_CLANG != 2100))
 #define HWY_X86_HAVE_AVX10_2_OPS 1
 #else
 #define HWY_X86_HAVE_AVX10_2_OPS 0
@@ -1002,6 +1003,23 @@ using MFromD = decltype(MaskFromVec(VFromD<D>()));
 template <class D>
 HWY_API MFromD<D> MaskFalse(D /*d*/) {
   return MFromD<D>{static_cast<decltype(MFromD<D>().raw)>(0)};
+}
+
+// ------------------------------ SetMask
+#ifdef HWY_NATIVE_SET_MASK
+#undef HWY_NATIVE_SET_MASK
+#else
+#define HWY_NATIVE_SET_MASK
+#endif
+
+template <class D>
+HWY_API MFromD<D> SetMask(D /*d*/, bool val) {
+  constexpr uint64_t kMask = (HWY_MAX_LANES_D(D) < 64)
+                                 ? ((1ULL << (HWY_MAX_LANES_D(D) & 63)) - 1ULL)
+                                 : LimitsMax<uint64_t>();
+
+  return MFromD<D>{static_cast<decltype(MFromD<D>().raw)>(
+      static_cast<uint64_t>(-static_cast<int64_t>(val)) & kMask)};
 }
 
 // ------------------------------ IsNegative (MFromD)
@@ -6962,7 +6980,11 @@ HWY_API Vec128<T, N> Broadcast(const Vec128<T, N> v) {
 template <int kLane, typename T, size_t N, HWY_IF_UI32(T)>
 HWY_API Vec128<T, N> Broadcast(const Vec128<T, N> v) {
   static_assert(0 <= kLane && kLane < N, "Invalid lane");
-  return Vec128<T, N>{_mm_shuffle_epi32(v.raw, 0x55 * kLane)};
+  HWY_IF_CONSTEXPR(N == 1){
+    return Vec128<T, N>{v};  // Workaround for MSVC compiler bug on single lane integer broadcast
+  }else{
+    return Vec128<T, N>{_mm_shuffle_epi32(v.raw, 0x55 * kLane)};
+  }
 }
 
 template <int kLane, typename T, size_t N, HWY_IF_UI64(T)>
@@ -10003,12 +10025,21 @@ HWY_API VFromD<DI32> SumOfMulQuadAccumulate(
 #else
 #define HWY_NATIVE_I8_I8_SUMOFMULQUADACCUMULATE
 #endif
+
+#if HWY_X86_HAVE_AVX10_2_OPS
+template <class DI32, HWY_IF_I32_D(DI32), HWY_IF_V_SIZE_LE_D(DI32, 16)>
+HWY_API VFromD<DI32> SumOfMulQuadAccumulate(DI32 /*di32*/,
+                                            VFromD<Repartition<int8_t, DI32>> a,
+                                            VFromD<Repartition<int8_t, DI32>> b,
+                                            VFromD<DI32> sum) {
+  return VFromD<DI32>{_mm_dpbssd_epi32(sum.raw, a.raw, b.raw)};
+}
+#else   // !HWY_X86_HAVE_AVX10_2_OPS
 template <class DI32, HWY_IF_I32_D(DI32)>
 HWY_API VFromD<DI32> SumOfMulQuadAccumulate(DI32 di32,
                                             VFromD<Repartition<int8_t, DI32>> a,
                                             VFromD<Repartition<int8_t, DI32>> b,
                                             VFromD<DI32> sum) {
-  // TODO(janwas): AVX-VNNI-INT8 has dpbssd.
   const Repartition<uint8_t, decltype(di32)> du8;
 
   const auto a_u = BitCast(du8, a);
@@ -10017,17 +10048,26 @@ HWY_API VFromD<DI32> SumOfMulQuadAccumulate(DI32 di32,
       SumOfMulQuadAccumulate(di32, ShiftRight<7>(a_u), b, Zero(di32)));
   return result_sum_0 - result_sum_1;
 }
+#endif  // HWY_X86_HAVE_AVX10_2_OPS
 
 #ifdef HWY_NATIVE_U8_U8_SUMOFMULQUADACCUMULATE
 #undef HWY_NATIVE_U8_U8_SUMOFMULQUADACCUMULATE
 #else
 #define HWY_NATIVE_U8_U8_SUMOFMULQUADACCUMULATE
 #endif
+
+#if HWY_X86_HAVE_AVX10_2_OPS
+template <class DU32, HWY_IF_U32_D(DU32), HWY_IF_V_SIZE_LE_D(DU32, 16)>
+HWY_API VFromD<DU32> SumOfMulQuadAccumulate(
+    DU32 /*du32*/, VFromD<Repartition<uint8_t, DU32>> a,
+    VFromD<Repartition<uint8_t, DU32>> b, VFromD<DU32> sum) {
+  return VFromD<DU32>{_mm_dpbuud_epi32(sum.raw, a.raw, b.raw)};
+}
+#else   // !HWY_X86_HAVE_AVX10_2_OPS
 template <class DU32, HWY_IF_U32_D(DU32)>
 HWY_API VFromD<DU32> SumOfMulQuadAccumulate(
     DU32 du32, VFromD<Repartition<uint8_t, DU32>> a,
     VFromD<Repartition<uint8_t, DU32>> b, VFromD<DU32> sum) {
-  // TODO(janwas): AVX-VNNI-INT8 has dpbuud.
   const Repartition<uint8_t, decltype(du32)> du8;
   const RebindToSigned<decltype(du8)> di8;
   const RebindToSigned<decltype(du32)> di32;
@@ -10040,6 +10080,7 @@ HWY_API VFromD<DU32> SumOfMulQuadAccumulate(
 
   return BitCast(du32, result_sum_0 - result_sum_1);
 }
+#endif  // HWY_X86_HAVE_AVX10_2_OPS
 
 #endif  // HWY_TARGET <= HWY_AVX3_DL
 

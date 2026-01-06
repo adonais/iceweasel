@@ -18,15 +18,16 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.button.TextButton
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
@@ -35,6 +36,7 @@ import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.onboarding.store.PrivacyPreferencesAction
 import org.mozilla.fenix.onboarding.store.PrivacyPreferencesStore
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 
 /**
  * Dialog to manage privacy preferences during onboarding.
@@ -53,7 +55,7 @@ fun ManagePrivacyPreferencesDialog(
         properties = DialogProperties(dismissOnClickOutside = false),
     ) {
         Card(
-            colors = CardDefaults.cardColors(containerColor = FirefoxTheme.colors.layer2),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
             shape = RoundedCornerShape(8.dp),
         ) {
             Column(Modifier.padding(16.dp)) {
@@ -83,7 +85,6 @@ fun ManagePrivacyPreferencesDialog(
 private fun Title() {
     Text(
         text = stringResource(R.string.onboarding_preferences_dialog_title),
-        color = FirefoxTheme.colors.textPrimary,
         style = FirefoxTheme.typography.headline7,
         maxLines = 1,
     )
@@ -111,7 +112,6 @@ private fun CrashReportingPreference(
 
     Text(
         text = stringResource(R.string.onboarding_preferences_dialog_crash_reporting_description),
-        color = FirefoxTheme.colors.textPrimary,
         style = FirefoxTheme.typography.caption,
     )
 
@@ -126,7 +126,7 @@ private fun CrashReportingPreference(
                 onClick = { onLinkClick() },
             ),
         ),
-        style = FirefoxTheme.typography.caption.copy(color = FirefoxTheme.colors.textPrimary),
+        style = FirefoxTheme.typography.caption,
     )
 }
 
@@ -152,7 +152,6 @@ private fun UsageDataPreference(
 
     Text(
         text = stringResource(R.string.onboarding_preferences_dialog_usage_data_description_2),
-        color = FirefoxTheme.colors.textPrimary,
         style = FirefoxTheme.typography.caption,
     )
 
@@ -167,7 +166,7 @@ private fun UsageDataPreference(
                 onClick = { onLinkClick() },
             ),
         ),
-        style = FirefoxTheme.typography.caption.copy(color = FirefoxTheme.colors.textPrimary),
+        style = FirefoxTheme.typography.caption,
     )
 }
 
@@ -179,21 +178,9 @@ private fun PositiveButton(onDismissRequest: () -> Unit) {
             .wrapContentHeight(),
         horizontalArrangement = Arrangement.End,
     ) {
-        DialogButton(
+        TextButton(
             text = stringResource(R.string.onboarding_preferences_dialog_positive_button),
             onClick = { onDismissRequest() },
-        )
-    }
-}
-
-@Composable
-private fun DialogButton(text: String, onClick: () -> Unit) {
-    TextButton(onClick = onClick) {
-        Text(
-            text.uppercase(),
-            color = MaterialTheme.colorScheme.tertiary,
-            style = FirefoxTheme.typography.button,
-            maxLines = 1,
         )
     }
 }
@@ -202,6 +189,14 @@ private fun DialogButton(text: String, onClick: () -> Unit) {
 @Composable
 private fun ManagePrivacyPreferencesDialogPreview() {
     FirefoxTheme {
+        ManagePrivacyPreferencesDialog(PrivacyPreferencesStore(), {}, {}, {})
+    }
+}
+
+@Preview
+@Composable
+private fun ManagePrivacyPreferencesDialogPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
         ManagePrivacyPreferencesDialog(PrivacyPreferencesStore(), {}, {}, {})
     }
 }

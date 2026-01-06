@@ -24,6 +24,7 @@
 @import url("chrome://browser/skin/places/editBookmarkPanel.css");
 @import url("chrome://browser/skin/searchbar.css");
 @import url("chrome://browser/skin/sidebar.css");
+@import url("chrome://browser/skin/aiWindowSidebar.css");
 @import url("chrome://browser/skin/customizableui/customizeMode.css");
 @import url("chrome://browser/skin/UITour.css");
 @import url("chrome://browser/skin/formautofill-notification.css");
@@ -699,7 +700,7 @@ menupopup::part(drop-indicator) {
 }
 
 #widget-overflow .webextension-popup-browser {
-  background: #fff;
+  background: white;
 
   /* height set via JS can be lower than the stack min-height,
      ensure the browser takes up at least that min-height */

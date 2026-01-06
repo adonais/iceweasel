@@ -86,4 +86,11 @@ class OnboardingSecondFragment : Fragment() {
             onboardingInteractor.onFinishOnBoarding()
         }
     }
+
+    /**
+     * Companion object for [OnboardingSecondFragment].
+     */
+    companion object {
+        const val FRAGMENT_TAG = "onboarding-second-fragment"
+    }
 }

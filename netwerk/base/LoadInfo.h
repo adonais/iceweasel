@@ -403,6 +403,7 @@ class LoadInfo final : public nsILoadInfo {
            nsIURI* aResultPrincipalURI,
            nsICookieJarSettings* aCookieJarSettings,
            nsIPolicyContainer* aPolicyContainerToInherit,
+           const Maybe<dom::FeaturePolicyInfo>& aContainerFeaturePolicyInfo,
            const nsACString& aTriggeringRemoteType,
            const nsID& aSandboxedNullPrincipalID,
            const Maybe<mozilla::dom::ClientInfo>& aClientInfo,

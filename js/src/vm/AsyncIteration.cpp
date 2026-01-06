@@ -148,17 +148,15 @@ AsyncGeneratorRequest* AsyncGeneratorObject::createRequest(
       return true;
     }
 
-    Rooted<ListObject*> queue(cx, ListObject::create(cx));
+    ListObject* queue = ListObject::create(cx);
     if (!queue) {
       return false;
     }
 
-    RootedValue requestVal(cx, ObjectValue(*generator->singleQueueRequest()));
-    if (!queue->append(cx, requestVal)) {
+    if (!queue->append(cx, ObjectValue(*generator->singleQueueRequest()))) {
       return false;
     }
-    requestVal = ObjectValue(*request);
-    if (!queue->append(cx, requestVal)) {
+    if (!queue->append(cx, ObjectValue(*request))) {
       return false;
     }
 
@@ -166,9 +164,7 @@ AsyncGeneratorRequest* AsyncGeneratorObject::createRequest(
     return true;
   }
 
-  Rooted<ListObject*> queue(cx, generator->queue());
-  RootedValue requestVal(cx, ObjectValue(*request));
-  return queue->append(cx, requestVal);
+  return generator->queue()->append(cx, ObjectValue(*request));
 }
 
 /* static */
@@ -338,16 +334,10 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 // AsyncGeneratorUnwrapYieldResumption ( resumptionValue )
 // https://tc39.es/ecma262/#sec-asyncgeneratorunwrapyieldresumption
 //
-// Steps 1-2.
-[[nodiscard]] static bool AsyncGeneratorUnwrapYieldResumption(
+// Step 2.
+[[nodiscard]] static bool AsyncGeneratorUnwrapYieldResumptionWithReturn(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator,
-    CompletionKind completionKind, JS::Handle<JS::Value> value) {
-  // Step 1. If resumptionValue is not a return completion, return ?
-  //         resumptionValue.
-  if (completionKind != CompletionKind::Return) {
-    return AsyncGeneratorResume(cx, generator, completionKind, value);
-  }
-
+    JS::Handle<JS::Value> value) {
   // Step 2. Let awaited be Completion(Await(resumptionValue.[[Value]])).
   //
   // NOTE: Given that Await needs to be performed asynchronously,
@@ -367,8 +357,17 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 // https://tc39.es/ecma262/#sec-asyncgeneratoryield
 //
 // Stesp 9-12.
+//
+// AsyncGeneratorUnwrapYieldResumption ( resumptionValue )
+// https://tc39.es/ecma262/#sec-asyncgeneratorunwrapyieldresumption
+//
+// Step 1.
 [[nodiscard]] static bool AsyncGeneratorYield(
-    JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue value) {
+    JSContext* cx, Handle<AsyncGeneratorObject*> generator, HandleValue value,
+    bool* resumeAgain, CompletionKind* resumeCompletionKind,
+    JS::MutableHandle<JS::Value> resumeValue) {
+  *resumeAgain = false;
+
   // Step 9. Perform
   //         ! AsyncGeneratorCompleteStep(generator, completion, false,
   //                                      previousRealm).
@@ -401,8 +400,20 @@ AsyncGeneratorRequest* AsyncGeneratorRequest::create(
 
     // Step 11.d. Return ?
     //            AsyncGeneratorUnwrapYieldResumption(resumptionValue).
-    return AsyncGeneratorUnwrapYieldResumption(cx, generator, completionKind,
-                                               completionValue);
+    //
+    // AsyncGeneratorUnwrapYieldResumption
+    // Step 1. If resumptionValue is not a return completion, return ?
+    //         resumptionValue.
+    if (completionKind != CompletionKind::Return) {
+      *resumeAgain = true;
+      *resumeCompletionKind = completionKind;
+      resumeValue.set(completionValue);
+      return true;
+    }
+
+    // Step 2.
+    return AsyncGeneratorUnwrapYieldResumptionWithReturn(cx, generator,
+                                                         completionValue);
   }
 
   // Step 12. Else,
@@ -1074,8 +1085,8 @@ bool js::AsyncGeneratorReturn(JSContext* cx, unsigned argc, Value* vp) {
     // Step 12.f. Return ?
     //            AsyncGeneratorUnwrapYieldResumption(resumptionValue).
     //
-    if (!AsyncGeneratorUnwrapYieldResumption(
-            cx, generator, CompletionKind::Return, completionValue)) {
+    if (!AsyncGeneratorUnwrapYieldResumptionWithReturn(cx, generator,
+                                                       completionValue)) {
       // The failure path here is for the Await inside
       // AsyncGeneratorUnwrapYieldResumption, where a corrupted Promise is
       // passed and called there.
@@ -1212,59 +1223,72 @@ bool js::AsyncGeneratorThrow(JSContext* cx, unsigned argc, Value* vp) {
 [[nodiscard]] static bool AsyncGeneratorResume(
     JSContext* cx, Handle<AsyncGeneratorObject*> generator,
     CompletionKind completionKind, HandleValue argument) {
-  MOZ_ASSERT(!generator->isClosed(),
-             "closed generator when resuming async generator");
-  MOZ_ASSERT(generator->isSuspended(),
-             "non-suspended generator when resuming async generator");
+  // Given that yield can resume again, we implement it as a loop.
+  JS::Rooted<JS::Value> resumeArgument(cx, argument);
+  while (true) {
+    MOZ_ASSERT(!generator->isClosed(),
+               "closed generator when resuming async generator");
+    MOZ_ASSERT(generator->isSuspended(),
+               "non-suspended generator when resuming async generator");
 
-  // Step 1. Assert: generator.[[AsyncGeneratorState]] is either
-  //         suspended-start or suspended-yield.
-  //
-  // NOTE: We're using suspend/resume also for await. and the state can be
-  //       anything.
+    // Step 1. Assert: generator.[[AsyncGeneratorState]] is either
+    //         suspended-start or suspended-yield.
+    //
+    // NOTE: We're using suspend/resume also for await. and the state can be
+    //       anything.
 
-  // Step 2. Let genContext be generator.[[AsyncGeneratorContext]].
-  // Step 3. Let callerContext be the running execution context.
-  // Step 4. Suspend callerContext.
-  // (handled in generator)
+    // Step 2. Let genContext be generator.[[AsyncGeneratorContext]].
+    // Step 3. Let callerContext be the running execution context.
+    // Step 4. Suspend callerContext.
+    // (handled in generator)
 
-  // Step 5. Set generator.[[AsyncGeneratorState]] to executing.
-  generator->setExecuting();
+    // Step 5. Set generator.[[AsyncGeneratorState]] to executing.
+    generator->setExecuting();
 
-  // Step 6. Push genContext onto the execution context stack; genContext is
-  //         now the running execution context.
-  // Step 7. Resume the suspended evaluation of genContext using completion as
-  //         the result of the operation that suspended it. Let result be the
-  //         Completion Record returned by the resumed computation.
-  // Step 8. Assert: result is never an abrupt completion.
-  // Step 9. Assert: When we return here, genContext has already been removed
-  //         from the execution context stack and callerContext is the currently
-  //         running execution context.
-  // Step 10. Return unused.
-  Handle<PropertyName*> funName = completionKind == CompletionKind::Normal
-                                      ? cx->names().AsyncGeneratorNext
-                                  : completionKind == CompletionKind::Throw
-                                      ? cx->names().AsyncGeneratorThrow
-                                      : cx->names().AsyncGeneratorReturn;
-  FixedInvokeArgs<1> args(cx);
-  args[0].set(argument);
-  RootedValue thisOrRval(cx, ObjectValue(*generator));
-  if (!CallSelfHostedFunction(cx, funName, thisOrRval, args, &thisOrRval)) {
-    if (!generator->isClosed()) {
-      generator->setClosed(cx);
+    // Step 6. Push genContext onto the execution context stack; genContext is
+    //         now the running execution context.
+    // Step 7. Resume the suspended evaluation of genContext using completion as
+    //         the result of the operation that suspended it. Let result be the
+    //         Completion Record returned by the resumed computation.
+    // Step 8. Assert: result is never an abrupt completion.
+    // Step 9. Assert: When we return here, genContext has already been removed
+    //         from the execution context stack and callerContext is the
+    //         currently running execution context.
+    // Step 10. Return unused.
+    Handle<PropertyName*> funName = completionKind == CompletionKind::Normal
+                                        ? cx->names().AsyncGeneratorNext
+                                    : completionKind == CompletionKind::Throw
+                                        ? cx->names().AsyncGeneratorThrow
+                                        : cx->names().AsyncGeneratorReturn;
+    FixedInvokeArgs<1> args(cx);
+    args[0].set(resumeArgument);
+    RootedValue thisOrRval(cx, ObjectValue(*generator));
+    if (!CallSelfHostedFunction(cx, funName, thisOrRval, args, &thisOrRval)) {
+      if (!generator->isClosed()) {
+        generator->setClosed(cx);
+      }
+      return AsyncGeneratorThrown(cx, generator);
     }
-    return AsyncGeneratorThrown(cx, generator);
-  }
 
-  if (generator->isAfterAwait()) {
-    return AsyncGeneratorAwait(cx, generator, thisOrRval);
-  }
+    if (generator->isAfterAwait()) {
+      return AsyncGeneratorAwait(cx, generator, thisOrRval);
+    }
 
-  if (generator->isAfterYield()) {
-    return AsyncGeneratorYield(cx, generator, thisOrRval);
-  }
+    if (generator->isAfterYield()) {
+      bool resumeAgain = false;
+      if (!AsyncGeneratorYield(cx, generator, thisOrRval, &resumeAgain,
+                               &completionKind, &resumeArgument)) {
+        return false;
+      }
+      if (resumeAgain) {
+        MOZ_ASSERT(completionKind != CompletionKind::Return);
+        continue;
+      }
+      return true;
+    }
 
-  return AsyncGeneratorReturned(cx, generator, thisOrRval);
+    return AsyncGeneratorReturned(cx, generator, thisOrRval);
+  }
 }
 
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT

@@ -4,9 +4,7 @@
 
 package org.mozilla.fenix.home.setup.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -95,14 +95,12 @@ private fun Task(
                 .weight(1f)
                 .semantics { heading() },
             style = FirefoxTheme.typography.subtitle1,
-            color = FirefoxTheme.colors.textPrimary,
         )
 
         Icon(
             painter = painterResource(task.icon),
             contentDescription = stringResource(R.string.a11y_task_icon_description),
             modifier = Modifier.padding(16.dp),
-            tint = FirefoxTheme.colors.iconPrimary,
         )
     }
 }
@@ -147,24 +145,22 @@ private fun Group(
             Text(
                 text = stringResource(group.title, stringResource(R.string.firefox)),
                 style = FirefoxTheme.typography.subtitle1,
-                color = FirefoxTheme.colors.textPrimary,
                 modifier = Modifier.semantics { heading() },
             )
 
             Text(
                 text = "${group.progress.completedTasks}/${group.progress.totalTasks}",
                 style = FirefoxTheme.typography.body2,
-                color = FirefoxTheme.colors.textSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
         Icon(
-            painter = painterResource(id = R.drawable.ic_arrowhead_down),
+            painter = painterResource(id = iconsR.drawable.mozac_ic_chevron_down_24),
             contentDescription = "",
             modifier = Modifier
                 .padding(16.dp)
                 .rotate(if (group.isExpanded) ROTATE_180 else 0f),
-            tint = FirefoxTheme.colors.iconPrimary,
         )
     }
 }
@@ -173,22 +169,18 @@ private fun Group(
 @Composable
 private fun TasksChecklistPreview() {
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer1)
-                .padding(top = 16.dp),
-        ) {
+        Surface {
             val tasks = listOf(
                 ChecklistItem.Task(
                     type = ChecklistItem.Task.Type.EXPLORE_EXTENSION,
                     title = R.string.setup_checklist_task_explore_extensions,
-                    icon = R.drawable.ic_addons_extensions,
+                    icon = iconsR.drawable.mozac_ic_extension_24,
                     isCompleted = true,
                 ),
                 ChecklistItem.Task(
                     type = ChecklistItem.Task.Type.INSTALL_SEARCH_WIDGET,
                     title = R.string.setup_checklist_task_search_widget_2,
-                    icon = R.drawable.ic_search,
+                    icon = iconsR.drawable.mozac_ic_search_24,
                     isCompleted = false,
                 ),
             )

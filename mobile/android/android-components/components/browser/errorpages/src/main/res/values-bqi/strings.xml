@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">موشکل وبگه بلا کوݩ</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>بلگه %1$s و عونوان ی وبگه بلا کوݩ گوزارش وابیڌه وو و ری ترجیهات ٱمنیتی ایسا مسدۊد وابیڌه.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">وبگه سی ٱمنیت ایسا مسدۊد وابی</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>ای بلگه ز وبگه من %1$s مسدۊد وابیڌه چیناکه یکی ز وردنی یل ایسا قپ ریت اکونه ک هونه بوگوشه. ای وبگه گاشڌ سی دۊزیڌن دووسمندیا ایسا جۊر رزما یا شوماره کارتا ائتواری ایسا و کار روه.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">وبگه ایمن من دسرس نؽ</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

@@ -18,6 +18,19 @@ import org.mozilla.focus.settings.BaseComposeFragment
 import org.mozilla.focus.settings.permissions.SitePermissionOption
 import org.mozilla.focus.state.AppAction
 
+/**
+ * A fragment that displays a list of options for a specific site permission (e.g., Camera,
+ * Location). It allows the user to select an option, such as "Ask every time", "Allowed", or
+ * "Blocked".
+ *
+ * This fragment receives a [SitePermission] object via its arguments, which defines the permission
+ * to be configured. It uses a `SitePermissionOptionsScreenStore` to manage its state and an
+ * interactor to handle user actions.
+ *
+ * For permissions that require a corresponding Android system permission (like Camera or
+ * Location), this fragment also manages the logic to check for the system-level permission and
+ * guides the user to the app's settings if it's denied.
+ */
 class SitePermissionOptionsFragment : BaseComposeFragment() {
 
     private lateinit var sitePermissionOptionsScreenStore: SitePermissionOptionsScreenStore
@@ -34,17 +47,16 @@ class SitePermissionOptionsFragment : BaseComposeFragment() {
         private const val SITE_PERMISSION = "sitePermission"
 
         /**
-         * Creates a new instance of [SitePermissionOptionsFragment] with the given [SitePermission].
+         * Creates a [Bundle] containing the provided [SitePermission]. This is useful for passing
+         * the site permission data to fragments or other components.
          *
-         * @param sitePermission The [SitePermission] to be displayed in the fragment.
-         * @return A new instance of [SitePermissionOptionsFragment].
+         * @param sitePermission The [SitePermission] to be added to the bundle.
+         * @return A new [Bundle] instance with the site permission parcelable.
          */
-        fun addSitePermission(sitePermission: SitePermission): SitePermissionOptionsFragment {
-            val fragment = SitePermissionOptionsFragment()
-            fragment.arguments = Bundle().apply {
+        fun bundleForSitePermission(sitePermission: SitePermission): Bundle {
+            return Bundle().apply {
                 putParcelable(SITE_PERMISSION, sitePermission)
             }
-            return fragment
         }
     }
 

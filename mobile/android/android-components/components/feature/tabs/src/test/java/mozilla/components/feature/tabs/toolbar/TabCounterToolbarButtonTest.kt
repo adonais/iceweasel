@@ -20,7 +20,6 @@ import mozilla.components.browser.state.state.recover.RecoverableTab
 import mozilla.components.browser.state.state.recover.TabState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.menu.MenuController
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
@@ -137,7 +136,7 @@ class TabCounterToolbarButtonTest {
 
         store.dispatch(
             TabListAction.AddTabAction(createTab("https://www.mozilla.org")),
-        ).joinBlocking()
+        )
 
         verify(button).updateCount(eq(1))
     }
@@ -168,7 +167,7 @@ class TabCounterToolbarButtonTest {
                 ),
                 restoreLocation = TabListAction.RestoreAction.RestoreLocation.BEGINNING,
             ),
-        ).joinBlocking()
+        )
 
         verify(button).updateCount(eq(1))
     }
@@ -190,7 +189,7 @@ class TabCounterToolbarButtonTest {
         whenever(button.updateCount(anyInt())).then { }
         button.createView(LinearLayout(testContext) as ViewGroup) as TabCounterView
 
-        store.dispatch(TabListAction.RemoveTabAction(tab.id)).joinBlocking()
+        store.dispatch(TabListAction.RemoveTabAction(tab.id))
         verify(button).updateCount(eq(0))
     }
 
@@ -214,7 +213,7 @@ class TabCounterToolbarButtonTest {
 
         store.dispatch(
             TabListAction.AddTabAction(createTab("https://www.mozilla.org", private = true)),
-        ).joinBlocking()
+        )
 
         verify(button).updateCount(eq(1))
     }
@@ -238,7 +237,7 @@ class TabCounterToolbarButtonTest {
 
         button.createView(LinearLayout(testContext) as ViewGroup) as TabCounterView
 
-        store.dispatch(TabListAction.RemoveTabAction(tab.id)).joinBlocking()
+        store.dispatch(TabListAction.RemoveTabAction(tab.id))
         verify(button).updateCount(eq(0))
     }
 

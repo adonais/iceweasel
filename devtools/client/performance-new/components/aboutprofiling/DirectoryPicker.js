@@ -4,7 +4,7 @@
 // @ts-check
 
 /**
- * @typedef {Object} Props
+ * @typedef {object} Props
  * @property {string[]} dirs
  * @property {() => void} onAdd
  * @property {(index: number) => void} onRemove

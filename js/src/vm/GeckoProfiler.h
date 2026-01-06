@@ -199,6 +199,8 @@ class GeckoProfilerRuntime {
 
   js::ProfilerJSSources getProfilerScriptSources();
 
+  size_t scriptSourcesCount() { return scriptSources_.readLock()->count(); }
+
   const uint32_t* addressOfEnabled() const { return &enabled_; }
 
   void fixupStringsMapAfterMovingGC();

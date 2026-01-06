@@ -19,4 +19,6 @@
   <string name="mozac_compose_base_progress_loading">Se încarcă</string>
   <!-- Content description for the dismiss icon of a Snackbar -->
   <string name="mozac_compose_base_snackbar_dismiss_content_description">Respinge mesajul</string>
+  <!-- Content description for the close icon of a Banner -->
+  <string name="mozac_compose_base_close_button_content_description">Închide</string>
 </resources>

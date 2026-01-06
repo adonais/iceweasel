@@ -9,6 +9,7 @@
 #ifndef vm_JSContext_h
 #define vm_JSContext_h
 
+#include "mozilla/Attributes.h"
 #include "mozilla/BaseProfilerUtils.h"  // BaseProfilerThreadId
 #include "mozilla/Maybe.h"
 #include "mozilla/MemoryReporting.h"
@@ -154,12 +155,26 @@ enum class InterruptReason : uint32_t {
 
 enum class ShouldCaptureStack { Maybe, Always };
 
+// A wrapper type to allow customization of tracing of
+// MicroTaskElements.
+struct MicroTaskQueueElement {
+  MOZ_IMPLICIT
+  MicroTaskQueueElement(const JS::Value& val) : value(val) {}
+
+  operator JS::Value() const { return value; }
+
+  void trace(JSTracer* trc);
+
+ private:
+  JS::Value value;
+};
+
 // Use TempAllocPolicy to report OOM
 // MG:XXX: It would be nice to explore the typical depth of the queue
 //         to see if we can get it all inline in the common case.
 // MG:XXX: This appears to be broken for non-zero values of inline!
 using MicroTaskQueue =
-    js::TraceableFifo<js::HeapPtr<JS::Value>, 0, TempAllocPolicy>;
+    js::TraceableFifo<MicroTaskQueueElement, 0, TempAllocPolicy>;
 
 // A pair of microtask queues; one debug and one 'regular' (non-debug).
 struct MicroTaskQueueSet {
@@ -174,12 +189,12 @@ struct MicroTaskQueueSet {
   MicroTaskQueueSet(const MicroTaskQueueSet&) = delete;
   MicroTaskQueueSet& operator=(const MicroTaskQueueSet&) = delete;
 
-  bool enqueueRegularMicroTask(JSContext* cx, const JS::MicroTask&);
-  bool enqueueDebugMicroTask(JSContext* cx, const JS::MicroTask&);
-  bool prependRegularMicroTask(JSContext* cx, const JS::MicroTask&);
+  bool enqueueRegularMicroTask(JSContext* cx, const JS::GenericMicroTask&);
+  bool enqueueDebugMicroTask(JSContext* cx, const JS::GenericMicroTask&);
+  bool prependRegularMicroTask(JSContext* cx, const JS::GenericMicroTask&);
 
-  JS::MicroTask popFront();
-  JS::MicroTask popDebugFront();
+  JS::GenericMicroTask popFront();
+  JS::GenericMicroTask popDebugFront();
 
   bool empty() { return microTaskQueue.empty() && debugMicroTaskQueue.empty(); }
 
@@ -620,6 +635,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
 
  public:
   js::wasm::Context& wasm() { return wasm_; }
+  static constexpr size_t offsetOfWasm() { return offsetof(JSContext, wasm_); }
 
   /* Temporary arena pool used while compiling and decompiling. */
   static const size_t TEMP_LIFO_ALLOC_PRIMARY_CHUNK_SIZE = 4 * 1024;
@@ -997,6 +1013,11 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   js::StructuredSpewer& spewer() { return structuredSpewer_.ref(); }
 #endif
 
+  // This flag indicates whether we should bypass CSP restrictions for
+  // eval() and Function() calls or not. This flag can be set when
+  // evaluating the code for Debugger.Frame.prototype.eval.
+  js::ContextData<bool> bypassCSPForDebugger;
+
   // Debugger having set `exclusiveDebuggerOnEval` property to true
   // want their evaluations and calls to be ignore by all other Debuggers
   // except themself. This flag indicates whether we are in such debugger
@@ -1054,7 +1075,7 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   bool hasExecutionTracer() { return false; }
 #endif
 
-  js::UniquePtr<js::MicroTaskQueueSet> microTaskQueues;
+  JS::PersistentRooted<js::UniquePtr<js::MicroTaskQueueSet>> microTaskQueues;
 }; /* struct JSContext */
 
 inline JSContext* JSRuntime::mainContextFromOwnThread() {
@@ -1183,6 +1204,19 @@ class MOZ_RAII AutoNoteExclusiveDebuggerOnEval {
   ~AutoNoteExclusiveDebuggerOnEval() {
     cx->insideExclusiveDebuggerOnEval = oldValue;
   }
+};
+
+class MOZ_RAII AutoSetBypassCSPForDebugger {
+  JSContext* cx;
+  bool oldValue;
+
+ public:
+  AutoSetBypassCSPForDebugger(JSContext* cx, bool value)
+      : cx(cx), oldValue(cx->bypassCSPForDebugger) {
+    cx->bypassCSPForDebugger = value;
+  }
+
+  ~AutoSetBypassCSPForDebugger() { cx->bypassCSPForDebugger = oldValue; }
 };
 
 enum UnsafeABIStrictness {

@@ -881,6 +881,7 @@ function getCanUseBits(transient = true) {
 /**
  * Logs a string to the error console. If enabled, also logs to the update
  * messages file.
+ *
  * @param   string
  *          The string to write to the error console.
  */
@@ -891,6 +892,7 @@ function LOG(string) {
 /**
  * Gets the specified directory at the specified hierarchy under the
  * update root directory and creates it if it doesn't exist.
+ *
  * @param   pathArray
  *          An array of path components to locate beneath the directory
  *          specified by |key|
@@ -963,6 +965,7 @@ function getInstallDirRoot() {
 
 /**
  * Gets the file at the specified hierarchy under the update root directory.
+ *
  * @param   pathArray
  *          An array of path components to locate beneath the directory
  *          specified by |key|. The last item in this array must be the
@@ -998,6 +1001,7 @@ function maybeMapErrorCode(code) {
 /**
  * Returns human readable status text from the updates.properties bundle
  * based on an error code
+ *
  * @param   code
  *          The error code to look up human readable status text for
  * @param   defaultCode
@@ -1033,6 +1037,7 @@ function getStatusTextFromCode(code, defaultCode) {
  * Get the Ready Update directory. This is the directory that an update
  * should reside in after download has completed but before it has been
  * installed and cleaned up.
+ *
  * @return The ready updates directory, as a nsIFile object
  */
 function getReadyUpdateDir() {
@@ -1043,6 +1048,7 @@ function getReadyUpdateDir() {
  * Get the Downloading Update directory. This is the directory that an update
  * should reside in during download. Once download is completed, it will be
  * moved to the Ready Update directory.
+ *
  * @return The downloading update directory, as a nsIFile object
  */
 function getDownloadingUpdateDir() {
@@ -1138,6 +1144,7 @@ function onStateAccessSuccess() {
 /**
  * Reads the update state from the update.status file in the specified
  * directory.
+ *
  * @param   dir
  *          The dir to look for an update.status file in
  * @return  The status value of the update.
@@ -1538,6 +1545,7 @@ async function cleanupActiveUpdates() {
 /**
  * Writes a string of text to a file.  A newline will be appended to the data
  * written to the file.  This function only works with ASCII text.
+ *
  * @param file An nsIFile indicating what file to write to.
  * @param text A string containing the text to write to the file.
  * @throws Errors from file stream will be propagated.
@@ -1779,6 +1787,7 @@ function handleUpdateFailure(update) {
 
 /**
  * Return the first UpdatePatch with the given type.
+ *
  * @param   update
  *          A nsIUpdate object to search through for a patch of the desired
  *          type.
@@ -2311,6 +2320,7 @@ class Update {
 
   /**
    * Implements nsIUpdate
+   *
    * @param   update
    *          An <update> element to initialize this object with
    * @throws if the update contains no patches
@@ -2690,6 +2700,7 @@ export class UpdateService {
   /**
    * UpdateService
    * A Service for managing the discovery and installation of software updates.
+   *
    * @constructor
    */
   constructor() {
@@ -2738,6 +2749,7 @@ export class UpdateService {
 
   /**
    * Handle Observer Service notifications
+   *
    * @param   subject
    *          The subject of the notification
    * @param   topic
@@ -3263,7 +3275,22 @@ export class UpdateService {
           let uri = "chrome://mozapps/content/update/updateElevation.xhtml";
           let features =
             "chrome,centerscreen,resizable=no,titlebar,toolbar=no,dialog=no";
-          Services.ww.openWindow(null, uri, "Update:Elevation", features, null);
+
+          // The following timeout is intended to make the elevation dialog
+          // appear on top of any browser windows after startup. In the past,
+          // this dialog would frequently be displayed first, then getting
+          // obscured by browser windows. The timeout period is arbitrary and
+          // may be adjusted, but this seemed to work well during initial
+          // testing. See bug 1273536 for more info.
+          lazy.setTimeout(() => {
+            Services.ww.openWindow(
+              null,
+              uri,
+              "Update:Elevation",
+              features,
+              null
+            );
+          }, 2000);
         }
       }
     } else if (
@@ -3481,6 +3508,7 @@ export class UpdateService {
 
   /**
    * Notified when a timer fires
+   *
    * @param   _timer
    *          The timer that fired
    */
@@ -3509,6 +3537,7 @@ export class UpdateService {
 
   /**
    * Checks for updates in the background.
+   *
    * @param   isNotify
    *          Whether or not a background update check was initiated by the
    *          application update timer notification.
@@ -3715,6 +3744,7 @@ export class UpdateService {
    * Determine the update from the specified updates that should be offered.
    * If both valid major and minor updates are available the minor update will
    * be offered.
+   *
    * @param   updates
    *          An array of available nsIUpdate items
    * @return  The nsIUpdate to offer.
@@ -3893,6 +3923,7 @@ export class UpdateService {
   /**
    * Determine which of the specified updates should be installed and begin the
    * download/installation process or notify the user about the update.
+   *
    * @param   updates
    *          An array of available updates
    */
@@ -4591,6 +4622,7 @@ export class UpdateManager {
 
   /**
    * A service to manage active and past updates.
+   *
    * @constructor
    */
   constructor() {
@@ -4712,6 +4744,7 @@ export class UpdateManager {
 
   /**
    * Loads an updates.xml formatted file into an array of nsIUpdate items.
+   *
    * @param   fileName
    *          The file name in the updates directory to load.
    * @return  The array of nsIUpdate items held in the file.
@@ -4884,6 +4917,7 @@ export class UpdateManager {
   /**
    * Serializes an array of updates to an XML file or removes the file if the
    * array length is 0.
+   *
    * @param   updates
    *          An array of nsIUpdate objects
    * @param   fileName
@@ -5933,6 +5967,7 @@ class Downloader {
 
   /**
    * Manages the download of updates
+   *
    * @param   background
    *          Whether or not this downloader is operating in background
    *          update mode.
@@ -6037,6 +6072,7 @@ class Downloader {
   /**
    * Select the patch to use given the current state of updateDir and the given
    * set of update patches.
+   *
    * @param   update
    *          A nsIUpdate object to select a patch from
    * @return  A nsIUpdatePatch object to download
@@ -6305,6 +6341,7 @@ class Downloader {
 
   /**
    * Download and stage the given update.
+   *
    * @param   update
    *          A nsIUpdate object to download a patch for. Cannot be null.
    */
@@ -6654,6 +6691,7 @@ class Downloader {
 
   /**
    * When the async request begins
+   *
    * @param   request
    *          The nsIRequest object for the transfer
    */
@@ -6681,6 +6719,7 @@ class Downloader {
 
   /**
    * When new data has been downloaded
+   *
    * @param   request
    *          The nsIRequest object for the transfer
    * @param   progress
@@ -6734,6 +6773,7 @@ class Downloader {
 
   /**
    * When we have new status text
+   *
    * @param   request
    *          The nsIRequest object for the transfer
    * @param   status
@@ -6755,6 +6795,7 @@ class Downloader {
 
   /**
    * When data transfer ceases
+   *
    * @param   request
    *          The nsIRequest object for the transfer
    * @param   status

@@ -4,9 +4,7 @@
 
 package org.mozilla.fenix.compose
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
@@ -99,7 +99,6 @@ fun InfoCard(
                 title?.let {
                     Text(
                         text = it,
-                        color = FirefoxTheme.colors.textPrimary,
                         style = FirefoxTheme.typography.headline8,
                         modifier = Modifier.semantics {
                             heading()
@@ -115,7 +114,6 @@ fun InfoCard(
 
                     Text(
                         text = remember(description) { parseHtml(description) },
-                        color = FirefoxTheme.colors.textPrimary,
                         style = FirefoxTheme.typography.body2,
                     )
                 }
@@ -127,9 +125,9 @@ fun InfoCard(
                         text = it.first,
                         linkTextStates = listOf(it.second),
                         style = FirefoxTheme.typography.body2.copy(
-                            color = FirefoxTheme.colors.textPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                         ),
-                        linkTextColor = FirefoxTheme.colors.textPrimary,
+                        linkTextColor = MaterialTheme.colorScheme.onSurface,
                         linkTextDecoration = TextDecoration.Underline,
                     )
                 }
@@ -158,7 +156,6 @@ private fun InfoCardIcon(
     Icon(
         painter = painterResource(id = iconId),
         contentDescription = null,
-        tint = FirefoxTheme.colors.iconPrimary,
         modifier = modifier,
     )
 }
@@ -221,7 +218,7 @@ enum class InfoType {
         get() = when {
             this == Info && !isSystemInDarkTheme() -> FirefoxTheme.colors.textOnColorPrimary
             this == InfoPlain -> FirefoxTheme.colors.textActionSecondary
-            else -> FirefoxTheme.colors.textPrimary
+            else -> MaterialTheme.colorScheme.onSurface
         }
 }
 
@@ -247,15 +244,13 @@ private fun InfoCardPreview(
     @PreviewParameter(PreviewModelParameterProvider::class) type: InfoType,
 ) {
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer1)
-                .padding(16.dp),
-        ) {
+        Surface {
             InfoCard(
                 title = "Title text",
                 type = type,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(all = 16.dp),
                 description = "Description text",
                 footer = "Primary link text with an underlined hyperlink." to LinkTextState(
                     text = "underlined hyperlink",

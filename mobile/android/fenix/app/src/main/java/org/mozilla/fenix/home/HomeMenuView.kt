@@ -11,6 +11,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import mozilla.appservices.places.BookmarkRoot
 import mozilla.components.browser.menu.view.MenuButton
 import mozilla.components.concept.sync.FxAEntryPoint
@@ -26,7 +27,7 @@ import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.SupportUtils
-import org.mozilla.fenix.settings.deletebrowsingdata.deleteAndQuit
+import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataController
 import org.mozilla.fenix.theme.ThemeManager
 import org.mozilla.fenix.whatsnew.WhatsNew
 import java.lang.ref.WeakReference
@@ -43,6 +44,7 @@ import org.mozilla.fenix.GleanMetrics.HomeMenu as HomeMenuMetrics
  * @param menuButton The [MenuButton] that will be used to create a menu when the button is
  * clicked.
  * @param fxaEntrypoint The source entry point to FxA.
+ * @param deleteBrowsingDataController [DeleteBrowsingDataController] used to delete browsing data.
  */
 @Suppress("LongParameterList")
 class HomeMenuView(
@@ -53,6 +55,7 @@ class HomeMenuView(
     private val fenixBrowserUseCases: FenixBrowserUseCases,
     private val menuButton: WeakReference<MenuButton>,
     private val fxaEntrypoint: FxAEntryPoint = FenixFxAEntryPoint.HomeMenu,
+    private val deleteBrowsingDataController: DeleteBrowsingDataController,
 ) {
 
     /**
@@ -201,10 +204,11 @@ class HomeMenuView(
                 )
             }
             HomeMenu.Item.Quit -> {
-                deleteAndQuit(
-                    activity = homeActivity,
-                    coroutineScope = homeActivity.lifecycleScope,
-                )
+                homeActivity.lifecycleScope.launch {
+                    deleteBrowsingDataController.clearBrowsingDataOnQuit {
+                        homeActivity.finishAndRemoveTask()
+                    }
+                }
             }
             HomeMenu.Item.ReconnectSync -> {
                 navController.nav(

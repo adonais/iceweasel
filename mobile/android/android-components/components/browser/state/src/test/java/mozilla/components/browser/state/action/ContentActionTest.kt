@@ -316,6 +316,7 @@ class ContentActionTest {
         val tabSecurityInfo = (tab.content.securityInfo as SecurityInfo.Secure)
         assertEquals("mozilla.org", tabSecurityInfo.host)
         assertEquals("The Mozilla Team", tabSecurityInfo.issuer)
+        assertNull(tabSecurityInfo.certificate)
     }
 
     @Test

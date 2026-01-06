@@ -13,6 +13,7 @@
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/NavigateEventBinding.h"
 #include "mozilla/dom/Navigation.h"
+#include "mozilla/dom/NavigationHistoryEntry.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
 #include "nsDocShell.h"
 #include "nsFocusManager.h"
@@ -468,7 +469,8 @@ static void ScrollToBeginningOfDocument(Document& aDocument) {
 
 // https://html.spec.whatwg.org/#restore-scroll-position-data
 static void RestoreScrollPositionData(Document* aDocument,
-                                      const uint32_t& aLastScrollGeneration) {
+                                      const uint32_t& aLastScrollGeneration,
+                                      SessionHistoryInfo* aHistoryEntry) {
   // 1. Let document be entry's document.
   // 2. If document's has been scrolled by the user is true, then the user agent
   // should return.
@@ -485,7 +487,7 @@ static void RestoreScrollPositionData(Document* aDocument,
   // restore the scroll positions of entry's document's restorable scrollable
   // regions. The user agent may continue to attempt to do so periodically,
   // until document's has been scrolled by the user becomes true.
-  docShell->RestoreScrollPosFromActiveSHE();
+  docShell->RestoreScrollPositionFromTargetSessionHistoryInfo(aHistoryEntry);
 }
 
 // https://html.spec.whatwg.org/#process-scroll-behavior
@@ -500,7 +502,17 @@ void NavigateEvent::ProcessScrollBehavior() {
   if (mNavigationType == NavigationType::Traverse ||
       mNavigationType == NavigationType::Reload) {
     RefPtr<Document> document = GetAssociatedDocument();
-    RestoreScrollPositionData(document, mLastScrollGeneration);
+    // SHIP changes the active entry in
+    // `nsDocShell::HandleSameDocumentNavigation`, which breaks with Navigation
+    // API spec steps as it's too late, and at this point, the actual "active
+    // session history entry" will become the target session history entry
+    // provided here, which is why we're using this instead of
+    // nsDocShell::mActiveEntry
+    RestoreScrollPositionData(
+        document, mLastScrollGeneration,
+        mDestination->GetEntry()
+            ? mDestination->GetEntry()->SessionHistoryInfo()
+            : nullptr);
     return;
   }
 
@@ -521,6 +533,9 @@ void NavigateEvent::ProcessScrollBehavior() {
   }
 
   // Step 4.3
+  // Here we need to update Document::mScrollToRef, since that is what
+  // Document::ScrollToRef will be scrolling to.
+  document->SetScrollToRef(document->GetDocumentURI());
   document->ScrollToRef();
 }
 

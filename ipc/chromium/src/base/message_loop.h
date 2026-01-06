@@ -10,8 +10,6 @@
 #include <deque>
 #include <queue>
 #include <string>
-#include <vector>
-#include <map>
 
 #include "base/message_pump.h"
 #include "base/observer_list.h"

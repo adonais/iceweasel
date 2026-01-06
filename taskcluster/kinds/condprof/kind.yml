@@ -67,7 +67,7 @@ tasks:
                   path: archive
                   type: directory
     linux64-firefox:
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         description: Creates or updates conditioned profiles on Linux
         run-on-projects: ['mozilla-central']
         treeherder:
@@ -97,7 +97,7 @@ tasks:
                 --scenario ${SCENARIO}
                 ../../archive
         worker:
-            docker-image: {in-tree: condprof}
+            docker-image: {in-tree: ubuntu2404-test}
             artifacts:
                 - name: public/condprof
                   path: /builds/worker/archive

@@ -167,6 +167,7 @@ describe("ASRouterPreferences", () => {
        * looks like a migrated version of the original provider. Requires that:
        * its id matches the original provider's id; it has no bucket; and its
        * collection is set to the value of the original provider's bucket.
+       *
        * @param {object} provider the provider object to compare to
        * @returns {object} custom matcher object for sinon
        */

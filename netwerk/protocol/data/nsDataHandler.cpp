@@ -8,7 +8,6 @@
 #include "nsNetCID.h"
 #include "nsError.h"
 #include "nsIOService.h"
-#include "DataChannelChild.h"
 #include "nsNetUtil.h"
 #include "nsSimpleURI.h"
 #include "nsUnicharUtils.h"
@@ -86,12 +85,7 @@ NS_IMETHODIMP
 nsDataHandler::NewChannel(nsIURI* uri, nsILoadInfo* aLoadInfo,
                           nsIChannel** result) {
   NS_ENSURE_ARG_POINTER(uri);
-  RefPtr<nsDataChannel> channel;
-  if (XRE_IsParentProcess()) {
-    channel = new nsDataChannel(uri);
-  } else {
-    channel = new mozilla::net::DataChannelChild(uri);
-  }
+  RefPtr<nsDataChannel> channel = new nsDataChannel(uri);
 
   // set the loadInfo on the new channel
   nsresult rv = channel->SetLoadInfo(aLoadInfo);

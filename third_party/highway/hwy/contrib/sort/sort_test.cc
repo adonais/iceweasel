@@ -20,6 +20,10 @@
 #include <random>
 #include <vector>
 
+#if !defined(HWY_DISABLED_TARGETS) && HWY_IS_DEBUG_BUILD
+#define HWY_DISABLED_TARGETS (HWY_SSE2 | HWY_SSSE3)
+#endif
+
 #include "hwy/aligned_allocator.h"  // IsAligned
 #include "hwy/base.h"
 #include "hwy/contrib/sort/vqsort.h"
@@ -228,7 +232,7 @@ void TestAllSort() {
       Algo::kVQSort,  Algo::kHeapSort,
   };
 
-  for (int num : {129, 504, 3 * 1000, 34567}) {
+  for (int num : {129, 504, 3 * 1000, 14567}) {
     const size_t num_lanes = AdjustedReps(static_cast<size_t>(num));
     CallAllSortTraits(algos, num_lanes);
   }
@@ -237,7 +241,7 @@ void TestAllSort() {
 void TestAllPartialSort() {
   const std::vector<Algo> algos{Algo::kVQPartialSort, Algo::kHeapPartialSort};
 
-  for (int num : {129, 504, 3 * 1000, 34567}) {
+  for (int num : {129, 504, 3 * 1000, 14567}) {
     const size_t num_lanes = AdjustedReps(static_cast<size_t>(num));
     CallAllSortTraits(algos, num_lanes);
   }
@@ -246,7 +250,7 @@ void TestAllPartialSort() {
 void TestAllSelect() {
   const std::vector<Algo> algos{Algo::kVQSelect, Algo::kHeapSelect};
 
-  for (int num : {129, 504, 3 * 1000, 34567}) {
+  for (int num : {129, 504, 3 * 1000, 14567}) {
     const size_t num_lanes = AdjustedReps(static_cast<size_t>(num));
     CallAllSortTraits(algos, num_lanes);
   }

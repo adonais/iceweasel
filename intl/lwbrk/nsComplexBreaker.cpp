@@ -5,8 +5,6 @@
 
 #include "nsComplexBreaker.h"
 
-#include <algorithm>
-
 #include "LineBreakCache.h"
 #include "MainThreadUtils.h"
 #include "mozilla/Assertions.h"

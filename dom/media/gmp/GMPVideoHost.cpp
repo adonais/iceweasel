@@ -94,6 +94,9 @@ void GMPVideoHostImpl::DecodedFrameCreated(
 
 void GMPVideoHostImpl::DecodedFrameDestroyed(GMPVideoi420FrameImpl* aFrame) {
   MOZ_ALWAYS_TRUE(mDecodedFrames.RemoveElement(aFrame));
+  if (mSharedMemMgr && aFrame->mReportPolicy == HostReportPolicy::Destroyed) {
+    mSharedMemMgr->MgrDecodedFrameDestroyed(aFrame);
+  }
 }
 
 }  // namespace mozilla::gmp

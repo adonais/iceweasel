@@ -74,6 +74,12 @@ enum class KeyPurposeId {
   id_kp_codeSigning = 3,      // id-kp-codeSigning
   id_kp_emailProtection = 4,  // id-kp-emailProtection
   id_kp_OCSPSigning = 9,      // id-kp-OCSPSigning
+  // RFC 9336 - X.509 Certificate General-Purpose Extended Key Usage (EKU) for
+  // Document Signing
+  id_kp_documentSigning = 36,  // id-kp-documentSigning
+  // Adobe Authentic Documents Trust (1.2.840.113583.1.1.5)
+  id_kp_documentSigningAdobe,
+  id_kp_documentSigningMicrosoft,
 };
 
 struct CertPolicyId final {

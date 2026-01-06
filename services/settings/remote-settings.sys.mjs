@@ -76,6 +76,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 /**
  * cacheProxy returns an object Proxy that will memoize properties of the target.
+ *
  * @param {object} target the object to wrap.
  * @returns {Proxy}
  */
@@ -104,8 +105,9 @@ class JexlFilter {
   /**
    * Default entry filtering function, in charge of excluding remote settings entries
    * where the JEXL expression evaluates into a falsy value.
-   * @param {Object} entry The Remote Settings entry to be excluded or kept.
-   * @returns {?Object} the entry or null if excluded.
+   *
+   * @param {object} entry The Remote Settings entry to be excluded or kept.
+   * @returns {?object} the entry or null if excluded.
    */
   async filterEntry(entry) {
     const { filter_expression } = entry;
@@ -134,6 +136,7 @@ class JexlFilter {
 /**
  * Creates the default entry filter, in charge of excluding remote settings entries
  * where the JEXL expression evaluates into a falsy value.
+ *
  * @param {ClientEnvironment} environment Information about version, language, platform etc.
  * @param {string}            collectionName
  *    Which collection includes this entry. This is used for error reporting.
@@ -157,8 +160,8 @@ function remoteSettingsFunction() {
   /**
    * RemoteSettings constructor.
    *
-   * @param {String} collectionName The remote settings identifier
-   * @param {Object} options Advanced options
+   * @param {string} collectionName The remote settings identifier
+   * @param {object} options Advanced options
    * @returns {RemoteSettingsClient} An instance of a Remote Settings client.
    */
   const remoteSettings = function (collectionName, options) {
@@ -218,6 +221,7 @@ function remoteSettingsFunction() {
   /**
    * Helper to introspect the synchronization history and determine whether it is
    * consistently failing and thus, broken.
+   *
    * @returns {bool} true if broken.
    */
   async function isSynchronizationBroken() {
@@ -337,7 +341,7 @@ function remoteSettingsFunction() {
   /**
    * Main polling method, called by the ping mechanism.
    *
-   * @param {Object} options
+   * @param {object} options
 .  * @param {Object} options.expectedTimestamp (optional) The expected timestamp to be received — used by servers for cache busting.
    * @param {string} options.trigger           (optional) label to identify what triggered this sync (eg. ``"timer"``, default: `"manual"`)
    * @param {bool}   options.full              (optional) Ignore last polling status and fetch all changes (default: `false`)
@@ -646,7 +650,8 @@ function remoteSettingsFunction() {
   /**
    * Returns an object with polling status information and the list of
    * known remote settings collections.
-   * @param {Object} options
+   *
+   * @param {object} options
    * @param {boolean?} options.localOnly (optional) If set to `true`, do not contact the server.
    */
   remoteSettings.inspect = async (options = {}) => {

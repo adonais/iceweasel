@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Problema con sito ingannevole</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Il sito web %1$s è stato segnalato come sito ingannevole ed è stato bloccato sulla base delle impostazioni di sicurezza.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Sito bloccato per la tua sicurezza</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>La pagina all’indirizzo %1$s è stata bloccata perché uno dei tuoi componenti aggiuntivi ha provato ad accedervi. Questo sito potrebbe essere sfruttato per rubare i tuoi dati, come password o numeri di carte di credito.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Versione sicura del sito non disponibile</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

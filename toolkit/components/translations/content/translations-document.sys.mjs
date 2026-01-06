@@ -1590,6 +1590,10 @@ export class TranslationsDocument {
       this.#addRootElement(document.body);
       this.#addRootElement(document.head);
       this.#addRootElement(document.querySelector("title"));
+      if (!document.body && document.documentElement) {
+        // Handle documents such as standalone SVGs that lack a body.
+        this.#addRootElement(document.documentElement);
+      }
 
       ChromeUtils.addProfilerMarker(
         "TranslationsDocument Initialize",
@@ -1624,7 +1628,13 @@ export class TranslationsDocument {
       }
     };
 
-    if (document.body) {
+    if (
+      // There exists a document body, so we are clear to continue.
+      document.body ||
+      // The page has finished loading, but there is no document body.
+      // There may still be roots to add, such as in the case of a standalone SVG.
+      document.readyState !== "loading"
+    ) {
       addRootElements();
     } else {
       // The TranslationsDocument was invoked before the DOM was ready, wait for
@@ -2404,7 +2414,7 @@ export class TranslationsDocument {
       return;
     }
 
-    const element = asHTMLElement(node);
+    const element = asElement(node);
     if (!element) {
       return;
     }

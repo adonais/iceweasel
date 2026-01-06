@@ -48,7 +48,7 @@ function mouseout() {
   );
   EventUtils.synthesizeNativeMouseEvent({
     type: "mousemove",
-    target: win.gURLBar.textbox,
+    target: win.gURLBar,
     offsetX: 0,
     offsetY: 0,
     win,

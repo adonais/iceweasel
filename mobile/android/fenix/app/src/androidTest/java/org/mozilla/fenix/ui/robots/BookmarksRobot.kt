@@ -74,7 +74,8 @@ class BookmarksRobot(private val composeTestRule: ComposeTestRule) {
     fun verifyBookmarkTitle(title: String) {
         Log.i(TAG, "verifyBookmarkTitle: Waiting for $waitingTime for bookmark with title: $title to exist.")
         composeTestRule.waitUntilExactlyOneExists(
-            hasText(title), waitingTime,
+            hasText(title),
+            waitingTime,
         )
         Log.i(TAG, "verifyBookmarkTitle: Waited for $waitingTime for bookmark with title: $title to exist.")
         Log.i(TAG, "verifyBookmarkTitle: Waited for bookmarks header to exist.")
@@ -300,7 +301,7 @@ private fun ComposeTestRule.addFolderButton() =
     onNodeWithContentDescription(getStringResource(R.string.bookmark_add_new_folder_button_content_description))
 
 private fun ComposeTestRule.addFolderTitleField() =
-    onNodeWithTag(ADD_BOOKMARK_FOLDER_NAME_TEXT_FIELD).onChildAt(0)
+    onNodeWithTag(ADD_BOOKMARK_FOLDER_NAME_TEXT_FIELD)
 
 private fun ComposeTestRule.navigateUpButton() =
     onNodeWithContentDescription(getStringResource(R.string.bookmark_navigate_back_button_content_description))
@@ -309,13 +310,13 @@ private fun ComposeTestRule.threeDotMenuButton(bookmarkedItem: String) =
     onNodeWithContentDescription("Item Menu for $bookmarkedItem")
 
 private fun ComposeTestRule.bookmarkNameEditBox() =
-    onNodeWithTag(EDIT_BOOKMARK_ITEM_TITLE_TEXT_FIELD).onChildAt(0)
+    onNodeWithTag(EDIT_BOOKMARK_ITEM_TITLE_TEXT_FIELD)
 
 private fun ComposeTestRule.bookmarkFolderSelector() =
     onNodeWithText("Bookmarks")
 
 private fun ComposeTestRule.bookmarkURLEditBox() =
-    onNodeWithTag(EDIT_BOOKMARK_ITEM_URL_TEXT_FIELD).onChildAt(0)
+    onNodeWithTag(EDIT_BOOKMARK_ITEM_URL_TEXT_FIELD)
 
 private fun ComposeTestRule.selectFolderNewFolderButton() =
     onNodeWithText(getStringResource(R.string.bookmark_select_folder_new_folder_button_title))

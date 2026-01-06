@@ -95,7 +95,7 @@ class gfxFontconfigFontEntry final : public gfxFT2FontEntryBase {
   bool TestCharacterMap(uint32_t aCh) override;
 
   mozilla::gfx::SharedFTFace* GetFTFace();
-  FTUserFontData* GetUserFontData();
+  FTUserFontData* GetUserFontData() override;
 
   FT_MM_Var* GetMMVar() override;
 

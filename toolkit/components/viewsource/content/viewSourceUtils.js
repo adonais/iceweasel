@@ -27,6 +27,7 @@ var gViewSourceUtils = {
 
   /**
    * Get the ViewSourcePage actor.
+   *
    * @param object An object with `browsingContext` field
    */
   getPageActor({ browsingContext }) {
@@ -270,7 +271,7 @@ var gViewSourceUtils = {
           let ssm = Services.scriptSecurityManager;
           let principal = ssm.createContentPrincipal(
             data.uri,
-            browser.contentPrincipal.originAttributes
+            browser ? browser.contentPrincipal.originAttributes : {}
           );
           webBrowserPersist.saveURI(
             uri,

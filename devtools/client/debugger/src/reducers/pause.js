@@ -6,6 +6,7 @@
 
 /**
  * Pause reducer
+ *
  * @module reducers/pause
  */
 

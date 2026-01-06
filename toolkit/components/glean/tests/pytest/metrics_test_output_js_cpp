@@ -59,73 +59,73 @@ already_AddRefed<GleanMetric> NewMetricFromId(uint32_t id, nsISupports* aParent)
     {
       return MakeAndAddRef<GleanCustomDistribution>(metricId, aParent);
     }
-    case 4: /* labeled_boolean */
-    {
-      return MakeAndAddRef<GleanLabeled>(metricId, 4, aParent);
-    }
-    case 5: /* labeled_counter */
-    {
-      return MakeAndAddRef<GleanLabeled>(metricId, 5, aParent);
-    }
-    case 6: /* labeled_string */
-    {
-      return MakeAndAddRef<GleanLabeled>(metricId, 6, aParent);
-    }
-    case 7: /* memory_distribution */
-    {
-      return MakeAndAddRef<GleanMemoryDistribution>(metricId, aParent);
-    }
-    case 8: /* string_list */
-    {
-      return MakeAndAddRef<GleanStringList>(metricId, aParent);
-    }
-    case 9: /* string */
-    {
-      return MakeAndAddRef<GleanString>(metricId, aParent);
-    }
-    case 10: /* text */
-    {
-      return MakeAndAddRef<GleanText>(metricId, aParent);
-    }
-    case 11: /* timespan */
-    {
-      return MakeAndAddRef<GleanTimespan>(metricId, aParent);
-    }
-    case 12: /* timing_distribution */
-    {
-      return MakeAndAddRef<GleanTimingDistribution>(metricId, aParent);
-    }
-    case 13: /* dual_labeled_counter */
-    {
-      return MakeAndAddRef<GleanDualLabeledCounter>(metricId, aParent);
-    }
-    case 14: /* object */
-    {
-      return MakeAndAddRef<GleanObject>(metricId, aParent);
-    }
-    case 15: /* datetime */
+    case 4: /* datetime */
     {
       return MakeAndAddRef<GleanDatetime>(metricId, aParent);
     }
-    case 16: /* event */
-    {
-      return MakeAndAddRef<GleanEvent>(metricId, aParent);
-    }
-    case 17: /* denominator */
+    case 5: /* denominator */
     {
       return MakeAndAddRef<GleanDenominator>(metricId, aParent);
     }
-    case 18: /* quantity */
+    case 6: /* dual_labeled_counter */
+    {
+      return MakeAndAddRef<GleanDualLabeledCounter>(metricId, aParent);
+    }
+    case 7: /* event */
+    {
+      return MakeAndAddRef<GleanEvent>(metricId, aParent);
+    }
+    case 8: /* labeled_boolean */
+    {
+      return MakeAndAddRef<GleanLabeled>(metricId, 8, aParent);
+    }
+    case 9: /* labeled_counter */
+    {
+      return MakeAndAddRef<GleanLabeled>(metricId, 9, aParent);
+    }
+    case 10: /* labeled_string */
+    {
+      return MakeAndAddRef<GleanLabeled>(metricId, 10, aParent);
+    }
+    case 11: /* memory_distribution */
+    {
+      return MakeAndAddRef<GleanMemoryDistribution>(metricId, aParent);
+    }
+    case 12: /* numerator */
+    {
+      return MakeAndAddRef<GleanNumerator>(metricId, aParent);
+    }
+    case 13: /* object */
+    {
+      return MakeAndAddRef<GleanObject>(metricId, aParent);
+    }
+    case 14: /* quantity */
     {
       return MakeAndAddRef<GleanQuantity>(metricId, aParent);
     }
-    case 19: /* rate */
+    case 15: /* rate */
     {
       return MakeAndAddRef<GleanRate>(metricId, aParent);
     }
-    case 20: /* numerator */
+    case 16: /* string */
     {
-      return MakeAndAddRef<GleanNumerator>(metricId, aParent);
+      return MakeAndAddRef<GleanString>(metricId, aParent);
+    }
+    case 17: /* string_list */
+    {
+      return MakeAndAddRef<GleanStringList>(metricId, aParent);
+    }
+    case 18: /* text */
+    {
+      return MakeAndAddRef<GleanText>(metricId, aParent);
+    }
+    case 19: /* timespan */
+    {
+      return MakeAndAddRef<GleanTimespan>(metricId, aParent);
+    }
+    case 20: /* timing_distribution */
+    {
+      return MakeAndAddRef<GleanTimingDistribution>(metricId, aParent);
     }
     case 21: /* uuid */
     {
@@ -154,17 +154,17 @@ already_AddRefed<GleanMetric> NewSubMetricFromIds(uint32_t aParentTypeId,
                                            uint32_t* aSubmetricId,
                                            nsISupports* aParent) {
   switch (aParentTypeId) {
-    case 4: { /* labeled_boolean */
+    case 8: { /* labeled_boolean */
       auto id = impl::fog_labeled_boolean_get(aParentMetricId, &aLabel);
       *aSubmetricId = id;
       return MakeAndAddRef<GleanBoolean>(id, aParent);
     }
-    case 5: { /* labeled_counter */
+    case 9: { /* labeled_counter */
       auto id = impl::fog_labeled_counter_get(aParentMetricId, &aLabel);
       *aSubmetricId = id;
       return MakeAndAddRef<GleanCounter>(id, aParent);
     }
-    case 6: { /* labeled_string */
+    case 10: { /* labeled_string */
       auto id = impl::fog_labeled_string_get(aParentMetricId, &aLabel);
       *aSubmetricId = id;
       return MakeAndAddRef<GleanString>(id, aParent);
@@ -414,62 +414,62 @@ static_assert(sizeof(gMetricStringTable) < 4294967296, "Metric string table is t
 
 const metric_entry_t sMetricByNameLookupEntries[] = {
   1152921611981030014ull,
-  3458764672734331862ull,
-  8646911490709783796ull,
-  5764607578868810038ull,
-  10376293653130773162ull,
-  2305843030688530526ull,
-  11529215166327554778ull,
-  2882303911840973722ull,
-  8646911370450698730ull,
+  5764607681948025814ull,
+  2305843215372125428ull,
+  10376293597296197942ull,
+  8070450643917079210ull,
+  4611686039902224478ull,
+  6917529147900166874ull,
+  5188146921054667674ull,
+  2305843095113040362ull,
   576460756598390784ull,
   12105676043185030676ull,
   1729382269795172390ull,
-  3458764677029299184ull,
-  5764607703422862425ull,
-  5188146946824471622ull,
-  8070450734111392991ull,
-  2305843150947615582ull,
+  5764607686242993136ull,
+  10376293721850250329ull,
+  9223372212948436038ull,
+  7493989981807969503ull,
+  4611686160161309534ull,
   576460881152443159ull,
-  2305843026393563204ull,
+  4611686035607257156ull,
   1152921732240115085ull,
-  8070450613852307926ull,
-  9223372247308174607ull,
+  7493989861548884438ull,
+  4035225476577363215ull,
   1729382394349224767ull,
-  4611686190226080815ull,
-  10376293773389858234ull,
-  5188146822270419236ull,
-  2305843082228138388ull,
-  10952754529988249045ull,
-  10952754409729163972ull,
+  9799832960956892207ull,
+  8070450764176164282ull,
+  9223372088394383652ull,
+  4611686091441832340ull,
+  8646911520774555093ull,
+  8646911400515470020ull,
   12105675922925945601ull,
-  2882303787286921342ull,
-  4035225309073637616ull,
+  5188146796500615294ull,
+  6341068318287331568ull,
   576460945576952990ull,
-  11529215286586639852ull,
-  2305843155242582905ull,
-  2882303916135941045ull,
-  6341068335467200838ull,
+  6917529268159251948ull,
+  4611686164456276857ull,
+  5188146925349634997ull,
+  10952754353894588742ull,
   1152921723650180424ull,
   576460821022900600ull,
-  6341068460021253226ull,
-  9223372251603141927ull,
-  4611686065672028430ull,
-  3458764552475246801ull,
-  9799832887942447675ull,
+  10952754478448641130ull,
+  4035225480872330535ull,
+  9799832836402839822ull,
+  5764607561688940753ull,
+  2882303860301365819ull,
   1152921513196781587ull,
-  6917529216619644031ull,
+  11529215235047031935ull,
   1152921607686062682ull,
-  4035225433627690000ull,
-  2305843206782190779ull,
-  6917529092065591642ull,
+  6341068442841383952ull,
+  4611686215995884731ull,
+  11529215110492979546ull,
   1152921727945147752ull,
-  9223372131344056859ull,
-  3458764548180279480ull,
-  9223372127049089540ull,
+  4035225360613245467ull,
+  5764607557393973432ull,
+  4035225356318278148ull,
   1152921637750833963ull,
-  7493989857253917111ull,
-  2882303791581888664ull
+  3458764591129952695ull,
+  5188146800795582616ull
 };
 
 

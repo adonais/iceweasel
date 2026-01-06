@@ -76,7 +76,7 @@ ChromeUtils.defineLazyGetter(lazy, "syncDataStore", () => {
      * { childPref: value }
      * where value is parsed to the appropriate type
      *
-     * @returns {Object[]}
+     * @returns {object[]}
      */
     _getBranchChildValues(prefBranch, featureId) {
       const branch = Services.prefs.getBranch(prefBranch);
@@ -309,6 +309,7 @@ export class ExperimentStore extends SharedDataMap {
 
   /**
    * Returns all active experiments
+   *
    * @returns {Enrollment[]}
    */
   getAllActiveExperiments() {
@@ -319,6 +320,7 @@ export class ExperimentStore extends SharedDataMap {
 
   /**
    * Returns all active rollouts
+   *
    * @returns {Enrollment[]}
    */
   getAllActiveRollouts() {
@@ -330,6 +332,7 @@ export class ExperimentStore extends SharedDataMap {
   /**
    * Returns a Map from the setPrefs from all active experiments to
    * the pref values that the experiment overwrote.
+   *
    * @returns {nsIPrefOverrideMap}
    */
   getOriginalPrefValuesForAllActiveEnrollments() {
@@ -348,6 +351,7 @@ export class ExperimentStore extends SharedDataMap {
 
   /**
    * Query the store for the remote configuration of a feature
+   *
    * @param {string} featureId The feature we want to query for
    * @returns {{Rollout}|undefined} Remote defaults if available
    */
@@ -441,6 +445,7 @@ export class ExperimentStore extends SharedDataMap {
 
   /**
    * Persists early startup experiments or rollouts
+   *
    * @param {Enrollment} enrollment Experiment or rollout
    */
   _updateSyncStore(enrollment) {
@@ -473,6 +478,7 @@ export class ExperimentStore extends SharedDataMap {
 
   /**
    * Add an enrollment and notify listeners
+   *
    * @param {object} enrollment The enrollment to add.
    * @param {object} recipe The recipe for the enrollment that was enrolled.
    */

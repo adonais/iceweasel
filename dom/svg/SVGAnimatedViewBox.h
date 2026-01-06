@@ -99,7 +99,20 @@ class SVGAnimatedViewBox {
   }
 
   const SVGViewBox& GetBaseValue() const { return mBaseVal; }
-  void SetBaseValue(const SVGViewBox& aRect, SVGElement* aSVGElement);
+  void SetBaseX(float aX, SVGElement* aSVGElement) {
+    SetBaseField(aX, aSVGElement, mBaseVal.x);
+  }
+  void SetBaseY(float aY, SVGElement* aSVGElement) {
+    SetBaseField(aY, aSVGElement, mBaseVal.y);
+  }
+  void SetBaseWidth(float aWidth, SVGElement* aSVGElement) {
+    SetBaseField(aWidth, aSVGElement, mBaseVal.width);
+  }
+  void SetBaseHeight(float aHeight, SVGElement* aSVGElement) {
+    SetBaseField(aHeight, aSVGElement, mBaseVal.height);
+  }
+  void SetBaseValue(const SVGViewBox& aRect, SVGElement* aSVGElement,
+                    bool aDoSetAttr);
   const SVGViewBox& GetAnimValue() const {
     return mAnimVal ? *mAnimVal : mBaseVal;
   }
@@ -119,6 +132,8 @@ class SVGAnimatedViewBox {
   UniquePtr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 
  private:
+  void SetBaseField(float aHeight, SVGElement* aSVGElement, float& aElement);
+
   SVGViewBox mBaseVal;
   UniquePtr<SVGViewBox> mAnimVal;
   bool mHasBaseVal;

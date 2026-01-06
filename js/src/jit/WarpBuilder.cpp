@@ -3380,7 +3380,11 @@ bool WarpBuilder::buildIC(BytecodeLocation loc, CacheKind kind,
   mozilla::DebugOnly<size_t> numInputs = inputs.size();
   MOZ_ASSERT(numInputs == NumInputsForCacheKind(kind));
 
-  if (auto* cacheIRSnapshot = getOpSnapshot<WarpCacheIR>(loc)) {
+  const WarpCacheIRBase* cacheIRSnapshot = getOpSnapshot<WarpCacheIR>(loc);
+  if (!cacheIRSnapshot) {
+    cacheIRSnapshot = getOpSnapshot<WarpCacheIRWithShapeList>(loc);
+  }
+  if (cacheIRSnapshot) {
     return TranspileCacheIRToMIR(this, loc, cacheIRSnapshot, inputs);
   }
 

@@ -19,9 +19,10 @@ const MAX_INT_32 = 2 ** 32;
 /**
  * Divides numerator fields by the denominator. Value is set to 0 if denominator is missing or 0.
  * Adds 0 value for all situations where there is a denominator but no numerator value.
- * @param {Object.<string, number>} numerator
- * @param {Object.<string, number>} denominator
- * returns {Object.<string, number>}
+ *
+ * @param {{[key: string]: number}} numerator
+ * @param {{[key: string]: number}} denominator
+ * @returns {{[key: string]: number}}
  */
 export function divideDict(numerator, denominator) {
   const result = {};
@@ -39,6 +40,7 @@ export function divideDict(numerator, denominator) {
 /**
  * Unary encoding with randomized response for differential privacy.
  * The output must be decoded to back to an integer when aggregating a historgram on a server
+ *
  * @param {number} x - Integer input (0 <= x < N)
  * @param {number} N - Number of values (see ablove)
  * @param {number} p - Probability of keeping a 1-bit as 1 (after one-hot encoding the output)
@@ -63,7 +65,8 @@ export function unaryEncodeDiffPrivacy(x, N, p, q) {
 
 /**
  * Adds value to all a particular key in a dictionary. If the key is missing it sets the value.
- * @param {Object} dict - The dictionary to modify.
+ *
+ * @param {object} dict - The dictionary to modify.
  * @param {string} key - The key whose value should be added or set.
  * @param {number} value - The value to add to the key.
  */
@@ -77,9 +80,10 @@ export function dictAdd(dict, key, value) {
 
 /**
  * Apply function to all keys in dictionary, returning new dictionary.
- * @param {Object} obj - The object whose values should be transformed.
+ *
+ * @param {object} obj - The object whose values should be transformed.
  * @param {Function} fn - The function to apply to each value.
- * @returns {Object} A new object with the transformed values.
+ * @returns {object} A new object with the transformed values.
  */
 export function dictApply(obj, fn) {
   return Object.fromEntries(
@@ -93,6 +97,7 @@ export function dictApply(obj, fn) {
 export class DayTimeWeighting {
   /**
    * Instantiate class based on a series of day periods in the past.
+   *
    * @param {int[]} pastDays Series of number of days, indicating days ago intervals in reverse chonological order.
    * Intervals are added: If the first value is 1 and the second is 5, then the first inteval is 0-1 and second interval is between 1 and 6.
    * @param {number[]} relativeWeight Relative weight of each period. Must be same length as pastDays
@@ -108,6 +113,7 @@ export class DayTimeWeighting {
 
   /**
    * Get a series of interval pairs in the past based on the pastDays.
+   *
    * @param {number} curTimeMs Base time time in MS. Usually current time.
    * @returns
    */
@@ -126,6 +132,7 @@ export class DayTimeWeighting {
 
   /**
    * Get relative weight of current index.
+   *
    * @param {int} weightIndex Index
    * @returns {number} Weight at index, or 0 if index out of range.
    */
@@ -168,6 +175,7 @@ export class InterestFeatures {
 
   /**
    * Quantize a feature value based on the thresholds specified in the class.
+   *
    * @param {number} inValue Value computed by model for the feature.
    * @returns Quantized value. A value between 0 and number of thresholds specified (inclusive)
    */
@@ -187,6 +195,7 @@ export class InterestFeatures {
    * Applies Differential Privacy Unary Encoding method, outputting a one-hot encoded vector with randomizaiton.
    * Accurate historgrams of values can be computed with reasonable accuracy.
    * If the class has no or 0 p/q values set for differential privacy, then response is original number non-encoded.
+   *
    * @param {number} inValue Value to randomize
    * @returns Bitfield as a string, that is the same as the thresholds length + 1
    */
@@ -233,9 +242,9 @@ export class FeatureModel {
   /**
    *
    * @param {string} modelId
-   * @param {Object} dayTimeWeighting Data for day time weighting class
-   * @param {Object} interestVectorModel Data for interest model
-   * @param {Object} tileImportance Data for tile importance
+   * @param {object} dayTimeWeighting Data for day time weighting class
+   * @param {object} interestVectorModel Data for interest model
+   * @param {object} tileImportance Data for tile importance
    * @param {boolean} rescale Whether to rescale to max value
    * @param {boolean} logScale Whether to apply natural log (ln(x+ 1)) before rescaling
    */
@@ -311,9 +320,10 @@ export class FeatureModel {
 
   /**
    * Computes an interest vector or aggregate based on the model and raw sql inout.
-   * @param {Object} config
+   *
+   * @param {object} config
    * @param {Array.<Array.<string|number>>} config.dataForIntervals Raw aggregate output from SQL query. Could be clicks or impressions
-   * @param {Object.<string, number>} config.indexSchema Map of keys to indices in each sub-array in dataForIntervals
+   * @param {{[key: string]: number}} config.indexSchema Map of keys to indices in each sub-array in dataForIntervals
    * @param {boolean} [config.applyThresholding=false] Whether to apply thresholds
    * @param {boolean} [config.applyDifferntialPrivacy=false] Whether to apply differential privacy. This will be used for sending to telemetry.
    * @returns
@@ -401,8 +411,8 @@ export class FeatureModel {
    * Convert float to discrete values, based on threshold parmaters for each feature in the model.
    * Values are modifified in place on provided dictionary.
    *
-   * @param {Object} valueDict of all values in model
-   * @param {Boolean} applyDifferentialPrivacy whether to apply differential privacy as well as thresholding.
+   * @param {object} valueDict of all values in model
+   * @param {boolean} applyDifferentialPrivacy whether to apply differential privacy as well as thresholding.
    */
   applyThresholding(valueDict, applyDifferentialPrivacy = false) {
     for (const key of Object.keys(valueDict)) {
@@ -461,16 +471,16 @@ export class FeatureModel {
    *
    * In all cases model_id is returned.
    *
-   * @param {Object} params - Function parameters.
-   * @param {Object<string, number>} params.clickDict - A dictionary of interest keys to click counts.
-   * @param {Object<string, number>} params.impressionDict - A dictionary of interest keys to impression counts.
+   * @param {object} params - Function parameters.
+   * @param {{[key: string]: number}} params.clickDict - A dictionary of interest keys to click counts.
+   * @param {{[key: string]: number}} params.impressionDict - A dictionary of interest keys to impression counts.
    * @param {string} [params.model_id="unknown"] - Identifier for the model used in generating the vectors.
    * @param {boolean} [params.condensePrivateValues=true] - If true, condenses coarse private interest values into an array format.
    *
-   * @returns {Object} result - An object containing one or more of the following:
-   * @returns {Object} result.inferredInterest - A dictionary of private inferred interest scores
-   * @returns {Object} [result.coarseInferredInterests] - A dictionary of thresholded interest scores (non-private), if supported.
-   * @returns {Object} [result.coarsePrivateInferredInterests] - A dictionary of thresholded interest scores with differential privacy, if supported.
+   * @returns {object} result - An object containing one or more of the following:
+   * @returns {object} result.inferredInterest - A dictionary of private inferred interest scores
+   * @returns {object} [result.coarseInferredInterests] - A dictionary of thresholded interest scores (non-private), if supported.
+   * @returns {object} [result.coarsePrivateInferredInterests] - A dictionary of thresholded interest scores with differential privacy, if supported.
    */
   computeCTRInterestVectors({
     clicks,
@@ -529,16 +539,16 @@ export class FeatureModel {
    * Returns standard inferred interests (with Laplace noise), and optionally returns
    * coarse-grained and private-coarse versions depending on model support.
    *
-   * @param {Object} params - The function parameters.
-   * @param {Array<Object>} params.dataForIntervals - An array of data points grouped by time intervals (e.g., clicks, impressions).
-   * @param {Object} params.indexSchema - Schema that defines how interest indices should be computed.
+   * @param {object} params - The function parameters.
+   * @param {Array<object>} params.dataForIntervals - An array of data points grouped by time intervals (e.g., clicks, impressions).
+   * @param {object} params.indexSchema - Schema that defines how interest indices should be computed.
    * @param {string} [params.model_id="unknown"] - Identifier for the model used to produce these vectors.
    * @param {boolean} [params.condensePrivateValues=true] - If true, condenses coarse private interest values into an array format.
    *
-   * @returns {Object} result - An object containing the computed interest vectors.
-   * @returns {Object} result.inferredInterests - A dictionary of private inferred interest values, with `model_id`.
-   * @returns {Object} [result.coarseInferredInterests] - Coarse thresholded (non-private) interest vector, if supported.
-   * @returns {Object|{values: Array<number>, model_id: string}} [result.coarsePrivateInferredInterests] - Coarse and differentially private interests.
+   * @returns {object} result - An object containing the computed interest vectors.
+   * @returns {object} result.inferredInterests - A dictionary of private inferred interest values, with `model_id`.
+   * @returns {object} [result.coarseInferredInterests] - Coarse thresholded (non-private) interest vector, if supported.
+   * @returns {object | {values: Array<number>, model_id: string}} [result.coarsePrivateInferredInterests] - Coarse and differentially private interests.
    *           If `condensePrivateValues` is true, returned as an object with a `values` array; otherwise, as a dictionary.
    */
   computeInterestVectors({

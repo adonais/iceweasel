@@ -8,7 +8,6 @@
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/IntegerTypeTraits.h"
 
-#include <iterator>
 #include <type_traits>
 
 #include "jit/ABIFunctions.h"

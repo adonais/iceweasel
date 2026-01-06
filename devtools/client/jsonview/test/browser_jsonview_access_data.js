@@ -68,6 +68,7 @@ async function getJSONViewData(json) {
 
 /**
  * Helper function to test that $json.data matches the original object.
+ *
  * @param {*} obj - The object to stringify, load, and verify
  * @param {string} dataDescription - Description of the data being tested
  */

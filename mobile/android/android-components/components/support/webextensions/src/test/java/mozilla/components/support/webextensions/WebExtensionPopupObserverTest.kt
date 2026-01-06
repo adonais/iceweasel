@@ -9,7 +9,6 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineSession
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
@@ -41,7 +40,7 @@ class WebExtensionPopupObserverTest {
         observer.start()
         assertNull(extensionOpeningPopup)
 
-        store.dispatch(WebExtensionAction.UpdatePopupSessionAction(extensionId, popupSession = engineSession)).joinBlocking()
+        store.dispatch(WebExtensionAction.UpdatePopupSessionAction(extensionId, popupSession = engineSession))
         assertNotNull(extensionOpeningPopup)
         assertEquals(extensionId, extensionOpeningPopup!!.id)
         assertEquals(engineSession, extensionOpeningPopup.popupSession)
@@ -49,7 +48,7 @@ class WebExtensionPopupObserverTest {
         // Verify that stopped feature does not observe and forward requests to open popup
         extensionOpeningPopup = null
         observer.stop()
-        store.dispatch(WebExtensionAction.UpdatePopupSessionAction(extensionId, popupSession = mock())).joinBlocking()
+        store.dispatch(WebExtensionAction.UpdatePopupSessionAction(extensionId, popupSession = mock()))
         assertNull(extensionOpeningPopup)
     }
 }

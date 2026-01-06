@@ -13,7 +13,19 @@
 #include <fcntl.h>
 #include <libdrm/drm_fourcc.h>
 #include <pipewire/pipewire.h>
+#include <spa/buffer/buffer.h>
+#include <spa/buffer/meta.h>
+#include <spa/param/format.h>
+#include <spa/param/param.h>
 #include <spa/param/video/format-utils.h>
+#include <spa/param/video/raw.h>
+#include <spa/pod/builder.h>
+#include <spa/pod/iter.h>
+#include <spa/pod/vararg.h>
+#include <spa/support/loop.h>
+#include <spa/utils/defs.h>
+#include <spa/utils/hook.h>
+#include <spa/utils/type.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 
@@ -63,8 +75,12 @@ constexpr int CursorMetaSize(int w, int h) {
           w * h * kCursorBpp);
 }
 
-constexpr PipeWireVersion kDmaBufModifierMinVersion = {0, 3, 33};
-constexpr PipeWireVersion kDropSingleModifierMinVersion = {0, 3, 40};
+constexpr PipeWireVersion kDmaBufModifierMinVersion = {.major = 0,
+                                                       .minor = 3,
+                                                       .micro = 33};
+constexpr PipeWireVersion kDropSingleModifierMinVersion = {.major = 0,
+                                                           .minor = 3,
+                                                           .micro = 40};
 
 class SharedScreenCastStreamPrivate {
  public:
@@ -281,7 +297,7 @@ void SharedScreenCastStreamPrivate::OnStreamParamChanged(
   that->stream_size_ = DesktopSize(width, height);
 
   uint8_t buffer[2048] = {};
-  auto builder = spa_pod_builder{buffer, sizeof(buffer)};
+  auto builder = spa_pod_builder{.data = buffer, .size = sizeof(buffer)};
 
   // Setup buffers and meta header for new format.
 
@@ -378,7 +394,8 @@ void SharedScreenCastStreamPrivate::OnRenegotiateFormat(void* data, uint64_t) {
 
     uint8_t buffer[4096] = {};
 
-    spa_pod_builder builder = spa_pod_builder{buffer, sizeof(buffer)};
+    spa_pod_builder builder =
+        spa_pod_builder{.data = buffer, .size = sizeof(buffer)};
 
     std::vector<const spa_pod*> params;
     struct spa_rectangle resolution =
@@ -498,7 +515,8 @@ bool SharedScreenCastStreamPrivate::StartScreenCastStream(
                            &pw_stream_events_, this);
     uint8_t buffer[4096] = {};
 
-    spa_pod_builder builder = spa_pod_builder{buffer, sizeof(buffer)};
+    spa_pod_builder builder =
+        spa_pod_builder{.data = buffer, .size = sizeof(buffer)};
 
     std::vector<const spa_pod*> params;
     const bool has_required_pw_client_version =
@@ -723,8 +741,11 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
         if (bitmap && bitmap->size.width > 0 && bitmap->size.height > 0) {
           const uint8_t* bitmap_data =
               SPA_MEMBER(bitmap, bitmap->offset, uint8_t);
+          // TODO(bugs.webrtc.org/436974448): Convert `spa_video_format` to
+          // `FourCC`.
           BasicDesktopFrame* mouse_frame = new BasicDesktopFrame(
-              DesktopSize(bitmap->size.width, bitmap->size.height));
+              DesktopSize(bitmap->size.width, bitmap->size.height),
+              FOURCC_ARGB);
           mouse_frame->CopyPixelsFrom(
               bitmap_data, bitmap->stride,
               DesktopRect::MakeWH(bitmap->size.width, bitmap->size.height));
@@ -851,7 +872,7 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
   if (!queue_.current_frame() ||
       !queue_.current_frame()->size().equals(frame_size_)) {
     std::unique_ptr<DesktopFrame> frame(new BasicDesktopFrame(
-        DesktopSize(frame_size_.width(), frame_size_.height())));
+        DesktopSize(frame_size_.width(), frame_size_.height()), FOURCC_ARGB));
     queue_.ReplaceCurrentFrame(SharedDesktopFrame::Wrap(std::move(frame)));
   }
 
@@ -872,6 +893,8 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
     return;
   }
 
+  // TODO(bugs.webrtc.org/436974448): Remove this conversion when arbitrary
+  // pixel formats are supported.
   if (spa_video_format_.format == SPA_VIDEO_FORMAT_RGBx ||
       spa_video_format_.format == SPA_VIDEO_FORMAT_RGBA) {
     uint8_t* tmp_src = queue_.current_frame()->data();
@@ -969,9 +992,9 @@ bool SharedScreenCastStreamPrivate::ProcessDMABuffer(
   std::vector<EglDmaBuf::PlaneData> plane_datas;
   for (uint32_t i = 0; i < n_planes; ++i) {
     EglDmaBuf::PlaneData data = {
-        static_cast<int32_t>(spa_buffer->datas[i].fd),
-        static_cast<uint32_t>(spa_buffer->datas[i].chunk->stride),
-        static_cast<uint32_t>(spa_buffer->datas[i].chunk->offset)};
+        .fd = static_cast<int32_t>(spa_buffer->datas[i].fd),
+        .stride = static_cast<uint32_t>(spa_buffer->datas[i].chunk->stride),
+        .offset = static_cast<uint32_t>(spa_buffer->datas[i].chunk->offset)};
     plane_datas.push_back(data);
   }
 
@@ -983,9 +1006,7 @@ bool SharedScreenCastStreamPrivate::ProcessDMABuffer(
                       << " and trying to renegotiate stream parameters";
 
     if (pw_server_version_ >= kDropSingleModifierMinVersion) {
-      modifiers_.erase(
-          std::remove(modifiers_.begin(), modifiers_.end(), modifier_),
-          modifiers_.end());
+      std::erase(modifiers_, modifier_);
     } else {
       modifiers_.clear();
     }

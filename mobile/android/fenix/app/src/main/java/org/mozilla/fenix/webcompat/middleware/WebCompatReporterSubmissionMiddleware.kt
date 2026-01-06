@@ -67,7 +67,7 @@ class WebCompatReporterSubmissionMiddleware(
                     handleOpenPreviewClicked(context)
                 }
             }
-            is WebCompatReporterAction.SendMoreInfoClicked -> {
+            is WebCompatReporterAction.AddMoreInfoClicked -> {
                 scope.launch {
                     handleSendMoreInfoClicked(context)
                 }

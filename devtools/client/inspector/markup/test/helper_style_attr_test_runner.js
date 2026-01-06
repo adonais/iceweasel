@@ -72,6 +72,7 @@ async function runStyleAttributeAutocompleteTests(inspector, testData) {
 
 /**
  * Process a test data entry.
+ *
  * @param {Array} data
  *        test data - click or key - to enter
  * @param {InplaceEditor} editor

@@ -25,6 +25,7 @@ import org.mozilla.fenix.GleanMetrics.PrivateBrowsingLocked
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.ext.registerForActivityResult
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
@@ -61,9 +62,9 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler {
         super.onViewCreated(view, savedInstanceState)
         PrivateBrowsingLocked.promptShown.record()
 
-        val homeActivity = activity as HomeActivity
-        val isCustomPrivateTab = isCustomTabIntent(homeActivity.intent) &&
-            homeActivity.browsingModeManager.mode.isPrivate
+        val appStore = requireComponents.appStore
+        val isCustomPrivateTab =
+            isCustomTabIntent(requireActivity().intent) && appStore.state.mode.isPrivate
 
         (view as ComposeView).setContent {
             FirefoxTheme {
@@ -112,8 +113,7 @@ class UnlockPrivateTabsFragment : Fragment(), UserInteractionHandler {
             // home page, then, when leaving without authentication, we want to navigate user back
             // to normal mode. If they have opened regular tabs, we open the tabs tray as well.
             NavigationOrigin.TAB, NavigationOrigin.HOME_PAGE -> {
-                (activity as HomeActivity).browsingModeManager.mode = BrowsingMode.Normal
-
+                requireComponents.appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(BrowsingMode.Normal))
                 findNavController().navigate(UnlockPrivateTabsFragmentDirections.actionGlobalHome())
 
                 val hasNormalTabs = requireComponents.core.store.state.normalTabs.isNotEmpty()

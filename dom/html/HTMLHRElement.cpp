@@ -150,7 +150,7 @@ void HTMLHRElement::MapAttributesIntoRule(MappedDeclarationsBuilder& aBuilder) {
       // 10000px on all corners; this triggers the clamping to make
       // circular ends.  This assumes the <hr> isn't larger than
       // that in *both* dimensions.
-      for (const nsCSSPropertyID* props =
+      for (const NonCustomCSSPropertyId* props =
                nsCSSProps::SubpropertyEntryFor(eCSSProperty_border_radius);
            *props != eCSSProperty_UNKNOWN; ++props) {
         aBuilder.SetPixelValueIfUnset(*props, 10000.0f);

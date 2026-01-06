@@ -140,6 +140,10 @@
   <string name="search_suggestions_onboarding_title">ব্যক্তিগত সেশনে অনুসন্ধানের পরামর্শ দেওয়ার অনুমতি দেবেন?</string>
   <!-- Search suggestion onboarding hint description text, %s is the name of the app (for example "Firefox"). -->
   <string name="search_suggestions_onboarding_text">ঠিকানা বারে টাইপ করা সবকিছ %s আপনার ডিফল্ট অনুসন্ধান ইঞ্জিনের মাধ্যমে আপনার সাথে শেয়ার করবে।</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">অনুসন্ধান করুন</string>
   <!-- Text preview for larger sized widgets -->
@@ -854,4 +858,10 @@
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

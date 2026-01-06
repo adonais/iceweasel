@@ -17,7 +17,7 @@ const {
 const ISSUE_DEPRECATED = {
   type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
   property: "-moz-user-focus",
-  url: "https://developer.mozilla.org/docs/Web/CSS/-moz-user-focus",
+  url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/-moz-user-focus",
   deprecated: true,
   experimental: false,
 };
@@ -25,7 +25,7 @@ const ISSUE_DEPRECATED = {
 const ISSUE_SCROLLBAR_COLOR = {
   type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
   property: "scrollbar-color",
-  url: "https://developer.mozilla.org/docs/Web/CSS/scrollbar-color",
+  url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scrollbar-color",
   deprecated: false,
   experimental: false,
 };
@@ -77,7 +77,8 @@ add_task(async function () {
  * that corresponds to the selector passed.
  * This overrides the definition in inspector/test/head.js which times
  * out when the container to be clicked is already the selected node.
- * @param {String|NodeFront} selector
+ *
+ * @param {string | NodeFront} selector
  * @param {InspectorPanel} inspector The instance of InspectorPanel currently
  * loaded in the toolbox
  * @return {Promise} Resolves when the node has been selected.

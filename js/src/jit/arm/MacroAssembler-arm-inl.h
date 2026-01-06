@@ -327,6 +327,14 @@ void MacroAssembler::add32(Imm32 imm, const Address& dest) {
   ma_str(scratch, dest, scratch2);
 }
 
+void MacroAssembler::add32(const Address& src, Register dest) {
+  ScratchRegisterScope scratch(*this);
+  SecondScratchRegisterScope scratch2(*this);
+
+  ma_ldr(src, scratch, scratch2);
+  ma_add(scratch, dest, SetCC);
+}
+
 void MacroAssembler::addPtr(Register src, Register dest) { ma_add(src, dest); }
 
 void MacroAssembler::addPtr(Imm32 imm, Register dest) {

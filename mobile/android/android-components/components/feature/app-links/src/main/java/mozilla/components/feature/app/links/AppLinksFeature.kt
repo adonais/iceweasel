@@ -31,8 +31,13 @@ import mozilla.components.support.ktx.android.content.appName
 internal const val MAX_SUCCESSIVE_DIALOG_MILLIS_LIMIT: Int = 500 // 0.5 seconds
 
 internal val WALLET_SCHEMES: Array<String> = arrayOf(
-    "openid4vp", "mdoc", "mdoc-openid4vp", "haip",
-    "eudi-wallet", "eudi-openid4vp", "openid-credential-offer",
+    "openid4vp",
+    "mdoc",
+    "mdoc-openid4vp",
+    "haip",
+    "eudi-wallet",
+    "eudi-openid4vp",
+    "openid-credential-offer",
 )
 
 /**

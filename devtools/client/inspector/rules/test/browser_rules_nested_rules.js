@@ -57,7 +57,12 @@ add_task(async function () {
 
   await selectNode("body", inspector);
   checkRuleViewContent(view, [
-    { selector: "element", ancestorRulesData: null, declarations: [] },
+    {
+      selector: "element",
+      selectorEditable: false,
+      ancestorRulesData: null,
+      declarations: [],
+    },
     {
       selector: "",
       ancestorRulesData: [`body {`],
@@ -84,7 +89,12 @@ add_task(async function () {
 
   await selectNode("h1", inspector);
   checkRuleViewContent(view, [
-    { selector: "element", ancestorRulesData: null, declarations: [] },
+    {
+      selector: "element",
+      selectorEditable: false,
+      ancestorRulesData: null,
+      declarations: [],
+    },
     {
       selector: `& h1`,
       // prettier-ignore
@@ -98,7 +108,12 @@ add_task(async function () {
 
   await selectNode("h1 > .foo", inspector);
   checkRuleViewContent(view, [
-    { selector: "element", ancestorRulesData: null, declarations: [] },
+    {
+      selector: "element",
+      selectorEditable: false,
+      ancestorRulesData: null,
+      declarations: [],
+    },
     {
       selector: `& .foo`,
       // prettier-ignore
@@ -113,7 +128,12 @@ add_task(async function () {
 
   await selectNode("h1 > #bar", inspector);
   checkRuleViewContent(view, [
-    { selector: "element", ancestorRulesData: null, declarations: [] },
+    {
+      selector: "element",
+      selectorEditable: false,
+      ancestorRulesData: null,
+      declarations: [],
+    },
     {
       selector: `& #bar`,
       // prettier-ignore
@@ -128,7 +148,12 @@ add_task(async function () {
 
   await selectNode("nav", inspector);
   checkRuleViewContent(view, [
-    { selector: "element", ancestorRulesData: null, declarations: [] },
+    {
+      selector: "element",
+      selectorEditable: false,
+      ancestorRulesData: null,
+      declarations: [],
+    },
     {
       selector: `& + nav`,
       ancestorRulesData: [
@@ -143,7 +168,12 @@ add_task(async function () {
 
   await selectNode("nav a", inspector);
   checkRuleViewContent(view, [
-    { selector: "element", ancestorRulesData: null, declarations: [] },
+    {
+      selector: "element",
+      selectorEditable: false,
+      ancestorRulesData: null,
+      declarations: [],
+    },
     {
       selector: `& [href]`,
       ancestorRulesData: [

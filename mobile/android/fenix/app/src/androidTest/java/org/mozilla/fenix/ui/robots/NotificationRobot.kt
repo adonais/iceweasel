@@ -82,13 +82,11 @@ class NotificationRobot {
     fun verifyPrivateTabsNotification() {
         when (Build.VERSION.SDK_INT) {
             // For API 34 the notification is slightly different
-            Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
-                {
+            Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> {
                     verifySystemNotificationExists(getStringResource(R.string.notification_erase_title_android_14))
                     verifySystemNotificationExists(getStringResource(R.string.notification_erase_text_android_14))
                 }
-            else ->
-                {
+            else -> {
                     verifySystemNotificationExists("$appName (Private)")
                     verifySystemNotificationExists("Close private tabs")
                 }

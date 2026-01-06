@@ -15,8 +15,9 @@ const fs = require("fs");
  * order to get the data Storybook needs, we have to convert the markdown to
  * MDX, the convert that to CSF.
  * More info on indexers can be found here: storybook.js.org/docs/api/main-config-indexers
+ *
  * @param {string} fileName - Path to the file being processed.
- * @param {Object} opts - Options to configure the indexer.
+ * @param {object} opts - Options to configure the indexer.
  * @returns Array of IndexInput objects.
  */
 module.exports = async (fileName, opts) => {

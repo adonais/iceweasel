@@ -1578,7 +1578,7 @@ void MacroAssembler::convertUInt64ToDouble(Register64 input,
   mov(input.reg, scratch);
   mov(input.reg, temp);
   shrq(Imm32(1), scratch);
-  andq(Imm32(1), temp);
+  andl(Imm32(1), temp);
   orq(temp, scratch);
 
   vcvtsq2sd(scratch, output, output);
@@ -1608,7 +1608,7 @@ void MacroAssembler::convertUInt64ToFloat32(Register64 input,
   mov(input.reg, scratch);
   mov(input.reg, temp);
   shrq(Imm32(1), scratch);
-  andq(Imm32(1), temp);
+  andl(Imm32(1), temp);
   orq(temp, scratch);
 
   vcvtsq2ss(scratch, output, output);

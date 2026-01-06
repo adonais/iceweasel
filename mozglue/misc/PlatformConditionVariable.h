@@ -9,8 +9,6 @@
 
 #include <stdint.h>
 
-#include <utility>
-
 #include "mozilla/PlatformMutex.h"
 #include "mozilla/TimeStamp.h"
 #if !defined(XP_WIN) && !defined(__wasi__)

@@ -35,7 +35,7 @@ class HistoryMetadataMiddleware(
     // e.g. via the toolbar as opposed to via web content.
     private var directLoadTriggeredSet = mutableSetOf<String>()
 
-    @Suppress("ComplexMethod")
+    @Suppress("CyclomaticComplexMethod")
     override fun invoke(
         context: MiddlewareContext<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
@@ -150,7 +150,7 @@ class HistoryMetadataMiddleware(
         }
     }
 
-    @Suppress("ComplexMethod")
+    @Suppress("CognitiveComplexMethod")
     private fun createHistoryMetadata(
         context: MiddlewareContext<BrowserState, BrowserAction>,
         tab: TabSessionState,

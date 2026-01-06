@@ -15,9 +15,9 @@ import androidx.navigation.fragment.navArgs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.ext.consumeFrom
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.compose.core.Action
 import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
@@ -49,9 +49,9 @@ class NimbusBranchesFragment : Fragment() {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        nimbusBranchesStore = StoreProvider.get(this) {
-            NimbusBranchesStore(NimbusBranchesState(branches = emptyList()))
-        }
+        nimbusBranchesStore = fragmentStore(NimbusBranchesState(branches = emptyList())) {
+            NimbusBranchesStore(it)
+        }.value
 
         controller = NimbusBranchesController(
             isTelemetryEnabled = { requireContext().settings().isTelemetryEnabled },

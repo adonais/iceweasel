@@ -10,8 +10,6 @@
  */
 
 #include <stdio.h>
-#include <string>
-#include <vector>
 
 #include "cert.h"
 #include "nspr.h"

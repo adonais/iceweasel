@@ -7,6 +7,7 @@ package org.mozilla.fenix.browser.store
 import android.content.Context
 import android.view.Gravity
 import androidx.annotation.VisibleForTesting
+import androidx.fragment.app.FragmentManager
 import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.feature.downloads.ui.DownloadCancelDialogFragment
 import mozilla.components.lib.crash.CrashReporter
@@ -16,22 +17,21 @@ import mozilla.components.lib.state.Store
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.store.BrowserScreenAction.CancelPrivateDownloadsOnPrivateTabsClosedAccepted
 import org.mozilla.fenix.browser.store.BrowserScreenAction.ClosingLastPrivateTab
-import org.mozilla.fenix.browser.store.BrowserScreenAction.EnvironmentCleared
-import org.mozilla.fenix.browser.store.BrowserScreenAction.EnvironmentRehydrated
-import org.mozilla.fenix.browser.store.BrowserScreenStore.Environment
 import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.theme.ThemeManager
 
 /**
  * [Middleware] responsible for handling actions related to the browser screen.
  *
+ * @param uiContext [Context] used for various system interactions.
  * @param crashReporter [CrashReporter] for recording crashes.
+ * @param fragmentManager [FragmentManager] to use for showing other fragments.
  */
 class BrowserScreenMiddleware(
+    private val uiContext: Context,
     private val crashReporter: CrashReporter,
+    private val fragmentManager: FragmentManager,
 ) : Middleware<BrowserScreenState, BrowserScreenAction> {
-    @VisibleForTesting
-    internal var environment: Environment? = null
 
     override fun invoke(
         context: MiddlewareContext<BrowserScreenState, BrowserScreenAction>,
@@ -39,18 +39,6 @@ class BrowserScreenMiddleware(
         action: BrowserScreenAction,
     ) {
         when (action) {
-            is EnvironmentRehydrated -> {
-                next(action)
-
-                environment = action.environment
-            }
-
-            is EnvironmentCleared -> {
-                next(action)
-
-                environment = null
-            }
-
             is ClosingLastPrivateTab -> {
                 next(action)
 
@@ -70,14 +58,12 @@ class BrowserScreenMiddleware(
         downloadCount: Int,
         tabId: String?,
     ) {
-        val environment = environment ?: return
-
         crashReporter.recordCrashBreadcrumb(
             Breadcrumb("DownloadCancelDialogFragment shown in browser screen"),
         )
-        val dialog = createDownloadCancelDialog(environment.context, store, downloadCount, tabId)
+        val dialog = createDownloadCancelDialog(uiContext, store, downloadCount, tabId)
 
-        dialog.show(environment.fragmentManager, CANCEL_PRIVATE_DOWNLOADS_DIALOG_FRAGMENT_TAG)
+        dialog.show(fragmentManager, CANCEL_PRIVATE_DOWNLOADS_DIALOG_FRAGMENT_TAG)
     }
 
     /**

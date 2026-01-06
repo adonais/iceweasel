@@ -310,6 +310,7 @@ function unregisterVacuumParticipant(connectionData) {
 
 /**
  * Create a ConsoleInstance logger with a given prefix.
+ *
  * @param {string} prefix The prefix to use when logging.
  * @returns {ConsoleInstance} a console logger.
  */
@@ -471,6 +472,7 @@ ConnectionData.prototype = Object.freeze({
 
   /**
    * This should only be used by the VacuumManager component.
+   *
    * @see unsafeRawConnection for an official (but still unsafe) API.
    */
   get databaseConnection() {
@@ -1476,26 +1478,22 @@ function openConnection(options) {
  *
  * The following parameters can control the cloned connection:
  *
- *   connection -- (mozIStorageAsyncConnection) The original Storage connection
- *       to clone.  It's not possible to clone connections to memory databases.
- *
- *   readOnly -- (boolean) - If true the clone will be read-only.  If the
- *       original connection is already read-only, the clone will be, regardless
- *       of this option.  If the original connection is using the shared cache,
- *       this parameter will be ignored and the clone will be as privileged as
- *       the original connection.
- *   shrinkMemoryOnConnectionIdleMS -- (integer) If defined, the connection
- *       will attempt to minimize its memory usage after this many
- *       milliseconds of connection idle. The connection is idle when no
- *       statements are executing. There is no default value which means no
- *       automatic memory minimization will occur. Please note that this is
- *       *not* a timer on the idle service and this could fire while the
- *       application is active.
- *
- *
- * @param options
- *        (Object) Parameters to control connection and clone options.
- *
+ * @param {object} options
+ *   Parameters to control connection and clone options.
+ * @param {mozIStorageAsyncConnection} options.connection
+ *   The original Storage connection to clone. It's not possible to clone
+ *   connections to memory databases.
+ * @param {boolean} [options.readOnly]
+ *   If true the clone will be read-only.  If the original connection is already
+ *   read-only, the clone will be, regardless of this option.  If the original
+ *   connection is using the shared cache, this parameter will be ignored and
+ *   the clone will be as privileged as the original connection.
+ * @param {number} [options.shrinkMemoryOnConnectionIdleMS]
+ *   If defined, the connection will attempt to minimize its memory usage after
+ *   this many milliseconds of connection idle. The connection is idle when no
+ *   statements are executing. There is no default value which means no automatic
+ *   memory minimization will occur. Please note that this is *not* a timer on
+ *   the idle service and this could fire while the application is active.
  * @return {Promise<OpenedConnection>}
  */
 function cloneStorageConnection(options) {

@@ -13,8 +13,7 @@ export const PersonalizedCard = ({
   handleBlock,
   messageData,
 }) => {
-  const wavingFox =
-    "chrome://newtab/content/data/content/assets/waving-fox.svg";
+  const kitFox = "chrome://newtab/content/data/content/assets/kit.png";
 
   const onDismiss = useCallback(() => {
     handleDismiss();
@@ -41,7 +40,7 @@ export const PersonalizedCard = ({
         ></moz-button>
       </div>
       <div className="personalized-card-inner">
-        <img src={wavingFox} alt="" />
+        <img src={kitFox} alt="" />
         <h2>{messageData.content.cardTitle}</h2>
         <p>{messageData.content.cardMessage}</p>
         <div className="personalized-card-cta-wrapper">

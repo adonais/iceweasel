@@ -308,17 +308,14 @@ export class GeckoViewNavigation extends GeckoViewModule {
     debug`handleNewSession: uri=${aUri && aUri.spec}
                              where=${aWhere} flags=${aFlags}`;
 
-    const setupPromise = this.#handleNewSessionAsync(
+    let browser = undefined;
+    this._handleNewSessionAsync({
       aUri,
       aOpenWindowInfo,
-      aFlags,
-      aName
-    );
-
-    let browser = undefined;
-    setupPromise.then(
-      window => {
-        browser = window.browser;
+      aName,
+    }).then(
+      result => {
+        browser = result;
       },
       () => {
         browser = null;
@@ -344,7 +341,7 @@ export class GeckoViewNavigation extends GeckoViewModule {
    * Similar to handleNewSession. But this returns a promise to wait for new
    * browser.
    */
-  #handleNewSessionAsync(aUri, aOpenWindowInfo, aFlags, aName) {
+  _handleNewSessionAsync({ aUri, aOpenWindowInfo, aName }) {
     if (!this.enabled) {
       return Promise.reject();
     }
@@ -377,6 +374,9 @@ export class GeckoViewNavigation extends GeckoViewModule {
           return Promise.reject();
         }
         return setupPromise;
+      })
+      .then(newWindow => {
+        return newWindow.browser;
       });
   }
 
@@ -397,29 +397,26 @@ export class GeckoViewNavigation extends GeckoViewModule {
       return null;
     }
 
-    if (
-      lazy.LoadURIDelegate.load(
-        this.window,
-        this.eventDispatcher,
-        aUri,
-        aWhere,
-        aFlags,
-        aTriggeringPrincipal
-      )
-    ) {
-      // The app has handled the load, abort open-window handling.
-      Components.returnCode = Cr.NS_ERROR_ABORT;
-      return null;
-    }
-
-    const newTab = this.#isNewTab(aWhere);
-    const promise = this.#handleNewSessionAsync(
+    const promise = lazy.LoadURIDelegate.load(
+      this.window,
+      this.eventDispatcher,
       aUri,
-      aOpenWindowInfo,
       aWhere,
       aFlags,
-      null
-    );
+      aTriggeringPrincipal
+    ).then(handled => {
+      if (handled) {
+        // This will throw NS_ERROR_ABORT
+        return Promise.reject();
+      }
+      return this._handleNewSessionAsync({
+        aUri,
+        aOpenWindowInfo,
+        aWhere,
+      });
+    });
+
+    const newTab = this.#isNewTab(aWhere);
 
     // Actually, GeckoView's createContentWindow always creates new window even
     // if OPEN_NEWTAB. So the browsing context will be observed via
@@ -436,8 +433,8 @@ export class GeckoViewNavigation extends GeckoViewModule {
 
     let browser = undefined;
     promise.then(
-      window => {
-        browser = window.browser;
+      result => {
+        browser = result;
       },
       () => {
         browser = null;
@@ -459,6 +456,27 @@ export class GeckoViewNavigation extends GeckoViewModule {
     return browser.browsingContext;
   }
 
+  async _createContentWindowInFrameAsync(aUri, aParams, aWhere, aFlags, aName) {
+    if (
+      await lazy.LoadURIDelegate.load(
+        this.window,
+        this.eventDispatcher,
+        aUri,
+        aWhere,
+        aFlags,
+        aParams.triggeringPrincipal
+      )
+    ) {
+      return null;
+    }
+
+    return await this._handleNewSessionAsync({
+      aUri,
+      aOpenWindowInfo: aParams.openWindowInfo,
+      aName,
+    });
+  }
+
   // nsIBrowserDOMWindow.
   createContentWindowInFrame(aUri, aParams, aWhere, aFlags, aName) {
     debug`createContentWindowInFrame: uri=${aUri && aUri.spec}
@@ -469,28 +487,29 @@ export class GeckoViewNavigation extends GeckoViewModule {
       return this.window.moduleManager.onPrintWindow(aParams);
     }
 
-    if (
-      lazy.LoadURIDelegate.load(
-        this.window,
-        this.eventDispatcher,
-        aUri,
-        aWhere,
-        aFlags,
-        aParams.triggeringPrincipal
-      )
-    ) {
-      // The app has handled the load, abort open-window handling.
-      Components.returnCode = Cr.NS_ERROR_ABORT;
-      return null;
-    }
-
-    const browser = this.handleNewSession(
+    let browser = undefined;
+    this._createContentWindowInFrameAsync(
       aUri,
-      aParams.openWindowInfo,
+      aParams,
       aWhere,
       aFlags,
       aName
+    ).then(
+      result => {
+        browser = result;
+      },
+      () => {
+        browser = null;
+      }
     );
+
+    // Wait indefinitely for app to respond with a browser or null.
+    // if browser is null, return error.
+    Services.tm.spinEventLoopUntil(
+      "GeckoViewNavigation.sys.mjs:createContentWindowInFrame",
+      () => this.window.closed || browser !== undefined
+    );
+
     if (!browser) {
       Components.returnCode = Cr.NS_ERROR_ABORT;
       return null;
@@ -499,7 +518,7 @@ export class GeckoViewNavigation extends GeckoViewModule {
     return browser;
   }
 
-  handleOpenUri({
+  async _handleOpenUriAsync({
     uri,
     openWindowInfo,
     where,
@@ -509,11 +528,10 @@ export class GeckoViewNavigation extends GeckoViewModule {
     referrerInfo = null,
     name = null,
   }) {
-    debug`handleOpenUri: uri=${uri && uri.spec}
-                          where=${where} flags=${flags}`;
+    debug`_handleOpenUriAsync: uri=${uri?.spec} where=${where} flags=${flags}`;
 
     if (
-      lazy.LoadURIDelegate.load(
+      await lazy.LoadURIDelegate.load(
         this.window,
         this.eventDispatcher,
         uri,
@@ -525,19 +543,23 @@ export class GeckoViewNavigation extends GeckoViewModule {
       return null;
     }
 
-    let browser = this.browser;
-
-    if (
-      where === Ci.nsIBrowserDOMWindow.OPEN_NEWWINDOW ||
-      where === Ci.nsIBrowserDOMWindow.OPEN_NEWTAB ||
-      where === Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_BACKGROUND ||
-      where === Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_FOREGROUND
-    ) {
-      browser = this.handleNewSession(uri, openWindowInfo, where, flags, name);
-    }
+    const browser = await (async () => {
+      if (
+        where === Ci.nsIBrowserDOMWindow.OPEN_NEWWINDOW ||
+        where === Ci.nsIBrowserDOMWindow.OPEN_NEWTAB ||
+        where === Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_BACKGROUND ||
+        where === Ci.nsIBrowserDOMWindow.OPEN_NEWTAB_FOREGROUND
+      ) {
+        return await this._handleNewSessionAsync({
+          aUri: uri,
+          aOpenWindowInfo: openWindowInfo,
+          aName: name,
+        });
+      }
+      return this.browser;
+    })();
 
     if (!browser) {
-      // Should we throw?
       return null;
     }
 
@@ -551,6 +573,26 @@ export class GeckoViewNavigation extends GeckoViewModule {
       textDirectiveUserActivation:
         !!openWindowInfo?.textDirectiveUserActivation,
     });
+
+    return browser;
+  }
+
+  _handleOpenUri(openUriInfo) {
+    let browser = undefined;
+    this._handleOpenUriAsync(openUriInfo).then(
+      result => {
+        browser = result;
+      },
+      () => {
+        browser = null;
+      }
+    );
+
+    Services.tm.spinEventLoopUntil(
+      "GeckoViewNavigation.sys.mjs:_handleOpenUri",
+      () => this.window.closed || browser !== undefined
+    );
+
     return browser;
   }
 
@@ -563,7 +605,7 @@ export class GeckoViewNavigation extends GeckoViewModule {
     aTriggeringPrincipal,
     aPolicyContainer
   ) {
-    const browser = this.handleOpenUri({
+    const browser = this._handleOpenUri({
       uri: aUri,
       openWindowInfo: aOpenWindowInfo,
       where: aWhere,
@@ -571,12 +613,18 @@ export class GeckoViewNavigation extends GeckoViewModule {
       triggeringPrincipal: aTriggeringPrincipal,
       policyContainer: aPolicyContainer,
     });
+
+    if (!browser) {
+      Components.returnCode = Cr.NS_ERROR_ABORT;
+      return null;
+    }
+
     return browser && browser.browsingContext;
   }
 
   // nsIBrowserDOMWindow.
   openURIInFrame(aUri, aParams, aWhere, aFlags, aName) {
-    const browser = this.handleOpenUri({
+    const browser = this._handleOpenUri({
       uri: aUri,
       openWindowInfo: aParams.openWindowInfo,
       where: aWhere,
@@ -586,6 +634,12 @@ export class GeckoViewNavigation extends GeckoViewModule {
       referrerInfo: aParams.referrerInfo,
       name: aName,
     });
+
+    if (!browser) {
+      Components.returnCode = Cr.NS_ERROR_ABORT;
+      return null;
+    }
+
     return browser;
   }
 

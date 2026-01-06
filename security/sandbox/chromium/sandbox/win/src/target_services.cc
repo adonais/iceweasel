@@ -122,14 +122,6 @@ bool SetProcessIntegrityLevel(IntegrityLevel integrity_level) {
     return true;
   }
 
-  // Set integrity level for our process ACL, so we retain access to it.
-  // We ignore failures because this is not a security measure, but some
-  // functionality may fail later in the process.
-  DWORD rv = SetObjectIntegrityLabel(::GetCurrentProcess(),
-                                     base::win::SecurityObjectType::kKernel,
-                                     0, integrity_level);
-  DCHECK(rv == ERROR_SUCCESS);
-
   absl::optional<base::win::AccessToken> token =
       base::win::AccessToken::FromCurrentProcess(/*impersonation=*/false,
                                                  TOKEN_ADJUST_DEFAULT);
@@ -137,6 +129,29 @@ bool SetProcessIntegrityLevel(IntegrityLevel integrity_level) {
     return false;
   }
   return token->SetIntegrityLevel(*rid);
+}
+
+void SetProcessAclIntegrityLevel(IntegrityLevel integrity_level) {
+  absl::optional<DWORD> rid = GetIntegrityLevelRid(integrity_level);
+  if (!rid) {
+    // No mandatory level specified, we don't change it.
+    return;
+  }
+
+  // Set the integrity level for our process ACL, so we retain access to it.
+  // We ignore failures in non-debug because this is not a security measure,
+  // but some functionality may fail later in the process.
+  base::win::SecurityDescriptor sdWrapper;
+  if (!sdWrapper.SetMandatoryLabel(*rid, 0, 0)) {
+    DCHECK(false);
+    return;
+  }
+
+  SECURITY_DESCRIPTOR sd;
+  sdWrapper.ToAbsolute(sd);
+  BOOL success = ::SetKernelObjectSecurity(::GetCurrentProcess(),
+                                           LABEL_SECURITY_INFORMATION, &sd);
+  DCHECK(success);
 }
 
 // Used as storage for g_target_services, because other allocation facilities
@@ -184,11 +199,13 @@ void TargetServicesBase::LowerToken() {
   if (!CloseOpenHandles(&is_csrss_connected))
     ::TerminateProcess(::GetCurrentProcess(), SBOX_FATAL_CLOSEHANDLES);
   process_state_.SetCsrssConnected(is_csrss_connected);
-  // Enabling mitigations must happen last otherwise handle closing breaks
+  // Enabling mitigations must happen after the above measures otherwise handle
+  // closing breaks.
   if (g_shared_delayed_mitigations &&
       !LockDownSecurityMitigations(g_shared_delayed_mitigations)) {
     ::TerminateProcess(::GetCurrentProcess(), SBOX_FATAL_MITIGATION);
   }
+  SetProcessAclIntegrityLevel(g_shared_delayed_integrity_level);
 }
 
 ProcessState* TargetServicesBase::GetState() {

@@ -33,6 +33,7 @@ const L10N_IDS = {
 export default class SecurityPrivacyCard extends MozLitElement {
   /**
    * Private member to check the App Updater status
+   *
    * @returns {boolean} should we NOT warn the user about their app update status
    */
   #okUpdateStatus() {

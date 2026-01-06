@@ -357,7 +357,7 @@ function getSuppressFocusPromise(win = window) {
         observer.disconnect();
       }
     });
-    observer.observe(win.gURLBar.textbox, {
+    observer.observe(win.gURLBar, {
       attributes: true,
       attributeFilter: ["suppress-focus-border"],
     });

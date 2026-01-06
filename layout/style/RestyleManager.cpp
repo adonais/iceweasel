@@ -691,7 +691,6 @@ nsCString RestyleManager::ChangeHintToString(nsChangeHint aHint) {
                          "ChildrenOnlyTransform",
                          "RecomputePosition",
                          "UpdateContainingBlock",
-                         "BorderStyleNoneChange",
                          "SchedulePaint",
                          "NeutralChange",
                          "InvalidateRenderingObservers",
@@ -754,11 +753,10 @@ static bool gInApplyRenderingChangeToTree = false;
 #endif
 
 /**
- * Sync views on the frame and all of it's descendants (following placeholders).
  * The change hint should be some combination of nsChangeHint_RepaintFrame,
  * nsChangeHint_UpdateOpacityLayer and nsChangeHint_SchedulePaint, nothing else.
  */
-static void SyncViewsAndInvalidateDescendants(nsIFrame*, nsChangeHint);
+static void InvalidateDescendants(nsIFrame*, nsChangeHint);
 
 static void StyleChangeReflow(nsIFrame* aFrame, nsChangeHint aHint);
 
@@ -822,14 +820,6 @@ static bool RecomputePosition(nsIFrame* aFrame) {
   // Changes to the offsets of a non-positioned element can safely be ignored.
   if (display->mPosition == StylePositionProperty::Static) {
     return true;
-  }
-
-  // Don't process position changes on frames which have views or the ones which
-  // have a view somewhere in their descendants, because the corresponding view
-  // needs to be repositioned properly as well.
-  if (aFrame->GetView() ||
-      aFrame->HasAnyStateBits(NS_FRAME_HAS_CHILD_WITH_VIEW)) {
-    return false;
   }
 
   if (aFrame->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
@@ -1183,11 +1173,11 @@ static void DoApplyRenderingChangeToTree(nsIFrame* aFrame,
        aFrame = nsLayoutUtils::GetNextContinuationOrIBSplitSibling(aFrame)) {
     // Invalidate and sync views on all descendant frames, following
     // placeholders. We don't need to update transforms in
-    // SyncViewsAndInvalidateDescendants, because there can't be any
+    // InvalidateDescendants, because there can't be any
     // out-of-flows or popups that need to be transformed; all out-of-flow
     // descendants of the transformed element must also be descendants of the
     // transformed frame.
-    SyncViewsAndInvalidateDescendants(
+    InvalidateDescendants(
         aFrame, nsChangeHint(aChange & (nsChangeHint_RepaintFrame |
                                         nsChangeHint_UpdateOpacityLayer |
                                         nsChangeHint_SchedulePaint)));
@@ -1254,8 +1244,7 @@ static void DoApplyRenderingChangeToTree(nsIFrame* aFrame,
   }
 }
 
-static void SyncViewsAndInvalidateDescendants(nsIFrame* aFrame,
-                                              nsChangeHint aChange) {
+static void InvalidateDescendants(nsIFrame* aFrame, nsChangeHint aChange) {
   MOZ_ASSERT(gInApplyRenderingChangeToTree,
              "should only be called within ApplyRenderingChangeToTree");
 
@@ -1264,8 +1253,6 @@ static void SyncViewsAndInvalidateDescendants(nsIFrame* aFrame,
                                nsChangeHint_UpdateOpacityLayer |
                                nsChangeHint_SchedulePaint)),
                "Invalid change flag");
-
-  aFrame->SyncFrameViewProperties();
 
   for (const auto& [list, listID] : aFrame->ChildLists()) {
     for (nsIFrame* child : list) {
@@ -1277,7 +1264,7 @@ static void SyncViewsAndInvalidateDescendants(nsIFrame* aFrame,
               nsPlaceholderFrame::GetRealFrameForPlaceholder(child);
           DoApplyRenderingChangeToTree(outOfFlowFrame, aChange);
         } else {  // regular frame
-          SyncViewsAndInvalidateDescendants(child, aChange);
+          InvalidateDescendants(child, aChange);
         }
       }
     }

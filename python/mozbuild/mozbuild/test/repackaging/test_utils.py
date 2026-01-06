@@ -357,19 +357,17 @@ def test_render_templates():
 
 
 def test_inject_distribution_folder(monkeypatch):
-    def mock_check_call(command):
-        global clone_dir
-        clone_dir = command[-1]
-        os.makedirs(os.path.join(clone_dir, "desktop/deb/distribution"))
+    def mock_makedirs(destination, *, exist_ok):
+        assert destination == "/source_dir/firefox/distribution"
+        assert exist_ok
 
-    monkeypatch.setattr(utils.subprocess, "check_call", mock_check_call)
+    def mock_move(source, destination):
+        assert source == "/source_dir/debian/distribution.ini"
+        assert destination == "/source_dir/firefox/distribution"
 
-    def mock_copytree(source_tree, destination_tree):
-        global clone_dir
-        assert source_tree == mozpath.join(clone_dir, "desktop/deb/distribution")
-        assert destination_tree == "/source_dir/firefox/distribution"
-
-    monkeypatch.setattr(utils.shutil, "copytree", mock_copytree)
+    monkeypatch.setattr(utils.os.path, "exists", lambda _: True)
+    monkeypatch.setattr(utils.shutil, "move", mock_move)
+    monkeypatch.setattr(utils.os, "makedirs", mock_makedirs)
 
     utils.inject_distribution_folder("/source_dir", "debian", "Firefox")
 

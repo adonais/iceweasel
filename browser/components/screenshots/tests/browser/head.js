@@ -147,6 +147,7 @@ class ScreenshotsHelper {
 
   /**
    * Get the button from screenshots preview dialog
+   *
    * @param {Sting} name The id of the button to query
    * @returns The button or null
    */
@@ -335,10 +336,11 @@ class ScreenshotsHelper {
    *
    * Note: The distance of the rect should be greater than 40 to enter in the "dragging" state.
    * See https://searchfox.org/mozilla-central/rev/af78418c4b5f2c8721d1a06486cf4cf0b33e1e8d/browser/components/screenshots/ScreenshotsOverlayChild.sys.mjs#809
-   * @param {Number} startX The starting X coordinate. The left edge of the overlay rect.
-   * @param {Number} startY The starting Y coordinate. The top edge of the overlay rect.
-   * @param {Number} endX The end X coordinate. The right edge of the overlay rect.
-   * @param {Number} endY The end Y coordinate. The bottom edge of the overlay rect.
+   *
+   * @param {number} startX The starting X coordinate. The left edge of the overlay rect.
+   * @param {number} startY The starting Y coordinate. The top edge of the overlay rect.
+   * @param {number} endX The end X coordinate. The right edge of the overlay rect.
+   * @param {number} endY The end Y coordinate. The bottom edge of the overlay rect.
    */
   async dragOverlay(
     startX,
@@ -676,6 +678,7 @@ class ScreenshotsHelper {
 
   /**
    * Gets the dialog box
+   *
    * @returns The dialog box
    */
   getDialog() {
@@ -737,7 +740,8 @@ class ScreenshotsHelper {
 
   /**
    * Gets the client and scroll demensions on the window
-   * @returns { Object }
+   *
+   * @returns {object}
    *   clientHeight The visible height
    *   clientWidth The visible width
    *   scrollHeight The scrollable height
@@ -898,6 +902,7 @@ class ScreenshotsHelper {
    * Copied from screenshots extension
    * A helper that returns the size of the image that was just put into the clipboard by the
    * :screenshot command.
+   *
    * @return The {width, height, color} dimension and color object.
    */
   async getImageSizeAndColorFromClipboard(options = {}) {
@@ -1000,6 +1005,7 @@ class ScreenshotsHelper {
 
 /**
  * Get the raw clipboard data
+ *
  * @param flavor Type of data to get from clipboard
  * @returns The data from the clipboard
  */
@@ -1031,7 +1037,7 @@ function getRawClipboardData(flavor) {
  * Synthesize a mouse event on an element
  * in the viewport.
  *
- * @param {String} selector: The node selector to get the node target for the event.
+ * @param {string} selector: The node selector to get the node target for the event.
  * @param {number} x
  * @param {number} y
  * @param {object} options: Options that will be passed to BrowserTestUtils.synthesizeMouse
@@ -1073,7 +1079,7 @@ async function safeSynthesizeKeyEventInContentPage(aKey, options, browser) {
  * Synthesize a touch event on an element
  * in the viewport.
  *
- * @param {String} selector: The node selector to get the node target for the event.
+ * @param {string} selector: The node selector to get the node target for the event.
  * @param {number} x
  * @param {number} y
  * @param {object} options: Options that will be passed to BrowserTestUtils.synthesizeTouch

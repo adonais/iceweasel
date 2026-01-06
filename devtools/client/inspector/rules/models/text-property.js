@@ -34,18 +34,18 @@ loader.lazyRequireGetter(
  */
 class TextProperty {
   /**
-   * @param {Object} options
+   * @param {object} options
    * @param {Rule} options.rule
    *        The rule this TextProperty came from.
-   * @param {String} options.name
+   * @param {string} options.name
    *        The text property name (such as "background" or "border-top").
-   * @param {String} options.value
+   * @param {string} options.value
    *        The property's value (not including priority).
-   * @param {String} options.priority
+   * @param {string} options.priority
    *        The property's priority (either "important" or an empty string).
-   * @param {Boolean} options.enabled
+   * @param {boolean} options.enabled
    *        Whether the property is enabled.
-   * @param {Boolean} options.invisible
+   * @param {boolean} options.invisible
    *        Whether the property is invisible. In an inherited rule, only show
    *        the inherited declarations. The other declarations are considered
    *        invisible and does not show up in the UI. These are needed so that
@@ -95,7 +95,7 @@ class TextProperty {
   /**
    * Returns whether or not the declaration's name is known.
    *
-   * @return {Boolean} true if the declaration name is known, false otherwise.
+   * @return {boolean} true if the declaration name is known, false otherwise.
    */
   get isKnownProperty() {
     return this.cssProperties.isKnown(this.name);
@@ -104,7 +104,7 @@ class TextProperty {
   /**
    * Returns whether or not the declaration is changed by the user.
    *
-   * @return {Boolean} true if the declaration is changed by the user, false
+   * @return {boolean} true if the declaration is changed by the user, false
    * otherwise.
    */
   get isPropertyChanged() {
@@ -222,7 +222,7 @@ class TextProperty {
    * Called when the property's value has been updated externally, and
    * the property and editor should update to reflect that value.
    *
-   * @param {String} value
+   * @param {string} value
    *        Property value
    */
   updateValue(value) {
@@ -275,7 +275,7 @@ class TextProperty {
   /**
    * Returns the associated StyleRule declaration if it exists
    *
-   * @returns {Object|undefined}
+   * @returns {object | undefined}
    */
   #getDomRuleDeclaration() {
     const selfIndex = this.rule.textProps.indexOf(this);
@@ -286,7 +286,7 @@ class TextProperty {
    * Validate this property. Does it make sense for this value to be assigned
    * to this property name?
    *
-   * @return {Boolean} true if the whole CSS declaration is valid, false otherwise.
+   * @return {boolean} true if the whole CSS declaration is valid, false otherwise.
    */
   isValid() {
     const declaration = this.#getDomRuleDeclaration();
@@ -306,7 +306,7 @@ class TextProperty {
    * Returns an object with properties explaining why the property is inactive, if it is.
    * If it's not inactive, this returns undefined.
    *
-   * @returns {Object|undefined}
+   * @returns {object | undefined}
    */
   getInactiveCssData() {
     const declaration = this.#getDomRuleDeclaration();
@@ -402,7 +402,7 @@ class TextProperty {
   /**
    * Validate the name of this property.
    *
-   * @return {Boolean} true if the property name is valid, false otherwise.
+   * @return {boolean} true if the property name is valid, false otherwise.
    */
   isNameValid() {
     const declaration = this.#getDomRuleDeclaration();
@@ -423,7 +423,7 @@ class TextProperty {
    * For now, it's only computed on the server for declarations of
    * registered properties.
    *
-   * @return {Boolean}
+   * @return {boolean}
    */
   isInvalidAtComputedValueTime() {
     const declaration = this.#getDomRuleDeclaration();
@@ -441,7 +441,7 @@ class TextProperty {
   /**
    * Get the associated CSS variable computed value.
    *
-   * @return {String}
+   * @return {string}
    */
   getVariableComputedValue() {
     const declaration = this.#getDomRuleDeclaration();
@@ -459,7 +459,7 @@ class TextProperty {
    * Returns the expected syntax for this property.
    * For now, it's only sent from the server for invalid at computed-value time declarations.
    *
-   * @return {String|null} The expected syntax, or null.
+   * @return {string | null} The expected syntax, or null.
    */
   getExpectedSyntax() {
     const declaration = this.#getDomRuleDeclaration();

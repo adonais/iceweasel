@@ -38,7 +38,7 @@ tasks:
             group-by: platform
             unique-kinds: false
         shipping-phase: promote
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             docker-image:
                 in-tree: debian12-rpm-repackage

@@ -1436,6 +1436,20 @@ fn is_mali_valhall(renderer_name: &str) -> bool {
     // Bifrost models (of which we don't expect any new ones to be released)
     renderer_name.starts_with("Mali-G") && !is_mali_bifrost(renderer_name)
 }
+#[inline(never)]
+fn gl_error_string(code: u32) -> &'static str {
+    match code {
+        gl::INVALID_ENUM => "GL_INVALID_ENUM",
+        gl::INVALID_VALUE => "GL_INVALID_VALUE",
+        gl::INVALID_OPERATION => "GL_INVALID_OPERATION",
+        gl::STACK_OVERFLOW => "GL_STACK_OVERFLOW",
+        gl::STACK_UNDERFLOW => "GL_STACK_UNDERFLOW",
+        gl::OUT_OF_MEMORY => "GL_OUT_OF_MEMORY",
+        gl::INVALID_FRAMEBUFFER_OPERATION => "GL_INVALID_FRAMEBUFFER_OPERATION",
+        0x507 => "GL_CONTEXT_LOST",
+        _ => "(unknown error code)",
+    }
+}
 
 impl Device {
     pub fn new(
@@ -1491,8 +1505,9 @@ impl Device {
                 if supports_khr_debug {
                     Self::log_driver_messages(gl);
                 }
-                error!("Caught GL error {:x} at {}", code, name);
-                panic!("Caught GL error {:x} at {}", code, name);
+                let err_name = gl_error_string(code);
+                error!("Caught GL error 0x{:x} {} at {}", code, err_name, name);
+                panic!("Caught GL error 0x{:x} {} at {}", code, err_name, name);
             });
         }
 

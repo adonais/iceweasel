@@ -3,7 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import React, { useEffect, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, batch } from "react-redux";
 import { Lists } from "./Lists/Lists";
 import { FocusTimer } from "./FocusTimer/FocusTimer";
 import { MessageWrapper } from "content-src/components/MessageWrapper/MessageWrapper";
@@ -14,6 +14,8 @@ const PREF_WIDGETS_LISTS_ENABLED = "widgets.lists.enabled";
 const PREF_WIDGETS_SYSTEM_LISTS_ENABLED = "widgets.system.lists.enabled";
 const PREF_WIDGETS_TIMER_ENABLED = "widgets.focusTimer.enabled";
 const PREF_WIDGETS_SYSTEM_TIMER_ENABLED = "widgets.system.focusTimer.enabled";
+const PREF_WIDGETS_MAXIMIZED = "widgets.maximized";
+const PREF_WIDGETS_SYSTEM_MAXIMIZED = "widgets.system.maximized";
 
 // resets timer to default values (exported for testing)
 // In practice, this logic runs inside a useEffect when
@@ -52,6 +54,7 @@ function Widgets() {
   const { messageData } = useSelector(state => state.Messages);
   const timerType = useSelector(state => state.TimerWidget.timerType);
   const timerData = useSelector(state => state.TimerWidget);
+  const isMaximized = prefs[PREF_WIDGETS_MAXIMIZED];
   const dispatch = useDispatch();
 
   const nimbusListsEnabled = prefs.widgetsConfig?.listsEnabled;
@@ -90,6 +93,38 @@ function Widgets() {
     prevTimerEnabledRef.current = isTimerEnabled;
   }, [timerEnabled, timerData, dispatch, timerType]);
 
+  // Sends a dispatch to disable all widgets
+  function handleHideAllWidgetsClick(e) {
+    e.preventDefault();
+    batch(() => {
+      dispatch(ac.SetPref(PREF_WIDGETS_LISTS_ENABLED, false));
+      dispatch(ac.SetPref(PREF_WIDGETS_TIMER_ENABLED, false));
+    });
+  }
+
+  function handleHideAllWidgetsKeyDown(e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      batch(() => {
+        dispatch(ac.SetPref(PREF_WIDGETS_LISTS_ENABLED, false));
+        dispatch(ac.SetPref(PREF_WIDGETS_TIMER_ENABLED, false));
+      });
+    }
+  }
+
+  // Toggles the maximized state of widgets
+  function handleToggleMaximizeClick(e) {
+    e.preventDefault();
+    dispatch(ac.SetPref(PREF_WIDGETS_MAXIMIZED, !isMaximized));
+  }
+
+  function handleToggleMaximizeKeyDown(e) {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      dispatch(ac.SetPref(PREF_WIDGETS_MAXIMIZED, !isMaximized));
+    }
+  }
+
   function handleUserInteraction(widgetName) {
     const prefName = `widgets.${widgetName}.interaction`;
     const hasInteracted = prefs[prefName];
@@ -105,19 +140,53 @@ function Widgets() {
 
   return (
     <div className="widgets-wrapper">
-      <div className="widgets-container">
-        {listsEnabled && (
-          <Lists
-            dispatch={dispatch}
-            handleUserInteraction={handleUserInteraction}
+      <div className="widgets-section-container">
+        <div className="widgets-title-container">
+          <h1 data-l10n-id="newtab-widget-section-title"></h1>
+          {prefs[PREF_WIDGETS_SYSTEM_MAXIMIZED] && (
+            <moz-button
+              id="toggle-widgets-size-button"
+              type="icon ghost"
+              size="small"
+              // Toggle the icon and hover text
+              data-l10n-id={
+                isMaximized
+                  ? "newtab-widget-section-maximize"
+                  : "newtab-widget-section-minimize"
+              }
+              iconsrc={`chrome://browser/skin/${isMaximized ? "fullscreen" : "fullscreen-exit"}.svg`}
+              onClick={handleToggleMaximizeClick}
+              onKeyDown={handleToggleMaximizeKeyDown}
+            />
+          )}
+          <moz-button
+            id="hide-all-widgets-button"
+            type="icon ghost"
+            size="small"
+            data-l10n-id="newtab-widget-section-hide-all-button"
+            iconsrc="chrome://global/skin/icons/close.svg"
+            onClick={handleHideAllWidgetsClick}
+            onKeyDown={handleHideAllWidgetsKeyDown}
           />
-        )}
-        {timerEnabled && (
-          <FocusTimer
-            dispatch={dispatch}
-            handleUserInteraction={handleUserInteraction}
-          />
-        )}
+        </div>
+        <div
+          className={`widgets-container ${isMaximized ? "is-maximized" : ""}`}
+        >
+          {listsEnabled && (
+            <Lists
+              dispatch={dispatch}
+              handleUserInteraction={handleUserInteraction}
+              isMaximized={isMaximized}
+            />
+          )}
+          {timerEnabled && (
+            <FocusTimer
+              dispatch={dispatch}
+              handleUserInteraction={handleUserInteraction}
+              isMaximized={isMaximized}
+            />
+          )}
+        </div>
       </div>
       {messageData?.content?.messageType === "WidgetMessage" && (
         <MessageWrapper dispatch={dispatch}>

@@ -71,7 +71,7 @@ struct nsGlyphCode {
                                    (!IsGlyphID() && other.code[0] == code[0] &&
                                     other.code[1] == code[1])));
   }
-  bool operator!=(const nsGlyphCode& other) const { return !operator==(other); }
+  bool operator!=(const nsGlyphCode&) const = default;
 };
 
 // Class used to handle stretchy symbols (accent, delimiter and boundary

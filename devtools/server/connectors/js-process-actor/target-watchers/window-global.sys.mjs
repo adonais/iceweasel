@@ -214,12 +214,12 @@ function destroyTargetsForWatcher(watcherDataObject, options) {
  *  - by a bfcache navigation (pageshow)
  *
  * @param {Window} window
- * @param {Object} options
- * @param {Boolean} options.isBFCache
+ * @param {object} options
+ * @param {boolean} options.isBFCache
  *        True, if the request to instantiate a new target comes from a bfcache navigation.
  *        i.e. when we receive a pageshow event with persisted=true.
  *        This will be true regardless of bfcacheInParent being enabled or disabled.
- * @param {Boolean} options.ignoreIfExisting
+ * @param {boolean} options.ignoreIfExisting
  *        By default to false. If true is passed, we avoid instantiating a target actor
  *        if one already exists for this windowGlobal.
  */
@@ -398,9 +398,9 @@ function onWindowGlobalDestroyed(innerWindowId) {
  * Instantiate a WindowGlobal target actor for a given browsing context
  * and for a given watcher actor.
  *
- * @param {Object} watcherDataObject
+ * @param {object} watcherDataObject
  * @param {BrowsingContext} windowGlobalChild
- * @param {Boolean} isDocumentCreation
+ * @param {boolean} isDocumentCreation
  */
 function createWindowGlobalTargetActor(
   watcherDataObject,
@@ -472,7 +472,7 @@ function createWindowGlobalTargetActor(
  * @param {DOMWindow|Document} subject
  *        A window for *-document-global-created
  *        A document for *-page-{shown|hide}
- * @param {String} topic
+ * @param {string} topic
  */
 function observe(subject, topic) {
   if (
@@ -520,9 +520,9 @@ function observe(subject, topic) {
 /**
  * DOM Event handler.
  *
- * @param {String} type
+ * @param {string} type
  *        DOM event name
- * @param {Boolean} persisted
+ * @param {boolean} persisted
  *        A flag set to true in cache of BFCache navigation
  * @param {Document} target
  *        The navigating document
@@ -581,9 +581,9 @@ function handleEvent({ type, persisted, target }) {
  * Return an existing Window Global target for given a WatcherActor
  * and against a given WindowGlobal.
  *
- * @param {Object} options
- * @param {String} options.watcherDataObject
- * @param {Number} options.innerWindowId
+ * @param {object} options
+ * @param {string} options.watcherDataObject
+ * @param {number} options.innerWindowId
  *                 The WindowGlobal inner window ID.
  *
  * @returns {WindowGlobalTargetActor|null}

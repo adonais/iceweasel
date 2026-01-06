@@ -1,47 +1,40 @@
 From: Michael Froman <mfroman@mozilla.com>
 Date: Wed, 8 Oct 2025 17:49:00 +0000
-Subject: Bug 1980501 - use forward class decl rather than include
- audio_state.h r?ng!
+Subject: Bug 1980501 - enable c++20 builds in libwebrtc. r?ng!
 
-This avoids code outside of libwebrtc inadvertently including
-rtc_base/containers/flat_set.h which uses c++20 features.  Once
-the rest of the Mozilla tree is compiling with c++20, we can
-remove this modification (see Bug 1768116).
-
-Differential Revision: https://phabricator.services.mozilla.com/D267993
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/9c487a574d218cc1c261b646c501db4d159754f0
+Differential Revision: https://phabricator.services.mozilla.com/D267994
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/43de54a6e52daf0a06956ae01951ef1e29d46e82
 ---
- audio/audio_receive_stream.h | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ BUILD.gn | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
 
-diff --git a/audio/audio_receive_stream.h b/audio/audio_receive_stream.h
-index 0d78482e0e..d7ebd8c9d1 100644
---- a/audio/audio_receive_stream.h
-+++ b/audio/audio_receive_stream.h
-@@ -32,7 +32,11 @@
- #include "api/scoped_refptr.h"
- #include "api/sequence_checker.h"
- #include "api/transport/rtp/rtp_source.h"
-+// This can be removed after Bug 1768116 enables
-+// c++20 builds across the entire Mozilla tree.
-+#if !defined(WEBRTC_MOZILLA_BUILD)
- #include "audio/audio_state.h"
-+#endif
- #include "call/audio_receive_stream.h"
- #include "call/audio_state.h"
- #include "call/syncable.h"
-@@ -44,6 +48,14 @@ class PacketRouter;
- class RtpStreamReceiverControllerInterface;
- class RtpStreamReceiverInterface;
+diff --git a/BUILD.gn b/BUILD.gn
+index 8240fc84d6..a3b738a7e1 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -315,6 +315,16 @@ config("common_config") {
+   cflags_objc = []
+   defines = []
  
-+// This can be removed after Bug 1768116 enables
-+// c++20 builds across the entire Mozilla tree.
-+#if defined(WEBRTC_MOZILLA_BUILD)
-+namespace internal {
-+class AudioState;
-+}
-+#endif
++  # We should be able to remove this after c++20 is enabled
++  # across the Mozilla tree.
++  if (build_with_mozilla) {
++    if (is_win) {
++      cflags_cc += [ "-std:c++20" ]
++    } else {
++      cflags_cc += [ "-std=gnu++20" ]
++    }
++  }
 +
- namespace voe {
- class ChannelReceiveInterface;
- }  // namespace voe
+   if (rtc_enable_protobuf) {
+     defines += [ "WEBRTC_ENABLE_PROTOBUF=1" ]
+   } else {
+@@ -420,7 +430,7 @@ config("common_config") {
+         # "-Wnested-externs",  (C/Obj-C only)
+       ]
+       cflags_objc += [ "-Wstrict-prototypes" ]
+-      cflags_cc = [
++      cflags_cc += [
+         "-Wnon-virtual-dtor",
+ 
+         # This is enabled for clang; enable for gcc as well.

@@ -1945,7 +1945,7 @@ Result<Loader::LoadSheetResult, nsresult> Loader::LoadStyleLink(
   nsresult rv = CheckContentPolicy(
       loadingPrincipal, principal, aInfo.mURI, requestingNode, aInfo.mNonce,
       StylePreloadKind::None, aInfo.mCORSMode, aInfo.mIntegrity);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  if (NS_FAILED(rv)) {
     // Don't fire the error event if our document is loaded as data.  We're
     // supposed to not even try to do loads in that case... Unfortunately, we
     // implement that via nsDataDocumentContentPolicy, which doesn't have a good

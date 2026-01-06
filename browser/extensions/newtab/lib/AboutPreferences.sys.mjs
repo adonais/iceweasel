@@ -39,28 +39,6 @@ const PREFS_FOR_SETTINGS = () => [
     ),
   },
   {
-    id: "trending-searches",
-    pref: {
-      feed: "trendingSearch.enabled",
-      titleString: "home-prefs-trending-search-header",
-      descString: "home-prefs-trending-search-description",
-    },
-    eventSource: "TRENDING_SEARCH",
-    shouldHidePref:
-      // Hide if Trending Search experiment is not enabled for this user
-      !Services.prefs.getBoolPref(
-        "browser.newtabpage.activity-stream.system.trendingSearch.enabled",
-        false
-      ) ||
-      // Also hide if it's enabled but the user doesn't have Google as their default search engine
-      (Services.prefs.getBoolPref(
-        "browser.newtabpage.activity-stream.system.trendingSearch.enabled",
-        false
-      ) &&
-        Services.prefs.getStringPref("browser.urlbar.placeholderName", "") !==
-          "Google"),
-  },
-  {
     id: "topsites",
     pref: {
       feed: "feeds.topsites",
@@ -205,6 +183,13 @@ export class AboutPreferences {
      * We have to potentially re-assign the `id` if it is `web-search`.
      * We should restore `id` back to a const after Fx146+.
      */
+
+    /* Do not render old-style settings if new settings UI is enabled - this is needed to avoid
+     * registering prefs twice and ensuing errors */
+    if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
+      return;
+    }
+
     let { id } = sectionData;
     const {
       pref: prefData,

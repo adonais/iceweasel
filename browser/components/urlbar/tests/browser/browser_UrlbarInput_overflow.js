@@ -5,7 +5,7 @@
 async function testVal(aExpected, overflowSide = null) {
   info(`Testing ${aExpected} with overflow ${overflowSide}`);
   try {
-    gURLBar.setURI(makeURI(aExpected));
+    gURLBar.setURI({ uri: makeURI(aExpected) });
   } catch (ex) {
     if (ex.result != Cr.NS_ERROR_MALFORMED_URI) {
       throw ex;

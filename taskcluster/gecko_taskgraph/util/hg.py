@@ -93,19 +93,6 @@ def get_push_data(repository, project, push_id_start, push_id_end):
     return None
 
 
-@memoize
-def get_json_pushchangedfiles(repository, revision):
-    url = "{}/json-pushchangedfiles/{}".format(repository.rstrip("/"), revision)
-    logger.debug("Querying version control for metadata: %s", url)
-
-    def get_pushchangedfiles():
-        response = requests.get(url, timeout=60)
-        response.raise_for_status()
-        return response.json()
-
-    return retry(get_pushchangedfiles, attempts=10, sleeptime=10)
-
-
 def get_hg_revision_branch(root, revision):
     """Given the parameters for a revision, find the hg_branch (aka
     relbranch) of the revision."""

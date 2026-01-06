@@ -54,9 +54,9 @@ add_task(async function () {
  * Helper method for extracting the rgba overlay value of the color preview's background
  * image style.
  *
- * @param   {String} linearGradientStr
+ * @param   {string} linearGradientStr
  *          The linear gradient CSS string.
- * @return  {String} Returns the rgba string for the color overlay.
+ * @return  {string} Returns the rgba string for the color overlay.
  */
 function extractRgbaOverlayString(linearGradientStr) {
   const start = linearGradientStr.indexOf("(");

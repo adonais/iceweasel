@@ -7,12 +7,12 @@
  * Test that we don't show the backup section if backup is disabled
  */
 add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.backup.archive.enabled", false]],
-  });
-
   await openPreferencesViaOpenPreferencesAPI("paneSync", {
     leaveOpen: true,
+  });
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.backup.archive.enabled", false]],
   });
 
   ok(

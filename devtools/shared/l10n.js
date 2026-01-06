@@ -28,9 +28,9 @@ const getNumberFormatter = function (decimals) {
  * Memoized getter for properties files that ensures a given url is only required and
  * parsed once.
  *
- * @param {String} url
+ * @param {string} url
  *        The URL of the properties file to parse.
- * @return {Object} parsed properties mapped in an object.
+ * @return {object} parsed properties mapped in an object.
  */
 function getProperties(url) {
   if (!propertiesMap[url]) {

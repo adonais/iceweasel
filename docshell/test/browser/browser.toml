@@ -82,7 +82,10 @@ support-files = [
 
 ["browser_backforward_userinteraction.js"]
 support-files = ["dummy_iframe_page.html"]
-skip-if = ["os == 'linux' && bits == 64 && !debug"] # Bug 1607713
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && opt", # Bug 1607713
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1607713
+]
 
 ["browser_backforward_userinteraction_about.js"]
 
@@ -94,9 +97,8 @@ skip-if = ["os == 'linux' && bits == 64 && !debug"] # Bug 1607713
 
 ["browser_bfcache_copycommand.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1730593
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt", # Bug 1730593
-  "win11_2009", # Bug 1775931
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1730593
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1775931
 ]
 
 ["browser_browsingContext-01.js"]
@@ -112,7 +114,10 @@ https_first_disabled = true
 ["browser_browsingContext-getWindowByName.js"]
 
 ["browser_browsingContext-webProgress.js"]
-skip-if = ["os == 'linux' && bits == 64 && !debug"] # Bug 1721261
+skip-if = [
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland' && opt", # Bug 1721261
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1721261
+]
 https_first_disabled = true
 
 ["browser_browsingContext_iframeWebProgress.js"]
@@ -159,18 +164,22 @@ https_first_disabled = true
 
 ["browser_bug420605.js"]
 skip-if = [
-  "verify-standalone",
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1775923
+  "verify-standalone",
 ]
 
 ["browser_bug422543.js"]
 https_first_disabled = true
-skip-if = ["asan"] # Bug 1933429
+skip-if = [
+  "asan", # Bug 1933429
+]
 
 ["browser_bug441169.js"]
 
 ["browser_bug503832.js"]
-skip-if = ["os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && msix && verify-standalone"]
+skip-if = [
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug && msix && verify-standalone",
+]
 
 ["browser_bug554155.js"]
 
@@ -180,9 +189,11 @@ skip-if = ["os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug
 
 ["browser_bug670318.js"]
 skip-if = [
-  "os == 'linux' && (debug || asan || tsan)", # Bug 1717403
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && asan", # Bug 1717403
-]  
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && asan", # Bug 1717403
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1717403
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1717403
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && asan", # Bug 1717403
+]
 
 ["browser_bug673087-1.js"]
 
@@ -221,7 +232,6 @@ support-files = [
 ["browser_bug1673702.js"]
 https_first_disabled = true
 skip-if = [
-  "os == 'linux' && bits == 64 && os_version == '18.04' && debug", # Bug 1674513
   "os == 'win'", # Bug 1674513
 ]
 support-files = [
@@ -232,8 +242,8 @@ support-files = [
 ["browser_bug1674464.js"]
 https_first_disabled = true
 skip-if = [
-  "!fission",
   "!crashreporter", # On a crash we only keep history when fission is enabled.
+  "!fission",
 ]
 
 ["browser_bug1688368-1.js"]
@@ -244,7 +254,9 @@ https_first_disabled = true
 ["browser_bug1705872.js"]
 
 ["browser_bug1716290-1.js"]
-skip-if = ["verify-standalone"]
+skip-if = [
+  "verify-standalone",
+]
 
 ["browser_bug1716290-2.js"]
 
@@ -293,7 +305,11 @@ https_first_disabled = true
 
 ["browser_fall_back_to_https.js"]
 https_first_disabled = true
-skip-if = ["os == 'mac'"]
+skip-if = [
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'",
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'",
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'",
+]
 
 ["browser_frameloader_swap_with_bfcache.js"]
 
@@ -317,7 +333,9 @@ https_first_disabled = true
 support-files = ["head_browser_onbeforeunload.js"]
 
 ["browser_onbeforeunload_navigation.js"]
-skip-if = ["os == 'win' && !debug"] # bug 1300351
+skip-if = [
+  "os == 'win' && opt", # bug 1300351
+]
 
 ["browser_onbeforeunload_nested_with_delay.js"]
 support-files = [
@@ -346,8 +364,7 @@ support-files = ["file_replace_state_during_navigation.html"]
 
 ["browser_tab_replace_while_loading.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1604237
-  "os == 'linux'&& os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1604237
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1604237
   "os == 'win'", # Bug 1671794
 ]
 
@@ -356,7 +373,9 @@ skip-if = [
 ["browser_targetTopLevelLinkClicksToBlank.js"]
 
 ["browser_title_in_session_history.js"]
-skip-if = ["!sessionHistoryInParent"]
+run-if = [
+  "sessionHistoryInParent",
+]
 
 ["browser_ua_emulation.js"]
 

@@ -20,7 +20,8 @@ registerCleanupFunction(function () {
 
 /**
  * Run document.requestStorageAccess in an iframe.
- * @param {Object} options - Request / iframe options.
+ *
+ * @param {object} options - Request / iframe options.
  * @param {boolean} [options.withUserActivation] - Whether the requesting iframe
  * should have user activation prior to calling rsA.
  * @param {string} [options.sandboxAttr] - Iframe sandbox attributes.

@@ -1,0 +1,29 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<svg xmlns="http://www.w3.org/2000/svg" data-name="Layer 1" viewBox="0 0 600 128">
+    <defs>
+        <radialGradient id="c" cx="150.25" cy="182.29" r="1" fx="150.25" fy="182.29"
+            gradientTransform="matrix(0 212 212 0 -38346 -31789)" gradientUnits="userSpaceOnUse">
+            <stop offset=".46" stop-color="#fff" stop-opacity="0" />
+            <stop offset=".85" stop-color="#fff" stop-opacity=".02" />
+            <stop offset="1" stop-color="#fff" stop-opacity=".15" />
+        </radialGradient>
+        <radialGradient id="d" cx="150.43" cy="181.78" r="1" fx="150.43" fy="181.78"
+            gradientTransform="matrix(0 123 123 0 -22059 -18439)" gradientUnits="userSpaceOnUse">
+            <stop offset=".46" stop-color="#fff" stop-opacity="0" />
+            <stop offset=".85" stop-color="#fff" stop-opacity=".02" />
+            <stop offset="1" stop-color="#fff" stop-opacity=".15" />
+        </radialGradient>
+        <clipPath id="a">
+            <path d="M0 0h600v128H0z" style="fill:none" />
+        </clipPath>
+    </defs>
+    <g style="clip-path:url(#a)">
+        <circle cx="300" cy="64" r="212" style="fill:url(#c)" />
+        <circle cx="300" cy="64" r="123" style="fill:url(#d)" />
+        <path
+            d="M300 100c-1.68 0-3.37-.42-4.89-1.21-7.76-4.09-14.88-10.71-20.04-18.62-2.56-3.92-4.35-8.64-5.34-14.05l-2.55-14.03a11.3 11.3 0 0 1 .9-6.85c1.01-2.13 2.66-3.88 4.71-5l22.02-11.91c1.59-.87 3.37-1.32 5.17-1.32 1.81 0 3.58.45 5.18 1.31l22.02 12.13c2.06 1.12 3.72 2.87 4.73 5.01s1.32 4.54.89 6.87l-2.54 13.84c-.98 5.38-2.78 10.08-5.32 13.99-5.16 7.92-12.28 14.53-20.05 18.64-1.51.8-3.19 1.22-4.89 1.22Zm-1.75-67.32-24.07 13.05-1.83 4.52 2.72 14.88c.85 4.68 2.38 8.73 4.53 12.03 4.66 7.15 11.06 13.11 18.02 16.78h4.78c6.97-3.68 13.37-9.65 18.03-16.8 2.15-3.29 3.67-7.32 4.52-11.97l2.72-14.92-2.2-4.52-23.67-13.04h-3.53Z"
+            style="fill:#fbfbfe" />
+    </g>
+</svg>

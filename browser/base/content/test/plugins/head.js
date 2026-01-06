@@ -177,6 +177,7 @@ function promiseForNotificationBar(notificationID, browser) {
 
 /**
  * Reshow a notification and call a callback when it is reshown.
+ *
  * @param notification
  *        The notification to reshow
  * @param callback

@@ -1,4 +1,4 @@
-// |reftest| shell-option(--enable-upsert) skip-if(!Map.prototype.getOrInsertComputed||!xulRuntime.shell) -- upsert is not enabled unconditionally, requires shell-options
+// |reftest| skip-if(!Map.prototype.getOrInsertComputed) -- upsert is not enabled unconditionally
 // Copyright (C) 2025 André Bargull. All rights reserved.
 // This code is governed by the BSD license found in the LICENSE file.
 

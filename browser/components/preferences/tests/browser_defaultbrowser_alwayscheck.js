@@ -2,6 +2,7 @@
 
 /**
  * Sets up initial prefs and opens about:preferences page.
+ *
  * @returns {Promise<void>}
  */
 async function setup() {

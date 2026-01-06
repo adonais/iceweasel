@@ -1015,7 +1015,8 @@ export const FormAutofillHeuristics = {
     // needs to find the field name.
     if (
       autocompleteInfo?.fieldName &&
-      !["on", "off"].includes(autocompleteInfo.fieldName)
+      !["on", "off"].includes(autocompleteInfo.fieldName) &&
+      !lazy.FormAutofillUtils.isUnsupportedField(autocompleteInfo.fieldName)
     ) {
       inferredInfo.autocompleteInfo = autocompleteInfo;
       return [autocompleteInfo.fieldName, inferredInfo];
@@ -1267,6 +1268,12 @@ export const FormAutofillHeuristics = {
         const labels = lazy.LabelUtils.findLabelElements(element);
         for (let label of labels) {
           yield* lazy.LabelUtils.extractLabelStrings(label);
+        }
+
+        // If no labels were found, look for nearby text that could
+        // be used as a label.
+        if (!labels.length) {
+          yield lazy.LabelUtils.findNearbyText(element);
         }
 
         const ariaLabels = element.getAttribute("aria-label");

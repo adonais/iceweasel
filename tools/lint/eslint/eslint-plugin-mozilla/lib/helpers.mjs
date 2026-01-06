@@ -27,8 +27,12 @@ export default {
    *
    * TypeScript (ts) is not listed here, as we currently only format that with
    * Prettier.
+   *
+   * JSON is not listed here, as we don't want to apply most rules to the JSON
+   * files, but only the json ones. These are managed in the main configuration
+   * for firefox-main.
    */
-  allFileExtensions: ["mjs", "js", "json", "jsx", "html", "sjs", "xhtml"],
+  allFileExtensions: ["mjs", "js", "jsx", "html", "sjs", "xhtml"],
 
   /**
    * Can be used to change a group of rules or globals, so that all the items
@@ -151,7 +155,7 @@ export default {
     switch (node.type) {
       case "MemberExpression":
         if (node.computed) {
-          let filename = context && context.getFilename();
+          let filename = context?.filename;
           throw new Error(
             `getASTSource unsupported computed MemberExpression in ${filename}`
           );
@@ -453,7 +457,7 @@ export default {
    *         True or false
    */
   getIsHeadFile(scope) {
-    var pathAndFilename = this.cleanUpPath(scope.getFilename());
+    var pathAndFilename = this.cleanUpPath(scope.filename);
 
     return /.*[\\/]head(_.+)?\.js$/.test(pathAndFilename);
   },
@@ -473,7 +477,7 @@ export default {
       return [];
     }
 
-    let filepath = this.cleanUpPath(scope.getFilename());
+    let filepath = this.cleanUpPath(scope.filename);
     let dir = path.dirname(filepath);
 
     let names = fs
@@ -560,7 +564,7 @@ export default {
    *         The path to the test manifest file
    */
   getTestManifest(scope) {
-    let filepath = this.cleanUpPath(scope.getFilename());
+    let filepath = this.cleanUpPath(scope.filename);
 
     let dir = path.dirname(filepath);
     let filename = path.basename(filepath);
@@ -598,7 +602,7 @@ export default {
    * Check if this is an .sjs file.
    */
   getIsSjs(scope) {
-    let filepath = this.cleanUpPath(scope.getFilename());
+    let filepath = this.cleanUpPath(scope.filename);
 
     return path.extname(filepath) == ".sjs";
   },
@@ -623,7 +627,7 @@ export default {
       }
     }
 
-    let filepath = this.cleanUpPath(scope.getFilename());
+    let filepath = this.cleanUpPath(scope.filename);
     let filename = path.basename(filepath);
 
     if (filename.startsWith("browser_")) {
@@ -706,7 +710,7 @@ export default {
    * ESLint may be executed from various places: from mach, at the root of the
    * repository, or from a directory in the repository when, for instance,
    * executed by a text editor's plugin.
-   * The value returned by context.getFileName() varies because of this.
+   * The value returned by context.filename varies because of this.
    * This helper function makes sure to return an absolute file path for the
    * current context, by looking at process.cwd().
    *
@@ -714,7 +718,7 @@ export default {
    * @returns {string} The absolute path
    */
   getAbsoluteFilePath(context) {
-    var fileName = this.cleanUpPath(context.getFilename());
+    var fileName = this.cleanUpPath(context.filename);
     var cwd = process.cwd();
 
     if (path.isAbsolute(fileName)) {
@@ -736,7 +740,7 @@ export default {
 
   /**
    * When ESLint is run from SublimeText, paths retrieved from
-   * context.getFileName contain leading and trailing double-quote characters.
+   * context.fileName contain leading and trailing double-quote characters.
    * These characters need to be removed.
    *
    * @param {string} pathName

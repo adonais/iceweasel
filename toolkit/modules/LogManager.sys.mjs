@@ -140,7 +140,7 @@ class StorageStreamAppender extends Log.Appender {
  * (although it does maintain a .sawError property to help the consumer decide
  *  based on its policies)
  *
- * @param {Object} fomatter A log message formatter
+ * @param {object} fomatter A log message formatter
  * @param {boolean} overwriteFileOnFlush False to use append mode when opening the file for writing
  */
 class FlushableStorageAppender extends StorageStreamAppender {
@@ -214,7 +214,7 @@ class FlushableStorageAppender extends StorageStreamAppender {
    *
    * @param {string} subDirArray an array of path components, relative to the profile
    *                             directory, where the file will be created.
-   * @param {String} outputFileName the filename to write to.
+   * @param {string} outputFileName the filename to write to.
    * @returns {Promise} A promise that is resolved on completion or rejected with an error.
    */
   async _copyStreamToFile(inputStream, subdirArray, outputFileName, log) {

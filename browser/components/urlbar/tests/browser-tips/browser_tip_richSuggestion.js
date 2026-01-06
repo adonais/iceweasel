@@ -134,6 +134,7 @@ add_task(async function learn_more() {
             titleL10n: { id: "urlbar-search-tips-confirm" },
             descriptionL10n: {
               id: "firefox-suggest-onboarding-main-accept-option-label",
+              parseMarkup: true,
             },
             descriptionLearnMoreTopic: topic,
           },
@@ -153,7 +154,10 @@ add_task(async function learn_more() {
     let learnMoreLink = row.querySelector(
       ".urlbarView-row-body-description > a"
     );
-    Assert.equal(!!learnMoreLink, !!topic);
+    Assert.ok(
+      learnMoreLink,
+      "The descriptionL10n contains a learn-more link, so the element should have a learn-more link"
+    );
 
     if (topic) {
       info("Activate learn more link and check");

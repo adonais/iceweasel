@@ -33,16 +33,20 @@ enum nsCSSUnit : uint32_t {
                            // different behavior than percent)
 
   // Font relative measure
-  eCSSUnit_EM = 800,              // == current font size
-  eCSSUnit_XHeight = 801,         // distance from top of lower case x to
-                                  // baseline
-  eCSSUnit_Char = 802,            // number of characters, used for width with
-                                  // monospace font
-  eCSSUnit_RootEM = 803,          // == root element font size
-  eCSSUnit_Ideographic = 804,     // == CJK water ideograph width
-  eCSSUnit_CapHeight = 805,       // == Capital letter height
-  eCSSUnit_LineHeight = 806,      // == Line height
-  eCSSUnit_RootLineHeight = 807,  // == Root line height
+  eCSSUnit_EM = 800,               // == current font size (em)
+  eCSSUnit_XHeight = 801,          // distance from top of lower case x to
+                                   // baseline (ex)
+  eCSSUnit_Char = 802,             // number of characters, used for width with
+                                   // monospace font (ch)
+  eCSSUnit_RootEM = 803,           // == root element font size (rem)
+  eCSSUnit_Ideographic = 804,      // == CJK water ideograph width (ic)
+  eCSSUnit_CapHeight = 805,        // == Capital letter height (cap)
+  eCSSUnit_LineHeight = 806,       // == Line height (lh)
+  eCSSUnit_RootLineHeight = 807,   // == Root line height (rlh)
+  eCSSUnit_RootXHeight = 808,      // == Root x-height (rex)
+  eCSSUnit_RootChar = 809,         // == Root advance measure (rch)
+  eCSSUnit_RootIdeographic = 810,  // == Root ideographic advance measure (ric)
+  eCSSUnit_RootCapHeight = 811,    // == Root capital letter height (rch)
 
   // Screen relative measure
   eCSSUnit_Point = 900,       // 4/3 of a CSS pixel
@@ -82,9 +86,9 @@ class nsCSSValue {
 
   nsCSSValue& operator=(const nsCSSValue& aCopy);
   nsCSSValue& operator=(nsCSSValue&& aCopy);
-  bool operator==(const nsCSSValue& aOther) const;
 
-  bool operator!=(const nsCSSValue& aOther) const { return !(*this == aOther); }
+  bool operator==(const nsCSSValue& aOther) const;
+  bool operator!=(const nsCSSValue&) const = default;
 
   nsCSSUnit GetUnit() const { return mUnit; }
   bool IsLengthUnit() const {

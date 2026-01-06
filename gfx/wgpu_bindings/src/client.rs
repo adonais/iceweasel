@@ -1200,7 +1200,7 @@ pub extern "C" fn wgpu_device_create_render_bundle_encoder(
         sample_count: desc.sample_count,
         multiview: None,
     };
-    match wgc::command::RenderBundleEncoder::new(&descriptor, device_id, None) {
+    match wgc::command::RenderBundleEncoder::new(&descriptor, device_id) {
         Ok(encoder) => Box::into_raw(Box::new(encoder)),
         Err(e) => {
             let message = format!("Error in `Device::create_render_bundle_encoder`: {}", e);
@@ -1668,7 +1668,7 @@ pub unsafe extern "C" fn wgpu_client_create_render_pipeline(
         primitive: desc.primitive.to_wgpu(),
         depth_stencil: desc.depth_stencil.cloned(),
         multisample: desc.multisample.clone(),
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     };
 
@@ -1833,7 +1833,7 @@ pub unsafe extern "C" fn wgpu_command_encoder_resolve_query_set(
     destination_offset: wgt::BufferAddress,
 ) {
     let action = CommandEncoderAction::ResolveQuerySet {
-        query_set_id,
+        query_set: query_set_id,
         start_query,
         query_count,
         destination,

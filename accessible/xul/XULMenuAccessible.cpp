@@ -130,8 +130,8 @@ ENameValueFlag XULMenuitemAccessible::NativeName(nsString& aName) const {
   return eNameOK;
 }
 
-ENameValueFlag XULMenuitemAccessible::Name(nsString& aName) const {
-  ENameValueFlag flag = AccessibleWrap::Name(aName);
+ENameValueFlag XULMenuitemAccessible::DirectName(nsString& aName) const {
+  ENameValueFlag flag = AccessibleWrap::DirectName(aName);
   if (!aName.IsEmpty()) {
     // We can't handle this in NativeName() because some menuitems use
     // aria-label rather than label, and aria-label is returned by

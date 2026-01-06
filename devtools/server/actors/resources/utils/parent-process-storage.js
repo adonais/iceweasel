@@ -201,7 +201,7 @@ class ParentProcessStorage {
    * - <bf-cache-navigation-pageshow> (to cover history navications)
    *
    * @param {WindowGlobal} windowGlobal
-   * @param {Boolean} isBfCacheNavigation
+   * @param {boolean} isBfCacheNavigation
    */
   async _onNewWindowGlobal(windowGlobal, isBfCacheNavigation) {
     // We instantiate only one instance of parent process storage actors per toolbox
@@ -405,7 +405,7 @@ class StorageActorMock extends EventEmitter {
   /**
    * Get the browsing contexts matching the given host.
    *
-   * @param {String} host: The host for which we want the browsing contexts
+   * @param {string} host: The host for which we want the browsing contexts
    * @returns Array<BrowsingContext>
    */
   getBrowsingContextsFromHost(host) {

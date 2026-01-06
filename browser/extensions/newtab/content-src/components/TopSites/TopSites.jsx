@@ -32,6 +32,7 @@ function topSiteIconType(link) {
 
 /**
  * Iterates through TopSites and counts types of images.
+ *
  * @param acc Accumulator for reducer.
  * @param topsite Entry in TopSites.
  */

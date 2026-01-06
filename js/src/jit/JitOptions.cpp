@@ -132,6 +132,9 @@ DefaultJitOptions::DefaultJitOptions() {
   // Whether the Baseline Interpreter is enabled.
   SET_DEFAULT(baselineInterpreter, true);
 
+  // Whether replacing Object.keys with NativeIterators is globally disabled.
+  SET_DEFAULT(disableObjectKeysScalarReplacement, false);
+
 #ifdef ENABLE_PORTABLE_BASELINE_INTERP
   // Whether the Portable Baseline Interpreter is enabled.
   SET_DEFAULT(portableBaselineInterpreter, false);
@@ -268,7 +271,7 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(osrPcMismatchesBeforeRecompile, 6000);
 
   // The bytecode length limit for small function.
-  SET_DEFAULT(smallFunctionMaxBytecodeLength, 130);
+  SET_DEFAULT(smallFunctionMaxBytecodeLength, 140);
 
   // The minimum entry count for an IC stub before it can be trial-inlined.
   SET_DEFAULT(inliningEntryThreshold, 100);

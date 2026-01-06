@@ -25,7 +25,7 @@ let censusTreeNodeIdCounter = 0;
  * Return true if the given object is a SavedFrame stack object, false otherwise.
  *
  * @param {any} obj
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function isSavedFrame(obj) {
   return Object.prototype.toString.call(obj) === "[object SavedFrame]";
@@ -70,7 +70,7 @@ CensusTreeNodeCacheValue.prototype = null;
  *        The SavedFrame object we would like to lookup in or insert into a
  *        CensusTreeNodeCache.
  *
- * @returns {String}
+ * @returns {string}
  *          The unique string that can be used as a key in a CensusTreeNodeCache.
  */
 CensusTreeNodeCache.hashFrame = function (frame) {
@@ -86,7 +86,7 @@ CensusTreeNodeCache.hashFrame = function (frame) {
  * @param {CensusTreeNode} node
  *        The node we would like to lookup in or insert into a cache.
  *
- * @returns {String}
+ * @returns {string}
  *          The unique string that can be used as a key in a CensusTreeNodeCache.
  */
 CensusTreeNodeCache.hashNode = function (node) {
@@ -182,20 +182,20 @@ function getArrayOfFrames(stack) {
  * Given an `edge` to a sub-`report` whose structure is described by
  * `breakdown`, create a CensusTreeNode tree.
  *
- * @param {Object} breakdown
+ * @param {object} breakdown
  *        The breakdown specifying the structure of the given report.
  *
- * @param {Object} report
+ * @param {object} report
  *        The census report.
  *
- * @param {null|String|SavedFrame} edge
+ * @param {null | string | SavedFrame} edge
  *        The edge leading to this report from the parent report.
  *
  * @param {CensusTreeNodeCache} cache
  *        The cache of CensusTreeNodes we have already made for the siblings of
  *        the node being created. The existing nodes are reused when possible.
  *
- * @param {Object} outParams
+ * @param {object} outParams
  *        The return values are attached to this object after this function
  *        returns. Because we create a CensusTreeNode for each frame in a
  *        SavedFrame stack edge, there may multiple nodes per sub-report.
@@ -405,7 +405,7 @@ CensusTreeNodeVisitor.prototype.root = function () {
 /**
  * Create a single, uninitialized CensusTreeNode.
  *
- * @param {null|String|SavedFrame} name
+ * @param {null | string | SavedFrame} name
  */
 function CensusTreeNode(name) {
   // Display name for this CensusTreeNode. Either null, a string, or a
@@ -468,7 +468,7 @@ CensusTreeNode.prototype = null;
  * @param {CensusTreeNode} node1
  * @param {CensusTreeNode} node2
  *
- * @returns {Number}
+ * @returns {number}
  *          A number suitable for using with Array.prototype.sort.
  */
 function compareByTotal(node1, node2) {
@@ -487,7 +487,7 @@ function compareByTotal(node1, node2) {
  * @param {CensusTreeNode} node1
  * @param {CensusTreeNode} node2
  *
- * @returns {Number}
+ * @returns {number}
  *          A number suitable for using with Array.prototype.sort.
  */
 function compareBySelf(node1, node2) {
@@ -665,7 +665,7 @@ function filter(tree, predicate) {
  * Given a filter string, return a predicate function that takes a node and
  * returns true iff the node matches the filter.
  *
- * @param {String} filterString
+ * @param {string} filterString
  * @returns {Function}
  */
 function makeFilterPredicate(filterString) {
@@ -703,13 +703,13 @@ function makeFilterPredicate(filterString) {
  *   parent: <?Number>
  * }
  *
- * @param {Object} breakdown
+ * @param {object} breakdown
  *        The breakdown used to generate the census report.
  *
- * @param {Object} report
+ * @param {object} report
  *        The census report generated with the specified breakdown.
  *
- * @param {Object} options
+ * @param {object} options
  *        Configuration options.
  *          - invert: Whether to invert the resulting tree or not. Defaults to
  *                    false, ie uninverted.

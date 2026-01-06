@@ -13,7 +13,6 @@
 #include <cstring>
 #include <ctime>
 #include <new>
-#include <type_traits>
 #include <utility>
 #include <mutex>
 
@@ -24,13 +23,11 @@
 #include "mozilla/ArrayIterator.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/Casting.h"
 #include "mozilla/Components.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ContentBlockingNotifier.h"
 #include "mozilla/glean/ResistfingerprintingMetrics.h"
 #include "mozilla/HashFunctions.h"
-#include "mozilla/HelperMacros.h"
 #include "mozilla/Likely.h"
 #include "mozilla/Logging.h"
 #include "mozilla/LookAndFeel.h"

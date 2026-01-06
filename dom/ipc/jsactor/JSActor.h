@@ -9,6 +9,7 @@
 
 #include "ipc/EnumSerializer.h"
 #include "js/TypeDecls.h"
+#include "mozilla/dom/JSIPCValue.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsTHashMap.h"
@@ -65,21 +66,20 @@ class JSActor : public nsISupports, public nsWrapperCache {
   // message metadata |aMetadata|. The underlying transport should call the
   // |ReceiveMessage| method on the other side asynchronously.
   virtual void SendRawMessage(const JSActorMessageMeta& aMetadata,
-                              UniquePtr<ipc::StructuredCloneData> aData,
+                              JSIPCValue&& aData,
                               UniquePtr<ipc::StructuredCloneData> aStack,
                               ErrorResult& aRv) = 0;
 
   // Helper method to send an in-process raw message.
   using OtherSideCallback = std::function<already_AddRefed<JSActorManager>()>;
   static void SendRawMessageInProcess(
-      const JSActorMessageMeta& aMeta,
-      UniquePtr<ipc::StructuredCloneData> aData,
+      const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
       UniquePtr<ipc::StructuredCloneData> aStack,
       OtherSideCallback&& aGetOtherSide);
 
   virtual ~JSActor() = default;
 
-  void Init(const nsACString& aName);
+  void Init(const nsACString& aName, bool aSendTyped);
 
   bool CanSend() const { return mCanSend; }
 
@@ -134,7 +134,7 @@ class JSActor : public nsISupports, public nsWrapperCache {
     ~QueryHandler() = default;
 
     void SendReply(JSContext* aCx, JSActorMessageKind aKind,
-                   UniquePtr<ipc::StructuredCloneData> aData);
+                   JSIPCValue&& aData);
 
     RefPtr<JSActor> mActor;
     RefPtr<Promise> mPromise;
@@ -155,6 +155,12 @@ class JSActor : public nsISupports, public nsWrapperCache {
   nsTHashMap<nsUint64HashKey, PendingQuery> mPendingQueries;
   uint64_t mNextQueryId = 0;
   bool mCanSend = true;
+
+  // If this is false, the receiver won't be doing type checking, so
+  // use structured clone when sending. The security of the receiver does not
+  // depend on this value, because it will make its own independent judgment
+  // about whether the message needs to be typed.
+  bool mSendTyped = true;
 };
 
 }  // namespace dom

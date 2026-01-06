@@ -6,7 +6,6 @@
 #define DOM_MEDIA_PLATFORM_WMF_CLEARKEY_WMFCLEARKEYCDMUTILS_H
 
 #include <initguid.h>
-#include <memory>
 #include <mfidl.h>
 #include <mutex>
 #include <thread>

@@ -46,33 +46,52 @@ int VideoEngine::SetAndroidObjects() {
 }
 #endif
 
-int32_t VideoEngine::CreateVideoCapture(const char* aDeviceUniqueIdUTF8) {
+int32_t VideoEngine::CreateVideoCapture(const char* aDeviceUniqueIdUTF8,
+                                        uint64_t aWindowID) {
   LOG(("%s", __PRETTY_FUNCTION__));
   MOZ_ASSERT(aDeviceUniqueIdUTF8);
 
-  int32_t id = GenerateId();
-  LOG(("CaptureDeviceType=%s id=%d", EnumValueToString(mCaptureDevType), id));
-
-  for (auto& it : mCaps) {
+  for (auto& it : mSharedCapturers) {
     if (it.second.VideoCapture() &&
         it.second.VideoCapture()->CurrentDeviceName() &&
         strcmp(it.second.VideoCapture()->CurrentDeviceName(),
                aDeviceUniqueIdUTF8) == 0) {
-      mIdMap.emplace(id, it.first);
+      int32_t id = GenerateId();
+      LOG(("%sVideoEngine::%s(device=\"%s\", window=%" PRIu64
+           "): Reusing capturer with id %d. stream id=%d",
+           EnumValueToString(mCaptureDevType), __func__, aDeviceUniqueIdUTF8,
+           aWindowID, it.first, id));
+      mIdToCapturerMap.emplace(id, CaptureHandle{.mCaptureEntryNum = it.first,
+                                                 .mWindowID = aWindowID});
       return id;
     }
   }
 
-  CaptureEntry entry = {-1, nullptr, nullptr};
+  int32_t id = GenerateId();
 
   VideoCaptureFactory::CreateVideoCaptureResult capturer =
       mVideoCaptureFactory->CreateVideoCapture(id, aDeviceUniqueIdUTF8,
                                                mCaptureDevType);
-  entry =
+
+  if (!capturer.mCapturer) {
+    LOG(("%sVideoEngine::%s(device=\"%s\", window=%" PRIu64
+         "): Creating video capturer for id %d failed.",
+         EnumValueToString(mCaptureDevType), __func__, aDeviceUniqueIdUTF8,
+         aWindowID, id));
+    return -1;
+  }
+
+  auto entry =
       CaptureEntry(id, std::move(capturer.mCapturer), capturer.mDesktopImpl);
 
-  mCaps.emplace(id, std::move(entry));
-  mIdMap.emplace(id, id);
+  LOG(("%sVideoEngine::%s(device=\"%s\", window=%" PRIu64
+       "): Created new video capturer for id %d.",
+       EnumValueToString(mCaptureDevType), __func__, aDeviceUniqueIdUTF8,
+       aWindowID, id));
+
+  mSharedCapturers.emplace(id, std::move(entry));
+  mIdToCapturerMap.emplace(
+      id, CaptureHandle{.mCaptureEntryNum = id, .mWindowID = aWindowID});
   return id;
 }
 
@@ -81,14 +100,15 @@ int VideoEngine::ReleaseVideoCapture(const int32_t aId) {
 
 #ifdef DEBUG
   {
-    auto it = mIdMap.find(aId);
-    MOZ_ASSERT(it != mIdMap.end());
+    auto it = mIdToCapturerMap.find(aId);
+    MOZ_ASSERT(it != mIdToCapturerMap.end());
     (void)it;
   }
 #endif
 
-  for (auto& it : mIdMap) {
-    if (it.first != aId && it.second == mIdMap[aId]) {
+  for (auto& it : mIdToCapturerMap) {
+    if (it.first != aId &&
+        it.second.mCaptureEntryNum == mIdToCapturerMap[aId].mCaptureEntryNum) {
       // There are other tracks still using this hardware.
       found = true;
     }
@@ -101,13 +121,13 @@ int VideoEngine::ReleaseVideoCapture(const int32_t aId) {
     });
     MOZ_ASSERT(found);
     if (found) {
-      auto it = mCaps.find(mIdMap[aId]);
-      MOZ_ASSERT(it != mCaps.end());
-      mCaps.erase(it);
+      auto it = mSharedCapturers.find(mIdToCapturerMap[aId].mCaptureEntryNum);
+      MOZ_ASSERT(it != mSharedCapturers.end());
+      mSharedCapturers.erase(it);
     }
   }
 
-  mIdMap.erase(aId);
+  mIdToCapturerMap.erase(aId);
   return found ? 0 : (-1);
 }
 
@@ -216,19 +236,42 @@ bool VideoEngine::WithEntry(
     const std::function<void(CaptureEntry& entry)>&& fn) {
 #ifdef DEBUG
   {
-    auto it = mIdMap.find(entryCapnum);
-    MOZ_ASSERT(it != mIdMap.end());
+    auto it = mIdToCapturerMap.find(entryCapnum);
+    MOZ_ASSERT(it != mIdToCapturerMap.end());
     (void)it;
   }
 #endif
 
-  auto it = mCaps.find(mIdMap[entryCapnum]);
-  MOZ_ASSERT(it != mCaps.end());
-  if (it == mCaps.end()) {
+  auto it =
+      mSharedCapturers.find(mIdToCapturerMap[entryCapnum].mCaptureEntryNum);
+  MOZ_ASSERT(it != mSharedCapturers.end());
+  if (it == mSharedCapturers.end()) {
     return false;
   }
   fn(it->second);
   return true;
+}
+
+bool VideoEngine::IsWindowCapturing(uint64_t aWindowID,
+                                    const nsCString& aUniqueIdUTF8) {
+  Maybe<int32_t> sharedId;
+  for (auto& [id, entry] : mSharedCapturers) {
+    if (entry.VideoCapture() && entry.VideoCapture()->CurrentDeviceName() &&
+        strcmp(entry.VideoCapture()->CurrentDeviceName(),
+               aUniqueIdUTF8.get()) == 0) {
+      sharedId = Some(id);
+      break;
+    }
+  }
+  if (!sharedId) {
+    return false;
+  }
+  for (auto& [id, handle] : mIdToCapturerMap) {
+    if (handle.mCaptureEntryNum == *sharedId && handle.mWindowID == aWindowID) {
+      return true;
+    }
+  }
+  return false;
 }
 
 int32_t VideoEngine::GenerateId() {
@@ -253,8 +296,8 @@ VideoEngine::VideoEngine(const CaptureDeviceType& aCaptureDeviceType,
 }
 
 VideoEngine::~VideoEngine() {
-  MOZ_ASSERT(mCaps.empty());
-  MOZ_ASSERT(mIdMap.empty());
+  MOZ_ASSERT(mSharedCapturers.empty());
+  MOZ_ASSERT(mIdToCapturerMap.empty());
 }
 
 }  // namespace mozilla::camera

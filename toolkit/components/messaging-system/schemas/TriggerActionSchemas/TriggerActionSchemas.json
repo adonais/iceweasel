@@ -24,6 +24,13 @@
                 "type": "string"
               },
               "description": "List of Match pattern compatible strings to match against"
+            },
+            "regexPatterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of regular expression patterns to match against URLs"
             }
           },
           "required": ["id"],
@@ -50,6 +57,13 @@
                 "type": "string"
               },
               "description": "List of Match pattern compatible strings to match against"
+            },
+            "regexPatterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of regular expression patterns to match against URLs"
             }
           },
           "required": ["id"],
@@ -88,6 +102,13 @@
                 "type": "string"
               },
               "description": "List of Match pattern compatible strings to match against"
+            },
+            "regexPatterns": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "List of regular expression patterns to match against URLs"
             }
           },
           "required": ["id"],

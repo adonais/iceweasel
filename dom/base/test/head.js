@@ -37,6 +37,22 @@ function optional_ev(...args) {
 }
 
 async function jsCacheContentTask(test, item) {
+  const defaultSkippedEvents = test.skippedEvents ?? [
+    // The compilation is not target of this test.
+    "compile:main thread",
+    // This is triggered by 'invalidateMemory' below, but we don't have to
+    // track it.
+    "memorycache:invalidate",
+    // The disk cache handling for the in-memory cache can happen multiple
+    // times depending on the scheduling and speed
+    // (e.g. debug vs opt, verify mode).
+    "diskcache:noschedule",
+  ];
+  const nonSkippedEvents = test.nonSkippedEvents ?? [];
+  const skippedEvents = defaultSkippedEvents.filter(
+    ev => !nonSkippedEvents.includes(ev)
+  );
+
   function match(param, event) {
     if (event.event !== param.event) {
       return false;
@@ -102,21 +118,12 @@ async function jsCacheContentTask(test, item) {
       param[m[1]] = m[2];
     }
 
-    if (param.event === "compile:main thread") {
-      return;
-    }
-
     if (consumeIfMatched(param, item.events)) {
       dump("@@@ Got expected event: " + data + "\n");
       if (item.events.length === 0) {
         resolve();
       }
-    } else if (param.event === "diskcache:noschedule") {
-      // The disk cache handling for the in-memory cache can happen multiple
-      // times depending on the scheduling and speed
-      // (e.g. debug vs opt, verify mode).
-      //
-      // Ignore any unmatching message here.
+    } else if (skippedEvents.includes(param.event)) {
       dump("@@@ Ignoring: " + data + "\n");
     } else {
       dump("@@@ Got unexpected event: " + data + "\n");
@@ -154,16 +161,44 @@ async function runJSCacheTests(tests) {
         ChromeUtils.clearResourceCache();
         Services.cache2.clear();
 
+        if (test.useServiceWorker) {
+          await SpecialPowers.spawn(browser, [], async () => {
+            const registration = await content.navigator.serviceWorker.register(
+              "file_js_cache_sw.js",
+              { scope: "./" }
+            );
+
+            const sw = registration.installing || registration.active;
+
+            await new Promise(resolve => {
+              function onStateChange() {
+                if (sw.state === "activated") {
+                  sw.removeEventListener("statechange", onStateChange);
+                  resolve();
+                }
+              }
+              sw.addEventListener("statechange", onStateChange);
+              onStateChange();
+            });
+          });
+        }
+
         for (let i = 0; i < test.items.length; i++) {
           const item = test.items[i];
           info(`start: ${test.title} (item ${i})`);
 
-          // Make sure the test starts in clean document.
-          await BrowserTestUtils.reloadTab(tab);
+          if (!test.skipReload) {
+            // Make sure the test starts in clean document.
+            await BrowserTestUtils.reloadTab(tab);
+          }
 
           if (item.clearMemory) {
             info("clear memory cache");
             ChromeUtils.clearResourceCache();
+          }
+          if (item.invalidateMemory) {
+            info("invalidate memory cache");
+            ChromeUtils.invalidateResourceCache();
           }
           if (item.clearDisk) {
             info("clear disk cache");
@@ -175,6 +210,14 @@ async function runJSCacheTests(tests) {
             jsCacheContentTask
           );
           ok(result, "Received expected events");
+        }
+
+        if (test.useServiceWorker) {
+          await SpecialPowers.spawn(browser, [], async () => {
+            const registration =
+              await content.navigator.serviceWorker.getRegistration();
+            registration.unregister();
+          });
         }
 
         ok(true, "end: " + test.title);

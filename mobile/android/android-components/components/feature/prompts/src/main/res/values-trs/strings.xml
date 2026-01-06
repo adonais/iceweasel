@@ -83,10 +83,14 @@
   <string name="mozac_feature_prompts_dec">Ahui hio\' yi</string>
   <!-- Title of the time picker dialog. -->
   <string name="mozac_feature_prompts_set_time">Gānïn ‘ngō diû</string>
+  <!-- Header for the select password prompt to allow users to fill a form with a saved password -->
+  <string name="mozac_feature_prompts_saved_logins_2">Nej da’nga’ huì nū sà’a</string>
   <!-- Pressing this will use the suggested strong password -->
   <string name="mozac_feature_prompts_suggest_strong_password_use_password">Gārāsun da’nga’ huìi</string>
   <!-- Pressing this will dismiss the suggested strong password dialog -->
   <string name="mozac_feature_prompts_suggest_strong_password_dismiss">Sī ga\'hue akuan\' nïn</string>
+  <!-- Title for showing the suggest strong password updated confirmation snackbar -->
+  <string name="mozac_feature_prompts_suggest_strong_password_updated_snackbar_title">Da’nga’ huì nahuin nākàa</string>
   <!-- Strings shown in a dialog that appear when users try to refresh a certain kind of webpages -->
   <string name="mozac_feature_prompt_repost_title">Nā’nïnjt nej dato riña sitiô nan anj.</string>
   <string name="mozac_feature_prompt_repost_message">Sisī nāgi’hiaj nākàt pajinâ nan nī gā’hue nāhuin huà’ nej sa gi’hiaj nākàt, dàj rû’ gā’nïnjt ‘ngō san’ānj an asi huà’ gāhuī ‘ngō nuguan’ gā’nïnjt.</string>

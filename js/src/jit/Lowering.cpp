@@ -1283,6 +1283,21 @@ void LIRGenerator::visitTest(MTest* test) {
     return;
   }
 
+  if (opd->isIteratorsMatchAndHaveIndices()) {
+    MOZ_ASSERT(opd->isEmittedAtUses());
+
+    MDefinition* object = opd->toIteratorsMatchAndHaveIndices()->object();
+    MDefinition* iterator = opd->toIteratorsMatchAndHaveIndices()->iterator();
+    MDefinition* otherIterator =
+        opd->toIteratorsMatchAndHaveIndices()->otherIterator();
+    LIteratorsMatchAndHaveIndicesAndBranch* lir =
+        new (alloc()) LIteratorsMatchAndHaveIndicesAndBranch(
+            ifTrue, ifFalse, useRegister(object), useRegister(iterator),
+            useRegister(otherIterator), temp(), temp());
+    add(lir, test);
+    return;
+  }
+
   switch (opd->type()) {
     case MIRType::Double:
       add(new (alloc()) LTestDAndBranch(ifTrue, ifFalse, useRegister(opd)));
@@ -5040,6 +5055,10 @@ void LIRGenerator::visitObjectKeys(MObjectKeys* ins) {
   assignSafepoint(lir, ins);
 }
 
+void LIRGenerator::visitObjectKeysFromIterator(MObjectKeysFromIterator* ins) {
+  MOZ_CRASH("ObjectKeysFromIterator is purely for recovery purposes.");
+}
+
 void LIRGenerator::visitObjectKeysLength(MObjectKeysLength* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
   MOZ_ASSERT(ins->type() == MIRType::Int32);
@@ -5789,6 +5808,23 @@ void LIRGenerator::visitGuardMultipleShapes(MGuardMultipleShapes* ins) {
   }
 }
 
+void LIRGenerator::visitGuardShapeList(MGuardShapeList* ins) {
+  MOZ_ASSERT(ins->object()->type() == MIRType::Object);
+
+  if (JitOptions.spectreObjectMitigations) {
+    auto* lir = new (alloc())
+        LGuardShapeList(useRegisterAtStart(ins->object()), temp(), temp());
+    assignSnapshot(lir, ins->bailoutKind());
+    defineReuseInput(lir, ins, 0);
+  } else {
+    auto* lir = new (alloc()) LGuardShapeList(useRegister(ins->object()),
+                                              temp(), LDefinition::BogusTemp());
+    assignSnapshot(lir, ins->bailoutKind());
+    add(lir, ins);
+    redefine(ins, ins->object());
+  }
+}
+
 void LIRGenerator::visitGuardProto(MGuardProto* ins) {
   MOZ_ASSERT(ins->object()->type() == MIRType::Object);
   MOZ_ASSERT(ins->expected()->type() == MIRType::Object);
@@ -6250,7 +6286,29 @@ void LIRGenerator::visitStoreSlotByIteratorIndex(
   add(lir, ins);
 }
 
+void LIRGenerator::visitLoadSlotByIteratorIndexIndexed(
+    MLoadSlotByIteratorIndexIndexed* ins) {
+  auto* lir = new (alloc()) LLoadSlotByIteratorIndexIndexed(
+      useRegister(ins->object()), useRegister(ins->iterator()),
+      useRegister(ins->index()), temp(), temp());
+  defineBox(lir, ins);
+}
+
+void LIRGenerator::visitStoreSlotByIteratorIndexIndexed(
+    MStoreSlotByIteratorIndexIndexed* ins) {
+  auto* lir = new (alloc()) LStoreSlotByIteratorIndexIndexed(
+      useRegister(ins->object()), useRegister(ins->iterator()),
+      useRegister(ins->index()), useBox(ins->value()), temp(), temp());
+  add(lir, ins);
+}
+
 void LIRGenerator::visitIteratorHasIndices(MIteratorHasIndices* ins) {
+  MOZ_ASSERT(ins->hasOneUse());
+  emitAtUses(ins);
+}
+
+void LIRGenerator::visitIteratorsMatchAndHaveIndices(
+    MIteratorsMatchAndHaveIndices* ins) {
   MOZ_ASSERT(ins->hasOneUse());
   emitAtUses(ins);
 }
@@ -6346,6 +6404,24 @@ void LIRGenerator::visitCloseIterCache(MCloseIterCache* ins) {
       new (alloc()) LCloseIterCache(useRegister(ins->iter()), temp());
   add(lir, ins);
   assignSafepoint(lir, ins);
+}
+
+void LIRGenerator::visitLoadIteratorElement(MLoadIteratorElement* ins) {
+  MOZ_ASSERT(ins->iter()->type() == MIRType::Object);
+  MOZ_ASSERT(ins->index()->type() == MIRType::Int32);
+  MOZ_ASSERT(ins->type() == MIRType::String);
+
+  auto* lir = new (alloc()) LLoadIteratorElement(
+      useRegister(ins->iter()), useRegisterOrConstant(ins->index()));
+  define(lir, ins);
+}
+
+void LIRGenerator::visitIteratorLength(MIteratorLength* ins) {
+  MOZ_ASSERT(ins->iter()->type() == MIRType::Object);
+  MOZ_ASSERT(ins->type() == MIRType::Int32);
+
+  auto* lir = new (alloc()) LIteratorLength(useRegister(ins->iter()));
+  define(lir, ins);
 }
 
 void LIRGenerator::visitOptimizeGetIteratorCache(
@@ -8095,16 +8171,30 @@ void LIRGenerator::visitMapObjectSize(MMapObjectSize* ins) {
 }
 
 void LIRGenerator::visitWeakMapGetObject(MWeakMapGetObject* ins) {
+#ifdef JS_CODEGEN_X86
   auto* lir = new (alloc()) LWeakMapGetObject(
       useFixedAtStart(ins->weakMap(), CallTempReg0),
       useFixedAtStart(ins->object(), CallTempReg1), tempFixed(CallTempReg2));
   defineReturn(lir, ins);
+#else
+  auto* lir = new (alloc()) LWeakMapGetObject(
+      useRegisterAtStart(ins->weakMap()), useRegisterAtStart(ins->object()),
+      temp(), temp(), temp(), temp(), temp(), temp(), temp());
+  defineBox(lir, ins);
+#endif
 }
 
 void LIRGenerator::visitWeakMapHasObject(MWeakMapHasObject* ins) {
+#ifdef JS_CODEGEN_X86
   auto* lir = new (alloc()) LWeakMapHasObject(
       useRegisterAtStart(ins->weakMap()), useRegisterAtStart(ins->object()));
   defineReturn(lir, ins);
+#else
+  auto* lir = new (alloc()) LWeakMapHasObject(
+      useRegisterAtStart(ins->weakMap()), useRegisterAtStart(ins->object()),
+      temp(), temp(), temp(), temp(), temp(), temp(), temp());
+  define(lir, ins);
+#endif
 }
 
 void LIRGenerator::visitWeakSetHasObject(MWeakSetHasObject* ins) {

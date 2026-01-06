@@ -97,7 +97,7 @@
                    form="report-broken-site-panel-form"
                    allow-arrow-navigation="true"
                    rows="4"></html:textarea>
-    <vbox>
+    <vbox id="report-broken-site-popup-blocked-trackers">
       <checkbox id="report-broken-site-popup-blocked-trackers-checkbox" data-l10n-id="report-broken-site-panel-blocked-trackers-label" />
       <html:p data-l10n-id="report-broken-site-panel-blocked-trackers-description"/>
     </vbox>
@@ -106,12 +106,34 @@
               href="#"
               data-l10n-id="report-broken-site-panel-send-more-info-link"/>
     </hbox>
+    <html:moz-box-button id="report-broken-site-popup-preview-button"
+                         data-l10n-id="report-broken-site-panel-preview-button" />
   </vbox>
   <html:moz-button-group class="panel-footer">
     <button id="report-broken-site-popup-cancel-button"
             class="footer-button"
             data-l10n-id="report-broken-site-panel-button-cancel"/>
     <button id="report-broken-site-popup-send-button"
+            class="footer-button"
+            default="true"
+            data-l10n-id="report-broken-site-panel-button-send"/>
+  </html:moz-button-group>
+</panelview>
+
+<panelview id="report-broken-site-popup-previewView"
+           class="report-broken-site-view preview-view PanelUI-subView"
+           role="dialog"
+           data-l10n-id="report-broken-site-panel-preview-header"
+           data-l10n-attrs="title"
+           aria-describedby="report-broken-site-panel-preview-label">
+  <vbox class="panel-subview-body">
+    <vbox id="report-broken-site-panel-preview-items"/>
+  </vbox>
+  <html:moz-button-group class="panel-footer">
+    <button id="report-broken-site-popup-preview-cancel-button"
+            class="footer-button"
+            data-l10n-id="report-broken-site-panel-button-cancel"/>
+    <button id="report-broken-site-popup-preview-send-button"
             class="footer-button"
             default="true"
             data-l10n-id="report-broken-site-panel-button-send"/>

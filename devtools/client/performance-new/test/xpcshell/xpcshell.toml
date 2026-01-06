@@ -1,5 +1,7 @@
 [DEFAULT]
-run-if = ["os != 'android'"]
+run-if = [
+  "os != 'android'",
+]
 tags = "devtools"
 head = "head.js"
 firefox-appdir = "browser"

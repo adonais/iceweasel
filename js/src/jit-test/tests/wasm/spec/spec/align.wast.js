@@ -1218,17 +1218,20 @@ assert_malformed(
 );
 
 // Suppressed because wasm-tools cannot parse these offsets.
-// // ./test/core/align.wast:1005
-// let $25 = instantiate(`(module
-//   (memory i64 1)
-//   (func
-//     i64.const 0
-//     i32.load offset=0xFFFF_FFFF_FFFF_FFFF
-//     drop
-//   )
-// )`);
+// // ./test/core/align.wast:1004
+// assert_invalid(
+//   () => instantiate(`(module
+//     (memory 1)
+//     (func
+//       i32.const 0
+//       i32.load offset=0xFFFF_FFFF_FFFF_FFFF
+//       drop
+//     )
+//   )`),
+//   `offset out of range`,
+// );
 //
-// // ./test/core/align.wast:1014
+// // ./test/core/align.wast:1016
 // assert_invalid(
 //   () => instantiate(`(module
 //     (memory 1)

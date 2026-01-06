@@ -29,6 +29,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mozilla/ResultExtensions.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/Nullable.h"
 #include "mozilla/dom/quota/Client.h"
 #include "mozilla/dom/quota/CommonMetadata.h"
@@ -1342,7 +1343,11 @@ nsresult SaveOriginAccessTimeOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
 
   auto originStateMetadata = maybeOriginStateMetadata.extract();
 
-  originStateMetadata.mLastAccessTime = PR_Now();
+  // See the documentation for this pref in StaticPrefList.yaml
+  if (StaticPrefs::dom_quotaManager_temporaryStorage_updateOriginAccessTime()) {
+    originStateMetadata.mLastAccessTime = PR_Now();
+  }
+
   originStateMetadata.mAccessed = true;
 
   QM_TRY_INSPECT(const auto& file,
@@ -3655,7 +3660,12 @@ nsresult PersistOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
       // Set the persisted flag to true and also update origin access time
       // while we are here.
 
-      originStateMetadata.mLastAccessTime = PR_Now();
+      // See the documentation for this pref in StaticPrefList.yaml
+      if (StaticPrefs::
+              dom_quotaManager_temporaryStorage_updateOriginAccessTime()) {
+        originStateMetadata.mLastAccessTime = PR_Now();
+      }
+
       originStateMetadata.mPersisted = true;
 
       QM_TRY(MOZ_TO_RESULT(

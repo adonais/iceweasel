@@ -1,4 +1,4 @@
-// |reftest| shell-option(--enable-upsert) skip-if(!Map.prototype.getOrInsertComputed||!xulRuntime.shell) -- upsert is not enabled unconditionally, requires shell-options
+// |reftest| skip-if(!Map.prototype.getOrInsertComputed) -- upsert is not enabled unconditionally
 // Copyright (C) 2015 the V8 project authors. All rights reserved.
 // Copyright (C) 2025 Jonas Haukenes. All rights reserved.
 // This code is governed by the BSD license found in the LICENSE file.
@@ -12,33 +12,27 @@ info: |
   ...
   4. If CanBeHeldWeakly(_key_) is *false*, throw a *TypeError* exception.
   ...
+includes: [compareArray.js]
 features: [Symbol, WeakMap, upsert]
 ---*/
+
+var log = [];
+var invalidKeys = [1, false, undefined, 'string', null];
+
 var s = new WeakMap();
 
-assert.throws(TypeError, function() {
-  s.getOrInsertComputed(1, () => 1);
-});
+for (let invalidKey of invalidKeys) {
+  assert.throws(TypeError, function () {
+    s.getOrInsertComputed(invalidKey,
+      () => log.push(`Unexpected evaluation of callback function, key: ${invalidKey}`));
+  }, `${typeof invalidKey} not allowed as WeakMap key`);
+}
 
-assert.throws(TypeError, function() {
-  s.getOrInsertComputed(false, () => 1);
-});
-
-assert.throws(TypeError, function() {
-  s.getOrInsertComputed(undefined, () => 1);
-});
-
-assert.throws(TypeError, function() {
-  s.getOrInsertComputed('string', () => 1);
-});
-
-assert.throws(TypeError, function() {
-  s.getOrInsertComputed(null, () => 1);
-});
-
-assert.throws(TypeError, function() {
-  s.getOrInsertComputed(Symbol.for('registered symbol'), () => 1);
+assert.throws(TypeError, function () {
+  s.getOrInsertComputed(Symbol.for('registered symbol'),
+    () => log.push("Unexpected callback evaluation"));
 }, 'Registered symbol not allowed as WeakMap key');
 
+assert.compareArray(log, []);
 
 reportCompare(0, 0);

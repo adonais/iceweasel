@@ -1030,7 +1030,7 @@ void CodeGeneratorShared::visitOutOfLineTruncateSlow(
   masm.jump(ool->rejoin());
 }
 
-bool CodeGeneratorShared::omitOverRecursedCheck() const {
+bool CodeGeneratorShared::omitOverRecursedStackCheck() const {
   // If the current function makes no calls (which means it isn't recursive)
   // and it uses only a small amount of stack space, it doesn't need a
   // stack overflow check. Note that the actual number here is somewhat
@@ -1038,6 +1038,10 @@ bool CodeGeneratorShared::omitOverRecursedCheck() const {
   // additional stack space in some cases too.
   return frameSize() < MAX_UNCHECKED_LEAF_FRAME_SIZE &&
          !gen->needsOverrecursedCheck();
+}
+
+bool CodeGeneratorShared::omitOverRecursedInterruptCheck() const {
+  return !gen->needsOverrecursedCheck();
 }
 
 void CodeGeneratorShared::emitPreBarrier(Address address) {

@@ -570,6 +570,8 @@ export var BrowserUtils = {
    *        order to do custom failure handling.
    * @param {...any} args
    *        Arguments to pass to the consumers.
+   * @returns {Promise}
+   *   A Promise that resolves when all consumers have settled.
    */
   callModulesFromCategory(
     {
@@ -613,15 +615,25 @@ export var BrowserUtils = {
       }
     };
 
+    let allTasks = [];
+
     for (let listener of lazy.CatManListenerManager.getListeners(
       categoryName
     )) {
       if (idleDispatch) {
-        ChromeUtils.idleDispatch(() => callSingleListener(listener));
+        allTasks.push(
+          new Promise(resolve => {
+            ChromeUtils.idleDispatch(() => {
+              resolve(callSingleListener(listener));
+            });
+          })
+        );
       } else {
-        callSingleListener(listener);
+        allTasks.push(callSingleListener(listener));
       }
     }
+
+    return Promise.allSettled(allTasks);
   },
 
   /**

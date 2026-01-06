@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2025-11-06T19:13:23.782316+00:00'
+updated_at: '2025-12-04T14:55:53.808070+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -69,10 +69,6 @@ people:
     bmo_id: 636965
     name: Shane Hughes
     nick: aminomancer
-  - &amy
-    bmo_id: 622155
-    name: Amy Churchwell
-    nick: amy
   - &anba
     bmo_id: 339940
     name: André Bargull
@@ -264,6 +260,10 @@ people:
     bmo_id: 7924
     name: ''
     nick: deanis74
+  - &decoder
+    bmo_id: 395101
+    name: Christian Holler
+    nick: decoder
   - &deian
     bmo_id: 637163
     name: Deian Stefan
@@ -474,6 +474,10 @@ people:
     bmo_id: 623993
     name: Iain Ireland
     nick: iain
+  - &ini
+    bmo_id: 741020
+    name: Irene Ni
+    nick: ini
   - &issammani
     bmo_id: 708367
     name: Issam Mani
@@ -753,6 +757,10 @@ people:
     bmo_id: 636237
     name: Maxx Crawford
     nick: maxx
+  - &mbeier
+    bmo_id: 754437
+    name: Moritz Beier
+    nick: mbeier
   - &mcarare
     bmo_id: 648814
     name: Mihai Adrian Carare
@@ -865,6 +873,10 @@ people:
     bmo_id: 651777
     name: Erik Nordin
     nick: nordzilla
+  - &npypchenko
+    bmo_id: 731746
+    name: Nina Pypchenko
+    nick: npypchenko
   - &nrishel
     bmo_id: 697005
     name: Nick Rishel
@@ -917,6 +929,10 @@ people:
     bmo_id: 444787
     name: Daniel Thorn
     nick: relud
+  - &rhamoui
+    bmo_id: 690143
+    name: Reem Hamoui
+    nick: rhamoui
   - &rhunt
     bmo_id: 573202
     name: Ryan Hunt
@@ -1187,6 +1203,20 @@ modules:
           - *TLMC
         peers: []
         machine_name: performance_regression_policy
+
+      - name: Security Architecture
+        description: Submodule responsible for driving security architecture decisions,
+          performing security reviews, and guiding security decisions.
+        owners:
+          - *decoder
+        peers:
+          - *dveditz
+          - *freddy
+          - *tjr
+          - *bholley
+          - *ckerschb
+          - *sfriedberger
+        machine_name: security_architecture
 
   - machine_name: android_components
     name: Android Components
@@ -3469,9 +3499,10 @@ modules:
         peers:
           - *daisuke
           - *dao
-          - *mak
-          - *standard8
           - *jteow
+          - *mak
+          - *mbeier
+          - *standard8
         meta:
           components:
             - Firefox::Address Bar
@@ -3526,7 +3557,7 @@ modules:
         meta:
           peers_emeritus:
             - Tim Nguyen
-            - *amy
+            - Amy Churchwell
           components:
             - Firefox::Theme
             - Toolkit::Themes
@@ -3720,12 +3751,16 @@ modules:
           peers_emeritus:
             - *k88hudson
             - *aoprea
+            - Amy Churchwell
         owners:
           - *thecount
         peers:
-          - *amy
-          - *nbarrett
+          - *ini
           - *maxx
+          - *mconley
+          - *nbarrett
+          - *npypchenko
+          - *rhamoui
         machine_name: new_tab_page
 
       - name: Password Manager
@@ -4633,5 +4668,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: e27b32239a127b334a155bb8abffb2b429236d5b
-  export: 1d6764c9e1e0c2e0500f5b50903f9c68a098a0ad
+  config: 74d3e43232fd8791824228b47bf9d0de2e3e0ccc
+  export: 65ac11e9d29fb19a38fa449a050a80c42498370f

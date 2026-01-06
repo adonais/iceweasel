@@ -202,8 +202,8 @@ add_task(async function test_customize_position_setting() {
   ok(newPanel.positionInput.checked, "Position setting persists.");
   is(
     newSidebarBox.style.order,
-    "3",
-    "Sidebar box should have an order of 3 when on the right"
+    "5",
+    "Sidebar box should have an order of 5 when on the right"
   );
 
   await BrowserTestUtils.closeWindow(newWin);

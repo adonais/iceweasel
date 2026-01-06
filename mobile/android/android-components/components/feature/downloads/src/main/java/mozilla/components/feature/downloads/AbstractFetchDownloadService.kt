@@ -90,7 +90,7 @@ import kotlin.random.Random
  *
  * To use this service, you must create a subclass in your application and add it to the manifest.
  */
-@Suppress("TooManyFunctions", "LargeClass", "ComplexMethod")
+@Suppress("TooManyFunctions", "LargeClass")
 abstract class AbstractFetchDownloadService : Service() {
     protected abstract val store: BrowserStore
 
@@ -363,7 +363,6 @@ abstract class AbstractFetchDownloadService : Service() {
      * Android rate limits notifications being sent, so we must send them on a delay so that
      * notifications are not dropped
      */
-    @Suppress("ComplexMethod")
     private fun updateDownloadNotification() {
         for (download in downloadJobs.values) {
             if (!download.canUpdateNotification()) { continue }
@@ -666,7 +665,7 @@ abstract class AbstractFetchDownloadService : Service() {
         }
     }
 
-    @Suppress("ComplexCondition", "ComplexMethod")
+    @Suppress("ComplexCondition")
     internal fun performDownload(currentDownloadJobState: DownloadJobState, useHttpClient: Boolean = false) {
         val download = currentDownloadJobState.state
         val isResumingDownload = currentDownloadJobState.currentBytesCopied > 0L
@@ -702,7 +701,7 @@ abstract class AbstractFetchDownloadService : Service() {
 
         // If we are resuming a download and the response does not contain a CONTENT_RANGE
         // we cannot be sure that the request will properly be handled
-        if (response.status != PARTIAL_CONTENT_STATUS && response.status != OK_STATUS ||
+        if ((response.status != PARTIAL_CONTENT_STATUS && response.status != OK_STATUS) ||
             (isResumingDownload && !response.headers.contains(CONTENT_RANGE))
         ) {
             response.close()

@@ -92,7 +92,12 @@ add_task(async function () {
   );
   await selectNode("summary", inspector);
   await checkRuleViewContent(view, [
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
     {
       selector: `& summary`,
       ancestorRulesData: ["details {"],
@@ -130,7 +135,12 @@ add_task(async function () {
     {
       header: "This Element",
     },
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
     {
       selector: `p`,
       declarations: [{ name: "outline-color", value: "var(--x)" }],
@@ -215,7 +225,12 @@ add_task(async function () {
     {
       header: "This Element",
     },
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
     {
       selector: `details#in-summary`,
       declarations: [{ name: "color", value: "cyan" }],
@@ -242,7 +257,12 @@ add_task(async function () {
   await selectNode("details#in-summary summary", inspector);
 
   await checkRuleViewContent(view, [
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
     {
       selector: `& summary`,
       ancestorRulesData: ["details#in-summary {"],
@@ -288,7 +308,12 @@ add_task(async function () {
     {
       header: "This Element",
     },
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
     {
       selector: `p`,
       declarations: [{ name: "outline-color", value: "var(--x)" }],
@@ -367,7 +392,7 @@ add_task(async function () {
   // actually interactive. The other ones are placed inside the ::details-content
   await selectNode("summary#non-functional-summary", inspector);
   await checkRuleViewContent(view, [
-    { selector: `element`, declarations: [] },
+    { selector: `element`, selectorEditable: false, declarations: [] },
     {
       selector: `& summary`,
       ancestorRulesData: [`details {`],
@@ -435,7 +460,12 @@ add_task(async function () {
     {
       header: "This Element",
     },
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      selectorEditable: false,
+      ancestorRulesData: null,
+      declarations: [],
+    },
     {
       selector: `details`,
       declarations: [
@@ -470,7 +500,12 @@ add_task(async function () {
     {
       header: "This Element",
     },
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      selectorEditable: false,
+      ancestorRulesData: null,
+      declarations: [],
+    },
     {
       selector: `p`,
       declarations: [{ name: "outline-color", value: "var(--x)" }],
@@ -526,7 +561,12 @@ add_task(async function () {
   );
   await selectNode("#vip article", inspector);
   await checkRuleViewContent(view, [
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      selectorEditable: false,
+      ancestorRulesData: null,
+      declarations: [],
+    },
     {
       header: "Inherited from details#vip::details-content",
     },

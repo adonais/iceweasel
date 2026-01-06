@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.utils
 
+import android.content.pm.PackageInfo
 import androidx.core.content.edit
 import io.mockk.every
 import io.mockk.spyk
@@ -28,6 +29,7 @@ import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.nimbus.DefaultBrowserPrompt
 import org.mozilla.fenix.nimbus.FakeNimbusEventStore
 import org.mozilla.fenix.settings.PhoneFeature
+import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
 import org.robolectric.RobolectricTestRunner
 import java.util.Calendar
@@ -1273,20 +1275,34 @@ class SettingsTest {
     @Test
     fun `WHEN user has accepted the ToU THEN termsOfUseAcceptedTimeInMillis returns the app installed time`() {
         val installTime = 12345L
-        settings.applicationInstalledTime = installTime
+        val settings = Settings(
+            appContext = testContext,
+            packageName = "test",
+            packageManagerCompatHelper = FakePackageManagerCompatHelper(
+                packageInfo = PackageInfo().apply { firstInstallTime = installTime },
+            ),
+        )
         settings.hasAcceptedTermsOfService = true
 
         val result = settings.termsOfUseAcceptedTimeInMillis
+
         assertEquals(installTime, result)
     }
 
     @Test
     fun `WHEN user has not accepted the ToU THEN termsOfUseAcceptedTimeInMillis returns 0L`() {
         val installTime = 12345L
-        settings.applicationInstalledTime = installTime
+        val settings = Settings(
+            appContext = testContext,
+            packageName = "test",
+            packageManagerCompatHelper = FakePackageManagerCompatHelper(
+                packageInfo = PackageInfo().apply { firstInstallTime = installTime },
+            ),
+        )
         settings.hasAcceptedTermsOfService = false
 
         val result = settings.termsOfUseAcceptedTimeInMillis
+
         assertEquals(0L, result)
     }
 
@@ -1304,5 +1320,39 @@ class SettingsTest {
 
         val result = settings.termsOfUseAcceptedVersion
         assertEquals(0, result)
+    }
+
+    @Test
+    fun `GIVEN toolbar customization is disabled WHEN reading toolbarSimpleShortcut THEN NEW_TAB is returned regardless of stored key`() {
+        settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
+
+        val result = settings.toolbarSimpleShortcut
+        assertEquals(ShortcutType.NEW_TAB.value, result)
+    }
+
+    @Test
+    fun `GIVEN toolbar customization is enabled WHEN reading toolbarSimpleShortcut THEN stored key is returned`() {
+        settings.shouldShowToolbarCustomization = true
+        settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
+
+        val result = settings.toolbarSimpleShortcut
+        assertEquals(ShortcutType.SHARE.value, result)
+    }
+
+    @Test
+    fun `GIVEN toolbar customization is disabled WHEN reading toolbarExpandedShortcut THEN BOOKMARK is returned regardless of stored key`() {
+        settings.toolbarExpandedShortcutKey = ShortcutType.NEW_TAB.value
+
+        val result = settings.toolbarExpandedShortcut
+        assertEquals(ShortcutType.BOOKMARK.value, result)
+    }
+
+    @Test
+    fun `GIVEN toolbar customization is enabled WHEN reading toolbarExpandedShortcut THEN stored key is returned`() {
+        settings.shouldShowToolbarCustomization = true
+        settings.toolbarExpandedShortcutKey = ShortcutType.TRANSLATE.value
+
+        val result = settings.toolbarExpandedShortcut
+        assertEquals(ShortcutType.TRANSLATE.value, result)
     }
 }

@@ -201,6 +201,8 @@ unsigned inline operator/(unsigned num, FastDivisor<T> divisor) {
 #define ALIGNMENT_CEILING(s, alignment) \
   (((s) + ((alignment) - 1)) & (~((alignment) - 1)))
 
+#define ALIGNMENT_FLOOR(s, alignment) ((s) & (~((alignment) - 1)))
+
 static inline const char* _getprogname(void) { return "<jemalloc>"; }
 
 #ifdef XP_WIN

@@ -20,7 +20,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.window.WindowRequest
 import mozilla.components.support.test.any
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.whenever
@@ -74,7 +73,7 @@ class CustomTabWindowFeatureTest {
         feature.start()
         whenever(windowRequest.type).thenReturn(WindowRequest.Type.OPEN)
         whenever(windowRequest.url).thenReturn("https://www.firefox.com")
-        store.dispatch(ContentAction.UpdateWindowRequestAction(sessionId, windowRequest)).joinBlocking()
+        store.dispatch(ContentAction.UpdateWindowRequestAction(sessionId, windowRequest))
 
         verify(activity).startActivity(any(), any())
         verify(store).dispatch(ContentAction.ConsumeWindowRequestAction(sessionId))
@@ -90,7 +89,7 @@ class CustomTabWindowFeatureTest {
         whenever(windowRequest.type).thenReturn(WindowRequest.Type.OPEN)
         whenever(windowRequest.url).thenReturn("blob:https://www.firefox.com")
         whenever(activity.startActivity(any(), any())).thenThrow(exception)
-        store.dispatch(ContentAction.UpdateWindowRequestAction(sessionId, windowRequest)).joinBlocking()
+        store.dispatch(ContentAction.UpdateWindowRequestAction(sessionId, windowRequest))
         verify(engineSession).loadUrl("blob:https://www.firefox.com")
     }
 
@@ -157,7 +156,7 @@ class CustomTabWindowFeatureTest {
         val windowRequest: WindowRequest = mock()
         whenever(windowRequest.type).thenReturn(WindowRequest.Type.OPEN)
         whenever(windowRequest.url).thenReturn("https://www.firefox.com")
-        store.dispatch(ContentAction.UpdateWindowRequestAction(sessionId, windowRequest)).joinBlocking()
+        store.dispatch(ContentAction.UpdateWindowRequestAction(sessionId, windowRequest))
         verify(activity, never()).startActivity(any(), any())
         verify(store, never()).dispatch(ContentAction.ConsumeWindowRequestAction(sessionId))
     }

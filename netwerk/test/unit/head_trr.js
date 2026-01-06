@@ -319,6 +319,25 @@ function trrQueryHandler(req, resp, url) {
     let domain = dnsQuery.questions[0].name;
     let type = dnsQuery.questions[0].type;
     let response = global.dns_query_answers[`${domain}/${type}`] || {};
+    let delay = response.delay || 0;
+    let searchParams = new URL(req1.url, "http://example.com").searchParams;
+    if (searchParams.get("conncycle")) {
+      if (domain.startsWith("newconn")) {
+        // If we haven't seen a req for this newconn name before,
+        // or if we've seen one for the same name on the same port,
+        // synthesize a timeout.
+        if (
+          !global.gDoHNewConnLog[domain] ||
+          global.gDoHNewConnLog[domain] == req1.socket.remotePort
+        ) {
+          delay = 1000;
+        }
+        if (!global.gDoHNewConnLog[domain]) {
+          global.gDoHNewConnLog[domain] = req1.socket.remotePort;
+        }
+      }
+      global.gDoHPortsLog.push([domain, req1.socket.remotePort]);
+    }
 
     if (!global.dns_query_counts[domain]) {
       global.dns_query_counts[domain] = {};
@@ -361,7 +380,7 @@ function trrQueryHandler(req, resp, url) {
       } catch (e) {}
     };
 
-    if (response.delay) {
+    if (delay) {
       // This function is handled within the httpserver where setTimeout is
       // available.
       // eslint-disable-next-line no-undef
@@ -369,7 +388,7 @@ function trrQueryHandler(req, resp, url) {
         arg => {
           writeResponse(arg[0], arg[1], arg[2]);
         },
-        response.delay,
+        delay,
         [resp1, buf, response]
       );
       return;
@@ -402,9 +421,13 @@ class TRRServer extends TRRNodeHttp2Server {
       // value: a map containing {key: type, value: number of requests}
       global.dns_query_counts = {};
 
+      global.gDoHPortsLog = [];
+      global.gDoHNewConnLog = {};
+
       global.dnsPacket = require(\`\${__dirname}/../dns-packet\`);
       global.ip = require(\`\${__dirname}/../node_ip\`);
       global.http2 = require("http2");
+      global.url = require("url");
     })()`);
     await this.registerPathHandler("/dns-query", trrQueryHandler);
     await this.registerPathHandler("/dnsAnswer", answerHandler);

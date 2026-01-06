@@ -81,8 +81,8 @@ export class LoginDataSource extends DataSourceBase {
   #originPrototype;
   #usernamePrototype;
   #passwordPrototype;
-  #enabled;
   #header;
+  #initialized;
   #exportPasswordsStrings;
   #displayMode;
 
@@ -364,6 +364,7 @@ export class LoginDataSource extends DataSourceBase {
       this.#displayMode = DISPLAY_MODES.ALL;
       this.#addObservers();
       this.#reloadDataSource();
+      this.#initialized = true;
     });
   }
 
@@ -790,16 +791,13 @@ export class LoginDataSource extends DataSourceBase {
    * @param {string} searchText used to filter data
    */
   *enumerateLines(searchText) {
-    if (this.#enabled === undefined) {
+    if (!this.#initialized) {
       // Async Fluent API makes it possible to have data source waiting
       // for the localized strings, which can be detected by undefined in #enabled.
       return;
     }
 
     yield this.#header;
-    if (this.#header.collapsed || !this.#enabled) {
-      return;
-    }
 
     const stats = { count: 0, total: 0 };
     searchText = searchText.toUpperCase();
@@ -822,12 +820,6 @@ export class LoginDataSource extends DataSourceBase {
    */
   async #reloadDataSource() {
     this.doneReloadDataSource = false;
-    this.#enabled = Services.prefs.getBoolPref("signon.rememberSignons");
-    if (!this.#enabled) {
-      this.#reloadEmptyDataSource();
-      this.doneReloadDataSource = true;
-      return;
-    }
 
     const logins = await LoginHelper.getAllUserFacingLogins();
     const breachesMap = lazy.BREACH_ALERTS_ENABLED
@@ -907,14 +899,6 @@ export class LoginDataSource extends DataSourceBase {
     this.#header.value.total = logins.length;
     this.#header.value.alerts = loginsWithAlerts.length;
     this.afterReloadingDataSource();
-  }
-
-  #reloadEmptyDataSource() {
-    this.lines.length = 0;
-    //todo: user can enable passwords by activating Passwords header line
-    this.#header.value.total = 0;
-    this.#header.value.alerts = 0;
-    this.refreshAllLinesOnScreen();
   }
 
   getAuthTimeoutMs() {

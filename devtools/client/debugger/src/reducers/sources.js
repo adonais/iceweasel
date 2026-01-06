@@ -4,6 +4,7 @@
 
 /**
  * Sources reducer
+ *
  * @module reducers/sources
  */
 

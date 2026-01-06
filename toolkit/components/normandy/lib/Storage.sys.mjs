@@ -35,6 +35,7 @@ export var Storage = class {
 
   /**
    * Sets an item in the prefixed storage.
+   *
    * @returns {Promise}
    * @resolves With the stored value, or null.
    * @rejects Javascript exception.
@@ -47,6 +48,7 @@ export var Storage = class {
 
   /**
    * Sets an item in the prefixed storage.
+   *
    * @returns {Promise}
    * @resolves When the operation is completed successfully
    * @rejects Javascript exception.
@@ -62,6 +64,7 @@ export var Storage = class {
 
   /**
    * Removes a single item from the prefixed storage.
+   *
    * @returns {Promise}
    * @resolves When the operation is completed successfully
    * @rejects Javascript exception.
@@ -76,6 +79,7 @@ export var Storage = class {
 
   /**
    * Clears all storage for the prefix.
+   *
    * @returns {Promise}
    * @resolves When the operation is completed successfully
    * @rejects Javascript exception.

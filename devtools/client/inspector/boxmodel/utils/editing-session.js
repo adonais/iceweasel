@@ -31,9 +31,9 @@ EditingSession.prototype = {
    *
    * @param  {StyleRuleFront} rule
    *         The CSS rule.
-   * @param  {String} property
+   * @param  {string} property
    *         The name of the property.
-   * @return {String} the value.
+   * @return {string} the value.
    */
   getPropertyFromRule(rule, property) {
     // Use the parsed declarations in the StyleRuleFront object if available.
@@ -52,7 +52,7 @@ EditingSession.prototype = {
    * Returns the current value for a property as a string or the empty string if
    * no style rules affect the property.
    *
-   * @param  {String} property
+   * @param  {string} property
    *         The name of the property as a string
    */
   getProperty(property) {
@@ -80,11 +80,11 @@ EditingSession.prototype = {
    * Get the index of a given css property name in a CSS rule.
    * Or -1, if there are no properties in the rule yet.
    *
-   * @param  {String} name
+   * @param  {string} name
    *         The property name.
    * @param  {StyleRuleFront} rule
    *         Optional, defaults to the element style rule.
-   * @return {Number} The property index in the rule.
+   * @return {number} The property index in the rule.
    */
   getPropertyIndex(name, rule = this._rules[0]) {
     if (!rule.declarations.length) {

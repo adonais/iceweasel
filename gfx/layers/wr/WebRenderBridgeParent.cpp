@@ -123,6 +123,8 @@ static CrashReporter::Annotation FromWrCrashAnnotation(
       return CrashReporter::Annotation::GraphicsCompileShader;
     case mozilla::wr::CrashAnnotation::DrawShader:
       return CrashReporter::Annotation::GraphicsDrawShader;
+    case mozilla::wr::CrashAnnotation::FontFile:
+      return CrashReporter::Annotation::GraphicsFontFile;
     default:
       MOZ_ASSERT_UNREACHABLE("Unhandled annotation!");
       return CrashReporter::Annotation::Count;

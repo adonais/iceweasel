@@ -255,7 +255,7 @@ inline nscolor EnsureDifferentColors(nscolor colorA, nscolor colorB) {
 void nsTableCellFrame::DecorateForSelection(DrawTarget* aDrawTarget,
                                             nsPoint aPt) {
   NS_ASSERTION(IsSelected(), "Should only be called for selected cells");
-  if (!IsSelectable(nullptr)) {
+  if (!IsSelectable()) {
     return;
   }
   RefPtr<nsFrameSelection> frameSelection = PresShell()->FrameSelection();
@@ -471,10 +471,6 @@ void nsTableCellFrame::AlignChildWithinCell(
   FinishAndStoreOverflow(&reflowOutput);
 
   if (kidPosition != kidRect.Origin(innerWM)) {
-    // Make sure any child views are correctly positioned. We know the inner
-    // table cell won't have a view.
-    nsContainerFrame::PositionChildViews(inner);
-
     // Invalidate new overflow rect.
     inner->InvalidateFrameSubtree();
   }

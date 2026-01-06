@@ -39,6 +39,7 @@ class GMPVideoEncoder final : public MediaDataEncoder,
 
   void Encoded(GMPVideoEncodedFrame* aEncodedFrame,
                const nsTArray<uint8_t>& aCodecSpecificInfo) override;
+  void Dropped(uint64_t aTimestamp) override;
   void Error(GMPErr aError) override;
   void Terminated() override;
 

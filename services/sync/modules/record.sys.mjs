@@ -27,8 +27,8 @@ import { CryptoUtils } from "moz-src:///services/crypto/modules/utils.sys.mjs";
  * class retains the old name.
  *
  * @class
- * @param {String} collection The collection name for this BSO.
- * @param {String} id         The ID of this BSO.
+ * @param {string} collection The collection name for this BSO.
+ * @param {string} id         The ID of this BSO.
  */
 export function WBORecord(collection, id) {
   this.data = {};
@@ -153,8 +153,8 @@ Utils.deferGetSet(WBORecord, "data", [
  *
  * @class
  * @template Cleartext
- * @param    {String} collection The collection name for this BSO.
- * @param    {String} id         The ID of this BSO.
+ * @param    {string} collection The collection name for this BSO.
+ * @param    {string} id         The ID of this BSO.
  */
 export function RawCryptoWrapper(collection, id) {
   // Setting properties before calling the superclass constructor isn't allowed
@@ -187,7 +187,7 @@ RawCryptoWrapper.prototype = {
    * in a BSO payload. This is called before uploading the record to the server.
    *
    * @param   {Cleartext} outgoingCleartext The cleartext to upload.
-   * @returns {String}                      The serialized cleartext.
+   * @returns {string}                      The serialized cleartext.
    */
   transformBeforeEncrypt() {
     throw new TypeError("Override to stringify outgoing records");
@@ -198,7 +198,7 @@ RawCryptoWrapper.prototype = {
    * `Cleartext` type. This is called when fetching the record from the
    * server.
    *
-   * @param   {String} incomingCleartext The decrypted cleartext string.
+   * @param   {string} incomingCleartext The decrypted cleartext string.
    * @returns {Cleartext}                The parsed cleartext.
    */
   transformAfterDecrypt() {
@@ -280,8 +280,8 @@ Utils.deferGetSet(RawCryptoWrapper, "payload", ["ciphertext", "IV", "hmac"]);
  * should subclass this class to describe their own record types.
  *
  * @class
- * @param {String} collection The collection name for this BSO.
- * @param {String} id         The ID of this BSO.
+ * @param {string} collection The collection name for this BSO.
+ * @param {string} id         The ID of this BSO.
  */
 export function CryptoWrapper(collection, id) {
   RawCryptoWrapper.call(this, collection, id);

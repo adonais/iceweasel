@@ -26,21 +26,22 @@ XPCOMUtils.defineLazyServiceGetter(
 class ProtectionCategory {
   /**
    * Creates a protection category.
+   *
    * @param {string} id - Identifier of the category. Used to query the category
    * UI elements in the DOM.
-   * @param {Object} options - Category options.
+   * @param {object} options - Category options.
    * @param {string} options.prefEnabled - ID of pref which controls the
    * category enabled state.
-   * @param {Object} flags - Flags for this category to look for in the content
+   * @param {object} flags - Flags for this category to look for in the content
    * blocking event and content blocking log.
-   * @param {Number} [flags.load] - Load flag for this protection category. If
+   * @param {number} [flags.load] - Load flag for this protection category. If
    * omitted, we will never match a isAllowing check for this category.
-   * @param {Number} [flags.block] - Block flag for this protection category. If
+   * @param {number} [flags.block] - Block flag for this protection category. If
    * omitted, we will never match a isBlocking check for this category.
-   * @param {Number} [flags.shim] - Shim flag for this protection category. This
+   * @param {number} [flags.shim] - Shim flag for this protection category. This
    * flag is set if we replaced tracking content with a non-tracking shim
    * script.
-   * @param {Number} [flags.allow] - Allow flag for this protection category.
+   * @param {number} [flags.allow] - Allow flag for this protection category.
    * This flag is set if we explicitly allow normally blocked tracking content.
    * The webcompat extension can do this if it needs to unblock content on user
    * opt-in.
@@ -110,6 +111,7 @@ class ProtectionCategory {
   /**
    * Get the category item associated with this protection from the main
    * protections panel.
+   *
    * @returns {xul:toolbarbutton|undefined} - Item or undefined if the panel is
    * not yet initialized.
    */
@@ -126,6 +128,7 @@ class ProtectionCategory {
 
   /**
    * Defaults to enabled state. May be overridden by child classes.
+   *
    * @returns {boolean} - Whether the protection is set to block trackers.
    */
   get blockingEnabled() {
@@ -135,6 +138,7 @@ class ProtectionCategory {
   /**
    * Update the category item state in the main view of the protections panel.
    * Determines whether the category is set to block trackers.
+   *
    * @returns {boolean} - true if the state has been updated, false if the
    * protections popup has not been initialized yet.
    */
@@ -188,7 +192,8 @@ class ProtectionCategory {
 
   /**
    * Create a list of items, each representing a tracker.
-   * @returns {Object} result - An object containing the results.
+   *
+   * @returns {object} result - An object containing the results.
    * @returns {HTMLDivElement[]} result.items - Generated tracker items. May be
    * empty.
    * @returns {boolean} result.anyShimAllowed - Flag indicating if any of the
@@ -217,6 +222,7 @@ class ProtectionCategory {
 
   /**
    * Return the number items blocked by this blocker.
+   *
    * @returns {Integer} count - The number of items blocked.
    */
   async getBlockerCount() {
@@ -226,10 +232,11 @@ class ProtectionCategory {
 
   /**
    * Create a DOM item representing a tracker.
+   *
    * @param {string} origin - Origin of the tracker.
    * @param {Array} actions - Array of actions from the content blocking log
    * associated with the tracking origin.
-   * @returns {Object} result - An object containing the results.
+   * @returns {object} result - An object containing the results.
    * @returns {HTMLDListElement} [options.item] - Generated item or null if we
    * don't have an item for this origin based on the actions log.
    * @returns {boolean} options.shimAllowed - Flag indicating whether the
@@ -277,6 +284,7 @@ class ProtectionCategory {
   /**
    * Create an indicator icon for marking origins that have been allowed by a
    * shim script.
+   *
    * @returns {HTMLImageElement} - Created element.
    */
   _getShimAllowIndicator() {
@@ -292,7 +300,7 @@ class ProtectionCategory {
   }
 
   /**
-   * @param {Number} state - Content blocking event flags.
+   * @param {number} state - Content blocking event flags.
    * @returns {boolean} - Whether the protection has blocked a tracker.
    */
   isBlocking(state) {
@@ -300,7 +308,7 @@ class ProtectionCategory {
   }
 
   /**
-   * @param {Number} state - Content blocking event flags.
+   * @param {number} state - Content blocking event flags.
    * @returns {boolean} - Whether the protection has allowed a tracker.
    */
   isAllowing(state) {
@@ -308,7 +316,7 @@ class ProtectionCategory {
   }
 
   /**
-   * @param {Number} state - Content blocking event flags.
+   * @param {number} state - Content blocking event flags.
    * @returns {boolean} - Whether the protection has detected (blocked or
    * allowed) a tracker.
    */
@@ -317,7 +325,7 @@ class ProtectionCategory {
   }
 
   /**
-   * @param {Number} state - Content blocking event flags.
+   * @param {number} state - Content blocking event flags.
    * @returns {boolean} - Whether the protections has allowed a tracker that
    * would have normally been blocked.
    */
@@ -1803,6 +1811,13 @@ var gProtectionsHandler = {
       false
     );
 
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "trustPanelEnabledPref",
+      "browser.urlbar.trustPanel.featureGate",
+      false
+    );
+
     for (let blocker of Object.values(this.blockers)) {
       if (blocker.init) {
         blocker.init();
@@ -2841,7 +2856,7 @@ var gProtectionsHandler = {
   /**
    * Showing the protections popup.
    *
-   * @param {Object} options
+   * @param {object} options
    *                 The object could have two properties.
    *                 event:
    *                   The event triggers the protections popup to be opened.
@@ -2854,6 +2869,9 @@ var gProtectionsHandler = {
    *                   telemetry purposes.
    */
   showProtectionsPopup(options = {}) {
+    if (this.trustPanelEnabledPref) {
+      return;
+    }
     const { event, toast, openingReason } = options;
 
     this._initializePopup();
@@ -2937,7 +2955,7 @@ var gProtectionsHandler = {
   /**
    * Sends a message to webcompat extension to unblock content and remove placeholders
    *
-   * @param {String} shimId - the id of the shim blocking the content
+   * @param {string} shimId - the id of the shim blocking the content
    */
   _sendUnblockMessageToSmartblock(shimId) {
     Services.obs.notifyObservers(
@@ -2950,7 +2968,7 @@ var gProtectionsHandler = {
   /**
    * Sends a message to webcompat extension to reblock content
    *
-   * @param {String} shimId - the id of the shim blocking the content
+   * @param {string} shimId - the id of the shim blocking the content
    */
   _sendReblockMessageToSmartblock(shimId) {
     Services.obs.notifyObservers(

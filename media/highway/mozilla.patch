@@ -30,9 +30,9 @@ diff --git a/hwy/base.h b/hwy/base.h
  
 +#include <mozilla/Attributes.h>
 +
- // API version (https://semver.org/); keep in sync with CMakeLists.txt.
+ // API version (https://semver.org/); keep in sync with CMakeLists.txt and
+ // meson.build.
  #define HWY_MAJOR 1
- #define HWY_MINOR 3
 @@ -1283,7 +1285,7 @@ struct alignas(2) float16_t {
  #if HWY_HAVE_SCALAR_F16_TYPE
    // NEON vget/set_lane intrinsics and SVE `svaddv` could use explicit

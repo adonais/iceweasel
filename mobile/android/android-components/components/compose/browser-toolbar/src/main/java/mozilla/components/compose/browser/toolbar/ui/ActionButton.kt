@@ -7,8 +7,10 @@ package mozilla.components.compose.browser.toolbar.ui
 import android.graphics.drawable.Drawable
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,7 +51,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param onInteraction Callback for handling [BrowserToolbarEvent]s on user interactions.
  */
 @Composable
-@Suppress("LongMethod", "CyclomaticComplexMethod")
+@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 internal fun ActionButton(
     icon: Drawable,
     contentDescription: String,
@@ -64,12 +66,12 @@ internal fun ActionButton(
         onLongClick != null
     }
     var currentMenuState by remember { mutableStateOf(None) }
-    val colors = AcornTheme.colors
+    val colors = MaterialTheme.colorScheme
     val tint = remember(state, colors) {
         when (state) {
-            State.ACTIVE -> colors.iconAccentViolet
-            State.DISABLED -> colors.iconDisabled
-            State.DEFAULT -> colors.iconPrimary
+            State.ACTIVE -> colors.tertiary
+            State.DISABLED -> colors.onSurface.copy(alpha = 0.38f)
+            State.DEFAULT -> colors.onSurface
         }
     }
 
@@ -213,16 +215,40 @@ private enum class MenuState {
 @Composable
 private fun ActionButtonPreview() {
     AcornTheme {
-        Box(modifier = Modifier.background(AcornTheme.colors.layer1)) {
-            ActionButton(
-                icon = AppCompatResources.getDrawable(
-                    LocalContext.current,
-                    iconsR.drawable.mozac_ic_web_extension_default_icon,
-                )!!,
-                contentDescription = "Test",
-                onClick = object : BrowserToolbarEvent {},
-                onInteraction = {},
-            )
+        Surface {
+            Row {
+                ActionButton(
+                    icon = AppCompatResources.getDrawable(
+                        LocalContext.current,
+                        iconsR.drawable.mozac_ic_bookmark_24,
+                    )!!,
+                    contentDescription = "Test",
+                    onClick = object : BrowserToolbarEvent {},
+                    onInteraction = {},
+                )
+
+                ActionButton(
+                    icon = AppCompatResources.getDrawable(
+                        LocalContext.current,
+                        iconsR.drawable.mozac_ic_bookmark_24,
+                    )!!,
+                    contentDescription = "Test",
+                    state = State.ACTIVE,
+                    onClick = object : BrowserToolbarEvent {},
+                    onInteraction = {},
+                )
+
+                ActionButton(
+                    icon = AppCompatResources.getDrawable(
+                        LocalContext.current,
+                        iconsR.drawable.mozac_ic_bookmark_24,
+                    )!!,
+                    contentDescription = "Test",
+                    state = State.DISABLED,
+                    onClick = object : BrowserToolbarEvent {},
+                    onInteraction = {},
+                )
+            }
         }
     }
 }
@@ -231,11 +257,11 @@ private fun ActionButtonPreview() {
 @Composable
 private fun HighlightedActionButtonPreview() {
     AcornTheme {
-        Box(modifier = Modifier.background(AcornTheme.colors.layer1)) {
+        Surface {
             ActionButton(
                 icon = AppCompatResources.getDrawable(
                     LocalContext.current,
-                    iconsR.drawable.mozac_ic_web_extension_default_icon,
+                    iconsR.drawable.mozac_ic_ellipsis_vertical_24,
                 )!!,
                 contentDescription = "Test",
                 onClick = object : BrowserToolbarEvent {},

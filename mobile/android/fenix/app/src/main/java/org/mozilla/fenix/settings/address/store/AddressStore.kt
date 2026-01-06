@@ -5,7 +5,7 @@
 package org.mozilla.fenix.settings.address.store
 
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.UiStore
+import mozilla.components.lib.state.Store
 
 /**
  * A Store for handling [AddressState] and dispatching [AddressAction].
@@ -16,4 +16,4 @@ import mozilla.components.lib.state.UiStore
 class AddressStore(
     initialState: AddressState,
     middleware: List<Middleware<AddressState, AddressAction>>,
-) : UiStore<AddressState, AddressAction>(initialState, ::addressReducer, middleware)
+) : Store<AddressState, AddressAction>(initialState, ::addressReducer, middleware)

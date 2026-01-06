@@ -1,5 +1,7 @@
 [DEFAULT]
-run-if = ["os != 'android'"]
+run-if = [
+  "os != 'android'",
+]
 head = "head_favicons.js"
 support-files = [
   "expected-favicon-animated16.png.png",

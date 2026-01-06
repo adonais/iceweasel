@@ -6,7 +6,13 @@
   @include newtab-card-style;
 
   grid-column: span 1;
-  width: var(--newtab-card-width-medium);
+  width: var(--newtab-card-grid-layout-width);
+
+  // Match the new card width if sections are enabled
+  .has-sections-grid & {
+    width: var(--newtab-card-width-medium);
+  }
+
   border-radius: var(--border-radius-large);
   padding-block: var(--space-medium);
   height: var(--newtab-card-height);

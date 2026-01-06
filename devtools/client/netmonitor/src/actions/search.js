@@ -186,6 +186,7 @@ function clearSearchResults() {
 
 /**
  * Used to clear and cancel an ongoing search.
+ *
  * @returns {Function}
  */
 function clearSearchResultAndCancel() {
@@ -217,6 +218,7 @@ function closeSearch() {
 
 /**
  * Open the entire search panel
+ *
  * @returns {Function}
  */
 function openSearch() {
@@ -232,6 +234,7 @@ function openSearch() {
 
 /**
  * Toggles case sensitive search
+ *
  * @returns {Function}
  */
 function toggleCaseSensitiveSearch() {

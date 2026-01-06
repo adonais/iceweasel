@@ -37,6 +37,7 @@ import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.navigation.DefaultNavControllerProvider
 import org.mozilla.fenix.navigation.NavControllerProvider
 import org.mozilla.fenix.utils.isLargeScreenSize
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * Get the requireComponents of this application.
@@ -65,7 +66,9 @@ fun Fragment.nav(
     navController.nav(id, directions, options)
 }
 
-fun Fragment.getPreferenceKey(@StringRes resourceId: Int): String = getString(resourceId)
+fun Fragment.getPreferenceKey(
+    @StringRes resourceId: Int,
+): String = getString(resourceId)
 
 /**
  * Displays the activity toolbar with the given [title].
@@ -73,7 +76,7 @@ fun Fragment.getPreferenceKey(@StringRes resourceId: Int): String = getString(re
  */
 fun Fragment.showToolbar(title: String) {
     (requireActivity() as AppCompatActivity).title = title
-    activity?.setNavigationIcon(R.drawable.ic_back_button)
+    activity?.setNavigationIcon(iconsR.drawable.mozac_ic_back_24)
     (activity as? NavHostActivity)?.getSupportActionBarAndInflateIfNecessary()?.show()
 }
 
@@ -93,7 +96,7 @@ fun Fragment.showToolbarWithIconButton(
  ) {
     val activity = requireActivity() as AppCompatActivity
     activity.title = title
-    activity.setNavigationIcon(R.drawable.ic_back_button)
+    activity.setNavigationIcon(iconsR.drawable.mozac_ic_back_24)
     (activity as? NavHostActivity)?.getSupportActionBarAndInflateIfNecessary()?.show()
 
     val menuHost = activity as MenuHost
@@ -233,33 +236,18 @@ fun Fragment.isLargeScreenSize(): Boolean {
     return requireContext().isLargeScreenSize()
 }
 
-internal const val TALL_SCREEN_HEIGHT_DP = 480
-internal const val WIDE_SCREEN_WIDTH_DP = 600
-
 /**
- * Helper function to determine whether the app's current window height
- * is at least more than [TALL_SCREEN_HEIGHT_DP].
- *
- * This is useful when navigation bar should only be enabled on
- * taller screens (e.g., to avoid crowding content vertically).
- *
- * @return true if the window height size is more than [TALL_SCREEN_HEIGHT_DP].
+ * Checks whether the app's current window height is at least more than [TALL_SCREEN_HEIGHT_DP].
  */
 fun Fragment.isTallWindow(): Boolean {
-    return resources.configuration.screenHeightDp > TALL_SCREEN_HEIGHT_DP
+    return requireContext().isTallWindow()
 }
 
 /**
- * Helper function to determine whether the app's current window width
- * is at least more than [WIDE_SCREEN_WIDTH_DP].
- *
- * This is useful when navigation bar should only be enabled on
- * wider screens (e.g., to avoid crowding content horizontally).
- *
- * @return true if the window width size is more than [WIDE_SCREEN_WIDTH_DP].
+ * Checks whether the app's current window width is at least more than [WIDE_SCREEN_WIDTH_DP].
  */
 fun Fragment.isWideWindow(): Boolean {
-    return resources.configuration.screenWidthDp > WIDE_SCREEN_WIDTH_DP
+    return requireContext().isWideWindow()
 }
 
 /**
@@ -362,4 +350,6 @@ fun Fragment.updateMicrosurveyPromptForConfigurationChange(
  * @param resId Resource ID of the dimension.
  * @return The pixel size corresponding to the given dimension resource.
  */
-fun Fragment.pixelSizeFor(@DimenRes resId: Int) = resources.getDimensionPixelSize(resId)
+fun Fragment.pixelSizeFor(
+    @DimenRes resId: Int,
+) = resources.getDimensionPixelSize(resId)

@@ -890,6 +890,7 @@ AppUpdater.STATUS = {
 /**
  * Logs a string to the error console. If enabled, also logs to the update
  * messages file.
+ *
  * @param   string
  *          The string to write to the error console.
  */

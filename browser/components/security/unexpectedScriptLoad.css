@@ -11,7 +11,7 @@
 .dialogTitleBar {
   display: flex;
   padding: 0.4em 0.2em;
-  border-bottom: 1px solid var(--in-content-border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .dialogTitle {

@@ -10,7 +10,9 @@ import static org.mozilla.geckoview.GeckoSession.GeckoPrintException.ERROR_NO_PR
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.Point;
@@ -50,6 +52,9 @@ import java.io.InputStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.Principal;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -291,6 +296,7 @@ public class GeckoSession {
   private float mViewportLeft;
   private float mViewportTop;
   private float mViewportZoom = 1.0f;
+  private ScrollPositionUpdate mLastScrollPositionUpdate = null;
   private int mKeyboardHeight = 0; // The software keyboard height, 0 if it's hidden.
 
   //
@@ -733,7 +739,7 @@ public class GeckoSession {
                 delegate.onLoadRequest(GeckoSession.this, request);
 
             if (result == null) {
-              callback.sendSuccess(null);
+              callback.sendSuccess(false);
               return;
             }
 
@@ -779,6 +785,13 @@ public class GeckoSession {
                     }));
           } else if ("GeckoView:OnNewSession".equals(event)) {
             final String uri = message.getString("uri");
+
+            // Early check whether parent is opened. If not opened, we cannot get parent's runtime.
+            if (!GeckoSession.this.isOpen()) {
+              callback.sendError("Parent session is closed or isn't opened yet");
+              return;
+            }
+
             final GeckoResult<GeckoSession> result = delegate.onNewSession(GeckoSession.this, uri);
             if (result == null) {
               callback.sendSuccess(false);
@@ -3420,7 +3433,17 @@ public class GeckoSession {
   @UiThread
   public void setCompositorScrollDelegate(final @Nullable CompositorScrollDelegate delegate) {
     ThreadUtils.assertOnUiThread();
+    if (mCompositorScrollDelegate == delegate) {
+      return;
+    }
+
     mCompositorScrollDelegate = delegate;
+
+    // Notify the newly registered delegate immediately about the
+    // most recent update, if there is one.
+    if (mCompositorScrollDelegate != null && mLastScrollPositionUpdate != null) {
+      mCompositorScrollDelegate.onScrollChanged(this, mLastScrollPositionUpdate);
+    }
   }
 
   /**
@@ -6919,12 +6942,15 @@ public class GeckoSession {
   /**
    * Get a matrix for transforming from screen coordinates to Android's current window coordinates.
    *
+   * @param activity an Activity of this window.
    * @param matrix Matrix to be replaced by the transformation matrix.
    * @see <a
    *     href="https://developer.android.com/guide/topics/large-screens/multi-window-support#window_metrics">...</a>
    */
+  @SuppressLint("BlockedPrivateApi")
   @UiThread
-  /* package */ void getScreenToWindowManagerOffsetMatrix(@NonNull final Matrix matrix) {
+  /* package */ void getScreenToWindowManagerOffsetMatrix(
+      @NonNull final Activity activity, @NonNull final Matrix matrix) {
     ThreadUtils.assertOnUiThread();
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -6936,8 +6962,33 @@ public class GeckoSession {
       return;
     }
 
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+      try {
+        // Android 9/10 hides WindowConfiguration object.
+        final Configuration config = activity.getResources().getConfiguration();
+        final Field windowConfigurationField =
+            Configuration.class.getDeclaredField("windowConfiguration");
+        windowConfigurationField.setAccessible(true);
+        final Object windowConfig = windowConfigurationField.get(config);
+        final Method getBoundsMethod;
+        if (activity.isInMultiWindowMode()) {
+          getBoundsMethod = windowConfig.getClass().getDeclaredMethod("getBounds");
+        } else {
+          getBoundsMethod = windowConfig.getClass().getDeclaredMethod("getAppBounds");
+        }
+        final Rect currentWindowRect = (Rect) getBoundsMethod.invoke(windowConfig);
+        matrix.postTranslate(-currentWindowRect.left, -currentWindowRect.top);
+      } catch (final NoSuchMethodException
+          | NoSuchFieldException
+          | IllegalAccessException
+          | InvocationTargetException e) {
+        Log.e(LOGTAG, "Could not convert from screen coordinate to window manager coordinate", e);
+      }
+      return;
+    }
+
     // TODO(m_kato): Bug 1678531
-    // How to get window coordinate on Android 7-10 that supports split window?
+    // How to get window coordinate on Android 8 that supports split window?
   }
 
   /**
@@ -7828,6 +7879,7 @@ public class GeckoSession {
     update.scrollY = scrollY;
     update.zoom = zoom;
     update.source = source;
+    mLastScrollPositionUpdate = update;
     if (mCompositorScrollDelegate != null) {
       mCompositorScrollDelegate.onScrollChanged(this, update);
     }

@@ -3,9 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-from collections import deque
-
 import taskgraph
+from taskgraph.graph import Graph
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.cached_tasks import add_optimization
 
@@ -15,25 +14,19 @@ transforms = TransformSequence()
 def order_tasks(config, tasks):
     """Iterate image tasks in an order where parent tasks come first."""
     kind_prefix = config.kind + "-"
+    pending = {task["label"]: task for task in tasks}
+    nodes = set(pending)
+    edges = {
+        (label, dep, "")
+        for label in pending
+        for dep in pending[label].get("dependencies", {}).values()
+        if dep.startswith(kind_prefix)
+    }
+    graph = Graph(nodes, edges)
 
-    pending = deque(tasks)
-    task_labels = {task["label"] for task in pending}
-    emitted = set()
-    while True:
-        try:
-            task = pending.popleft()
-        except IndexError:
-            break
-        parents = {
-            task
-            for task in task.get("dependencies", {}).values()
-            if task.startswith(kind_prefix)
-        }
-        if parents and not emitted.issuperset(parents & task_labels):
-            pending.append(task)
-            continue
-        emitted.add(task["label"])
-        yield task
+    for label in graph.visit_postorder():
+        yield pending.pop(label)
+    assert not pending
 
 
 def format_task_digest(cached_task):

@@ -2483,10 +2483,6 @@ void SdpOfferAnswerHandler::DoSetLocalDescription(
         RTC_LOG(LS_ERROR) << "Rejecting SDP because of ufrag modification";
         reject_error = true;
       }
-    } else if (sdp_munging_type == kNumberOfContents &&
-               !pc_->trials().IsDisabled(
-                   "WebRTC-NoSdpMangleNumberOfContents")) {
-      reject_error = true;
     } else {
       reject_error = !IsSdpMungingAllowed(sdp_munging_type, pc_->trials());
     }
@@ -3011,7 +3007,10 @@ bool SdpOfferAnswerHandler::RemoveIceCandidates(
   RTC_DCHECK_RUN_ON(signaling_thread());
 
   for (const auto& c : candidates) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     IceCandidate candidate(c.transport_name(), /*sdp_mline_index=*/-1, c);
+#pragma clang diagnostic pop
     if (!RemoveIceCandidate(&candidate)) {
       RTC_LOG(LS_ERROR) << "RemoveIceCandidates: Failed to remove candidate: "
                         << c.ToSensitiveString();
@@ -3260,13 +3259,11 @@ void SdpOfferAnswerHandler::RemoveStream(MediaStreamInterface* local_stream) {
     }
   }
   local_streams_->RemoveStream(local_stream);
-  stream_observers_.erase(
-      std::remove_if(
-          stream_observers_.begin(), stream_observers_.end(),
-          [local_stream](const std::unique_ptr<MediaStreamObserver>& observer) {
-            return observer->stream()->id().compare(local_stream->id()) == 0;
-          }),
-      stream_observers_.end());
+  std::erase_if(
+      stream_observers_,
+      [local_stream](const std::unique_ptr<MediaStreamObserver>& observer) {
+        return observer->stream()->id().compare(local_stream->id()) == 0;
+      });
 
   if (pc_->IsClosed()) {
     return;
@@ -3695,7 +3692,7 @@ bool SdpOfferAnswerHandler::CheckIfNegotiationIsNeeded() {
     // m= section, or the MSID values themselves, differ from what is in
     // transceiver.sender.[[AssociatedMediaStreamIds]], return true.
     if (RtpTransceiverDirectionHasSend(transceiver->direction())) {
-      if (current_local_media_description->streams().size() == 0)
+      if (current_local_media_description->streams().empty())
         return true;
 
       std::vector<std::string> msection_msids;
@@ -5044,9 +5041,9 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
     ContentSource source,
     const std::map<std::string, const ContentGroup*>& bundle_groups_by_mid) {
   TRACE_EVENT0("webrtc", "SdpOfferAnswerHandler::PushdownMediaDescription");
+  RTC_DCHECK_RUN_ON(signaling_thread());
   const SessionDescriptionInterface* sdesc =
       (source == CS_LOCAL ? local_description() : remote_description());
-  RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(sdesc);
 
   if (ConfiguredForMedia()) {
@@ -5064,8 +5061,7 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
     auto rtp_transceivers = transceivers()->ListInternal();
     std::vector<std::pair<ChannelInterface*, const MediaContentDescription*>>
         channels;
-    bool use_ccfb = false;
-    bool seen_ccfb = false;
+    std::optional<RtcpFeedbackType> preferred_rtcp_cc_ack_type;
     for (const auto& transceiver : rtp_transceivers) {
       const ContentInfo* content_info =
           FindMediaSectionForTransceiver(transceiver, sdesc);
@@ -5078,16 +5074,20 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
       if (!content_desc) {
         continue;
       }
-      // RFC 8888 says that the ccfb must be consistent across the description.
-      if (seen_ccfb) {
-        if (use_ccfb != content_desc->rtcp_fb_ack_ccfb()) {
+      if (preferred_rtcp_cc_ack_type.has_value()) {
+        // RFC 8888 says that the ccfb must be consistent across the
+        // description.
+        if (preferred_rtcp_cc_ack_type == RtcpFeedbackType::CCFB &&
+            preferred_rtcp_cc_ack_type !=
+                content_desc->preferred_rtcp_cc_ack_type()) {
           RTC_LOG(LS_ERROR)
-              << "Warning: Inconsistent CCFB flag - CCFB turned off";
-          use_ccfb = false;
+              << "Warning: Inconsistent CCFB flag - ack type changed to "
+              << content_desc->preferred_rtcp_cc_ack_type();
+          preferred_rtcp_cc_ack_type =
+              content_desc->preferred_rtcp_cc_ack_type();
         }
       } else {
-        use_ccfb = content_desc->rtcp_fb_ack_ccfb();
-        seen_ccfb = true;
+        preferred_rtcp_cc_ack_type = content_desc->preferred_rtcp_cc_ack_type();
       }
 
       transceiver->OnNegotiationUpdate(type, content_desc);
@@ -5118,11 +5118,45 @@ RTCError SdpOfferAnswerHandler::PushdownMediaDescription(
     // If local and remote are both set, we assume that it's safe to trigger
     // CCFB.
     if (pc_->trials().IsEnabled("WebRTC-RFC8888CongestionControlFeedback")) {
-      if (use_ccfb && local_description() && remote_description()) {
-        // The call and the congestion controller live on the worker thread.
-        context_->worker_thread()->PostTask([call = pc_->call_ptr()] {
-          call->EnableSendCongestionControlFeedbackAccordingToRfc8888();
-        });
+      if (type == SdpType::kAnswer && local_description() &&
+          remote_description()) {
+        std::optional<RtcpFeedbackType> remote_preferred_rtcp_cc_ack_type;
+        // Verify that the remote agrees on congestion control feedback format.
+        for (const auto& content :
+             remote_description()->description()->contents()) {
+          if (content.type != MediaProtocolType::kRtp || content.rejected ||
+              content.media_description() == nullptr) {
+            continue;
+          }
+          if (!remote_preferred_rtcp_cc_ack_type.has_value()) {
+            remote_preferred_rtcp_cc_ack_type =
+                content.media_description()->preferred_rtcp_cc_ack_type();
+          }
+          if (content.media_description()
+                  ->preferred_rtcp_cc_ack_type()
+                  .has_value() &&
+              remote_preferred_rtcp_cc_ack_type !=
+                  content.media_description()->preferred_rtcp_cc_ack_type()) {
+            RTC_LOG(LS_ERROR) << "Warning: Inconsistent remote congestion "
+                                 "control feedback types. ";
+            remote_preferred_rtcp_cc_ack_type = std::nullopt;
+            break;
+          }
+        }
+        if (preferred_rtcp_cc_ack_type.has_value() &&
+            preferred_rtcp_cc_ack_type == remote_preferred_rtcp_cc_ack_type) {
+          // The call and the congestion controller live on the worker thread.
+          context_->worker_thread()->PostTask(
+              [call = pc_->call_ptr(),
+               preferred_rtcp_cc_ack_type = *preferred_rtcp_cc_ack_type] {
+                call->SetPreferredRtcpCcAckType(preferred_rtcp_cc_ack_type);
+              });
+        } else {
+          RTC_LOG(LS_WARNING)
+              << "Inconsistent Congestion Control feedback types: "
+              << preferred_rtcp_cc_ack_type << " vs "
+              << remote_preferred_rtcp_cc_ack_type << " Using default.";
+        }
       }
     }
   }

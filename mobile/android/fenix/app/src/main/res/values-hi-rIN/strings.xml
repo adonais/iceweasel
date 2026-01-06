@@ -194,6 +194,10 @@
   <string name="search_engine_suggestions_title">%s खोजें</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">सीधे पता बार से खोजें</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">खोजें</string>
   <!-- Text preview for larger sized widgets -->
@@ -1195,4 +1199,10 @@
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

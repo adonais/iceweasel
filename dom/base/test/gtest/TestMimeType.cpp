@@ -1099,3 +1099,37 @@ TEST(MimeTypeParsing, invalidSubtype2)
   RefPtr<CMimeType> parsed = CMimeType::Parse(val);
   ASSERT_TRUE(!parsed);
 }
+
+TEST(MimeTypeParsing, countParameters0)
+{
+  constexpr nsLiteralCString val("text/plain");
+  RefPtr<CMimeType> parsed = CMimeType::Parse(val);
+  ASSERT_TRUE(parsed);
+  ASSERT_TRUE(parsed->GetParameterCount() == 0);
+}
+
+TEST(MimeTypeParsing, countParameters1)
+{
+  constexpr nsLiteralCString val("video/webm; codecs=\"vp09.00.10.08, opus\"");
+  RefPtr<CMimeType> parsed = CMimeType::Parse(val);
+  ASSERT_TRUE(parsed);
+  ASSERT_TRUE(parsed->GetParameterCount() == 1);
+}
+
+TEST(MimeTypeParsing, countParameters2)
+{
+  constexpr nsLiteralCString val(
+      "video/mp4; codecs=\"avc1.64001f\"; profile=high");
+  RefPtr<CMimeType> parsed = CMimeType::Parse(val);
+  ASSERT_TRUE(parsed);
+  ASSERT_TRUE(parsed->GetParameterCount() == 2);
+}
+
+TEST(MimeTypeParsing, countParameters3)
+{
+  constexpr nsLiteralCString val(
+      "video/mp4; codecs=\"a,b\"; FrameRate=60; BITRATE=100000");
+  RefPtr<CMimeType> parsed = CMimeType::Parse(val);
+  ASSERT_TRUE(parsed);
+  ASSERT_TRUE(parsed->GetParameterCount() == 3);
+}

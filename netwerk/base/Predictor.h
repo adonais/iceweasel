@@ -243,15 +243,6 @@ class Predictor final : public nsINetworkPredictor,
                        nsINetworkPredictorVerifier* verifier,
                        uint8_t stackCount);
 
-  // Used when predicting because the user's mouse hovered over a link
-  //   * targetURI - the URI target of the link
-  //   * sourceURI - the URI of the page on which the link appears
-  //   * originAttributes - the originAttributes for this prediction
-  //   * verifier - used for testing to verify the expected predictions happen
-  void PredictForLink(nsIURI* targetURI, nsIURI* sourceURI,
-                      const OriginAttributes& originAttributes,
-                      nsINetworkPredictorVerifier* verifier);
-
   // Used when predicting because a page is being loaded (which may include
   // being the target of a redirect). All arguments are the same as for
   // PredictInternal. Returns true if any predictions were queued up.

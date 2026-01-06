@@ -25,7 +25,7 @@ task-defaults:
     shipping-phase: promote
     # never run as part of CI
     run-on-projects: []
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     attributes:
         build_type: opt
         release_artifacts:

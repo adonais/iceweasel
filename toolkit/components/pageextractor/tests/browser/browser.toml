@@ -12,3 +12,6 @@ support-files = [
 ["browser_dom_extractor_pdf.js"]
 
 ["browser_dom_extractor_reader_mode.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && opt", # Bug 1996139
+]

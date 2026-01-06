@@ -4390,7 +4390,7 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
     END_CASE(DynamicImport)
 
     CASE(EnvCallee) {
-      uint8_t numHops = GET_UINT8(REGS.pc);
+      uint16_t numHops = GET_ENVCOORD_HOPS(REGS.pc);
       JSObject* env = &REGS.fp()->environmentChain()->as<EnvironmentObject>();
       for (unsigned i = 0; i < numHops; i++) {
         env = &env->as<EnvironmentObject>().enclosingEnvironment();

@@ -144,7 +144,6 @@ var AboutTabCrashed = {
    *        requestAutoSubmit (bool):
    *          Whether or not we should ask the user to automatically
    *          submit backlogged crash reports.
-   *
    */
   onSetCrashReportAvailable(message) {
     let data = message.data;

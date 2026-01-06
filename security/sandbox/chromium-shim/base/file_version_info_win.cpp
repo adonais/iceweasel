@@ -9,6 +9,8 @@
 
 #include "base/file_version_info_win.h"
 
+#include <windows.h>
+
 #include "base/files/file_path.h"
 #include "base/memory/ptr_util.h"
 #include "base/threading/scoped_blocking_call.h"

@@ -778,7 +778,7 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
       color = kWindowText;
       break;
     case ColorID::MozSidebarborder:
-    case ColorID::Windowframe:  // --in-content-box-border-color computed
+    case ColorID::Windowframe:  // --border-color computed
                                 // with kWindowText above
                                 // kWindowBackground.
     case ColorID::Graytext:     // opacity: 0.4 of kWindowText blended over the

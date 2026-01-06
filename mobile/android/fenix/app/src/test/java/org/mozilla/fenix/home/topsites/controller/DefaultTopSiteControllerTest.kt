@@ -406,7 +406,7 @@ class DefaultTopSiteControllerTest {
 
         every { controller.getAvailableSearchEngines() } returns listOf(searchEngine)
 
-        store.dispatch(SearchAction.SetRegionAction(RegionState("US", "US"))).joinBlocking()
+        store.dispatch(SearchAction.SetRegionAction(RegionState("US", "US")))
 
         controller.handleSelectTopSite(topSite, position = 0)
 
@@ -444,7 +444,7 @@ class DefaultTopSiteControllerTest {
 
         every { controller.getAvailableSearchEngines() } returns listOf(searchEngine)
 
-        store.dispatch(SearchAction.SetRegionAction(RegionState("DE", "FR"))).joinBlocking()
+        store.dispatch(SearchAction.SetRegionAction(RegionState("DE", "FR")))
 
         controller.handleSelectTopSite(topSite, position = 0)
 
@@ -531,7 +531,7 @@ class DefaultTopSiteControllerTest {
 
         every { controller.getAvailableSearchEngines() } returns listOf(searchEngine)
 
-        store.dispatch(SearchAction.SetRegionAction(RegionState("US", "US"))).joinBlocking()
+        store.dispatch(SearchAction.SetRegionAction(RegionState("US", "US")))
 
         controller.handleSelectTopSite(topSite, position = 0)
 
@@ -569,7 +569,7 @@ class DefaultTopSiteControllerTest {
 
         every { controller.getAvailableSearchEngines() } returns listOf(searchEngine)
 
-        store.dispatch(SearchAction.SetRegionAction(RegionState("DE", "FR"))).joinBlocking()
+        store.dispatch(SearchAction.SetRegionAction(RegionState("DE", "FR")))
 
         controller.handleSelectTopSite(topSite, position = 0)
 
@@ -607,7 +607,7 @@ class DefaultTopSiteControllerTest {
 
         every { controller.getAvailableSearchEngines() } returns listOf(searchEngine)
 
-        store.dispatch(SearchAction.SetRegionAction(RegionState("US", "US"))).joinBlocking()
+        store.dispatch(SearchAction.SetRegionAction(RegionState("US", "US")))
 
         controller.handleSelectTopSite(topSite, position = 0)
 
@@ -645,7 +645,7 @@ class DefaultTopSiteControllerTest {
 
         every { controller.getAvailableSearchEngines() } returns listOf(searchEngine)
 
-        store.dispatch(SearchAction.SetRegionAction(RegionState("DE", "FR"))).joinBlocking()
+        store.dispatch(SearchAction.SetRegionAction(RegionState("DE", "FR")))
 
         controller.handleSelectTopSite(topSite, position = 0)
 

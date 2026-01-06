@@ -870,6 +870,7 @@ class GeckoEngineSession(
     /**
      * NavigationDelegate implementation for forwarding callbacks to observers of the session.
      */
+    @Suppress("CognitiveComplexMethod")
     private fun createNavigationDelegate() = object : GeckoSession.NavigationDelegate {
         override fun onLocationChange(
             session: GeckoSession,
@@ -1079,11 +1080,11 @@ class GeckoEngineSession(
             }
 
             notifyObservers {
-                // TODO provide full certificate info: https://github.com/mozilla-mobile/android-components/issues/5557
                 onSecurityChange(
                     securityInfo.isSecure,
                     securityInfo.host,
                     securityInfo.getIssuerName(),
+                    securityInfo.certificate,
                 )
             }
         }
@@ -1234,7 +1235,7 @@ class GeckoEngineSession(
         }
     }
 
-    @Suppress("NestedBlockDepth")
+    @Suppress("NestedBlockDepth", "CognitiveComplexMethod")
     internal fun createContentDelegate() = object : GeckoSession.ContentDelegate {
         override fun onCookieBannerDetected(session: GeckoSession) {
             notifyObservers { onCookieBannerChange(CookieBannerHandlingStatus.DETECTED) }
@@ -1623,6 +1624,7 @@ class GeckoEngineSession(
                 WebRequestError.ERROR_SAFEBROWSING_UNWANTED_URI -> ErrorType.ERROR_SAFEBROWSING_UNWANTED_URI
                 WebRequestError.ERROR_SAFEBROWSING_HARMFUL_URI -> ErrorType.ERROR_SAFEBROWSING_HARMFUL_URI
                 WebRequestError.ERROR_SAFEBROWSING_PHISHING_URI -> ErrorType.ERROR_SAFEBROWSING_PHISHING_URI
+                WebRequestError.ERROR_HARMFULADDON_URI -> ErrorType.ERROR_HARMFULADDON_URI
                 WebRequestError.ERROR_HTTPS_ONLY -> ErrorType.ERROR_HTTPS_ONLY
                 WebRequestError.ERROR_BAD_HSTS_CERT -> ErrorType.ERROR_BAD_HSTS_CERT
                 else -> ErrorType.UNKNOWN

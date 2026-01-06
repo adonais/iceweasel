@@ -367,6 +367,7 @@ exports.analyzeInputString = function (str, timeout = 2500) {
 /**
  * Checks whether the analyzed input string is in an appropriate state to autocomplete, e.g. not
  * inside a string, or declaring a variable.
+ *
  * @param {object} inputAnalysisState The analyzed string to check
  * @returns {boolean} Whether the input should be autocompleted
  */
@@ -402,6 +403,7 @@ exports.shouldInputBeAutocompleted = function (inputAnalysisState) {
 
 /**
  * Checks whether the analyzed input string is in an appropriate state to be eagerly evaluated.
+ *
  * @param {object} inputAnalysisState
  * @returns {boolean} Whether the input should be eagerly evaluated
  */

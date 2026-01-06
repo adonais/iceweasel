@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.settings.settingssearch
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,22 +13,34 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.button.TextButton
+import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.lib.state.ext.observeAsComposableState
+import org.mozilla.fenix.GleanMetrics.SettingsSearch
 import org.mozilla.fenix.R
+import org.mozilla.fenix.settings.settingssearch.ui.SettingsSearchSectionHeader
 import org.mozilla.fenix.theme.FirefoxTheme
 
 /**
@@ -62,7 +75,6 @@ fun SettingsSearchScreen(
                 if (state.recentSearches.isNotEmpty()) {
                     RecentSearchesContent(
                         store = store,
-                        recentSearches = state.recentSearches,
                         modifier = Modifier
                             .padding(top = topPadding)
                             .fillMaxSize(),
@@ -76,17 +88,15 @@ fun SettingsSearchScreen(
                 }
             }
             is SettingsSearchState.NoSearchResults -> {
-                SettingsSearchMessageContent(
+                EmptySearchResultsView(
                     modifier = Modifier
                         .padding(top = topPadding)
                         .fillMaxSize(),
-                    currentUserQuery = state.searchQuery,
-                    )
+                )
             }
             is SettingsSearchState.SearchInProgress -> {
                 SearchResults(
                     store = store,
-                    searchItems = state.searchResults,
                     modifier = Modifier
                         .padding(top = topPadding)
                         .fillMaxSize(),
@@ -99,16 +109,8 @@ fun SettingsSearchScreen(
 @Composable
 private fun SettingsSearchMessageContent(
     modifier: Modifier = Modifier,
-    currentUserQuery: String = "",
 ) {
-    val displayMessage = if (currentUserQuery.isBlank()) {
-        stringResource(R.string.settings_search_empty_query_placeholder)
-    } else {
-        stringResource(
-            R.string.settings_search_no_results_found_message,
-            currentUserQuery,
-        )
-    }
+    val displayMessage = stringResource(R.string.settings_search_empty_query_placeholder)
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center,
@@ -125,30 +127,54 @@ private fun SettingsSearchMessageContent(
 @Composable
 private fun SearchResults(
     store: SettingsSearchStore,
-    searchItems: List<SettingsSearchItem>,
     modifier: Modifier = Modifier,
 ) {
     val state by store.observeAsComposableState { it }
+    val focusManager = LocalFocusManager.current
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.isScrollInProgress }
+            .collect { isScrolling ->
+                if (isScrolling) {
+                    focusManager.clearFocus()
+                }
+            }
+    }
 
     LazyColumn(
         modifier = modifier,
+        state = listState,
     ) {
-        items(searchItems.size) { index ->
-            val searchItem = searchItems[index]
-            if (index > 0) {
-                HorizontalDivider()
+        state.groupedResults.forEach { (header, items) ->
+            item {
+                SettingsSearchSectionHeader(title = header)
             }
-            SettingsSearchResultItem(
-                item = searchItem,
-                query = state.searchQuery,
-                onClick = {
-                    store.dispatch(
-                        SettingsSearchAction.ResultItemClicked(
-                            searchItem,
-                        ),
-                    )
-                },
-            )
+
+            items(items.size) { index ->
+                val settingsSearchItem = items[index]
+                SettingsSearchResultItem(
+                    item = settingsSearchItem,
+                    query = state.searchQuery,
+                    onClick = {
+                        SettingsSearch.searchResultClicked.record(
+                            SettingsSearch.SearchResultClickedExtra(
+                                itemPreferenceKey = settingsSearchItem.preferenceKey,
+                                isRecentSearch = false,
+                            ),
+                        )
+                        store.dispatch(
+                            SettingsSearchAction.ResultItemClicked(
+                                settingsSearchItem,
+                            ),
+                        )
+                    },
+                )
+            }
+
+            item {
+                HorizontalDivider(modifier = Modifier.padding(top = 8.dp, bottom = 12.dp))
+            }
         }
     }
 }
@@ -156,32 +182,110 @@ private fun SearchResults(
 @Composable
 private fun RecentSearchesContent(
     store: SettingsSearchStore,
-    recentSearches: List<SettingsSearchItem>,
     modifier: Modifier = Modifier,
 ) {
+    val state by store.observeAsComposableState { it }
+    val focusManager = LocalFocusManager.current
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.isScrollInProgress }
+            .collect { isScrolling ->
+                if (isScrolling) {
+                    focusManager.clearFocus()
+                }
+            }
+    }
+
     Column(
         modifier = modifier,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(34.dp)
-                .padding(start = 16.dp, end = 16.dp),
+                .height(50.dp)
+                .padding(start = 16.dp, top = 12.dp, bottom = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = stringResource(R.string.settings_search_recent_searches_section_header),
                 style = FirefoxTheme.typography.headline8,
+                color = colorResource(RECENT_SEARCHES_HEADER_TEXT_COLOR),
             )
             TextButton(
-                text = stringResource(R.string.settings_search_clear_recent_searches_message),
                 onClick = {
                     store.dispatch(SettingsSearchAction.ClearRecentSearchesClicked)
                 },
+                colors = ButtonDefaults.textButtonColors(),
+                modifier = Modifier,
+                enabled = true,
+            ) {
+               Text(
+                   text = stringResource(R.string.settings_search_clear_recent_searches_message),
+                   color = colorResource(RECENT_SEARCHES_CLEAR_RECENTS_TEXT_COLOR),
+                   style = AcornTheme.typography.button,
+                   maxLines = 1,
+               )
+            }
+        }
+        LazyColumn(
+            state = listState,
+        ) {
+            items(state.recentSearches.size) { index ->
+                val searchItem = state.recentSearches[index]
+
+                SettingsSearchResultItem(
+                    item = searchItem,
+                    query = state.searchQuery,
+                    onClick = {
+                        SettingsSearch.searchResultClicked.record(
+                            SettingsSearch.SearchResultClickedExtra(
+                                itemPreferenceKey = searchItem.preferenceKey,
+                                isRecentSearch = true,
+                            ),
+                        )
+                        store.dispatch(
+                            SettingsSearchAction.ResultItemClicked(
+                                searchItem,
+                            ),
+                        )
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptySearchResultsView(
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = BiasAlignment(0f, VERTICAL_BIAS_OFFSET_IMAGE_MESSAGE),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Image(
+                modifier = Modifier.size(77.dp),
+                painter = painterResource(R.drawable.fox_exclamation_alert),
+                contentDescription = null,
+            )
+
+            Text(
+                text = stringResource(R.string.settings_search_no_results_title),
+                textAlign = TextAlign.Center,
+                style = FirefoxTheme.typography.headline7,
+            )
+            Text(
+                text = stringResource(R.string.settings_search_no_results_message),
+                textAlign = TextAlign.Center,
+                style = FirefoxTheme.typography.body2,
             )
         }
-        SearchResults(store, recentSearches, Modifier)
     }
 }
 
@@ -212,14 +316,14 @@ private fun SettingsSearchScreenWithRecentsPreview() {
                     "Search engine",
                     "Choose your default",
                     "search_engine",
-                    listOf("General"),
+                    categoryHeader = "General",
                     PreferenceFileInformation.SearchSettingsPreferences,
                 ),
                 SettingsSearchItem(
                     "Delete browsing data",
                     "Clear history, cookies, and more",
                     "delete_browsing_data",
-                    listOf("Privacy"),
+                    categoryHeader = "Privacy",
                     PreferenceFileInformation.PrivateBrowsingPreferences,
                 ),
             ),
@@ -244,24 +348,38 @@ private fun SettingsSearchScreenWithResultsPreview() {
             searchQuery = "privacy",
             searchResults = listOf(
                 SettingsSearchItem(
+                    "Search engine",
+                    "Choose your default",
+                    "search_engine",
+                    categoryHeader = "General",
+                    PreferenceFileInformation.SearchSettingsPreferences,
+                ),
+                SettingsSearchItem(
+                    "Homepage",
+                    "Choose your homepage",
+                    "home_page",
+                    categoryHeader = "General",
+                    PreferenceFileInformation.SearchSettingsPreferences,
+                ),
+                SettingsSearchItem(
                     "Tracking Protection",
                     "Strict, Standard, or Custom",
                     "tracking_protection",
-                    listOf("Privacy"),
+                    categoryHeader = "Privacy",
                     PreferenceFileInformation.GeneralPreferences,
                 ),
                 SettingsSearchItem(
                     "Delete browsing data",
                     "Clear history, cookies, and more",
                     "delete_browsing_data",
-                    listOf("Privacy"),
+                    categoryHeader = "Privacy",
                     PreferenceFileInformation.GeneralPreferences,
                 ),
                 SettingsSearchItem(
                     "HTTPS-Only Mode",
                     "Enable in all tabs",
                     "https_only_mode",
-                    listOf("Privacy", "Advanced"),
+                    categoryHeader = "Privacy",
                     PreferenceFileInformation.GeneralPreferences,
                 ),
             ),
@@ -295,3 +413,7 @@ private fun SettingsSearchScreenNoResultsPreview() {
         )
     }
 }
+
+private val RECENT_SEARCHES_HEADER_TEXT_COLOR = mozilla.components.ui.colors.R.color.photonDarkGrey05
+private val RECENT_SEARCHES_CLEAR_RECENTS_TEXT_COLOR = mozilla.components.ui.colors.R.color.photonViolet70
+private const val VERTICAL_BIAS_OFFSET_IMAGE_MESSAGE = -0.33f

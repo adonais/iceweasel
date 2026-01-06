@@ -110,7 +110,7 @@ const SPECIAL_VALUES = new Set(["none", "unset", "initial", "inherit"]);
  *
  * @param {Node} el
  *        The widget container.
- * @param {String} value
+ * @param {string} value
  *        CSS filter value
  */
 function CSSFilterEditorWidget(el, value = "") {
@@ -784,9 +784,9 @@ CSSFilterEditorWidget.prototype = {
   /**
    * returns definition of a filter as defined in filterList
    *
-   * @param {String} name
+   * @param {string} name
    *        filter name (e.g. blur)
-   * @return {Object}
+   * @return {object}
    *        filter's definition
    */
   _definition(name) {
@@ -797,7 +797,7 @@ CSSFilterEditorWidget.prototype = {
   /**
    * Parses the CSS value specified, updating widget's filters
    *
-   * @param {String} cssValue
+   * @param {string} cssValue
    *        css value to be parsed
    */
   setCssValue(cssValue) {
@@ -833,14 +833,14 @@ CSSFilterEditorWidget.prototype = {
   /**
    * Creates a new [name] filter record with value
    *
-   * @param {String} name
+   * @param {string} name
    *        filter name (e.g. blur)
-   * @param {String} value
+   * @param {string} value
    *        value of the filter (e.g. 30px, 20%)
    *        If this is |null|, then a default value may be supplied.
-   * @return {Number}
+   * @return {number}
    *        The index of the new filter in the current list of filters
-   * @param {Boolean}
+   * @param {boolean}
    *        By default, adding a new filter emits an "updated" event, but if
    *        you're calling add in a loop and wait to emit a single event after
    *        the loop yourself, set this parameter to true.
@@ -897,9 +897,9 @@ CSSFilterEditorWidget.prototype = {
   /**
    * returns value + unit of the specified filter
    *
-   * @param {Number} index
+   * @param {number} index
    *        filter index
-   * @return {String}
+   * @return {string}
    *        css value of filter
    */
   getValueAt(index) {
@@ -929,7 +929,7 @@ CSSFilterEditorWidget.prototype = {
   /**
    * Generates CSS filter value for filters of the widget
    *
-   * @return {String}
+   * @return {string}
    *        css value of filters
    */
   getCssValue() {
@@ -947,7 +947,7 @@ CSSFilterEditorWidget.prototype = {
   /**
    * Updates specified filter's value
    *
-   * @param {Number} index
+   * @param {number} index
    *        The index of the filter in the current list of filters
    * @param {number/string} value
    *        value to set, string for string-typed filters
@@ -1004,9 +1004,9 @@ function fixFloat(a, number) {
  *
  * @param {Array} array
  *        the array to swap elements of
- * @param {Number} a
+ * @param {number} a
  *        index of first element
- * @param {Number} b
+ * @param {number} b
  *        index of second element
  */
 function swapArrayIndices(array, a, b) {
@@ -1016,7 +1016,7 @@ function swapArrayIndices(array, a, b) {
 /**
  * Tokenizes a CSS Filter value and returns an array of {name, value} pairs.
  *
- * @param {String} css CSS Filter value to be parsed
+ * @param {string} css CSS Filter value to be parsed
  * @return {Array} An array of {name, value} pairs
  */
 function tokenizeFilterValue(css) {
@@ -1087,11 +1087,11 @@ function tokenizeFilterValue(css) {
  * the numbers may be floats (containing dots)
  * It's assumed that the value given to this function is a valid number
  *
- * @param {String} string
+ * @param {string} string
  *        The string containing numbers
- * @param {Number} index
+ * @param {number} index
  *        The index to look for neighbours for
- * @return {Object}
+ * @return {object}
  *         returns null if no number is found
  *         value: The number found
  *         start: The number's starting index

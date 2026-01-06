@@ -22,6 +22,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 /**
  *  Logs a string to the error console.
+ *
  *  @param   string
  *           The string to write to the error console.
  *  @param   bool
@@ -37,6 +38,7 @@ function LOG(string, alwaysLog = false) {
 /**
  *  A manager for timers. Manages timers that fire over long periods of time
  *  (e.g. days, weeks, months).
+ *
  *  @constructor
  */
 export function TimerManager() {

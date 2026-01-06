@@ -22,7 +22,6 @@
 #  endif
 #endif
 
-#include <algorithm>
 #include <dlfcn.h>
 
 using namespace mozilla;

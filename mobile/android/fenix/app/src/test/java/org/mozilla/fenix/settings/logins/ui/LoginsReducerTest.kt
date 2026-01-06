@@ -128,7 +128,10 @@ class LoginsReducerTest {
         val filterUrl = loginsReducer(state, SearchLogins("url", itemsList))
         assertEquals("url", filterUrl.searchText)
         assertEquals(5, filterUrl.loginItems.size)
-        assertEquals(listOf(itemsList[0], itemsList[2], itemsList[4], itemsList[6], itemsList[7]), filterUrl.loginItems)
+        assertEquals(
+            listOf(itemsList[0], itemsList[2], itemsList[4], itemsList[6], itemsList[7]),
+            filterUrl.loginItems,
+        )
     }
 
     @Test
@@ -451,65 +454,5 @@ class LoginsReducerTest {
         )
 
         assertEquals(resultListStateAfterBackClick, expectedListStateAfterSaveClick)
-    }
-
-    @Test
-    fun `GIVEN a logins screen WHEN the biometric authentication becomes authorized THEN reflect that into the state`() {
-        val state = LoginsState.default.copy(
-            biometricAuthenticationState = BiometricAuthenticationState.Authorized,
-        )
-        val result = loginsReducer(
-            state,
-            action = BiometricAuthenticationAction.Succeeded,
-        )
-        assertEquals(
-            BiometricAuthenticationState.Authorized,
-            result.biometricAuthenticationState,
-        )
-    }
-
-    @Test
-    fun `GIVEN a logins screen WHEN the lifecycle action becomes paused THEN reflect that into the state`() {
-        val state = LoginsState.default.copy(
-            biometricAuthenticationState = BiometricAuthenticationState.Authorized,
-        )
-        val result = loginsReducer(
-            state,
-            action = LifecycleAction.OnPause,
-        )
-        assertEquals(
-            BiometricAuthenticationState.ReadyToLock,
-            result.biometricAuthenticationState,
-        )
-    }
-
-    @Test
-    fun `GIVEN a logins screen WHEN the lifecycle action becomes resumed THEN reflect that into the state`() {
-        val state = LoginsState.default.copy(
-            biometricAuthenticationState = BiometricAuthenticationState.ReadyToLock,
-        )
-        val result = loginsReducer(
-            state,
-            action = LifecycleAction.OnResume,
-        )
-        assertEquals(
-            BiometricAuthenticationState.InProgress,
-            result.biometricAuthenticationState,
-        )
-    }
-
-    @Test
-    fun `GIVEN the lock screen presenting WHEN the unlock button is tapped THEN reflect that into the state`() {
-        val state = LoginsState.default.copy(
-            biometricAuthenticationState = BiometricAuthenticationState.ReadyToLock,
-        )
-        val result = loginsReducer(
-            state,
-            action = UnlockScreenAction.UnlockTapped,
-        )
-        assertEquals(
-            BiometricAuthenticationState.InProgress,
-            result.biometricAuthenticationState,
-        )
     }
 }

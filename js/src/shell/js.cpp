@@ -960,8 +960,23 @@ class ShellPrincipals final : public JSPrincipals {
   static ShellPrincipals fullyTrusted;
 };
 
+// Global CSP state for the shell. When true, CSP restrictions are enforced.
+static bool gCSPEnabled = false;
+
+static bool ContentSecurityPolicyAllows(
+    JSContext* cx, JS::RuntimeCode kind, JS::Handle<JSString*> codeString,
+    JS::CompilationType compilationType,
+    JS::Handle<JS::StackGCVector<JSString*>> parameterStrings,
+    JS::Handle<JSString*> bodyString,
+    JS::Handle<JS::StackGCVector<JS::Value>> parameterArgs,
+    JS::Handle<JS::Value> bodyArg, bool* outCanCompileStrings) {
+  // If CSP is enabled, block string compilation.
+  *outCanCompileStrings = !gCSPEnabled;
+  return true;
+}
+
 JSSecurityCallbacks ShellPrincipals::securityCallbacks = {
-    nullptr,  // contentSecurityPolicyAllows
+    ContentSecurityPolicyAllows,
     nullptr,  // codeForEvalGets
     subsumes};
 
@@ -1418,20 +1433,6 @@ static bool MaybeRunShellTasks(JSContext* cx) {
   return ranTasks;
 }
 
-static bool EnqueueJob(JSContext* cx, unsigned argc, Value* vp) {
-  CallArgs args = CallArgsFromVp(argc, vp);
-
-  if (!IsFunctionObject(args.get(0))) {
-    JS_ReportErrorASCII(cx, "EnqueueJob's first argument must be a function");
-    return false;
-  }
-
-  args.rval().setUndefined();
-
-  RootedObject job(cx, &args[0].toObject());
-  return js::EnqueueJob(cx, job);
-}
-
 static void RunShellJobs(JSContext* cx) {
   ShellContext* sc = GetShellContext(cx);
   if (sc->quitting) {
@@ -1488,8 +1489,15 @@ static bool GlobalOfFirstJobInQueue(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
 
-    auto& job = cx->microTaskQueues->microTaskQueue.front();
+    auto& genericJob = cx->microTaskQueues->microTaskQueue.front();
+    JS::JSMicroTask* job = JS::ToUnwrappedJSMicroTask(genericJob);
+    MOZ_ASSERT(job);
     RootedObject global(cx, JS::GetExecutionGlobalFromJSMicroTask(job));
+    if (!global) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_DEAD_OBJECT);
+      return false;
+    }
     MOZ_ASSERT(global);
     if (!cx->compartment()->wrap(cx, &global)) {
       return false;
@@ -1656,6 +1664,20 @@ static bool SetTimeout(JSContext* cx, unsigned argc, Value* vp) {
     ReportOutOfMemory(cx);
     return false;
   }
+
+  args.rval().setUndefined();
+  return true;
+}
+
+static bool SetCSPEnabled(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  if (args.length() != 1) {
+    JS_ReportErrorASCII(cx, "setCSPEnabled() requires one boolean argument");
+    return false;
+  }
+
+  gCSPEnabled = JS::ToBoolean(args[0]);
 
   args.rval().setUndefined();
   return true;
@@ -5719,17 +5741,9 @@ static bool ParseModule(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  if (!args[0].isString()) {
-    const char* typeName = InformalValueTypeName(args[0]);
-    JS_ReportErrorASCII(cx, "expected string to compile, got %s", typeName);
-    return false;
-  }
-
-  JSString* scriptContents = args[0].toString();
-
   UniqueChars filename;
   CompileOptions options(cx);
-  bool jsonModule = false;
+  JS::ModuleType moduleType = JS::ModuleType::JavaScript;
   if (args.length() > 1) {
     if (!args[1].isString()) {
       const char* typeName = InformalValueTypeName(args[1]);
@@ -5745,7 +5759,8 @@ static bool ParseModule(JSContext* cx, unsigned argc, Value* vp) {
 
     options.setFileAndLine(filename.get(), 1);
 
-    // The 2nd argument is the module type string. "js" or "json" is expected.
+    // The 2nd argument is the module type string. "js", "json" or "bytes" is
+    // expected.
     if (args.length() == 3) {
       if (!args[2].isString()) {
         const char* typeName = InformalValueTypeName(args[2]);
@@ -5759,9 +5774,12 @@ static bool ParseModule(JSContext* cx, unsigned argc, Value* vp) {
         return false;
       }
       if (JS_LinearStringEqualsLiteral(linearStr, "json")) {
-        jsonModule = true;
+        moduleType = JS::ModuleType::JSON;
+      } else if (JS_LinearStringEqualsLiteral(linearStr, "bytes")) {
+        moduleType = JS::ModuleType::Bytes;
       } else if (!JS_LinearStringEqualsLiteral(linearStr, "js")) {
-        JS_ReportErrorASCII(cx, "moduleType string ('js' or 'json') expected");
+        JS_ReportErrorASCII(
+            cx, "moduleType string ('js' or 'json' or 'bytes') expected");
         return false;
       }
     }
@@ -5769,29 +5787,69 @@ static bool ParseModule(JSContext* cx, unsigned argc, Value* vp) {
     options.setFileAndLine("<string>", 1);
   }
 
-  AutoStableStringChars linearChars(cx);
-  if (!linearChars.initTwoByte(cx, scriptContents)) {
-    return false;
-  }
-
-  JS::SourceText<char16_t> srcBuf;
-  if (!srcBuf.initMaybeBorrowed(cx, linearChars)) {
-    return false;
-  }
-
   RootedObject module(cx);
-  if (jsonModule) {
-    module = JS::CompileJsonModule(cx, options, srcBuf);
-  } else {
-    options.setModule();
-    module = JS::CompileModule(cx, options, srcBuf);
+  switch (moduleType) {
+    case JS::ModuleType::JavaScript:
+    case JS::ModuleType::JSON: {
+      if (!args[0].isString()) {
+        const char* typeName = InformalValueTypeName(args[0]);
+        JS_ReportErrorASCII(cx, "expected string to compile, got %s", typeName);
+        return false;
+      }
+
+      JSString* scriptContents = args[0].toString();
+
+      AutoStableStringChars linearChars(cx);
+      if (!linearChars.initTwoByte(cx, scriptContents)) {
+        return false;
+      }
+
+      JS::SourceText<char16_t> srcBuf;
+      if (!srcBuf.initMaybeBorrowed(cx, linearChars)) {
+        return false;
+      }
+
+      if (moduleType == JS::ModuleType::JSON) {
+        module = JS::CompileJsonModule(cx, options, srcBuf);
+      } else {
+        options.setModule();
+        module = JS::CompileModule(cx, options, srcBuf);
+      }
+
+      break;
+    }
+
+    case JS::ModuleType::Bytes: {
+      if (!args[0].isObject() ||
+          !JS::IsArrayBufferObject(&args[0].toObject())) {
+        const char* typeName = InformalValueTypeName(args[0]);
+        JS_ReportErrorASCII(cx, "expected ArrayBuffer for bytes module, got %s",
+                            typeName);
+        return false;
+      }
+
+      /*
+       * NOTE: The spec requires checking that the ArrayBuffer is immutable.
+       * Immutable ArrayBuffers (see bug 1952253) are still only a Stage 2.7
+       * proposal. This check will be added in a future update.
+       */
+      module = JS::CreateDefaultExportSyntheticModule(cx, args[0]);
+      break;
+    }
+
+    case JS::ModuleType::CSS:
+    case JS::ModuleType::Unknown:
+      JS_ReportErrorASCII(cx, "Unsupported module type in parseModule");
+      return false;
   }
+
   if (!module) {
     return false;
   }
 
   Rooted<ShellModuleObjectWrapper*> wrapper(
-      cx, ShellModuleObjectWrapper::create(cx, module.as<ModuleObject>()));
+      cx, ShellModuleObjectWrapper::create(cx, module.as<ModuleObject>(),
+                                           moduleType));
   if (!wrapper) {
     return false;
   }
@@ -6050,10 +6108,8 @@ static bool RegisterModule(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  JS::ModuleType moduleType = JS::ModuleType::JavaScript;
-  if (module->hasSyntheticModuleFields()) {
-    moduleType = JS::ModuleType::JSON;
-  }
+  JS::ModuleType moduleType =
+      args[1].toObject().as<ShellModuleObjectWrapper>().getModuleType();
 
   RootedObject moduleRequest(
       cx, ModuleRequestObject::create(cx, specifier, moduleType));
@@ -6066,7 +6122,7 @@ static bool RegisterModule(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   Rooted<ShellModuleObjectWrapper*> wrapper(
-      cx, ShellModuleObjectWrapper::create(cx, module));
+      cx, ShellModuleObjectWrapper::create(cx, module, moduleType));
   if (!wrapper) {
     return false;
   }
@@ -8029,6 +8085,14 @@ static bool DisableGeckoProfiling(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+static bool GetGeckoProfilingScriptSourcesCount(JSContext* cx, unsigned argc,
+                                                Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  size_t count = cx->runtime()->geckoProfiler().scriptSourcesCount();
+  args.rval().setNumber(static_cast<double>(count));
+  return true;
+}
+
 // Global mailbox that is used to communicate a shareable object value from one
 // worker to another.
 //
@@ -8846,7 +8910,7 @@ static bool AddMarkObservers(JSContext* cx, unsigned argc, Value* vp) {
       return false;
     }
 
-    if (!CanBeHeldWeakly(value)) {
+    if (!value.isObject() && !value.isSymbol()) {
       JS_ReportErrorASCII(cx, "Can only observe objects and symbols");
       return false;
     }
@@ -10208,9 +10272,9 @@ static const JSFunctionSpecWithHelp shell_functions[] = {
 "  Sleep for dt seconds."),
 
     JS_FN_HELP("parseModule", ParseModule, 3, 0,
-"parseModule(code, 'filename', 'js' | 'json')",
+"parseModule(code, 'filename', 'js' | 'json' | 'bytes')",
 "  Parses source text as a JS module ('js', this is the default) or a JSON"
-" module ('json') and returns a ModuleObject wrapper object."),
+" module ('json') or bytes module ('bytes') and returns a ModuleObject wrapper object."),
 
     JS_FN_HELP("instantiateModuleStencil", InstantiateModuleStencil, 1, 0,
 "instantiateModuleStencil(stencil, [options])",
@@ -10519,6 +10583,10 @@ JS_FN_HELP("createUserArrayBuffer", CreateUserArrayBuffer, 1, 0,
 "disableGeckoProfiling()",
 "  Disables Gecko Profiler instrumentation"),
 
+    JS_FN_HELP("getGeckoProfilingScriptSourcesCount", GetGeckoProfilingScriptSourcesCount, 0, 0,
+"getGeckoProfilingScriptSourcesCount()",
+"  Returns the number of script sources registered with the Gecko Profiler"),
+
     JS_FN_HELP("isLatin1", IsLatin1, 1, 0,
 "isLatin1(s)",
 "  Return true iff the string's characters are stored as Latin1."),
@@ -10527,10 +10595,6 @@ JS_FN_HELP("createUserArrayBuffer", CreateUserArrayBuffer, 1, 0,
 "stackPointerInfo()",
 "  Return an int32 value which corresponds to the offset of the latest stack\n"
 "  pointer, such that one can take the differences of 2 to estimate a frame-size."),
-
-    JS_FN_HELP("enqueueJob", EnqueueJob, 1, 0,
-"enqueueJob(fn)",
-"  Enqueue 'fn' on the shell's job queue."),
 
     JS_FN_HELP("globalOfFirstJobInQueue", GlobalOfFirstJobInQueue, 0, 0,
 "globalOfFirstJobInQueue()",
@@ -10547,6 +10611,12 @@ JS_FN_HELP("createUserArrayBuffer", CreateUserArrayBuffer, 1, 0,
 "Executes functionRef after the specified delay, like the Web builtin."
 "This is currently restricted to require a delay of 0 and will not accept"
 "any extra arguments. No return value is given and there is no clearTimeout."),
+
+    JS_FN_HELP("setCSPEnabled", SetCSPEnabled, 1, 0,
+"setCSPEnabled(enabled)",
+"Enable or disable Content Security Policy restrictions for eval() and Function().\n"
+"When enabled (true), string compilation will be blocked. When disabled (false),\n"
+"string compilation is allowed. Defaults to disabled."),
 
     JS_FN_HELP("setPromiseRejectionTrackerCallback", SetPromiseRejectionTrackerCallback, 1, 0,
 "setPromiseRejectionTrackerCallback()",
@@ -10977,15 +11047,10 @@ static bool MatchPattern(JSContext* cx, JS::Handle<RegExpObject*> regex,
 }
 
 static bool PrintEnumeratedHelp(JSContext* cx, HandleObject obj,
-                                HandleObject pattern, bool brief) {
+                                Handle<RegExpObject*> pattern, bool brief) {
   RootedIdVector idv(cx);
   if (!GetPropertyKeys(cx, obj, JSITER_OWNONLY | JSITER_HIDDEN, &idv)) {
     return false;
-  }
-
-  Rooted<RegExpObject*> regex(cx);
-  if (pattern) {
-    regex = &UncheckedUnwrap(pattern)->as<RegExpObject>();
   }
 
   for (size_t i = 0; i < idv.length(); i++) {
@@ -10999,7 +11064,7 @@ static bool PrintEnumeratedHelp(JSContext* cx, HandleObject obj,
     }
 
     RootedObject funcObj(cx, &v.toObject());
-    if (regex) {
+    if (pattern) {
       // Only pay attention to objects with a 'help' property, which will
       // either be documented functions or interface objects.
       if (!JS_GetProperty(cx, funcObj, "help", &v)) {
@@ -11025,7 +11090,7 @@ static bool PrintEnumeratedHelp(JSContext* cx, HandleObject obj,
 
       Rooted<JSString*> inputStr(cx, v.toString());
       bool result = false;
-      if (!MatchPattern(cx, regex, inputStr, &result)) {
+      if (!MatchPattern(cx, pattern, inputStr, &result)) {
         return false;
       }
       if (!result) {
@@ -11041,22 +11106,18 @@ static bool PrintEnumeratedHelp(JSContext* cx, HandleObject obj,
   return true;
 }
 
-static bool PrintExtraGlobalEnumeratedHelp(JSContext* cx, HandleObject pattern,
+static bool PrintExtraGlobalEnumeratedHelp(JSContext* cx,
+                                           Handle<RegExpObject*> pattern,
                                            bool brief) {
-  Rooted<RegExpObject*> regex(cx);
-  if (pattern) {
-    regex = &UncheckedUnwrap(pattern)->as<RegExpObject>();
-  }
-
   for (const auto& item : extraGlobalBindingsWithHelp) {
-    if (regex) {
+    if (pattern) {
       JS::Rooted<JSString*> name(cx, JS_NewStringCopyZ(cx, item.name));
       if (!name) {
         return false;
       }
 
       bool result = false;
-      if (!MatchPattern(cx, regex, name, &result)) {
+      if (!MatchPattern(cx, pattern, name, &result)) {
         return false;
       }
       if (!result) {
@@ -11113,10 +11174,12 @@ static bool Help(JSContext* cx, unsigned argc, Value* vp) {
 
   if (isRegexp) {
     // help(/pattern/)
-    if (!PrintEnumeratedHelp(cx, global, obj, false)) {
+    Rooted<RegExpObject*> pattern(cx,
+                                  &UncheckedUnwrap(obj)->as<RegExpObject>());
+    if (!PrintEnumeratedHelp(cx, global, pattern, false)) {
       return false;
     }
-    if (!PrintExtraGlobalEnumeratedHelp(cx, obj, false)) {
+    if (!PrintExtraGlobalEnumeratedHelp(cx, pattern, false)) {
       return false;
     }
     return true;
@@ -12975,7 +13038,7 @@ bool InitOptionParser(OptionParser& op) {
           "Don't compile very large scripts (default: on, off to disable)") ||
       !op.addIntOption('\0', "ion-warmup-threshold", "COUNT",
                        "Wait for COUNT calls or iterations before compiling "
-                       "at the normal optimization level (default: 1000)",
+                       "at the normal optimization level (default: 1500)",
                        -1) ||
       !op.addStringOption(
           '\0', "ion-regalloc", "[mode]",
@@ -13002,6 +13065,9 @@ bool InitOptionParser(OptionParser& op) {
       !op.addBoolOption('\0', "disable-main-thread-denormals",
                         "Disable Denormals on the main thread only, to "
                         "emulate WebAudio worklets.") ||
+      !op.addStringOption('\0', "object-keys-scalar-replacement", "on/off",
+                          "Replace Object.keys with a NativeIterators "
+                          "(default: on)") ||
       !op.addBoolOption('\0', "baseline",
                         "Enable baseline compiler (default)") ||
       !op.addBoolOption('\0', "no-baseline", "Disable baseline compiler") ||
@@ -13964,6 +14030,16 @@ bool SetContextJITOptions(JSContext* cx, const OptionParser& op) {
 #else
     // Do nothing on other architecture.
 #endif
+  }
+
+  if (const char* str = op.getStringOption("object-keys-scalar-replacement")) {
+    if (strcmp(str, "on") == 0) {
+      jit::JitOptions.disableObjectKeysScalarReplacement = false;
+    } else if (strcmp(str, "off") == 0) {
+      jit::JitOptions.disableObjectKeysScalarReplacement = true;
+    } else {
+      return OptionFailure("object-keys-scalar-replacement", str);
+    }
   }
 
   int32_t warmUpThreshold = op.getIntOption("ion-warmup-threshold");

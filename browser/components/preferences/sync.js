@@ -4,6 +4,10 @@
 
 /* import-globals-from preferences.js */
 
+const { SCOPE_APP_SYNC } = ChromeUtils.importESModule(
+  "resource://gre/modules/FxAccountsCommon.sys.mjs"
+);
+
 const FXA_PAGE_LOGGED_OUT = 0;
 const FXA_PAGE_LOGGED_IN = 1;
 
@@ -265,8 +269,31 @@ var gSyncPane = {
         document.getElementById("fxaCancelChangeDeviceName").click();
       }
     });
-    setEventListener("syncSetup", "command", function () {
-      this._chooseWhatToSync(false, "setupSync");
+    setEventListener("syncSetup", "command", async function () {
+      // Check if the user has sync keys before opening CWTS
+      try {
+        const hasKeys = await fxAccounts.keys.hasKeysForScope(SCOPE_APP_SYNC);
+        if (hasKeys) {
+          // User has keys - open the choose what to sync dialog
+          this._chooseWhatToSync(false, "setupSync");
+        } else {
+          // User signed in via third-party auth without sync keys.
+          // Redirect to FxA to create a password and generate sync keys.
+          // canConnectAccount() checks if the Primary Password is locked and
+          // prompts the user to unlock it. Returns false if the user cancels.
+          if (!(await FxAccounts.canConnectAccount())) {
+            return;
+          }
+          const url = await FxAccounts.config.promiseConnectAccountURI(
+            this._getEntryPoint()
+          );
+          this.replaceTabWithUrl(url);
+        }
+      } catch (err) {
+        console.error("Failed to check for sync keys", err);
+        // Fallback to opening CWTS dialog
+        this._chooseWhatToSync(false, "setupSync");
+      }
     });
     setEventListener("syncChangeOptions", "command", function () {
       this._chooseWhatToSync(true, "manageSyncSettings");
@@ -521,6 +548,7 @@ var gSyncPane = {
   /**
    * Attempts to take the user through the sign in flow by opening the web content
    * with the given entrypoint as a query parameter
+   *
    * @param entrypoint: An string appended to the query parameters, used in telemtry to differentiate
    * different entrypoints to accounts
    */

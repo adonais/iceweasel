@@ -97,14 +97,18 @@ class Graph(_Graph):
                 indegree[dependent] -= 1
                 if indegree[dependent] == 0:
                     queue.append(dependent)
+        loopy_nodes = {node for node, degree in indegree.items() if degree > 0}
+        if loopy_nodes:
+            raise Exception(
+                f"Dependency loop detected involving the following nodes: {loopy_nodes}"
+            )
 
     def visit_postorder(self):
         """
         Generate a sequence of nodes in postorder, such that every node is
         visited *after* any nodes it links to.
 
-        Behavior is undefined (read: it will hang) if the graph contains a
-        cycle.
+        Raises an exception if the graph contains a cycle.
         """
         return self._visit(False)
 

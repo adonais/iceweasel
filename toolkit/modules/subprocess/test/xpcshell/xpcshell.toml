@@ -1,5 +1,7 @@
 [DEFAULT]
-run-if = ["os != 'android'"]
+run-if = [
+  "os != 'android'",
+]
 head = "head.js"
 firefox-appdir = "browser"
 subprocess = true
@@ -15,7 +17,6 @@ support-files = [
 
 ["test_subprocess_connectRunning.js"]
 skip-if = [
-  "os == 'mac' && os_version == '11.20' && arch == 'aarch64'", # Bug 1936343
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1936343
 ]
 

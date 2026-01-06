@@ -95,7 +95,7 @@ const MOZSEARCH_LOCALNAME = "SearchPlugin";
  *   The uri from which to load the OpenSearch engine data.
  * @param {string} [lastModified]
  *   The UTC date when the engine was last updated, if any.
- * @param {object} [originAttributes]
+ * @param {OriginAttributesDictionary} [originAttributes]
  *   The origin attributes of the site loading the manifest. If none are
  *   specified, the origin attributes will be formed of the first party domain
  *   based on the domain of the manifest.

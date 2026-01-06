@@ -221,7 +221,8 @@ void MacroAssemblerMIPS64::ma_li(Register dest, ImmWord imm) {
     as_lui(dest, uint16_t(value >> 16));
   } else if (0 == (value >> 32)) {
     as_lui(dest, uint16_t(value >> 16));
-    as_dinsu(dest, zero, 32, 32);
+    // mips spec recommends dinsu but it is unfriendly to mips3
+    ma_dext(dest, dest, Imm32(0), Imm32(32));
   } else if (-1 == (value >> 47) || 0 == (value >> 47)) {
     as_lui(dest, uint16_t(value >> 32));
     if (uint16_t(value >> 16)) {
@@ -230,7 +231,8 @@ void MacroAssemblerMIPS64::ma_li(Register dest, ImmWord imm) {
     as_dsll(dest, dest, 16);
   } else if (0 == (value >> 48)) {
     as_lui(dest, uint16_t(value >> 32));
-    as_dinsu(dest, zero, 32, 32);
+    // mips spec recommends dinsu but it is unfriendly to mips3
+    ma_dext(dest, dest, Imm32(0), Imm32(32));
     if (uint16_t(value >> 16)) {
       as_ori(dest, dest, uint16_t(value >> 16));
     }
@@ -271,8 +273,8 @@ void MacroAssemblerMIPS64::ma_liPatchable(Register dest, ImmWord imm,
                                           LiFlags flags) {
   if (Li64 == flags) {
     m_buffer.ensureSpace(6 * sizeof(uint32_t));
-    as_lui(dest, Imm16::Upper(Imm32(imm.value >> 32)).encode());
-    as_ori(dest, dest, Imm16::Lower(Imm32(imm.value >> 32)).encode());
+    as_lui(dest, Imm16::Upper(Imm32((imm.value >> 32) + 0x8000)).encode());
+    as_daddiu(dest, dest, int16_t((imm.value >> 32) & 0xffff));
     as_dsll(dest, dest, 16);
     as_ori(dest, dest, Imm16::Upper(Imm32(imm.value)).encode());
     as_dsll(dest, dest, 16);
@@ -281,7 +283,7 @@ void MacroAssemblerMIPS64::ma_liPatchable(Register dest, ImmWord imm,
     m_buffer.ensureSpace(4 * sizeof(uint32_t));
     as_lui(dest, Imm16::Lower(Imm32(imm.value >> 32)).encode());
     as_ori(dest, dest, Imm16::Upper(Imm32(imm.value)).encode());
-    as_drotr32(dest, dest, 48);
+    as_dsll(dest, dest, 16);
     as_ori(dest, dest, Imm16::Lower(Imm32(imm.value)).encode());
   }
 }
@@ -316,21 +318,23 @@ void MacroAssemblerMIPS64::ma_dsra(Register rd, Register rt, Imm32 shift) {
 }
 
 void MacroAssemblerMIPS64::ma_dror(Register rd, Register rt, Imm32 shift) {
-  if (31 < shift.value) {
-    as_drotr32(rd, rt, shift.value);
+  if (hasR2()) {
+    if (31 < shift.value) {
+      as_drotr32(rd, rt, shift.value);
+    } else {
+      as_drotr(rd, rt, shift.value);
+    }
   } else {
-    as_drotr(rd, rt, shift.value);
+    UseScratchRegisterScope temps(*this);
+    Register scratch = temps.Acquire();
+    ma_dsrl(scratch, rt, shift);
+    ma_dsll(rd, rt, Imm32(64 - shift.value));
+    as_or(rd, rd, scratch);
   }
 }
 
 void MacroAssemblerMIPS64::ma_drol(Register rd, Register rt, Imm32 shift) {
-  uint32_t s = 64 - shift.value;
-
-  if (31 < s) {
-    as_drotr32(rd, rt, s);
-  } else {
-    as_drotr(rd, rt, s);
-  }
+  ma_dror(rd, rt, Imm32(64 - shift.value));
 }
 
 void MacroAssemblerMIPS64::ma_dsll(Register rd, Register rt, Register shift) {
@@ -346,39 +350,87 @@ void MacroAssemblerMIPS64::ma_dsra(Register rd, Register rt, Register shift) {
 }
 
 void MacroAssemblerMIPS64::ma_dror(Register rd, Register rt, Register shift) {
-  as_drotrv(rd, rt, shift);
+  if (hasR2()) {
+    as_drotrv(rd, rt, shift);
+  } else {
+    UseScratchRegisterScope temps(*this);
+    Register scratch = temps.Acquire();
+    as_dsubu(scratch, zero, shift);
+    as_dsllv(scratch, rt, scratch);
+    as_dsrlv(rd, rt, shift);
+    as_or(rd, rd, scratch);
+  }
 }
 
 void MacroAssemblerMIPS64::ma_drol(Register rd, Register rt, Register shift) {
   UseScratchRegisterScope temps(*this);
   Register scratch = temps.Acquire();
   as_dsubu(scratch, zero, shift);
-  as_drotrv(rd, rt, scratch);
+  if (hasR2()) {
+    as_drotrv(rd, rt, scratch);
+  } else {
+    as_dsrlv(scratch, rt, scratch);
+    as_dsllv(rd, rt, shift);
+    as_or(rd, rd, scratch);
+  }
 }
 
 void MacroAssemblerMIPS64::ma_dins(Register rt, Register rs, Imm32 pos,
                                    Imm32 size) {
-  if (pos.value >= 0 && pos.value < 32) {
-    if (pos.value + size.value > 32) {
-      as_dinsm(rt, rs, pos.value, size.value);
+  if (hasR2()) {
+    if (pos.value >= 0 && pos.value < 32) {
+      if (pos.value + size.value > 32) {
+        as_dinsm(rt, rs, pos.value, size.value);
+      } else {
+        as_dins(rt, rs, pos.value, size.value);
+      }
     } else {
-      as_dins(rt, rs, pos.value, size.value);
+      as_dinsu(rt, rs, pos.value, size.value);
     }
   } else {
-    as_dinsu(rt, rs, pos.value, size.value);
+    UseScratchRegisterScope temps(*this);
+    Register scratch = temps.Acquire();
+
+    // optimize for special positions
+    if (pos.value == 0) {
+      ma_dext(scratch, rs, Imm32(0), size);
+      ma_dsrl(rt, rt, size);
+      ma_dsll(rt, rt, size);
+      as_or(rt, rt, scratch);
+    } else if (pos.value + size.value == 64) {
+      ma_dsll(scratch, rs, pos);
+      ma_dsll(rt, rt, size);
+      ma_dsrl(rt, rt, size);
+      as_or(rt, rt, scratch);
+    } else {
+      Register scratch2 = temps.Acquire();
+      ma_dsubu(scratch, zero, Imm32(1));
+      ma_dsrl(scratch, scratch, Imm32(64 - size.value));
+      as_and(scratch2, rs, scratch);
+      ma_dsll(scratch, scratch, pos);
+      ma_dsll(scratch2, scratch2, pos);
+      as_nor(scratch, scratch, zero);
+      as_and(rt, rt, scratch);
+      as_or(rt, rt, scratch2);
+    }
   }
 }
 
 void MacroAssemblerMIPS64::ma_dext(Register rt, Register rs, Imm32 pos,
                                    Imm32 size) {
-  if (pos.value >= 0 && pos.value < 32) {
-    if (size.value > 32) {
-      as_dextm(rt, rs, pos.value, size.value);
+  if (hasR2()) {
+    if (pos.value >= 0 && pos.value < 32) {
+      if (size.value > 32) {
+        as_dextm(rt, rs, pos.value, size.value);
+      } else {
+        as_dext(rt, rs, pos.value, size.value);
+      }
     } else {
-      as_dext(rt, rs, pos.value, size.value);
+      as_dextu(rt, rs, pos.value, size.value);
     }
   } else {
-    as_dextu(rt, rs, pos.value, size.value);
+    ma_dsll(rt, rs, Imm32(64 - pos.value - size.value));
+    ma_dsrl(rt, rt, Imm32(64 - size.value));
   }
 }
 
@@ -1940,7 +1992,7 @@ void MacroAssemblerMIPS64Compat::boxValue(JSValueType type, Register src,
   if (type == JSVAL_TYPE_INT32) {
     ma_dins(dest, src, Imm32(0), Imm32(32));
   } else {
-    ma_dins(dest, src, Imm32(0), Imm32(JSVAL_TAG_SHIFT));
+    as_or(dest, dest, src);
   }
 }
 
@@ -2178,7 +2230,7 @@ void MacroAssemblerMIPS64Compat::tagValue(JSValueType type, Register payload,
         ma_li(scratch, Imm32(shifted));
 
         // Insert tag into the result.
-        as_dinsu(dest.valueReg(), scratch, 32, 32);
+        ma_dins(dest.valueReg(), scratch, Imm32(32), Imm32(32));
         return;
       }
       case JSVAL_TYPE_STRING:
@@ -2196,8 +2248,8 @@ void MacroAssemblerMIPS64Compat::tagValue(JSValueType type, Register payload,
         as_daddiu(scratch, zero, signExtendedShiftedTag);
 
         // Insert tag into the result.
-        as_dinsu(dest.valueReg(), scratch, JSVAL_TAG_SHIFT,
-                 64 - JSVAL_TAG_SHIFT);
+        ma_dins(dest.valueReg(), scratch, Imm32(JSVAL_TAG_SHIFT),
+                Imm32(64 - JSVAL_TAG_SHIFT));
         return;
       }
       case JSVAL_TYPE_DOUBLE:

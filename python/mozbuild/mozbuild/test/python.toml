@@ -113,6 +113,8 @@ subsuite = "mozbuild"
 
 ["test_rewrite_mozbuild.py"]
 
+["test_site_dependency_extractor.py"]
+
 ["test_telemetry.py"]
 
 ["test_telemetry_settings.py"]

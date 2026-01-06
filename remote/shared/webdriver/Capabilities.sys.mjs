@@ -500,6 +500,7 @@ export class Capabilities extends Map {
       ["browserVersion", lazy.AppInfo.version],
       ["platformName", getWebDriverPlatformName()],
       ["proxy", new ProxyConfiguration()],
+      ["setWindowRect", !lazy.AppInfo.isAndroid],
       ["unhandledPromptBehavior", new lazy.UserPromptHandler()],
       ["userAgent", lazy.userAgent],
 
@@ -517,9 +518,9 @@ export class Capabilities extends Map {
       defaults.push(
         ["pageLoadStrategy", PageLoadStrategy.Normal],
         ["timeouts", new Timeouts()],
-        ["setWindowRect", !lazy.AppInfo.isAndroid],
         ["strictFileInteractability", false],
 
+        // Gecko specific capabilities
         ["moz:accessibilityChecks", false],
         ["moz:webdriverClick", true],
         ["moz:windowless", false]

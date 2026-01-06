@@ -216,6 +216,8 @@ class WebRenderImageProviderData final : public WebRenderUserData {
 class WebRenderFallbackData : public WebRenderUserData {
  public:
   WebRenderFallbackData(RenderRootStateManager* aManager, nsDisplayItem* aItem);
+  WebRenderFallbackData(RenderRootStateManager* aManager,
+                        uint32_t aDisplayItemKey, nsIFrame* aFrame);
   virtual ~WebRenderFallbackData();
 
   WebRenderFallbackData* AsFallbackData() override { return this; }
@@ -259,6 +261,8 @@ class WebRenderAPZAnimationData : public WebRenderUserData {
  public:
   WebRenderAPZAnimationData(RenderRootStateManager* aManager,
                             nsDisplayItem* aItem);
+  WebRenderAPZAnimationData(RenderRootStateManager* aManager,
+                            uint32_t aDisplayItemKey, nsIFrame* aFrame);
   virtual ~WebRenderAPZAnimationData() = default;
 
   UserDataType GetType() override { return UserDataType::eAPZAnimation; }
@@ -273,6 +277,8 @@ class WebRenderAnimationData : public WebRenderUserData {
  public:
   WebRenderAnimationData(RenderRootStateManager* aManager,
                          nsDisplayItem* aItem);
+  WebRenderAnimationData(RenderRootStateManager* aManager,
+                         uint32_t aDisplayItemKey, nsIFrame* aFrame);
   virtual ~WebRenderAnimationData();
 
   UserDataType GetType() override { return UserDataType::eAnimation; }
@@ -286,6 +292,8 @@ class WebRenderAnimationData : public WebRenderUserData {
 class WebRenderCanvasData : public WebRenderUserData {
  public:
   WebRenderCanvasData(RenderRootStateManager* aManager, nsDisplayItem* aItem);
+  WebRenderCanvasData(RenderRootStateManager* aManager,
+                      uint32_t aDisplayItemKey, nsIFrame* aFrame);
   virtual ~WebRenderCanvasData();
 
   WebRenderCanvasData* AsCanvasData() override { return this; }
@@ -309,12 +317,9 @@ class WebRenderCanvasData : public WebRenderUserData {
 class WebRenderMaskData : public WebRenderUserData {
  public:
   explicit WebRenderMaskData(RenderRootStateManager* aManager,
-                             nsDisplayItem* aItem)
-      : WebRenderUserData(aManager, aItem),
-        mMaskStyle(nsStyleImageLayers::LayerType::Mask),
-        mShouldHandleOpacity(false) {
-    MOZ_COUNT_CTOR(WebRenderMaskData);
-  }
+                             nsDisplayItem* aItem);
+  explicit WebRenderMaskData(RenderRootStateManager* aManager,
+                             uint32_t aDisplayItemKey, nsIFrame* aFrame);
   virtual ~WebRenderMaskData() {
     MOZ_COUNT_DTOR(WebRenderMaskData);
     ClearImageKey();

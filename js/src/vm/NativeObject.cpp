@@ -10,7 +10,6 @@
 #include "mozilla/Maybe.h"
 
 #include <algorithm>
-#include <iterator>
 
 #include "gc/MaybeRooted.h"
 #include "gc/StableCellHasher.h"

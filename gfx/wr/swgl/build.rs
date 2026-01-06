@@ -202,17 +202,15 @@ fn main() {
     if let Ok(tool) = build.try_get_compiler() {
         if tool.is_like_msvc() {
             build
-                .flag("/std:c++17")
+                .flag("/std:c++20")
                 .flag("/EHs-")
-                .flag("/GR-")
-                .flag("/UMOZILLA_CONFIG_H");
+                .flag("/GR-");
         } else {
             build
-                .flag("-std=c++17")
+                .flag("-std=c++20")
                 .flag("-fno-exceptions")
                 .flag("-fno-rtti")
-                .flag("-fno-math-errno")
-                .flag("-UMOZILLA_CONFIG_H");
+                .flag("-fno-math-errno");
         }
         // SWGL relies heavily on inlining for performance so override -Oz with -O2
         if tool.args().contains(&"-Oz".into()) {

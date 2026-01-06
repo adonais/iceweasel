@@ -18,8 +18,6 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineSession
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.MiddlewareContext
-import mozilla.components.support.test.ext.joinBlocking
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.rule.runTestOnMain
@@ -47,8 +45,7 @@ class TabsRemovedMiddlewareTest {
         )
 
         val engineSession = linkEngineSession(store, tab.id)
-        store.dispatch(TabListAction.RemoveTabAction(tab.id)).joinBlocking()
-        store.waitUntilIdle()
+        store.dispatch(TabListAction.RemoveTabAction(tab.id))
         dispatcher.scheduler.advanceUntilIdle()
 
         assertNull(store.state.findTab(tab.id)?.engineState?.engineSession)
@@ -72,8 +69,7 @@ class TabsRemovedMiddlewareTest {
         val engineSession2 = linkEngineSession(store, tab2.id)
         val engineSession3 = linkEngineSession(store, tab3.id)
 
-        store.dispatch(TabListAction.RemoveTabsAction(listOf(tab1.id, tab2.id))).joinBlocking()
-        store.waitUntilIdle()
+        store.dispatch(TabListAction.RemoveTabsAction(listOf(tab1.id, tab2.id)))
         dispatcher.scheduler.advanceUntilIdle()
 
         assertNull(store.state.findTab(tab1.id)?.engineState?.engineSession)
@@ -100,8 +96,7 @@ class TabsRemovedMiddlewareTest {
         val engineSession2 = linkEngineSession(store, tab2.id)
         val engineSession3 = linkEngineSession(store, tab3.id)
 
-        store.dispatch(TabListAction.RemoveAllNormalTabsAction).joinBlocking()
-        store.waitUntilIdle()
+        store.dispatch(TabListAction.RemoveAllNormalTabsAction)
         dispatcher.scheduler.advanceUntilIdle()
 
         assertNull(store.state.findTab(tab1.id)?.engineState?.engineSession)
@@ -128,8 +123,7 @@ class TabsRemovedMiddlewareTest {
         val engineSession2 = linkEngineSession(store, tab2.id)
         val engineSession3 = linkEngineSession(store, tab3.id)
 
-        store.dispatch(TabListAction.RemoveAllPrivateTabsAction).joinBlocking()
-        store.waitUntilIdle()
+        store.dispatch(TabListAction.RemoveAllPrivateTabsAction)
         dispatcher.scheduler.advanceUntilIdle()
 
         assertNull(store.state.findTab(tab1.id)?.engineState?.engineSession)
@@ -156,8 +150,7 @@ class TabsRemovedMiddlewareTest {
         val engineSession2 = linkEngineSession(store, tab2.id)
         val engineSession3 = linkEngineSession(store, tab3.id)
 
-        store.dispatch(TabListAction.RemoveAllTabsAction()).joinBlocking()
-        store.waitUntilIdle()
+        store.dispatch(TabListAction.RemoveAllTabsAction())
         dispatcher.scheduler.advanceUntilIdle()
 
         assertNull(store.state.findTab(tab1.id)?.engineState?.engineSession)
@@ -179,8 +172,7 @@ class TabsRemovedMiddlewareTest {
         )
 
         val engineSession = linkEngineSession(store, tab.id)
-        store.dispatch(CustomTabListAction.RemoveCustomTabAction(tab.id)).joinBlocking()
-        store.waitUntilIdle()
+        store.dispatch(CustomTabListAction.RemoveCustomTabAction(tab.id))
         dispatcher.scheduler.advanceUntilIdle()
 
         assertNull(store.state.findTab(tab.id)?.engineState?.engineSession)
@@ -203,8 +195,7 @@ class TabsRemovedMiddlewareTest {
         val engineSession2 = linkEngineSession(store, tab2.id)
         val engineSession3 = linkEngineSession(store, tab3.id)
 
-        store.dispatch(CustomTabListAction.RemoveAllCustomTabsAction).joinBlocking()
-        store.waitUntilIdle()
+        store.dispatch(CustomTabListAction.RemoveAllCustomTabsAction)
         dispatcher.scheduler.advanceUntilIdle()
 
         assertNull(store.state.findCustomTab(tab1.id)?.engineState?.engineSession)
@@ -217,7 +208,7 @@ class TabsRemovedMiddlewareTest {
 
     private fun linkEngineSession(store: BrowserStore, tabId: String): EngineSession {
         val engineSession: EngineSession = mock()
-        store.dispatch(EngineAction.LinkEngineSessionAction(tabId, engineSession)).joinBlocking()
+        store.dispatch(EngineAction.LinkEngineSessionAction(tabId, engineSession))
         assertNotNull(store.state.findTabOrCustomTab(tabId)?.engineState?.engineSession)
         return engineSession
     }

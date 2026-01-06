@@ -4,14 +4,10 @@
 
 package org.mozilla.fenix.browser.store
 
-import android.content.Context
 import androidx.fragment.app.FragmentManager
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
 import io.mockk.mockk
 import mozilla.components.concept.engine.translate.Language
 import mozilla.components.lib.state.Middleware
-import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -23,18 +19,14 @@ import org.mozilla.fenix.browser.PageTranslationStatus
 import org.mozilla.fenix.browser.ReaderModeStatus
 import org.mozilla.fenix.browser.store.BrowserScreenAction.CancelPrivateDownloadsOnPrivateTabsClosedAccepted
 import org.mozilla.fenix.browser.store.BrowserScreenAction.ClosingLastPrivateTab
-import org.mozilla.fenix.browser.store.BrowserScreenAction.EnvironmentRehydrated
 import org.mozilla.fenix.browser.store.BrowserScreenAction.PageTranslationStatusUpdated
 import org.mozilla.fenix.browser.store.BrowserScreenAction.ReaderModeStatusUpdated
-import org.mozilla.fenix.browser.store.BrowserScreenStore.Environment
-import org.mozilla.fenix.helpers.lifecycle.TestLifecycleOwner
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class BrowserScreenStoreKtTest {
     @get:Rule
     val mainCoroutineRule = MainCoroutineRule()
-    private val lifecycleOwner = TestLifecycleOwner(Lifecycle.State.RESUMED)
     private val fragmentManager: FragmentManager = mockk()
 
     @Test
@@ -86,15 +78,8 @@ class BrowserScreenStoreKtTest {
     private fun buildStore(
         initialState: BrowserScreenState = BrowserScreenState(),
         middlewares: List<Middleware<BrowserScreenState, BrowserScreenAction>> = emptyList(),
-        context: Context = testContext,
-        viewLifecycleOwner: LifecycleOwner = lifecycleOwner,
-        fragmentManager: FragmentManager = this.fragmentManager,
     ) = BrowserScreenStore(
         initialState = initialState,
         middleware = middlewares,
-    ).also {
-        it.dispatch(
-            EnvironmentRehydrated(Environment(context, viewLifecycleOwner, fragmentManager)),
-        )
-    }
+    )
 }

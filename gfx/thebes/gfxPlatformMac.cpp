@@ -188,6 +188,7 @@ void gfxPlatformMac::GetCommonFallbackFonts(uint32_t aCh, Script aRunScript,
     // in future if we get better at handling things like `lang=zh-Hant`, not
     // just resolving based on the Unicode text.
     case Script::TRADITIONAL_HAN:
+    case Script::TRADITIONAL_HAN_WITH_LATIN:
       aFontList.AppendElement("Songti TC");
       if (aCh > 0x10000) {
         // macOS installations with MS Office may have these -ExtB fonts
@@ -656,6 +657,10 @@ void gfxPlatformMac::GetCommonFallbackFonts(uint32_t aCh, Script aRunScript,
     case Script::SUNUWAR:
     case Script::TODHRI:
     case Script::TULU_TIGALARI:
+    case Script::BERIA_ERFE:
+    case Script::SIDETIC:
+    case Script::TAI_YO:
+    case Script::TOLONG_SIKI:
       break;
   }
 
@@ -755,10 +760,7 @@ class OSXVsyncSource final : public VsyncSource {
 
   virtual ~OSXVsyncSource() {
     MOZ_ASSERT(NS_IsMainThread());
-    CGDisplayRemoveReconfigurationCallback(DisplayReconfigurationCallback,
-                                           this);
-    DisableVsync();
-    DestroyDisplayLink();
+    Shutdown();
   }
 
   static void RetryCreateDisplayLinkAndEnableVsync(nsITimer* aTimer,
@@ -767,8 +769,18 @@ class OSXVsyncSource final : public VsyncSource {
     OSXVsyncSource* osxVsyncSource =
         static_cast<OSXVsyncSource*>(aOsxVsyncSource);
     MOZ_ASSERT(osxVsyncSource);
+
+    osxVsyncSource->DisableVsync();
+    osxVsyncSource->DestroyDisplayLink();
     osxVsyncSource->CreateDisplayLink();
     osxVsyncSource->EnableVsync();
+
+    if (!osxVsyncSource->IsVsyncEnabled()) {
+      gfxWarning() << "Display reconfiguration vsync has failed; giving up.";
+      osxVsyncSource->Shutdown();
+      gfxPlatform::ResetHardwareVsyncSource();
+      gfxPlatform::ReInitFrameRate(nullptr, nullptr);
+    }
   }
 
   void CreateDisplayLink() {
@@ -886,8 +898,12 @@ class OSXVsyncSource final : public VsyncSource {
 
   void Shutdown() override {
     MOZ_ASSERT(NS_IsMainThread());
-    mTimer->Cancel();
-    mTimer = nullptr;
+    if (mTimer) {
+      mTimer->Cancel();
+      mTimer = nullptr;
+    }
+    CGDisplayRemoveReconfigurationCallback(DisplayReconfigurationCallback,
+                                           this);
     DisableVsync();
     DestroyDisplayLink();
   }

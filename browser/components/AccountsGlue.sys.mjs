@@ -37,6 +37,12 @@ ChromeUtils.defineLazyGetter(
   () => new Localization(["browser/accounts.ftl", "branding/brand.ftl"], true)
 );
 
+const AlertNotification = Components.Constructor(
+  "@mozilla.org/alert-notification;1",
+  "nsIAlertNotification",
+  "initWithObject"
+);
+
 /**
  * Manages Mozilla Account and Sync related functionality
  * needed at startup. It mainly handles various account-related events and notifications.
@@ -127,14 +133,12 @@ export const AccountsGlue = {
       }
       this._openPreferences("sync");
     };
-    lazy.AlertsService.showAlertNotification(
-      null,
+    let alert = new AlertNotification({
       title,
-      body,
-      true,
-      null,
-      clickCallback
-    );
+      text: body,
+      textClickable: true,
+    });
+    lazy.AlertsService.showAlert(alert, clickCallback);
   },
 
   _openURLInNewWindow(url) {
@@ -251,14 +255,13 @@ export const AccountsGlue = {
       if (AppConstants.platform == "win") {
         imageURL = "chrome://branding/content/icon64.png";
       }
-      lazy.AlertsService.showAlertNotification(
+      let alert = new AlertNotification({
         imageURL,
         title,
-        body,
-        true,
-        null,
-        clickCallback
-      );
+        text: body,
+        textClickable: true,
+      });
+      lazy.AlertsService.showAlert(alert, clickCallback);
     } catch (ex) {
       console.error("Error displaying tab(s) received by Sync: ", ex);
     }
@@ -343,15 +346,14 @@ export const AccountsGlue = {
     ]);
 
     try {
-      lazy.AlertsService.showAlertNotification(
+      let alert = new AlertNotification({
         imageURL,
         title,
-        body,
-        true,
-        null,
-        clickCallback,
-        "closed-tab-notification"
-      );
+        text: body,
+        textClickable: true,
+        name: "closed-tab-notification",
+      });
+      lazy.AlertsService.showAlert(alert, clickCallback);
     } catch (ex) {
       console.error("Error notifying user of closed tab(s) ", ex);
     }
@@ -380,14 +382,13 @@ export const AccountsGlue = {
     };
 
     try {
-      lazy.AlertsService.showAlertNotification(
+      let alert = new AlertNotification({
         imageURL,
         title,
         body,
-        true,
-        null,
-        clickCallback
-      );
+        textClickable: true,
+      });
+      lazy.AlertsService.showAlert(alert, clickCallback);
     } catch (ex) {
       console.error("Error notifying of a verify login event: ", ex);
     }
@@ -417,14 +418,12 @@ export const AccountsGlue = {
     };
 
     try {
-      lazy.AlertsService.showAlertNotification(
-        null,
+      let alert = new AlertNotification({
         title,
-        body,
-        true,
-        null,
-        clickCallback
-      );
+        text: body,
+        textClickable: true,
+      });
+      lazy.AlertsService.showAlert(alert, clickCallback);
     } catch (ex) {
       console.error("Error notifying of a new Sync device: ", ex);
     }
@@ -442,14 +441,13 @@ export const AccountsGlue = {
       }
       this._openPreferences("sync");
     };
-    lazy.AlertsService.showAlertNotification(
-      null,
+
+    let alert = new AlertNotification({
       title,
-      body,
-      true,
-      null,
-      clickCallback
-    );
+      text: body,
+      textClickable: true,
+    });
+    lazy.AlertsService.showAlert(alert, clickCallback);
   },
 
   _updateFxaBadges(win) {

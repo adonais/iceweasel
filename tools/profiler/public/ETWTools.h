@@ -43,7 +43,6 @@ struct MarkerHasTranslator<
 
 #  include <windows.h>
 #  include <TraceLoggingProvider.h>
-#  include <vector>
 
 namespace ETW {
 
@@ -247,14 +246,8 @@ static inline void CreateDataDescForPayloadNonPOD(
 static inline void CreateDataDescForPayloadNonPOD(
     PayloadBuffer& aBuffer, EVENT_DATA_DESCRIPTOR& aDescriptor,
     const mozilla::TimeStamp& aPayload) {
-  if (aPayload.RawQueryPerformanceCounterValue().isNothing()) {
-    // This should never happen?
-    EventDataDescCreate(&aDescriptor, nullptr, 0);
-    return;
-  }
-
-  CreateDataDescForPayloadPOD(
-      aBuffer, aDescriptor, aPayload.RawQueryPerformanceCounterValue().value());
+  CreateDataDescForPayloadPOD(aBuffer, aDescriptor,
+                              aPayload.RawQueryPerformanceCounterValue());
 }
 
 static inline void CreateDataDescForPayloadNonPOD(
@@ -308,13 +301,13 @@ static inline void StoreBaseEventDataDesc(
     const mozilla::MarkerOptions& aOptions) {
   if (aOptions.IsTimingUnspecified()) {
     aStorage.mStartTime =
-        mozilla::TimeStamp::Now().RawQueryPerformanceCounterValue().value();
+        mozilla::TimeStamp::Now().RawQueryPerformanceCounterValue();
     aStorage.mPhase = 0;
   } else {
     aStorage.mStartTime =
-        aOptions.Timing().StartTime().RawQueryPerformanceCounterValue().value();
+        aOptions.Timing().StartTime().RawQueryPerformanceCounterValue();
     aStorage.mEndTime =
-        aOptions.Timing().EndTime().RawQueryPerformanceCounterValue().value();
+        aOptions.Timing().EndTime().RawQueryPerformanceCounterValue();
     aStorage.mPhase = uint8_t(aOptions.Timing().MarkerPhase());
   }
   if (!aOptions.InnerWindowId().IsUnspecified()) {

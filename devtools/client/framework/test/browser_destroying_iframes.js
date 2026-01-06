@@ -2,11 +2,17 @@
  * http://creativecommons.org/publicdomain/zero/1.0/ */
 "use strict";
 
+// Frequent promise rejections which are not impacting the load of the toolbox.
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+PromiseTestUtils.allowMatchingRejectionsGlobally(/NS_ERROR_FAILURE/);
+
 // Testing that there's no breaking exception when destroying
 // an iframe early after its creation.
 
 add_task(async function () {
-  const { tab, toolbox } = await openInspectorForURL("about:blank");
+  const { tab } = await openInspectorForURL("about:blank");
   const browser = tab.linkedBrowser;
 
   // Create/remove an extra one now, after the load event.
@@ -18,7 +24,4 @@ add_task(async function () {
       iframe.remove();
     });
   }
-
-  // Wait for requests to settle to avoid unhandled promise rejections
-  await toolbox.commands.waitForRequestsToSettle();
 });

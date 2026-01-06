@@ -42,6 +42,7 @@
   _(CheckHashTables, "ckTbls")                \
   _(MarkRuntime, "mkRntm")                    \
   _(MarkDebugger, "mkDbgr")                   \
+  _(TraceWeakMaps, "trWkMp")                  \
   _(SweepCaches, "swpCch")                    \
   _(CollectToObjFP, "colObj")                 \
   _(CollectToStrFP, "colStr")                 \
@@ -73,6 +74,7 @@ class NurseryDecommitTask;
 class NurserySweepTask;
 class SetObject;
 class JS_PUBLIC_API Sprinter;
+class WeakMapBase;
 
 namespace gc {
 
@@ -314,6 +316,11 @@ class Nursery {
                   setsWithNurseryIterators_.back() != obj);
     return setsWithNurseryIterators_.append(obj);
   }
+  bool addWeakMapWithNurseryEntries(WeakMapBase* wm) {
+    MOZ_ASSERT_IF(!weakMapsWithNurseryEntries_.empty(),
+                  weakMapsWithNurseryEntries_.back() != wm);
+    return weakMapsWithNurseryEntries_.append(wm);
+  }
 
   void joinSweepTask();
   void joinDecommitTask();
@@ -491,6 +498,9 @@ class Nursery {
 
   void clearMapAndSetNurseryIterators();
   void sweepMapAndSetObjects();
+
+  void traceWeakMaps(gc::TenuringTracer& trc);
+  void sweepWeakMaps();
 
   void sweepStringsWithBuffer();
 
@@ -718,6 +728,12 @@ class Nursery {
   StringBufferVector stringBuffersToReleaseAfterMinorGC_;
 
   UniquePtr<NurserySweepTask> sweepTask;
+
+  // Lists of weakmaps with nursery allocated keys or values. Such objects need
+  // to be swept after minor GC.
+  using WeakMapVector = Vector<WeakMapBase*, 0, SystemAllocPolicy>;
+  WeakMapVector weakMapsWithNurseryEntries_;
+
   UniquePtr<NurseryDecommitTask> decommitTask;
 
   // Whether the previous collection tenured everything. This may be false if

@@ -6,8 +6,6 @@
 
 #include "PersistenceType.h"
 
-#include <utility>
-
 #include "nsIFile.h"
 #include "nsLiteralString.h"
 #include "nsString.h"

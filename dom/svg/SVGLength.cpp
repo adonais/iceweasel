@@ -28,10 +28,14 @@ const unsigned short SVG_LENGTHTYPE_IC = 14;
 const unsigned short SVG_LENGTHTYPE_CAP = 15;
 const unsigned short SVG_LENGTHTYPE_LH = 16;
 const unsigned short SVG_LENGTHTYPE_RLH = 17;
-const unsigned short SVG_LENGTHTYPE_VW = 18;
-const unsigned short SVG_LENGTHTYPE_VH = 19;
-const unsigned short SVG_LENGTHTYPE_VMIN = 20;
-const unsigned short SVG_LENGTHTYPE_VMAX = 21;
+const unsigned short SVG_LENGTHTYPE_REX = 18;
+const unsigned short SVG_LENGTHTYPE_RCH = 19;
+const unsigned short SVG_LENGTHTYPE_RIC = 20;
+const unsigned short SVG_LENGTHTYPE_RCAP = 21;
+const unsigned short SVG_LENGTHTYPE_VW = 22;
+const unsigned short SVG_LENGTHTYPE_VH = 23;
+const unsigned short SVG_LENGTHTYPE_VMIN = 24;
+const unsigned short SVG_LENGTHTYPE_VMAX = 25;
 
 void SVGLength::GetValueAsString(nsAString& aValue) const {
   nsTextFormatter::ssprintf(aValue, u"%g", (double)mValue);
@@ -78,7 +82,7 @@ bool SVGLength::IsAbsoluteUnit(uint8_t aUnit) {
 /*static*/
 bool SVGLength::IsFontRelativeUnit(uint8_t aUnit) {
   return aUnit == SVG_LENGTHTYPE_EMS || aUnit == SVG_LENGTHTYPE_EXS ||
-         (aUnit >= SVG_LENGTHTYPE_CH && aUnit <= SVG_LENGTHTYPE_RLH);
+         (aUnit >= SVG_LENGTHTYPE_CH && aUnit <= SVG_LENGTHTYPE_RCAP);
 }
 
 /**
@@ -214,6 +218,18 @@ float SVGLength::GetPixelsPerUnit(const UserSpaceMetrics& aMetrics,
       case SVG_LENGTHTYPE_RLH:
         zoomType = ZoomType::SelfFromRoot;
         return aMetrics.GetLineHeight(UserSpaceMetrics::Type::Root);
+      case SVG_LENGTHTYPE_REX:
+        zoomType = ZoomType::SelfFromRoot;
+        return aMetrics.GetExLength(UserSpaceMetrics::Type::Root);
+      case SVG_LENGTHTYPE_RCH:
+        zoomType = ZoomType::SelfFromRoot;
+        return aMetrics.GetChSize(UserSpaceMetrics::Type::Root);
+      case SVG_LENGTHTYPE_RIC:
+        zoomType = ZoomType::SelfFromRoot;
+        return aMetrics.GetIcWidth(UserSpaceMetrics::Type::Root);
+      case SVG_LENGTHTYPE_RCAP:
+        zoomType = ZoomType::SelfFromRoot;
+        return aMetrics.GetCapHeight(UserSpaceMetrics::Type::Root);
       default:
         MOZ_ASSERT(IsAbsoluteUnit(aUnitType));
         return GetAbsUnitsPerAbsUnit(SVG_LENGTHTYPE_PX, aUnitType);

@@ -7,7 +7,6 @@
 #include "nsStructuredCloneContainer.h"
 
 #include <cstddef>
-#include <utility>
 
 #include "ErrorList.h"
 #include "js/RootingAPI.h"

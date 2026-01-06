@@ -10,7 +10,7 @@
   <!-- Content description for the clear URL text button. -->
   <string name="mozac_clear_button_description">清除</string>
   <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
-  <string name="mozac_browser_toolbar_search_hint">進行搜尋或輸入網址</string>
+  <string name="mozac_browser_toolbar_search_hint">搜尋或輸入網址</string>
   <!-- Contextual menu option for long pressing on the toolbar URL. Clicking it will copy the current URL -->
   <string name="mozac_browser_toolbar_long_press_popup_copy">複製</string>
   <!-- Contextual menu option for long pressing on the toolbar URL. Clicking it will paste the text from clipboard and allow user to edit it -->
@@ -21,4 +21,6 @@
   <string name="mozac_toolbar_cfr_title">為 Android 設計，也為您精心打造</string>
   <!-- Text for the description displayed in the contextual feature recommendation popup promoting the new toolbar redesign. -->
   <string name="mozac_toolbar_cfr_description">我們重新設計一套更圓滑、更現代的視覺感受</string>
+  <!-- Content description (not visible, for screen readers etc.) for the "minimal toolbar" containing just the URL instead of the big toolbar containing also other buttons. %1$s will be replaced with the domain name of the current website. -->
+  <string name="mozac_minimal_display_toolbar_content_description">正在輸入文字到 %1$s。雙擊即可停止</string>
 </resources>

@@ -4,14 +4,13 @@
 
 package org.mozilla.fenix.translations.preferences.nevertranslatesite
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +22,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import org.mozilla.fenix.R
@@ -30,6 +30,7 @@ import org.mozilla.fenix.compose.InfoCard
 import org.mozilla.fenix.compose.InfoType
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -45,12 +46,7 @@ fun NeverTranslateSitesPreference(
     hasNeverTranslateSitesError: Boolean,
     onItemClick: (String) -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .background(
-                color = FirefoxTheme.colors.layer1,
-            ),
-    ) {
+    Surface {
         LazyColumn {
             item {
                 TextListItem(
@@ -132,6 +128,39 @@ private fun NeverTranslateSitePreferencePreview() {
         NeverTranslateSitesPreference(
             neverTranslateSitesListPreferences = getNeverTranslateSitesList(),
             hasNeverTranslateSitesError = false,
+        ) {}
+    }
+}
+
+@Composable
+@PreviewLightDark
+private fun NeverTranslateSitePreferenceErrorPreview() {
+    FirefoxTheme {
+        NeverTranslateSitesPreference(
+            neverTranslateSitesListPreferences = getNeverTranslateSitesList(),
+            hasNeverTranslateSitesError = true,
+        ) {}
+    }
+}
+
+@Composable
+@Preview
+private fun NeverTranslateSitePreferencePrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        NeverTranslateSitesPreference(
+            neverTranslateSitesListPreferences = getNeverTranslateSitesList(),
+            hasNeverTranslateSitesError = false,
+        ) {}
+    }
+}
+
+@Composable
+@Preview
+private fun NeverTranslateSitePreferenceErrorPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        NeverTranslateSitesPreference(
+            neverTranslateSitesListPreferences = getNeverTranslateSitesList(),
+            hasNeverTranslateSitesError = true,
         ) {}
     }
 }

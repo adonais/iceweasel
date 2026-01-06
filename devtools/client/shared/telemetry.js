@@ -25,8 +25,8 @@ const PENDING_EVENTS = new WeakMapMap();
 /**
  * Instantiate a new Telemetry helper class.
  *
- * @param {Object} options [optional]
- * @param {Boolean} options.useSessionId [optional]
+ * @param {object} options [optional]
+ * @param {boolean} options.useSessionId [optional]
  *        If true, this instance will automatically generate a unique "sessionId"
  *        and use it to aggregate all records against this unique session.
  *        This helps aggregate all data coming from a single toolbox instance for ex.
@@ -90,17 +90,17 @@ class Telemetry {
    * properties have been received. Once they have all been received we send the
    * telemetry event.
    *
-   * @param {Object} obj
+   * @param {object} obj
    *        The telemetry event or ping is associated with this object, meaning
    *        that multiple events or pings for the same histogram may be run
    *        concurrently, as long as they are associated with different objects.
-   * @param {String} method
+   * @param {string} method
    *        The telemetry event method (describes the type of event that
    *        occurred e.g. "open")
-   * @param {String} object
+   * @param {string} object
    *        The telemetry event object name (the name of the object the event
    *        occurred on) e.g. "tools" or "setting"
-   * @param {String|null} value
+   * @param {string | null} value
    *        The telemetry event value (a user defined value, providing context
    *        for the event) e.g. "console"
    * @param {Array} expected
@@ -143,22 +143,22 @@ class Telemetry {
    * This means that if preparePendingEvent() is called before or after sending
    * the event properties they will automatically added to the event.
    *
-   * @param {Object} obj
+   * @param {object} obj
    *        The telemetry event or ping is associated with this object, meaning
    *        that multiple events or pings for the same histogram may be run
    *        concurrently, as long as they are associated with different objects.
-   * @param {String} method
+   * @param {string} method
    *        The telemetry event method (describes the type of event that
    *        occurred e.g. "open")
-   * @param {String} object
+   * @param {string} object
    *        The telemetry event object name (the name of the object the event
    *        occurred on) e.g. "tools" or "setting"
-   * @param {String|null} value
+   * @param {string | null} value
    *        The telemetry event value (a user defined value, providing context
    *        for the event) e.g. "console"
-   * @param {String} pendingPropName
+   * @param {string} pendingPropName
    *        The pending property name
-   * @param {String} pendingPropValue
+   * @param {string} pendingPropValue
    *        The pending property value
    */
   addEventProperty(
@@ -211,20 +211,20 @@ class Telemetry {
    * This means that if preparePendingEvent() is called before or after sending
    * the event properties they will automatically added to the event.
    *
-   * @param {Object} obj
+   * @param {object} obj
    *        The telemetry event or ping is associated with this object, meaning
    *        that multiple events or pings for the same histogram may be run
    *        concurrently, as long as they are associated with different objects.
-   * @param {String} method
+   * @param {string} method
    *        The telemetry event method (describes the type of event that
    *        occurred e.g. "open")
-   * @param {String} object
+   * @param {string} object
    *        The telemetry event object name (the name of the object the event
    *        occurred on) e.g. "tools" or "setting"
-   * @param {String|null} value
+   * @param {string | null} value
    *        The telemetry event value (a user defined value, providing context
    *        for the event) e.g. "console"
-   * @param {String} pendingObject
+   * @param {string} pendingObject
    *        An object containing key, value pairs that should be added to the
    *        event as properties.
    */
@@ -239,17 +239,17 @@ class Telemetry {
    * prepare a pending telemetry event for sending and then send it via
    * recordEvent().
    *
-   * @param {Object} obj
+   * @param {object} obj
    *        The telemetry event or ping is associated with this object, meaning
    *        that multiple events or pings for the same histogram may be run
    *        concurrently, as long as they are associated with different objects.
-   * @param {String} method
+   * @param {string} method
    *        The telemetry event method (describes the type of event that
    *        occurred e.g. "open")
-   * @param {String} object
+   * @param {string} object
    *        The telemetry event object name (the name of the object the event
    *        occurred on) e.g. "tools" or "setting"
-   * @param {String|null} value
+   * @param {string | null} value
    *        The telemetry event value (a user defined value, providing context
    *        for the event) e.g. "console"
    */
@@ -265,16 +265,16 @@ class Telemetry {
   /**
    * Send a telemetry event.
    *
-   * @param {String} method
+   * @param {string} method
    *        The telemetry event method (describes the type of event that
    *        occurred e.g. "open")
-   * @param {String} object
+   * @param {string} object
    *        The telemetry event object name (the name of the object the event
    *        occurred on) e.g. "tools" or "setting"
-   * @param {String|null} [value]
+   * @param {string | null} [value]
    *        Optional telemetry event value (a user defined value, providing
    *        context for the event) e.g. "console"
-   * @param {Object} [extra]
+   * @param {object} [extra]
    *        Optional telemetry event extra object containing the properties that
    *        will be sent with the event e.g.
    *        {
@@ -328,9 +328,9 @@ class Telemetry {
   /**
    * Sends telemetry pings to indicate that a tool has been opened.
    *
-   * @param {String} id
+   * @param {string} id
    *        The ID of the tool opened.
-   * @param {Object} obj
+   * @param {object} obj
    *        The telemetry event or ping is associated with this object, meaning
    *        that multiple events or pings for the same histogram may be run
    *        concurrently, as long as they are associated with different objects.
@@ -376,9 +376,9 @@ class Telemetry {
   /**
    * Sends telemetry pings to indicate that a tool has been closed.
    *
-   * @param {String} id
+   * @param {string} id
    *        The ID of the tool opened.
-   * @param {Object} obj
+   * @param {object} obj
    *        The telemetry event or ping is associated with this object, meaning
    *        that multiple events or pings for the same histogram may be run
    *        concurrently, as long as they are associated with different objects.
@@ -418,9 +418,8 @@ class Telemetry {
 /**
  * Returns the telemetry charts for a specific tool.
  *
- * @param {String} id
+ * @param {string} id
  *        The ID of the tool that has been opened.
- *
  */
 // eslint-disable-next-line complexity
 function getChartsFromToolId(id) {

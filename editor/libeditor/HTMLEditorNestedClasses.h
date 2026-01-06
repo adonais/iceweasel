@@ -1690,8 +1690,8 @@ HTMLEditor::AutoDeleteRangesHandler::AutoEmptyBlockAncestorDeleter final {
    * `mEmptyInclusiveAncestorBlockElement`.
    */
   [[nodiscard]] Result<CaretPoint, nsresult> GetNewCaretPosition(
-      const HTMLEditor& aHTMLEditor,
-      nsIEditor::EDirection aDirectionAndAmount) const;
+      const HTMLEditor& aHTMLEditor, nsIEditor::EDirection aDirectionAndAmount,
+      const Element& aEditingHost) const;
 
   RefPtr<Element> mEmptyInclusiveAncestorBlockElement;
 };

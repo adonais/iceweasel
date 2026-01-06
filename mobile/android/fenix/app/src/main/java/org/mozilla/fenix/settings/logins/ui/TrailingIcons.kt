@@ -4,11 +4,10 @@
 
 package org.mozilla.fenix.settings.logins.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -18,13 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.text.Text
 import mozilla.components.compose.base.text.value
 import mozilla.components.compose.base.textfield.TextField
-import mozilla.components.compose.base.theme.AcornTheme
+import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -50,7 +51,6 @@ fun EyePasswordIconButton(
                 painterResource(id = iconsR.drawable.mozac_ic_eye_slash_24)
             },
             contentDescription = null,
-            tint = AcornTheme.colors.textPrimary,
         )
     }
 }
@@ -60,21 +60,52 @@ fun EyePasswordIconButton(
 private fun EyePasswordIconButtonPreview() {
     var isPasswordVisible by remember { mutableStateOf(false) }
 
-    AcornTheme {
-        Column(
-            modifier = Modifier
-                .background(color = AcornTheme.colors.layer1)
-                .padding(8.dp),
-        ) {
+    FirefoxTheme {
+        Surface {
             TextField(
                 value = "password",
                 onValueChange = {},
                 isEnabled = true,
                 placeholder = "",
                 errorText = "",
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
                 label = "",
-                trailingIcons = {
+                trailingIcon = {
+                    EyePasswordIconButton(
+                        isPasswordVisible = isPasswordVisible,
+                        onTrailingIconClick = { isPasswordVisible = !isPasswordVisible },
+                    )
+                },
+                visualTransformation = if (isPasswordVisible) {
+                    VisualTransformation.None
+                } else {
+                    PasswordVisualTransformation()
+                },
+            )
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun EyePasswordIconButtonPrivatePreview() {
+    var isPasswordVisible by remember { mutableStateOf(false) }
+
+    FirefoxTheme(theme = Theme.Private) {
+        Surface {
+            TextField(
+                value = "password",
+                onValueChange = {},
+                isEnabled = true,
+                placeholder = "",
+                errorText = "",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                label = "",
+                trailingIcon = {
                     EyePasswordIconButton(
                         isPasswordVisible = isPasswordVisible,
                         onTrailingIconClick = { isPasswordVisible = !isPasswordVisible },

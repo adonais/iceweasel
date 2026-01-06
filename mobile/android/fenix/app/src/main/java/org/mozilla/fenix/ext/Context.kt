@@ -7,7 +7,6 @@ package org.mozilla.fenix.ext
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.provider.Settings
@@ -20,7 +19,6 @@ import androidx.annotation.StringRes
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.locale.LocaleManager
-import mozilla.components.support.utils.ext.getPackageInfoCompat
 import org.mozilla.fenix.FenixApplication
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.Components
@@ -52,7 +50,9 @@ val Context.metrics: MetricController
 fun Context.asActivity() = (this as? ContextThemeWrapper)?.baseContext as? Activity
     ?: this as? Activity
 
-fun Context.getPreferenceKey(@StringRes resourceId: Int): String =
+fun Context.getPreferenceKey(
+    @StringRes resourceId: Int,
+): String =
     resources.getString(resourceId)
 
 /**
@@ -71,7 +71,10 @@ fun Context.settings() = components.settings
  *
  * @return the formatted string in locale language or English as a fallback
  */
-fun Context.getStringWithArgSafe(@StringRes resId: Int, formatArg: String): String {
+fun Context.getStringWithArgSafe(
+    @StringRes resId: Int,
+    formatArg: String,
+): String {
     return try {
         format(getString(resId), formatArg)
     } catch (e: IllegalArgumentException) {
@@ -167,6 +170,35 @@ fun Context.tabsClosedUndoMessage(private: Boolean): String =
  */
 fun Context.isLargeWindow(): Boolean = AcornWindowSize.isLargeWindow(this)
 
+internal const val TALL_SCREEN_HEIGHT_DP = 480
+internal const val WIDE_SCREEN_WIDTH_DP = 600
+
+/**
+ * Helper function to determine whether the app's current window height
+ * is at least more than [TALL_SCREEN_HEIGHT_DP].
+ *
+ * This is useful when navigation bar should only be enabled on
+ * taller screens (e.g., to avoid crowding content vertically).
+ *
+ * @return true if the window height size is more than [TALL_SCREEN_HEIGHT_DP].
+ */
+fun Context.isTallWindow(): Boolean {
+    return resources.configuration.screenHeightDp > TALL_SCREEN_HEIGHT_DP
+}
+
+/**
+ * Helper function to determine whether the app's current window width
+ * is at least more than [WIDE_SCREEN_WIDTH_DP].
+ *
+ * This is useful when navigation bar should only be enabled on
+ * wider screens (e.g., to avoid crowding content horizontally).
+ *
+ * @return true if the window width size is more than [WIDE_SCREEN_WIDTH_DP].
+ */
+fun Context.isWideWindow(): Boolean {
+    return resources.configuration.screenWidthDp > WIDE_SCREEN_WIDTH_DP
+}
+
 /**
  *  This will record an event in the Nimbus internal event store. Used for behavioral targeting.
  */
@@ -187,20 +219,6 @@ fun Context.isToolbarAtBottom() =
  * @param resId Resource ID of the dimension.
  * @return The pixel size corresponding to the given dimension resource.
  */
-fun Context.pixelSizeFor(@DimenRes resId: Int) = resources.getDimensionPixelSize(resId)
-
-/**
- * Returns the installation time of this application (in milliseconds).
- *
- * @param logger Used to log a warning if package information cannot be retrieved.
- * @return The installation time in milliseconds since epoch, or `0L` if unavailable.
- */
-fun Context.getApplicationInstalledTime(logger: Logger): Long = try {
-    packageManager.getPackageInfoCompat(packageName, 0).firstInstallTime
-} catch (e: PackageManager.NameNotFoundException) {
-    logger.warn("Unable to retrieve package info for $packageName", e)
-    0L
-} catch (e: UnsupportedOperationException) {
-    logger.warn("Unable to retrieve package info for $packageName", e)
-    0L
-}
+fun Context.pixelSizeFor(
+    @DimenRes resId: Int,
+) = resources.getDimensionPixelSize(resId)

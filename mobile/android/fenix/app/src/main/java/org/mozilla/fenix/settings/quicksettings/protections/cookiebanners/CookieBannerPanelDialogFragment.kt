@@ -17,9 +17,9 @@ import kotlinx.coroutines.plus
 import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.lib.state.ext.consumeFrom
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.storeProvider
 import org.mozilla.fenix.R
 import org.mozilla.fenix.android.FenixDialogFragment
-import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.databinding.FragmentCookieBannerHandlingDetailsDialogBinding
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.trackingprotection.ProtectionsState
@@ -52,9 +52,9 @@ class CookieBannerPanelDialogFragment : FenixDialogFragment() {
         val rootView = inflateRootView(container)
 
         val tab = store.state.findTabOrCustomTab(provideCurrentTabId())
-        protectionsStore = StoreProvider.get(this) {
+        protectionsStore = storeProvider.get { restoredState ->
             ProtectionsStore(
-                ProtectionsState(
+                restoredState ?: ProtectionsState(
                     tab = tab,
                     url = args.url,
                     isTrackingProtectionEnabled = args.trackingProtectionEnabled,

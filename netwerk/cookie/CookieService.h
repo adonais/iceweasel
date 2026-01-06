@@ -150,7 +150,6 @@ class CookieService final : public nsICookieService,
                        OriginAttributes* aOriginAttributes, int32_t aSameSite,
                        nsICookie::schemeType aSchemeMap, bool aIsPartitioned,
                        bool aFromHttp, const nsID* aOperationID,
-                       bool aRejectWhenInvalid,
                        nsICookieValidation** aValidation);
 };
 

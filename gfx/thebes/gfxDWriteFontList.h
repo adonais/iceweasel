@@ -158,7 +158,7 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
    * \param aStyle italic or oblique of font
    */
   gfxDWriteFontEntry(const nsACString& aFaceName, IDWriteFontFile* aFontFile,
-                     IDWriteFontFileStream* aFontFileStream,
+                     gfxDWriteFontFileStream* aFontFileStream,
                      WeightRange aWeight, StretchRange aStretch,
                      SlantStyleRange aStyle)
       : gfxFontEntry(aFaceName),
@@ -199,6 +199,9 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
   void AddSizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf,
                               FontListSizes* aSizes) const override;
 
+  size_t ComputedSizeOfExcludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf) override;
+
  protected:
   friend class gfxDWriteFont;
   friend class gfxDWriteFontList;
@@ -225,7 +228,7 @@ class gfxDWriteFontEntry final : public gfxFontEntry {
 
   // For custom fonts, we hold a reference to the IDWriteFontFileStream for
   // for the IDWriteFontFile, so that the data is available.
-  RefPtr<IDWriteFontFileStream> mFontFileStream;
+  RefPtr<gfxDWriteFontFileStream> mFontFileStream;
 
   // font face corresponding to the mFont/mFontFile *without* any DWrite
   // style simulations applied

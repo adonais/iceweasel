@@ -83,71 +83,6 @@ features:
         description: The drawable displayed in the app menu for Settings
         type: String
         default: mozac_ic_settings
-  search-term-groups:
-    description: A feature allowing the grouping of URLs around the search term that it came from.
-    variables:
-      enabled:
-        description: If true, the feature shows up on the homescreen and on the new tab screen.
-        type: Boolean
-        default: false
-    defaults:
-      - channel: nightly
-        value:
-          enabled: true
-      - channel: developer
-        value:
-          enabled: true
-  mr2022:
-    description: Features for MR 2022.
-    variables:
-      sections-enabled:
-        description: "This property provides a lookup table of whether or not the given section should be enabled."
-        type: Map<MR2022Section, Boolean>
-        default:
-          {
-            "wallpapers-selection-tool": true,
-            "tcp-cfr": true,
-            "tcp-feature": true,
-          }
-    defaults:
-      - channel: developer
-        value: {
-          "sections-enabled": {
-            "wallpapers-selection-tool": true,
-          }
-        }
-  query-parameter-stripping:
-    description: Features for query parameter stripping.
-    variables:
-      sections-enabled:
-        description: "This property provides a lookup table of whether or not the given section should be enabled."
-        type: Map<QueryParameterStrippingSection, String>
-        default:
-          {
-            "query-parameter-stripping": "0",
-            "query-parameter-stripping-pmb": "0",
-            "query-parameter-stripping-allow-list": "",
-            "query-parameter-stripping-strip-list": "",
-          }
-    defaults:
-      - channel: developer
-        value: {
-          "sections-enabled": {
-            "query-parameter-stripping": "0",
-            "query-parameter-stripping-pmb": "0",
-            "query-parameter-stripping-allow-list": "",
-            "query-parameter-stripping-strip-list": "",
-          }
-        }
-      - channel: nightly
-        value: {
-          "sections-enabled": {
-            "query-parameter-stripping": "0",
-            "query-parameter-stripping-pmb": "0",
-            "query-parameter-stripping-allow-list": "",
-            "query-parameter-stripping-strip-list": "",
-          }
-        }
   cookie-banners:
     description: Features for cookie banner handling.
     variables:
@@ -517,6 +452,14 @@ features:
           set to false.
         type: Boolean
         default: false
+      isolationStrategy:
+        description: >
+          The web content isolation strategy to use with fission. "0" means "isolate nothing", similar to
+          non-fission behavior. "1" means "isolate everything", where every site-origin gets its own
+          process. "2" means "isolate high value", Android-specific setting to only isolate sites
+          considered "high value".
+        type: Int
+        default: 2
 
   suggest-shipped-domains:
     description: Feature that suggests domains from the shipped domain list.
@@ -770,23 +713,6 @@ features:
         type: Int
         default: 0
 
-  bookmarks:
-    description: Feature for Bookmarks
-    variables:
-      new-compose-ui:
-        description: if true, enable new compose based UI
-        type: Boolean
-        default: false
-
-  networking:
-    description: Enables networking features
-    variables:
-      fetchPriorityEnabled:
-        description: >
-          Enables or disables network.fetchpriority.enabled preference.
-        type: Boolean
-        default: true
-
   networkingBannedPorts:
     description: "Networking (Necko) Banned Ports"
     variables:
@@ -907,6 +833,13 @@ features:
             Enables the user to search for settings.
           type: Boolean
           default: false
+      defaults:
+        - channel: developer
+          value:
+            enabled: true
+        - channel: nightly
+          value:
+            enabled: true
 
   toolbar-redesign-option:
     description: Control the visibility of toolbar redesign option in settings.
@@ -916,27 +849,20 @@ features:
           Whether or not the toolbar redesign option is visible to the user.  This allows the user to switch between simple and expanded toolbar.
         type: Boolean
         default: true
-      show-simple-customization:
+      show-customization:
         description: >
-          Whether or not the simple toolbar customization option is visible to the user.
-        type: Boolean
-        default: false
-      show-expanded-customization:
-        description: >
-          Whether or not the expanded toolbar customization option is visible to the user.
+          Whether or not the simple/expanded toolbar customization option is visible to the user.
         type: Boolean
         default: false
     defaults:
       - channel: developer
         value:
           show-options: true
-          show-simple-customization: false
-          show-expanded-customization: false
+          show-customization: false
       - channel: nightly
         value:
           show-options: true
-          show-simple-customization: false
-          show-expanded-customization: false
+          show-customization: false
 
   tab-management-enhancements:
     description: Control the visibility of the tab management enhancements.
@@ -977,6 +903,16 @@ features:
   lna-blocking:
     description: Feature that allows blocking local network or device access.
     variables:
+      blocking:
+        description: >
+          Whether or not to block LNA requests
+        type: Boolean
+        default: false
+      block-trackers:
+        description: >
+          Whether or not to block trackers
+        type: Boolean
+        default: false
       enabled:
         description: >
           Whether or not to turn on local network / device access blocking
@@ -1078,15 +1014,6 @@ types:
         collections:
           description: The collections section of the homepage.
 
-    MR2022Section:
-      description: The identifiers for the sections of the MR 2022.
-      variants:
-        wallpapers-selection-tool:
-          description: Wallpapers selection dialog tool for the home screen.
-        tcp-cfr:
-          description: CFR for the first time you use the browse with Total Cookie Protection on the browser screen.
-        tcp-feature:
-          description: Controls the Total Cookie Protection feature.
     CookieBannersSection:
       description: The identifiers for the sections of the MR 2022.
       variants:

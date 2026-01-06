@@ -44,7 +44,7 @@ class BaseInBrowserHost {
   /**
    * @param {Tab} hostTab
    *              The web page's tab where DevTools are displayed.
-   * @param {String} type
+   * @param {string} type
    *              The host type: left, bottom, right.
    */
   constructor(hostTab, type) {

@@ -69,9 +69,9 @@ function checkLoginNewlyCreated(login) {
 /**
  * Asserts histogram telemetry for the categories of logins
  *
- * @param {Object} histogram Histogram object returned from `TelemetryTestUtils.getAndClearHistogram()`
- * @param {Number} index Index representing one of the following values in order: ["added", "modified", "error", "no_change"]. See `toolkit/components/telemetry/Histogram.json` for more information
- * @param {Number} expected The expected number of entries in the histogram at the passed index
+ * @param {object} histogram Histogram object returned from `TelemetryTestUtils.getAndClearHistogram()`
+ * @param {number} index Index representing one of the following values in order: ["added", "modified", "error", "no_change"]. See `toolkit/components/telemetry/Histogram.json` for more information
+ * @param {number} expected The expected number of entries in the histogram at the passed index
  */
 function assertHistogramTelemetry(histogram, index, expected) {
   TTU.assertHistogram(histogram, index, expected);

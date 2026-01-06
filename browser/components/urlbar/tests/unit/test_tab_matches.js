@@ -321,6 +321,10 @@ add_task(async function test_tab_matches() {
         heuristic: true,
       }),
       makeTabSwitchResult(context, {
+        uri: "http://abc.com/",
+        title: "ABC rocks",
+      }),
+      makeTabSwitchResult(context, {
         uri: "data:text/html,test",
         title: "data:text/html,test",
         iconUri: UrlbarUtils.ICON.DEFAULT,
@@ -328,10 +332,6 @@ add_task(async function test_tab_matches() {
       makeTabSwitchResult(context, {
         uri: "about:mozilla",
         title: "about:mozilla",
-      }),
-      makeTabSwitchResult(context, {
-        uri: "http://abc.com/",
-        title: "ABC rocks",
       }),
     ],
   });

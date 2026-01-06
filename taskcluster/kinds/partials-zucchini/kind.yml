@@ -50,7 +50,7 @@ tasks:
                 - linux64-zucchini-bin
                 - linux64-mar-tools
         # treeherder: set in transform
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             artifacts:
                 - name: public/build

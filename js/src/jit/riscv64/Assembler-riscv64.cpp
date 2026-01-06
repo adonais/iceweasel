@@ -1079,8 +1079,8 @@ void Assembler::bind(Label* label, BufferOffset boff) {
           DEBUG_PRINTF("\t\ttrampolining: %d\n", next);
         } else {
           target_at_put(b, dest);
-          BufferOffset deadline(b.getOffset() + ImmBranchMaxForwardOffset(
-                                                     UncondBranchRangeType));
+          BufferOffset deadline(
+              b.getOffset() + ImmBranchMaxForwardOffset(UncondBranchRangeType));
           m_buffer.unregisterBranchDeadline(UncondBranchRangeType, deadline);
         }
       } else {

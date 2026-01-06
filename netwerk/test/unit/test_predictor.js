@@ -184,28 +184,6 @@ function open_and_continue(uris, continueCallback) {
   }
 }
 
-function test_link_hover() {
-  if (!running_single_process && !is_child_process()) {
-    // This one we can just proxy to the child and be done with, no extra setup
-    // is necessary.
-    sendCommand("test_link_hover();");
-    return;
-  }
-
-  var uri = newURI("http://localhost:4444/foo/bar");
-  var referrer = newURI("http://localhost:4444/foo");
-  var preconns = ["http://localhost:4444"];
-
-  var verifier = new Verifier("hover", [], preconns, []);
-  predictor.predict(
-    uri,
-    referrer,
-    predictor.PREDICT_LINK,
-    origin_attributes,
-    verifier
-  );
-}
-
 const pageload_toplevel = newURI("http://localhost:4444/index.html");
 
 function continue_test_pageload() {
@@ -765,7 +743,6 @@ function cleanup() {
 var tests = [
   // This must ALWAYS come first, to ensure a clean slate
   reset_predictor,
-  test_link_hover,
   test_pageload,
   // TODO: These are disabled until the features are re-written
   //test_redirect,

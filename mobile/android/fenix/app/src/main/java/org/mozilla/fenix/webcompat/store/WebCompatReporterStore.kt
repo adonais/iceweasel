@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
-import mozilla.components.lib.state.UiStore
+import mozilla.components.lib.state.Store
 import org.mozilla.fenix.R
 
 /**
@@ -39,7 +39,9 @@ data class WebCompatReporterState(
      *
      * @property displayStringId The string ID corresponding to the reason.
      */
-    enum class BrokenSiteReason(@param:StringRes val displayStringId: Int) {
+    enum class BrokenSiteReason(
+        @param:StringRes val displayStringId: Int,
+    ) {
         Load(
             displayStringId = R.string.webcompat_reporter_reason_load,
         ),
@@ -169,9 +171,9 @@ sealed class WebCompatReporterAction : Action {
     data object SendMoreInfoSubmitted : WebCompatReporterAction(), NavigationAction
 
     /**
-     * Dispatched when the user requests to send more info.
+     * Dispatched when the user requests to add more info.
      */
-    data object SendMoreInfoClicked : WebCompatReporterAction(), WebCompatReporterStorageAction
+    data object AddMoreInfoClicked : WebCompatReporterAction(), WebCompatReporterStorageAction
 
     /**
      * Dispatched when the user requests to cancel the report.
@@ -206,19 +208,19 @@ private fun reduce(
     )
     is WebCompatReporterAction.NavigationAction -> state
     WebCompatReporterAction.SendReportClicked -> state
-    WebCompatReporterAction.SendMoreInfoClicked -> state
+    WebCompatReporterAction.AddMoreInfoClicked -> state
     WebCompatReporterAction.LearnMoreClicked -> state
     is WebCompatReporterAction.IncludeEtpBlockedUrlsChanged -> state.copy(includeEtpBlockedUrls = action.include)
 }
 
 /**
- * A [UiStore] that holds the [WebCompatReporterState] for the WebCompat Reporter and reduces
+ * A [Store] that holds the [WebCompatReporterState] for the WebCompat Reporter and reduces
  * [WebCompatReporterAction]s dispatched to the store.
  */
 class WebCompatReporterStore(
     initialState: WebCompatReporterState = WebCompatReporterState(),
     middleware: List<Middleware<WebCompatReporterState, WebCompatReporterAction>> = listOf(),
-) : UiStore<WebCompatReporterState, WebCompatReporterAction>(
+) : Store<WebCompatReporterState, WebCompatReporterAction>(
     initialState,
     ::reduce,
     middleware,

@@ -72,10 +72,7 @@ let PageActionMap = new WeakMap();
 export class PageAction {
   constructor(win, dispatchCFRAction) {
     this.window = win;
-
-    this.urlbar = win.gURLBar; // The global URLBar object
-    this.urlbarinput = win.gURLBar.textbox; // The URLBar DOM node
-
+    this.urlbar = win.gURLBar;
     this.container = win.document.getElementById(
       "contextual-feature-recommendation"
     );
@@ -167,12 +164,12 @@ export class PageAction {
     let [{ width }] = await this.window.promiseDocumentFlushed(() =>
       this.label.getClientRects()
     );
-    this.urlbarinput.style.setProperty("--cfr-label-width", `${width}px`);
+    this.urlbar.style.setProperty("--cfr-label-width", `${width}px`);
 
     this.container.addEventListener("click", this._cfrUrlbarButtonClick);
     // Collapse the recommendation on url bar focus in order to free up more
     // space to display and edit the url
-    this.urlbar.addEventListener("focus", this._collapse);
+    this.urlbar.inputField.addEventListener("focus", this._collapse);
 
     if (shouldExpand) {
       this._clearScheduledStateChanges();
@@ -194,9 +191,9 @@ export class PageAction {
   hideAddressBarNotifier() {
     this.container.hidden = true;
     this._clearScheduledStateChanges();
-    this.urlbarinput.removeAttribute("cfr-recommendation-state");
+    this.urlbar.removeAttribute("cfr-recommendation-state");
     this.container.removeEventListener("click", this._cfrUrlbarButtonClick);
-    this.urlbar.removeEventListener("focus", this._collapse);
+    this.urlbar.inputField.removeEventListener("focus", this._collapse);
     if (this.currentNotification) {
       this.window.PopupNotifications.remove(this.currentNotification);
       this.currentNotification = null;
@@ -207,13 +204,13 @@ export class PageAction {
     if (delay > 0) {
       this.stateTransitionTimeoutIDs.push(
         this.window.setTimeout(() => {
-          this.urlbarinput.setAttribute("cfr-recommendation-state", "expanded");
+          this.urlbar.setAttribute("cfr-recommendation-state", "expanded");
         }, delay)
       );
     } else {
       // Non-delayed state change overrides any scheduled state changes
       this._clearScheduledStateChanges();
-      this.urlbarinput.setAttribute("cfr-recommendation-state", "expanded");
+      this.urlbar.setAttribute("cfr-recommendation-state", "expanded");
     }
   }
 
@@ -222,23 +219,17 @@ export class PageAction {
       this.stateTransitionTimeoutIDs.push(
         this.window.setTimeout(() => {
           if (
-            this.urlbarinput.getAttribute("cfr-recommendation-state") ===
-            "expanded"
+            this.urlbar.getAttribute("cfr-recommendation-state") === "expanded"
           ) {
-            this.urlbarinput.setAttribute(
-              "cfr-recommendation-state",
-              "collapsed"
-            );
+            this.urlbar.setAttribute("cfr-recommendation-state", "collapsed");
           }
         }, delay)
       );
     } else {
       // Non-delayed state change overrides any scheduled state changes
       this._clearScheduledStateChanges();
-      if (
-        this.urlbarinput.getAttribute("cfr-recommendation-state") === "expanded"
-      ) {
-        this.urlbarinput.setAttribute("cfr-recommendation-state", "collapsed");
+      if (this.urlbar.getAttribute("cfr-recommendation-state") === "expanded") {
+        this.urlbar.setAttribute("cfr-recommendation-state", "collapsed");
       }
     }
   }
@@ -323,10 +314,11 @@ export class PageAction {
   }
 
   /**
-   * getStrings - Handles getting the localized strings vs message overrides.
-   *              If string_id is not defined it assumes you passed in an override
-   *              message and it just returns it.
-   *              If subAttribute is provided, the string for it is returned.
+   * Handles getting the localized strings vs message overrides.
+   * If string_id is not defined it assumes you passed in an override message
+   * and it just returns it.
+   * If subAttribute is provided, the string for it is returned.
+   *
    * @return A string. One of 1) passed in string 2) a String object with
    *         attributes property if there are attributes 3) the sub attribute.
    */
@@ -942,6 +934,7 @@ export const CFRPageActions = {
 
   /**
    * Fetch the URL to the latest add-on xpi so the recommendation can download it.
+   *
    * @param id          The add-on ID
    * @return            A string for the URL that was fetched
    */
@@ -965,6 +958,7 @@ export const CFRPageActions = {
 
   /**
    * Force a recommendation to be shown. Should only happen via the Admin page.
+   *
    * @param browser                 The browser for the recommendation
    * @param recommendation  The recommendation to show
    * @param dispatchCFRAction      A function to dispatch resulting actions to
@@ -1002,6 +996,7 @@ export const CFRPageActions = {
 
   /**
    * Add a recommendation specific to the given browser and host.
+   *
    * @param browser                 The browser for the recommendation
    * @param host                    The host for the recommendation
    * @param recommendation          The recommendation to show

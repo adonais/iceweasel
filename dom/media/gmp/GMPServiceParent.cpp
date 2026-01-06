@@ -5,8 +5,6 @@
 
 #include "GMPServiceParent.h"
 
-#include <limits>
-
 #include "GMPDecoderModule.h"
 #include "GMPLog.h"
 #include "GMPParent.h"

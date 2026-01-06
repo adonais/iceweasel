@@ -138,6 +138,8 @@ class SplashScreenManager(
                 }.onAwait { it }
             }
 
+            splashScreenOperation.dispose()
+
             withContext(this@SplashScreenManager.coroutineContext) {
                 isSplashScreenFinished = true
                 onSplashScreenFinished(result)

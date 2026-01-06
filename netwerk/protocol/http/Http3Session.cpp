@@ -589,6 +589,7 @@ nsresult Http3Session::ProcessEvents() {
 
         if (stream) {
           StreamReadyToWrite(stream);
+          stream->SetBlockedByFlowControl(false);
         }
       } break;
       case Http3Event::Tag::Reset:
@@ -1461,7 +1462,13 @@ nsresult Http3Session::TryActivating(
 
   if (mState == ZERORTT) {
     if (!aStream->Do0RTT()) {
-      MOZ_ASSERT(!mCannotDo0RTTStreams.Contains(aStream));
+      // Stream can't do 0RTT - queue it for activation when the session
+      // reaches CONNECTED state via Finish0Rtt.
+      if (!mCannotDo0RTTStreams.Contains(aStream)) {
+        LOG(("Http3Session %p queuing stream %p for post-0RTT activation", this,
+             aStream));
+        mCannotDo0RTTStreams.AppendElement(aStream);
+      }
       return NS_BASE_STREAM_WOULD_BLOCK;
     }
   }
@@ -1513,9 +1520,15 @@ nsresult Http3Session::TryActivating(
       QueueStream(aStream);
       return rv;
     }
-    // Ignore this error. This may happen if some events are not handled yet.
-    // TODO we may try to add an assertion here.
-    return NS_OK;
+
+    // Previously we always returned NS_OK here, which caused the
+    // transaction to wait until the quic connection timed out
+    // after which it was retried without quic.
+    if (StaticPrefs::network_http_http3_fallback_to_h2_on_error()) {
+      return NS_ERROR_HTTP2_FALLBACK_TO_HTTP1;
+    }
+
+    return rv;
   }
 
   LOG(("Http3Session::TryActivating streamId=0x%" PRIx64
@@ -1817,11 +1830,18 @@ nsresult Http3Session::SendData(nsIUDPSocket* socket) {
   nsresult rv = NS_OK;
   RefPtr<Http3StreamBase> stream;
 
+  nsTArray<RefPtr<Http3StreamBase>> blockedStreams;
+
   // Step 1)
   while (CanSendData() && (stream = mReadyForWrite.PopFront())) {
     LOG(("Http3Session::SendData call ReadSegments from stream=%p [this=%p]",
          stream.get(), this));
     stream->SetInTxQueue(false);
+    if (stream->BlockedByFlowControl()) {
+      LOG(("stream %p blocked by flow control", stream.get()));
+      blockedStreams.AppendElement(stream);
+      continue;
+    }
     rv = stream->ReadSegments();
 
     // on stream error we return earlier to let the error be handled.
@@ -1857,6 +1877,13 @@ nsresult Http3Session::SendData(nsIUDPSocket* socket) {
   if (NS_FAILED(rv)) {
     return rv;
   }
+
+  // Put the blocked streams back to the queue, since they are ready to write.
+  for (const auto& stream : blockedStreams) {
+    mReadyForWrite.Push(stream);
+    stream->SetInTxQueue(true);
+  }
+
   rv = ProcessEvents();
 
   // Let the connection know we sent some app data successfully.

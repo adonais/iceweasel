@@ -141,11 +141,10 @@ search.service.initializationStatus
 
   A counter for initialization successes on start up.
 
-search.suggestions.*
-~~~~~~~~~~~~~~~~~~~~
+search.suggestions.latency
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  Labeled counters to count the number of suggestion requests sent from app-
-  provided search engines. There are three separate counters for the number of
-  successful, aborted and failed requests. Aborted requests can happen when
-  users type faster than the search engine responds and failed requests when
-  there is an HTTP or network error.
+  A labelled timing distribution that records the latencies (ms) of search
+  suggestions fetches per search engine. Keys in this histogram are the search
+  engine identifier for configuration provided search engines and 'other' for
+  search engines installed via other methods.

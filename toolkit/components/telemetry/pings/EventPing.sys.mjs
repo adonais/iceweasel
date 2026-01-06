@@ -154,7 +154,7 @@ export var TelemetryEventPing = {
   /**
    * Submits an "event" ping and restarts the timer for the next interval.
    *
-   * @param {String} reason The reason we're sending the ping. One of TelemetryEventPing.Reason.
+   * @param {string} reason The reason we're sending the ping. One of TelemetryEventPing.Reason.
    * @param {bool} discardLeftovers Whether to discard event records left over from a previous ping.
    */
   _submitPing(reason, discardLeftovers = false) {

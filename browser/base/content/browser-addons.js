@@ -1910,10 +1910,11 @@ var BrowserAddonUI = {
 
   /**
    * Open about:addons page by given view id.
-   * @param {String} aView
+   *
+   * @param {string} aView
    *                 View id of page that will open.
    *                 e.g. "addons://discover/"
-   * @param {Object} options
+   * @param {object} options
    *        {
    *          selectTabByViewId: If true, if there is the tab opening page having
    *                             same view id, select the tab. Else if the current

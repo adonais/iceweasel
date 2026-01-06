@@ -1546,7 +1546,6 @@ static bool TryEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
     if (piter) {
       do {
         NativeIterator* ni = piter->getNativeIterator();
-        MOZ_ASSERT(ni->isReusable());
 
         // Guard against indexes.
         if (ni->mayHavePrototypeProperties()) {
@@ -1845,7 +1844,6 @@ static bool CountEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
                                         LookupInShapeIteratorCache(cx, nobj));
   if (piter) {
     NativeIterator* ni = piter->getNativeIterator();
-    MOZ_ASSERT(ni->isReusable());
 
     // Guard against indexes.
     if (!ni->mayHavePrototypeProperties()) {

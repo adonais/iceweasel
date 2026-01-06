@@ -187,10 +187,10 @@ class DefaultHistoryMetadataGroupController(
 
     override fun handleDeleteAllConfirmed() {
         scope.launch {
-            store.dispatch(HistoryMetadataGroupFragmentAction.DeleteAll)
             store.state.items.forEach {
                 historyStorage.deleteVisitsFor(it.url)
             }
+            store.dispatch(HistoryMetadataGroupFragmentAction.DeleteAll)
             browserStore.dispatch(
                 HistoryMetadataAction.DisbandSearchGroupAction(searchTerm = searchTerm),
             )

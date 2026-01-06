@@ -82,8 +82,10 @@ add_task(async function test_onAction_INIT() {
       data: [
         {
           ...attachment,
-          wallpaperUrl: "http://localhost:8888/base_url/attachment",
+          background_position: "center",
           category: "",
+          order: 0,
+          wallpaperUrl: "http://localhost:8888/base_url/attachment",
         },
       ],
       meta: {

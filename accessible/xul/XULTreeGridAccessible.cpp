@@ -251,7 +251,7 @@ void XULTreeGridRowAccessible::Shutdown() {
 
 role XULTreeGridRowAccessible::NativeRole() const { return roles::ROW; }
 
-ENameValueFlag XULTreeGridRowAccessible::Name(nsString& aName) const {
+ENameValueFlag XULTreeGridRowAccessible::DirectName(nsString& aName) const {
   aName.Truncate();
 
   // XXX: the row name sholdn't be a concatenation of cell names (bug 664384).
@@ -400,7 +400,7 @@ void XULTreeGridCellAccessible::Shutdown() {
 
 Accessible* XULTreeGridCellAccessible::FocusedChild() { return nullptr; }
 
-ENameValueFlag XULTreeGridCellAccessible::Name(nsString& aName) const {
+ENameValueFlag XULTreeGridCellAccessible::DirectName(nsString& aName) const {
   aName.Truncate();
 
   if (!mTreeView) return eNameOK;

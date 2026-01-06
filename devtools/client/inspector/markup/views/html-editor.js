@@ -127,7 +127,7 @@ class HTMLEditor extends EventEmitter {
    * @param  {DOMNode} element
    *         The element that the editor will be anchored to.
    *         Should belong to the HTMLDocument passed into the constructor.
-   * @param  {String} text
+   * @param  {string} text
    *         Value to set the contents of the editor to
    * @param  {Function} cb
    *         The function to call when hiding
@@ -151,7 +151,7 @@ class HTMLEditor extends EventEmitter {
   /**
    * Hide the editor, optionally committing the changes
    *
-   * @param  {Boolean} shouldCommit
+   * @param  {boolean} shouldCommit
    *         A change will be committed by default.  If this param
    *         strictly equals false, no change will occur.
    */

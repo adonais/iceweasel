@@ -1151,7 +1151,7 @@ NameLocation ScopeContext::searchInEnclosingScopeWithCache(
   mozilla::Maybe<NameLocation> found;
 
   // Number of enclosing scope we walked over.
-  uint8_t hops = 0;
+  uint16_t hops = 0;
 
   for (InputScopeIter si(input.enclosingScope); si; si++) {
     MOZ_ASSERT(NameIsOnEnvironment(fc, parserAtoms, input.atomCache, si.scope(),
@@ -1220,8 +1220,8 @@ NameLocation ScopeContext::searchInEnclosingScopeNoCache(
   // NameLocation which contains relative locations to access `name`.
   mozilla::Maybe<NameLocation> result;
 
-  // Number of enclosing scoep we walked over.
-  uint8_t hops = 0;
+  // Number of enclosing scope we walked over.
+  uint16_t hops = 0;
 
   for (InputScopeIter si(input.enclosingScope); si; si++) {
     MOZ_ASSERT(NameIsOnEnvironment(fc, parserAtoms, input.atomCache, si.scope(),
@@ -4141,7 +4141,7 @@ size_t InitialStencilAndDelazifications::sizeOfExcludingThis(
     // The initial stencil can be shared between multiple owners, but
     // in most case this instance is considered as the main owner, in term
     // of the memory reporting.
-    size += initial_->sizeOfExcludingThis(mallocSizeOf);
+    size += initial_->sizeOfIncludingThis(mallocSizeOf);
   }
 
   size += delazifications_.sizeOfExcludingThis(mallocSizeOf);
@@ -4152,7 +4152,7 @@ size_t InitialStencilAndDelazifications::sizeOfExcludingThis(
     }
 
     // Delazifications are exclusively owned by this instance.
-    size += (*delazification).sizeOfExcludingThis(mallocSizeOf);
+    size += (*delazification).sizeOfIncludingThis(mallocSizeOf);
   }
 
   size += functionKeyToInitialScriptIndex_.sizeOfExcludingThis(mallocSizeOf);

@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { html, ifDefined } from "../vendor/lit.all.mjs";
+import { html, ifDefined, when } from "../vendor/lit.all.mjs";
 import { MozLitElement } from "../lit-utils.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-button.mjs";
@@ -54,6 +54,7 @@ export default class MozMessageBar extends MozLitElement {
     closeButton: "moz-button.close",
     messageEl: ".message",
     supportLinkSlot: "slot[name=support-link]",
+    supportLinkHolder: ".link",
   };
 
   static properties = {
@@ -61,6 +62,7 @@ export default class MozMessageBar extends MozLitElement {
     heading: { type: String, fluent: true },
     message: { type: String, fluent: true },
     dismissable: { type: Boolean },
+    supportPage: { type: String },
     messageL10nId: { type: String },
     messageL10nArgs: { type: String },
   };
@@ -70,39 +72,52 @@ export default class MozMessageBar extends MozLitElement {
 
     /**
      * The type of the displayed message.
+     *
      * @type {MozMessageBarType}
      */
     this.type = "info";
 
     /**
      * Whether or not the element is dismissable.
+     *
      * @type {boolean}
      */
     this.dismissable = false;
 
     /**
      * The message text.
+     *
      * @type {string | undefined}
      */
     this.message = undefined;
 
     /**
      * l10n ID for the message.
+     *
      * @type {string | undefined}
      */
     this.messageL10nId = undefined;
 
     /**
      * Any args needed for the message l10n ID.
+     *
      * @type {Record<string, string> | undefined}
      */
     this.messageL10nArgs = undefined;
 
     /**
      * The heading of the message.
+     *
      * @type {string | undefined}
      */
     this.heading = undefined;
+
+    /**
+     * The support page stub.
+     *
+     * @type {string | undefined}
+     */
+    this.supportPage = undefined;
   }
 
   onActionSlotchange() {
@@ -113,7 +128,7 @@ export default class MozMessageBar extends MozLitElement {
   onLinkSlotChange() {
     this.messageEl.classList.toggle(
       "has-link-after",
-      !!this.supportLinkEls.length
+      !!this.supportLinkEls.length || !!this.supportPage
     );
   }
 
@@ -128,7 +143,25 @@ export default class MozMessageBar extends MozLitElement {
   }
 
   get supportLinkEls() {
+    if (this.supportPage) {
+      return this.supportLinkHolder.children;
+    }
     return this.supportLinkSlot.assignedElements();
+  }
+
+  supportLinkTemplate() {
+    if (this.supportPage) {
+      return html`<a
+        is="moz-support-link"
+        support-page=${this.supportPage}
+        part="support-link"
+        aria-describedby="heading message"
+      ></a>`;
+    }
+    return html`<slot
+      name="support-link"
+      @slotchange=${this.onLinkSlotChange}
+    ></slot>`;
   }
 
   iconTemplate() {
@@ -186,7 +219,12 @@ export default class MozMessageBar extends MozLitElement {
               <div>
                 <slot name="message">
                   <span
-                    class="message"
+                    id="message"
+                    class=${when(
+                      this.supportPage,
+                      () => "message has-link-after",
+                      () => "message"
+                    )}
                     data-l10n-id=${ifDefined(this.messageL10nId)}
                     data-l10n-args=${ifDefined(
                       JSON.stringify(this.messageL10nArgs)
@@ -195,12 +233,7 @@ export default class MozMessageBar extends MozLitElement {
                     ${this.message}
                   </span>
                 </slot>
-                <span class="link">
-                  <slot
-                    name="support-link"
-                    @slotchange=${this.onLinkSlotChange}
-                  ></slot>
-                </span>
+                <span class="link"> ${this.supportLinkTemplate()} </span>
               </div>
             </div>
           </div>

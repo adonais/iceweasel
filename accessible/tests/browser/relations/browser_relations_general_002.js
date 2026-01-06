@@ -89,44 +89,6 @@ addAccessibleTask(
 );
 
 /*
- * Test mutation of LABEL relations via accessible shutdown.
- */
-addAccessibleTask(
-  `
-  <div id="d"></div>
-  <label id="l">
-    <select id="s">
-  `,
-  async function (browser, accDoc) {
-    const label = findAccessibleChildByID(accDoc, "l");
-    const select = findAccessibleChildByID(accDoc, "s");
-    const div = findAccessibleChildByID(accDoc, "d");
-
-    await testCachedRelation(label, RELATION_LABEL_FOR, select);
-    await testCachedRelation(select, RELATION_LABELLED_BY, label);
-    await testCachedRelation(div, RELATION_LABELLED_BY, []);
-
-    const r = waitForEvent(EVENT_REORDER, "l");
-    await invokeContentTask(browser, [], () => {
-      content.document.getElementById("s").remove();
-    });
-    await r;
-    await invokeContentTask(browser, [], () => {
-      const l = content.document.getElementById("l");
-      l.htmlFor = "d";
-    });
-    await testCachedRelation(label, RELATION_LABEL_FOR, div);
-    await testCachedRelation(div, RELATION_LABELLED_BY, label);
-  },
-  {
-    chrome: false,
-    iframe: true,
-    remoteIframe: true,
-    topLevel: true,
-  }
-);
-
-/*
  * Test mutation of LABEL relations via DOM ID reuse.
  */
 addAccessibleTask(
@@ -191,19 +153,24 @@ addAccessibleTask(
  */
 addAccessibleTask(
   `
-  <div id="d"></div>
+  <input id="d"></input>
   <label id="l">
-    <select id="s">
+    <select id="s"></select>
+  </label>
   `,
   async function (browser, accDoc) {
     const label = findAccessibleChildByID(accDoc, "l");
     const select = findAccessibleChildByID(accDoc, "s");
-    const div = findAccessibleChildByID(accDoc, "d");
+    const input = findAccessibleChildByID(accDoc, "d");
 
     await testCachedRelation(label, RELATION_LABEL_FOR, select);
     await testCachedRelation(select, RELATION_LABELLED_BY, label);
-    await testCachedRelation(div, RELATION_LABELLED_BY, []);
+    await testCachedRelation(input, RELATION_LABELLED_BY, []);
     await untilCacheOk(() => {
+      if (!browser.isRemoteBrowser) {
+        return true;
+      }
+
       try {
         // We should get an acc ID back from this, but we don't have a way of
         // verifying its correctness -- it should be the ID of the select.
@@ -214,12 +181,16 @@ addAccessibleTask(
       }
     }, "Label for relation exists");
 
-    const r = waitForEvent(EVENT_REORDER, "l");
+    const r = waitForEvent(EVENT_INNER_REORDER, "l");
     await invokeContentTask(browser, [], () => {
       content.document.getElementById("s").remove();
     });
     await r;
     await untilCacheOk(() => {
+      if (!browser.isRemoteBrowser) {
+        return true;
+      }
+
       try {
         label.cache.getStringProperty("for");
       } catch (e) {
@@ -234,15 +205,11 @@ addAccessibleTask(
       const l = content.document.getElementById("l");
       l.htmlFor = "d";
     });
-    await testCachedRelation(label, RELATION_LABEL_FOR, div);
-    await testCachedRelation(div, RELATION_LABELLED_BY, label);
+    await testCachedRelation(label, RELATION_LABEL_FOR, input);
+    await testCachedRelation(input, RELATION_LABELLED_BY, label);
   },
   {
-    /**
-     * This functionality is broken in our LocalAcccessible implementation,
-     * so we avoid running this test in chrome or when the cache is off.
-     */
-    chrome: false,
+    chrome: true,
     iframe: true,
     remoteIframe: true,
     topLevel: true,
@@ -351,6 +318,44 @@ addAccessibleTask(
 
     await testCachedRelation(btn, RELATION_LABELLED_BY, relocated);
     await testCachedRelation(relocated, RELATION_LABEL_FOR, btn);
+  },
+  { chrome: true, topLevel: true }
+);
+
+/**
+ * Test table caption.
+ */
+addAccessibleTask(
+  `
+<table id="table">
+  <caption id="caption">caption</caption>
+  <tr><th>a</th></tr>
+</table>
+  `,
+  async function testTableCaption(browser, docAcc) {
+    const table = findAccessibleChildByID(docAcc, "table");
+
+    const caption = findAccessibleChildByID(docAcc, "caption");
+    await testCachedRelation(table, RELATION_LABELLED_BY, caption);
+    await testCachedRelation(caption, RELATION_LABEL_FOR, table);
+  },
+  { chrome: true, topLevel: true }
+);
+
+/**
+ * Test elements that are not label by spec do not get LABEL relations
+ */
+addAccessibleTask(
+  `
+  <label id="label" for="btn">label</label>
+  <div role="button" id="btn"></div>
+  `,
+  async function testLabelOnDiv(browser, docAcc) {
+    const btn = findAccessibleChildByID(docAcc, "btn");
+
+    const label = findAccessibleChildByID(docAcc, "label");
+    await testCachedRelation(btn, RELATION_LABELLED_BY, []);
+    await testCachedRelation(label, RELATION_LABEL_FOR, []);
   },
   { chrome: true, topLevel: true }
 );

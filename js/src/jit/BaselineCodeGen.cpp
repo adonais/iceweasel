@@ -3907,9 +3907,9 @@ Address BaselineCodeGen<Handler>::getEnvironmentCoordinateAddress(
 // number of environment objects.
 static void LoadAliasedVarEnv(MacroAssembler& masm, Register env,
                               Register scratch) {
-  static_assert(ENVCOORD_HOPS_LEN == 1,
-                "Code assumes number of hops is stored in uint8 operand");
-  LoadUint8Operand(masm, scratch);
+  static_assert(ENVCOORD_HOPS_LEN == 2,
+                "Code assumes number of hops is stored in uint16 operand");
+  LoadUint16Operand(masm, scratch);
 
   Label top, done;
   masm.branchTest32(Assembler::Zero, scratch, scratch, &done);
@@ -5918,7 +5918,7 @@ bool BaselineCodeGen<Handler>::emit_Callee() {
 template <>
 bool BaselineCompilerCodeGen::emit_EnvCallee() {
   frame.syncStack(0);
-  uint8_t numHops = GET_UINT8(handler.pc());
+  uint16_t numHops = GET_ENVCOORD_HOPS(handler.pc());
   Register scratch = R0.scratchReg();
 
   masm.loadPtr(frame.addressOfEnvironmentChain(), scratch);
@@ -5939,7 +5939,7 @@ bool BaselineInterpreterCodeGen::emit_EnvCallee() {
   Register env = R1.scratchReg();
 
   static_assert(JSOpLength_EnvCallee - sizeof(jsbytecode) == ENVCOORD_HOPS_LEN,
-                "op must have uint8 operand for LoadAliasedVarEnv");
+                "op must have uint16 operand for LoadAliasedVarEnv");
 
   // Load the right environment object.
   masm.loadPtr(frame.addressOfEnvironmentChain(), env);

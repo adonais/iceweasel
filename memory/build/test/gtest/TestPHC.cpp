@@ -503,7 +503,11 @@ TEST(PHC, TestPHCLimit)
   // (see kPhcVirtualReservation)
   size_t limit =
 #ifdef HAVE_64BIT_BUILD
-      1024 * 1024 * 1024;
+#  if defined(XP_DARWIN) && defined(__aarch64__)
+      512 * 1024 * 1024;
+#  else
+      128 * 1024 * 1024;
+#  endif
 #else
       2 * 1024 * 1024;
 #endif

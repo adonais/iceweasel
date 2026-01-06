@@ -392,9 +392,10 @@ export class ProgressListener {
   }
 
   #onNavigationCommitted = (eventName, data) => {
-    const { navigationId } = data;
+    const { navigationId, url } = data;
 
     if (this.#resolveWhenCommitted && this.#navigationId === navigationId) {
+      this.#targetURI = Services.io.newURI(url);
       this.#trace(
         `Received "navigation-committed" event. Stopping the navigation.`
       );

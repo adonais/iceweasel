@@ -160,7 +160,7 @@ def get_runtimes(platform, suite_name):
         raise OSError(f"manifest runtime file at {path} not found.")
 
     with open(path) as fh:
-        return json.load(fh)[suite_name]
+        return json.load(fh).get(suite_name, {})
 
 
 def chunk_manifests(suite, platform, chunks, manifests):
@@ -175,32 +175,22 @@ def chunk_manifests(suite, platform, chunks, manifests):
         A list of length `chunks` where each item contains a list of manifests
         that run in that chunk.
     """
-    ini_manifests = set([x.replace(".toml", ".ini") for x in manifests])
-
-    if "web-platform-tests" not in suite and "marionette" not in suite:
+    if "web-platform-tests" not in suite:
+        ini_manifests = {x.replace(".toml", ".ini"): x for x in manifests}
         runtimes = {
             k: v for k, v in get_runtimes(platform, suite).items() if k in ini_manifests
         }
-        retVal = []
-        for c in chunk_by_runtime(None, chunks, runtimes).get_chunked_manifests(
-            ini_manifests
-        ):
-            retVal.append(
-                [m if m in manifests else m.replace(".ini", ".toml") for m in c[1]]
-            )
+
+        cbr = chunk_by_runtime(None, chunks, runtimes)
+        return [
+            [ini_manifests.get(m, m) for m in c]
+            for _, c in cbr.get_chunked_manifests(manifests)
+        ]
 
     # Keep track of test paths for each chunk, and the runtime information.
-    chunked_manifests = [[] for _ in range(chunks)]
-
     # Spread out the test manifests evenly across all chunks.
-    for index, key in enumerate(sorted(manifests)):
-        chunked_manifests[index % chunks].append(key)
-
-    # One last sort by the number of manifests. Chunk size should be more or less
-    # equal in size.
-    chunked_manifests.sort(key=lambda x: len(x))
-
-    # Return just the chunked test paths.
+    sorted_manifests = sorted(manifests)
+    chunked_manifests = [sorted_manifests[c::chunks] for c in range(chunks)]
     return chunked_manifests
 
 
@@ -248,42 +238,57 @@ class DefaultLoader(BaseManifestLoader):
     @memoize
     def get_manifests(self, suite, frozen_mozinfo):
         mozinfo = dict(frozen_mozinfo)
-        # Compute all tests for the given suite/subsuite.
+
         tests = self.get_tests(suite)
+
+        mozinfo_tags = json.loads(mozinfo.get("tag", "[]"))
 
         if "web-platform-tests" in suite:
             manifests = set()
-            subsuite = [x for x in WPT_SUBSUITES.keys() if mozinfo[x]]
-            mozinfo_tags = json.loads(mozinfo["tag"])
-            for t in tests:
-                if mozinfo_tags and not any(
-                    x in t.get("tags", []) for x in mozinfo_tags
-                ):
-                    continue
-                if subsuite:
-                    # add specific directories
-                    if any(x in t["manifest"] for x in WPT_SUBSUITES[subsuite[0]]):
-                        manifests.add(t["manifest"])
-                else:
-                    containsSubsuite = False
-                    for subsuites in WPT_SUBSUITES.values():
-                        if any(subsuite in t["manifest"] for subsuite in subsuites):
-                            containsSubsuite = True
-                            break
 
-                    if containsSubsuite:
+            subsuite = next((x for x in WPT_SUBSUITES.keys() if mozinfo.get(x)), None)
+
+            if subsuite:
+                subsuite_paths = WPT_SUBSUITES[subsuite]
+                for t in tests:
+                    if mozinfo_tags and not any(
+                        x in t.get("tags", []) for x in mozinfo_tags
+                    ):
                         continue
 
-                    manifests.add(t["manifest"])
+                    manifest = t["manifest"]
+                    if any(x in manifest for x in subsuite_paths):
+                        manifests.add(manifest)
+            else:
+
+                all_subsuite_paths = [
+                    path for paths in WPT_SUBSUITES.values() for path in paths
+                ]
+                for t in tests:
+                    if mozinfo_tags and not any(
+                        x in t.get("tags", []) for x in mozinfo_tags
+                    ):
+                        continue
+
+                    manifest = t["manifest"]
+                    if not any(path in manifest for path in all_subsuite_paths):
+                        manifests.add(manifest)
+
             return {
                 "active": list(manifests),
                 "skipped": [],
-                "other_dirs": dict.fromkeys(manifests, ""),
+                "other_dirs": {},
             }
 
-        manifests = {chunk_by_runtime.get_manifest(t) for t in tests}
-
         filters = []
+        SUITES_WITHOUT_TAG = {
+            "crashtest",
+            "crashtest-qr",
+            "jsreftest",
+            "reftest",
+            "reftest-qr",
+        }
+
         # Exclude suites that don't support --tag to prevent manifests from
         # being optimized out, which would result in no jobs being triggered.
         # No need to check suites like gtest, as all suites in compiled.yml
@@ -293,37 +298,33 @@ class DefaultLoader(BaseManifestLoader):
         # DesktopUnittest's _query_abs_base_cmd method. The lists should be
         # kept in sync.
         assert suite not in ["gtest", "cppunittest", "jittest"]
-        if suite not in [
-            "crashtest",
-            "crashtest-qr",
-            "jsreftest",
-            "reftest",
-            "reftest-qr",
-        ] and (mozinfo_tags := json.loads(mozinfo["tag"])):
+
+        if suite not in SUITES_WITHOUT_TAG and mozinfo_tags:
             filters.extend([tags([x]) for x in mozinfo_tags])
 
-        # Compute  the active tests.
         m = TestManifest()
         m.tests = tests
-        tests = m.active_tests(disabled=False, exists=False, filters=filters, **mozinfo)
+        active_tests = m.active_tests(
+            disabled=False, exists=False, filters=filters, **mozinfo
+        )
+
+        all_manifests = {chunk_by_runtime.get_manifest(t) for t in tests}
+
         active = {}
-        # map manifests and 'other' directories included
-        for t in tests:
+        for t in active_tests:
             mp = chunk_by_runtime.get_manifest(t)
-            active.setdefault(mp, [])
+            dir_relpath = t["dir_relpath"]
+            if not mp.startswith(dir_relpath):
+                active.setdefault(mp, set()).add(dir_relpath)
+            else:
+                active.setdefault(mp, set())
 
-            if not mp.startswith(t["dir_relpath"]):
-                active[mp].append(t["dir_relpath"])
+        skipped = all_manifests - set(active.keys())
 
-        skipped = manifests - set(active.keys())
-        other = {}
-        for m in active:
-            if len(active[m]) > 0:
-                other[m] = list(set(active[m]))
         return {
             "active": list(active.keys()),
             "skipped": list(skipped),
-            "other_dirs": other,
+            "other_dirs": {},
         }
 
 

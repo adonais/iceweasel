@@ -13,6 +13,14 @@ const { PlacesUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/PlacesUtils.sys.mjs"
 );
 
+// 0 days ago, 1 visit. This is to mimic the expectation of the original test,
+// which is that a single visit should not be filtered when running tests.
+const FRECENCY_THRESHOLD = PlacesUtils.history.pageFrecencyThreshold(
+  0,
+  1,
+  false
+);
+
 // const SEARCH_SHORTCUTS_EXPERIMENT_PREF =
 //   "browser.newtabpage.activity-stream.improvesearch.topSiteSearchShortcuts";
 // Services.prefs.setBoolPref(SEARCH_SHORTCUTS_EXPERIMENT_PREF, false);
@@ -91,6 +99,22 @@ function getHistorySize() {
   return NewTabUtils.activityStreamProvider.executePlacesQuery(
     "SELECT count(*) FROM moz_places WHERE hidden = 0 AND last_visit_date NOT NULL"
   );
+}
+
+async function getFrecencyForUrl(url) {
+  let db = await PlacesUtils.promiseDBConnection();
+  let rows = await db.executeCached(
+    `
+    SELECT frecency
+    FROM moz_places
+    WHERE url = :url
+    `,
+    {
+      url,
+    }
+  );
+  Assert.equal(rows?.length, 1, "Should have found a result.");
+  return rows[0].getResultByName("frecency");
 }
 
 add_task(async function validCacheMidPopulation() {
@@ -720,7 +744,9 @@ add_task(async function getTopFrecentSites() {
   await setUpActivityStreamTest();
 
   let provider = NewTabUtils.activityStreamLinks;
-  let links = await provider.getTopSites({ topsiteFrecency: 100 });
+  let links = await provider.getTopSites({
+    topsiteFrecency: FRECENCY_THRESHOLD,
+  });
   Assert.equal(links.length, 0, "empty history yields empty links");
 
   // add a visit
@@ -734,7 +760,7 @@ add_task(async function getTopFrecentSites() {
     "adding a single visit doesn't exceed default threshold"
   );
 
-  links = await provider.getTopSites({ topsiteFrecency: 100 });
+  links = await provider.getTopSites({ topsiteFrecency: FRECENCY_THRESHOLD });
   Assert.equal(links.length, 1, "adding a visit yields a link");
   Assert.equal(links[0].url, testURI, "added visit corresponds to added url");
 });
@@ -757,7 +783,9 @@ add_task(
     await PlacesTestUtils.addVisits(testURI);
 
     let provider = NewTabUtils.activityStreamLinks;
-    let links = await provider.getTopSites({ topsiteFrecency: 100 });
+    let links = await provider.getTopSites({
+      topsiteFrecency: FRECENCY_THRESHOLD,
+    });
     Assert.equal(
       links.length,
       1,
@@ -777,7 +805,9 @@ add_task(async function getTopFrecentSites_no_dedup() {
   await setUpActivityStreamTest();
 
   let provider = NewTabUtils.activityStreamLinks;
-  let links = await provider.getTopSites({ topsiteFrecency: 100 });
+  let links = await provider.getTopSites({
+    topsiteFrecency: FRECENCY_THRESHOLD,
+  });
   Assert.equal(links.length, 0, "empty history yields empty links");
 
   // Add a visits in reverse order they will be returned in when not deduped.
@@ -794,7 +824,7 @@ add_task(async function getTopFrecentSites_no_dedup() {
     "adding a single visit doesn't exceed default threshold"
   );
 
-  links = await provider.getTopSites({ topsiteFrecency: 100 });
+  links = await provider.getTopSites({ topsiteFrecency: FRECENCY_THRESHOLD });
   Assert.equal(links.length, 1, "adding a visit yields a link");
   // Plain domain is returned when deduped.
   Assert.equal(
@@ -804,7 +834,7 @@ add_task(async function getTopFrecentSites_no_dedup() {
   );
 
   links = await provider.getTopSites({
-    topsiteFrecency: 100,
+    topsiteFrecency: FRECENCY_THRESHOLD,
     onePerDomain: false,
   });
   Assert.equal(links.length, 2, "adding a visit yields a link");
@@ -825,55 +855,67 @@ add_task(async function getTopFrecentSites_dedupeWWW() {
 
   let provider = NewTabUtils.activityStreamLinks;
 
-  let links = await provider.getTopSites({ topsiteFrecency: 100 });
+  let links = await provider.getTopSites({
+    topsiteFrecency: FRECENCY_THRESHOLD,
+  });
   Assert.equal(links.length, 0, "empty history yields empty links");
 
   // add a visit without www
-  let testURI = "http://mozilla.com";
+  let testURI = "http://mozilla.com/";
   await PlacesTestUtils.addVisits(testURI);
+  let frecency1 = await getFrecencyForUrl(testURI);
 
   // add a visit with www
-  testURI = "http://www.mozilla.com";
+  testURI = "http://www.mozilla.com/";
   await PlacesTestUtils.addVisits(testURI);
+  let frecency2 = await getFrecencyForUrl(testURI);
 
   // Test combined frecency score
-  links = await provider.getTopSites({ topsiteFrecency: 100 });
+  links = await provider.getTopSites({ topsiteFrecency: FRECENCY_THRESHOLD });
   Assert.equal(links.length, 1, "adding both www. and no-www. yields one link");
-  Assert.equal(links[0].frecency, 200, "frecency scores are combined");
+  Assert.equal(
+    links[0].frecency,
+    frecency1 + frecency2,
+    "frecency scores are combined"
+  );
 
   // add another page visit with www and without www
   let noWWW = "http://mozilla.com/page";
   await PlacesTestUtils.addVisits(noWWW);
+  let noWWWFrecency = await getFrecencyForUrl(noWWW);
   let withWWW = "http://www.mozilla.com/page";
   await PlacesTestUtils.addVisits(withWWW);
-  links = await provider.getTopSites({ topsiteFrecency: 100 });
+  let withWWWFrecency = await getFrecencyForUrl(withWWW);
+  links = await provider.getTopSites({ topsiteFrecency: FRECENCY_THRESHOLD });
   Assert.equal(links.length, 1, "adding both www. and no-www. yields one link");
   Assert.equal(
     links[0].frecency,
-    200,
+    noWWWFrecency + withWWWFrecency,
     "frecency scores are combined ignoring extra pages"
   );
 
   // add another visit with www
   await PlacesTestUtils.addVisits(withWWW);
-  links = await provider.getTopSites({ topsiteFrecency: 100 });
+  withWWWFrecency = await getFrecencyForUrl(withWWW);
+  links = await provider.getTopSites({ topsiteFrecency: FRECENCY_THRESHOLD });
   Assert.equal(links.length, 1, "still yields one link");
   Assert.equal(links[0].url, withWWW, "more frecent www link is used");
   Assert.equal(
     links[0].frecency,
-    300,
+    noWWWFrecency + withWWWFrecency,
     "frecency scores are combined ignoring extra pages"
   );
 
   // add a couple more visits to the no-www page
   await PlacesTestUtils.addVisits(noWWW);
   await PlacesTestUtils.addVisits(noWWW);
-  links = await provider.getTopSites({ topsiteFrecency: 100 });
+  noWWWFrecency = await getFrecencyForUrl(noWWW);
+  links = await provider.getTopSites({ topsiteFrecency: FRECENCY_THRESHOLD });
   Assert.equal(links.length, 1, "still yields one link");
   Assert.equal(links[0].url, noWWW, "now more frecent no-www link is used");
   Assert.equal(
     links[0].frecency,
-    500,
+    noWWWFrecency + withWWWFrecency,
     "frecency scores are combined ignoring extra pages"
   );
 });
@@ -890,7 +932,9 @@ add_task(async function getTopFrencentSites_maxLimit() {
     await PlacesTestUtils.addVisits(testURI);
   }
 
-  let links = await provider.getTopSites({ topsiteFrecency: 100 });
+  let links = await provider.getTopSites({
+    topsiteFrecency: FRECENCY_THRESHOLD,
+  });
   Assert.less(
     links.length,
     MANY_LINKS,
@@ -908,21 +952,23 @@ add_task(async function getTopFrencentSites_allowedProtocols() {
   let testURI = "file:///some/file/path.png";
   await PlacesTestUtils.addVisits(testURI);
 
-  let links = await provider.getTopSites({ topsiteFrecency: 100 });
+  let links = await provider.getTopSites({
+    topsiteFrecency: FRECENCY_THRESHOLD,
+  });
   Assert.equal(links.length, 0, "don't get sites with the file:// protocol");
 
   // now add a site with an allowed protocol
   testURI = "http://www.mozilla.com";
   await PlacesTestUtils.addVisits(testURI);
 
-  links = await provider.getTopSites({ topsiteFrecency: 100 });
+  links = await provider.getTopSites({ topsiteFrecency: FRECENCY_THRESHOLD });
   Assert.equal(links.length, 1, "http:// is an allowed protocol");
 
   // and just to be sure, add a visit to a site with ftp:// protocol
   testURI = "ftp://bad/example";
   await PlacesTestUtils.addVisits(testURI);
 
-  links = await provider.getTopSites({ topsiteFrecency: 100 });
+  links = await provider.getTopSites({ topsiteFrecency: FRECENCY_THRESHOLD });
   Assert.equal(
     links.length,
     1,
@@ -933,7 +979,7 @@ add_task(async function getTopFrencentSites_allowedProtocols() {
   testURI = "https://https";
   await PlacesTestUtils.addVisits(testURI);
 
-  links = await provider.getTopSites({ topsiteFrecency: 100 });
+  links = await provider.getTopSites({ topsiteFrecency: FRECENCY_THRESHOLD });
   Assert.equal(
     links.length,
     2,
@@ -1115,7 +1161,7 @@ add_task(async function getTopFrecentSites_hideWithSearchParam() {
             JSON.stringify(hideWithSearchParam)
         );
 
-        let options = { topsiteFrecency: 100 };
+        let options = { topsiteFrecency: FRECENCY_THRESHOLD };
         if (hideWithSearchParam !== undefined) {
           options = { ...options, hideWithSearchParam };
         }

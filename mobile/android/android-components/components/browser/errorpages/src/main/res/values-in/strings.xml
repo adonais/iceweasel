@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Masalah situs tipuan</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Laman web di %1$s telah dilaporkan sebagai situs tipuan dan telah diblokir sesuai dengan pengaturan keamanan Anda.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Situs diblokir demi keamanan Anda</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Laman web di %1$s telah diblokir karena salah satu pengaya Anda mencoba membukanya. Situs ini dapat digunakan untuk mencuri informasi Anda — seperti sandi atau nomor kartu kredit.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Situs Aman Tidak Tersedia</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

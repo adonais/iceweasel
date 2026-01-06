@@ -540,15 +540,6 @@ Predictor::PredictNative(nsIURI* targetURI, nsIURI* sourceURI,
   nsCOMPtr<nsIURI> uriKey = targetURI;
   nsCOMPtr<nsIURI> originKey;
   switch (reason) {
-    case nsINetworkPredictor::PREDICT_LINK:
-      if (!targetURI || !sourceURI) {
-        PREDICTOR_LOG(("    link invalid URI state"));
-        return NS_ERROR_INVALID_ARG;
-      }
-      // Link hover is a special case where we can predict without hitting the
-      // db, so let's go ahead and fire off that prediction here.
-      PredictForLink(targetURI, sourceURI, originAttributes, verifier);
-      return NS_OK;
     case nsINetworkPredictor::PREDICT_LOAD:
       if (!targetURI || sourceURI) {
         PREDICTOR_LOG(("    load invalid URI state"));
@@ -659,35 +650,6 @@ bool Predictor::PredictInternal(PredictorPredictReason reason,
   }
 
   return rv;
-}
-
-void Predictor::PredictForLink(nsIURI* targetURI, nsIURI* sourceURI,
-                               const OriginAttributes& originAttributes,
-                               nsINetworkPredictorVerifier* verifier) {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  PREDICTOR_LOG(("Predictor::PredictForLink"));
-  if (!mSpeculativeService) {
-    PREDICTOR_LOG(("    missing speculative service"));
-    return;
-  }
-
-  if (!StaticPrefs::network_predictor_enable_hover_on_ssl()) {
-    if (sourceURI->SchemeIs("https")) {
-      // We don't want to predict from an HTTPS page, to avoid info leakage
-      PREDICTOR_LOG(("    Not predicting for link hover - on an SSL page"));
-      return;
-    }
-  }
-
-  nsCOMPtr<nsIPrincipal> principal =
-      BasePrincipal::CreateContentPrincipal(targetURI, originAttributes);
-
-  mSpeculativeService->SpeculativeConnect(targetURI, principal, nullptr, false);
-  if (verifier) {
-    PREDICTOR_LOG(("    sending verification"));
-    verifier->OnPredictPreconnect(targetURI);
-  }
 }
 
 // This is the driver for prediction based on a new pageload.

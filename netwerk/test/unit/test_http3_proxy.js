@@ -20,6 +20,7 @@ add_task(test_http_connect_invalid_host);
 add_task(test_concurrent_http_connect_tunnels);
 // TODO: Proxy needs to close the stream properly when socket failures occur
 // add_task(test_http_connect_stream_closure);
+add_task(test_http_connect_websocket);
 add_task(test_connect_udp);
 add_task(test_http_connect_fallback);
 add_task(test_inner_connection_fallback);

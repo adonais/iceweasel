@@ -115,3 +115,69 @@ The rule also allows these non-token values:
   .current-background-color {
     background-color: currentColor;
   }
+
+Autofix functionality
+---------------------
+
+This rule can automatically fix some violations by replacing hex color values with
+appropriate color names. Examples of autofixable violations:
+
+.. code-block:: css
+
+  /* Before */
+  .white-background {
+    background-color: #fff;
+  }
+
+  /* After autofix */
+  .white-background {
+    background-color: white;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .white-background {
+    background-color: #ffffff;
+  }
+
+  /* After autofix */
+  .white-background {
+    background-color: white;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .black-background {
+    background-color: #000;
+  }
+
+  /* After autofix */
+  .black-background {
+    background-color: black;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .black-background {
+    background-color: #000000;
+  }
+
+  /* After autofix */
+  .black-background {
+    background-color: black;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .custom-background {
+    background: url('image.png') #fff;
+  }
+
+  /* After autofix */
+  .custom-background {
+    background: url('image.png') white;
+  }

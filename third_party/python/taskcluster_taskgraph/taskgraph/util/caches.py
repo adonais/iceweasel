@@ -37,11 +37,6 @@ def get_checkout_cache_name(config: "TransformConfig", task: dict[str, Any]) -> 
         digest = hashlib.sha256(checkout_paths_str).hexdigest()
         cache_name += f"-repos-{digest}"
 
-    # Sparse checkouts need their own cache because they can interfere
-    # with clients that aren't sparse aware.
-    if task["run"]["sparse-profile"]:
-        cache_name += "-sparse"
-
     return cache_name
 
 

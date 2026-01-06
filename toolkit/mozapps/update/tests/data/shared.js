@@ -361,6 +361,7 @@ function writeFile(aFile, aText) {
 
 /**
  * Attempts to remove a file. Does not fail if the file does not exist.
+ *
  * @param  file
  *         The `nsIFile` to remove.
  */

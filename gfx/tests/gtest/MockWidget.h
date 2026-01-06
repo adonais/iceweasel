@@ -71,11 +71,7 @@ class MockWidget : public nsIWidget {
   void Invalidate(const LayoutDeviceIntRect& aRect) override {}
   nsresult SetTitle(const nsAString& title) override { return NS_OK; }
   LayoutDeviceIntPoint WidgetToScreenOffset() override {
-    return LayoutDeviceIntPoint(0, 0);
-  }
-  nsresult DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
-                         nsEventStatus& aStatus) override {
-    return NS_OK;
+    return LayoutDeviceIntPoint();
   }
   void SetInputContext(const InputContext& aContext,
                        const InputContextAction& aAction) override {}

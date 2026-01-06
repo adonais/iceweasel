@@ -27,8 +27,8 @@ const FULLSCREEN_STYLE = {
  * Create the canvases, resize handlers, and return references to them all
  *
  * @param  {HTMLDivElement} parentEl
- * @param  {Number} debounceRate
- * @return {Object}
+ * @param  {number} debounceRate
+ * @return {object}
  */
 function Canvases(parentEl, debounceRate) {
   EventEmitter.decorate(this);
@@ -74,8 +74,8 @@ function createContainingDiv(parentEl) {
  * Create a canvas and context
  *
  * @param  {HTMLDivElement} container
- * @param  {String} className
- * @return {Object} { canvas, ctx }
+ * @param  {string} className
+ * @return {object} { canvas, ctx }
  */
 function createCanvas(container, className) {
   const window = container.ownerDocument.defaultView;
@@ -98,8 +98,8 @@ function createCanvas(container, className) {
  * Resize the canvases' resolutions, and fires out the onResize callback
  *
  * @param  {HTMLDivElement} container
- * @param  {Object} canvases
- * @param  {Number} debounceRate
+ * @param  {object} canvases
+ * @param  {number} debounceRate
  */
 function handleResizes(canvases, debounceRate) {
   const { container, main, zoom } = canvases;

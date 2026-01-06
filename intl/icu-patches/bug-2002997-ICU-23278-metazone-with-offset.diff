@@ -1,0 +1,54 @@
+diff --git a/intl/icu/source/data/misc/metaZones.txt b/intl/icu/source/data/misc/metaZones.txt
+--- a/intl/icu/source/data/misc/metaZones.txt
++++ b/intl/icu/source/data/misc/metaZones.txt
+@@ -1257,16 +1257,21 @@ metaZones:table(nofallback){
+                 "1990-03-20 22:00",
+             }
+             {
+                 "Africa_Central",
+                 "1990-03-20 22:00",
+                 "1994-03-20 22:00",
+             }
+             {
++                "Africa_Western",
++                "1994-03-20 22:00",
++                "2017-10-23 22:00",
++            }
++            {
+                 "Africa_Central",
+                 "2017-10-23 22:00",
+                 "9999-12-31 23:59",
+             }
+         }
+         "America:Adak"{
+             {
+                 "Bering",
+@@ -3832,16 +3837,28 @@ metaZones:table(nofallback){
+                 "9999-12-31 23:59",
+             }
+         }
+         "Europe:Copenhagen"{
+             {
+                 "Europe_Central",
+             }
+         }
++        "Europe:Dublin"{
++            {
++                "Irish",
++                "1970-01-01 00:00",
++                "1971-10-31 02:00",
++            }
++            {
++                "GMT",
++                "1971-10-31 02:00",
++                "9999-12-31 23:59",
++            }
++        }
+         "Europe:Gibraltar"{
+             {
+                 "Europe_Central",
+             }
+         }
+         "Europe:Guernsey"{
+             {
+                 "British",

@@ -30,6 +30,7 @@ add_task(async function () {
   checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [
         { name: "margin-top", value: "1px" },
         { name: "padding-top", value: "5px" },
@@ -59,6 +60,7 @@ add_task(async function () {
   checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [
         { name: "margin-top", value: "1px" },
         { name: "padding-top", value: "5px" },
@@ -79,6 +81,7 @@ add_task(async function () {
   checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [
         { name: "margin-top", value: "1px" },
         { name: "padding-top", value: "5px" },

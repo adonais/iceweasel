@@ -408,6 +408,11 @@ class BaseAssemblerX64 : public BaseAssembler {
     m_formatter.twoByteOp64(OP2_IMUL_GvEv, src, dst);
   }
 
+  void imulq_r(RegisterID multiplier) {
+    spew("imulq      %s", GPReg64Name(multiplier));
+    m_formatter.oneByteOp64(OP_GROUP3_Ev, multiplier, GROUP3_OP_IMUL);
+  }
+
   void imulq_mr(int32_t offset, RegisterID base, RegisterID dst) {
     spew("imulq      " MEM_ob ", %s", ADDR_ob(offset, base), GPReg64Name(dst));
     m_formatter.twoByteOp64(OP2_IMUL_GvEv, offset, base, dst);
@@ -422,6 +427,11 @@ class BaseAssemblerX64 : public BaseAssembler {
       m_formatter.oneByteOp64(OP_IMUL_GvEvIz, src, dst);
       m_formatter.immediate32(value);
     }
+  }
+
+  void mulq_r(RegisterID multiplier) {
+    spew("mulq       %s", GPReg64Name(multiplier));
+    m_formatter.oneByteOp64(OP_GROUP3_Ev, multiplier, GROUP3_OP_MUL);
   }
 
   void cqo() {

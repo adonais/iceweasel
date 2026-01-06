@@ -1333,6 +1333,15 @@ void nsHttpTransaction::Close(nsresult reason) {
     mDNSRequest = nullptr;
   }
 
+  // If an HTTP/3 backup timer is active and this transaction ends in error,
+  // treat it as NS_ERROR_NET_RESET so the transaction will retry once.
+  // NOTE: This is a temporary workaround; the proper fix belongs in
+  // the Happy Eyeballs project.
+  if (NS_FAILED(reason) && AllowedErrorForTransactionRetry(reason) &&
+      mHttp3BackupTimerCreated && mHttp3BackupTimer) {
+    reason = NS_ERROR_NET_RESET;
+  }
+
   MaybeCancelFallbackTimer();
 
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
@@ -1384,7 +1393,7 @@ void nsHttpTransaction::Close(nsresult reason) {
   // to make sure this transaction can be restarted with the same conncetion
   // info.
   bool shouldRestartTransactionForHTTPSRR =
-      mOrigConnInfo && AllowedErrorForHTTPSRRFallback(reason) &&
+      mOrigConnInfo && AllowedErrorForTransactionRetry(reason) &&
       !mDoNotRemoveAltSvc;
 
   //
@@ -1840,6 +1849,11 @@ nsresult nsHttpTransaction::Restart() {
   if (++mRestartCount >= gHttpHandler->MaxRequestAttempts()) {
     LOG(("reached max request attempts, failing transaction @%p\n", this));
     return NS_ERROR_NET_RESET;
+  }
+
+  // Let's not restart during shutdown.
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
 
   LOG(("restarting transaction @%p\n", this));
@@ -3443,6 +3457,10 @@ void nsHttpTransaction::OnBackupConnectionReady(bool aTriggeredByHTTPSRR) {
   }
 
   if (mConnection) {
+    if (mConnection->Version() != HttpVersion::v3_0) {
+      LOG(("Already have non-HTTP/3 conn:%p", mConnection.get()));
+      return;
+    }
     // The transaction will only be restarted when we already have a connection.
     // When there is no connection, this transaction will be moved to another
     // connection entry.

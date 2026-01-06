@@ -362,10 +362,6 @@ export const FeatureManifest: {
                 };
                 description: string;
             };
-            quickSuggestDataCollectionEnabled: {
-                type: string;
-                description: string;
-            };
             quickSuggestDynamicSuggestionTypes: {
                 type: string;
                 setPref: {

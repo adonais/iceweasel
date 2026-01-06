@@ -14,7 +14,7 @@ const ICONS = {
 const TESTS = [
   {
     url: "about:about",
-    icon: ICONS.insecure,
+    icon: ICONS.active,
   },
   {
     url: "https://example.com",

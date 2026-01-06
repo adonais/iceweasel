@@ -1153,7 +1153,7 @@ class MediaTrackGraph {
   /* From the main thread, ask the MTG to resolve the returned promise when
    * the device specified has started.
    * A null aDeviceID indicates the default audio output device.
-   * The promise is rejected with NS_ERROR_INVALID_ARG if aSink does not
+   * The promise is rejected with NS_ERROR_INVALID_ARG if aDeviceID does not
    * correspond to any output devices used by the graph, or
    * NS_ERROR_NOT_AVAILABLE if outputs to the device are removed or
    * NS_ERROR_ILLEGAL_DURING_SHUTDOWN if the graph is force shut down

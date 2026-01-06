@@ -125,6 +125,7 @@ osclientcerts = { path = "../../../../security/manager/ssl/osclientcerts" }
 gkrust-uniffi-components = { path = "../../../components/uniffi-bindgen-gecko-js/components/", features = ["xpcom"] }
 uniffi-bindgen-gecko-js-test-fixtures = { path = "../../../components/uniffi-bindgen-gecko-js/test-fixtures/", optional = true }
 viaduct = "0.1"
+viaduct-necko = { path = "../../../../services/application-services/components/viaduct-necko" }
 webext-storage = "0.1"
 
 [target.'cfg(target_os = "windows")'.dependencies]

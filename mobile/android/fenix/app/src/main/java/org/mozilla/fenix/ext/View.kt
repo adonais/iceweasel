@@ -23,13 +23,20 @@ import org.mozilla.fenix.components.Components
  */
 fun View.settings() = context.components.settings
 
-fun View.increaseTapArea(@Dimension(unit = DP) extraDps: Int) {
-    val dips = extraDps.dpToPx(resources.displayMetrics)
+fun View.increaseTapArea(
+    @Dimension(unit = DP) extraDps: Int,
+) {
+    val extraPx = extraDps.dpToPx(resources.displayMetrics)
+    increaseTapAreaInternal(extraPx)
+}
+
+@VisibleForTesting
+internal fun View.increaseTapAreaInternal(extraPx: Int) {
     val parent = this.parent as View
     parent.post {
         val touchRect = Rect()
         getHitRect(touchRect)
-        touchRect.inset(-dips, -dips)
+        touchRect.inset(-extraPx, -extraPx)
         parent.touchDelegate = TouchDelegate(touchRect, this)
     }
 }
@@ -39,7 +46,9 @@ fun View.increaseTapArea(@Dimension(unit = DP) extraDps: Int) {
  *
  * @param extraDps the extra dps that's wanted to be added on top and bottom of the view
  */
-fun View.increaseTapAreaVertically(@Dimension(unit = DP) extraDps: Int) {
+fun View.increaseTapAreaVertically(
+    @Dimension(unit = DP) extraDps: Int,
+) {
     val dips = extraDps.dpToPx(resources.displayMetrics)
     val parent = this.parent as View
     parent.post {
@@ -94,8 +103,13 @@ fun View.getWindowInsets(): WindowInsetsCompat? {
  */
 fun View.isKeyboardVisible(): Boolean {
     // Since we have insets, we don't need to guess what the keyboard height is.
+    return isKeyboardVisible(getKeyboardHeight())
+}
+
+@VisibleForTesting
+internal fun isKeyboardVisible(keyboardHeight: Int): Boolean {
     val minimumKeyboardHeight = 0
-    return getKeyboardHeight() > minimumKeyboardHeight
+    return keyboardHeight > minimumKeyboardHeight
 }
 
 @VisibleForTesting
@@ -108,14 +122,21 @@ internal fun View.getWindowVisibleDisplayFrame(): Rect = with(Rect()) {
  * Calculates the height of the onscreen keyboard.
  */
 fun View.getKeyboardHeight(): Int {
-    val windowRect = getWindowVisibleDisplayFrame()
-    val statusBarHeight = windowRect.top
-    var keyboardHeight = rootView.height - (windowRect.height() + statusBarHeight)
-    getWindowInsets()?.let {
-        keyboardHeight -= it.bottom()
-    }
+    return getKeyboardHeight(
+        rootViewHeight = rootView.height,
+        windowVisibleDisplayFrame = getWindowVisibleDisplayFrame(),
+        bottomInset = getWindowInsets()?.bottom() ?: 0,
+    )
+}
 
-    return keyboardHeight
+@VisibleForTesting
+internal fun getKeyboardHeight(
+    rootViewHeight: Int,
+    windowVisibleDisplayFrame: Rect,
+    bottomInset: Int,
+): Int {
+    val statusBarHeight = windowVisibleDisplayFrame.top
+    return rootViewHeight - (windowVisibleDisplayFrame.height() + statusBarHeight) - bottomInset
 }
 
 /**
@@ -127,4 +148,6 @@ fun View.getKeyboardHeight(): Int {
  * @param resId Resource ID of the dimension.
  * @return The pixel size corresponding to the given dimension resource.
  */
-fun View.pixelSizeFor(@DimenRes resId: Int) = resources.getDimensionPixelSize(resId)
+fun View.pixelSizeFor(
+    @DimenRes resId: Int,
+) = resources.getDimensionPixelSize(resId)

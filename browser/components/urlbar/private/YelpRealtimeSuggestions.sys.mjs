@@ -117,8 +117,6 @@ export class YelpRealtimeSuggestions extends RealtimeSuggestProvider {
             }).format(new Date()),
           },
           parseMarkup: true,
-          cacheable: true,
-          excludeArgsFromCacheKey: true,
         },
       },
       [`popularity_${index}`]: {
@@ -128,8 +126,6 @@ export class YelpRealtimeSuggestions extends RealtimeSuggestProvider {
             rating: item.rating,
             review_count: item.review_count,
           },
-          cacheable: true,
-          excludeArgsFromCacheKey: true,
         },
       },
     };

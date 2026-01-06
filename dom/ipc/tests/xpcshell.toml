@@ -12,5 +12,5 @@
 
 ["test_sharedMap.js"]
 skip-if = [
-  "os == 'android' && os_version == '14' && processor == 'x86_64' && debug",
+  "os == 'android' && os_version == '14' && arch == 'x86_64' && debug",
 ]

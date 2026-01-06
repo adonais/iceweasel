@@ -130,8 +130,9 @@ export const CommonUtils = {
    * on the accessible, but it catches exceptions which might occur if the
    * accessible has died or was constructed from a pseudoelement
    * like ::details-content.
+   *
    * @param  {nsIAccessible} accessible  accessible
-   * @return {String?}                   DOMNode id if available
+   * @return {string?}                   DOMNode id if available
    */
   getAccessibleDOMNodeID(accessible) {
     try {

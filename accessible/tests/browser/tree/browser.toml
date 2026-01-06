@@ -15,7 +15,9 @@ prefs = [
 ]
 
 ["browser_aria_owns.js"]
-skip-if = ["true"] # Bug 1445513
+skip-if = [
+  "true", # Bug 1445513
+]
 
 ["browser_browser_element.js"]
 
@@ -26,7 +28,9 @@ skip-if = ["true"] # Bug 1445513
 ["browser_general.js"]
 
 ["browser_lazy_tabs.js"]
-skip-if = ["verify-standalone"]
+skip-if = [
+  "verify-standalone",
+]
 
 ["browser_link.js"]
 

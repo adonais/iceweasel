@@ -627,7 +627,7 @@ class TextInputDelegateTest : BaseSessionTest() {
             ic,
             "foobarfoo",
             5,
-            /* checkGecko */
+            // checkGecko
             false,
         )
     }
@@ -733,7 +733,7 @@ class TextInputDelegateTest : BaseSessionTest() {
             ic,
             "frabar",
             6,
-            /* checkGecko */
+            // checkGecko
             false,
         )
 
@@ -923,7 +923,7 @@ class TextInputDelegateTest : BaseSessionTest() {
             "Can set large initial text",
             ic,
             content,
-            /* checkGecko */
+            // checkGecko
             false,
         )
     }
@@ -1520,7 +1520,7 @@ class TextInputDelegateTest : BaseSessionTest() {
             ic,
             0,
             0,
-            /* checkGecko */
+            // checkGecko
             false,
         )
 

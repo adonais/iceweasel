@@ -73,6 +73,7 @@ class HomeMenuViewTest {
             navController = navController,
             fenixBrowserUseCases = fenixBrowserUseCases,
             menuButton = WeakReference(menuButton),
+            deleteBrowsingDataController = mockk(relaxed = true),
         )
     }
 

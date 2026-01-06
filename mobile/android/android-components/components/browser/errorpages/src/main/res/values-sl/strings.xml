@@ -135,6 +135,8 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Težava zavajajoče strani</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Spletna stran na naslovu %1$s je bila prijavljena kot zavajajoča in je bila zavrnjena na podlagi vaših varnostnih nastavitev.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Stran je zaradi vaše varnosti blokirana</string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Varno spletno mesto ni na voljo</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

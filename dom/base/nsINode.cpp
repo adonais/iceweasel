@@ -2553,12 +2553,13 @@ static void EnsureAllowedAsChild(nsINode* aNewChild, nsINode* aParent,
              "can't be parents!");
 
   // Step 2.
-  // A common case is that aNewChild has no kids, in which case
+  // A common case is that aNewChild has no element kids, in which case
   // aParent can't be a descendant of aNewChild unless they're
   // actually equal to each other.  Fast-path that case, since aParent
   // could be pretty deep in the DOM tree.
   if (aNewChild == aParent ||
-      ((aNewChild->GetFirstChild() ||
+      (((aNewChild->HasFlag(NODE_MAY_HAVE_ELEMENT_CHILDREN) &&
+         aNewChild->GetFirstChild()) ||
         // HTML template elements and ShadowRoot hosts need
         // to be checked to ensure that they are not inserted into
         // the hosted content.

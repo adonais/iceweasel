@@ -20,6 +20,7 @@
 #include "VPXDecoder.h"
 #include "VideoUtils.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/fallible.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/Types.h"
@@ -49,12 +50,15 @@ class RenderOrReleaseOutput {
  public:
   RenderOrReleaseOutput(java::CodecProxy::Param aCodec,
                         java::Sample::Param aSample)
-      : mCodec(aCodec), mSample(aSample) {}
+      : mMutex("AndroidRenderOrReleaseOutput"),
+        mCodec(aCodec),
+        mSample(aSample) {}
 
   virtual ~RenderOrReleaseOutput() { ReleaseOutput(false); }
 
  protected:
   void ReleaseOutput(bool aToRender) {
+    MutexAutoLock lock(mMutex);
     if (mCodec && mSample) {
       mCodec->ReleaseOutput(mSample, aToRender);
       mCodec = nullptr;
@@ -63,8 +67,9 @@ class RenderOrReleaseOutput {
   }
 
  private:
-  java::CodecProxy::GlobalRef mCodec;
-  java::Sample::GlobalRef mSample;
+  Mutex mMutex;
+  java::CodecProxy::GlobalRef mCodec MOZ_GUARDED_BY(mMutex);
+  java::Sample::GlobalRef mSample MOZ_GUARDED_BY(mMutex);
 };
 
 static bool areSmpte432ColorPrimariesBuggy() {

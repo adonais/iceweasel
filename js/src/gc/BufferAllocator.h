@@ -18,7 +18,6 @@
 
 #include <cstdint>
 #include <stddef.h>
-#include <utility>
 
 #include "jstypes.h"  // JS_PUBLIC_API
 

@@ -29,7 +29,7 @@ index 127cf5ee24..28f0510e3d 100644
  
  }  // namespace webrtc
 diff --git a/modules/desktop_capture/mac/screen_capturer_mac.mm b/modules/desktop_capture/mac/screen_capturer_mac.mm
-index 5f36971ea9..82c07d777a 100644
+index 57ff0688a3..7405c95911 100644
 --- a/modules/desktop_capture/mac/screen_capturer_mac.mm
 +++ b/modules/desktop_capture/mac/screen_capturer_mac.mm
 @@ -189,6 +189,7 @@ void ScreenCapturerMac::Start(Callback* callback) {

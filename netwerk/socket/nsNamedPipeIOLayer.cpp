@@ -6,7 +6,6 @@
 #include "nsNamedPipeIOLayer.h"
 
 #include <algorithm>
-#include <utility>
 
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"

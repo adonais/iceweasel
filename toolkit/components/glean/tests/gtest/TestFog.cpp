@@ -9,7 +9,6 @@
 #include "mozilla/glean/GleanPings.h"
 #include "mozilla/glean/fog_ffi_generated.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/ResultVariant.h"
 #include "mozilla/TimeStamp.h"
 #include "../../bindings/private/Common.h"
 

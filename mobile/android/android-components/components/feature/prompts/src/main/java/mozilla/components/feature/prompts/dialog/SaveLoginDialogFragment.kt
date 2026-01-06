@@ -294,6 +294,7 @@ internal class SaveLoginDialogFragment : PromptDialogFragment() {
      * Check current state then update view state to match.
      */
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    @Suppress("CognitiveComplexMethod")
     fun update() = view?.toScope()?.launch(IO) {
         val entry = LoginEntry(
             origin = origin,

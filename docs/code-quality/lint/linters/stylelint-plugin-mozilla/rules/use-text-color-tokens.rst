@@ -103,3 +103,93 @@ The rule also allows these values non-token values:
   .current-text-color {
     color: currentColor;
   }
+
+.. code-block:: css
+
+  .current-text-color {
+    color: white;
+  }
+
+.. code-block:: css
+
+  .current-text-color {
+    color: black;
+  }
+
+Autofix functionality
+---------------------
+
+This rule can automatically fix some violations by replacing hex color values with
+appropriate color names. Examples of autofixable violations:
+
+.. code-block:: css
+
+  /* Before */
+  .a {
+    color: #fff;
+  }
+
+  /* After autofix */
+  .a {
+    color: white;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .a {
+    color: #ffffff;
+  }
+
+  /* After autofix */
+  .a {
+    color: white;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .a {
+    color: #FFF;
+  }
+
+  /* After autofix */
+  .a {
+    color: white;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .a {
+    color: #FFFFFF;
+  }
+
+  /* After autofix */
+  .a {
+    color: white;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .a {
+    color: #000;
+  }
+
+  /* After autofix */
+  .a {
+    color: black;
+  }
+
+.. code-block:: css
+
+  /* Before */
+  .a {
+    color: #000000;
+  }
+
+  /* After autofix */
+  .a {
+    color: black;
+  }

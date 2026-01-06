@@ -96,7 +96,7 @@
     Text shown in the notification description that pops up to remind the user that a browsing session is active
     for Android 14+.
   -->
-  <string name="notification_erase_text_android_14_1">Нажмите или снимите это уведомление, чтобы надежно удалить свою историю просмотра.</string>
+  <string name="notification_erase_text_android_14_1">Нажмите или снимите это уведомление, чтобы надёжно удалить свою историю просмотра.</string>
   <string name="notification_erase_text">Удалить историю просмотра сети</string>
   <!-- Notification action to open Focus and resume the current browsing session. -->
   <string name="notification_action_open">Открыть</string>
@@ -566,7 +566,7 @@
     If the user decides to open the current page in another browser and if Firefox is not installed then we show this
     item in the list of browsers. Clicking it will open the app store installed on the device (usually that's Google Play).
   -->
-  <string name="download_firefox" tools:ignore="BrandUsage">Загрузить Firefox</string>
+  <string name="download_firefox" tools:ignore="BrandUsage">Скачать Firefox</string>
   <!-- Text shown in prompts for GeckoView -->
   <string name="gv_prompt_username_hint">Имя пользователя</string>
   <string name="gv_prompt_password_hint">Пароль</string>
@@ -904,7 +904,7 @@
   -->
   <string name="tool_tip_title">Вы защищены!</string>
   <!-- Tool Tip Message -->
-  <string name="tool_tip_message">Эти настройки по умолчанию обеспечивают надежную защиту. Но вы можете легко изменить их под ваши конкретные потребности.</string>
+  <string name="tool_tip_message">Эти настройки по умолчанию обеспечивают надёжную защиту. Но вы можете легко изменить их под ваши конкретные потребности.</string>
   <!-- Tool Tip "X" button Content description (not visible, for screen readers etc.) :Button that closes the tool tip -->
   <string name="tool_tip_dismiss_button_content_description">Убрать</string>
   <!-- CFR for Toolbar Delete Icon (Banner Info Message) -->

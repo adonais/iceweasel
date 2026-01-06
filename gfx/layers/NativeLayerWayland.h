@@ -7,7 +7,6 @@
 #define mozilla_layers_NativeLayerWayland_h
 
 #include <deque>
-#include <unordered_map>
 
 #include "mozilla/Mutex.h"
 #include "mozilla/layers/NativeLayer.h"

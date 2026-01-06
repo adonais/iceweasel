@@ -54,11 +54,11 @@
 #ifndef mozilla_ServoBindingTypes_h
 #define mozilla_ServoBindingTypes_h
 
+#include "NonCustomCSSPropertyId.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoTypes.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Types.h"
-#include "nsCSSPropertyID.h"
 #include "nsStyleAutoArray.h"
 #include "nsTArray.h"
 

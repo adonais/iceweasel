@@ -469,6 +469,7 @@ class _QuickSuggestTestUtils {
     isSuggestedIndexRelativeToGroup = true,
     isBestMatch = false,
     requestId = undefined,
+    dismissalKey = undefined,
     descriptionL10n = { id: "urlbar-result-action-sponsored" },
     categories = [],
   } = {}) {
@@ -525,6 +526,9 @@ class _QuickSuggestTestUtils {
       });
     } else {
       result.payload.icon = icon;
+      if (typeof dismissalKey == "string") {
+        result.payload.dismissalKey = dismissalKey;
+      }
     }
 
     return result;
@@ -942,7 +946,6 @@ class _QuickSuggestTestUtils {
         shouldShowUrl: true,
         bottomTextL10n: {
           id: "firefox-suggest-addons-recommended",
-          cacheable: true,
         },
         helpUrl: lazy.QuickSuggest.HELP_URL,
         telemetryType: "amo",
@@ -1000,7 +1003,6 @@ class _QuickSuggestTestUtils {
         shouldShowUrl: true,
         bottomTextL10n: {
           id: "firefox-suggest-mdn-bottom-text",
-          cacheable: true,
         },
         source: "rust",
         provider: "Mdn",
@@ -1064,7 +1066,6 @@ class _QuickSuggestTestUtils {
         telemetryType: "yelp",
         bottomTextL10n: {
           id: "firefox-suggest-yelp-bottom-text",
-          cacheable: true,
         },
         url,
         originalUrl,
@@ -1135,8 +1136,6 @@ class _QuickSuggestTestUtils {
         unit: temperatureUnit.toUpperCase(),
       },
       parseMarkup: true,
-      cacheable: true,
-      excludeArgsFromCacheKey: true,
     };
 
     return {
@@ -1152,7 +1151,6 @@ class _QuickSuggestTestUtils {
         bottomTextL10n: {
           id: "urlbar-result-weather-provider-sponsored",
           args: { provider: "AccuWeather®" },
-          cacheable: true,
         },
         source,
         provider,

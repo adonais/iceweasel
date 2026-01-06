@@ -29,6 +29,8 @@ dependencies {
     implementation libs.androidx.fragment
     implementation libs.androidx.lifecycle.compose
     implementation libs.androidx.lifecycle.process
+    implementation libs.androidx.lifecycle.viewmodel.compose
+    implementation libs.androidx.navigation.fragment
     implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:support-test')

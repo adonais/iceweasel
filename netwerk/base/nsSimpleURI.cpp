@@ -641,12 +641,9 @@ nsSimpleURI::GetAsciiHost(nsACString& result) {
 // nsSimpleURI::nsISizeOf
 //----------------------------------------------------------------------------
 
-size_t nsSimpleURI::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
-  return mSpec.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
-}
-
 size_t nsSimpleURI::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
-  return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
+  return aMallocSizeOf(this) +
+         mSpec.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
 }
 
 NS_IMETHODIMP

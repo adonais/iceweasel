@@ -33,7 +33,7 @@
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">dostop do vaših podatkov za druge domene</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
   <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">dostop do vaših podatkov za spletna mesta %1$d domen</string>
-  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2" tools:ignore="MissingQuantity">
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
     <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
     <item quantity="one">dostop do vaših podatkov za spletna mesta %1$d domene</item>
     <item quantity="two">dostop do vaših podatkov za spletna mesta %1$d domen</item>
@@ -304,6 +304,8 @@
   <string name="mozac_feature_addons_admin_install_only">Dodatka %1$s ni bilo mogoče namestiti: namesti ga lahko samo organizacija z uporabo pravilnikov podjetja, kar pa na tej platformi ni podprto.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s krši Mozilline pravilnike in ga ni mogoče namestiti v %2$s.</string>
+  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_soft_blocked_2">%1$s je omejen in ga ni mogoče namestiti v %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Dodatka %1$s ni bilo mogoče omogočiti</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -350,8 +352,12 @@
   <string name="mozac_feature_addons_status_blocklisted_1">Ta razširitev je blokirana zaradi kršenja Mozillinih pravilnikov, zato je bila onemogočena.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Ta razširitev je omejena zaradi kršenja Mozillinih pravilnikov, zato je bila onemogočena. Lahko jo omogočite, vendar je to morda nevarno.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
+  <string name="mozac_feature_addons_status_softblocked_2">Ta razširitev je omejena, zato je bila onemogočena. Lahko jo omogočite, vendar je to morda nevarno.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Ta razširitev krši Mozilline pravilnike. Njena uporaba je morda nevarna.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
+  <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Ta razširitev je omejena. Morda je ni varno uporabljati.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">Dodatka %1$s ni bilo mogoče potrditi kot varnega, zato je onemogočen.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

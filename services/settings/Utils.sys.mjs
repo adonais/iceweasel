@@ -155,6 +155,7 @@ export var Utils = {
 
   /**
    * Internal method to enable pulling data from preview buckets.
+   *
    * @param enabled
    */
   enablePreviewMode(enabled) {
@@ -330,8 +331,8 @@ export var Utils = {
   /**
    * Check if we ship a JSON dump for the specified bucket and collection.
    *
-   * @param {String} bucket
-   * @param {String} collection
+   * @param {string} bucket
+   * @param {string} collection
    * @return {bool} Whether it is present or not.
    */
   async hasLocalDump(bucket, collection) {
@@ -351,8 +352,8 @@ export var Utils = {
   /**
    * Look up the last modification time of the JSON dump.
    *
-   * @param {String} bucket
-   * @param {String} collection
+   * @param {string} bucket
+   * @param {string} collection
    * @return {int} The last modification time of the dump. -1 if non-existent.
    */
   async getLocalDumpLastModified(bucket, collection) {
@@ -404,13 +405,14 @@ export var Utils = {
    *     "metadata": {}
    *   }
    * ```
-   * @param {String} serverUrl         The server URL (eg. `https://server.org/v1`)
+   *
+   * @param {string} serverUrl         The server URL (eg. `https://server.org/v1`)
    * @param {int}    expectedTimestamp The timestamp that the server is supposed to return.
    *                                   We obtained it from the Megaphone notification payload,
    *                                   and we use it only for cache busting (Bug 1497159).
-   * @param {String} lastEtag          (optional) The Etag of the latest poll to be matched
+   * @param {string} lastEtag          (optional) The Etag of the latest poll to be matched
    *                                   by the server (eg. `"123456789"`).
-   * @param {Object} filters
+   * @param {object} filters
    */
   async fetchLatestChanges(serverUrl, options = {}) {
     const { expectedTimestamp, lastEtag = "", filters = {} } = options;
@@ -498,9 +500,9 @@ export var Utils = {
   /**
    * Test if a single object matches all given filters.
    *
-   * @param  {Object} filters  The filters object.
-   * @param  {Object} entry    The object to filter.
-   * @return {Boolean}
+   * @param  {object} filters  The filters object.
+   * @param  {object} entry    The object to filter.
+   * @return {boolean}
    */
   filterObject(filters, entry) {
     return Object.entries(filters).every(([filter, value]) => {
@@ -519,7 +521,7 @@ export var Utils = {
   /**
    * Sorts records in a list according to a given ordering.
    *
-   * @param  {String} order The ordering, eg. `-last_modified`.
+   * @param  {string} order The ordering, eg. `-last_modified`.
    * @param  {Array}  list  The collection to order.
    * @return {Array}
    */
@@ -551,7 +553,7 @@ export var Utils = {
    * @async
    * @function fetchChangesetsBundle
    * @memberof Utils
-   * @returns {Promise<Array<Object>>} A promise that resolves to an array of parsed changesets.
+   * @returns {Promise<Array<object>>} A promise that resolves to an array of parsed changesets.
    *
    * @throws {Error} Throws an error if there is an issue fetching the server info or the changeset bundle,
    *                 or if there is an error during the extraction and parsing of the changesets.

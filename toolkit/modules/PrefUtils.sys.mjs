@@ -10,6 +10,7 @@ const kPrefBranches = {
 export var PrefUtils = {
   /**
    * Get a preference of any type from the named branch.
+   *
    * @param {string} pref
    * @param {object} [options]
    * @param {"default"|"user"} [options.branchName="user"] One of "default" or "user"
@@ -56,6 +57,7 @@ export var PrefUtils = {
 
   /**
    * Set a preference on the named branch
+   *
    * @param {string} pref
    * @param {string|boolean|integer|null} value The value to set.
    * @param {object} options

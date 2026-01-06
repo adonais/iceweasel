@@ -10,19 +10,22 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams
 import mozilla.components.browser.state.action.AwesomeBarAction
+import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.CustomTabSessionState
 import mozilla.components.browser.state.store.BrowserStore
-import mozilla.components.compose.base.theme.localAcornColors
 import mozilla.components.compose.base.utils.BackInvokedHandler
 import mozilla.components.compose.browser.toolbar.BrowserToolbar
+import mozilla.components.compose.browser.toolbar.BrowserToolbarCFR
+import mozilla.components.compose.browser.toolbar.R
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarAction.ToolbarGravityUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarStore
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity
@@ -30,6 +33,8 @@ import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Bottom
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Top
 import mozilla.components.feature.toolbar.ToolbarBehaviorController
 import mozilla.components.lib.state.ext.observeAsComposableState
+import mozilla.telemetry.glean.private.NoExtras
+import org.mozilla.fenix.GleanMetrics.Toolbar
 import org.mozilla.fenix.browser.store.BrowserScreenStore
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
@@ -69,7 +74,7 @@ class BrowserToolbarComposable(
     private val searchSuggestionsContent: @Composable (Modifier) -> Unit,
     private val navigationBarContent: (@Composable () -> Unit)?,
 ) : FenixBrowserToolbarView(
-    context = activity,
+    parent = container,
     settings = settings,
     customTabSession = customTabSession,
 ) {
@@ -89,6 +94,8 @@ class BrowserToolbarComposable(
         val customColors = browserScreenStore.observeAsComposableState { it.customTabColors }
         val shouldUseBottomToolbar = remember(settings) { settings.shouldUseBottomToolbar }
 
+        var toolbarCFR = toolbarCFRData(browserStore, settings, customTabSession)
+
         DisposableEffect(activity) {
             val toolbarController = ToolbarBehaviorController(
                 toolbar = this@BrowserToolbarComposable,
@@ -105,27 +112,27 @@ class BrowserToolbarComposable(
         }
 
         FirefoxTheme {
-            val firefoxColors = FirefoxTheme.colors
-            val customTheme = remember(customColors, firefoxColors) {
-                firefoxColors.copy(
+            val materialColors = MaterialTheme.colorScheme
+            val colorScheme = remember(customColors.value, materialColors) {
+                materialColors.copy(
                     // Toolbar background
-                    layer1 = customColors.value?.toolbarColor?.let { Color(it) } ?: firefoxColors.layer1,
+                    surface = customColors.value?.toolbarColor?.let { Color(it) }
+                        ?: materialColors.surface,
                     // Page origin background
-                    layer3 = when (customTabSession) {
-                        null -> firefoxColors.layer3 // show a different background only for normal tabs
-                        else -> customColors.value?.toolbarColor?.let { Color(it) } ?: firefoxColors.layer1
+                    surfaceDim = when (customTabSession) {
+                        null -> materialColors.surfaceDim // show a different background only for normal tabs
+                        else -> customColors.value?.toolbarColor?.let { Color(it) }
+                            ?: materialColors.surface
                     },
-                    // All text but the title and URL subdomain
-                    textPrimary = customColors.value?.readableColor?.let { Color(it) } ?: firefoxColors.textPrimary,
-                    // Title and URL subdomain
-                    textSecondary =
-                        customColors.value?.secondaryReadableColor?.let { Color(it) } ?: firefoxColors.textSecondary,
-                    // All icons tint
-                    iconPrimary = customColors.value?.readableColor?.let { Color(it) } ?: firefoxColors.iconPrimary,
+                    onSurface = customColors.value?.readableColor?.let { Color(it) }
+                        ?: materialColors.onSurface,
+                    onSurfaceVariant =
+                        customColors.value?.secondaryReadableColor?.let { Color(it) }
+                            ?: materialColors.onSurfaceVariant,
                 )
             }
 
-            CompositionLocalProvider(localAcornColors provides customTheme) {
+            MaterialTheme(colorScheme = colorScheme) {
                 when (shouldShowTabStrip) {
                     true -> Column(
                         modifier = Modifier
@@ -133,7 +140,10 @@ class BrowserToolbarComposable(
                             .wrapContentHeight(),
                     ) {
                         tabStripContent()
-                        BrowserToolbar(toolbarStore)
+                        BrowserToolbar(
+                            store = toolbarStore,
+                            cfr = toolbarCFR,
+                        )
                         if (customTabSession == null) {
                             searchSuggestionsContent(Modifier.weight(1f))
                         }
@@ -148,10 +158,16 @@ class BrowserToolbarComposable(
                             if (customTabSession == null) {
                                 searchSuggestionsContent(Modifier.weight(1f))
                             }
-                            BrowserToolbar(toolbarStore)
+                            BrowserToolbar(
+                                store = toolbarStore,
+                                cfr = toolbarCFR,
+                            )
                             navigationBarContent?.invoke()
                         } else {
-                            BrowserToolbar(toolbarStore)
+                            BrowserToolbar(
+                                store = toolbarStore,
+                                cfr = toolbarCFR,
+                            )
                             if (customTabSession == null) {
                                 searchSuggestionsContent(Modifier.weight(1f))
                             }
@@ -187,5 +203,39 @@ class BrowserToolbarComposable(
     private fun buildToolbarGravityConfig(): ToolbarGravity = when (settings.shouldUseBottomToolbar) {
         true -> Bottom
         false -> Top
+    }
+}
+
+@Composable
+private fun toolbarCFRData(
+    browserStore: BrowserStore,
+    settings: Settings,
+    customTabSession: CustomTabSessionState?,
+): BrowserToolbarCFR? {
+    if (settings.hasSeenBrowserToolbarCFR || !settings.toolbarRedesignEnabled || customTabSession != null) {
+        return null
+    }
+
+    val session = browserStore.observeAsComposableState { it.selectedTab?.content }.value
+    val shouldShowCFR = session != null && session.progress == 100 && !session.loading
+
+    val title = stringResource(R.string.mozac_toolbar_cfr_title)
+    val description = stringResource(R.string.mozac_toolbar_cfr_description)
+    return remember(shouldShowCFR, title, description) {
+        if (shouldShowCFR) {
+            BrowserToolbarCFR(
+                enabled = shouldShowCFR,
+                title = title,
+                description = description,
+                onShown = { Toolbar.cfrShown.record(NoExtras()) },
+                onDismiss = {
+                    settings.hasSeenBrowserToolbarCFR = true
+                    settings.lastCfrShownTimeInMillis = System.currentTimeMillis()
+                    Toolbar.cfrDismissed.record(NoExtras())
+                },
+            )
+        } else {
+            null
+        }
     }
 }

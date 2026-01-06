@@ -375,6 +375,25 @@ class MOZ_STACK_CLASS WSScanResult final {
     }
   }
 
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const ScanDirection& aDirection) {
+    return aStream << (aDirection == ScanDirection::Backward
+                           ? "ScanDirection::Backward"
+                           : "ScanDirection::Forward");
+  }
+
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const WSScanResult& aResult) {
+    aStream << "{ mReason: " << aResult.mReason;
+    if (aResult.mReason == WSType::NotInitialized ||
+        aResult.mReason == WSType::InUncomposedDoc) {
+      return aStream << " }";
+    }
+    return aStream << ", mContent: " << aResult.mContent
+                   << ", mOffset: " << aResult.mOffset
+                   << ", mDirection: " << aResult.mDirection << " }";
+  }
+
  private:
   nsCOMPtr<nsIContent> mContent;
   Maybe<uint32_t> mOffset;

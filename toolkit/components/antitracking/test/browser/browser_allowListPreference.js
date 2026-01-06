@@ -8,6 +8,7 @@ const COLLECTION_NAME = "url-classifier-exceptions";
 
 /**
  * Load a tracker in third-party context.
+ *
  * @param {string} trackerUrl - The URL of the tracker to load in an iframe.
  * @returns {Promise} A promise that resolves when the tracker is loaded or
  * blocked. The promise resolves to "loaded" if the tracker is loaded, or
@@ -95,9 +96,10 @@ add_setup(async function () {
 
 /**
  * Set exceptions via RemoteSettings.
- * @param {Boolean} baseline - If true, set baseline allow list entries.
- * @param {Boolean} convenience - If true, set convenience allow list entries.
- * @param {String} category - The content blocking category to set.
+ *
+ * @param {boolean} baseline - If true, set baseline allow list entries.
+ * @param {boolean} convenience - If true, set convenience allow list entries.
+ * @param {string} category - The content blocking category to set.
  */
 async function setAllowListPrefs(baseline, convenience, category) {
   info("Set allow list baseline and convenience prefs");

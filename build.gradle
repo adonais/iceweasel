@@ -54,8 +54,8 @@ abstract class VerifyGleanVersionTask extends DefaultTask {
     @Input
     String expectedVersion = project.ext.gleanVersion
 
-    @OutputFiles
-    FileCollection outputFiles = project.objects.fileCollection()
+    @OutputFile
+    final RegularFileProperty outputFile = project.objects.fileProperty()
 
     @TaskAction
     void verifyGleanVersion() {
@@ -66,6 +66,8 @@ abstract class VerifyGleanVersionTask extends DefaultTask {
         } else {
             logger.lifecycle("verifyGleanVersion> expected version matches found version '${foundVersion}'")
         }
+
+        outputFile.get().asFile.text = "glean-${foundVersion}"
     }
 
     // Parses the Cargo.lock and returns the version for the given package name.
@@ -86,7 +88,9 @@ abstract class VerifyGleanVersionTask extends DefaultTask {
     }
 }
 
-tasks.register("verifyGleanVersion", VerifyGleanVersionTask)
+tasks.register("verifyGleanVersion", VerifyGleanVersionTask) {
+    outputFile.convention(layout.buildDirectory.file("glean/verifyGleanVersion.marker"))
+}
 
 allprojects {
     // Expose the per-object-directory configuration to all projects.
@@ -104,9 +108,10 @@ allprojects {
         buildId = getBuildId()
 
         buildToolsVersion = mozconfig.substs.ANDROID_BUILD_TOOLS_VERSION
-        compileSdkVersion = tryInt(mozconfig.substs.ANDROID_COMPILE_SDK)
-        targetSdkVersion = tryInt(mozconfig.substs.ANDROID_TARGET_SDK)
+        compileSdkMajorVersion = tryInt(mozconfig.substs.ANDROID_COMPILE_SDK_MAJOR)
+        compileSdkMinorVersion = tryInt(mozconfig.substs.ANDROID_COMPILE_SDK_MINOR)
         minSdkVersion = tryInt(mozconfig.substs.MOZ_ANDROID_MIN_SDK_VERSION)
+        targetSdkVersion = tryInt(mozconfig.substs.ANDROID_TARGET_SDK)
         manifestPlaceholders = [
             ANDROID_TARGET_SDK: mozconfig.substs.ANDROID_TARGET_SDK,
             MOZ_ANDROID_MIN_SDK_VERSION: mozconfig.substs.MOZ_ANDROID_MIN_SDK_VERSION,

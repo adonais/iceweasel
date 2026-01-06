@@ -48,6 +48,7 @@ class FenixBrowserUseCases(
      * was opened from history.
      * @param additionalHeaders The extra headers to use when loading the URL.
      */
+    @Suppress("CognitiveComplexMethod")
     fun loadUrlOrSearch(
         searchTermOrURL: String,
         newTab: Boolean,

@@ -91,7 +91,7 @@ class SiteSettingsFragment : PreferenceFragmentCompat() {
             // not need to be bound
             .filter { it != PhoneFeature.AUTOPLAY_INAUDIBLE }
             .excludeFeatures(
-                condition = { !requireContext().settings().isLnaBlockingEnabled },
+                condition = { !requireContext().settings().isLnaFeatureEnabled },
                 features = setOf(
                     PhoneFeature.LOCAL_DEVICE_ACCESS,
                     PhoneFeature.LOCAL_NETWORK_ACCESS,
@@ -107,6 +107,13 @@ class SiteSettingsFragment : PreferenceFragmentCompat() {
         val preference = requirePreference<Preference>(phoneFeature.getPreferenceId())
         preference.summary = phoneFeature.getActionLabel(context, settings = settings)
         preference.isVisible = true
+        preference.icon?.setTint(
+            MaterialColors.getColor(
+                requireContext(),
+                materialR.attr.colorOnSurface,
+                "Could not resolve themed color",
+            ),
+        )
         preference.onPreferenceClickListener = OnPreferenceClickListener {
             navigateToPhoneFeature(phoneFeature)
             true

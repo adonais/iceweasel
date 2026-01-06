@@ -2123,13 +2123,14 @@ class DebugEnvironmentProxyHandler : public NurseryAllocableProxyHandler {
       return true;
     }
 
-    if (!GetFunctionThis(cx, maybeEnv->frame(), thisv)) {
+    AbstractFramePtr frame = maybeEnv->frame();
+    if (!GetFunctionThis(cx, frame, thisv)) {
       return false;
     }
 
     // Update the this-argument to avoid boxing primitive |this| more
     // than once.
-    maybeEnv->frame().thisArgument() = thisv;
+    frame.thisArgument() = thisv;
     *success = true;
     return true;
   }

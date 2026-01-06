@@ -4,8 +4,7 @@ TypeScript
 `TypeScript`__ is being used as a type checker for JavaScript.
 
 This is a new linter that is being set up and readied for production use. Please
-discuss with `Mark Banner (standard8) <https://people.mozilla.org/s?query=standard8>`__
-before setting up new projects.
+see `this page`_ before setting up new projects.
 
 Run Locally
 -----------
@@ -68,4 +67,5 @@ For test harness issues, file bugs in Developer Infrastructure :: Lint and Forma
 
 
 .. __: https://www.typescriptlang.org/
+.. _this page: ../../typescript/index.html
 .. _Usage guide: ../usage.html

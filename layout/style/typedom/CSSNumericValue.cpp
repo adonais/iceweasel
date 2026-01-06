@@ -16,6 +16,10 @@ namespace mozilla::dom {
 CSSNumericValue::CSSNumericValue(nsCOMPtr<nsISupports> aParent)
     : CSSStyleValue(std::move(aParent)) {}
 
+CSSNumericValue::CSSNumericValue(nsCOMPtr<nsISupports> aParent,
+                                 ValueType aValueType)
+    : CSSStyleValue(std::move(aParent), aValueType) {}
+
 JSObject* CSSNumericValue::WrapObject(JSContext* aCx,
                                       JS::Handle<JSObject*> aGivenProto) {
   return CSSNumericValue_Binding::Wrap(aCx, this, aGivenProto);

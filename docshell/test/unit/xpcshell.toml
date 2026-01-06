@@ -15,12 +15,12 @@ support-files = [
 
 ["test_URIFixup_info.js"]
 skip-if = [
-  "os == 'android' && os_version == '14' && processor == 'x86_64'",
+  "os == 'android' && os_version == '14' && arch == 'x86_64'",
 ]
 
 ["test_URIFixup_search.js"]
 skip-if = [
-  "os == 'android' && os_version == '14' && processor == 'x86_64'",
+  "os == 'android' && os_version == '14' && arch == 'x86_64'",
 ]
 
 ["test_allowJavascript.js"]
@@ -32,7 +32,9 @@ support-files = [
 ["test_browsing_context_structured_clone.js"]
 
 ["test_pb_notification.js"]
-skip-if = ["true"] # Bug 751575: unrelated JS changes cause timeouts on random platforms
+skip-if = [
+  "true", # Bug 751575: unrelated JS changes cause timeouts on random platforms
+]
 
 ["test_privacy_transition.js"]
 

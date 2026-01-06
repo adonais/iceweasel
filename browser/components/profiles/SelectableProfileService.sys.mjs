@@ -187,7 +187,6 @@ class SelectableProfileServiceClass extends EventEmitter {
     "browser.crashReports.unsubmittedCheck.autoSubmit2",
     "browser.discovery.enabled",
     "browser.shell.checkDefaultBrowser",
-    "browser.urlbar.quicksuggest.dataCollection.enabled",
     DAU_GROUPID_PREF_NAME,
     "datareporting.healthreport.uploadEnabled",
     "datareporting.policy.currentPolicyVersion",
@@ -210,6 +209,7 @@ class SelectableProfileServiceClass extends EventEmitter {
   // Preferences that were previously shared but should now be ignored.
   static ignoredSharedPrefs = [
     "browser.profiles.enabled",
+    "browser.urlbar.quicksuggest.dataCollection.enabled",
     "toolkit.profiles.storeID",
   ];
 

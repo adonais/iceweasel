@@ -170,38 +170,6 @@ nsClipboard::SetNativeClipboardData(nsITransferable* aTransferable,
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
-nsresult nsClipboard::TransferableFromPasteboard(
-    nsITransferable* aTransferable, NSPasteboard* cocoaPasteboard) {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
-
-  // get flavor list that includes all acceptable flavors (including ones
-  // obtained through conversion)
-  nsTArray<nsCString> flavors;
-  nsresult rv = aTransferable->FlavorsTransferableCanImport(flavors);
-  if (NS_FAILED(rv)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  for (uint32_t i = 0; i < flavors.Length(); i++) {
-    nsCString& flavorStr = flavors[i];
-
-    auto dataOrError = GetDataFromPasteboard(flavorStr, cocoaPasteboard);
-    if (dataOrError.isErr()) {
-      continue;
-    }
-
-    if (auto data = dataOrError.inspect()) {
-      aTransferable->SetTransferData(flavorStr.get(), data);
-      // XXX Maybe try to fill in more types? Is there a point?
-      break;
-    }
-  }
-
-  return NS_OK;
-
-  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
-}
-
 mozilla::Result<nsCOMPtr<nsISupports>, nsresult>
 nsClipboard::GetDataFromPasteboard(const nsACString& aFlavor,
                                    NSPasteboard* aPasteboard) {

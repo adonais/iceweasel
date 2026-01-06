@@ -41,7 +41,6 @@ import mozilla.components.support.ktx.android.content.res.resolveAttribute
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
@@ -1145,7 +1144,7 @@ class CustomTabsToolbarFeatureTest {
                 "mozilla",
                 "https://github.com/mozilla-mobile/android-components",
             ),
-        ).joinBlocking()
+        )
 
         verify(feature).addActionButton(anyInt(), any())
         verify(toolbar).addBrowserAction(captor.capture())
@@ -1457,7 +1456,7 @@ class CustomTabsToolbarFeatureTest {
                 "mozilla",
                 "https://github.com/mozilla-mobile/android-components",
             ),
-        ).joinBlocking()
+        )
 
         val menuBuilder = toolbar.display.menuBuilder!!
 
@@ -1858,7 +1857,7 @@ class CustomTabsToolbarFeatureTest {
                 "mozilla",
                 "Internet for people, not profit - Mozilla",
             ),
-        ).joinBlocking()
+        )
 
         assertEquals("Internet for people, not profit - Mozilla", toolbar.title)
     }
@@ -1900,7 +1899,7 @@ class CustomTabsToolbarFeatureTest {
 
         store.dispatch(
             ContentAction.UpdateUrlAction("mozilla", "https://www.mozilla.org/en-US/firefox/"),
-        ).joinBlocking()
+        )
 
         assertEquals("", toolbar.title)
 
@@ -1909,31 +1908,31 @@ class CustomTabsToolbarFeatureTest {
                 "mozilla",
                 "Firefox - Protect your life online with privacy-first products",
             ),
-        ).joinBlocking()
+        )
 
         assertEquals("Firefox - Protect your life online with privacy-first products", toolbar.title)
 
         store.dispatch(
             ContentAction.UpdateUrlAction("mozilla", "https://github.com/mozilla-mobile/android-components"),
-        ).joinBlocking()
+        )
 
         assertEquals("https://github.com/mozilla-mobile/android-components", toolbar.title)
 
         store.dispatch(
             ContentAction.UpdateTitleAction("mozilla", "Le GitHub"),
-        ).joinBlocking()
+        )
 
         assertEquals("Le GitHub", toolbar.title)
 
         store.dispatch(
             ContentAction.UpdateUrlAction("mozilla", "https://github.com/mozilla-mobile/fenix"),
-        ).joinBlocking()
+        )
 
         assertEquals("https://github.com/mozilla-mobile/fenix", toolbar.title)
 
         store.dispatch(
             ContentAction.UpdateTitleAction("mozilla", ""),
-        ).joinBlocking()
+        )
 
         assertEquals("https://github.com/mozilla-mobile/fenix", toolbar.title)
 
@@ -1942,13 +1941,13 @@ class CustomTabsToolbarFeatureTest {
                 "mozilla",
                 "A collection of Android libraries to build browsers or browser-like applications.",
             ),
-        ).joinBlocking()
+        )
 
         assertEquals("A collection of Android libraries to build browsers or browser-like applications.", toolbar.title)
 
         store.dispatch(
             ContentAction.UpdateTitleAction("mozilla", ""),
-        ).joinBlocking()
+        )
 
         assertEquals("https://github.com/mozilla-mobile/fenix", toolbar.title)
     }

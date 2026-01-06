@@ -322,8 +322,18 @@ void Promise::WaitForAll(nsIGlobalObject* aGlobal,
       return nullptr;
     };
     // Step 9.4 (and actually also step 4 and step 9.3)
-    (void)promise->ThenCatchWithCycleCollectedArgs(
+    Result resultPromise = promise->ThenCatchWithCycleCollectedArgs(
         fulfillmentHandlerSteps, rejectionHandlerSteps, result, arg);
+
+    // https://tc39.es/ecma262/multipage/control-abstraction-objects.html#sec-performpromisethen
+    // Step 12
+    // Promise;:ThenCatchWithCycleCollectedArgs is fairly similar to, but not
+    // exactly the same as PerformPromiseThen, in particular the step that marks
+    // the promise as handled is missing. It's performed here to not change the
+    // existing behavior of ThenCatchWithCycleCollectedArgs.
+    if (resultPromise.isOk()) {
+      (void)resultPromise.unwrap()->SetAnyPromiseIsHandled();
+    }
 
     // Step 9.5
     index++;

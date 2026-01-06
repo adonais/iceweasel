@@ -50,8 +50,8 @@ prefs = [
 
 ["test_bug92773.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug384632.html"]
@@ -62,8 +62,8 @@ skip-if = [
 
 ["test_bug396851.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug428021.html"]
@@ -74,16 +74,16 @@ skip-if = [
 
 ["test_bug478438.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug500691.html"]
 
 ["test_bug505915.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug560351.html"]
@@ -96,8 +96,8 @@ skip-if = [
 
 ["test_bug605167.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug618017.html"]
@@ -108,26 +108,26 @@ skip-if = [
 
 ["test_bug629227.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug629331.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug636097.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug650273.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug655297-1.html"]
@@ -140,12 +140,14 @@ skip-if = [
 
 ["test_bug720619.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug731471.html"]
-skip-if = ["os == 'android' && debug"]
+skip-if = [
+  "os == 'android' && debug",
+]
 
 ["test_bug764389.html"]
 
@@ -153,8 +155,8 @@ skip-if = ["os == 'android' && debug"]
 
 ["test_bug789713.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug790732.html"]
@@ -163,14 +165,14 @@ skip-if = [
 
 ["test_bug800864.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug802557.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug803730.html"]
@@ -179,42 +181,42 @@ skip-if = [
 
 ["test_bug829872.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug862380.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug865260.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug912322.html"]
 
 ["test_bug916945.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug940783.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug960820.html"]
 
 ["test_bug965082.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_bug993423.html"]
@@ -230,7 +232,9 @@ skip-if = [
 ["test_bug1681664.html"]
 
 ["test_class_static_block_worker.html"]
-skip-if = ["!nightly_build"]
+skip-if = [
+  "!nightly_build",
+]
 
 ["test_crosscompartment_weakmap.html"]
 
@@ -248,7 +252,12 @@ skip-if = ["!nightly_build"]
 # The JS test component we use below is only available in debug builds.
 
 ["test_getWebIDLCaller.html"]
-skip-if = ["!debug"]
+skip-if = [
+  "asan",
+  "ccov",
+  "opt",
+  "tsan",
+]
 
 ["test_getweakmapkeys.html"]
 
@@ -259,7 +268,12 @@ skip-if = ["!debug"]
 ["test_nukeContentWindow.html"]
 
 ["test_paris_weakmap_keys.html"]
-skip-if = ["!debug"]
+skip-if = [
+  "asan",
+  "ccov",
+  "opt",
+  "tsan",
+]
 
 ["test_private_field_dom.html"]
 
@@ -267,8 +281,8 @@ skip-if = ["!debug"]
 
 ["test_sameOriginPolicy.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_sandbox_fetch.html"]
@@ -278,10 +292,14 @@ support-files = ["../../../../dom/tests/mochitest/fetch/test_fetch_basic.js"]
 # This test has been updated to work with worker modules
 
 ["test_shadowRealm_worker.html"]
-skip-if = ["!nightly_build"]
+skip-if = [
+  "!nightly_build",
+]
 
 ["test_spectre_mitigations.html"]
-skip-if = ["os == 'android'"] # Fission situation on Android is more complicated.
+skip-if = [
+  "os == 'android'", # Fission situation on Android is more complicated.
+]
 
 ["test_weakRefs.html"]
 

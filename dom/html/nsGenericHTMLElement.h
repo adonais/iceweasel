@@ -28,7 +28,7 @@ class nsILayoutHistoryState;
 class nsIURI;
 struct nsSize;
 
-enum nsCSSPropertyID : int32_t;
+enum NonCustomCSSPropertyId : uint16_t;
 
 namespace mozilla {
 class EditorBase;
@@ -568,7 +568,8 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
    * block, handling percentages and numbers.
    */
   static void MapDimensionAttributeInto(mozilla::MappedDeclarationsBuilder&,
-                                        nsCSSPropertyID, const nsAttrValue&);
+                                        NonCustomCSSPropertyId,
+                                        const nsAttrValue&);
 
   /**
    * Maps the aspect ratio given width and height attributes.

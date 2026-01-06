@@ -1,5 +1,7 @@
 [DEFAULT]
-skip-if = ["os == 'android'"]
+skip-if = [
+  "os == 'android'",
+]
 support-files = [
   "satchel_common.js",
   "subtst_form_submission_1.html",
@@ -29,8 +31,8 @@ support-files = [
 
 ["test_form_autocomplete_with_list.html"]
 skip-if = [
-  "http3",
   "http2",
+  "http3",
 ]
 
 ["test_form_submission.html"]

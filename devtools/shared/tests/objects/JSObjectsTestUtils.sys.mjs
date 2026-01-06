@@ -27,7 +27,7 @@ let gTestScope;
 /**
  * Initialize the test helper.
  *
- * @param {Object} testScope
+ * @param {object} testScope
  *        XPCShell or mochitest test scope (i.e. the global object of the test currently executed)
  */
 function init(testScope) {

@@ -76,8 +76,8 @@ async function waitSamplingAndStopProfilerAndGetThreads(contentPid) {
  * Then from this thread we get its parent thread. Indeed the parent thread is
  * where all network stuff happens, so this is useful for network marker tests.
  *
- * @param {Object} profile
- * @returns {{ serviceWorkerThread: Object, serviceWorkerParentThread: Object }} the found threads
+ * @param {object} profile
+ * @returns {{serviceWorkerThread: object, serviceWorkerParentThread: object}} the found threads
  */
 function findServiceWorkerThreads(profile) {
   const allThreads = [
@@ -144,7 +144,7 @@ function findServiceWorkerThreads(profile) {
  * This logs some basic information about the passed thread.
  *
  * @param {string} prefix
- * @param {Object} thread
+ * @param {object} thread
  */
 function logInformationForThread(prefix, thread) {
   if (!thread) {

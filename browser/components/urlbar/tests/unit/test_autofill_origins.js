@@ -331,34 +331,41 @@ add_task(async function groupByHost() {
   // both so that alone, neither http nor https would be autofilled, but added
   // together they should be.
   await PlacesTestUtils.addVisits([
-    { uri: "http://example.com/" },
+    { uri: "http://example.com/", visitDate: daysAgo(30) },
 
-    { uri: "https://example.com/" },
-    { uri: "https://example.com/" },
+    // Have a higher frecency by being more recent. But not so recent that it
+    // has a higher frecency than other visits that bump the origins threshold.
+    { uri: "https://example.com/", visitDate: daysAgo(7) },
 
-    { uri: "https://mozilla.org/" },
-    { uri: "https://mozilla.org/" },
-    { uri: "https://mozilla.org/" },
-    { uri: "https://mozilla.org/" },
+    {
+      uri: "https://mozilla.org/",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+    },
+    {
+      uri: "https://mozilla.org/1",
+      transition: PlacesUtils.history.TRANSITION_TYPED,
+      visitDate: daysAgo(1),
+    },
+
+    // Add more origins to make the threshold higher
+    { uri: "https://mozilla.com/" },
+    { uri: "https://mozilla.ca/" },
   ]);
 
-  let httpFrec = await PlacesTestUtils.getDatabaseValue(
-    "moz_places",
-    "frecency",
-    { url: "http://example.com/" }
+  let httpFrec = await getOriginFrecency("http://", "example.com");
+  let httpsFrec = await getOriginFrecency("https://", "example.com");
+  let otherFrec = await getOriginFrecency("https://", "mozilla.org");
+
+  Assert.less(
+    httpFrec,
+    httpsFrec,
+    "Frecency http://example.com is less than https://example.com"
   );
-  let httpsFrec = await PlacesTestUtils.getDatabaseValue(
-    "moz_places",
-    "frecency",
-    { url: "https://example.com/" }
+  Assert.less(
+    httpsFrec,
+    otherFrec,
+    "Frecency of https://example.com is less than https://mozilla.org"
   );
-  let otherFrec = await PlacesTestUtils.getDatabaseValue(
-    "moz_places",
-    "frecency",
-    { url: "https://mozilla.org/" }
-  );
-  Assert.less(httpFrec, httpsFrec, "Sanity check");
-  Assert.less(httpsFrec, otherFrec, "Sanity check");
 
   // Make sure the frecencies of the three origins are as expected in relation
   // to the threshold.
@@ -406,45 +413,22 @@ add_task(async function groupByHostNonDefaultStddevMultiplier() {
   );
 
   await PlacesTestUtils.addVisits([
-    { uri: "http://example.com/" },
-    { uri: "http://example.com/" },
+    { uri: "http://example.com/", visitDate: daysAgo(30) },
 
-    { uri: "https://example.com/" },
-    { uri: "https://example.com/" },
-    { uri: "https://example.com/" },
-
-    { uri: "https://foo.com/" },
-    { uri: "https://foo.com/" },
-    { uri: "https://foo.com/" },
+    { uri: "https://example.com/", visitDate: daysAgo(7) },
 
     { uri: "https://mozilla.org/" },
-    { uri: "https://mozilla.org/" },
-    { uri: "https://mozilla.org/" },
-    { uri: "https://mozilla.org/" },
-    { uri: "https://mozilla.org/" },
+    { uri: "https://mozilla.org/1", visitDate: daysAgo(1) },
+    { uri: "https://mozilla.org/2", visitDate: daysAgo(2) },
+
+    // Add more origins to make the threshold higher
+    { uri: "https://mozilla.com/" },
+    { uri: "https://mozilla.ca/" },
   ]);
 
-  let httpFrec = await PlacesTestUtils.getDatabaseValue(
-    "moz_places",
-    "frecency",
-    {
-      url: "http://example.com/",
-    }
-  );
-  let httpsFrec = await PlacesTestUtils.getDatabaseValue(
-    "moz_places",
-    "frecency",
-    {
-      url: "https://example.com/",
-    }
-  );
-  let otherFrec = await PlacesTestUtils.getDatabaseValue(
-    "moz_places",
-    "frecency",
-    {
-      url: "https://mozilla.org/",
-    }
-  );
+  let httpFrec = await getOriginFrecency("http://", "example.com");
+  let httpsFrec = await getOriginFrecency("https://", "example.com");
+  let otherFrec = await getOriginFrecency("https://", "mozilla.org");
   Assert.less(httpFrec, httpsFrec, "Sanity check");
   Assert.less(httpsFrec, otherFrec, "Sanity check");
 
@@ -920,17 +904,17 @@ add_task(async function nullTitle() {
         // Set title of visits data to an empty string causes
         // the title to be null in the database.
         title: "",
-        frecency: 100,
+        frecencyBucket: "high",
       },
       {
         uri: "https://www.example.com/",
-        title: "high frecency",
-        frecency: 50,
+        title: "medium frecency",
+        frecencyBucket: "medium",
       },
       {
         uri: "http://www.example.com/",
         title: "low frecency",
-        frecency: 1,
+        frecencyBucket: "low",
       },
     ],
     input: "example.com",
@@ -940,12 +924,12 @@ add_task(async function nullTitle() {
       matches: context => [
         makeVisitResult(context, {
           uri: "http://example.com/",
-          title: "high frecency",
+          title: "medium frecency",
           heuristic: true,
         }),
         makeVisitResult(context, {
           uri: "https://www.example.com/",
-          title: "high frecency",
+          title: "medium frecency",
         }),
       ],
     },
@@ -958,17 +942,17 @@ add_task(async function domainTitle() {
       {
         uri: "http://example.com/",
         title: "example.com",
-        frecency: 100,
+        frecencyBucket: "high",
       },
       {
         uri: "https://www.example.com/",
         title: "",
-        frecency: 50,
+        frecencyBucket: "medium",
       },
       {
         uri: "http://www.example.com/",
         title: "lowest frecency but has title",
-        frecency: 1,
+        frecencyBucket: "low",
       },
     ],
     input: "example.com",
@@ -996,12 +980,12 @@ add_task(async function exactMatchedTitle() {
       {
         uri: "http://example.com/",
         title: "exact match",
-        frecency: 50,
+        frecencyBucket: "medium",
       },
       {
         uri: "https://www.example.com/",
         title: "high frecency uri",
-        frecency: 100,
+        frecencyBucket: "high",
       },
     ],
     input: "http://example.com/",
@@ -1024,20 +1008,55 @@ add_task(async function exactMatchedTitle() {
 });
 
 async function doTitleTest({ visits, input, expected }) {
-  await PlacesTestUtils.addVisits(visits);
-  for (const { uri, frecency } of visits) {
-    // Prepare data.
-    await PlacesUtils.withConnectionWrapper("test::doTitleTest", async db => {
-      await db.execute(
-        `UPDATE moz_places SET frecency = :frecency, recalc_frecency=0 WHERE url = :url`,
-        {
-          frecency,
-          url: uri,
-        }
-      );
-      await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
-    });
+  for (let visit of visits) {
+    switch (visit.frecencyBucket) {
+      case "high": {
+        await PlacesTestUtils.addVisits({
+          title: visit.title,
+          uri: visit.uri,
+          transition: PlacesUtils.history.TRANSITION_TYPED,
+        });
+        break;
+      }
+      case "medium": {
+        await PlacesTestUtils.addVisits({ title: visit.title, uri: visit.uri });
+        break;
+      }
+      case "low": {
+        // Non-bookmarked sponsors are categorized as low.
+        await PlacesTestUtils.addVisits({
+          title: visit.title,
+          uri: visit.uri,
+        });
+        // Add visits doesn't allow you to set the visit source.
+        await PlacesUtils.withConnectionWrapper("setVisitSource", async db => {
+          await db.execute(
+            `
+            UPDATE moz_historyvisits
+            SET source = :source
+            WHERE place_id = (SELECT id FROM moz_places WHERE url = :url)`,
+            {
+              url: visit.uri,
+              source: PlacesUtils.history.VISIT_SOURCE_SPONSORED,
+            }
+          );
+          await db.execute(
+            `
+            UPDATE moz_places
+            SET recalc_frecency = 1
+            WHERE id = (SELECT id FROM moz_places WHERE url = :url)`,
+            {
+              url: visit.uri,
+            }
+          );
+        });
+        await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
+        break;
+      }
+    }
   }
+
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
   const context = createContext(input, { isPrivate: false });
   await check_results({

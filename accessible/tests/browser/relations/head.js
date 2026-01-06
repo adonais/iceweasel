@@ -90,10 +90,11 @@ async function testCachedRelation(
 /**
  * Asynchronously set or remove content element's reflected elements attribute
  * (in content process if e10s is enabled).
- * @param  {Object}  browser  current "tabbrowser" element
- * @param  {String}  id       content element id
- * @param  {String}  attr     attribute name
- * @param  {String?} value    optional attribute value, if not present, remove
+ *
+ * @param  {object}  browser  current "tabbrowser" element
+ * @param  {string}  id       content element id
+ * @param  {string}  attr     attribute name
+ * @param  {string?} value    optional attribute value, if not present, remove
  *                            attribute
  * @return {Promise}          promise indicating that attribute is set/removed
  */

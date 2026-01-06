@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Problemer med villeiande nettstad</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Denne nettsida på %1$s er rapportert som ein villeiande nettstad, og er blokkert basert på sikkerheitsinnstillingane dine.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Nettstaden er blokkert for di sikkerheit</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Denne nettsida på %1$s er blokkert fordi ei av utvidingane dine prøvde å opne henne. Denne nettstaden kan brukast til å stele informasjonen din — til dømes passord eller bankkortnummer.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Trygg nettstad ikkje tilgjengeleg</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

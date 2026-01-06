@@ -169,7 +169,10 @@ class NonShrinkingValueVector
  public:
   bool traceWeak(JSTracer* trc) {
     for (HeapPtr<Value>& value : *this) {
-      TraceWeakEdge(trc, &value, "NonShrinkingValueVector element");
+      if (value.isGCThing() &&
+          value.toGCThing()->zoneFromAnyThread()->isGCSweeping()) {
+        TraceWeakEdge(trc, &value, "NonShrinkingValueVector element");
+      }
     }
     return true;
   }

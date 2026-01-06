@@ -41,7 +41,7 @@ PropRep.propTypes = {
  * Function that given a name, a delimiter and an object returns an array
  * of React elements representing an object property (e.g. `name: value`)
  *
- * @param {Object} props
+ * @param {object} props
  * @return {Array} Array of React elements.
  */
 

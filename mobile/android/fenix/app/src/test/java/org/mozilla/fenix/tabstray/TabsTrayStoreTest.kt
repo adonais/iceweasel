@@ -5,8 +5,6 @@
 package org.mozilla.fenix.tabstray
 
 import mozilla.components.browser.state.state.createTab
-import mozilla.components.support.test.ext.joinBlocking
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -20,8 +18,6 @@ class TabsTrayStoreTest {
 
         store.dispatch(TabsTrayAction.EnterSelectMode)
 
-        store.waitUntilIdle()
-
         assertTrue(store.state.mode.selectedTabs.isEmpty())
         assertTrue(store.state.mode is TabsTrayState.Mode.Select)
 
@@ -29,8 +25,6 @@ class TabsTrayStoreTest {
 
         store.dispatch(TabsTrayAction.ExitSelectMode)
         store.dispatch(TabsTrayAction.EnterSelectMode)
-
-        store.waitUntilIdle()
 
         assertTrue(store.state.mode.selectedTabs.isEmpty())
         assertTrue(store.state.mode is TabsTrayState.Mode.Select)
@@ -42,13 +36,9 @@ class TabsTrayStoreTest {
 
         store.dispatch(TabsTrayAction.EnterSelectMode)
 
-        store.waitUntilIdle()
-
         assertTrue(store.state.mode is TabsTrayState.Mode.Select)
 
         store.dispatch(TabsTrayAction.ExitSelectMode)
-
-        store.waitUntilIdle()
 
         assertTrue(store.state.mode is TabsTrayState.Mode.Normal)
     }
@@ -58,8 +48,6 @@ class TabsTrayStoreTest {
         val store = TabsTrayStore()
 
         store.dispatch(TabsTrayAction.AddSelectTab(createTab(url = "url", id = "tab1")))
-
-        store.waitUntilIdle()
 
         assertEquals("tab1", store.state.mode.selectedTabs.take(1).first().id)
     }
@@ -72,13 +60,9 @@ class TabsTrayStoreTest {
         store.dispatch(TabsTrayAction.AddSelectTab(tabForRemoval))
         store.dispatch(TabsTrayAction.AddSelectTab(createTab(url = "url", id = "tab2")))
 
-        store.waitUntilIdle()
-
         assertEquals(2, store.state.mode.selectedTabs.size)
 
         store.dispatch(TabsTrayAction.RemoveSelectTab(tabForRemoval))
-
-        store.waitUntilIdle()
 
         assertEquals(1, store.state.mode.selectedTabs.size)
         assertEquals("tab2", store.state.mode.selectedTabs.take(1).first().id)
@@ -98,8 +82,6 @@ class TabsTrayStoreTest {
         assertEquals(Page.NormalTabs, store.state.selectedPage)
 
         store.dispatch(TabsTrayAction.PageSelected(Page.SyncedTabs))
-
-        store.waitUntilIdle()
 
         assertEquals(Page.SyncedTabs, store.state.selectedPage)
     }
@@ -144,8 +126,6 @@ class TabsTrayStoreTest {
 
         store.dispatch(TabsTrayAction.SyncNow)
 
-        store.waitUntilIdle()
-
         assertTrue(store.state.syncing)
     }
 
@@ -157,8 +137,6 @@ class TabsTrayStoreTest {
 
         store.dispatch(TabsTrayAction.SyncCompleted)
 
-        store.waitUntilIdle()
-
         assertFalse(store.state.syncing)
     }
 
@@ -169,8 +147,6 @@ class TabsTrayStoreTest {
 
         store.dispatch(TabsTrayAction.UpdateSelectedTabId(tabId = expected))
 
-        store.waitUntilIdle()
-
         assertEquals(expected, store.state.selectedTabId)
     }
 
@@ -180,7 +156,7 @@ class TabsTrayStoreTest {
 
         assertFalse(tabsTrayStore.state.inactiveTabsExpanded)
 
-        tabsTrayStore.dispatch(TabsTrayAction.UpdateInactiveExpanded(true)).joinBlocking()
+        tabsTrayStore.dispatch(TabsTrayAction.UpdateInactiveExpanded(true))
 
         assertTrue(tabsTrayStore.state.inactiveTabsExpanded)
     }

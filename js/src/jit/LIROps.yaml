@@ -2810,6 +2810,14 @@
     iterator: WordSized
   num_temps: 2
 
+- name: IteratorsMatchAndHaveIndicesAndBranch
+  successors: [ifTrue, ifFalse]
+  operands:
+    object: WordSized
+    iterator: WordSized
+    otherIterator: WordSized
+  num_temps: 2
+
 # Patchable jump to stubs generated for a SetProperty cache.
 - name: SetPropertyCache
   operands:
@@ -4160,6 +4168,60 @@
   defer_init: true
 #endif
 
+#if defined(JS_CODEGEN_X86) || defined(JS_CODEGEN_X64)
+- name: DivConstantI
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: int32_t
+  num_temps: 1
+  mir_op: Div
+
+- name: ModConstantI
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: int32_t
+  num_temps: 1
+  mir_op: Mod
+
+- name: UDivConstant
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint32_t
+  num_temps: 1
+  mir_op: Div
+
+- name: UModConstant
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint32_t
+  num_temps: 1
+  mir_op: Mod
+
+- name: UDiv
+  result_type: WordSized
+  operands:
+    lhs: WordSized
+    rhs: WordSized
+  num_temps: 1
+  mir_op: Div
+
+- name: UMod
+  result_type: WordSized
+  operands:
+    lhs: WordSized
+    rhs: WordSized
+  num_temps: 1
+  mir_op: Mod
+#endif
+
 #ifdef JS_CODEGEN_X86
 - name: BoxFloatingPoint
   result_type: BoxedValue
@@ -4174,15 +4236,6 @@
   gen_boilerplate: false
 
 - name: UDivOrModI64
-  gen_boilerplate: false
-
-- name: DivOrModConstantI
-  gen_boilerplate: false
-
-- name: UDivOrMod
-  gen_boilerplate: false
-
-- name: UDivOrModConstant
   gen_boilerplate: false
 
 - name: WasmTruncateToInt64
@@ -4245,20 +4298,91 @@
 #endif
 
 #ifdef JS_CODEGEN_X64
-- name: DivOrModI64
-  gen_boilerplate: false
+- name: DivI64
+  result_type: Int64
+  operands:
+    lhs: WordSized
+    rhs: WordSized
+  num_temps: 1
+  mir_op: Div
 
-- name: UDivOrModI64
-  gen_boilerplate: false
+- name: ModI64
+  result_type: Int64
+  operands:
+    lhs: WordSized
+    rhs: WordSized
+  num_temps: 1
+  mir_op: Mod
 
-- name: DivOrModConstantI
-  gen_boilerplate: false
+- name: UDivI64
+  result_type: Int64
+  operands:
+    lhs: WordSized
+    rhs: WordSized
+  num_temps: 1
+  mir_op: Div
 
-- name: UDivOrMod
-  gen_boilerplate: false
+- name: UModI64
+  result_type: Int64
+  operands:
+    lhs: WordSized
+    rhs: WordSized
+  num_temps: 1
+  mir_op: Mod
 
-- name: UDivOrModConstant
-  gen_boilerplate: false
+- name: DivPowTwoI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+    numeratorCopy: WordSized
+  arguments:
+    shift: int32_t
+    negativeDivisor: bool
+  mir_op: Div
+
+- name: ModPowTwoI64
+  result_type: WordSized
+  operands:
+    input: WordSized
+  arguments:
+    shift: int32_t
+  mir_op: Mod
+
+- name: DivConstantI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: int64_t
+  num_temps: 1
+  mir_op: Div
+
+- name: ModConstantI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: int64_t
+  num_temps: 1
+  mir_op: Mod
+
+- name: UDivConstantI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint64_t
+  num_temps: 1
+  mir_op: Div
+
+- name: UModConstantI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint64_t
+  num_temps: 1
+  mir_op: Mod
 
 - name: WasmTruncateToInt64
   result_type: Int64
@@ -4404,28 +4528,28 @@
 
 #ifdef JS_CODEGEN_ARM64
 - name: DivI64
-  result_type: Int64
+  result_type: WordSized
   operands:
     lhs: WordSized
     rhs: WordSized
   mir_op: Div
 
 - name: ModI64
-  result_type: Int64
+  result_type: WordSized
   operands:
     lhs: WordSized
     rhs: WordSized
   mir_op: Mod
 
 - name: UDivI64
-  result_type: Int64
+  result_type: WordSized
   operands:
     lhs: WordSized
     rhs: WordSized
   mir_op: Div
 
 - name: UModI64
-  result_type: Int64
+  result_type: WordSized
   operands:
     lhs: WordSized
     rhs: WordSized
@@ -4461,6 +4585,55 @@
     numerator: WordSized
   arguments:
     denominator: uint32_t
+  mir_op: Mod
+
+- name: DivPowTwoI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    shift: int32_t
+    negativeDivisor: bool
+  mir_op: Div
+
+- name: ModPowTwoI64
+  result_type: WordSized
+  operands:
+    input: WordSized
+  arguments:
+    shift: int32_t
+  mir_op: Mod
+
+- name: DivConstantI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: int64_t
+  mir_op: Div
+
+- name: ModConstantI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: int64_t
+  mir_op: Mod
+
+- name: UDivConstantI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint64_t
+  mir_op: Div
+
+- name: UModConstantI64
+  result_type: WordSized
+  operands:
+    numerator: WordSized
+  arguments:
+    denominator: uint64_t
   mir_op: Mod
 
 - name: UDiv

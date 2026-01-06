@@ -38,7 +38,7 @@ add_task(async function () {
 /**
  * Get the tab content for the specific tab
  *
- * @param {Number} index - index of the tab to get the source content
+ * @param {number} index - index of the tab to get the source content
  */
 function getTabContent(dbg, index) {
   const tabs = findElement(dbg, "sourceTabs").children;

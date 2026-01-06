@@ -1,6 +1,5 @@
 #include <windows.h>
 #include <iostream>
-#include <string>
 
 // Opens a file and holds it open until the caller sends input.
 // Then it closes the file and exits.

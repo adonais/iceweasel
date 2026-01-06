@@ -11,7 +11,7 @@ import android.view.View
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.test.TestScope
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.engine.EngineMiddleware
@@ -32,7 +32,6 @@ import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
@@ -155,6 +154,9 @@ class ContextMenuCandidateTest {
                     createTab("https://www.mozilla.org", contextId = "1"),
                 ),
             ),
+            middleware = EngineMiddleware.create(
+                engine = mock(),
+            ),
         )
 
         val tabsUseCases = TabsUseCases(store)
@@ -170,7 +172,6 @@ class ContextMenuCandidateTest {
         assertEquals("1", store.state.tabs.first().contextId)
 
         openInNewTab.action.invoke(store.state.tabs.first(), HitResult.UNKNOWN("https://firefox.com"))
-        store.waitUntilIdle()
 
         assertEquals(2, store.state.tabs.size)
         assertEquals("https://firefox.com", store.state.tabs.last().content.url)
@@ -185,6 +186,9 @@ class ContextMenuCandidateTest {
                     createTab("https://www.mozilla.org"),
                 ),
             ),
+            middleware = EngineMiddleware.create(
+                engine = mock(),
+            ),
         )
 
         val tabsUseCases = TabsUseCases(store)
@@ -200,7 +204,6 @@ class ContextMenuCandidateTest {
         assertFalse(snackbarDelegate.hasShownSnackbar)
 
         openInNewTab.action.invoke(store.state.tabs.first(), HitResult.UNKNOWN("https://firefox.com"))
-        store.waitUntilIdle()
 
         assertEquals(2, store.state.tabs.size)
         assertTrue(snackbarDelegate.hasShownSnackbar)
@@ -213,7 +216,7 @@ class ContextMenuCandidateTest {
         val store = BrowserStore(
             middleware = EngineMiddleware.create(
                 engine = mock(),
-                scope = MainScope(),
+                scope = TestScope(),
             ),
             initialState = BrowserState(
                 tabs = listOf(
@@ -236,12 +239,10 @@ class ContextMenuCandidateTest {
         assertFalse(snackbarDelegate.hasShownSnackbar)
 
         openInNewTab.action.invoke(store.state.tabs.first(), HitResult.UNKNOWN("https://firefox.com"))
-        store.waitUntilIdle()
 
         assertEquals("https://www.mozilla.org", store.state.selectedTab!!.content.url)
 
         snackbarDelegate.lastActionListener!!.invoke(mock())
-        store.waitUntilIdle()
 
         assertEquals("https://firefox.com", store.state.selectedTab!!.content.url)
     }
@@ -254,6 +255,9 @@ class ContextMenuCandidateTest {
                     createTab("https://www.mozilla.org", id = "mozilla"),
                 ),
                 selectedTabId = "mozilla",
+            ),
+            middleware = EngineMiddleware.create(
+                engine = mock(),
             ),
         )
 
@@ -273,7 +277,6 @@ class ContextMenuCandidateTest {
             store.state.tabs.first(),
             HitResult.IMAGE_SRC("https://www.mozilla_src.org", "https://www.mozilla_uri.org"),
         )
-        store.waitUntilIdle()
 
         assertEquals("https://www.mozilla_uri.org", store.state.tabs.last().content.url)
     }
@@ -282,7 +285,7 @@ class ContextMenuCandidateTest {
     fun `Open Link in New Tab with text fragment`() {
         val middleware = CaptureActionsMiddleware<BrowserState, BrowserAction>()
         val store = BrowserStore(
-            middleware = listOf(middleware),
+            middleware = listOf(middleware) + EngineMiddleware.create(engine = mock()),
             initialState = BrowserState(
                 tabs = listOf(
                     createTab("https://www.mozilla.org", id = "mozilla"),
@@ -307,7 +310,6 @@ class ContextMenuCandidateTest {
             store.state.tabs.first(),
             HitResult.UNKNOWN("https://www.mozilla.org"),
         )
-        store.waitUntilIdle()
 
         middleware.assertLastAction(EngineAction.LoadUrlAction::class) { action ->
             assertEquals("https://www.mozilla.org", action.url)
@@ -415,6 +417,9 @@ class ContextMenuCandidateTest {
                 ),
                 selectedTabId = "mozilla",
             ),
+            middleware = EngineMiddleware.create(
+                engine = mock(),
+            ),
         )
 
         val tabsUseCases = TabsUseCases(store)
@@ -430,7 +435,6 @@ class ContextMenuCandidateTest {
         assertFalse(snackbarDelegate.hasShownSnackbar)
 
         openInPrivateTab.action.invoke(store.state.tabs.first(), HitResult.UNKNOWN("https://firefox.com"))
-        store.waitUntilIdle()
 
         assertEquals(2, store.state.tabs.size)
         assertTrue(snackbarDelegate.hasShownSnackbar)
@@ -443,7 +447,7 @@ class ContextMenuCandidateTest {
         val store = BrowserStore(
             middleware = EngineMiddleware.create(
                 engine = mock(),
-                scope = MainScope(),
+                scope = TestScope(),
             ),
             initialState = BrowserState(
                 tabs = listOf(
@@ -466,13 +470,11 @@ class ContextMenuCandidateTest {
         assertFalse(snackbarDelegate.hasShownSnackbar)
 
         openInPrivateTab.action.invoke(store.state.tabs.first(), HitResult.UNKNOWN("https://firefox.com"))
-        store.waitUntilIdle()
 
         assertEquals("https://www.mozilla.org", store.state.selectedTab!!.content.url)
         assertEquals(2, store.state.tabs.size)
 
         snackbarDelegate.lastActionListener!!.invoke(mock())
-        store.waitUntilIdle()
 
         assertEquals("https://firefox.com", store.state.selectedTab!!.content.url)
     }
@@ -485,6 +487,9 @@ class ContextMenuCandidateTest {
                     createTab("https://www.mozilla.org", id = "mozilla"),
                 ),
                 selectedTabId = "mozilla",
+            ),
+            middleware = EngineMiddleware.create(
+                engine = mock(),
             ),
         )
 
@@ -502,7 +507,6 @@ class ContextMenuCandidateTest {
             store.state.tabs.first(),
             HitResult.IMAGE_SRC("https://www.mozilla_src.org", "https://www.mozilla_uri.org"),
         )
-        store.waitUntilIdle()
         assertEquals("https://www.mozilla_uri.org", store.state.tabs.last().content.url)
     }
 
@@ -511,7 +515,7 @@ class ContextMenuCandidateTest {
         val store = BrowserStore(
             middleware = EngineMiddleware.create(
                 engine = mock(),
-                scope = MainScope(),
+                scope = TestScope(),
             ),
             initialState = BrowserState(
                 tabs = listOf(
@@ -578,8 +582,6 @@ class ContextMenuCandidateTest {
             HitResult.IMAGE_SRC("https://firefox.com", "https://getpocket.com"),
         )
 
-        store.waitUntilIdle()
-
         assertEquals(2, store.state.tabs.size)
         assertFalse(store.state.tabs.last().content.private)
         assertEquals("https://firefox.com", store.state.tabs.last().content.url)
@@ -591,7 +593,6 @@ class ContextMenuCandidateTest {
         assertEquals("https://www.mozilla.org", store.state.selectedTab!!.content.url)
 
         snackbarDelegate.lastActionListener!!.invoke(mock())
-        store.waitUntilIdle()
 
         assertEquals("https://firefox.com", store.state.selectedTab!!.content.url)
     }
@@ -633,6 +634,9 @@ class ContextMenuCandidateTest {
                 ),
                 selectedTabId = "mozilla",
             ),
+            middleware = EngineMiddleware.create(
+                engine = mock(),
+            ),
         )
 
         val tabsUseCases = TabsUseCases(store)
@@ -651,7 +655,6 @@ class ContextMenuCandidateTest {
             store.state.tabs.first(),
             HitResult.IMAGE_SRC("https://firefox.com", "https://getpocket.com"),
         )
-        store.waitUntilIdle()
 
         assertEquals(2, store.state.tabs.size)
         assertTrue(store.state.tabs.last().content.private)
@@ -666,6 +669,9 @@ class ContextMenuCandidateTest {
                     createTab("https://www.mozilla.org", id = "mozilla", contextId = "1"),
                 ),
                 selectedTabId = "mozilla",
+            ),
+            middleware = EngineMiddleware.create(
+                engine = mock(),
             ),
         )
 
@@ -686,7 +692,6 @@ class ContextMenuCandidateTest {
             store.state.tabs.first(),
             HitResult.IMAGE_SRC("https://firefox.com", "https://getpocket.com"),
         )
-        store.waitUntilIdle()
 
         assertEquals(2, store.state.tabs.size)
         assertEquals("https://firefox.com", store.state.tabs.last().content.url)
@@ -757,8 +762,6 @@ class ContextMenuCandidateTest {
                 "https://firefox.com",
             ),
         )
-
-        store.waitUntilIdle()
 
         assertNotNull(store.state.tabs.first().content.download)
         assertEquals(
@@ -867,8 +870,6 @@ class ContextMenuCandidateTest {
             store.state.tabs.first(),
             HitResult.AUDIO("https://developer.mozilla.org/media/examples/t-rex-roar.mp3"),
         )
-
-        store.waitUntilIdle()
 
         assertNotNull(store.state.tabs.first().content.download)
         assertEquals(
@@ -1009,8 +1010,6 @@ class ContextMenuCandidateTest {
                 "https://www.mozilla.org/en-US/privacy-policy.pdf",
             ),
         )
-
-        store.waitUntilIdle()
 
         assertNotNull(store.state.tabs.first().content.download)
         assertEquals(

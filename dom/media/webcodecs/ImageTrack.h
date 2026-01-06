@@ -32,8 +32,9 @@ class ImageTrack final : public nsISupports, public nsWrapperCache {
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(ImageTrack)
 
  public:
-  ImageTrack(ImageTrackList* aTrackList, int32_t aIndex, bool aSelected,
-             bool aAnimated, uint32_t aFrameCount, bool aFrameCountComplete,
+  ImageTrack(ImageTrackList* aTrackList, int32_t aIndex,
+             nsTArray<ImageSize>&& aNativeSizes, bool aSelected, bool aAnimated,
+             uint32_t aFrameCount, bool aFrameCountComplete,
              float aRepetitionCount);
 
  protected:
@@ -61,6 +62,8 @@ class ImageTrack final : public nsISupports, public nsWrapperCache {
 
   void SetSelected(bool aSelected);
 
+  void GetSizes(nsTArray<ImageSize>& aSizes);
+
   void ClearSelected() { mSelected = false; }
   void MarkSelected() { mSelected = true; }
 
@@ -85,6 +88,7 @@ class ImageTrack final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsIGlobalObject> mParent;
   RefPtr<ImageTrackList> mTrackList;
   AutoTArray<RefPtr<VideoFrame>, 1> mDecodedFrames;
+  nsTArray<ImageSize> mNativeSizes;
   image::FrameTimeout mFramesTimestamp;
   int32_t mIndex = 0;
   float mRepetitionCount = 0.0f;

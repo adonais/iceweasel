@@ -310,7 +310,7 @@ sub sprintCharProps2_short
   return sprintf("{%d},",
                  $idtype[$usv]);
 }
-&genTables("CharProp2", "", "nsCharProps2", 9, 7, \&sprintCharProps2_short, 16, 1, 1);
+&genTables("CharProp2", "", "nsCharProps2", 11, 5, \&sprintCharProps2_short, 16, 1, 1);
 
 sub sprintHanVariants
 {

@@ -35,7 +35,6 @@ const FEATURES = {
 
 const SIMPLE_COMMANDS = [
   "dumpTextRuns",
-  "dumpViews",
   "dumpCounterManager",
   "dumpRetainedDisplayList",
   "dumpStyleSheets",
@@ -424,9 +423,6 @@ function OnLDBLoad() {
           break;
         case "menu_dumpTextRuns":
           gDebugger.dumpTextRuns();
-          break;
-        case "menu_dumpViews":
-          gDebugger.dumpViews();
           break;
         case "menu_dumpCounterManager":
           gDebugger.dumpCounterManager();

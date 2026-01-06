@@ -86,8 +86,8 @@ class SitePermissionsDetailsExceptionsFragment : PreferenceFragmentCompat() {
         initPhoneFeature(CROSS_ORIGIN_STORAGE_ACCESS)
         initPhoneFeature(MEDIA_KEY_SYSTEM_ACCESS)
         initAutoplayFeature()
-        initPhoneFeature(LOCAL_DEVICE_ACCESS, visible = settings.isLnaBlockingEnabled)
-        initPhoneFeature(LOCAL_NETWORK_ACCESS, visible = settings.isLnaBlockingEnabled)
+        initPhoneFeature(LOCAL_DEVICE_ACCESS, visible = settings.isLnaFeatureEnabled)
+        initPhoneFeature(LOCAL_NETWORK_ACCESS, visible = settings.isLnaFeatureEnabled)
         bindClearPermissionsButton()
     }
 

@@ -91,6 +91,7 @@
 #identity-popup-mainView,
 #permission-popup-mainView,
 #trustpanel-popup-mainView,
+#trustpanel-blockerView,
 #protections-popup-mainView {
   min-width: var(--popup-width);
   max-width: var(--popup-width);
@@ -805,9 +806,6 @@
 
 #trustpanel-popup-host {
   align-self: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 #trustpanel-graphic-section {
@@ -966,6 +964,14 @@
       background-position-x: right;
     }
   }
+}
+
+#trustpanel-smartblock-section {
+  margin: var(--space-large);
+}
+
+#trustpanel-smartblock-toggle-container {
+  margin-block-start: var(--space-large);
 }
 
 .moz-button-subviewbutton-nav {

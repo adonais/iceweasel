@@ -118,7 +118,7 @@ class HTMLTextFieldAccessible : public HyperTextAccessible {
   virtual ~HTMLTextFieldAccessible() {}
 
   // LocalAccessible
-  virtual ENameValueFlag Name(nsString& aName) const override;
+  virtual ENameValueFlag DirectName(nsString& aName) const override;
 
   virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                                    AttrModType aModType,
@@ -136,7 +136,7 @@ class HTMLFileInputAccessible : public HyperTextAccessible {
   // LocalAccessible
   virtual mozilla::a11y::role NativeRole() const override;
   virtual bool IsAcceptableChild(nsIContent* aEl) const override;
-  virtual ENameValueFlag Name(nsString& aName) const override;
+  virtual ENameValueFlag DirectName(nsString& aName) const override;
   virtual bool HasPrimaryAction() const override;
   virtual void ActionNameAt(uint8_t aIndex, nsAString& aName) override;
   virtual bool IsWidget() const override;

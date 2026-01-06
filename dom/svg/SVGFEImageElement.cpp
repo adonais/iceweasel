@@ -17,6 +17,7 @@
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/gfx/2D.h"
 #include "nsContentUtils.h"
+#include "nsISizeOf.h"
 #include "nsLayoutUtils.h"
 #include "nsNetUtil.h"
 
@@ -426,6 +427,14 @@ void SVGFEImageElement::HrefAsString(nsAString& aHref) {
 
 void SVGFEImageElement::NotifyImageContentChanged() {
   // We don't support rendering fragments yet (bug 455986)
+}
+
+void SVGFEImageElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
+                                               size_t* aNodeSize) const {
+  SVGElement::AddSizeOfExcludingThis(aSizes, aNodeSize);
+  if (nsCOMPtr<nsISizeOf> iface = do_QueryInterface(mSrcURI)) {
+    *aNodeSize += iface->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
+  }
 }
 
 }  // namespace mozilla::dom

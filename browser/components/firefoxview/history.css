@@ -31,7 +31,7 @@
 }
 
 .import-history-banner .banner-text span:first-child {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
 }
 
 .import-history-banner [slot="main"] {

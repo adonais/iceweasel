@@ -131,3 +131,127 @@ security-privacy-issue-warning-inner-html-ltgt =
 security-privacy-issue-warning-file-uri-origin =
   .label = File URI strict origin policy is disabled
   .description = Files loaded in { -brand-short-name } should be cross-origin from files in the same folder
+
+## DNS-Over-HTTPS
+
+preferences-doh-overview-default =
+    .label = Default
+    .description = Use secure DNS in regions where it’s available
+
+preferences-doh-overview-custom =
+    .label = Custom
+    .description = You control when to use secure DNS and choose your provider.
+
+preferences-doh-overview-off =
+    .label = Off
+    .description = Use your default DNS resolver
+
+preferences-doh-advanced-button =
+    .label = Advanced settings
+
+preferences-doh-advanced-section =
+    .label = Advanced settings
+    .description = Domain Name System (DNS) over HTTPS sends your request for a domain name through an encrypted connection, providing a secure DNS and making it harder for others to see which website you’re about to access.
+
+preferences-doh-manage-exceptions2 =
+    .label = Manage exceptions
+    .accesskey = x
+
+preferences-doh-radio-default =
+    .label = Default (when available)
+    .description = Use secure DNS in regions where it’s available
+
+preferences-doh-radio-custom =
+    .label = Custom (always on)
+
+preferences-doh-radio-off =
+    .label = Off
+    .description = Use your default DNS resolver
+
+preferences-doh-fallback-label =
+    .label = Always fallback to default DNS
+    .description = Fall back to your default DNS resolver if there is a problem with secure DNS
+
+preferences-doh-status-item-off =
+    .message = DNS-over-HTTPS is off
+
+## Variables:
+##   $reason (string) - A string representation of the reason DoH is not active. For example NS_ERROR_UNKNOWN_HOST or TRR_RCODE_FAIL.
+##   $name (string) - The name of the DNS over HTTPS resolver. If a custom resolver is used, the name will be the domain of the URL.
+
+preferences-doh-status-item-not-active =
+    .message = DNS-over-HTTPS is not working because we encountered an error ({ $reason }) while trying to use the provider { $name }
+
+preferences-doh-status-item-not-active-bad-url =
+    .message = DNS-over-HTTPS is not working because we received an invalid URL ({ $reason })
+
+preferences-doh-status-item-active =
+    .message = DNS-over-HTTPS is using the provider { $name }
+
+preferences-doh-status-item-not-active-local =
+    .message = DNS-over-HTTPS is not working because we encountered an error ({ $reason }) while trying to use the local provider { $name }
+
+preferences-doh-status-item-active-local =
+    .message = DNS-over-HTTPS is using the local provider { $name }
+
+preferences-doh-select-resolver-label =
+    .label = Choose provider
+
+# Variables:
+#   $name (String) - Display name or URL for the DNS over HTTPS provider
+connection-dns-over-https-url-item =
+    .label = { $name }
+    .tooltiptext = Use this provider for resolving DNS over HTTPS
+
+preferences-doh-custom-provider-label =
+    .aria-label = Enter a custom provider URL
+
+preferences-doh-header2 =
+  .heading = DNS over HTTPS
+
+## ETP status section
+
+preferences-etp-status-header =
+    .label = Enhanced Tracking Protection
+    .description = Some sites use trackers to learn what you do online. { -brand-short-name } blocks many of them automatically to protect your privacy while you browse.
+
+preferences-etp-level-standard =
+    .label = Standard (default)
+    .description = Blocks known trackers and cookies, helping protect your privacy without affecting most websites’ functionality.
+
+preferences-etp-level-strict =
+    .label = Strict
+    .description = Stronger protection, but may cause some sites or content to break.
+
+preferences-etp-level-custom =
+    .label = Custom
+    .description = Choose which trackers and scripts to block.
+
+preferences-etp-status-advanced-button =
+    .label = Advanced settings
+
+preferences-etp-status-protections-dashboard-link =
+        .label = View your personalized Protections Dashboard
+        .description = See how many creepers { -brand-short-name } has blocked for you, including social media trackers, fingerprinters, and cryptominers.
+
+preferences-etp-header =
+    .heading = Enhanced Tracking Protection
+    .description = Aut voluptates deleniti ut. Aut et praesentium voluptas dolore nostrum occaecati.
+
+preferences-etp-advanced-settings-group =
+    .label = Advanced settings
+    .description = Trackers follow you around online to collect information about your browsing habits and interests. { -brand-short-name } blocks many of these trackers and other malicious scripts.
+
+preferences-etp-customize-button =
+    .label = Customize
+
+preferences-etp-rfp-warning-message =
+    .message = You’re using Resist Fingerprinting (RFP), which replaces some of { -brand-short-name }’s fingerprinting protection settings. This might cause some sites to break.
+
+preferences-etp-level-warning-message =
+    .heading = Heads up
+    .message = Your settings may cause some websites to not display content or work correctly. If a site seems broken, you may want to turn off tracking protection for that site to load all content.
+
+preferences-etp-manage-exceptions-button =
+    .label = Manage exceptions
+    .description = Manage websites where Enhanced Tracking Protection is disabled.

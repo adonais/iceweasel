@@ -11,7 +11,6 @@
 
 #include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/HangTypes.h"
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
 #include "nsString.h"
 #include "nsTArray.h"

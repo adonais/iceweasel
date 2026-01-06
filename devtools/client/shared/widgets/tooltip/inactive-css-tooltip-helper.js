@@ -44,7 +44,7 @@ class InactiveCssTooltipHelper {
    *   </p>
    * </div>
    *
-   * @param {Object} data
+   * @param {object} data
    *        An object in the following format: {
    *          fixId: "inactive-css-not-grid-item-fix-2", // Fluent id containing the
    *                                                     // Inactive CSS fix.
@@ -61,7 +61,8 @@ class InactiveCssTooltipHelper {
     const { doc } = tooltip;
 
     const documentUrl = new URL(
-      learnMoreURL || `https://developer.mozilla.org/docs/Web/CSS/${property}`
+      learnMoreURL ||
+        `https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/${property}`
     );
     this._currentTooltip = tooltip;
     const { searchParams } = documentUrl;
@@ -90,7 +91,6 @@ class InactiveCssTooltipHelper {
    *
    * @param {DOMEvent} event
    *        The click event originating from the tooltip.
-   *
    */
   addTab(event) {
     // The XUL panel swallows click events so handlers can't be added directly

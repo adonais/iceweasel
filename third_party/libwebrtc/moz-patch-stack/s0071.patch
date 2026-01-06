@@ -50,10 +50,10 @@ index 1e6678b4ee..1ed48c08d7 100644
    Clock* const clock_;
    bool short_circuit_ RTC_GUARDED_BY(network_sequence_checker_) = false;
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index 942f77db26..09dfa8b2ac 100644
+index cb7070ecda..5249f6aed3 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
-@@ -383,7 +383,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
+@@ -381,7 +381,7 @@ RtpVideoStreamReceiver2::RtpVideoStreamReceiver2(
      frame_transformer_delegate_ =
          make_ref_counted<RtpVideoStreamReceiverFrameTransformerDelegate>(
              this, &env_.clock(), std::move(frame_transformer),

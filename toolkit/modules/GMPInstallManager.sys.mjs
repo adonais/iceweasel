@@ -185,6 +185,7 @@ GMPInstallManager.prototype = {
 
   /**
    * Determines the root to use for verifying content signatures.
+   *
    * @param url
    *        The Balrog URL, i.e. the return value of _getURL().
    */
@@ -216,6 +217,7 @@ GMPInstallManager.prototype = {
   /**
    * Records telemetry results on if fetching update.xml from Balrog succeeded
    * when content signature was used to verify the response from Balrog.
+   *
    * @param didGetAddonList
    *        A boolean indicating if an update.xml containing the addon list was
    *        successfully fetched (true) or not (false).
@@ -270,6 +272,7 @@ GMPInstallManager.prototype = {
    * Records telemetry results on if fetching update.xml from Balrog succeeded
    * when cert pinning was used to verify the response from Balrog. This
    * should be removed once we're no longer using cert pinning.
+   *
    * @param didGetAddonList
    *        A boolean indicating if an update.xml containing the addon list was
    *        successfully fetched (true) or not (false).
@@ -321,6 +324,7 @@ GMPInstallManager.prototype = {
 
   /**
    * Performs an addon check.
+   *
    * @return a promise which will be resolved or rejected.
    *         The promise is resolved with an object with properties:
    *           addons: array of addons
@@ -526,6 +530,7 @@ GMPInstallManager.prototype = {
   },
   /**
    * Installs the specified addon and calls a callback when done.
+   *
    * @param gmpAddon The GMPAddon object to install
    * @return a promise which will be resolved or rejected
    *         The promise will resolve with an array of paths that were extracted
@@ -585,6 +590,7 @@ GMPInstallManager.prototype = {
    * Wrapper for checkForAddons and installAddon.
    * Will only install if not already installed and will log the results.
    * This will only install/update the OpenH264 and EME plugins
+   *
    * @return a promise which will be resolved if all addons could be installed
    *         successfully, rejected otherwise.
    */
@@ -771,6 +777,7 @@ GMPAddon.prototype = {
   },
   /**
    * If all the fields aren't specified don't consider this addon valid
+   *
    * @return true if the addon is parsed and valid
    */
   get isValid() {
@@ -813,6 +820,7 @@ GMPAddon.prototype = {
 /**
  * Constructs a GMPExtractor object which is used to extract a GMP zip
  * into the specified location.
+ *
  * @param zipPath The path on disk of the zip file to extract
  * @param relativePath The relative path components inside the profile directory
  *                     to extract the zip to.
@@ -863,6 +871,7 @@ GMPExtractor.prototype = {
 /**
  * Constructs an object which downloads and initiates an install of
  * the specified GMPAddon object.
+ *
  * @param gmpAddon The addon to install.
  */
 export function GMPDownloader(gmpAddon) {
@@ -872,6 +881,7 @@ export function GMPDownloader(gmpAddon) {
 GMPDownloader.prototype = {
   /**
    * Starts the download process for an addon.
+   *
    * @return a promise which will be resolved or rejected
    *         See GMPInstallManager.installAddon for resolve/rejected info
    */
@@ -888,13 +898,7 @@ GMPDownloader.prototype = {
         type: "downloaderr",
       });
     }
-    // If the HTTPS-Only Mode is enabled, every insecure request gets upgraded
-    // by default. This upgrade has to be prevented for openh264 downloads since
-    // the server doesn't support https://
-    const downloadOptions = {
-      httpsOnlyNoUpgrade: gmpAddon.isOpenH264,
-    };
-    return ProductAddonChecker.downloadAddon(gmpAddon, downloadOptions).then(
+    return ProductAddonChecker.downloadAddon(gmpAddon).then(
       zipPath => {
         let now = Math.round(Date.now() / 1000);
         GMPPrefs.setInt(GMPPrefs.KEY_PLUGIN_LAST_DOWNLOAD, now, gmpAddon.id);

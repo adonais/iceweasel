@@ -27,6 +27,7 @@ toolkit.jar:
     content/global/ml/backends/OpenAIPipeline.mjs         (content/backends/OpenAIPipeline.mjs)
     content/global/ml/backends/StaticEmbeddingsPipeline.mjs (content/backends/StaticEmbeddingsPipeline.mjs)
     content/global/ml/openai.mjs                          (vendor/openai/dist/openai.mjs)
+    content/global/ml/MLTelemetry.sys.mjs                 (MLTelemetry.sys.mjs)
 #ifdef NIGHTLY_BUILD
     content/global/ml/ort.webgpu-dev.mjs        	        (vendor/ort.webgpu-dev.mjs)
     content/global/ml/transformers-dev.js       	        (vendor/transformers-dev.js)

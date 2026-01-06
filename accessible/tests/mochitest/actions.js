@@ -21,6 +21,7 @@ const XUL_EVENTS = CLICK_EVENTS | COMMAND_EVENT;
  *
  * Action tester interface is:
  *
+ * ```js
  *  var actionObj = {
  *    // identifier of accessible to perform an action on
  *    get ID() {},
@@ -50,7 +51,7 @@ const XUL_EVENTS = CLICK_EVENTS | COMMAND_EVENT;
  *    // constructor events.js)
  *    get eventSeq() {}
  *  };
- *
+ * ```
  *
  * @param  aArray [in] an array of action cheker objects
  */

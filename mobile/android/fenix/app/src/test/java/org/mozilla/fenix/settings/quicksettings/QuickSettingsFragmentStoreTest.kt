@@ -353,7 +353,7 @@ class QuickSettingsFragmentStoreTest {
                     updatedMicrophoneStatus,
                     updatedMicrophoneEnabledStatus,
                 ),
-            ).join()
+            )
 
             assertNotNull(store.state)
             assertNotSame(initialState, store.state)

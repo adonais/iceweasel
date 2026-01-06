@@ -6,7 +6,6 @@
 
 #include "Telemetry.h"
 
-#include <algorithm>
 #include <prio.h>
 #include <prproces.h>
 #if defined(XP_UNIX) && !defined(XP_DARWIN)
@@ -34,7 +33,6 @@
 #endif
 #include "mozilla/Components.h"
 #include "mozilla/DataMutex.h"
-#include "mozilla/FStream.h"
 #include "mozilla/IOInterposer.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MemoryReporting.h"

@@ -379,6 +379,12 @@ DevToolsStartup.prototype = {
         this.onMoreToolsViewShowing,
         "web-developer-tools-view-showing"
       );
+      // Add DevTools menu items so they can be picked up by the customize
+      // keyboard shortcuts UI.
+      Services.obs.addObserver(() => {
+        // Initialize DevTools to create all menuitems in the system menu.
+        this.initDevTools("CustomKeysUI");
+      }, "customkeys-ui-showing");
       /* eslint-enable mozilla/balanced-observers */
 
       if (!this.isDisabledByPolicy()) {

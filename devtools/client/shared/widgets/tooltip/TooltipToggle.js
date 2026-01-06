@@ -55,7 +55,7 @@ TooltipToggle.prototype = {
    *        The function can also return a promise that will resolve to one of
    *        the values listed above.
    *        If omitted, the tooltip will be shown everytime.
-   * @param {Object} options
+   * @param {object} options
             Set of optional arguments:
    *        - {Number} toggleDelay
    *          An optional delay (in ms) that will be observed before showing
@@ -151,6 +151,7 @@ TooltipToggle.prototype = {
   /**
    * Is the given target DOMNode a valid node for toggling the tooltip on hover.
    * This delegates to the user-defined _targetNodeCb callback.
+   *
    * @return {Promise} a promise that will resolve the anchor to use for the
    *         tooltip or null if no valid target was found.
    */

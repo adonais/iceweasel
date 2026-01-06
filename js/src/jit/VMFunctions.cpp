@@ -1492,6 +1492,27 @@ JSObject* ObjectKeys(JSContext* cx, HandleObject obj) {
   return argv[0].toObjectOrNull();
 }
 
+JSObject* ObjectKeysFromIterator(JSContext* cx, HandleObject iterObj) {
+  MOZ_RELEASE_ASSERT(iterObj->is<PropertyIteratorObject>());
+  NativeIterator* iter =
+      iterObj->as<PropertyIteratorObject>().getNativeIterator();
+
+  size_t length = iter->ownPropertyCount();
+  Rooted<ArrayObject*> array(cx, NewDenseFullyAllocatedArray(cx, length));
+  if (!array) {
+    return nullptr;
+  }
+
+  array->ensureDenseInitializedLength(0, length);
+
+  for (size_t i = 0; i < length; ++i) {
+    array->initDenseElement(
+        i, StringValue((iter->propertiesBegin() + i)->asString()));
+  }
+
+  return array;
+}
+
 bool ObjectKeysLength(JSContext* cx, HandleObject obj, int32_t* length) {
   MOZ_ASSERT(!obj->is<ProxyObject>());
   return js::obj_keys_length(cx, obj, *length);
@@ -3296,6 +3317,27 @@ void AssertPropertyLookup(NativeObject* obj, PropertyKey id, uint32_t slot) {
 #else
   MOZ_CRASH("This should only be called in debug builds.");
 #endif
+}
+
+// This is a specialized version of ExposeJSThingToActiveJS
+void ReadBarrier(gc::Cell* cell) {
+  AutoUnsafeCallWithABI unsafe;
+
+  MOZ_ASSERT(!JS::RuntimeHeapIsCollecting());
+  MOZ_ASSERT(!gc::IsInsideNursery(cell));
+
+  gc::TenuredCell* tenured = &cell->asTenured();
+  MOZ_ASSERT(!gc::detail::TenuredCellIsMarkedBlack(tenured));
+
+  Zone* zone = tenured->zone();
+  if (zone->needsIncrementalBarrier()) {
+    gc::PerformIncrementalReadBarrier(tenured);
+  } else if (!zone->isGCPreparing() &&
+             gc::detail::NonBlackCellIsMarkedGray(tenured)) {
+    gc::UnmarkGrayGCThingRecursively(tenured);
+  }
+  MOZ_ASSERT_IF(!zone->isGCPreparing(),
+                !gc::detail::TenuredCellIsMarkedGray(tenured));
 }
 
 void AssumeUnreachable(const char* output) {

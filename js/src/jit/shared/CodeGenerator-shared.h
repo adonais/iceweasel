@@ -261,17 +261,38 @@ class CodeGeneratorShared : public LElementVisitor {
   // Test whether the given block can be reached via fallthrough from the
   // current block.
   inline bool isNextBlock(LBlock* block) {
-    uint32_t target = skipTrivialBlocks(block->mir())->id();
-    uint32_t i = current->mir()->id() + 1;
-    if (target < i) {
+    uint32_t targetId = skipTrivialBlocks(block->mir())->id();
+
+    // If the target is before next, then it's not next.
+    if (targetId < current->mir()->id() + 1) {
       return false;
     }
-    // Trivial blocks can be crossed via fallthrough.
-    for (; i != target; ++i) {
-      if (!graph.getBlock(i)->isTrivial()) {
-        return false;
-      }
+
+    if (current->isOutOfLine() != graph.getBlock(targetId)->isOutOfLine()) {
+      return false;
     }
+
+    // Scan through blocks until the target to see if we can fallthrough them.
+    for (uint32_t nextId = current->mir()->id() + 1; nextId != targetId;
+         ++nextId) {
+      LBlock* nextBlock = graph.getBlock(nextId);
+
+      // If the next block is generated in a different section than this
+      // one, then we don't need to consider it for fallthrough.
+      if (nextBlock->isOutOfLine() != graph.getBlock(targetId)->isOutOfLine()) {
+        continue;
+      }
+
+      // If the next block is trivial, no code will be generated and we don't
+      // need to consider it for fallthrough.
+      if (nextBlock->isTrivial()) {
+        continue;
+      }
+
+      // Otherwise this is a real block that will prevent fallthrough.
+      return false;
+    }
+
     return true;
   }
 
@@ -397,7 +418,8 @@ class CodeGeneratorShared : public LElementVisitor {
  public:
   void visitOutOfLineTruncateSlow(OutOfLineTruncateSlow* ool);
 
-  bool omitOverRecursedCheck() const;
+  bool omitOverRecursedStackCheck() const;
+  bool omitOverRecursedInterruptCheck() const;
 
  public:
   bool isGlobalObject(JSObject* object);

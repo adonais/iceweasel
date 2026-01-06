@@ -653,15 +653,19 @@ def check_compiler(configure_cache, compiler, language, target, android_version)
             flags.append("-Xclang")
         flags.append("-std=gnu17")
 
-    cxx17_version = 201703
-    if info.language == "C++":
-        if info.language_version != cxx17_version:
-            # MSVC headers include C++17 features, but don't guard them
-            # with appropriate checks.
-            if info.type == "clang-cl":
-                flags.append("-std:c++17")
-            else:
-                flags.append("-std=gnu++17")
+    cxx20_version = 202002
+    if info.language == "C++" and info.language_version != cxx20_version:
+        if info.type == "clang-cl":
+            flags.append("-std:c++20")
+        else:
+            flags.append("-std=gnu++20")
+
+        # gcc 10 defines C++20's __cplusplus as 201709L instead of 202002L.
+        # Redefine as C++20's final vesion for gcc 10 so modern C++20 code's
+        # __cplusplus version checks work as expected.
+        if info.type == "gcc" and info.version < Version("11.0.0"):
+            flags.append("-U__cplusplus")
+            flags.append("-D__cplusplus=202002L")
 
     # Check compiler target
     # --------------------------------------------------------------------
@@ -1322,7 +1326,7 @@ def sysroot(host_or_target, target_sysroot=None):
         elif host_or_target.os == "iOS" and ios_sdk:
             path = ios_sdk
         if path:
-            # Find the version of libstdc++ headears in the sysroot
+            # Find the version of libstdc++ headers in the sysroot
             include = os.path.join(path, "usr/include/c++")
             if os.path.isdir(include):
                 with os.scandir(include) as d:
@@ -3178,6 +3182,7 @@ def coverage_cflags(target, c_compiler, build_env):
 
 
 set_config("COVERAGE_CFLAGS", coverage_cflags)
+add_linker_flag("--coverage", when=code_coverage & building_with_gnu_compatible_cc)
 
 # Assembler detection
 # ==============================================================
@@ -3942,3 +3947,50 @@ def htmlaccel_config(target, c_compiler):
 
 
 set_config("HTML_ACCEL_FLAGS", htmlaccel_config)
+
+
+@depends(c_compiler, compilation_flags, coverage_cflags, linker_flags)
+@imports(_from="mozbuild.shellutil", _import="split", _as="shellsplit")
+def extra_linker_flags(compiler, compilation_flags, coverage_cflags, linker_flags):
+    if compiler.type != "clang-cl":
+        return
+    with create_temporary_file(suffix=".c") as path:
+        # On clang-cl builds only, we run the linker via separate commands rather
+        # than invoking it through the compiler. We want to figure out what flags
+        # the compiler would add to the linker command line based on the extra
+        # compiler flags we use (notably, for sanitizer)
+        # The -### argument to clang/clang-cl tells us what commands it would run
+        # internally, and the last of them is going to be the linker.
+        # What we want to do is compare the linker commands the compiler would
+        # invoke with a limited set of flags vs. all of them.
+        # Typically, that will give us some extra flags, including extra libs for
+        # the clang runtime.
+
+        path_stem = os.path.basename(path)[: -len(".c")]
+
+        def is_in_out_arg(arg):
+            return arg.startswith("-out:") or os.path.basename(arg).startswith(
+                path_stem
+            )
+
+        cmd = [
+            compiler.compiler,
+            path,
+            "-fuse-ld=lld",
+            "-MD",
+            "-###",
+        ] + compiler.flags
+        retcode, stdout, stderr = get_cmd_output(*cmd)
+        if retcode != 0:
+            die("Error while running %s:\n%s" % (" ".join(cmd), stderr))
+        linker_command = shellsplit(stderr.splitlines()[-1])
+        linker_args = set(arg for arg in linker_command if not is_in_out_arg(arg))
+        cmd += compilation_flags.cflags + (coverage_cflags or [])
+        retcode, stdout, stderr = get_cmd_output(*cmd)
+    if retcode != 0:
+        die("Error while running %s:\n%s" % (" ".join(cmd), stderr))
+    linker_flags.ldflags.extend(
+        arg
+        for arg in shellsplit(stderr.splitlines()[-1])
+        if not is_in_out_arg(arg) and arg not in linker_args
+    )

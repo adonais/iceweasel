@@ -253,6 +253,8 @@ class ContentChild final : public PContentChild,
       const Maybe<OriginAttributesPattern>& aPattern,
       const Maybe<nsCString>& aURL);
 
+  mozilla::ipc::IPCResult RecvInvalidateScriptCache();
+
   mozilla::ipc::IPCResult RecvClearImageCache(
       const Maybe<bool>& aPrivateLoader, const Maybe<bool>& aChrome,
       const Maybe<RefPtr<nsIPrincipal>>& aPrincipal,
@@ -490,6 +492,10 @@ class ContentChild final : public PContentChild,
       const uint32_t& generation, const bool& anonymize,
       const bool& minimizeMemoryUsage, const Maybe<FileDescriptor>& DMDFile,
       const RequestMemoryReportResolver& aResolver);
+
+  mozilla::ipc::IPCResult RecvDecodeImage(NotNull<nsIURI*> aURI,
+                                          const ImageIntSize& aSize,
+                                          DecodeImageResolver&& aResolver);
 
 #if defined(XP_WIN)
   mozilla::ipc::IPCResult RecvGetUntrustedModulesData(
@@ -761,8 +767,7 @@ class ContentChild final : public PContentChild,
       const uint32_t aStopFlags);
 
   mozilla::ipc::IPCResult RecvRawMessage(
-      const JSActorMessageMeta& aMeta,
-      const UniquePtr<ClonedMessageData>& aData,
+      const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
       const UniquePtr<ClonedMessageData>& aStack);
 
   already_AddRefed<JSActor> InitJSActor(JS::Handle<JSObject*> aMaybeActor,

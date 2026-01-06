@@ -15,7 +15,7 @@ ChromeUtils.defineLazyGetter(lazy, "gTabBrowserLocalization", function () {
 });
 
 /**
- * @typedef {Object} Dialog
+ * @typedef {object} Dialog
  */
 
 /**
@@ -127,12 +127,12 @@ export class PromptParent extends JSWindowActorParent {
    * for a BrowsingContext, and puts the associated browser in the modal state
    * until the prompt is closed.
    *
-   * @param {Object} args
+   * @param {object} args
    *        The arguments passed up from the BrowsingContext to be passed
    *        directly to the modal prompt.
    * @return {Promise}
    *         Resolves when the modal prompt is dismissed.
-   * @resolves {Object}
+   * @resolves {object}
    *           The arguments returned from the modal prompt.
    */
   async openPromptWithTabDialogBox(args) {
@@ -329,7 +329,7 @@ export class PromptParent extends JSWindowActorParent {
    *
    * @param {TabDialogBox}  dialogBox
    *        The dialog to show the tab-switch checkbox for.
-   * @param {Object}  args
+   * @param {object}  args
    *        The `args` object to set tab switching permission info on.
    */
   addTabSwitchCheckboxToArgs(dialogBox, args) {

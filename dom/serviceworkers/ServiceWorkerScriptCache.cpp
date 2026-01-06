@@ -676,8 +676,7 @@ nsresult CompareNetwork::Initialize(nsIPrincipal* aPrincipal,
     net::CookieJarSettings::Cast(cookieJarSettings)
         ->SetPartitionKey(aPrincipal->OriginAttributesRef().mPartitionKey);
   } else {
-    net::CookieJarSettings::Cast(cookieJarSettings)
-        ->SetPartitionKey(uri, false);
+    net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri);
   }
 
   // Note that because there is no "serviceworker" RequestContext type, we can
@@ -894,6 +893,12 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader,
   nsresult rv = NS_ERROR_FAILURE;
   auto guard = MakeScopeExit([&] { NetworkFinish(rv); });
 
+  if (aLen > GetWorkerScriptMaxSizeInBytes()) {
+    rv = NS_ERROR_DOM_ABORT_ERR;  // This will make sure an exception gets
+                                  // thrown to the global.
+    return NS_OK;
+  }
+
   if (NS_WARN_IF(NS_FAILED(aStatus))) {
     rv = (aStatus == NS_ERROR_REDIRECT_LOOP) ? NS_ERROR_DOM_SECURITY_ERR
                                              : aStatus;
@@ -1080,13 +1085,14 @@ CompareNetwork::OnStreamComplete(nsIStreamLoader* aLoader,
     return rv;
   }
 
-  if (mimeType.IsEmpty() ||
-      !nsContentUtils::IsJavascriptMIMEType(NS_ConvertUTF8toUTF16(mimeType))) {
+  auto mimeTypeUTF16 = NS_ConvertUTF8toUTF16(mimeType);
+  if (mimeTypeUTF16.IsEmpty() ||
+      !(nsContentUtils::IsJavascriptMIMEType(mimeTypeUTF16) ||
+        nsContentUtils::IsJsonMimeType(mimeTypeUTF16))) {
     ServiceWorkerManager::LocalizeAndReportToAllClients(
         mRegistration->Scope(), "ServiceWorkerRegisterMimeTypeError2",
         nsTArray<nsString>{NS_ConvertUTF8toUTF16(mRegistration->Scope()),
-                           NS_ConvertUTF8toUTF16(mimeType),
-                           NS_ConvertUTF8toUTF16(mURL)});
+                           mimeTypeUTF16, NS_ConvertUTF8toUTF16(mURL)});
     rv = NS_ERROR_DOM_SECURITY_ERR;
     return rv;
   }

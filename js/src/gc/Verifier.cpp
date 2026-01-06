@@ -576,7 +576,7 @@ void js::gc::MarkingValidator::nonIncrementalMark(AutoGCSession& session) {
 
     AutoEnterOOMUnsafeRegion oomUnsafe;
     for (auto r = zone->gcEphemeronEdges().all(); !r.empty(); r.popFront()) {
-      MOZ_ASSERT(r.front().key()->asTenured().zone() == zone);
+      MOZ_ASSERT(r.front().key()->zone() == zone);
       if (!savedEphemeronEdges.putNew(r.front().key(),
                                       std::move(r.front().value()))) {
         // Notice the std::move -- this could consume the moved-from value even

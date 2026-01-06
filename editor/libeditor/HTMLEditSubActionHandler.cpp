@@ -6224,7 +6224,7 @@ Result<CreateElementResult, nsresult> HTMLEditor::ChangeListElementType(
   }
 
   if (aListElement.IsHTMLElement(&aNewListTag)) {
-    return CreateElementResult(&aListElement, std::move(pointToPutCaret));
+    return CreateElementResult(aListElement, std::move(pointToPutCaret));
   }
 
   // XXX If we replace the list element, shouldn't we create it first and then,

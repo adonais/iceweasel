@@ -33,6 +33,11 @@
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Gatū riña nej si datôt riña a’ngô nej dominio</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
   <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">Gātū riña nej si datôt guendâ nej sitiô riña nej dominio %1$d</string>
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
+    <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
+    <item quantity="one">Gātū riña màn nej si datôt guendâ nej sitiô riña si dominiô %1$d</item>
+    <item quantity="other">Gātū riña màn nej si datôt guendâ nej sitiô riña si dominiô %1$d</item>
+  </plurals>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d riña %3$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -152,6 +157,21 @@
     then we will show another collapsed entry saying "Access your data on another domain.".
   -->
   <string name="mozac_feature_addons_permissions_one_extra_domain_description_for_update">Gātū riña nej si datôt riña a’ngô dominio.</string>
+  <!--
+    When an add-on requires access to more than 2 domains, for example the add-on requires access for 4 domains. We will show the first 2 domains in individual entries, as in mozac_feature_addons_permissions_sites_in_domain_description_for_update,
+    then we will show another collapsed entry saying "Access your data on other domains.".
+  -->
+  <string name="mozac_feature_addons_permissions_extra_domains_description_plural_for_update">Gatū riña nej si datôt riña a\'ngô nej dominio.</string>
+  <!--
+    When an add-on requires access to more than 2 sites, for example the add-on requires access for 3 sites. We will show the first 2 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description_for_update,
+    then we will show another collapsed entry saying "Access your data on another site.".
+  -->
+  <string name="mozac_feature_addons_permissions_one_extra_site_description_for_update">Gatū riña nej si datôt riña a’ngô sîtio.</string>
+  <!--
+    When an add-on requires access to more than 2 sites, for example the add-on requires access for 4 sites. We will show the first 2 sites in individual entries, as in mozac_feature_addons_permissions_one_site_description_for_update,
+    then we will show another collapsed entry saying "Access your data on other sites.".
+  -->
+  <string name="mozac_feature_addons_permissions_extra_sites_description_for_update">Gatū riña nej si datôt riña a\'ngô nej sîtio.</string>
   <!-- The text shown when an extension requests the userScripts permission, near the usual description of the userScripts permission -->
   <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">Gā’hue gà’huì’ yì’ì nej scripts nāsinùnj un riña si āgâ’t. Màn nej scripts ni’înt gā’hue gā’nïnjt.</string>
   <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
@@ -258,6 +278,12 @@
   <string name="mozac_feature_addons_report">Gānātà\'</string>
   <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_permissions_dialog_title_2">Nutà\' %1$s</string>
+  <!-- Heading for the permissions section in the add-on install dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_required_permissions">Nej sa achin:</string>
+  <!-- Heading for the data collection permissions section in the add-on install dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_required_data_collection">Nej nuguan’ dāñû da’huît nāgà’huì’t:</string>
+  <!-- Heading for the optional settings section in the add-on install dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_optional_settings">Nej sa huā si ruhuât nādunāt:</string>
   <!-- This is a button to add (install) an add-on . -->
   <string name="mozac_feature_addons_permissions_dialog_add">Nūtà\'</string>
   <!-- This is a button to allow the optional permissions requested by an add-on . -->
@@ -266,6 +292,8 @@
   <string name="mozac_feature_addons_permissions_dialog_deny">Sī ga\'nïnjt</string>
   <!-- Text link to learn more about permission requests on the add-on permissions dialog . -->
   <string name="mozac_feature_addons_permissions_dialog_learn_more">Gāhuin chrūn doj</string>
+  <!-- This is the text for the "technical and interaction" checkbox shown in the add-on permissions dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_technical_and_interaction_data">Nāgà’huì’ nej nuguan’ chì’i nī nej nuguan’ arâj sunt nga aché nunt riña sa ri rè nej ekstensiûn</string>
   <!-- This is a button to cancel the add-on installation . -->
   <string name="mozac_feature_addons_permissions_dialog_cancel">Duyichin\'</string>
   <!-- Accessibility content description to install add-on button. %1$s is the add-on name. -->
@@ -274,14 +302,26 @@
   <string name="mozac_feature_addons_install_addon_dialog_cancel">Dūyichin\'</string>
   <!-- Indicates how many users have rated an add-on. %1$s will be replaced with number of reviews -->
   <string name="mozac_feature_addons_user_rating_count_2">Nuguan’ huā rayi’ij: %1$s</string>
+  <!-- Accessibility content description for the amount of stars that add-on has, where %1$.02f will be the amount of stars. -->
+  <string name="mozac_feature_addons_rating_content_description_2">Sa achi hua: %1$.02f out of 5</string>
   <!-- This is the title of page where all the add-ons are listed -->
   <string name="mozac_feature_addons_addons">Sa gā\'ue nūtò\'</string>
   <!-- Label for add-ons sub menu item for add-ons manager -->
   <string name="mozac_feature_addons_addons_manager">Sa nīkāj ñu\'ūnj nej sa gā\'ue nūtò\'</string>
+  <!-- The title of the "crash" notification in the extensions manager -->
+  <string name="mozac_feature_extensions_manager_notification_title_text">Giyichin’ akuan’ si ‘hiaj sun nej extensiûn</string>
+  <!-- The content of the "crash" notification in the extensions manager -->
+  <string name="mozac_feature_extensions_manager_notification_content_text">Giyichin’ si ‘hiaj sun hūìj huā’nïnj nej ekstensiûn, huê nej man ‘hiaj yi’î dan na’hue gī’hiaj sun hue’ê si āga’t.</string>
+  <!-- Button to re-enable the extensions in the "crash" notification -->
+  <string name="mozac_feature_extensions_manager_notification_restart_button">Nej ekstensiûn da’ nāyì’ì’</string>
+  <!-- Button in the extensions manager that opens AMO in a tab -->
+  <string name="mozac_feature_addons_find_more_extensions_button_text">Narì\'t doj extensiûn</string>
   <!-- The label of the update button on the system notification shown to the user when an add-on has an update that requires the user to accept new permissions. -->
   <string name="mozac_feature_addons_updater_notification_update_button">Nāgi\'iaj nākà</string>
   <!-- The label of the cancel button on a notification, this will be shown to the user when an add-on needs new permissions. Indicates the user denies the new permissions and prevents the add-on from be updated -->
   <string name="mozac_feature_addons_updater_notification_cancel_button">Dūyichin\'</string>
+  <!-- Name of the "notification channel" used for displaying a notification for updating an extension. See https://developer.android.com/training/notify-user/channels -->
+  <string name="mozac_feature_addons_updater_notification_channel_2">Nej sa huā nahuin nākà riña ekstensiûn</string>
   <!-- Name of the "notification channel" used for displaying a notification for new supported add-ons. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_addons_supported_checker_notification_channel" tools:ignore="UnusedResources">Sa natsij dàj gāran\' nej sa nutâ\'t</string>
   <!-- The tile of the notification, this will be shown to the user when one newly supported add-on is available. -->
@@ -296,12 +336,20 @@
   <string name="mozac_feature_addons_supported_checker_notification_content_more_than_two">Nūtà\' riña %1$s</string>
   <!-- This is the caption for not yet supported screen caption -->
   <string name="mozac_feature_addons_not_yet_supported_caption2">Akuan\' nïn nī hìaj ri nej ñunj \'ngō yi\'nïn\' li nej sa nūtò\' ni\'ñānj doj.</string>
+  <!-- This is the caption for the extension installation progress overlay -->
+  <string name="mozac_extension_install_progress_caption">Hìaj naduni nī natsi ekstensiûn…</string>
+  <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
+  <string name="mozac_feature_addons_failed_to_query_extensions">Gu gānātsít riña nej ekstensiûn!</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">Nu nāri’ìj nuguan’ nañû, guendâ nāgi’hiát sa huā riña %1$s nī gunedâ nādunā nânj ngà ‘na’ nīñā %2$s</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_successfully_installed">Ngà huā %1$s gārasunt</string>
   <!-- Text shown after failing to install an add-on (when add-on type isn't supported or an unknown has errored). %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_install">Nu ga\'ue nāñùn %1$s</string>
+  <!-- Text shown after failing to install an extension for which we don't have its name (when add-on type isn't supported or an unknown has errored). -->
+  <string name="mozac_feature_addons_extension_failed_to_install">Nu gā\'hue nāñùn ekstensiûn nan.</string>
+  <!-- Text shown when installing an add-on has failed. -->
+  <string name="mozac_feature_addons_cant_install_extension">Nu gā’hue nà’nïn ekstensiûn</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Nu ga\'ue nānùn %1$s</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -314,6 +362,10 @@
   <string name="mozac_feature_addons_failed_to_remove" tools:ignore="UnusedResources">Nu ga\'ue gānārè\' %1$s riña si āgâ\'t</string>
   <!-- Label shown to indicate that the add-on was migrated from a previous version of the app. %1$s is the app name most of the case it will be Firefox. -->
   <string name="mozac_feature_addons_migrated_from_a_previous_version_label" tools:ignore="UnusedResources">Riña sa gō doj %1$s ga\'na\' sa nata\' nan.</string>
+  <!-- Text shown in not yet supported add-ons section. -->
+  <string name="mozac_feature_addons_unsupported_caption_2">1 ekstensiûn</string>
+  <!-- Text shown in not yet supported add-ons section - plural. %1$s is the number of unsupported extensions. -->
+  <string name="mozac_feature_addons_unsupported_caption_plural_2">%1$s nej ekstensiûn</string>
   <!-- Text link to a sumo page for learning more about unsupported add-ons. -->
   <string name="mozac_feature_addons_unsupported_learn_more">Gāhuin chrūn doj</string>
   <!-- Displayed in the "Status" field for the updater when an add-on has been correctly updated. -->

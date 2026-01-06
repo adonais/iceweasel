@@ -6,11 +6,11 @@
 
 /* globals browser, InterventionHelpers */
 
-const debugLoggingPrefPromise = browser.aboutConfigPrefs.getPref(
+const debugLoggingPrefValue = browser.aboutConfigPrefs.getPref(
   "disable_debug_logging"
 );
-let debugLog = async function () {
-  if ((await debugLoggingPrefPromise) !== true) {
+let debugLog = function () {
+  if (debugLoggingPrefValue !== true) {
     console.debug.apply(this, arguments);
   }
 };
@@ -19,7 +19,7 @@ class Interventions {
   constructor(availableInterventions, customFunctions) {
     this._originalInterventions = availableInterventions;
 
-    this.INTERVENTION_PREF = "perform_injections";
+    this.INTERVENTION_PREF = "enable_interventions";
 
     this._interventionsEnabled = true;
 
@@ -94,9 +94,7 @@ class Interventions {
 
   checkInterventionPref() {
     navigator.locks.request("pref_check_lock", async () => {
-      const value = await browser.aboutConfigPrefs.getPref(
-        this.INTERVENTION_PREF
-      );
+      const value = browser.aboutConfigPrefs.getPref(this.INTERVENTION_PREF);
       if (value === undefined) {
         await browser.aboutConfigPrefs.setPref(this.INTERVENTION_PREF, true);
       } else if (value === false) {
@@ -161,7 +159,7 @@ class Interventions {
     });
   }
 
-  async _check_for_needed_prefs(intervention) {
+  _check_for_needed_prefs(intervention) {
     if (!intervention.pref_check) {
       return true;
     }
@@ -169,14 +167,14 @@ class Interventions {
       if (!this.#checkedPrefListeners.has(pref)) {
         const listener = () => this.onCheckedPrefChanged(pref);
         this.#checkedPrefListeners.set(pref, listener);
-        await browser.aboutConfigPrefs.onPrefChange.addListener(listener, pref);
+        browser.aboutConfigPrefs.onPrefChange.addListener(listener, pref);
       }
     }
     for (const [pref, value] of Object.entries(intervention.pref_check ?? {})) {
       if (!this.#checkedPrefCache.has(pref)) {
         this.#checkedPrefCache.set(
           pref,
-          await browser.aboutConfigPrefs.getPref(pref)
+          browser.aboutConfigPrefs.getPref(pref)
         );
       }
       if (value !== this.#checkedPrefCache.get(pref)) {
@@ -214,9 +212,7 @@ class Interventions {
       config.DISABLING_PREF = `disabled_interventions.${config.id}`;
       const disabledPrefListener = () => {
         navigator.locks.request("pref_check_lock", async () => {
-          const value = await browser.aboutConfigPrefs.getPref(
-            config.DISABLING_PREF
-          );
+          const value = browser.aboutConfigPrefs.getPref(config.DISABLING_PREF);
           if (value === true) {
             await this.disableIntervention(config);
             debugLog(
@@ -240,21 +236,17 @@ class Interventions {
         config.DISABLING_PREF
       );
 
-      const disablingPrefValue = browser.aboutConfigPrefs.getBoolPrefSync(
+      const disablingPrefValue = browser.aboutConfigPrefs.getPref(
         config.DISABLING_PREF
       );
 
       for (const intervention of config.interventions) {
         intervention.enabled = false;
-        if (!(await this._check_for_needed_prefs(intervention))) {
+        if (!this._check_for_needed_prefs(intervention)) {
           continue;
         }
         if (
-          await InterventionHelpers.shouldSkip(
-            intervention,
-            cleanVersion,
-            channel
-          )
+          InterventionHelpers.shouldSkip(intervention, cleanVersion, channel)
         ) {
           continue;
         }

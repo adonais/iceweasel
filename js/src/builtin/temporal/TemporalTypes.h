@@ -17,8 +17,8 @@
 
 #include "jstypes.h"
 
-#include "builtin/temporal/Int128.h"
 #include "builtin/temporal/TemporalUnit.h"
+#include "vm/Int128.h"
 
 namespace js::temporal {
 

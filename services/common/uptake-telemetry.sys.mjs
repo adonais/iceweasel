@@ -37,7 +37,7 @@ export class UptakeTelemetry {
    * - `CUSTOM_4_ERROR`: Update source specific error #4.
    * - `CUSTOM_5_ERROR`: Update source specific error #5.
    *
-   * @type {Object}
+   * @type {object}
    */
   static get STATUS() {
     return {
@@ -78,7 +78,7 @@ export class UptakeTelemetry {
    *
    * @param {string} component     the component reporting the uptake (eg. "Normandy").
    * @param {string} status        the uptake status (eg. "network_error")
-   * @param {Object} extra         extra values to report
+   * @param {object} extra         extra values to report
    * @param {string} extra.source  the update source (eg. "recipe-42").
    * @param {string} extra.trigger what triggered the polling/fetching (eg. "broadcast", "timer").
    * @param {int}    extra.age     age of pulled data in seconds

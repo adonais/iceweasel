@@ -14,7 +14,6 @@ import mozilla.components.feature.pwa.ManifestStorage
 import mozilla.components.feature.pwa.WebAppShortcutManager
 import mozilla.components.support.test.any
 import mozilla.components.support.test.ext.joinBlocking
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
@@ -70,8 +69,6 @@ class ManifestUpdateFeatureTest {
 
         feature.start()
 
-        store.waitUntilIdle()
-
         feature.stop()
 
         verify(storage).updateManifestUsedAt(baseManifest)
@@ -95,7 +92,7 @@ class ManifestUpdateFeatureTest {
                 sessionId,
                 baseManifest,
             ),
-        ).joinBlocking()
+        )
 
         feature.start()
 
@@ -121,7 +118,7 @@ class ManifestUpdateFeatureTest {
                 sessionId,
                 baseManifest,
             ),
-        ).joinBlocking()
+        )
 
         feature.start()
 
@@ -133,7 +130,7 @@ class ManifestUpdateFeatureTest {
                 sessionId,
                 newManifest,
             ),
-        ).joinBlocking()
+        )
 
         feature.updateJob!!.joinBlocking()
 
@@ -159,7 +156,7 @@ class ManifestUpdateFeatureTest {
                 sessionId,
                 baseManifest,
             ),
-        ).joinBlocking()
+        )
 
         feature.updateJob?.joinBlocking()
 
@@ -183,7 +180,7 @@ class ManifestUpdateFeatureTest {
                 sessionId,
                 baseManifest,
             ),
-        ).joinBlocking()
+        )
 
         feature.start()
 
@@ -192,7 +189,7 @@ class ManifestUpdateFeatureTest {
             ContentAction.RemoveWebAppManifestAction(
                 sessionId,
             ),
-        ).joinBlocking()
+        )
 
         feature.updateJob?.joinBlocking()
 
@@ -216,7 +213,7 @@ class ManifestUpdateFeatureTest {
                 sessionId,
                 baseManifest,
             ),
-        ).joinBlocking()
+        )
 
         feature.start()
 
@@ -226,7 +223,7 @@ class ManifestUpdateFeatureTest {
                 sessionId,
                 WebAppManifest(name = "Mozilla", startUrl = "https://netscape.com"),
             ),
-        ).joinBlocking()
+        )
 
         feature.updateJob?.joinBlocking()
 

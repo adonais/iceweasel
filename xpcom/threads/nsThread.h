@@ -202,9 +202,9 @@ class nsThread : public nsIThreadInternal,
   bool ShutdownRequired() { return mShutdownRequired; }
 
   // Lets GetRunningEventDelay() determine if the pool this is part
-  // of has an unstarted thread
+  // of has an idle or unstarted thread.
   void SetPoolThreadFreePtr(mozilla::Atomic<bool, mozilla::Relaxed>* aPtr) {
-    mIsAPoolThreadFree = aPtr;
+    mIsAPoolThreadFreePtr = aPtr;
   }
 
   void SetScriptObserver(mozilla::CycleCollectedJSContext* aScriptObserver);
@@ -292,7 +292,7 @@ class nsThread : public nsIThreadInternal,
   const bool mIsMainThread;
   bool mUseHangMonitor;
   const bool mIsUiThread;
-  mozilla::Atomic<bool, mozilla::Relaxed>* mIsAPoolThreadFree;
+  mozilla::Atomic<bool, mozilla::Relaxed>* mIsAPoolThreadFreePtr;
 
   // Set to true if this thread creates a JSRuntime.
   bool mCanInvokeJS;

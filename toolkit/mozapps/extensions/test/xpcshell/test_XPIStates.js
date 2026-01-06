@@ -38,6 +38,7 @@ var lastTimestamp = Date.now();
 
 /**
  * Helper function to touch a file and then test whether we detect the change.
+ *
  * @param XS      The XPIState object.
  * @param aPath   File path to touch.
  * @param aChange True if we should notice the change, False if we shouldn't.

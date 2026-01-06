@@ -9,10 +9,50 @@ import os
 import mozunit
 import pytest
 from manifestparser import ManifestParser
-from manifestparser.toml import Carry, alphabetize_toml_str, replace_tbd_skip_if
+from manifestparser.toml import (
+    DEFAULT_SECTION,
+    Carry,
+    Mode,
+    add_skip_if,
+    alphabetize_toml_str,
+    replace_tbd_skip_if,
+)
 from tomlkit.toml_document import TOMLDocument
 
 here = os.path.dirname(os.path.abspath(__file__))
+
+
+def test_add_skip_if(tmp_path):
+    parser = ManifestParser(use_toml=True, document=True)
+    filename = "aaa.js"
+    contents = f'[{DEFAULT_SECTION}]\n\n["{filename}"]'
+    manifest_path = tmp_path / "add_skip_if.toml"
+    manifest_path.write_text(contents)
+    parser.read(str(manifest_path))
+    document = parser.source_documents[str(manifest_path)]
+    assert DEFAULT_SECTION in document
+    skip_if = "true"
+    bug_reference = "Bug 2003869"
+    additional_comment, carryover, bug_reference = add_skip_if(
+        document,
+        filename,
+        skip_if,
+        bug_reference,
+        None,
+        Mode.NORMAL,
+    )
+    assert bug_reference is not None  # skip-if should not be ignored
+    manifest_str = alphabetize_toml_str(document)
+    assert (
+        manifest_str
+        == """[DEFAULT]
+
+["aaa.js"]
+skip-if = [
+  "true", # Bug 2003869
+]
+"""
+    )
 
 
 def test_replace_tbd_skip_if():
@@ -169,13 +209,13 @@ def carry():
         (17, "os == 'win'", "tsan", False),
         (
             18,
-            "os == 'linux' && os_version == '18.04' && debug",
+            "os == 'linux' && os_version == '22.04' && debug",
             "os == 'linux' && os_version == '24.04' && asan && isolated_debug_process",
             False,
         ),
         (
             19,
-            "os == 'linux' && os_version == '18.04' && isolated_debug_process",
+            "os == 'linux' && os_version == '22.04' && isolated_debug_process",
             "os == 'linux' && os_version == '24.04' && opt",
             True,
         ),

@@ -12,7 +12,6 @@ data class VoiceSearchState(
      * Whether the app is currently requesting voice input from the user.
      */
     val isRequestingVoiceInput: Boolean = false,
-
     /**
      * The search terms received from voice input, if any.
      */

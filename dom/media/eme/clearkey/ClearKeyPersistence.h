@@ -24,7 +24,6 @@
 #include <functional>
 #include <set>
 #include <string>
-#include <vector>
 
 #include "RefCounted.h"
 #include "content_decryption_module.h"

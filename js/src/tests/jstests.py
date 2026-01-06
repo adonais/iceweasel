@@ -146,13 +146,15 @@ def parse_args():
         "-a",
         "--args",
         dest="shell_args",
-        default="",
+        default=[],
+        action="append",
         help="Extra args to pass to the JS shell.",
     )
     harness_og.add_argument(
         "--feature-args",
         dest="feature_args",
-        default="",
+        default=[],
+        action="append",
         help="Extra args to pass to the JS shell even when feature-testing.",
     )
     harness_og.add_argument(
@@ -433,7 +435,7 @@ def parse_args():
     if options.rr:
         debugger_prefix = ["rr", "record"]
 
-    js_cmd_args = shlex.split(options.shell_args) + shlex.split(options.feature_args)
+    js_cmd_args = split_extra_shell_args(options.shell_args + options.feature_args)
     if options.jorendb:
         options.passthrough = True
         options.hide_progress = True
@@ -655,6 +657,13 @@ def load_wpt_tests(xul_tester, requested_paths, excluded_paths, update_manifest=
     return tests
 
 
+def split_extra_shell_args(args):
+    result = []
+    for option in args:
+        result.extend(shlex.split(option))
+    return result
+
+
 def load_tests(options, requested_paths, excluded_paths):
     """
     Returns a tuple: (test_count, test_gen)
@@ -672,7 +681,7 @@ def load_tests(options, requested_paths, excluded_paths):
             xul_abi, xul_os, xul_debug = options.xul_info_src.split(r":")
             xul_debug = xul_debug.lower() == "true"
             xul_info = manifest.XULInfo(xul_abi, xul_os, xul_debug)
-        feature_args = shlex.split(options.feature_args)
+        feature_args = split_extra_shell_args(options.feature_args)
         xul_tester = manifest.XULInfoTester(xul_info, options, feature_args)
 
     test_dir = dirname(abspath(__file__))

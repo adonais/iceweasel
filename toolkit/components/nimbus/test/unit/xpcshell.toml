@@ -4,8 +4,8 @@ tags = "nimbus"
 firefox-appdir = "browser"
 support-files = ["reference_aboutwelcome_experiment_content.json"]
 skip-if = [
-  "os == 'android'",
   "appname == 'thunderbird'",
+  "os == 'android'",
 ]
 prefs = [
   "app.normandy.run_interval_seconds=0", # This turns off the update interval for fetching recipes from Remote Settings
@@ -34,7 +34,9 @@ prefs = [
 
 ["test_ExperimentManager_prefs.js"]
 requesttimeoutfactor = 6  # Slow and high CPU use on Linux and Windows
-skip-if = ["os == 'win' && msix"] # Bug 1991153
+skip-if = [
+  "os == 'win' && msix", # Bug 1991153
+]
 
 ["test_ExperimentManager_unenroll.js"]
 

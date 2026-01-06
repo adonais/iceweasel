@@ -55,6 +55,7 @@ function savedFrameToDebuggerLocation(frame) {
 
 /**
  * Get the tooltip message.
+ *
  * @param {string|undefined} messageSource
  * @param {string} url
  * @returns {string}
@@ -149,6 +150,7 @@ class Frame extends Component {
 
   /**
    * Get current location's source, line, and column.
+   *
    * @returns {{sourceURL: string, line: number|null, column: number|null}}
    */
   #getCurrentLocationInfo = () => {
@@ -171,6 +173,7 @@ class Frame extends Component {
 
   /**
    * Get unicode hostname of the source link.
+   *
    * @returns {string}
    */
   #getCurrentLocationUnicodeHostName = () => {
@@ -182,6 +185,7 @@ class Frame extends Component {
 
   /**
    * Check if the current location is linkable.
+   *
    * @returns {boolean}
    */
   #isCurrentLocationLinkable = () => {
@@ -284,6 +288,7 @@ class Frame extends Component {
 
   /**
    * Render the source elements.
+   *
    * @returns {React.ReactNode}
    */
   #renderSourceElements = () => {
@@ -320,6 +325,7 @@ class Frame extends Component {
 
   /**
    * Render the display source.
+   *
    * @returns {React.ReactNode}
    */
   #renderDisplaySource = () => {
@@ -357,6 +363,7 @@ class Frame extends Component {
 
   /**
    * Render the function display name.
+   *
    * @returns {React.ReactNode}
    */
   #renderFunctionDisplayName = () => {

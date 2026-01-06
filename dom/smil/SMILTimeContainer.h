@@ -54,6 +54,12 @@ class SMILTimeContainer {
   virtual void Pause(uint32_t aType);
 
   /*
+   * Pause this time container when it reaches the specified time.
+   *
+   */
+  void PauseAt(SMILTime aTime);
+
+  /*
    * Resume this time container
    *
    * param @aType The source of the resume request. Clears the pause flag for
@@ -255,6 +261,9 @@ class SMILTimeContainer {
   //  Current time = parent time - mParentOffset
   //
   SMILTime mParentOffset;
+
+  // The time the time container will pause when it reaches this point.
+  Maybe<SMILTime> mPauseTime;
 
   // The timestamp in parent time when the container was paused
   SMILTime mPauseStart;

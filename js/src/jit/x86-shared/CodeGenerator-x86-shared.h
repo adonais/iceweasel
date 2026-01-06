@@ -84,6 +84,11 @@ class CodeGeneratorX86Shared : public CodeGeneratorShared {
   void emitTableSwitchDispatch(MTableSwitch* mir, Register index,
                                Register base);
 
+  // Emit out-of-line code to zero |output| if |rhs| is zero. Used for truncated
+  // division and modulus instructions.
+  OutOfLineCode* emitOutOfLineZeroForDivideByZero(Register rhs,
+                                                  Register output);
+
   void generateInvalidateEpilogue();
 
   template <typename T>

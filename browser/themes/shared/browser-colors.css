@@ -60,9 +60,6 @@
     --toolbox-textcolor: var(--lwt-text-color, currentColor);
     --toolbox-textcolor-inactive: var(--lwt-text-color, currentColor);
 
-    --sidebar-background-color: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.1));
-    --sidebar-text-color: CanvasText;
-
     @media not (prefers-contrast) {
       --focus-outline-color: light-dark(#0061e0, #00ddff);
     }

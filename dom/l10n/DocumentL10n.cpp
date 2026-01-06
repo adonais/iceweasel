@@ -48,8 +48,29 @@ RefPtr<DocumentL10n> DocumentL10n::Create(Document* aDocument, bool aSync) {
   return l10n.forget();
 }
 
+RefPtr<DocumentL10n> DocumentL10n::Create(Document* aDocument, bool aSync,
+                                          const nsTArray<nsCString>& aLocales) {
+  RefPtr<DocumentL10n> l10n = new DocumentL10n(aDocument, aSync, aLocales);
+
+  IgnoredErrorResult rv;
+  l10n->mReady = Promise::Create(l10n->mGlobal, rv);
+  if (NS_WARN_IF(rv.Failed())) {
+    return nullptr;
+  }
+
+  return l10n.forget();
+}
+
 DocumentL10n::DocumentL10n(Document* aDocument, bool aSync)
     : DOMLocalization(aDocument->GetScopeObject(), aSync),
+      mDocument(aDocument),
+      mState(DocumentL10nState::Constructed) {
+  mContentSink = do_QueryInterface(aDocument->GetCurrentContentSink());
+}
+
+DocumentL10n::DocumentL10n(Document* aDocument, bool aSync,
+                           const nsTArray<nsCString>& aLocales)
+    : DOMLocalization(aDocument->GetScopeObject(), aSync, aLocales),
       mDocument(aDocument),
       mState(DocumentL10nState::Constructed) {
   mContentSink = do_QueryInterface(aDocument->GetCurrentContentSink());

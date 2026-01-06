@@ -54,6 +54,7 @@ const lazy = XPCOMUtils.declareLazy({
 });
 
 /**
+ * @import {AppProvidedConfigEngine} from "ConfigSearchEngine.sys.mjs"
  * @import {AddonSearchEngine} from "AddonSearchEngine.sys.mjs"
  * @import {OpenSearchEngine} from "OpenSearchEngine.sys.mjs"
  * @import {SearchEngine} from "SearchEngine.sys.mjs"
@@ -149,46 +150,43 @@ const REASON_CHANGE_MAP = new Map([
  * @implements {nsISearchParseSubmissionResult}
  */
 class ParseSubmissionResult {
+  /**
+   * @param {?nsISearchEngine} engine
+   * @param {string} terms
+   * @param {string} termsParameterName
+   */
   constructor(engine, terms, termsParameterName) {
     this.#engine = engine;
     this.#terms = terms;
     this.#termsParameterName = termsParameterName;
   }
 
-  get engine() {
-    return this.#engine;
-  }
-
-  get terms() {
-    return this.#terms;
-  }
-
-  get termsParameterName() {
-    return this.#termsParameterName;
-  }
-
   /**
    * The search engine associated with the URL passed in to
    * nsISearchEngine::parseSubmissionURL, or null if the URL does not represent
    * a search submission.
-   *
-   * @type {nsISearchEngine|null}
    */
-  #engine;
+  get engine() {
+    return this.#engine;
+  }
 
   /**
    * String containing the sought terms. This can be an empty string in case no
    * terms were specified or the URL does not represent a search submission.
-   *
-   * @type {string}
    */
-  #terms;
+  get terms() {
+    return this.#terms;
+  }
 
   /**
    * The name of the query parameter used by `engine` for queries. E.g. "q".
-   *
-   * @type {string}
    */
+  get termsParameterName() {
+    return this.#termsParameterName;
+  }
+
+  #engine;
+  #terms;
   #termsParameterName;
 
   QueryInterface = ChromeUtils.generateQI(["nsISearchParseSubmissionResult"]);
@@ -211,31 +209,75 @@ export class SearchService {
 
   classID = Components.ID("{7319788a-fe93-4db3-9f39-818cf08f4256}");
 
+  /**
+   * The currently active search engine.
+   * Unless the application doesn't ship any search engine, this should never
+   * be null. If the currently active engine is removed, this attribute will
+   * fallback first to the application default engine if it's not hidden, then to
+   * the first visible engine, and as a last resort it will unhide the app
+   * default engine.
+   */
   get defaultEngine() {
     this.#ensureInitialized();
     return this._getEngineDefault(false);
   }
 
+  /**
+   * The currently active search engine for private browsing mode.
+   *
+   * @see defaultEngine
+   */
   get defaultPrivateEngine() {
     this.#ensureInitialized();
     return this._getEngineDefault(this.#separatePrivateDefault);
   }
 
+  /**
+   * The currently active search engine.
+   * Unless the application doesn't ship any search engine, this should never
+   * be null. If the currently active engine is removed, this attribute will
+   * fallback first to the application default engine if it's not hidden, then to
+   * the first visible engine, and as a last resort it will unhide the app
+   * default engine.
+   */
   async getDefault() {
     await this.init();
     return this.defaultEngine;
   }
 
+  /**
+   * Sets the currently active search engine.
+   *
+   * @param {SearchEngine} engine
+   *   The engine to set the default to.
+   * @param {nsISearchService.DefaultEngineChangeReason} changeReason
+   *   The reason the default engine is being changed, used for recording to
+   *   telemetry.
+   */
   async setDefault(engine, changeReason) {
     await this.init();
     this.#setEngineDefault(false, engine, changeReason);
   }
 
+  /**
+   * The currently active search engine for private browsing mode.
+   *
+   * @see defaultPrivateEngine
+   */
   async getDefaultPrivate() {
     await this.init();
     return this.defaultPrivateEngine;
   }
 
+  /**
+   * Sets the currently active default private search engine.
+   *
+   * @param {SearchEngine} engine
+   *   The engine to set the default to.
+   * @param {nsISearchService.DefaultEngineChangeReason} changeReason
+   *   The reason the default engine is being changed, used for recording to
+   *   telemetry.
+   */
   async setDefaultPrivate(engine, changeReason) {
     await this.init();
     if (!this.#lazyPrefs.separatePrivateDefaultPrefValue) {
@@ -307,7 +349,7 @@ export class SearchService {
    * A promise that is resolved when initialization has finished. This does not
    * trigger initialization to begin.
    *
-   * @returns {Promise}
+   * @returns {Promise<void>}
    *   Resolved when initalization has successfully finished, and rejected if it
    *   has failed.
    */
@@ -315,8 +357,39 @@ export class SearchService {
     return this.#initDeferredPromise.promise;
   }
 
+  /**
+   * Gets a representation of the default engine in an anonymized JSON
+   * string suitable for recording in the Telemetry environment.
+   *
+   * @typedef {object} SearchEngineTelemetryInfo
+   * @property {string} name
+   *   The user given name of the search engine.
+   * @property {string} loadPath
+   *   The load path for the search engine.
+   * @property {string} [submissionURL]
+   *   The submission URL for the search engine, only reported for a select
+   *   list of domains. See `#getEngineInfo()` for more info.
+   *
+   * @typedef {object} EnginesTelemetryInfo
+   *   Contains anonymized info about the default engine(s).
+   * @property {string} defaultSearchEngine
+   *   The telemetry id of the default engine.
+   * @property {SearchEngineTelemetryInfo} defaultSearchEngineData
+   *   Information about the default engine.
+   * @property {string} [defaultPrivateSearchEngine]
+   *   Only returned if the preference for having a separate engine in private
+   *   mode is turned on.
+   *   The telemetry id of the default engine for private browsing mode.
+   * @property {SearchEngineTelemetryInfo} [defaultPrivateSearchEngineData]
+   *   Only returned if the preference for having a separate engine in private
+   *   mode is turned on.
+   *   Information about the default engine for private browsing mode.
+   *
+   * @returns {EnginesTelemetryInfo}
+   */
   getDefaultEngineInfo() {
     let engineInfo = this.#getEngineInfo(this.defaultEngine);
+    /** @type {EnginesTelemetryInfo} */
     const result = {
       defaultSearchEngine: engineInfo.telemetryId,
       defaultSearchEngineData: {
@@ -414,33 +487,52 @@ export class SearchService {
     return null;
   }
 
+  /**
+   * Returns an array of all installed search engines.
+   * The array is sorted either to the user requirements or the default order.
+   *
+   * @returns {Promise<SearchEngine[]>}
+   */
   async getEngines() {
     await this.init();
     lazy.logConsole.debug("getEngines: getting all engines");
     return this.#sortedEngines;
   }
 
+  /**
+   * Returns an array of all installed search engines whose hidden attribute is
+   * false.
+   * The array is sorted either to the user requirements or the default order.
+   *
+   * @returns {Promise<SearchEngine[]>}
+   */
   async getVisibleEngines() {
     await this.init();
     lazy.logConsole.debug("getVisibleEngines: getting all visible engines");
     return this.#sortedVisibleEngines;
   }
 
+  /**
+   * Returns the current list of application provided engines.
+   */
   async getAppProvidedEngines() {
     await this.init();
 
     return lazy.SearchUtils.sortEnginesByDefaults({
-      engines: this.#sortedEngines.filter(e => e.isAppProvided),
+      engines: this.#sortedEngines.filter(
+        e => e instanceof lazy.AppProvidedConfigEngine
+      ),
       appDefaultEngine: this.appDefaultEngine,
       appPrivateDefaultEngine: this.appPrivateDefaultEngine,
     });
   }
 
-  async getEnginesByExtensionID(extensionID) {
-    await this.init();
-    return this.#getEnginesByExtensionID(extensionID);
-  }
-
+  /**
+   * Returns an engine definition if it's search url matches the host provided.
+   *
+   * @param {string} host
+   *   The host to search for.
+   */
   async findContextualSearchEngineByHost(host) {
     await this.init();
     let settings = await this._settings.get();
@@ -452,6 +544,17 @@ export class SearchService {
     return null;
   }
 
+  /**
+   * Returns whether the user should be given a prompt to install the
+   * engine they are currently using. A prompt is shown after the
+   * second time a user picks a contextual engine to search with. After
+   * the second time the prompt should not be shown again.
+   *
+   * @param {SearchEngine} engine
+   *   The engine to check.
+   * @returns {Promise<boolean>}
+   *   Whether or not to show the prompt.
+   */
   async shouldShowInstallPrompt(engine) {
     let identifer = engine._loadPath;
     let seenEngines =
@@ -479,10 +582,10 @@ export class SearchService {
   }
 
   /**
-   * This function calls #init to start initialization when it has not been
-   * started yet. Otherwise, it returns the pending promise.
+   * Starts initialisation if necessary, otherwise returns a promise which indicates
+   * the state of initialisation.
    *
-   * @returns {Promise}
+   * @returns {Promise<void>}
    *   Returns the pending Promise when #init has started but not yet finished.
    *   | Resolved | when initialization has successfully finished.
    *   | Rejected | when initialization has failed.
@@ -564,6 +667,9 @@ export class SearchService {
     );
   }
 
+  /**
+   * Resets the default engine to its app default engine value.
+   */
   resetToAppDefaultEngine() {
     let appDefaultEngine = this.appDefaultEngine;
     appDefaultEngine.hidden = false;
@@ -699,6 +805,12 @@ export class SearchService {
     return newEngine;
   }
 
+  /**
+   * Installs an engine into the user's engine list.
+   *
+   * @param {SearchEngine} engine
+   *   An engine configuration definition.
+   */
   async addSearchEngine(engine) {
     await this.init();
     this.#addEngineToStore(engine);
@@ -751,6 +863,20 @@ export class SearchService {
     });
   }
 
+  /**
+   * Adds a new Open Search engine from the xml file at the supplied URI.
+   *
+   * @param {string} engineURL
+   *   The URL to the search engine's description file.
+   * @param {string} iconURL
+   *   A URL string to an icon file to be used as the search engine's icon. This
+   *   value may be overridden by an icon specified in the engine description
+   *   file.
+   * @param {OriginAttributesDictionary} [originAttributes]
+   *   The origin attributes to use to load this manifest.
+   * @throws {Cr.NS_ERROR_FAILURE}
+   *   If the description file cannot be successfully loaded.
+   */
   async addOpenSearchEngine(engineURL, iconURL, originAttributes) {
     lazy.logConsole.debug("addOpenSearchEngine: Adding", engineURL);
     await this.init();
@@ -777,6 +903,13 @@ export class SearchService {
     return engine;
   }
 
+  /**
+   * This should be called when an extension is removed. It will remove any
+   * search engines that are associated with the extension.
+   *
+   * @param {string} id
+   *   The id of the extension.
+   */
   async removeWebExtensionEngine(id) {
     if (!this.isInitialized) {
       lazy.logConsole.debug(
@@ -796,6 +929,17 @@ export class SearchService {
     }
   }
 
+  /**
+   * Removes the search engine. If the search engine is installed in a global
+   * location, this will just hide the engine. If the engine is in the user's
+   * profile directory, it will be removed from disk.
+   *
+   * @param {SearchEngine} engine
+   *   The engine to remove.
+   * @param {nsISearchService.DefaultEngineChangeReason} changeReason
+   *   The reason for the engine being removed, used for telemetry if the engine
+   *   is currently a default engine.
+   */
   async removeEngine(engine, changeReason) {
     await this.init();
     if (!engine) {
@@ -887,6 +1031,19 @@ export class SearchService {
     );
   }
 
+  /**
+   * Moves a visible search engine.
+   *
+   * @param {SearchEngine} engine
+   *   The engine to move.
+   * @param {number} newIndex
+   *   The engine's new index in the set of visible engines.
+   *
+   * @throws {Cr.NS_ERROR_INVALID_ARG}
+   *   If newIndex is out of bounds.
+   * @throws {Cr.NS_ERROR_FAILURE}
+   *   If the engine is hidden.
+   */
   async moveEngine(engine, newIndex) {
     await this.init();
     if (newIndex > this.#sortedEngines.length || newIndex < 0) {
@@ -966,6 +1123,9 @@ export class SearchService {
     this.#saveSortedEngineList();
   }
 
+  /**
+   * Un-hides all application provided engines.
+   */
   restoreDefaultEngines() {
     this.#ensureInitialized();
     for (let e of this._engines.values()) {
@@ -976,6 +1136,20 @@ export class SearchService {
     }
   }
 
+  /**
+   * Determines if the provided URL represents results from a search engine, and
+   * provides details about the match.
+   *
+   * The lookup mechanism checks whether the domain name and path of the
+   * provided HTTP or HTTPS URL matches one of the known values for the visible
+   * search engines. The match does not depend on which of the schemes is used.
+   * The expected URI parameter for the search terms must exist in the query
+   * string, but other parameters are ignored.
+   *
+   * @param {string} url
+   *   String containing the URL to parse, for example
+   *   `https://www.google.com/search?q=terms`.
+   */
   parseSubmissionURL(url) {
     if (!this.hasSuccessfullyInitialized) {
       // If search is not initialized or failed initializing, do nothing.
@@ -1051,10 +1225,6 @@ export class SearchService {
     );
   }
 
-  getAlternateDomains(domain) {
-    return lazy.SearchStaticData.getAlternateDomains(domain);
-  }
-
   /**
    * Whether to display the "Search in Private Window" result in the urlbar.
    */
@@ -1092,7 +1262,7 @@ export class SearchService {
    * Resolved when initalization has successfully finished, and rejected if it
    * has failed.
    *
-   * @type {PromiseWithResolvers}
+   * @type {PromiseWithResolvers<void>}
    */
   #initDeferredPromise = Promise.withResolvers();
 
@@ -1450,11 +1620,6 @@ export class SearchService {
       onUpdate: () =>
         this._maybeReloadEngines(Ci.nsISearchService.CHANGE_REASON_EXPERIMENT),
     },
-    suggestOhttpEnabled: {
-      pref: "browser.search.suggest.ohttp.enabled",
-      default: false,
-      onUpdate: this.#recordPreferencesTelemetry.bind(this),
-    },
   });
 
   /**
@@ -1565,7 +1730,6 @@ export class SearchService {
     Glean.searchService.startupTime.stopAndAccumulate(timerId);
 
     this.#recordDefaultEngineTelemetryData();
-    this.#recordPreferencesTelemetry();
 
     Services.obs.notifyObservers(
       null,
@@ -2856,7 +3020,7 @@ export class SearchService {
           // There's a chance here that the WebExtension might not be
           // installed any longer, even though the engine is. We'll deal
           // with that in `checkWebExtensionEngines`.
-          let engines = await this.getEnginesByExtensionID(match[1]);
+          let engines = this.#getEnginesByExtensionID(match[1]);
           if (engines.length) {
             lazy.logConsole.debug(
               `Migrating ${engine.name} to WebExtension install`
@@ -3078,7 +3242,7 @@ export class SearchService {
    *   An Extension object containing data about the extension.
    */
   async #upgradeExtensionEngine(extension) {
-    let extensionEngines = await this.getEnginesByExtensionID(extension.id);
+    let extensionEngines = this.#getEnginesByExtensionID(extension.id);
 
     for (let engine of extensionEngines) {
       let isDefault = engine == this.defaultEngine;
@@ -3506,15 +3670,6 @@ export class SearchService {
     } else {
       Glean.searchEngineDefault.changed.record(extraArgs);
     }
-  }
-
-  /**
-   * Records in telemetry any user preferences that we monitor.
-   */
-  #recordPreferencesTelemetry() {
-    Glean.searchSuggestionsOhttp.enabled.set(
-      this.#lazyPrefs.suggestOhttpEnabled
-    );
   }
 
   /**

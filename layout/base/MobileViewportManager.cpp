@@ -16,7 +16,6 @@
 #include "mozilla/dom/InteractiveWidget.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
-#include "nsViewManager.h"
 #include "nsViewportInfo.h"
 
 mozilla::LazyLogModule MobileViewportManager::gLog("apz.mobileviewport");

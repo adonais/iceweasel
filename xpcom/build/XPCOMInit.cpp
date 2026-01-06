@@ -15,7 +15,6 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/SharedThreadPool.h"
 #include "mozilla/TaskController.h"
-#include "mozilla/XPCOM.h"
 #include "mozJSModuleLoader.h"
 #include "nsXULAppAPI.h"
 

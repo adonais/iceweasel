@@ -216,7 +216,7 @@
   }
 
   .mover {
-    background-color: #fff;
+    background-color: white;
     border-radius: var(--border-radius-circle);
     box-shadow: 0 0 4px rgba(0, 0, 0, 0.5);
     transition: transform 125ms cubic-bezier(0.07, 0.95, 0, 1);

@@ -165,8 +165,7 @@ FRAME_STATE_BIT(Generic, 16, NS_FRAME_MAY_BE_TRANSFORMED)
 // or is incomplete (its next sibling is a bidi continuation)
 FRAME_STATE_BIT(Generic, 17, NS_FRAME_IS_BIDI)
 
-// If this bit is set the frame has descendant with a view
-FRAME_STATE_BIT(Generic, 18, NS_FRAME_HAS_CHILD_WITH_VIEW)
+// Free bit here.
 
 // If this bit is set, then reflow may be dispatched from the current
 // frame instead of the root frame.

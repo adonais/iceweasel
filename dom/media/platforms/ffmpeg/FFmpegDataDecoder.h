@@ -15,7 +15,7 @@
 #include "FFmpegLibs.h"
 
 namespace mozilla {
-#if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION)
+#if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
 class MediaDrmCrypto;
 class MediaDrmRemoteCDMParent;
 #endif
@@ -65,8 +65,13 @@ class FFmpegDataDecoder<LIBAV_VER>
   MediaResult DoDecode(MediaRawData* aSample, bool* aGotFrame,
                        DecodedData& aResults);
 
+#if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
+  static void CryptoInfoAddRef(void* aCryptoInfo);
+  static void CryptoInfoRelease(void* aCryptoInfo);
+  MediaResult MaybeAttachCryptoInfo(MediaRawData* aSample, AVPacket* aPacket);
   MediaResult MaybeAttachCDM();
   void MaybeDetachCDM();
+#endif
 
   FFmpegLibWrapper* mLib;  // set in constructor
 

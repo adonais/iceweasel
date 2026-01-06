@@ -239,7 +239,14 @@ class FakeCompiler(dict):
                     apply_defn(defn)
 
             for flag in flags:
-                apply_defn(self.get(flag, {}))
+                if flag.startswith("-D"):
+                    name, val = flag[2:].split("=")
+                    apply_defn({name: val})
+                elif flag.startswith("-U"):
+                    name = flag[2:]
+                    apply_defn({name: False})
+                else:
+                    apply_defn(self.get(flag, {}))
 
             pp.out = StringIO()
             pp.do_include(file)

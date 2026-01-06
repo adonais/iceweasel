@@ -12,7 +12,6 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPtr.h"
-#include <algorithm>
 
 namespace mozilla {
 namespace net {

@@ -63,11 +63,11 @@
 #include "nsStyleStructInlines.h"
 #include "nsTransitionManager.h"
 #include "nsUnicharUtils.h"
-#include "nsViewManager.h"
 #include "nsWidgetsCID.h"
 #include "nsXULPopupManager.h"
 
 using namespace mozilla;
+using namespace mozilla::widget;
 using mozilla::dom::Document;
 using mozilla::dom::Element;
 using mozilla::dom::Event;
@@ -81,9 +81,12 @@ TimeStamp nsMenuPopupFrame::sLastKeyTime;
 extern mozilla::LazyLogModule gWidgetPopupLog;
 #  define LOG_WAYLAND(...) \
     MOZ_LOG(gWidgetPopupLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
+#  define LOG_WAYLAND_VERBOSE(...) \
+    MOZ_LOG(gWidgetPopupLog, mozilla::LogLevel::Verbose, (__VA_ARGS__))
 #else
 #  define IS_WAYLAND_DISPLAY() false
 #  define LOG_WAYLAND(...)
+#  define LOG_WAYLAND_VERBOSE(...)
 #endif
 
 nsIFrame* NS_NewMenuPopupFrame(PresShell* aPresShell, ComputedStyle* aStyle) {
@@ -329,6 +332,7 @@ void nsMenuPopupFrame::CreateWidget() {
     return;
   }
   mWidget->SetWidgetListener(this);
+  mWidget->EnableDragDrop(true);
   // TODO(emilio): Make all widgets look at widgetData.mTransparencyMode
   // (maybe in BaseCreate?) then remove this call.
   mWidget->SetTransparencyMode(mode);
@@ -336,11 +340,28 @@ void nsMenuPopupFrame::CreateWidget() {
 }
 
 LayoutDeviceIntRect nsMenuPopupFrame::CalcWidgetBounds() const {
-  return nsView::CalcWidgetBounds(
-      GetRect(), PresContext()->AppUnitsPerDevPixel(),
-      PresShell()->GetViewManager()->GetRootView(), nullptr,
-      widget::WindowType::Popup,
-      nsLayoutUtils::GetFrameTransparency(this, this));
+  auto a2d = PresContext()->AppUnitsPerDevPixel();
+  nsPoint offset;
+  nsIWidget* parentWidget =
+      PresShell()->GetRootFrame()->GetNearestWidget(offset);
+  // We want the bounds be relative to the parent widget, in appunits
+  if (parentWidget) {
+    // put offset into screen coordinates. (based on client area origin)
+    offset += LayoutDeviceIntPoint::ToAppUnits(
+        parentWidget->WidgetToScreenOffset(), a2d);
+  }
+  int32_t roundTo =
+      parentWidget ? parentWidget->RoundsWidgetCoordinatesTo() : 1;
+  auto bounds = GetRect() + offset;
+  // We use outside pixels for transparent windows if possible, so that we
+  // don't truncate the contents. For opaque popups, we use nearest pixels
+  // which prevents having pixels not drawn by the frame.
+  const auto transparency = nsLayoutUtils::GetFrameTransparency(this, this);
+  const bool opaque = transparency == TransparencyMode::Opaque;
+  const auto idealBounds = LayoutDeviceIntRect::FromUnknownRect(
+      opaque ? bounds.ToNearestPixels(a2d) : bounds.ToOutsidePixels(a2d));
+  return nsIWidget::MaybeRoundToDisplayPixels(idealBounds, transparency,
+                                              roundTo);
 }
 
 void nsMenuPopupFrame::DestroyWidget() {
@@ -1618,28 +1639,42 @@ auto nsMenuPopupFrame::GetRects(const nsSize& aPrefSize) const -> Rects {
       // only info we have there.
       const nsSize waylandSize = LayoutDeviceIntRect::ToAppUnits(
           widget->GetMoveToRectPopupSize(), a2d);
+
+      LOG_WAYLAND_VERBOSE(
+          "[%p] Wayland popup size from layout [%d x %d] a2d %d", widget,
+          result.mUsedRect.width / a2d, result.mUsedRect.height / a2d, a2d);
+      LOG_WAYLAND_VERBOSE(
+          "[%p] Wayland popup size from last move-to-rect [%d x %d] a2d %d",
+          widget, widget->GetMoveToRectPopupSize().width,
+          widget->GetMoveToRectPopupSize().height, a2d);
+
       if (waylandSize.width > 0 && result.mUsedRect.width > waylandSize.width) {
-        LOG_WAYLAND("Wayland constraint width [%p]:  %d to %d", widget,
+        LOG_WAYLAND("[%p] Wayland constraint width %d to %d", widget,
                     result.mUsedRect.width, waylandSize.width);
         result.mUsedRect.width = waylandSize.width;
       }
       if (waylandSize.height > 0 &&
           result.mUsedRect.height > waylandSize.height) {
-        LOG_WAYLAND("Wayland constraint height [%p]:  %d to %d", widget,
+        LOG_WAYLAND("[%p] Wayland constraint height %d to %d", widget,
                     result.mUsedRect.height, waylandSize.height);
         result.mUsedRect.height = waylandSize.height;
       }
       if (RefPtr<widget::Screen> s = widget->GetWidgetScreen()) {
         const nsSize screenSize =
             LayoutDeviceIntSize::ToAppUnits(s->GetAvailRect().Size(), a2d);
+        LOG_WAYLAND_VERBOSE("[%p] Wayland screen size [%d x %d] a2d %d", widget,
+                            s->GetAvailRect().Size().width,
+                            s->GetAvailRect().Size().height, a2d);
+
         if (result.mUsedRect.height > screenSize.height) {
-          LOG_WAYLAND("Wayland constraint height to screen [%p]:  %d to %d",
-                      widget, result.mUsedRect.height, screenSize.height);
+          LOG_WAYLAND("[%p] Wayland constraint height to screen %d to %d",
+                      widget, result.mUsedRect.height / a2d,
+                      screenSize.height / a2d);
           result.mUsedRect.height = screenSize.height;
         }
         if (result.mUsedRect.width > screenSize.width) {
-          LOG_WAYLAND("Wayland constraint widthto screen [%p]:  %d to %d",
-                      widget, result.mUsedRect.width, screenSize.width);
+          LOG_WAYLAND("[%p] Wayland constraint widthto screen %d to %d", widget,
+                      result.mUsedRect.width / a2d, screenSize.width / a2d);
           result.mUsedRect.width = screenSize.width;
         }
       }
@@ -2549,8 +2584,7 @@ bool nsMenuPopupFrame::RequestWindowClose(nsIWidget* aWidget) {
   return false;
 }
 
-nsEventStatus nsMenuPopupFrame::HandleEvent(mozilla::WidgetGUIEvent* aEvent,
-                                            bool aUseAttachedEvents) {
+nsEventStatus nsMenuPopupFrame::HandleEvent(mozilla::WidgetGUIEvent* aEvent) {
   MOZ_ASSERT(aEvent->mWidget);
   MOZ_ASSERT(aEvent->mWidget == mWidget);
   nsEventStatus status = nsEventStatus_eIgnore;
@@ -2559,7 +2593,7 @@ nsEventStatus nsMenuPopupFrame::HandleEvent(mozilla::WidgetGUIEvent* aEvent,
   return status;
 }
 
-bool nsMenuPopupFrame::PaintWindow(nsIWidget* aWidget, LayoutDeviceIntRegion) {
+void nsMenuPopupFrame::PaintWindow(nsIWidget* aWidget) {
   MOZ_ASSERT(aWidget == mWidget);
   nsAutoScriptBlocker scriptBlocker;
   RefPtr ps = PresShell();
@@ -2569,7 +2603,6 @@ bool nsMenuPopupFrame::PaintWindow(nsIWidget* aWidget, LayoutDeviceIntRegion) {
   } else {
     ps->SyncPaintFallback(this, renderer);
   }
-  return true;
 }
 
 void nsMenuPopupFrame::DidCompositeWindow(

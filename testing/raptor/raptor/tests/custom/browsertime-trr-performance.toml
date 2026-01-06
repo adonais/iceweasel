@@ -110,3 +110,17 @@ browser_cycles = 3
 test_script = "trr_performance.js"
 test_url = "None"
 custom_data = true
+
+["trr-multi"]
+browsertime_args = "--browsertime.test_type=browser_idle --firefox.preference network.trr.mode:3 --firefox.preference network.trr.uri:https://mozilla.cloudflare-dns.com/dns-query"
+browser_cycles = 3
+test_script = "trr_multi_domain_performance.js"
+test_url = "None"
+custom_data = true
+
+["trr-multm"]
+browsertime_args = "--browsertime.test_type=browser_idle --firefox.preference network.trr.mode:3 --firefox.preference network.trr.uri:https://mozilla.cloudflare-dns.com/dns-query"
+browser_cycles = 3
+test_script = "trr_multi_domain_performance.js"
+test_url = "None"
+custom_data = true

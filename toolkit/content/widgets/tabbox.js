@@ -882,12 +882,12 @@
      * @param {MozTab} startTab
      *   A `<tab>` element to start searching from.
      * @param {object} opts
-     * @param {Number} [opts.direction=1]
+     * @param {number} [opts.direction=1]
      *   1 to search forward, -1 to search backward.
-     * @param {Boolean} [opts.wrap=false]
+     * @param {boolean} [opts.wrap=false]
      *   If true, wrap around if the search reaches the end (or beginning)
      *   of the tab strip.
-     * @param {Boolean} [opts.startWithAdjacent=true]
+     * @param {boolean} [opts.startWithAdjacent=true]
      *   If true (which is the default), start searching from the next tab
      *   after (or before) `startTab`. If false, `startTab` may be returned
      *   if it passes the filter.

@@ -79,7 +79,7 @@ export function debuggerToSourceMapLocation(location) {
  * Pending location only need these three attributes,
  * and especially doesn't need the large source and sourceActor objects of the regular location objects.
  *
- * @param {Object} location
+ * @param {object} location
  */
 export function createPendingSelectedLocation(location) {
   return {

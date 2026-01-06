@@ -79,6 +79,7 @@ function checkElements(expectedPane) {
 
     // Profiles is only enabled in Nightly by default (bug 1947633)
     if (element.id === "profilesGroup" && profilesGroupDisabled) {
+      is_element_hidden(element, "Disabled profilesGroup should be hidden");
       continue;
     }
 
@@ -87,6 +88,12 @@ function checkElements(expectedPane) {
       element.id === "dataIPProtectionGroup" &&
       ipProtectionExperiment !== "beta"
     ) {
+      is_element_hidden(element, "Disabled ipProtection should be hidden");
+      continue;
+    }
+
+    if (element.getAttribute("data-hidden-from-search") == "true") {
+      is_element_hidden(element, "Hidden from search element should be hidden");
       continue;
     }
 

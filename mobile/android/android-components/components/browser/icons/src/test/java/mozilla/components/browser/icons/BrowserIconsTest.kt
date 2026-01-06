@@ -83,7 +83,6 @@ class BrowserIconsTest {
 
         server.enqueue(
             MockResponse().setBody(
-
                 javaClass.getResourceAsStream("/png/mozac.png")!!.source().buffer().buffer,
             ),
         )

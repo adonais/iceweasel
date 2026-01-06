@@ -24,7 +24,7 @@ add_task(async function () {
           "Mozilla/5.0 (X11; Linux x86_64; rv:68.0) Gecko/20100101 Firefox/68.0",
       },
       { name: "Accept", value: "*/*" },
-      { name: "Accept-Language", value: "en-US,en;q=0.5" },
+      { name: "Accept-Language", value: "en-US,en;q=0.9" },
       { name: "Accept-Encoding", value: "gzip, deflate, br" },
       { name: "Origin", value: "https://example.com" },
       { name: "Connection", value: "keep-alive" },
@@ -54,7 +54,7 @@ add_task(async function () {
     "user-agent header present in curl command"
   );
   ok(
-    exactHeaderInParams(curlParams, "Accept-Language: en-US,en;q=0.5"),
+    exactHeaderInParams(curlParams, "Accept-Language: en-US,en;q=0.9"),
     "accept-language header present in curl output"
   );
   ok(

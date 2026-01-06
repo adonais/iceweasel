@@ -214,7 +214,6 @@ tasks.register('ktlint', JavaExec) {
     mainClass.set("com.pinterest.ktlint.Main")
     args "app/src/**/*.kt"
     args "!**/build/**/*.kt"
-    args "--baseline=ktlint-baseline.xml"
     args "--reporter=json,output=build/reports/ktlint/ktlint.json"
     args "--reporter=plain"
 }
@@ -226,7 +225,6 @@ tasks.register('ktlintFormat', JavaExec) {
     args "-F"
     args "app/src/**/*.kt"
     args "!**/build/**/*.kt"
-    args "--baseline=ktlint-baseline.xml"
     args "--reporter=json,output=build/reports/ktlint/ktlintFormat.json"
     args "--reporter=plain"
     jvmArgs("--add-opens", "java.base/java.lang=ALL-UNNAMED")

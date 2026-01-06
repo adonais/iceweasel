@@ -61,8 +61,6 @@ class NeckoChild : public PNeckoChild {
   PUDPSocketChild* AllocPUDPSocketChild(nsIPrincipal* aPrincipal,
                                         const nsACString& aFilter);
   bool DeallocPUDPSocketChild(PUDPSocketChild*);
-  PSimpleChannelChild* AllocPSimpleChannelChild(const uint32_t& channelId);
-  bool DeallocPSimpleChannelChild(PSimpleChannelChild* child);
   PTransportProviderChild* AllocPTransportProviderChild();
   bool DeallocPTransportProviderChild(PTransportProviderChild* aActor);
   PWebSocketEventListenerChild* AllocPWebSocketEventListenerChild(

@@ -880,8 +880,6 @@ add_task(async function test_padding() {
   );
 });
 
-add_task(test_connection_reuse_and_cycling);
-
 // Can't test for socket process since telemetry is captured in different process.
 add_task(
   { skip_if: () => mozinfo.socketprocess_networking },

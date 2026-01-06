@@ -9,6 +9,7 @@
 
 #include "gfxDWriteFontList.h"
 #include "gfxDWriteFonts.h"
+#include "gfxDWriteCommon.h"
 #include "nsUnicharUtils.h"
 #include "nsPresContext.h"
 #include "nsServiceManagerUtils.h"
@@ -529,7 +530,7 @@ nsresult gfxDWriteFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
     rv = NS_OK;
   } else {
     uint32_t kCMAP = TRUETYPE_TAG('c', 'm', 'a', 'p');
-    charmap = new gfxCharacterMap();
+    charmap = new gfxCharacterMap(256);
     AutoTable cmapTable(this, kCMAP);
 
     if (cmapTable) {
@@ -566,7 +567,7 @@ nsresult gfxDWriteFontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
     mHasCmapTable = true;
   } else {
     // if error occurred, initialize to null cmap
-    charmap = new gfxCharacterMap();
+    charmap = new gfxCharacterMap(0);
     mHasCmapTable = false;
   }
   if (setCharMap) {
@@ -907,6 +908,15 @@ void gfxDWriteFontEntry::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
   AddSizeOfExcludingThis(aMallocSizeOf, aSizes);
 }
 
+size_t gfxDWriteFontEntry::ComputedSizeOfExcludingThis(
+    mozilla::MallocSizeOf aMallocSizeOf) {
+  size_t result = gfxFontEntry::ComputedSizeOfExcludingThis(aMallocSizeOf);
+  if (mFontFileStream) {
+    result += mFontFileStream->SizeOfExcludingThis(aMallocSizeOf);
+  }
+  return result;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // gfxDWriteFontList
 
@@ -973,7 +983,7 @@ gfxFontEntry* gfxDWriteFontList::MakePlatformFont(
     const nsACString& aFontName, WeightRange aWeightForEntry,
     StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
     const uint8_t* aFontData, uint32_t aLength) {
-  RefPtr<IDWriteFontFileStream> fontFileStream;
+  RefPtr<gfxDWriteFontFileStream> fontFileStream;
   RefPtr<IDWriteFontFile> fontFile;
   HRESULT hr = gfxDWriteFontFileLoader::CreateCustomFontFile(
       aFontData, aLength, getter_AddRefs(fontFile),
@@ -1363,7 +1373,7 @@ void gfxDWriteFontList::GetFacesInitDataForFamily(
             if (SUCCEEDED(dwFontFace->TryGetFontTable(
                     kCMAP, (const void**)&data, &size, &context, &exists)) &&
                 exists) {
-              charmap = new gfxCharacterMap();
+              charmap = new gfxCharacterMap(256);
               uint32_t offset;
               gfxFontUtils::ReadCMAP((const uint8_t*)data, size, *charmap,
                                      offset);
@@ -2509,7 +2519,7 @@ void DirectWriteFontInfo::LoadFontFamilyData(const nsACString& aFamilyName) {
 
       if (SUCCEEDED(hr) && exists) {
         bool cmapLoaded = false;
-        RefPtr<gfxCharacterMap> charmap = new gfxCharacterMap();
+        RefPtr<gfxCharacterMap> charmap = new gfxCharacterMap(256);
         uint32_t offset;
         MOZ_SEH_TRY {
           if (cmapData && cmapSize > 0 &&

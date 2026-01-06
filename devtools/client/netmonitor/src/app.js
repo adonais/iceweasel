@@ -45,7 +45,7 @@ const SearchDispatcher = require("resource://devtools/client/netmonitor/src/work
  * This object can be consumed by other panels (e.g. Console
  * is using inspectRequest), by the Launchpad (bootstrap), etc.
  *
- * @param {Object} api An existing API object to be reused.
+ * @param {object} api An existing API object to be reused.
  */
 function NetMonitorApp(api) {
   this.api = api;

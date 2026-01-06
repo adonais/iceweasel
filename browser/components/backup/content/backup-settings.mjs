@@ -7,12 +7,6 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
 import { getErrorL10nId } from "chrome://browser/content/backup/backup-errors.mjs";
 import { ERRORS } from "chrome://browser/content/backup/backup-constants.mjs";
 
-const lazy = {};
-
-ChromeUtils.defineESModuleGetters(lazy, {
-  BackupService: "resource:///modules/backup/BackupService.sys.mjs",
-});
-
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/backup/turn-on-scheduled-backups.mjs";
 // eslint-disable-next-line import/no-unassigned-import
@@ -24,15 +18,12 @@ import "chrome://browser/content/backup/enable-backup-encryption.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/backup/disable-backup-encryption.mjs";
 
-const BACKUP_ERROR_CODE_PREF_NAME = "browser.backup.errorCode";
-
 /**
  * The widget for managing the BackupService that is embedded within the main
  * document of about:settings / about:preferences.
  */
 export default class BackupSettings extends MozLitElement {
   #placeholderIconURL = "chrome://global/skin/icons/page-portrait.svg";
-  #backupService = lazy.BackupService.init();
   inProgressTimeout = null;
   showInProgress = false;
 
@@ -41,10 +32,7 @@ export default class BackupSettings extends MozLitElement {
 
   static properties = {
     backupServiceState: { type: Object },
-    backupErrorCode: { type: Number },
     _enableEncryptionTypeAttr: { type: String },
-    _archiveEnabled: { type: Boolean },
-    _restoreEnabled: { type: Boolean },
   };
 
   static get queries() {
@@ -111,17 +99,13 @@ export default class BackupSettings extends MozLitElement {
       supportBaseLink: "",
       backupInProgress: false,
       recoveryInProgress: false,
-      recoveryErrorCode: 0,
+      recoveryErrorCode: ERRORS.NONE,
+      backupErrorCode: ERRORS.NONE,
+      archiveEnabledStatus: false,
+      restoreEnabledStatus: false,
     };
-    this.backupErrorCode = this.#readBackupErrorPref();
     this._enableEncryptionTypeAttr = "";
-    this.updateArchiveAndRestoreState();
   }
-
-  updateArchiveAndRestoreState = () => {
-    this._archiveEnabled = this.#backupService.archiveEnabledStatus.enabled;
-    this._restoreEnabled = this.#backupService.restoreEnabledStatus.enabled;
-  };
 
   /**
    * Dispatches the BackupUI:InitWidget custom event upon being attached to the
@@ -133,34 +117,16 @@ export default class BackupSettings extends MozLitElement {
       new CustomEvent("BackupUI:InitWidget", { bubbles: true })
     );
 
-    Services.obs.addObserver(
-      this.updateArchiveAndRestoreState,
-      "backup-service-status-updated"
-    );
-
-    this._cleanupObs = () => {
-      Services.obs.removeObserver(
-        this.updateArchiveAndRestoreState,
-        "backup-service-status-updated"
-      );
-      window.removeEventListener("unload", this._cleanupObs);
-    };
-
-    window.addEventListener("unload", this._cleanupObs, { once: true });
-
     this.addEventListener("dialogCancel", this);
     this.addEventListener("restoreFromBackupConfirm", this);
     this.addEventListener("restoreFromBackupChooseFile", this);
   }
 
-  #readBackupErrorPref() {
-    return Services.prefs.getIntPref(BACKUP_ERROR_CODE_PREF_NAME);
-  }
-
   handleErrorBarDismiss = () => {
     // Reset the pref and reactive state; Lit will re-render without the bar.
-    Services.prefs.setIntPref(BACKUP_ERROR_CODE_PREF_NAME, ERRORS.NONE);
-    this.backupErrorCode = 0;
+    this.dispatchEvent(
+      new CustomEvent("BackupUI:ErrorBarDismissed", { bubbles: true })
+    );
   };
 
   handleEvent(event) {
@@ -476,7 +442,7 @@ export default class BackupSettings extends MozLitElement {
   }
 
   errorBarTemplate() {
-    const l10nId = getErrorL10nId(this.backupErrorCode);
+    const l10nId = getErrorL10nId(this.backupServiceState.backupErrorCode);
     return html`
       <moz-message-bar
         type="error"
@@ -536,13 +502,15 @@ export default class BackupSettings extends MozLitElement {
         rel="stylesheet"
         href="chrome://browser/content/backup/backup-settings.css"
       />
-      ${this.backupErrorCode ? this.errorBarTemplate() : null}
+      ${this.backupServiceState.backupErrorCode
+        ? this.errorBarTemplate()
+        : null}
       ${this.showInProgress ? this.inProgressMessageBarTemplate() : null}
       ${this.turnOnScheduledBackupsDialogTemplate()}
       ${this.turnOffScheduledBackupsDialogTemplate()}
       ${this.enableBackupEncryptionDialogTemplate()}
       ${this.disableBackupEncryptionDialogTemplate()}
-      ${this._archiveEnabled
+      ${this.backupServiceState.archiveEnabledStatus
         ? html` <section id="scheduled-backups">
             <div class="backups-control">
               <span
@@ -584,7 +552,9 @@ export default class BackupSettings extends MozLitElement {
               : null}
           </section>`
         : null}
-      ${this._restoreEnabled ? this.restoreFromBackupTemplate() : null} `;
+      ${this.backupServiceState.restoreEnabledStatus
+        ? this.restoreFromBackupTemplate()
+        : null} `;
   }
 }
 

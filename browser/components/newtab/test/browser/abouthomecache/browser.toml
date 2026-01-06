@@ -36,8 +36,7 @@ prefs = [
 
 ["browser_no_cache.js"]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64'", # Bug 1952938
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && tsan", # Bug 1952938
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1952938
 ]
 
 ["browser_no_cache_on_SessionStartup_restore.js"]
@@ -47,8 +46,14 @@ skip-if = [
 ["browser_overwrite_cache.js"]
 
 ["browser_process_crash.js"]
-run-if = ["crashreporter"]
-skip-if = ["os == 'mac'"] # Bug 1659427; medium frequency intermittent on osx: test timed out
+run-if = [
+  "crashreporter",
+]
+skip-if = [
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1659427; medium frequency intermittent on osx: test timed out
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1659427; medium frequency intermittent on osx: test timed out
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1659427; medium frequency intermittent on osx: test timed out
+]
 
 ["browser_same_consumer.js"]
 

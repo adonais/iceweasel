@@ -70,7 +70,6 @@ class BrowserStateReader {
     }
 }
 
-@Suppress("ComplexMethod")
 private fun JsonReader.browsingSession(
     engine: Engine,
     restoreSessionId: Boolean = true,
@@ -164,7 +163,7 @@ private fun JsonReader.tab(
     )
 }
 
-@Suppress("ComplexMethod", "LongMethod")
+@Suppress("LongMethod", "CyclomaticComplexMethod")
 private fun JsonReader.tabSession(): RecoverableTab {
     var id: String? = null
     var parentId: String? = null

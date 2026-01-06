@@ -94,6 +94,7 @@ class ReviewPromptMiddleware(
         next(action)
     }
 
+    @Suppress("CognitiveComplexMethod")
     private fun handleReviewPromptCheck(context: MiddlewareContext<AppState, AppAction>) {
         if (context.state.reviewPrompt != ReviewPromptState.Unknown) {
             // We only want to try to show it once to avoid unnecessary disk reads.

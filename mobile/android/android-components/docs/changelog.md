@@ -4,7 +4,23 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 146.0 (In Development)
+# 147.0 (In Development)
+* **browser-state**:
+  * ⚠️ **Breaking change**: New `Unknown` third state for the `SecurityStatus` of the connection used in a tab. The `secure` property has been migrated to `isSecure`. [Bug 2000617](https://bugzilla.mozilla.org/show_bug.cgi?id=2000617).
+* **lib-state**
+    * ⚠️ **Breaking change**: Removed thread marshalling from Stores [Bug 1980348](https://bugzilla.mozilla.org/show_bug.cgi?id=1980348).
+        * `Store.dispatch` is now invoked on the calling thread.
+        * `Store.dispatch` no longer spawns a new `Job` (it now returns `Unit`).
+    * ⚠️ **Breaking change**: Removed UIStore [Bug 1980350](https://bugzilla.mozilla.org/show_bug.cgi?id=1980350)
+* **ui-widgets**
+  * 🆕 New `EngineViewScrollingDataBehavior` meant to only be used to animate a bottom toolbar/banner in sync with the current webpage [Bug 1991654](https://bugzilla.mozilla.org/show_bug.cgi?id=1991654).
+* **concept-engine** and **browser-engine-gecko**
+  * 🆕 New `verticalScrollPosition` and `verticalScrollDelta` APIs exposing the current scroll position and delta of the webpage [Bug 1990215](https://bugzilla.mozilla.org/show_bug.cgi?id=1990215).
+* **lib-state**
+  * 🆕 New `fragmentStore`, `activityStore`, `composableStore` and `navBackStackStore` APIs available to build a new Store and persist its State in a ViewModel ensuring that it survives Activity recreations. These APIs supersede the existing ones and avoid the possibility of memory leaks. [Bug 1996676](https://bugzilla.mozilla.org/show_bug.cgi?id=1996676).
+  * ⚠️ **Breaking change**: The `lazyStore` API was removed in favor of the new `fragmentStore`, `activityStore` and `composableStore` APIs. [Bug 1996676](https://bugzilla.mozilla.org/show_bug.cgi?id=1996676).
+
+# 146.0
 
 # 145.0
 * **support-ktx**

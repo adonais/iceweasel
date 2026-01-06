@@ -3426,15 +3426,6 @@ void nsLineLayout::RelativePositionFrames(PerSpanData* psd,
     // Adjust the origin of the frame
     ApplyRelativePositioning(pfd);
 
-    // We must position the view correctly before positioning its
-    // descendants so that widgets are positioned properly (since only
-    // some views have widgets).
-    if (auto* view = frame->GetView()) {
-      nsContainerFrame::SyncFrameViewAfterReflow(
-          mPresContext, frame, view, pfd->mOverflowAreas.InkOverflow(),
-          nsIFrame::ReflowChildFlags::NoSizeView);
-    }
-
     // Note: the combined area of a child is in its coordinate
     // system. We adjust the childs combined area into our coordinate
     // system before computing the aggregated value by adding in
@@ -3463,24 +3454,6 @@ void nsLineLayout::RelativePositionFrames(PerSpanData* psd,
         }
         frame->FinishAndStoreOverflow(r, frame->GetSize());
       }
-
-      // If we have something that's not an inline but with a complex frame
-      // hierarchy inside that contains views, they need to be
-      // positioned.
-      // All descendant views must be repositioned even if this frame
-      // does have a view in case this frame's view does not have a
-      // widget and some of the descendant views do have widgets --
-      // otherwise the widgets won't be repositioned.
-      nsContainerFrame::PositionChildViews(frame);
-    }
-
-    // Do this here (rather than along with setting the overflow rect
-    // below) so we get leaf frames as well.  No need to worry
-    // about the root span, since it doesn't have a frame.
-    if (auto* view = frame->GetView()) {
-      nsContainerFrame::SyncFrameViewAfterReflow(
-          mPresContext, frame, view, r.InkOverflow(),
-          nsIFrame::ReflowChildFlags::NoMoveView);
     }
 
     overflowAreas.UnionWith(r + frame->GetPosition());

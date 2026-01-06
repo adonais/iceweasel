@@ -104,7 +104,7 @@ def bootstrap_tasks(config, tasks):
                 },
                 "run-on-projects": ["trunk"],
                 "run-on-repo-type": task.get("run-on-repo-type", ["git", "hg"]),
-                "worker-type": "b-linux-gcp",
+                "worker-type": "b-linux",
                 "worker": {
                     "implementation": "docker-worker",
                     "docker-image": image,

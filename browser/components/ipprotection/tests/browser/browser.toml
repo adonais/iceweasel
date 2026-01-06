@@ -28,6 +28,8 @@ prefs = [
 
 ["browser_ipprotection_message_bar.js"]
 
+["browser_ipprotection_optout.js"]
+
 ["browser_ipprotection_panel.js"]
 
 ["browser_ipprotection_proxy_errors.js"]

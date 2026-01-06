@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.search.awesomebar
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,18 +12,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.button.FilledButton
+import mozilla.components.compose.base.button.TextButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
@@ -48,80 +48,75 @@ internal fun PrivateSuggestionsCard(
     onSearchSuggestionsInPrivateModeBlocked: () -> Unit = {},
     onLearnMoreClick: () -> Unit = {},
 ) {
-    Column(
-        modifier = Modifier
-            .background(FirefoxTheme.colors.layer1),
-    ) {
-        Row(
-            modifier = Modifier.padding(top = 20.dp, start = 20.dp, end = 20.dp, bottom = 10.dp),
-        ) {
-            Icon(
-                painter = painterResource(iconsR.drawable.mozac_ic_information_24),
-                tint = FirefoxTheme.colors.iconPrimary,
-                contentDescription = null,
-            )
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Column {
-                Text(
-                    text = stringResource(R.string.search_suggestions_onboarding_title),
-                    style = FirefoxTheme.typography.subtitle1,
-                    maxLines = 2,
-                    color = FirefoxTheme.colors.textPrimary,
+    Surface {
+        Column {
+            Row(
+                modifier = Modifier.padding(
+                    top = 20.dp,
+                    start = 20.dp,
+                    end = 20.dp,
+                    bottom = 10.dp,
+                ),
+            ) {
+                Icon(
+                    painter = painterResource(iconsR.drawable.mozac_ic_information_24),
+                    contentDescription = null,
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.width(8.dp))
 
-                Text(
-                    text = stringResource(
-                        R.string.search_suggestions_onboarding_text,
-                        stringResource(R.string.app_name),
-                    ),
-                    style = FirefoxTheme.typography.body2,
-                    maxLines = 2,
-                    color = FirefoxTheme.colors.textSecondary,
-                )
+                Column {
+                    Text(
+                        text = stringResource(R.string.search_suggestions_onboarding_title),
+                        style = FirefoxTheme.typography.subtitle1,
+                        maxLines = 2,
+                    )
 
-                LinkText(
-                    text = stringResource(id = R.string.exceptions_empty_message_learn_more_link),
-                    linkTextStates = listOf(
-                        LinkTextState(
-                            text = stringResource(id = R.string.exceptions_empty_message_learn_more_link),
-                            url = "",
-                            onClick = { onLearnMoreClick() },
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = stringResource(
+                            R.string.search_suggestions_onboarding_text,
+                            stringResource(R.string.app_name),
                         ),
-                    ),
-                    linkTextColor = MaterialTheme.colorScheme.tertiary,
-                )
+                        style = FirefoxTheme.typography.body2,
+                        maxLines = 2,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                    LinkText(
+                        text = stringResource(id = R.string.exceptions_empty_message_learn_more_link),
+                        linkTextStates = listOf(
+                            LinkTextState(
+                                text = stringResource(id = R.string.exceptions_empty_message_learn_more_link),
+                                url = "",
+                                onClick = { onLearnMoreClick() },
+                            ),
+                        ),
+                        linkTextColor = MaterialTheme.colorScheme.tertiary,
+                    )
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    TextButton(
-                        onClick = onSearchSuggestionsInPrivateModeBlocked,
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
                     ) {
-                        Text(
+                        TextButton(
                             text = stringResource(R.string.search_suggestions_onboarding_do_not_allow_button),
-                            color = FirefoxTheme.colors.textPrimary,
+                            onClick = onSearchSuggestionsInPrivateModeBlocked,
                         )
-                    }
 
-                    Button(
-                        onClick = onSearchSuggestionsInPrivateModeAllowed,
-                    ) {
-                        Text(
+                        FilledButton(
                             text = stringResource(R.string.search_suggestions_onboarding_allow_button),
+                            onClick = onSearchSuggestionsInPrivateModeAllowed,
                         )
                     }
                 }
             }
-        }
 
-        HorizontalDivider(color = FirefoxTheme.colors.borderPrimary)
+            HorizontalDivider()
+        }
     }
 }
 

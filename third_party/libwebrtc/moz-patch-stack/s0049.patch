@@ -12,7 +12,7 @@ Subject: Bug 1766646 - (fix-ae0d117d51) ifdef our Csrc impl vs upstream's
  5 files changed, 20 insertions(+)
 
 diff --git a/modules/rtp_rtcp/source/rtp_header_extensions.cc b/modules/rtp_rtcp/source/rtp_header_extensions.cc
-index 39eb769f1c..7936e51945 100644
+index c0e46cc918..b26f0943e0 100644
 --- a/modules/rtp_rtcp/source/rtp_header_extensions.cc
 +++ b/modules/rtp_rtcp/source/rtp_header_extensions.cc
 @@ -182,6 +182,7 @@ bool AudioLevelExtension::Write(ArrayView<uint8_t> data,
@@ -31,7 +31,7 @@ index 39eb769f1c..7936e51945 100644
  
  // From RFC 5450: Transmission Time Offsets in RTP Streams.
  //
-@@ -421,6 +423,7 @@ bool PlayoutDelayLimits::Write(ArrayView<uint8_t> data,
+@@ -422,6 +424,7 @@ bool PlayoutDelayLimits::Write(ArrayView<uint8_t> data,
    return true;
  }
  
@@ -39,7 +39,7 @@ index 39eb769f1c..7936e51945 100644
  // CSRCAudioLevel
  //  Sample Audio Level Encoding Using the One-Byte Header Format
  //  Note that the range of len is 1 to 15 which is encoded as 0 to 14
-@@ -459,6 +462,7 @@ bool CsrcAudioLevel::Write(ArrayView<uint8_t> data,
+@@ -460,6 +463,7 @@ bool CsrcAudioLevel::Write(ArrayView<uint8_t> data,
    // This extension if used must have at least one audio level
    return csrcAudioLevels.numAudioLevels;
  }
@@ -111,7 +111,7 @@ index 60e582bf29..30d19e16eb 100644
    }
  }
 diff --git a/modules/rtp_rtcp/source/rtp_sender.cc b/modules/rtp_rtcp/source/rtp_sender.cc
-index c7e9a2a594..91e5e239b9 100644
+index 7e2e5eb3e2..fe6a3dc178 100644
 --- a/modules/rtp_rtcp/source/rtp_sender.cc
 +++ b/modules/rtp_rtcp/source/rtp_sender.cc
 @@ -114,7 +114,9 @@ bool IsNonVolatile(RTPExtensionType type) {

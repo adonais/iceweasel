@@ -19,6 +19,5 @@ message RecentSettingsSearchItem {
     string preference_key = 1;
     string title = 2;
     string summary = 3;
-    repeated string breadcrumbs = 4;
-    int32 xml_resource_id = 5; // We only need the ID to reconstruct the full object
+    int32 xml_resource_id = 4; // We only need the ID to reconstruct the full object
 }

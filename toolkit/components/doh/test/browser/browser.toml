@@ -1,8 +1,10 @@
 [DEFAULT]
 head = "head.js"
+run-if = [
+  "os != 'android'", # browser-chrome tests don't work on android
+]
 skip-if = [
-	"os == 'android'", # browser-chrome tests don't work on android
-	"socketprocess_networking", # bug 1849304 - high freq intermittent
+  "socketprocess_networking", # bug 1849304 - high freq intermittent
 ]
 
 ["browser_cleanFlow.js"]
@@ -28,7 +30,9 @@ skip-if = [
 ["browser_throttle_heuristics.js"]
 
 ["browser_trrSelect.js"]
-skip-if = ["socketprocess_networking && verify-standalone"]
+skip-if = [
+  "socketprocess_networking && verify-standalone",
+]
 
 ["browser_trrSelection_disable.js"]
 

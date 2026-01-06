@@ -91,40 +91,6 @@ static const unsigned int NEGATIVE_RECORD_LIFETIME = 60;
 
 using namespace mozilla;
 
-namespace geckoprofiler::markers {
-
-struct HostResolverMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("HostResolver");
-  }
-  static void StreamJSONMarkerData(
-      mozilla::baseprofiler::SpliceableJSONWriter& aWriter,
-      const mozilla::ProfilerString8View& aHost,
-      const mozilla::ProfilerString8View& aOriginSuffix, uint16_t aType,
-      uint32_t aFlags) {
-    aWriter.StringProperty("host", aHost);
-    aWriter.StringProperty("originSuffix", aOriginSuffix);
-    aWriter.IntProperty("qtype", aType);
-    aWriter.StringProperty("flags", nsPrintfCString("0x%x", aFlags));
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema(MS::Location::MarkerChart, MS::Location::MarkerTable);
-    schema.SetTableLabel("{marker.data.host}");
-    schema.AddKeyFormat("host", MS::Format::SanitizedString,
-                        MS::PayloadFlags::Searchable);
-    schema.AddKeyFormat("originSuffix", MS::Format::SanitizedString,
-                        MS::PayloadFlags::Searchable);
-    schema.AddKeyFormat("qtype", MS::Format::Integer);
-    schema.AddKeyFormat("flags", MS::Format::String);
-    return schema;
-  }
-};
-
-}  // namespace geckoprofiler::markers
-
-//----------------------------------------------------------------------------
-
 namespace mozilla::net {
 LazyLogModule gHostResolverLog("nsHostResolver");
 }  // namespace mozilla::net
@@ -483,9 +449,6 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
        flags & nsIDNSService::RESOLVE_BYPASS_CACHE ? " - bypassing cache" : "",
        flags & nsIDNSService::RESOLVE_REFRESH_CACHE ? " - refresh cache" : "",
        type, this));
-
-  PROFILER_MARKER("nsHostResolver::ResolveHost", NETWORK, {},
-                  HostResolverMarker, host, originSuffix, type, flags);
 
   // When this pref is set, we always set the flag, to make sure consumers
   // that forget to set the flag don't end up being a cache miss.
@@ -1418,6 +1381,9 @@ bool nsHostResolver::MaybeRetryTRRLookup(
   MOZ_ASSERT(!aAddrRec->mResolving);
   if (!StaticPrefs::network_trr_retry_on_recoverable_errors()) {
     LOG(("nsHostResolver::MaybeRetryTRRLookup retrying with native"));
+
+    // Trigger a confirmation retry, in order to cycle connection if needed
+    TRRService::Get()->RetryTRRConfirm();
     return NS_SUCCEEDED(NativeLookup(aAddrRec, aLock));
   }
 
@@ -1626,10 +1592,6 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupLocked(
     }
   }
 
-  PROFILER_MARKER("nsHostResolver::CompleteLookupLocked", NETWORK, {},
-                  HostResolverMarker, addrRec->host, addrRec->originSuffix,
-                  addrRec->type, addrRec->flags);
-
   // get the list of pending callbacks for this lookup, and notify
   // them that the lookup is complete.
   mozilla::LinkedList<RefPtr<nsResolveHostCallback>> cbs =
@@ -1744,10 +1706,6 @@ nsHostResolver::LookupStatus nsHostResolver::CompleteLookupByTypeLocked(
     MOZ_ASSERT(aReason != TRRSkippedReason::TRR_UNSET);
     typeRec->RecordReason(aReason);
   }
-
-  PROFILER_MARKER("nsHostResolver::CompleteLookupByTypeLocked", NETWORK, {},
-                  HostResolverMarker, typeRec->host, typeRec->originSuffix,
-                  typeRec->type, typeRec->flags);
 
   mozilla::LinkedList<RefPtr<nsResolveHostCallback>> cbs =
       std::move(typeRec->mCallbacks);

@@ -1534,6 +1534,10 @@ def _create_venv_with_pthfile(
     os.environ["VIRTUAL_ENV"] = virtualenv_root
 
     if populate_with_pip:
+        for requirements_txt_file in requirements.requirements_txt_files:
+            target_venv.pip_install(
+                ["--requirement", requirements_txt_file.path, "--require-hashes"]
+            )
         if requirements.pypi_requirements:
             requirements_list = [
                 str(req.requirement) for req in requirements.pypi_requirements
@@ -1566,6 +1570,16 @@ def _is_venv_up_to_date(
         if os.path.getmtime(dep_file) > metadata_mtime:
             return SiteUpToDateResult(
                 False, f'"{dep_file}" has changed since the virtualenv was created'
+            )
+
+    for requirements_txt_file in requirements.requirements_txt_files:
+        req_txt_path = requirements_txt_file.path
+        if (
+            os.path.exists(req_txt_path)
+            and os.path.getmtime(req_txt_path) > metadata_mtime
+        ):
+            return SiteUpToDateResult(
+                False, f'"{req_txt_path}" has changed since the virtualenv was created'
             )
 
     try:

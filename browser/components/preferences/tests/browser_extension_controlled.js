@@ -1048,6 +1048,9 @@ add_task(async function testExtensionControlledTrackingProtection() {
 });
 
 add_task(async function testExtensionControlledPasswordManager() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.settings-redesign.enabled", false]],
+  });
   const PASSWORD_MANAGER_ENABLED_PREF = "signon.rememberSignons";
   const PASSWORD_MANAGER_ENABLED_DEFAULT = true;
   const CONTROLLED_BUTTON_ID = "disablePasswordManagerExtension";

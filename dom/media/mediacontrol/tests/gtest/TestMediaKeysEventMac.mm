@@ -11,7 +11,6 @@
 #include "MediaHardwareKeysEventSourceMac.h"
 #include "MediaKeyListenerTest.h"
 #include "gtest/gtest.h"
-#include "mozilla/Maybe.h"
 
 using namespace mozilla::dom;
 using namespace mozilla::widget;

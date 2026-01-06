@@ -26,7 +26,9 @@ val inComposePreview: Boolean
  * @param attrId The attribute resource ID (e.g. R.attr.image)
  */
 @Composable
-fun getResolvedAttrResId(@AttrRes attrId: Int): Int {
+fun getResolvedAttrResId(
+    @AttrRes attrId: Int,
+): Int {
     val typedArray = LocalContext.current.obtainStyledAttributes(intArrayOf(attrId))
     val newResId = typedArray.getResourceId(0, 0)
     typedArray.recycle()

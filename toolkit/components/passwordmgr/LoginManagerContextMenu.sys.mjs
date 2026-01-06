@@ -15,7 +15,7 @@ export const LoginManagerContextMenu = {
   /**
    * Look for login items and add them to the contextual menu.
    *
-   * @param {Object} inputElementIdentifier
+   * @param {object} inputElementIdentifier
    *        An identifier generated for the input element via ContentDOMReference.
    * @param {xul:browser} browser
    *        The browser for the document the context menu was open on.
@@ -168,7 +168,7 @@ export const LoginManagerContextMenu = {
   /**
    * @param {nsILoginInfo} login
    *        The login we want to fill the form with.
-   * @param {Object} inputElementIdentifier
+   * @param {object} inputElementIdentifier
    *        An identifier generated for the input element via ContentDOMReference.
    * @param {xul:browser} browser
    *        The target tab browser.

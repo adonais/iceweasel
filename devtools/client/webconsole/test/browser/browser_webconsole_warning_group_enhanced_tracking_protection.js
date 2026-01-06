@@ -176,7 +176,7 @@ add_task(cleanUp);
 /**
  * Test that storage access blocked messages are grouped by emitting 2 messages.
  *
- * @param {String} groupLabel: The warning group label that should be created.
+ * @param {string} groupLabel: The warning group label that should be created.
  *                             It should contain "<URL>".
  */
 async function testStorageAccessBlockedGrouping(groupLabel) {

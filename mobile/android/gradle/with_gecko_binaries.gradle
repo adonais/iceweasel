@@ -72,6 +72,7 @@ ext.configureLibraryVariantWithJNIWrappers = { variant, module ->
 
             dependsOn jarTask
             dependsOn annotationProcessorsJarTask
+            dependsOn rootProject.verifyGleanVersion
         }
     }
 }

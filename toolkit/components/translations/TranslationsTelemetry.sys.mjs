@@ -16,7 +16,7 @@ const lazy = /** @type {any} */ ({});
 
 /**
  * @typedef {{ flowId: string, randomRoll: number }} FlowContext
- * @typedef {"default" | "nightly" | "beta" | "esr" | "release" | "unofficial"} UpdateChannel
+ * @typedef {"default" | "nightly" | "beta" | "aurora" | "esr" | "release" | "unofficial"} UpdateChannel
  * @typedef {Partial<Record<UpdateChannel, number>> & { applyInAutomation?: boolean }} SampleRates
  */
 
@@ -56,6 +56,7 @@ export class TranslationsTelemetry {
   static #PAGE_LOAD_RATE_LIMITS = {
     nightly: 1 /   1_000,
        beta: 1 /  10_000,
+     aurora: 1 /  10_000,
         esr: 1 /  10_000,
     release: 1 / 100_000,
   };
@@ -70,6 +71,7 @@ export class TranslationsTelemetry {
   // prettier-ignore
   static #ENGINE_PERFORMANCE_RATE_LIMITS = {
        beta: 1 /   100,
+     aurora: 1 /   100,
         esr: 1 /   100,
     release: 1 / 1_000,
   };
@@ -445,7 +447,11 @@ class FullPageTranslationsPanelTelemetry {
    */
   // prettier-ignore
   static #FULL_PAGE_PANEL_RATE_LIMITS = {
-    release: 1 / 100,
+    nightly: 1 /    10,
+       beta: 1 /    50,
+     aurora: 1 /    50,
+        esr: 1 /   100,
+    release: 1 / 1_000,
   };
 
   /**

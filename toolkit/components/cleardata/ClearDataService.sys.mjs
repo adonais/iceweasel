@@ -61,6 +61,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 /**
  * Adds brackets to a host if it's an IPv6 address.
+ *
  * @param {string} host - Host which may be an IPv6.
  * @returns {string} bracketed IPv6 or host if host is not an IPv6.
  */
@@ -81,6 +82,7 @@ function maybeFixupIpv6(host) {
  * Test if (host, OriginAttributes) or principal belong to a (schemeless) site.
  * Also considers partitioned storage by inspecting OriginAttributes
  * partitionKey.
+ *
  * @param options
  * @param {string} [options.host] - Optional host to compare to site.
  * @param {object} [options.originAttributes] - Optional origin attributes to
@@ -90,7 +92,7 @@ function maybeFixupIpv6(host) {
  * aSchemelessSite and aOriginAttributesPattern.
  * @param {string} aSchemelessSite - Domain to check for. Must be a valid,
  * non-empty baseDomain string.
- * @param {Object} [aOriginAttributesPattern] - Additional OriginAttributes
+ * @param {object} [aOriginAttributesPattern] - Additional OriginAttributes
  * filtering using an OriginAttributesPattern. Defaults to {} which matches all.
  * @returns {boolean} Whether the (host, originAttributes) or principal matches
  * the site.
@@ -812,6 +814,7 @@ const MediaDevicesCleaner = {
 const QuotaCleaner = {
   /**
    * Clear quota storage for matching principals.
+   *
    * @param {function} filterFn - Filter function which is passed a principal.
    * Return true to clear storage for given principal or false to skip it.
    * @returns {Promise} - Resolves once all matching items have been cleared.
@@ -1163,8 +1166,9 @@ const PredictorNetworkCleaner = {
 const PushNotificationsCleaner = {
   /**
    * Clear entries for aDomain including subdomains of aDomain.
+   *
    * @param {string} aDomain - Domain to clear data for.
-   * @param {Object} aOriginAttributesPattern - Optional pattern to filter OriginAttributes.
+   * @param {object} aOriginAttributesPattern - Optional pattern to filter OriginAttributes.
    * @returns {Promise} a promise which resolves once data has been cleared.
    */
   _deleteByRootDomain(aDomain, aOriginAttributesPattern = null) {

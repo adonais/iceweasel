@@ -83,6 +83,7 @@ add_task(async function test_fetchWithHistory_streams_and_forwards_args() {
     };
 
     sb.stub(SmartAssistEngine, "_createEngine").resolves(fakeEngine);
+    sb.stub(SmartAssistEngine, "_getFxAccountToken").resolves("mock_token");
 
     const messages = [
       { role: "system", content: "You are helpful" },
@@ -121,6 +122,7 @@ add_task(
     try {
       const err = new Error("creation failed (generic)");
       const stub = sb.stub(SmartAssistEngine, "_createEngine").rejects(err);
+      sb.stub(SmartAssistEngine, "_getFxAccountToken").resolves("mock_token");
       const messages = [{ role: "user", content: "Hi" }];
 
       // Must CONSUME the async generator to trigger the rejection
@@ -157,6 +159,7 @@ add_task(async function test_fetchWithHistory_propagates_stream_error() {
       },
     };
     sb.stub(SmartAssistEngine, "_createEngine").resolves(fakeEngine);
+    sb.stub(SmartAssistEngine, "_getFxAccountToken").resolves("mock_token");
 
     const consume = async () => {
       let acc = "";

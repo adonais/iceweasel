@@ -379,9 +379,9 @@ class CookiesStorageActor extends BaseStorageActor {
   /**
    * Pass the editItem command from the content to the chrome process.
    *
-   * @param {Object} data
+   * @param {object} data
    *        See editCookie() for format details.
-   * @returns {Object} An object with an "errorString" property.
+   * @returns {object} An object with an "errorString" property.
    */
   async editItem(data) {
     const potentialErrorMessage = this.editCookie(data);
@@ -391,9 +391,9 @@ class CookiesStorageActor extends BaseStorageActor {
   /**
    * Add a cookie on given host
    *
-   * @param {String} guid
-   * @param {String} host
-   * @returns {Object} An object with an "errorString" property.
+   * @param {string} guid
+   * @param {string} host
+   * @returns {object} An object with an "errorString" property.
    */
   async addItem(guid, host) {
     const window = this.storageActor.getWindowFromHost(host);
@@ -420,9 +420,9 @@ class CookiesStorageActor extends BaseStorageActor {
   /**
    * Add a cookie on given principal
    *
-   * @param {String} guid
+   * @param {string} guid
    * @param {Principal} principal
-   * @returns {String|null} If the cookie couldn't be added (e.g. it's invalid),
+   * @returns {string | null} If the cookie couldn't be added (e.g. it's invalid),
    *          an error string will be returned.
    */
   addCookie(guid, principal) {
@@ -464,7 +464,7 @@ class CookiesStorageActor extends BaseStorageActor {
   /**
    * Apply the results of a cookie edit.
    *
-   * @param {Object} data
+   * @param {object} data
    *        An object in the following format:
    *        {
    *          host: "http://www.mozilla.org",
@@ -486,7 +486,7 @@ class CookiesStorageActor extends BaseStorageActor {
    *            isHttpOnly: "false"
    *          }
    *        }
-   * @returns {(String|null)} If cookie couldn't be updated (e.g. it's invalid), an error string
+   * @returns {(string | null)} If cookie couldn't be updated (e.g. it's invalid), an error string
    *          will be returned.
    */
   // eslint-disable-next-line complexity

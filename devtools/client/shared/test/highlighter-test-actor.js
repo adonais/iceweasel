@@ -47,8 +47,9 @@ const dumpn = msg => {
  * highlighter actor.
  * The instance provides methods to get/set attributes/text/style on nodes of
  * the highlighter, inserted into the nsCanvasFrame.
+ *
  * @see /devtools/server/actors/highlighters.js
- * @param {String} actorID
+ * @param {string} actorID
  */
 function getHighlighterCanvasFrameHelper(conn, actorID) {
   // Retrieve the CustomHighlighterActor by its actorID:
@@ -221,7 +222,8 @@ class HighlighterTestActor extends protocol.Actor {
 
   /**
    * Helper to retrieve a DOM element.
-   * @param {string | array} selector Either a regular selector string
+   *
+   * @param {string | Array} selector Either a regular selector string
    *   or a selector array. If an array, each item, except the last one
    *   are considered matching an iframe, so that we can query element
    *   within deep iframes.
@@ -269,10 +271,11 @@ class HighlighterTestActor extends protocol.Actor {
   /**
    * Get a value for a given attribute name, on one of the elements of the box
    * model highlighter, given its ID.
-   * @param {String} nodeID The full ID of the element to get the attribute for
-   * @param {String} name The name of the attribute to get
-   * @param {String} actorID The highlighter actor ID
-   * @return {String} The value, if found, null otherwise
+   *
+   * @param {string} nodeID The full ID of the element to get the attribute for
+   * @param {string} name The name of the attribute to get
+   * @param {string} actorID The highlighter actor ID
+   * @return {string} The value, if found, null otherwise
    */
   getHighlighterAttribute(nodeID, name, actorID) {
     const helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
@@ -287,8 +290,8 @@ class HighlighterTestActor extends protocol.Actor {
   /**
    * Get the bounding client rect for an highlighter element, given its ID.
    *
-   * @param {String} nodeID The full ID of the element to get the DOMRect for
-   * @param {String} actorID The highlighter actor ID
+   * @param {string} nodeID The full ID of the element to get the DOMRect for
+   * @param {string} actorID The highlighter actor ID
    * @return {DOMRect} The value, if found, null otherwise
    */
   getHighlighterBoundingClientRect(nodeID, actorID) {
@@ -304,10 +307,11 @@ class HighlighterTestActor extends protocol.Actor {
   /**
    * Get the computed style for a given property, on one of the elements of the
    * box model highlighter, given its ID.
-   * @param {String} nodeID The full ID of the element to get the attribute for
-   * @param {String} property The name of the property
-   * @param {String} actorID The highlighter actor ID
-   * @return {String} The computed style of the property
+   *
+   * @param {string} nodeID The full ID of the element to get the attribute for
+   * @param {string} property The name of the property
+   * @param {string} actorID The highlighter actor ID
+   * @return {string} The computed style of the property
    */
   getHighlighterComputedStyle(nodeID, property, actorID) {
     const helper = getHighlighterCanvasFrameHelper(this.conn, actorID);
@@ -322,9 +326,10 @@ class HighlighterTestActor extends protocol.Actor {
   /**
    * Get the textcontent of one of the elements of the box model highlighter,
    * given its ID.
-   * @param {String} nodeID The full ID of the element to get the attribute for
-   * @param {String} actorID The highlighter actor ID
-   * @return {String} The textcontent value
+   *
+   * @param {string} nodeID The full ID of the element to get the attribute for
+   * @param {string} actorID The highlighter actor ID
+   * @return {string} The textcontent value
    */
   getHighlighterNodeTextContent(nodeID, actorID) {
     let value;
@@ -337,8 +342,9 @@ class HighlighterTestActor extends protocol.Actor {
 
   /**
    * Get the number of box-model highlighters created by the SelectorHighlighter
-   * @param {String} actorID The highlighter actor ID
-   * @return {Number} The number of box-model highlighters created, or null if the
+   *
+   * @param {string} actorID The highlighter actor ID
+   * @return {number} The number of box-model highlighters created, or null if the
    * SelectorHighlighter was not found.
    */
   getSelectorHighlighterBoxNb(actorID) {
@@ -354,9 +360,10 @@ class HighlighterTestActor extends protocol.Actor {
    * Subscribe to the box-model highlighter's update event, modify an attribute of
    * the currently highlighted node and send a message when the highlighter has
    * updated.
-   * @param {String} the name of the attribute to be changed
-   * @param {String} the new value for the attribute
-   * @param {String} actorID The highlighter actor ID
+   *
+   * @param {string} the name of the attribute to be changed
+   * @param {string} the new value for the attribute
+   * @param {string} actorID The highlighter actor ID
    */
   changeHighlightedNodeWaitForUpdate(name, value, actorID) {
     return new Promise(resolve => {
@@ -375,7 +382,7 @@ class HighlighterTestActor extends protocol.Actor {
    * back and the client would know the event listener is properly set.
    * A separate event, "highlighter-updated", will be emitted when the highlighter updates.
    *
-   * @param {String} actorID The highlighter actor ID
+   * @param {string} actorID The highlighter actor ID
    */
   registerOneTimeHighlighterUpdate(actorID) {
     const { _highlighter } = this.conn.getActor(actorID);
@@ -424,7 +431,7 @@ class HighlighterTestActor extends protocol.Actor {
   /**
    * Simulates a click on a button of the debugger pause overlay.
    *
-   * @param {String} id: The id of the element (e.g. "paused-dbg-resume-button").
+   * @param {string} id: The id of the element (e.g. "paused-dbg-resume-button").
    */
   async clickPausedDebuggerOverlayButton(id) {
     const pauseOverlay = this._getPausedDebuggerOverlay();
@@ -512,7 +519,7 @@ class HighlighterTestActor extends protocol.Actor {
    * Get a representation of the NodeTabbingOrderHighlighters created by the
    * TabbingOrderHighlighter of a given targetActor.
    *
-   * @returns {Array<String>} An array which will contain as many entry as they are
+   * @returns {Array<string>} An array which will contain as many entry as they are
    *          NodeTabbingOrderHighlighters displayed.
    *          Each item will be of the form `nodename[#id]: index`.
    *          For example:
@@ -590,10 +597,11 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
 
   /**
    * Get the value of an attribute on one of the highlighter's node.
-   * @param {String} nodeID The Id of the node in the highlighter.
-   * @param {String} name The name of the attribute.
-   * @param {Object} highlighter Optional custom highlighter to target
-   * @return {String} value
+   *
+   * @param {string} nodeID The Id of the node in the highlighter.
+   * @param {string} name The name of the attribute.
+   * @param {object} highlighter Optional custom highlighter to target
+   * @return {string} value
    */
   getHighlighterNodeAttribute(nodeID, name, highlighter) {
     return this.getHighlighterAttribute(
@@ -612,10 +620,11 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
 
   /**
    * Get the computed style of a property on one of the highlighter's node.
-   * @param {String} nodeID The Id of the node in the highlighter.
-   * @param {String} property The name of the property.
-   * @param {Object} highlighter Optional custom highlighter to target
-   * @return {String} value
+   *
+   * @param {string} nodeID The Id of the node in the highlighter.
+   * @param {string} property The name of the property.
+   * @param {object} highlighter Optional custom highlighter to target
+   * @return {string} value
    */
   getHighlighterComputedStyle(nodeID, property, highlighter) {
     return super.getHighlighterComputedStyle(
@@ -692,8 +701,9 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
   /**
    * Check that the box-model highlighter is currently highlighting the node matching the
    * given selector.
-   * @param {String} selector
-   * @return {Boolean}
+   *
+   * @param {string} selector
+   * @return {boolean}
    */
   async assertHighlightedNode(selector) {
     const rect = await this.getNodeRect(selector);
@@ -704,9 +714,10 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
    * Check that the box-model highlighter is currently highlighting the text node that can
    * be found at a given index within the list of childNodes of a parent element matching
    * the given selector.
-   * @param {String} parentSelector
-   * @param {Number} childNodeIndex
-   * @return {Boolean}
+   *
+   * @param {string} parentSelector
+   * @param {number} childNodeIndex
+   * @return {boolean}
    */
   async assertHighlightedTextNode(parentSelector, childNodeIndex) {
     const rect = await this.getTextNodeRect(parentSelector, childNodeIndex);
@@ -715,8 +726,9 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
 
   /**
    * Check that the box-model highlighter is currently highlighting the given rect.
-   * @param {Object} rect
-   * @return {Boolean}
+   *
+   * @param {object} rect
+   * @return {boolean}
    */
   async isNodeRectHighlighted({ left, top, width, height }) {
     const { visible, border } = await this.getBoxModelStatus();
@@ -825,7 +837,8 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
   /**
    * Get the coordinates of the rectangle that is defined by the 4 guides displayed
    * in the toolbox box-model highlighter.
-   * @return {Object} Null if at least one guide is hidden. Otherwise an object
+   *
+   * @return {object} Null if at least one guide is hidden. Otherwise an object
    * with p1, p2, p3, p4 properties being {x, y} objects.
    */
   async getGuidesRectangle() {
@@ -854,9 +867,10 @@ class HighlighterTestFront extends protocol.FrontClassWithSpec(
   /**
    * Get the "d" attribute value for one of the box-model highlighter's region
    * <path> elements, and parse it to a list of points.
-   * @param {String} region The box model region name.
+   *
+   * @param {string} region The box model region name.
    * @param {Front} highlighter The front of the highlighter.
-   * @return {Object} The object returned has the following form:
+   * @return {object} The object returned has the following form:
    * - d {String} the d attribute value
    * - points {Array} an array of all the polygons defined by the path. Each box
    *   is itself an Array of points, themselves being [x,y] coordinates arrays.
@@ -896,9 +910,10 @@ protocol.registerFront(HighlighterTestFront);
  * Check whether a point is included in a polygon.
  * Taken and tweaked from:
  * https://github.com/iominh/point-in-polygon-extended/blob/master/src/index.js#L30-L85
+ *
  * @param {Array} point [x,y] coordinates
  * @param {Array} polygon An array of [x,y] points
- * @return {Boolean}
+ * @return {boolean}
  */
 function isInside(point, polygon) {
   if (polygon.length === 0) {

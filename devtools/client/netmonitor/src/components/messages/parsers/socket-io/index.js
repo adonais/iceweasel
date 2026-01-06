@@ -76,7 +76,7 @@ const BINARY_ACK = 6;
 /**
  * A socket.io Decoder instance
  *
- * @return {Object} decoder
+ * @return {object} decoder
  * @api public
  */
 
@@ -95,7 +95,7 @@ Emitter(Decoder.prototype);
  * be constructed whenever a packet of type BINARY_EVENT is
  * decoded.
  *
- * @param {Object} packet
+ * @param {object} packet
  * @return {BinaryReconstructor} initialized reconstructor
  * @api private
  */
@@ -110,7 +110,7 @@ function BinaryReconstructor(packet) {
  * after a BINARY_EVENT packet.
  *
  * @param {Buffer | ArrayBuffer} binData - the raw binary data received
- * @return {null | Object} returns null if more binary data is expected or
+ * @return {null | object} returns null if more binary data is expected or
  *   a reconstructed packet object if all buffers have been received.
  * @api private
  */
@@ -140,8 +140,8 @@ BinaryReconstructor.prototype.finishedReconstruction = function () {
 /**
  * Decodes an encoded packet string into packet JSON.
  *
- * @param {String} obj - encoded packet
- * @return {Object} packet
+ * @param {string} obj - encoded packet
+ * @return {object} packet
  * @api public
  */
 
@@ -181,8 +181,8 @@ Decoder.prototype.add = function (obj) {
 /**
  * Decode a packet String (JSON data)
  *
- * @param {String} str
- * @return {Object} packet
+ * @param {string} str
+ * @return {object} packet
  * @api private
  */
 // eslint-disable-next-line complexity

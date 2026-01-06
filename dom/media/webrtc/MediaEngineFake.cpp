@@ -86,6 +86,9 @@ class MediaEngineFakeVideoSource : public MediaEngineSource {
  public:
   MediaEngineFakeVideoSource();
 
+  static already_AddRefed<MediaEngineFakeVideoSource> CreateFrom(
+      const MediaEngineFakeVideoSource* aSource);
+
   static nsString GetGroupId();
 
   nsresult Allocate(const dom::MediaTrackConstraints& aConstraints,
@@ -141,6 +144,15 @@ MediaEngineFakeVideoSource::MediaEngineFakeVideoSource()
       dom::GetEnumString(VideoFacingModeEnum::Environment)));
   mSettings->mResizeMode.Construct(NS_ConvertASCIItoUTF16(
       dom::GetEnumString(dom::VideoResizeModeEnum::None)));
+}
+
+/*static*/ already_AddRefed<MediaEngineFakeVideoSource>
+MediaEngineFakeVideoSource::CreateFrom(
+    const MediaEngineFakeVideoSource* aSource) {
+  auto src = MakeRefPtr<MediaEngineFakeVideoSource>();
+  *static_cast<MediaTrackSettings*>(src->mSettings) = *aSource->mSettings;
+  src->mOpts = aSource->mOpts;
+  return src.forget();
 }
 
 nsString MediaEngineFakeVideoSource::GetGroupId() {
@@ -609,6 +621,22 @@ RefPtr<MediaEngineSource> MediaEngineFake::CreateSource(
     case MediaSourceEnum::Camera:
       return new MediaEngineFakeVideoSource();
     case MediaSourceEnum::Microphone:
+      return new MediaEngineFakeAudioSource();
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unsupported source type");
+      return nullptr;
+  }
+}
+
+RefPtr<MediaEngineSource> MediaEngineFake::CreateSourceFrom(
+    const MediaEngineSource* aSource, const MediaDevice* aMediaDevice) {
+  MOZ_ASSERT(aMediaDevice->mEngine == this);
+  switch (aMediaDevice->mMediaSource) {
+    case MediaSourceEnum::Camera:
+      return MediaEngineFakeVideoSource::CreateFrom(
+          static_cast<const MediaEngineFakeVideoSource*>(aSource));
+    case MediaSourceEnum::Microphone:
+      // No main thread members that need to be deep cloned.
       return new MediaEngineFakeAudioSource();
     default:
       MOZ_ASSERT_UNREACHABLE("Unsupported source type");

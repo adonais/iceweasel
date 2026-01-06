@@ -446,6 +446,20 @@ void GMPVideoEncoder::Encoded(GMPVideoEncodedFrame* aEncodedFrame,
   }
 }
 
+void GMPVideoEncoder::Dropped(uint64_t aTimestamp) {
+  MOZ_ASSERT(IsOnGMPThread());
+
+  RefPtr<EncodePromise::Private> promise;
+  if (!mPendingEncodes.Remove(aTimestamp, getter_AddRefs(promise))) {
+    GMP_LOG_WARNING(
+        "[%p] GMPVideoEncoder::Dropped -- no frame matching timestamp %" PRIu64,
+        this, aTimestamp);
+    return;
+  }
+
+  promise->Reject(NS_ERROR_DOM_MEDIA_DROPPED_BY_ENCODER_ERR, __func__);
+}
+
 void GMPVideoEncoder::Teardown(const MediaResult& aResult,
                                StaticString aCallSite) {
   GMP_LOG_DEBUG("[%p] GMPVideoEncoder::Teardown", this);
@@ -510,19 +524,29 @@ void GMPVideoEncoder::EncodeNextSample(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr{this}, inputs = std::move(aInputs),
            outputs = std::move(aOutputs)](
-              MediaDataEncoder::EncodedData&& aData) mutable {
+              EncodePromise::ResolveOrRejectValue&& aValue) mutable {
             self->mEncodeBatchRequest.Complete();
+            if (aValue.IsReject() &&
+                aValue.RejectValue().Code() !=
+                    NS_ERROR_DOM_MEDIA_DROPPED_BY_ENCODER_ERR) {
+              auto& error = aValue.RejectValue();
+              GMP_LOG_ERROR(
+                  "[%p] GMPVideoEncoder::EncodeNextSample -- failed to encode: "
+                  "%s",
+                  self.get(), error.Description().get());
+              self->mEncodeBatchPromise.Reject(error, __func__);
+              return;
+            }
             inputs.RemoveElementAt(0);
-            outputs.AppendElements(aData);
+            if (aValue.IsResolve()) {
+              outputs.AppendElements(aValue.ResolveValue());
+            } else {
+              GMP_LOG_WARNING(
+                  "[%p] GMPVideoEncoder::EncodeNextSample -- dropped by "
+                  "encoder: %s. Continuing.",
+                  self.get(), aValue.RejectValue().Description().get());
+            }
             self->EncodeNextSample(std::move(inputs), std::move(outputs));
-          },
-          [self = RefPtr{this}](const MediaResult& aError) {
-            self->mEncodeBatchRequest.Complete();
-            GMP_LOG_ERROR(
-                "[%p] GMPVideoEncoder::EncodeNextSample -- failed to encode: "
-                "%s",
-                self.get(), aError.Description().get());
-            self->mEncodeBatchPromise.Reject(aError, __func__);
           })
       ->Track(mEncodeBatchRequest);
 }

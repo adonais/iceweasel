@@ -257,7 +257,7 @@ function emitEnhancedTrackingProtectionMessage() {
  * Log a string from the content page.
  *
  * @param {WebConsole} hud
- * @param {String} str
+ * @param {string} str
  */
 function logString(hud, str) {
   const onMessage = waitForMessageByType(hud, str, ".console-api");

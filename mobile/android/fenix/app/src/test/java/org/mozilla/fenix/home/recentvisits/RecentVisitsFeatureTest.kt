@@ -19,7 +19,6 @@ import mozilla.components.concept.storage.HistoryHighlightWeights
 import mozilla.components.concept.storage.HistoryMetadata
 import mozilla.components.concept.storage.HistoryMetadataKey
 import mozilla.components.concept.storage.HistoryMetadataStorage
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.rule.runTestOnMain
@@ -397,7 +396,6 @@ class RecentVisitsFeatureTest {
         every { feature.getCombinedHistory(any(), any()) } returns expected
 
         feature.updateState(emptyList(), emptyList())
-        appStore.waitUntilIdle()
 
         middleware.assertLastAction(AppAction.RecentHistoryChange::class) {
             assertEquals(expected, it.recentHistory)
@@ -662,7 +660,6 @@ class RecentVisitsFeatureTest {
         feature.start()
 
         scope.advanceUntilIdle()
-        appStore.waitUntilIdle()
 
         coVerify {
             historyMetadataStorage.getHistoryMetadataSince(any())

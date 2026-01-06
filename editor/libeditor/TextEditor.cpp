@@ -308,6 +308,43 @@ UniquePtr<PasswordMaskData> TextEditor::PreDestroy() {
   return passwordMaskData;
 }
 
+Result<widget::IMEState, nsresult> TextEditor::GetPreferredIMEState() const {
+  using IMEState = widget::IMEState;
+  using IMEEnabled = widget::IMEEnabled;
+
+  if (IsReadonly()) {
+    return IMEState{IMEEnabled::Disabled, IMEState::DONT_CHANGE_OPEN_STATE};
+  }
+
+  Element* const textControlElement = GetExposedRoot();
+  if (NS_WARN_IF(!textControlElement)) {
+    return Err(NS_ERROR_FAILURE);
+  }
+  MOZ_ASSERT(textControlElement->IsTextControlElement());
+
+  nsIFrame* const textControlFrame = textControlElement->GetPrimaryFrame();
+  if (NS_WARN_IF(!textControlFrame)) {
+    return Err(NS_ERROR_FAILURE);
+  }
+
+  switch (textControlFrame->StyleUIReset()->mIMEMode) {
+    case StyleImeMode::Auto:
+    default:
+      return IMEState{
+          IsPasswordEditor() ? IMEEnabled::Password : IMEEnabled::Enabled,
+          IMEState::DONT_CHANGE_OPEN_STATE};
+    case StyleImeMode::Disabled:
+      // we should use password state for |ime-mode: disabled;|.
+      return IMEState{IMEEnabled::Password, IMEState::DONT_CHANGE_OPEN_STATE};
+    case StyleImeMode::Active:
+      return IMEState{IMEEnabled::Enabled, IMEState::OPEN};
+    case StyleImeMode::Inactive:
+      return IMEState{IMEEnabled::Enabled, IMEState::CLOSED};
+    case StyleImeMode::Normal:
+      return IMEState{IMEEnabled::Enabled, IMEState::DONT_CHANGE_OPEN_STATE};
+  }
+}
+
 nsresult TextEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
   // NOTE: When you change this method, you should also change:
   //   * editor/libeditor/tests/test_texteditor_keyevent_handling.html

@@ -5,7 +5,6 @@
 package mozilla.components.compose.base.button
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,8 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ButtonDefaults.outlinedButtonBorder
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
@@ -25,9 +26,12 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.compose.base.theme.acornPrivateColorScheme
+import mozilla.components.compose.base.theme.privateColorPalette
 import androidx.compose.material3.Button as M3Button
 import androidx.compose.material3.OutlinedButton as M3OutlinedButton
 import mozilla.components.ui.icons.R as iconsR
@@ -59,6 +63,7 @@ private fun ButtonContent(
         )
         Spacer(modifier = Modifier.width(AcornTheme.layout.space.static100))
     }
+
     Text(
         text = text,
         textAlign = TextAlign.Center,
@@ -102,6 +107,40 @@ fun FilledButton(
         ),
     ) {
         ButtonContent(text = text, icon = icon, modifier = iconModifier)
+    }
+}
+
+/**
+ * Filled button.
+ *
+ * @param onClick Invoked when the user clicks on the button.
+ * @param modifier [Modifier] to be applied to the layout.
+ * @param enabled Controls the enabled state of the button.
+ * When false, this button will not be clickable.
+ * @param contentColor The color to be used for the button's text and icon when enabled.
+ * @param containerColor The background color of the button when enabled.
+ * @param content [Composable] content to be displayed in the button.
+ */
+@Composable
+fun FilledButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    contentColor: Color = ButtonDefaults.buttonColors().contentColor,
+    containerColor: Color = ButtonDefaults.buttonColors().containerColor,
+    content: @Composable () -> Unit,
+) {
+    M3Button(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        contentPadding = AcornTheme.buttonContentPadding(),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor,
+        ),
+    ) {
+        content()
     }
 }
 
@@ -191,17 +230,19 @@ fun DestructiveButton(
 }
 
 @Composable
-@PreviewLightDark
-private fun ButtonPreview() {
-    AcornTheme {
+private fun ButtonPreviewContent() {
+    Surface {
         Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(16.dp),
+            modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             FilledButton(
                 text = "Label",
+                onClick = {},
+            )
+
+            FilledButton(
+                text = "Label",
                 icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
                 onClick = {},
             )
@@ -213,6 +254,17 @@ private fun ButtonPreview() {
                 onClick = {},
             )
 
+            FilledButton(
+                onClick = {},
+            ) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary)
+            }
+
+            OutlinedButton(
+                text = "Label",
+                onClick = {},
+            )
+
             OutlinedButton(
                 text = "Label",
                 icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
@@ -223,6 +275,11 @@ private fun ButtonPreview() {
                 text = "Label",
                 enabled = false,
                 icon = painterResource(iconsR.drawable.mozac_ic_collection_24),
+                onClick = {},
+            )
+
+            DestructiveButton(
+                text = "Label",
                 onClick = {},
             )
 
@@ -239,5 +296,24 @@ private fun ButtonPreview() {
                 onClick = {},
             )
         }
+    }
+}
+
+@Composable
+@PreviewLightDark
+private fun ButtonPreview() {
+    AcornTheme {
+        ButtonPreviewContent()
+    }
+}
+
+@Composable
+@Preview
+private fun ButtonPrivatePreview() {
+    AcornTheme(
+        colors = privateColorPalette,
+        colorScheme = acornPrivateColorScheme(),
+    ) {
+        ButtonPreviewContent()
     }
 }

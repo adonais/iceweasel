@@ -16,6 +16,7 @@
 #include "mozilla/Encoding.h"
 #include "mozilla/LoadContext.h"
 #include "mozilla/LoadInfo.h"
+#include "mozilla/MathAlgorithms.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_network.h"
@@ -108,7 +109,6 @@
 #include "mozilla/net/ExtensionProtocolHandler.h"
 #include "mozilla/net/PageThumbProtocolHandler.h"
 #include "mozilla/net/SFVService.h"
-#include <limits>
 #include "nsICookieService.h"
 #include "nsIXPConnect.h"
 #include "nsParserConstants.h"
@@ -1399,7 +1399,11 @@ Result<nsCOMPtr<nsIInputStream>, nsresult> NS_NewBufferedInputStream(
 
 namespace {
 
-#define BUFFER_SIZE 8192
+// Returns the buffer size from the pref, floored to the nearest power of two.
+static uint32_t GetBufferSize() {
+  uint32_t prefValue = StaticPrefs::network_buffer_default_size();
+  return uint32_t(1) << FloorLog2(prefValue);
+}
 
 class BufferWriter final : public nsIInputStreamCallback {
  public:
@@ -1424,8 +1428,9 @@ class BufferWriter final : public nsIInputStreamCallback {
     // Let's make the inputStream buffered if it's not.
     if (!NS_InputStreamIsBuffered(mInputStream)) {
       nsCOMPtr<nsIInputStream> bufferedStream;
-      nsresult rv = NS_NewBufferedInputStream(
-          getter_AddRefs(bufferedStream), mInputStream.forget(), BUFFER_SIZE);
+      nsresult rv =
+          NS_NewBufferedInputStream(getter_AddRefs(bufferedStream),
+                                    mInputStream.forget(), GetBufferSize());
       NS_ENSURE_SUCCESS(rv, rv);
 
       mInputStream = bufferedStream;
@@ -1518,7 +1523,7 @@ class BufferWriter final : public nsIInputStreamCallback {
       }
 
       uint64_t offset = mWrittenData;
-      uint64_t length = mCount == -1 ? BUFFER_SIZE : mCount;
+      uint64_t length = mCount == -1 ? GetBufferSize() : mCount;
 
       // Let's try to read data directly.
       uint32_t writtenData;
@@ -1604,15 +1609,16 @@ class BufferWriter final : public nsIInputStreamCallback {
 
     MOZ_ASSERT(mCount == -1);
 
-    if (mBufferSize >= mWrittenData + BUFFER_SIZE) {
+    uint32_t bufSize = GetBufferSize();
+    if (mBufferSize >= mWrittenData + bufSize) {
       // The buffer is big enough.
       return true;
     }
 
     CheckedUint32 bufferSize =
-        std::max<uint32_t>(static_cast<uint32_t>(mWrittenData), BUFFER_SIZE);
+        std::max<uint32_t>(static_cast<uint32_t>(mWrittenData), bufSize);
     while (bufferSize.isValid() &&
-           bufferSize.value() < mWrittenData + BUFFER_SIZE) {
+           bufferSize.value() < mWrittenData + bufSize) {
       bufferSize *= 2;
     }
 

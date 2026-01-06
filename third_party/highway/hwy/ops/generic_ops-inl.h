@@ -245,6 +245,22 @@ HWY_API Mask<D> MaskFalse(D d) {
 
 #endif  // HWY_NATIVE_MASK_FALSE
 
+// ------------------------------ SetMask
+#if (defined(HWY_NATIVE_SET_MASK) == defined(HWY_TARGET_TOGGLE))
+#ifdef HWY_NATIVE_SET_MASK
+#undef HWY_NATIVE_SET_MASK
+#else
+#define HWY_NATIVE_SET_MASK
+#endif
+
+template <class D>
+HWY_API Mask<D> SetMask(D d, bool val) {
+  const Repartition<int32_t, decltype(d)> di32;
+  return MaskFromVec(ResizeBitCast(d, Set(di32, -static_cast<int32_t>(val))));
+}
+
+#endif  // HWY_NATIVE_SET_MASK
+
 // ------------------------------ IfNegativeThenElseZero
 #if (defined(HWY_NATIVE_IF_NEG_THEN_ELSE_ZERO) == defined(HWY_TARGET_TOGGLE))
 #ifdef HWY_NATIVE_IF_NEG_THEN_ELSE_ZERO
@@ -4525,43 +4541,46 @@ HWY_API V CLMulUpper(V a, V b) {
 #define HWY_NATIVE_POPCNT
 #endif
 
-// This overload requires vectors to be at least 16 bytes, which is the case
-// for LMUL >= 2.
-#undef HWY_IF_POPCNT
-#if HWY_TARGET == HWY_RVV
-#define HWY_IF_POPCNT(D) \
-  hwy::EnableIf<D().Pow2() >= 1 && D().MaxLanes() >= 16>* = nullptr
-#else
-// Other targets only have these two overloads which are mutually exclusive, so
-// no further conditions are required.
-#define HWY_IF_POPCNT(D) void* = nullptr
-#endif  // HWY_TARGET == HWY_RVV
-
-template <class V, class D = DFromV<V>, HWY_IF_U8_D(D),
-          HWY_IF_V_SIZE_GT_D(D, 8), HWY_IF_POPCNT(D)>
+template <class V, class D = DFromV<V>, HWY_IF_U8_D(D)>
 HWY_API V PopulationCount(V v) {
   const D d;
-  const V lookup =
-      Dup128VecFromValues(d, 0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4);
-  const auto lo = And(v, Set(d, uint8_t{0xF}));
-  const auto hi = ShiftRight<4>(v);
-  return Add(TableLookupBytes(lookup, hi), TableLookupBytes(lookup, lo));
-}
 
-// RVV has a specialization that avoids the Set().
-#if HWY_TARGET != HWY_RVV
-// Slower fallback for capped vectors.
-template <class V, class D = DFromV<V>, HWY_IF_U8_D(D),
-          HWY_IF_V_SIZE_LE_D(D, 8)>
-HWY_API V PopulationCount(V v) {
-  const D d;
+#if HWY_TARGET == HWY_SSE2
+  // TableLookupBytes is slow on SSE2
+
   // See https://arxiv.org/pdf/1611.07612.pdf, Figure 3
   const V k33 = Set(d, uint8_t{0x33});
   v = Sub(v, And(ShiftRight<1>(v), Set(d, uint8_t{0x55})));
   v = Add(And(ShiftRight<2>(v), k33), And(v, k33));
   return And(Add(v, ShiftRight<4>(v)), Set(d, uint8_t{0x0F}));
+#else  // HWY_TARGET != HWY_SSE2
+
+#if HWY_TARGET == HWY_RVV
+  // Need at least LMUL=1 on RVV to ensure that Lanes(d_tbl) is at least 16
+  const ScalableTag<uint8_t, HWY_MAX(HWY_POW2_D(D), 0)> d_tbl;
+#else
+  const FixedTag<uint8_t, HWY_MAX(HWY_MAX_LANES_D(D), 16)> d_tbl;
+#endif
+
+  const auto lookup = Dup128VecFromValues(d_tbl, 0, 1, 1, 2, 1, 2, 2, 3, 1, 2,
+                                          2, 3, 2, 3, 3, 4);
+  const auto lo = And(v, Set(d, uint8_t{0xF}));
+  const auto hi = ShiftRight<4>(v);
+
+#if HWY_TARGET == HWY_RVV
+  // On RVV, use TableLookupLanes to avoid unnecessary overhead
+  const auto hi_popcnt =
+      ResizeBitCast(d, TableLookupLanes(lookup, ResizeBitCast(d_tbl, hi)));
+  const auto lo_popcnt =
+      ResizeBitCast(d, TableLookupLanes(lookup, ResizeBitCast(d_tbl, lo)));
+#else  // HWY_TARGET != HWY_RVV
+  const auto hi_popcnt = TableLookupBytes(lookup, hi);
+  const auto lo_popcnt = TableLookupBytes(lookup, lo);
+#endif  // HWY_TARGET == HWY_RVV
+
+  return Add(hi_popcnt, lo_popcnt);
+#endif  // HWY_TARGET == HWY_SSE2
 }
-#endif  // HWY_TARGET != HWY_RVV
 
 template <class V, class D = DFromV<V>, HWY_IF_U16_D(D)>
 HWY_API V PopulationCount(V v) {
@@ -5474,17 +5493,15 @@ HWY_API V RoundingShiftRight(V v) {
 template <class V, HWY_IF_NOT_FLOAT_NOR_SPECIAL_V(V)>
 HWY_API V RoundingShiftRightSame(V v, int shift_amt) {
   const DFromV<V> d;
-  using T = TFromD<decltype(d)>;
 
-  const int shift_amt_is_zero_mask = -static_cast<int>(shift_amt == 0);
-
+  const bool shift_amt_is_zero = (shift_amt == 0);
   const auto scaled_down_v = ShiftRightSame(
       v, static_cast<int>(static_cast<unsigned>(shift_amt) +
-                          static_cast<unsigned>(~shift_amt_is_zero_mask)));
+                          static_cast<unsigned>(shift_amt_is_zero) - 1u));
 
   return AverageRound(
       scaled_down_v,
-      And(scaled_down_v, Set(d, static_cast<T>(shift_amt_is_zero_mask))));
+      IfThenElseZero(SetMask(d, shift_amt_is_zero), scaled_down_v));
 }
 
 template <class V, HWY_IF_NOT_FLOAT_NOR_SPECIAL_V(V)>

@@ -7,7 +7,6 @@
 #include "nsPageSequenceFrame.h"
 
 #include <algorithm>
-#include <limits>
 
 #include "gfxContext.h"
 #include "mozilla/Logging.h"

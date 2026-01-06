@@ -33,6 +33,7 @@ def generate(output, template, dataFile):
         template.substitute(
             {
                 "property_ids": "\n".join("  {},".format(p) for p in property_ids),
+                "longhand_first": property_ids[0],
                 "longhand_count": property_ids[longhand_count],
                 "shorthand_count": property_ids[longhand_count + shorthand_count],
             }

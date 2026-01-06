@@ -188,7 +188,7 @@ def make_job_description(config, jobs):
             "skip-artifacts": True,
         }
 
-        worker_type = "b-linux-gcp"
+        worker_type = "b-linux"
 
         worker["artifacts"] = _generate_task_output_files(
             dep_job,

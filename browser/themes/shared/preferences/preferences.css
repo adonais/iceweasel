@@ -68,11 +68,13 @@
 
 #mainPrefPane {
   width: 100%;
-  padding: 0;
+  /* at some point we'll end up removing the sticky element using z-index above this that cuts off the top of the focus outline in https://bugzilla.mozilla.org/show_bug.cgi?id=1867385, but we're adding padding intentionally until then */
+  padding: calc(var(--focus-outline-offset) + var(--focus-outline-width)) 0 0;
 }
 
 html|div[data-category],
-groupbox[data-category] {
+groupbox[data-category],
+setting-group[data-category] {
   margin: 0 0 32px;
 }
 
@@ -170,7 +172,7 @@ radio {
 
 .spotlight {
   background-color: color-mix(in srgb, var(--color-accent-primary) 15%, transparent);
-  outline: var(--color-accent-primary) 1px dotted;
+  outline: var(--border-color-selected) 1px dotted;
   animation: fade-out 0.5s ease-out 2s forwards;
   /* Show the border to spotlight the components in high-contrast mode. */
   border: 1px solid transparent;
@@ -201,7 +203,7 @@ radio {
 
 .subcategory:not([hidden]) ~ .subcategory {
   padding-top: var(--space-xxlarge);
-  border-top: 1px solid var(--in-content-border-color);
+  border-top: 1px solid var(--border-color);
 }
 
 /* Category List */
@@ -260,16 +262,6 @@ radio {
   #dataMigrationGroup {
     display: none;
   }
-}
-
-#dataMigration {
-  /* This should really be using baseline, but that doesn't work properly with
-   * the <description> and XUL <button> markup. */
-  align-items: center;
-}
-
-#browserContainersExtensionContent {
-  padding-block: 5px;
 }
 
 .extension-controlled {
@@ -628,7 +620,7 @@ html|dialog,
 
 .dialogTitleBar {
   padding: 0.4em 0.2em;
-  border-bottom: 1px solid var(--in-content-border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .dialogTitle {
@@ -763,7 +755,7 @@ html|dialog,
 }
 
 .separator {
-  border-bottom: 1px solid var(--in-content-box-border-color);
+  border-bottom: 1px solid var(--border-color);
 }
 
 #fxaGroup {
@@ -795,7 +787,7 @@ html|dialog,
 
 .sync-group {
   margin-block: var(--space-large);
-  border: 1px solid var(--in-content-border-color);
+  border: 1px solid var(--border-color);
 }
 
 .sync-configured {
@@ -923,7 +915,8 @@ dialog > .sync-engines-list + hbox {
     content: "";
     width: 1px;
     height: 100%;
-    background-color: var(--in-content-border-color);
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/no-non-semantic-token-usage */
+    background-color: var(--border-color);
     top: 0;
     inset-inline-end: 0;
     position: absolute;
@@ -1195,6 +1188,10 @@ richlistitem .text-link:hover {
   font-size: var(--font-size-large);
 }
 
+#experimentalCategory-reset {
+  margin-top: var(--space-small);
+}
+
 .featureGateDescription {
   white-space: pre-wrap;
 }
@@ -1384,18 +1381,24 @@ richlistitem .text-link:hover {
 }
 /** SRD web-appearance-chooser control END **/
 
+/** SRD rows control for New Tab START **/
+setting-group[groupid="home"] {
+  --select-max-width: 17rem;
+}
+/** SRD rows control for New Tab END **/
+
 #translations-manage-install-list {
   height: 220px;
   overflow: auto;
   background-color: var(--background-color-box);
-  border: 1px solid var(--in-content-box-border-color);
+  border: 1px solid var(--border-color);
   border-radius: var(--border-radius-small);
   resize: vertical;
   margin: 4px 0;
 }
 
 .translations-manage-language:first-child {
-  border-bottom: 1px solid var(--in-content-box-border-color);
+  border-bottom: 1px solid var(--border-color);
   padding: 8px;
   margin-bottom: 8px;
 }
@@ -1486,4 +1489,28 @@ richlistitem .text-link:hover {
   > a {
     font-size: var(--font-size-small);
   }
+}
+
+#dohProviderSelect {
+  --select-max-width: 235px;
+}
+
+#browserContainersbox moz-message-bar {
+  margin-block-start: 0;
+}
+
+#etpBannerEl {
+  border-radius: var(--border-radius-large);
+  background-clip: content-box;
+  background-image:
+    url("chrome://browser/content/preferences/etp-advanced-banner.svg"),
+    radial-gradient(94.12% 34.67% at 50% 50%, rgba(159, 116, 255, 0.5) 0%, rgba(159, 116, 255, 0) 100%), linear-gradient(135deg, #592acb 0%, #ab43e7 100%);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  height: 128px;
+}
+
+#etpLevelWarning {
+  --promo-image-position: top;
 }

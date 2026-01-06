@@ -1,10 +1,12 @@
 [DEFAULT]
-run-if = ["os != 'android'"]
+run-if = [
+  "os != 'android'",
+]
 skip-if = [
-  "os == 'win' && verify",
-  "os == 'win' && ccov", # 1532801
   "os == 'win' && asan", # updater binary must be signed for these tests, but it isn't in this build config
+  "os == 'win' && ccov", # 1532801
   "os == 'win' && msix", # Updates are disabled for MSIX builds
+  "os == 'win' && verify",
 ]
 dupe-manifest = true
 tags = "appupdate service"
@@ -52,7 +54,9 @@ run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
 
 ["marAppApplyUpdateAppBinInUseStageSuccess_win.js"]
 run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.
-skip-if = ["ccov && os == 'win'"] #Bug 1651090
+skip-if = [
+  "os == 'win' && ccov", # Bug 1651090
+]
 
 ["marAppApplyUpdateStageSuccess.js"]
 run-sequentially = ["true"] # Uses the Mozilla Maintenance Service.

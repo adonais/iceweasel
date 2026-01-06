@@ -394,10 +394,18 @@ nsresult HttpBaseChannel::Init(nsIURI* aURI, uint32_t aCaps,
     }
   }
 
+  RefPtr<mozilla::dom::BrowsingContext> browsingContext;
+  mLoadInfo->GetBrowsingContext(getter_AddRefs(browsingContext));
+
+  const nsCString& languageOverride =
+      browsingContext ? browsingContext->Top()->GetLanguageOverride()
+                      : EmptyCString();
+
   rv = gHttpHandler->AddStandardRequestHeaders(
       &mRequestHead, aURI, isHTTPS, contentPolicyType,
       nsContentUtils::ShouldResistFingerprinting(this,
-                                                 RFPTarget::HttpUserAgent));
+                                                 RFPTarget::HttpUserAgent),
+      languageOverride);
   if (NS_FAILED(rv)) return rv;
 
   nsAutoCString type;
@@ -1877,6 +1885,7 @@ HttpBaseChannel::GetRequestSize(uint64_t* aRequestSize) {
 
 NS_IMETHODIMP
 HttpBaseChannel::GetDecodedBodySize(uint64_t* aDecodedBodySize) {
+  MutexAutoLock lock(mOnDataFinishedMutex);
   *aDecodedBodySize = mDecodedBodySize;
   return NS_OK;
 }
@@ -3033,6 +3042,17 @@ nsresult EnsureMIMEOfScript(HttpBaseChannel* aChannel, nsIURI* aURI,
     // script load has type script
     glean::http::script_block_incorrect_mime
         .EnumGet(glean::http::ScriptBlockIncorrectMimeLabel::eJavascript)
+        .Add();
+    return NS_OK;
+  }
+
+  const auto internalPolicyType = aLoadInfo->InternalContentPolicyType();
+  if (internalPolicyType ==
+          nsIContentPolicy::TYPE_INTERNAL_WORKER_STATIC_MODULE &&
+      nsContentUtils::IsJsonMimeType(typeString)) {
+    // script and json are both allowed
+    glean::http::script_block_incorrect_mime
+        .EnumGet(glean::http::ScriptBlockIncorrectMimeLabel::eTextJson)
         .Add();
     return NS_OK;
   }
@@ -4549,6 +4569,21 @@ already_AddRefed<nsILoadInfo> HttpBaseChannel::CloneLoadInfoForRedirect(
       }
     }
   }
+
+  // Clone a new cookieJarSettings from the old one for the new channel.
+  // Otherwise, updating the new cookieJarSettings will affect the old one.
+  nsCOMPtr<nsICookieJarSettings> oldCookieJarSettings;
+  mLoadInfo->GetCookieJarSettings(getter_AddRefs(oldCookieJarSettings));
+
+  RefPtr<CookieJarSettings> newCookieJarSettings;
+  newCookieJarSettings = CookieJarSettings::Cast(oldCookieJarSettings)->Clone();
+
+  newLoadInfo->SetCookieJarSettings(newCookieJarSettings);
+
+  // Clear the isThirdPartyContextToTopWindow flag for the new channel so that
+  // it will be computed again when the new channel is opened.
+  static_cast<net::LoadInfo*>(newLoadInfo.get())
+      ->ClearIsThirdPartyContextToTopWindow();
 
   // Leave empty, we want a 'clean ground' when creating the new channel.
   // This will be ensured to be either set by the protocol handler or set

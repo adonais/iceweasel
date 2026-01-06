@@ -151,8 +151,8 @@ struct arena_chunk_t {
   // Arena that owns the chunk.
   arena_t* mArena;
 
-  // Linkage for the arena's tree of dirty chunks.
-  RedBlackTreeNode<arena_chunk_t> mLinkDirty;
+  // Linkage for the arena's list of dirty chunks.
+  mozilla::DoublyLinkedListElement<arena_chunk_t> mChunksDirtyElim;
 
 #ifdef MALLOC_DOUBLE_PURGE
   // If we're double-purging, we maintain a linked list of chunks which

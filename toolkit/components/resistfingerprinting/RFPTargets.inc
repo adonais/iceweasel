@@ -35,7 +35,8 @@ ITEM_VALUE(NavigatorHWConcurrency,      16)
 ITEM_VALUE(NavigatorOscpu,              17)
 ITEM_VALUE(NavigatorPlatform,           18)
 ITEM_VALUE(NavigatorUserAgent,          19)
-// We no longer use PointerId, it can renamed and reused
+// If the user disables PDFJS via a pref, we do not expose that to the web
+ITEM_VALUE(PdfjsSpoof,                  20)
 ITEM_VALUE(StreamVideoFacingMode,       21)
 ITEM_VALUE(JSDateTimeUTC,               22)
 ITEM_VALUE(JSMathFdlibm,                23)

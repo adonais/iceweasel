@@ -84,7 +84,7 @@ class CustomRequestPanel extends Component {
    * the given name regex and divider character.
    *
    * @param {string} text - Text of list
-   * @return {array} array of headers info {name, value}
+   * @return {Array} array of headers info {name, value}
    */
   parseRequestText(text, namereg, divider) {
     const regex = new RegExp(`(${namereg})\\${divider}\\s*(\\S.*)`);
@@ -103,8 +103,8 @@ class CustomRequestPanel extends Component {
   /**
    * Update Custom Request Fields
    *
-   * @param {Object} evt click event
-   * @param {Object} request current request
+   * @param {object} evt click event
+   * @param {object} request current request
    * @param {updateRequest} updateRequest action
    */
   updateCustomRequestFields(evt, request, updateRequest) {

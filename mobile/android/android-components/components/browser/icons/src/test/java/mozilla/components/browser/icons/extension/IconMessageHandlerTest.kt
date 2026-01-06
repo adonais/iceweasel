@@ -208,7 +208,6 @@ class IconMessageHandlerTest {
             }
 
             store.dispatch(TrackingProtectionAction.ClearTrackersAction("test-url"))
-                .join()
 
             // Loaded icon will be set on session
 

@@ -19,4 +19,6 @@
   <string name="mozac_browser_toolbar_long_press_popup_paste_and_go">Уставіць і перайсці</string>
   <!-- Text for the title displayed in the contextual feature recommendation popup promoting the new toolbar redesign. -->
   <string name="mozac_toolbar_cfr_title">Распрацавана для Android. Удасканалена для вас</string>
+  <!-- Text for the description displayed in the contextual feature recommendation popup promoting the new toolbar redesign. -->
+  <string name="mozac_toolbar_cfr_description">Мы абнавілі дызайн, надаўшы яму элегантны і сучасны выгляд</string>
 </resources>

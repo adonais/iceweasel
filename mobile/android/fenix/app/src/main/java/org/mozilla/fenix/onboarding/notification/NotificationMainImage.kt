@@ -5,10 +5,8 @@
 package org.mozilla.fenix.onboarding.notification
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import org.mozilla.fenix.R
@@ -31,7 +29,7 @@ fun NotificationMainImage() {
 @Composable
 private fun NotificationMainImagePreview() {
     FirefoxTheme {
-        Box(Modifier.background(FirefoxTheme.colors.layer1)) {
+        Surface {
             NotificationMainImage()
         }
     }

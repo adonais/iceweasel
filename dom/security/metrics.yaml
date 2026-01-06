@@ -349,6 +349,7 @@ security:
       Expected values are:
         - chromeuri - chrome:// file
         - resourceuri - resource:// file
+        - mozsrcuri - moz-src:// file
         - datauri - a data URI
         - bloburi - a blob URI
         - abouturi - an about URI

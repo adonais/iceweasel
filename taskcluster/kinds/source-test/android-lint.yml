@@ -28,7 +28,7 @@ task-defaults:
     treeherder:
         kind: test
         tier: 1
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     when:
         files-changed:
             - "mobile/android/android-components/**"

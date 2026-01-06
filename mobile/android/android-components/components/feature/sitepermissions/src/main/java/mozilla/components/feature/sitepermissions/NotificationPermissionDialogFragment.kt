@@ -15,6 +15,7 @@ import androidx.fragment.app.DialogFragment
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.acornDarkColorScheme
 import mozilla.components.compose.base.theme.acornLightColorScheme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * A dialog to be displayed to explain to the user why notification access is required.
@@ -44,7 +45,7 @@ class NotificationPermissionDialogFragment(val positiveButtonAction: () -> Unit)
 
                     AcornTheme(colorScheme = colors) {
                         PermissionDialog(
-                            icon = R.drawable.ic_system_permission_dialog,
+                            icon = iconsR.drawable.mozac_ic_notification_24,
                             title = title,
                             message = message,
                             positiveButtonLabel = positiveButtonLabel,

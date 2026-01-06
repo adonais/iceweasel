@@ -38,7 +38,7 @@ add_setup(async function () {
  *
  * @param {<xul:browser>} browser - The browser running in the content process
  * to be monitored.
- * @param {Boolean} isMuted - True if the muted topic should be fired.
+ * @param {boolean} isMuted - True if the muted topic should be fired.
  * @return {Promise}
  * @resolves {undefined} When the notification fires.
  */
@@ -58,7 +58,7 @@ function waitForCameraMuteState(browser, isMuted) {
  *
  * @param {<xul:browser>} browser - The browser running in the content process
  * to be monitored.
- * @param {Boolean} isMuted - True if the muted topic should be fired.
+ * @param {boolean} isMuted - True if the muted topic should be fired.
  * @return {Promise}
  * @resolves {undefined} When the notification fires.
  */

@@ -405,6 +405,9 @@ def check_latest_release_version(compiler, clang_latest_release):
     if (
         compiler.type in ("clang", "clang-cl")
         and compiler.version > clang_latest_release
+        # Don't error out on automation when using clang trunk (18.x is the first
+        # version where trunk is always y.0, and release y.1.*)
+        and not (compiler.version.major >= 18 and compiler.version.minor == 0)
     ):
         configure_error("latest clang release version must be updated")
 

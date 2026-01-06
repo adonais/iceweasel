@@ -124,25 +124,49 @@ class WebAuthnRegisterResult final : public nsIWebAuthnRegisterResult {
       }
     }
 
-    if (aResponse->dwVersion >= WEBAUTHN_CREDENTIAL_ATTESTATION_VERSION_3) {
-      if (aResponse->dwUsedTransport & WEBAUTHN_CTAP_TRANSPORT_USB) {
-        mTransports.AppendElement(u"usb"_ns);
+    if (aResponse->dwVersion >= WEBAUTHN_CREDENTIAL_ATTESTATION_VERSION_7) {
+      if (aResponse->pHmacSecret) {
+        if (aResponse->pHmacSecret->cbFirst > 0) {
+          mPrfFirst.emplace();
+          mPrfFirst->AppendElements(aResponse->pHmacSecret->pbFirst,
+                                    aResponse->pHmacSecret->cbFirst);
+        }
+        if (aResponse->pHmacSecret->cbSecond > 0) {
+          mPrfSecond.emplace();
+          mPrfSecond->AppendElements(aResponse->pHmacSecret->pbSecond,
+                                     aResponse->pHmacSecret->cbSecond);
+        }
       }
-      if (aResponse->dwUsedTransport & WEBAUTHN_CTAP_TRANSPORT_NFC) {
-        mTransports.AppendElement(u"nfc"_ns);
-      }
-      if (aResponse->dwUsedTransport & WEBAUTHN_CTAP_TRANSPORT_BLE) {
-        mTransports.AppendElement(u"ble"_ns);
-      }
-      if (aResponse->dwUsedTransport & WEBAUTHN_CTAP_TRANSPORT_INTERNAL) {
-        mTransports.AppendElement(u"internal"_ns);
-      }
+    }
+
+    DWORD transports = 0;
+    if (aResponse->dwVersion >= WEBAUTHN_CREDENTIAL_ATTESTATION_VERSION_8) {
+      // The dwTransports field added in version 8 lists all supported
+      // transports, whereas the dwUsedTransport available since version 3 only
+      // returns the transport that was used.
+      transports = aResponse->dwTransports;
+    } else if (aResponse->dwVersion >=
+               WEBAUTHN_CREDENTIAL_ATTESTATION_VERSION_3) {
+      transports = aResponse->dwUsedTransport;
+    }
+
+    if (transports & WEBAUTHN_CTAP_TRANSPORT_USB) {
+      mTransports.AppendElement(u"usb"_ns);
+    }
+    if (transports & WEBAUTHN_CTAP_TRANSPORT_NFC) {
+      mTransports.AppendElement(u"nfc"_ns);
+    }
+    if (transports & WEBAUTHN_CTAP_TRANSPORT_BLE) {
+      mTransports.AppendElement(u"ble"_ns);
+    }
+    if (transports & WEBAUTHN_CTAP_TRANSPORT_INTERNAL) {
+      mTransports.AppendElement(u"internal"_ns);
     }
     // WEBAUTHN_CREDENTIAL_ATTESTATION_VERSION_5 corresponds to
     // WEBAUTHN_API_VERSION_6 which is where WEBAUTHN_CTAP_TRANSPORT_HYBRID was
     // defined.
     if (aResponse->dwVersion >= WEBAUTHN_CREDENTIAL_ATTESTATION_VERSION_5) {
-      if (aResponse->dwUsedTransport & WEBAUTHN_CTAP_TRANSPORT_HYBRID) {
+      if (transports & WEBAUTHN_CTAP_TRANSPORT_HYBRID) {
         mTransports.AppendElement(u"hybrid"_ns);
       }
     }

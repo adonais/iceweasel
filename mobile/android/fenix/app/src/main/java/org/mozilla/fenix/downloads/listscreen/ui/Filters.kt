@@ -4,14 +4,13 @@
 
 package org.mozilla.fenix.downloads.listscreen.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -55,7 +54,7 @@ internal fun Filters(
         ) { contentTypeParam ->
             SelectableChip(
                 text = stringResource(id = contentTypeParam.stringRes),
-                isSelected = selectedContentTypeFilter == contentTypeParam,
+                selected = selectedContentTypeFilter == contentTypeParam,
                 modifier = Modifier.height(36.dp),
                 onClick = { onContentTypeSelected(contentTypeParam) },
             )
@@ -78,9 +77,7 @@ private fun FiltersPreview() {
     FirefoxTheme {
         var selectedContentTypeFilter by remember { mutableStateOf(FileItem.ContentTypeFilter.All) }
 
-        Box(
-            modifier = Modifier.background(FirefoxTheme.colors.layer1),
-        ) {
+        Surface {
             Filters(
                 selectedContentTypeFilter = selectedContentTypeFilter,
                 contentTypeFilters = FileItem.ContentTypeFilter.entries,

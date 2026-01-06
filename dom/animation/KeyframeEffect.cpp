@@ -10,6 +10,7 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/KeyframeAnimationOptionsBinding.h"
 // For UnrestrictedDoubleOrKeyframeAnimationOptions;
+#include "NonCustomCSSPropertyId.h"
 #include "WindowRenderer.h"
 #include "js/PropertyAndElement.h"  // JS_DefineProperty
 #include "mozilla/AnimationUtils.h"
@@ -30,7 +31,6 @@
 #include "mozilla/dom/KeyframeEffectBinding.h"
 #include "mozilla/dom/MutationObservers.h"
 #include "mozilla/layers/AnimationInfo.h"
-#include "nsCSSPropertyID.h"
 #include "nsCSSPropertyIDSet.h"
 #include "nsCSSProps.h"           // For nsCSSProps::PropHasFlags
 #include "nsCSSPseudoElements.h"  // For PseudoStyleType
@@ -288,7 +288,7 @@ void KeyframeEffect::ReplaceTransitionStartValue(AnimationValue&& aStartValue) {
 
   // Check that the value we are about to substitute in is actually for the
   // same property.
-  AnimatedPropertyID property(eCSSProperty_UNKNOWN);
+  CSSPropertyId property(eCSSProperty_UNKNOWN);
   Servo_AnimationValue_GetPropertyId(aStartValue.mServo, &property);
   if (property != mProperties[0].mProperty) {
     return;
@@ -300,13 +300,13 @@ void KeyframeEffect::ReplaceTransitionStartValue(AnimationValue&& aStartValue) {
 }
 
 static bool IsEffectiveProperty(const EffectSet& aEffects,
-                                const AnimatedPropertyID& aProperty) {
+                                const CSSPropertyId& aProperty) {
   return !aEffects.PropertiesWithImportantRules().HasProperty(aProperty) ||
          !aEffects.PropertiesForAnimationsLevel().HasProperty(aProperty);
 }
 
 const AnimationProperty* KeyframeEffect::GetEffectiveAnimationOfProperty(
-    const AnimatedPropertyID& aProperty, const EffectSet& aEffects) const {
+    const CSSPropertyId& aProperty, const EffectSet& aEffects) const {
   MOZ_ASSERT(mTarget && &aEffects == EffectSet::Get(mTarget));
 
   for (const AnimationProperty& property : mProperties) {
@@ -360,19 +360,19 @@ nsCSSPropertyIDSet KeyframeEffect::GetPropertiesForCompositor(
     // need to evaluate them as a group. We build up a separate set here then
     // evaluate it as a separate step below.
     if (transformLikeProperties.HasProperty(property.mProperty)) {
-      transformSet.AddProperty(property.mProperty.mID);
+      transformSet.AddProperty(property.mProperty.mId);
       continue;
     }
 
     KeyframeEffect::MatchForCompositor matchResult =
-        IsMatchForCompositor(nsCSSPropertyIDSet{property.mProperty.mID}, aFrame,
+        IsMatchForCompositor(nsCSSPropertyIDSet{property.mProperty.mId}, aFrame,
                              aEffects, dummyWarning);
     if (matchResult ==
             KeyframeEffect::MatchForCompositor::NoAndBlockThisProperty ||
         matchResult == KeyframeEffect::MatchForCompositor::No) {
       continue;
     }
-    properties.AddProperty(property.mProperty.mID);
+    properties.AddProperty(property.mProperty.mId);
   }
 
   if (!transformSet.IsEmpty()) {
@@ -453,7 +453,7 @@ void KeyframeEffect::UpdateProperties(const ComputedStyle* aStyle,
 
   for (const AnimationProperty& property : mProperties) {
     if (property.mIsRunningOnCompositor) {
-      runningOnCompositorProperties.AddProperty(property.mProperty.mID);
+      runningOnCompositorProperties.AddProperty(property.mProperty.mId);
     }
   }
 
@@ -686,7 +686,7 @@ bool KeyframeEffect::IsRunningOnCompositor() const {
   return false;
 }
 
-void KeyframeEffect::SetIsRunningOnCompositor(nsCSSPropertyID aProperty,
+void KeyframeEffect::SetIsRunningOnCompositor(NonCustomCSSPropertyId aProperty,
                                               bool aIsRunning) {
   MOZ_ASSERT(aProperty != eCSSPropertyExtra_variable,
              "Can't animate variables on compositor");
@@ -696,7 +696,7 @@ void KeyframeEffect::SetIsRunningOnCompositor(nsCSSPropertyID aProperty,
       "compositor-animatable property");
 
   for (AnimationProperty& property : mProperties) {
-    if (property.mProperty.mID == aProperty) {
+    if (property.mProperty.mId == aProperty) {
       property.mIsRunningOnCompositor = aIsRunning;
       // We currently only set a performance warning message when animations
       // cannot be run on the compositor, so if this animation is running
@@ -715,7 +715,7 @@ void KeyframeEffect::SetIsRunningOnCompositor(
     const nsCSSPropertyIDSet& aPropertySet, bool aIsRunning) {
   for (AnimationProperty& property : mProperties) {
     if (aPropertySet.HasProperty(property.mProperty)) {
-      MOZ_ASSERT(nsCSSProps::PropHasFlags(property.mProperty.mID,
+      MOZ_ASSERT(nsCSSProps::PropHasFlags(property.mProperty.mId,
                                           CSSPropFlags::CanAnimateOnCompositor),
                  "Property being animated on compositor is a recognized "
                  "compositor-animatable property");
@@ -1040,7 +1040,7 @@ void DumpAnimationProperties(
     nsTArray<AnimationProperty>& aAnimationProperties) {
   for (auto& p : aAnimationProperties) {
     printf("%s\n",
-           nsCString(nsCSSProps::GetStringValue(p.mProperty.mID)).get());
+           nsCString(nsCSSProps::GetStringValue(p.mProperty.mId)).get());
     for (auto& s : p.mSegments) {
       nsAutoCString fromValue, toValue;
       s.mFromValue.SerializeSpecifiedValue(p.mProperty, aRawData, fromValue);
@@ -1124,7 +1124,7 @@ void KeyframeEffect::SetPseudoElement(const nsAString& aPseudoElement,
 }
 
 static void CreatePropertyValue(
-    const AnimatedPropertyID& aProperty, float aOffset,
+    const CSSPropertyId& aProperty, float aOffset,
     const Maybe<StyleComputedTimingFunction>& aTimingFunction,
     const AnimationValue& aValue, dom::CompositeOperation aComposite,
     const StylePerDocumentStyleData* aRawData,
@@ -1300,20 +1300,20 @@ void KeyframeEffect::GetKeyframes(JSContext* aCx, nsTArray<JSObject*>& aResult,
       // https://drafts.csswg.org/web-animations/#property-name-conversion
       const char* name = nullptr;
       nsAutoCString customName;
-      switch (propertyValue.mProperty.mID) {
-        case nsCSSPropertyID::eCSSPropertyExtra_variable:
+      switch (propertyValue.mProperty.mId) {
+        case NonCustomCSSPropertyId::eCSSPropertyExtra_variable:
           customName.Append("--");
           customName.Append(nsAtomCString(propertyValue.mProperty.mCustomName));
           name = customName.get();
           break;
-        case nsCSSPropertyID::eCSSProperty_offset:
+        case NonCustomCSSPropertyId::eCSSProperty_offset:
           name = "cssOffset";
           break;
-        case nsCSSPropertyID::eCSSProperty_float:
+        case NonCustomCSSPropertyId::eCSSProperty_float:
           // FIXME: Bug 1582314: Should handle cssFloat manually if we remove it
           // from nsCSSProps::PropertyIDLName().
         default:
-          name = nsCSSProps::PropertyIDLName(propertyValue.mProperty.mID);
+          name = nsCSSProps::PropertyIDLName(propertyValue.mProperty.mId);
       }
 
       JS::Rooted<JS::Value> value(aCx);
@@ -1462,7 +1462,7 @@ bool KeyframeEffect::CanThrottle() const {
 
     DisplayItemType displayItemType =
         LayerAnimationInfo::GetDisplayItemTypeForProperty(
-            property.mProperty.mID);
+            property.mProperty.mId);
 
     // Note that AnimationInfo::GetGenarationFromFrame() is supposed to work
     // with the primary frame instead of the style frame.
@@ -1603,7 +1603,8 @@ PresShell* KeyframeEffect::GetPresShell() const {
 }
 
 /* static */
-bool KeyframeEffect::IsGeometricProperty(const nsCSSPropertyID aProperty) {
+bool KeyframeEffect::IsGeometricProperty(
+    const NonCustomCSSPropertyId aProperty) {
   MOZ_ASSERT(!nsCSSProps::IsShorthand(aProperty),
              "Property should be a longhand property");
 
@@ -1715,7 +1716,7 @@ bool KeyframeEffect::ShouldBlockAsyncTransformAnimations(
 
     // If there are any offset-path animations whose animation values are url(),
     // we have to sync with the main thread when resolving it.
-    if (property.mProperty.mID == eCSSProperty_offset_path) {
+    if (property.mProperty.mId == eCSSProperty_offset_path) {
       for (const auto& seg : property.mSegments) {
         if (seg.mFromValue.IsOffsetPathUrl() ||
             seg.mToValue.IsOffsetPathUrl()) {
@@ -1730,7 +1731,7 @@ bool KeyframeEffect::ShouldBlockAsyncTransformAnimations(
 
 bool KeyframeEffect::HasGeometricProperties() const {
   for (const AnimationProperty& property : mProperties) {
-    if (IsGeometricProperty(property.mProperty.mID)) {
+    if (IsGeometricProperty(property.mProperty.mId)) {
       return true;
     }
   }
@@ -1747,7 +1748,7 @@ void KeyframeEffect::SetPerformanceWarning(
       continue;
     }
     property.SetPerformanceWarning(aWarning, mTarget.mElement);
-    curr.RemoveProperty(property.mProperty.mID);
+    curr.RemoveProperty(property.mProperty.mId);
     if (curr.IsEmpty()) {
       return;
     }
@@ -1763,17 +1764,17 @@ void KeyframeEffect::CalculateCumulativeChangesForProperty(
 
   constexpr auto kInterestingFlags =
       CSSPropFlags::AffectsLayout | CSSPropFlags::AffectsOverflow;
-  if (aProperty.mProperty.mID == eCSSProperty_opacity) {
+  if (aProperty.mProperty.mId == eCSSProperty_opacity) {
     mCumulativeChanges.mOpacity = true;
     return;  // We know opacity is visual-only.
   }
 
-  if (aProperty.mProperty.mID == eCSSProperty_visibility) {
+  if (aProperty.mProperty.mId == eCSSProperty_visibility) {
     mCumulativeChanges.mVisibility = true;
     return;  // We know visibility is visual-only.
   }
 
-  if (aProperty.mProperty.mID == eCSSProperty_background_color) {
+  if (aProperty.mProperty.mId == eCSSProperty_background_color) {
     if (!mCumulativeChanges.mHasBackgroundColorCurrentColor) {
       mCumulativeChanges.mHasBackgroundColorCurrentColor =
           HasCurrentColor(aProperty.mSegments);
@@ -1781,7 +1782,7 @@ void KeyframeEffect::CalculateCumulativeChangesForProperty(
     return;  // We know background-color is visual-only.
   }
 
-  auto flags = nsCSSProps::PropFlags(aProperty.mProperty.mID);
+  auto flags = nsCSSProps::PropFlags(aProperty.mProperty.mId);
   if (!(flags & kInterestingFlags)) {
     return;  // Property is visual-only.
   }
@@ -1889,9 +1890,9 @@ bool KeyframeEffect::ContainsAnimatedScale(const nsIFrame* aFrame) const {
   }
 
   for (const AnimationProperty& prop : mProperties) {
-    if (prop.mProperty.mID != eCSSProperty_transform &&
-        prop.mProperty.mID != eCSSProperty_scale &&
-        prop.mProperty.mID != eCSSProperty_rotate) {
+    if (prop.mProperty.mId != eCSSProperty_transform &&
+        prop.mProperty.mId != eCSSProperty_scale &&
+        prop.mProperty.mId != eCSSProperty_rotate) {
       continue;
     }
 

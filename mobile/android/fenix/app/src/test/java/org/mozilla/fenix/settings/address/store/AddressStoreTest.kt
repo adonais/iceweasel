@@ -146,9 +146,14 @@ class AddressStoreTest {
         assertEquals(store.state.address, emptyUpdatableAddress)
 
         listOf(
-            FormChange.Name("Work"), FormChange.StreetAddress("Mozilla Lane"), FormChange.AddressLevel2("Level 2"),
-            FormChange.AddressLevel1("This Should Change"), FormChange.PostalCode("31337"), FormChange.Country("CA"),
-            FormChange.Tel("555-555-5555"), FormChange.Email("mo@zilla.com"),
+            FormChange.Name("Work"),
+            FormChange.StreetAddress("Mozilla Lane"),
+            FormChange.AddressLevel2("Level 2"),
+            FormChange.AddressLevel1("This Should Change"),
+            FormChange.PostalCode("31337"),
+            FormChange.Country("CA"),
+            FormChange.Tel("555-555-5555"),
+            FormChange.Email("mo@zilla.com"),
         ).forEach(store::dispatch)
 
         val expected = UpdatableAddressFields(

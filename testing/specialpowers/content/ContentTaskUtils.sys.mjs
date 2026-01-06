@@ -188,7 +188,7 @@ export var ContentTaskUtils = {
    *
    * @param {Element} subject
    *        The element on which to observe mutations.
-   * @param {Object} options
+   * @param {object} options
    *        The options to pass to MutationObserver.observe();
    * @param {function} checkFn [optional]
    *        Function that returns true when it wants the promise to be resolved.

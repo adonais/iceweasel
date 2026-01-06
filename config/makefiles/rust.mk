@@ -199,11 +199,8 @@ CXX_BASE_FLAGS += -DUNICODE
 endif
 
 ifneq (1,$(PASS_ONLY_BASE_CFLAGS_TO_RUST))
-# -DMOZILLA_CONFIG_H is added to prevent mozilla-config.h from injecting anything
-# in C/C++ compiles from rust. That's not needed in the other branch because the
-# base flags don't force-include mozilla-config.h.
-export CFLAGS_$(rust_host_cc_env_name)=$(HOST_CC_BASE_FLAGS) $(COMPUTED_HOST_CFLAGS) -DMOZILLA_CONFIG_H
-export CXXFLAGS_$(rust_host_cc_env_name)=$(HOST_CXX_BASE_FLAGS) $(COMPUTED_HOST_CXXFLAGS) -DMOZILLA_CONFIG_H
+export CFLAGS_$(rust_host_cc_env_name)=$(HOST_CC_BASE_FLAGS) $(COMPUTED_HOST_CFLAGS)
+export CXXFLAGS_$(rust_host_cc_env_name)=$(HOST_CXX_BASE_FLAGS) $(COMPUTED_HOST_CXXFLAGS)
 # We exclude -fprofile-generate from the PGO flags because on non-cross compiles,
 # that affects build scripts, and they fail to link because the linker flags are
 # not adequate, and also, we don't want to run instrumented build scripts.
@@ -214,8 +211,8 @@ export CXXFLAGS_$(rust_host_cc_env_name)=$(HOST_CXX_BASE_FLAGS) $(COMPUTED_HOST_
 ifneq (,$(filter clang%,$(CC_TYPE)))
 RUST_LTO_CFLAGS=$(MOZ_LTO_CFLAGS)
 endif
-export CFLAGS_$(rust_cc_env_name)=$(CC_BASE_FLAGS) $(RUST_LTO_CFLAGS) $(COMPUTED_CFLAGS) $(filter-out -fprofile-generate%,$(PGO_CFLAGS)) -DMOZILLA_CONFIG_H
-export CXXFLAGS_$(rust_cc_env_name)=$(CXX_BASE_FLAGS) $(RUST_LTO_CFLAGS) $(COMPUTED_CXXFLAGS) $(filter-out -fprofile-generate%,$(PGO_CFLAGS)) -DMOZILLA_CONFIG_H
+export CFLAGS_$(rust_cc_env_name)=$(CC_BASE_FLAGS) $(RUST_LTO_CFLAGS) $(COMPUTED_CFLAGS) $(filter-out -fprofile-generate%,$(PGO_CFLAGS))
+export CXXFLAGS_$(rust_cc_env_name)=$(CXX_BASE_FLAGS) $(RUST_LTO_CFLAGS) $(COMPUTED_CXXFLAGS) $(filter-out -fprofile-generate%,$(PGO_CFLAGS))
 else
 # Because cargo doesn't allow to distinguish builds happening for build
 # scripts/procedural macros vs. those happening for the rust target,

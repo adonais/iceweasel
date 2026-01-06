@@ -53,6 +53,7 @@ include WindowGlobalTypes;
 include IPCBlob;
 include IPCStream;
 include IPCTransferable;
+include JSIPCValue;
 include PPrintingTypes;
 include PTabContext;
 include ProtocolTypes;
@@ -582,7 +583,7 @@ both:
     async PWebBrowserPersistDocument(nullable PBrowser aBrowser,
                                      MaybeDiscardedBrowsingContext aContext);
 
-    async RawMessage(JSActorMessageMeta aMetadata, UniquePtr<ClonedMessageData> aData,
+    async RawMessage(JSActorMessageMeta aMetadata, JSIPCValue aData,
                      UniquePtr<ClonedMessageData> aStack);
 
 child:
@@ -626,6 +627,8 @@ child:
                               bool minimizeMemoryUsage,
                               FileDescriptor? DMDFile)
         returns (uint32_t aGeneration);
+
+    async DecodeImage(nsIURI aURI, ImageIntSize aSize) returns (nsresult rv, IPCImage? image);
 
 #if defined(XP_WIN)
     /**
@@ -684,6 +687,8 @@ child:
                            nsCString? aSchemelessSite,
                            OriginAttributesPattern? aPattern,
                            nsCString? aURL);
+
+    async InvalidateScriptCache();
 
     async SetOffline(bool offline);
     async SetConnectivity(bool connectivity);
@@ -1793,7 +1798,7 @@ parent:
       returns(int32_t? requestedIndex);
 
     async NavigationTraverse(MaybeDiscardedBrowsingContext aContext, nsID aKey,
-                             uint64_t aHistoryEpoch, bool aUserActivation, 
+                             uint64_t aHistoryEpoch, bool aUserActivation,
                              bool aCheckForCancelation)
       returns(nsresult result);
 

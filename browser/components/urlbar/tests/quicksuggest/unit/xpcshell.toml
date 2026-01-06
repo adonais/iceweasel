@@ -1,5 +1,7 @@
 [DEFAULT]
-run-if = ["os != 'android'"]
+run-if = [
+  "os != 'android'",
+]
 head = "../../unit/head.js head.js"
 firefox-appdir = "browser"
 prefs = [
@@ -31,9 +33,12 @@ requesttimeoutfactor = 2  # Slow on Mac in verify mode
 ["test_quicksuggest_flight_status.js"]
 
 ["test_quicksuggest_importantDatesSuggestions.js"]
+requesttimeoutfactor = 2  # Slow on Mac in verify mode
 
 ["test_quicksuggest_impressionCaps.js"]
-skip-if = ["true"] # Bug 1880214
+skip-if = [
+  "true", # Bug 1880214
+]
 
 ["test_quicksuggest_market.js"]
 

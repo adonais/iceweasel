@@ -173,6 +173,7 @@ class WebcompatTrackerDebugger {
 
   /**
    * Block or unblock all selected trackers.
+   *
    * @param {boolean} blocked - If true, block the selected trackers; if false, unblock them.
    */
   async blockOrUnblockSelected(blocked) {
@@ -217,6 +218,7 @@ class WebcompatTrackerDebugger {
 
   /**
    * Create the table head for the tracker table.
+   *
    * @return {HTMLTableSectionElement} The table head element containing the header row.
    */
   createTableHead() {
@@ -247,6 +249,7 @@ class WebcompatTrackerDebugger {
 
   /**
    * Handler for select all checkbox change event.
+   *
    * @param {Event} e - The change event.
    */
   onSelectAllChange(e) {
@@ -262,6 +265,7 @@ class WebcompatTrackerDebugger {
 
   /**
    * Create the table body for the tracker table.
+   *
    * @return {HTMLTableSectionElement} The table body element containing tracker rows.
    */
   createTableBody() {
@@ -274,8 +278,9 @@ class WebcompatTrackerDebugger {
 
   /**
    * Create a row for a tracker.
+   *
    * @param {string} hostname - The hostname of the tracker.
-   * @param {Object} trackerData - The data associated with the tracker.
+   * @param {object} trackerData - The data associated with the tracker.
    * @param {string} trackerData.trackerType - The type of tracker (e.g., "tracking", "fingerprinting").
    * @returns {HTMLTableRowElement} The tracker row element.
    */
@@ -307,6 +312,7 @@ class WebcompatTrackerDebugger {
 
   /**
    * Create a checkbox cell for a tracker row.
+   *
    * @param {string} tracker - The tracker identifier (hostname).
    * @returns {HTMLTableCellElement} The checkbox cell element.
    */
@@ -324,6 +330,7 @@ class WebcompatTrackerDebugger {
 
   /**
    * Handler for individual row checkbox change event.
+   *
    * @param {Event} e - The change event.
    */
   onRowCheckboxChange(e) {
@@ -337,6 +344,7 @@ class WebcompatTrackerDebugger {
 
   /**
    * Create an action cell (block/unblock button) for a tracker row.
+   *
    * @param {string} tracker - The tracker identifier (hostname).
    * @param {boolean} isBlocked - Whether the tracker is currently blocked.
    * @returns {HTMLTableCellElement} The action cell element containing the button.
@@ -355,6 +363,7 @@ class WebcompatTrackerDebugger {
 
   /**
    * Handler for individual action button click event.
+   *
    * @param {string} tracker - The tracker identifier (hostname).
    * @param {boolean} isBlocked - Whether the tracker is currently blocked.
    */

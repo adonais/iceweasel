@@ -5,8 +5,8 @@
 package org.mozilla.fenix.ui.robots
 
 import android.util.Log
-import androidx.compose.ui.test.assertIsOff
-import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -88,11 +88,11 @@ class SettingsSubMenuDataCollectionRobot {
         Log.i(TAG, "verifyUsageAndTechnicalDataToggle: Trying to verify that the \"Technical and interaction data\" toggle is checked: $isChecked")
         if (isChecked) {
             composeTestRule.onNodeWithTag("data.collection.Send technical and interaction data.toggle", useUnmergedTree = true)
-                .assertIsOn()
+                .assertIsSelected()
             Log.i(TAG, "verifyUsageAndTechnicalDataToggle: Verified that the \"Usage and technical data\" toggle is checked: $isChecked")
         } else {
             composeTestRule.onNodeWithTag("data.collection.Send technical and interaction data.toggle", useUnmergedTree = true)
-                .assertIsOff()
+                .assertIsNotSelected()
             Log.i(TAG, "verifyUsageAndTechnicalDataToggle: Verified that the \"Usage and technical data\" toggle is checked: $isChecked")
         }
     }
@@ -101,11 +101,11 @@ class SettingsSubMenuDataCollectionRobot {
         Log.i(TAG, "verifyDailyUsagePingToggle: Trying to verify that the \"Daily usage ping\" toggle is checked: $isChecked")
         if (isChecked) {
             composeTestRule.onNodeWithTag("data.collection.Daily usage ping.toggle", useUnmergedTree = true)
-                .assertIsOn()
+                .assertIsSelected()
             Log.i(TAG, "verifyDailyUsagePingToggle: Verified that the \"Daily usage ping\" toggle is checked: $isChecked")
         } else {
             composeTestRule.onNodeWithTag("data.collection.Daily usage ping.toggle", useUnmergedTree = true)
-                .assertIsOff()
+                .assertIsNotSelected()
             Log.i(TAG, "verifyDailyUsagePingToggle: Verified that the \"Daily usage ping\" toggle is checked: $isChecked")
         }
     }

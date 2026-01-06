@@ -40,6 +40,7 @@ import mozilla.components.feature.accounts.push.CloseTabsUseCases
 import mozilla.components.feature.downloads.ui.DownloadCancelDialogFragment
 import mozilla.components.feature.tabs.tabstray.TabsFeature
 import mozilla.components.lib.state.ext.observeAsState
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.storeProvider
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.util.AndroidDisplayUnitConverter
 import mozilla.telemetry.glean.private.NoExtras
@@ -49,7 +50,6 @@ import org.mozilla.fenix.GleanMetrics.TabsTray
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.compose.core.Action
 import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
@@ -137,16 +137,6 @@ class TabsTrayFragment : AppCompatDialogFragment() {
         args.accessPoint.takeIf { it != TabsTrayAccessPoint.None }?.let {
             TabsTray.accessPoint[it.name.lowercase()].add()
         }
-        val initialMode = if (args.enterMultiselect) {
-            TabsTrayState.Mode.Select(emptySet())
-        } else {
-            TabsTrayState.Mode.Normal
-        }
-        val initialPage = args.page
-        val activity = activity as HomeActivity
-        val initialInactiveExpanded = requireComponents.appStore.state.inactiveTabsExpanded
-        val inactiveTabs = requireComponents.core.store.state.actualInactiveTabs(requireContext().settings())
-        val normalTabs = requireComponents.core.store.state.normalTabs - inactiveTabs.toSet()
 
         enablePbmPinLauncher = registerForActivityResult(
             onSuccess = {
@@ -157,63 +147,6 @@ class TabsTrayFragment : AppCompatDialogFragment() {
             onFailure = {
                 PrivateBrowsingLocked.authFailure.record()
             },
-        )
-
-        tabsTrayStore = StoreProvider.get(this) {
-            TabsTrayStore(
-                initialState = TabsTrayState(
-                    selectedPage = initialPage,
-                    mode = initialMode,
-                    inactiveTabs = inactiveTabs,
-                    inactiveTabsExpanded = initialInactiveExpanded,
-                    normalTabs = normalTabs,
-                    privateTabs = requireComponents.core.store.state.privateTabs,
-                    selectedTabId = requireComponents.core.store.state.selectedTabId,
-                ),
-                middlewares = listOf(
-                    TabsTrayTelemetryMiddleware(requireComponents.nimbus.events),
-                ),
-            )
-        }
-
-        navigationInteractor =
-            DefaultNavigationInteractor(
-                browserStore = requireComponents.core.store,
-                navController = findNavController(),
-                dismissTabTray = ::dismissTabsTray,
-                dismissTabTrayAndNavigateHome = ::dismissTabsTrayAndNavigateHome,
-                showCancelledDownloadWarning = ::showCancelledDownloadWarning,
-                accountManager = requireComponents.backgroundServices.accountManager,
-            )
-
-        tabsTrayController = DefaultTabsTrayController(
-            activity = activity,
-            appStore = requireComponents.appStore,
-            tabsTrayStore = tabsTrayStore,
-            browserStore = requireComponents.core.store,
-            settings = requireContext().settings(),
-            browsingModeManager = activity.browsingModeManager,
-            navController = findNavController(),
-            navigateToHomeAndDeleteSession = ::navigateToHomeAndDeleteSession,
-            navigationInteractor = navigationInteractor,
-            profiler = requireComponents.core.engine.profiler,
-            tabsUseCases = requireComponents.useCases.tabsUseCases,
-            fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
-            closeSyncedTabsUseCases = requireComponents.useCases.closeSyncedTabsUseCases,
-            bookmarksStorage = requireComponents.core.bookmarksStorage,
-            ioDispatcher = Dispatchers.IO,
-            collectionStorage = requireComponents.core.tabCollectionStorage,
-            dismissTray = ::dismissTabsTray,
-            showUndoSnackbarForTab = ::showUndoSnackbarForTab,
-            showUndoSnackbarForInactiveTab = ::showUndoSnackbarForInactiveTab,
-            showUndoSnackbarForSyncedTab = ::showUndoSnackbarForSyncedTab,
-            showCancelledDownloadWarning = ::showCancelledDownloadWarning,
-            showCollectionSnackbar = ::showCollectionSnackbar,
-            showBookmarkSnackbar = ::showBookmarkSnackbar,
-        )
-
-        tabsTrayInteractor = DefaultTabsTrayInteractor(
-            controller = tabsTrayController,
         )
 
         recordBreadcrumb("TabsTrayFragment onCreateDialog")
@@ -228,7 +161,7 @@ class TabsTrayFragment : AppCompatDialogFragment() {
         dialog?.window?.setWindowAnimations(R.style.DialogFragmentRestoreAnimation)
     }
 
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "CognitiveComplexMethod")
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -251,6 +184,8 @@ class TabsTrayFragment : AppCompatDialogFragment() {
             tabsTrayDialogBinding.root,
             true,
         )
+
+        setupUserInteractionsHandling()
 
         tabsTrayComposeBinding.root
             .setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
@@ -422,6 +357,76 @@ class TabsTrayFragment : AppCompatDialogFragment() {
         return tabsTrayDialogBinding.root
     }
 
+    private fun setupUserInteractionsHandling() {
+        val args by navArgs<TabsTrayFragmentArgs>()
+        val initialMode = if (args.enterMultiselect) {
+            TabsTrayState.Mode.Select(emptySet())
+        } else {
+            TabsTrayState.Mode.Normal
+        }
+        val initialPage = args.page
+        val activity = activity as HomeActivity
+        val initialInactiveExpanded = requireComponents.appStore.state.inactiveTabsExpanded
+        val inactiveTabs = requireComponents.core.store.state.actualInactiveTabs(requireContext().settings())
+        val normalTabs = requireComponents.core.store.state.normalTabs - inactiveTabs.toSet()
+        tabsTrayStore = storeProvider.get { restoredState ->
+            TabsTrayStore(
+                initialState = restoredState ?: TabsTrayState(
+                    selectedPage = initialPage,
+                    mode = initialMode,
+                    inactiveTabs = inactiveTabs,
+                    inactiveTabsExpanded = initialInactiveExpanded,
+                    normalTabs = normalTabs,
+                    privateTabs = requireComponents.core.store.state.privateTabs,
+                    selectedTabId = requireComponents.core.store.state.selectedTabId,
+                ),
+                middlewares = listOf(
+                    TabsTrayTelemetryMiddleware(requireComponents.nimbus.events),
+                ),
+            )
+        }
+
+        navigationInteractor =
+            DefaultNavigationInteractor(
+                browserStore = requireComponents.core.store,
+                navController = findNavController(),
+                dismissTabTray = ::dismissTabsTray,
+                dismissTabTrayAndNavigateHome = ::dismissTabsTrayAndNavigateHome,
+                showCancelledDownloadWarning = ::showCancelledDownloadWarning,
+                accountManager = requireComponents.backgroundServices.accountManager,
+            )
+
+        tabsTrayController = DefaultTabsTrayController(
+            activity = activity,
+            appStore = requireComponents.appStore,
+            tabsTrayStore = tabsTrayStore,
+            browserStore = requireComponents.core.store,
+            settings = requireContext().settings(),
+            browsingModeManager = activity.browsingModeManager,
+            navController = findNavController(),
+            navigateToHomeAndDeleteSession = ::navigateToHomeAndDeleteSession,
+            navigationInteractor = navigationInteractor,
+            profiler = requireComponents.core.engine.profiler,
+            tabsUseCases = requireComponents.useCases.tabsUseCases,
+            fenixBrowserUseCases = requireComponents.useCases.fenixBrowserUseCases,
+            closeSyncedTabsUseCases = requireComponents.useCases.closeSyncedTabsUseCases,
+            bookmarksStorage = requireComponents.core.bookmarksStorage,
+            ioDispatcher = Dispatchers.IO,
+            collectionStorage = requireComponents.core.tabCollectionStorage,
+            dismissTray = ::dismissTabsTray,
+            showUndoSnackbarForTab = ::showUndoSnackbarForTab,
+            showUndoSnackbarForInactiveTab = ::showUndoSnackbarForInactiveTab,
+            showUndoSnackbarForSyncedTab = ::showUndoSnackbarForSyncedTab,
+            showCancelledDownloadWarning = ::showCancelledDownloadWarning,
+            showCollectionSnackbar = ::showCollectionSnackbar,
+            showBookmarkSnackbar = ::showBookmarkSnackbar,
+        )
+
+        tabsTrayInteractor = DefaultTabsTrayInteractor(
+            controller = tabsTrayController,
+        )
+    }
+
     private fun shouldShowBanner(settings: Settings) =
         with(settings) { privateBrowsingLockedFeatureEnabled && shouldShowLockPbmBanner }
 
@@ -587,7 +592,6 @@ class TabsTrayFragment : AppCompatDialogFragment() {
                 ),
                 positiveButtonRadius = pixelSizeFor(R.dimen.tab_corner_radius).toFloat(),
             ),
-
             onPositiveButtonClicked = ::onCancelDownloadWarningAccepted,
         )
         dialog.show(parentFragmentManager, DOWNLOAD_CANCEL_DIALOG_FRAGMENT_TAG)

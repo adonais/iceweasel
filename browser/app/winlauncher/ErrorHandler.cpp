@@ -6,8 +6,6 @@
 
 #include "ErrorHandler.h"
 
-#include <utility>
-
 #include "mozilla/CmdLineAndEnvUtils.h"
 #include "mozilla/UniquePtr.h"
 

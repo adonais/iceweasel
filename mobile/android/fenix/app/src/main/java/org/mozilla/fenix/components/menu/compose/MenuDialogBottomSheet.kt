@@ -16,7 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.toArgb
@@ -44,8 +43,6 @@ private const val CFR_VERTICAL_OFFSET_PORTRAIT = -6
  * @param handlebarContentDescription Bottom sheet handlebar content description.
  * @param isMenuDragBarDark Whether or not the menu's drag bar background should be dark.
  * @param cornerShape The shape of the bottom sheet's top corners.
- * @param handleColor The color of the handle.
- * @param handleCornerRadius The corner radius of the handle.
  * @param menuCfrState An optional [MenuCFRState] that describes how to display a
  * contextual feature recommendation (CFR) popup in the menu.
  * @param content The children composable to be laid out.
@@ -57,8 +54,6 @@ fun MenuDialogBottomSheet(
     handlebarContentDescription: String,
     isMenuDragBarDark: Boolean = false,
     cornerShape: Shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-    handleColor: Color = FirefoxTheme.colors.borderInverted,
-    handleCornerRadius: CornerRadius = CornerRadius.Zero,
     menuCfrState: MenuCFRState? = null,
     content: @Composable () -> Unit,
 ) {
@@ -78,8 +73,6 @@ fun MenuDialogBottomSheet(
                 contentDescription = handlebarContentDescription,
                 isMenuDragBarDark = isMenuDragBarDark,
                 cornerShape = cornerShape,
-                handleColor = handleColor,
-                handleCornerRadius = handleCornerRadius,
             )
         } else {
             MenuBottomSheetHandle(
@@ -88,8 +81,6 @@ fun MenuDialogBottomSheet(
                 contentDescription = handlebarContentDescription,
                 isMenuDragBarDark = isMenuDragBarDark,
                 cornerShape = cornerShape,
-                color = handleColor,
-                cornerRadius = handleCornerRadius,
             )
         }
 
@@ -104,8 +95,6 @@ private fun MenuBottomSheetHandle(
     contentDescription: String,
     isMenuDragBarDark: Boolean = false,
     cornerShape: Shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-    color: Color = FirefoxTheme.colors.borderInverted,
-    cornerRadius: CornerRadius = CornerRadius.Zero,
 ) {
     Column(
         modifier = Modifier
@@ -125,8 +114,6 @@ private fun MenuBottomSheetHandle(
             onRequestDismiss = onRequestDismiss,
             contentDescription = contentDescription,
             modifier = modifier,
-            cornerRadius = cornerRadius,
-            color = color,
         )
     }
 }
@@ -142,8 +129,6 @@ private fun CFRBottomSheetHandle(
     onRequestDismiss: () -> Unit,
     isMenuDragBarDark: Boolean,
     cornerShape: Shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-    handleColor: Color = FirefoxTheme.colors.borderInverted,
-    handleCornerRadius: CornerRadius = CornerRadius.Zero,
 ) {
     val (indicatorDirection, verticalOffset) = when (state.orientation) {
         OrientationMode.Landscape -> CFRPopup.IndicatorDirection.UP to CFR_VERTICAL_OFFSET_LANDSCAPE
@@ -190,8 +175,6 @@ private fun CFRBottomSheetHandle(
             contentDescription = contentDescription,
             isMenuDragBarDark = isMenuDragBarDark,
             cornerShape = cornerShape,
-            color = handleColor,
-            cornerRadius = handleCornerRadius,
         )
     }
 }

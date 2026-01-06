@@ -97,8 +97,7 @@ PACKAGES_WE_DONT_WANT = {
     #    "unicode-ident": "Use icu_properties instead",
     "unicode-joining-type": "Use icu_properties instead",
     "unicode-linebreak": "Use icu_segmenter instead",
-    # Exception until bug 1986265 is fixed.
-    #    "unicode-normalization": "Use icu_normalizer instead",
+    "unicode-normalization": "Use icu_normalizer instead",
     "unicode-properties": "Use icu_properties instead",
     "unicode-script": "Use icu_properties instead",
     "unicode-segmentation": "Use icu_segmenter instead",
@@ -130,7 +129,6 @@ ALLOWED_DESPITE_PREFIX = {
     "unicode-bidi",  # Out of scope for ICU4X; used with ICU4X data
     "unicode-bidi-ffi",  # FFI for previous
     "unicode-ident",  # Impractical to require icu_properties at this time
-    "unicode-normalization",  # Exception until bug 1986265 is fixed.
     "unicode-width",  # icu_properties has the raw data but not the algorithm
     "unic-langid",  # We want to migrate to icu_locale eventually
     "unic-langid-ffi",  # FFI for previous

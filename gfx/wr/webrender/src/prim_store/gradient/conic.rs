@@ -493,7 +493,7 @@ pub fn conic_gradient_pattern(
     stops: &[GradientStop],
     gpu_buffer_builder: &mut GpuBufferBuilder
 ) -> Pattern {
-    let num_blocks = 2 + gpu_gradient_stops_blocks(stops.len(), true);
+    let num_blocks = 2 + gpu_gradient_stops_blocks(stops.len());
     let mut writer = gpu_buffer_builder.f32.write_blocks(num_blocks);
     writer.push_one([
         center.x,

@@ -1595,6 +1595,7 @@ export var PanelView = class extends AssociatedToNode {
         localName == "checkbox" ||
         localName == "a" ||
         localName == "moz-button" ||
+        localName == "moz-box-button" ||
         localName == "moz-toggle" ||
         node.classList.contains("text-link") ||
         (!arrowKey && isNavigableWithTabOnly) ||
@@ -1921,7 +1922,10 @@ export var PanelView = class extends AssociatedToNode {
         // a11y against the event target (moz-button) which fails. Dispatch from
         // the inner button element instead.
         let target = button;
-        if (button.localName == "moz-button") {
+        if (
+          button.localName == "moz-button" ||
+          button.localName == "moz-box-button"
+        ) {
           target = button.buttonEl;
           details.composed = true;
         }

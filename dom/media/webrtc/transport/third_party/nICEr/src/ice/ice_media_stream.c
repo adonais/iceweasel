@@ -855,36 +855,6 @@ void nr_ice_media_stream_component_failed(nr_ice_media_stream *stream,nr_ice_com
     nr_ice_peer_ctx_check_if_connected(stream->pctx);
   }
 
-int nr_ice_media_stream_get_best_candidate(nr_ice_media_stream *str, int component, nr_ice_candidate **candp)
-  {
-    nr_ice_candidate *cand;
-    nr_ice_candidate *best_cand=0;
-    nr_ice_component *comp;
-    int r,_status;
-
-    if(r=nr_ice_media_stream_find_component(str,component,&comp))
-      ABORT(r);
-
-    cand=TAILQ_FIRST(&comp->candidates);
-    while(cand){
-      if(cand->state==NR_ICE_CAND_STATE_INITIALIZED){
-        if(!best_cand || (cand->priority>best_cand->priority))
-          best_cand=cand;
-
-      }
-      cand=TAILQ_NEXT(cand,entry_comp);
-    }
-
-    if(!best_cand)
-      ABORT(R_NOT_FOUND);
-
-    *candp=best_cand;
-
-    _status=0;
-  abort:
-    return(_status);
-  }
-
 
 /* OK, we have the stream the user created, but that reflects the base
    ICE ctx, not the peer_ctx. So, find the related stream in the pctx,
@@ -973,34 +943,6 @@ int nr_ice_media_stream_get_active(nr_ice_peer_ctx *pctx, nr_ice_media_stream *s
   abort:
     return(_status);
   }
-
-int nr_ice_media_stream_addrs(nr_ice_peer_ctx *pctx, nr_ice_media_stream *str, int component, nr_transport_addr *local, nr_transport_addr *remote)
-  {
-    int r,_status;
-    nr_ice_component *comp;
-
-    /* First find the peer component */
-    if(r=nr_ice_peer_ctx_find_component(pctx, str, component, &comp))
-      ABORT(r);
-
-    /* Do we have an active pair yet? We should... */
-    if(!comp->active)
-      ABORT(R_BAD_ARGS);
-
-    /* Use the socket on our local side */
-    if(r=nr_socket_getaddr(comp->active->local->osock,local))
-      ABORT(r);
-
-    /* Use the address on the remote side */
-    if(r=nr_transport_addr_copy(remote,&comp->active->remote->addr))
-      ABORT(r);
-
-    _status=0;
-  abort:
-    return(_status);
-  }
-
-
 
 int nr_ice_media_stream_finalize(nr_ice_media_stream *lstr,nr_ice_media_stream *rstr)
   {

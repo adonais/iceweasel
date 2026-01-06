@@ -16,12 +16,6 @@ add_task(async function test_openPreferences_spotlight() {
       "#privacy",
       "trackingprotection",
     ],
-    [
-      "privacy-permissions-block-popups",
-      "panePrivacy",
-      "#privacy",
-      "permissions-block-popups",
-    ],
   ]) {
     if (
       arg == "privacy-credit-card-autofill" &&

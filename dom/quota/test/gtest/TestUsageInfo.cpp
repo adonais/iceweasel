@@ -5,9 +5,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <cstdint>
-#include <memory>
 #include <ostream>
-#include <utility>
 
 #include "gtest/gtest.h"
 #include "mozilla/Maybe.h"

@@ -56,7 +56,7 @@ const kSaveDelayMs = 1500;
 /**
  * Handles serialization of the data and persistence into a file.
  *
- * @param {Object} config An object containing following members:
+ * @param {object} config An object containing following members:
  * @param {string} config.path
  *   String containing the file path where data should be saved.
  * @param {string} [config.sanitizedBasename]

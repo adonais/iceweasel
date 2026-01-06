@@ -24,7 +24,6 @@
 
 #include <atomic>
 #include <regex>
-#include <string>
 
 #ifdef XP_WIN
 #  include <windows.h>

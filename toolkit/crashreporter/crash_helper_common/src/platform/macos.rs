@@ -11,25 +11,48 @@ use nix::{
     },
     libc::{setsockopt, SOL_SOCKET, SO_NOSIGPIPE},
     sys::socket::{socketpair, AddressFamily, SockFlag, SockType},
-    Result,
 };
 use std::{
     mem::size_of,
     os::fd::{AsRawFd, BorrowedFd, OwnedFd},
 };
+use thiserror::Error;
 
 pub type ProcessHandle = ();
 
-pub(crate) fn unix_socketpair() -> Result<(OwnedFd, OwnedFd)> {
+#[derive(Error, Debug)]
+pub enum PlatformError {
+    #[error("poll() call failed with error: {0}")]
+    PollFailure(Errno),
+    #[error("Could not set socket in non-blocking mode: {0}")]
+    SocketNonBlockError(Errno),
+    #[error("Could not flag socket as close-after-exec: {0}")]
+    SocketCloexecError(Errno),
+    #[error("Could not create a socket pair: {0}")]
+    SocketpairFailure(#[from] Errno),
+    #[error("sendmsg() call failed with error: {0}")]
+    SendFailure(Errno),
+    #[error("Sending {expected} bytes failed, only {sent} bytes sent")]
+    SendTooShort { expected: usize, sent: usize },
+    #[error("recvmsg() call failed with error: {0}")]
+    ReceiveFailure(Errno),
+    #[error("Missing SCM credentials")]
+    ReceiveMissingCredentials,
+    #[error("Receiving {expected} bytes failed, only {received} bytes received")]
+    ReceiveTooShort { expected: usize, received: usize },
+}
+
+pub(crate) fn unix_socketpair() -> Result<(OwnedFd, OwnedFd), PlatformError> {
     socketpair(
         AddressFamily::Unix,
         SockType::Stream,
         None,
         SockFlag::empty(),
     )
+    .map_err(PlatformError::SocketpairFailure)
 }
 
-pub(crate) fn set_socket_default_flags(socket: BorrowedFd) -> Result<()> {
+pub(crate) fn set_socket_default_flags(socket: BorrowedFd) -> Result<(), PlatformError> {
     // All our sockets are in non-blocking mode.
     let flags = OFlag::from_bits_retain(fcntl(socket, F_GETFL)?);
     fcntl(socket, F_SETFL(flags.union(OFlag::O_NONBLOCK)))?;
@@ -48,12 +71,14 @@ pub(crate) fn set_socket_default_flags(socket: BorrowedFd) -> Result<()> {
     };
 
     if res < 0 {
-        return Err(Errno::last());
+        return Err(PlatformError::SocketNonBlockError(Errno::last()));
     }
 
     Ok(())
 }
 
-pub(crate) fn set_socket_cloexec(socket: BorrowedFd) -> Result<()> {
-    fcntl(socket, F_SETFD(FdFlag::FD_CLOEXEC)).map(|_res| ())
+pub(crate) fn set_socket_cloexec(socket: BorrowedFd) -> Result<(), PlatformError> {
+    fcntl(socket, F_SETFD(FdFlag::FD_CLOEXEC))
+        .map(|_res| ())
+        .map_err(PlatformError::SocketCloexecError)
 }

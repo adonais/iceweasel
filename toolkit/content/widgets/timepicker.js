@@ -19,7 +19,8 @@ function TimePicker(context) {
   TimePicker.prototype = {
     /**
      * Initializes the time picker. Set the default states and properties.
-     * @param  {Object} props
+     *
+     * @param  {object} props
      *         {
      *           {Number} hour [optional]: Hour in 24 hours format (0~23), default is current hour
      *           {Number} minute [optional]: Minute (0~59), default is current minute
@@ -170,7 +171,7 @@ function TimePicker(context) {
     /**
      * Insert element for layout purposes.
      *
-     * @param {Object}
+     * @param {object}
      *        {
      *          {String} tag: The tag to create
      *          {DOMElement} insertBefore: The DOM node to insert before
@@ -274,7 +275,7 @@ function TimePicker(context) {
     /**
      * Move the keyboard focus between spinners of the picker.
      *
-     * @param {Boolean} isReverse: Does the navigation expected to be following
+     * @param {boolean} isReverse: Does the navigation expected to be following
      *                           the focus order (false) or not (true/isReverse)
      */
     focusNextSpinner(isReverse) {
@@ -426,7 +427,7 @@ function TimePicker(context) {
     /**
      * Set the time state and update the components with the new state.
      *
-     * @param {Object} timeState
+     * @param {object} timeState
      *        {
      *          {Number} hour [optional]
      *          {Number} minute [optional]

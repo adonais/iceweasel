@@ -15,7 +15,6 @@
 #include "MediaEventSource.h"
 #include "MediaTrackGraph.h"
 #include "mozilla/Atomics.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -356,14 +355,11 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
    */
   void UpdateGraph(GraphTime aEndBlockingDecisions);
 
-  void SwapMessageQueues() MOZ_REQUIRES(mMonitor) {
+  void SwapMessageQueues() {
+    MonitorAutoLock lock(mMonitor);
     MOZ_ASSERT(OnGraphThreadOrNotRunning());
-    mMonitor.AssertCurrentThreadOwns();
     MOZ_ASSERT(mFrontMessageQueue.IsEmpty());
     mFrontMessageQueue.SwapElements(mBackMessageQueue);
-    if (!mFrontMessageQueue.IsEmpty()) {
-      EnsureNextIteration();
-    }
   }
   /**
    * Do all the processing and play the audio and video, from
@@ -382,7 +378,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   /* From the main thread, ask the MTG to resolve the returned promise when
    * the device specified has started.
    * A null aDeviceID indicates the default audio output device.
-   * The promise is rejected with NS_ERROR_INVALID_ARG if aSink does not
+   * The promise is rejected with NS_ERROR_INVALID_ARG if aDeviceID does not
    * correspond to any output devices used by the graph, or
    * NS_ERROR_NOT_AVAILABLE if outputs to the device are removed or
    * NS_ERROR_ILLEGAL_DURING_SHUTDOWN if the graph is force shut down

@@ -197,13 +197,12 @@ export function getShouldScrollToSelectedLocation(state) {
  * Gets the first source actor for the source and/or thread
  * provided.
  *
- * @param {Object} state
- * @param {String} sourceId
+ * @param {object} state
+ * @param {string} sourceId
  *         The source used
- * @param {String} [threadId]
+ * @param {string} [threadId]
  *         The thread to check, this is optional.
- * @param {Object} sourceActor
- *
+ * @param {object} sourceActor
  */
 export function getFirstSourceActorForGeneratedSource(
   state,
@@ -228,10 +227,10 @@ export function getFirstSourceActorForGeneratedSource(
 /**
  * Get the source actor of the source
  *
- * @param {Object} state
- * @param {String} id
+ * @param {object} state
+ * @param {string} id
  *        The source id
- * @return {Array<Object>}
+ * @return {Array<object>}
  *         List of source actors
  */
 export function getSourceActorsForSource(state, id) {
@@ -368,9 +367,9 @@ export function isSourceOverridden(toolboxState, source) {
  * Compute the list of source actors and source objects to be removed
  * when removing a given target/thread.
  *
- * @param {String} threadActorID
+ * @param {string} threadActorID
  *        The thread to be removed.
- * @return {Object}
+ * @return {object}
  *         An object with two arrays:
  *         - actors: list of source actor objects to remove
  *         - sources: list of source objects to remove

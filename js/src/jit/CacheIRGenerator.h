@@ -766,7 +766,6 @@ class MOZ_RAII InlinableNativeIRGenerator {
   AttachDecision tryAttachIsConstructor();
   AttachDecision tryAttachIsCrossRealmArrayConstructor();
   AttachDecision tryAttachCanOptimizeArraySpecies();
-  AttachDecision tryAttachCanOptimizeStringProtoSymbolLookup();
   AttachDecision tryAttachGuardToClass(InlinableNative native);
   AttachDecision tryAttachGuardToClass(GuardClassKind kind);
   AttachDecision tryAttachGuardToArrayBuffer();

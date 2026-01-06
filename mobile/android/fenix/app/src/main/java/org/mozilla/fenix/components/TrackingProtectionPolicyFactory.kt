@@ -44,9 +44,9 @@ class TrackingProtectionPolicyFactory(
             }
 
         return when {
-            normalMode && privateMode -> trackingProtectionPolicy.applyTCPIfNeeded(settings)
-            normalMode && !privateMode -> trackingProtectionPolicy.applyTCPIfNeeded(settings).forRegularSessionsOnly()
-            !normalMode && privateMode -> trackingProtectionPolicy.applyTCPIfNeeded(settings).forPrivateSessionsOnly()
+            normalMode && privateMode -> trackingProtectionPolicy.applyTCPIfNeeded()
+            normalMode && !privateMode -> trackingProtectionPolicy.applyTCPIfNeeded().forRegularSessionsOnly()
+            !normalMode && privateMode -> trackingProtectionPolicy.applyTCPIfNeeded().forPrivateSessionsOnly()
             else -> TrackingProtectionPolicy.none()
         }
     }
@@ -128,18 +128,10 @@ class TrackingProtectionPolicyFactory(
 }
 
 @VisibleForTesting
-internal fun TrackingProtectionPolicyForSessionTypes.applyTCPIfNeeded(
-    settings: Settings,
-): TrackingProtectionPolicyForSessionTypes {
-    val updatedCookiePolicy = if (settings.enabledTotalCookieProtection) {
-        CookiePolicy.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS
-    } else {
-        cookiePolicy
-    }
-
+internal fun TrackingProtectionPolicyForSessionTypes.applyTCPIfNeeded(): TrackingProtectionPolicyForSessionTypes {
     return TrackingProtectionPolicy.select(
         trackingCategories = trackingCategories,
-        cookiePolicy = updatedCookiePolicy,
+        cookiePolicy = CookiePolicy.ACCEPT_FIRST_PARTY_AND_ISOLATE_OTHERS,
         strictSocialTrackingProtection = strictSocialTrackingProtection,
         cookiePurging = cookiePurging,
         bounceTrackingProtectionMode = bounceTrackingProtectionMode,

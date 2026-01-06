@@ -56,12 +56,8 @@ nsresult mozilla::image::EnsureModuleInitialized() {
     return NS_OK;
   }
 
-  static ImageEnablementCookie kAVIFCookie = {
-      mozilla::StaticPrefs::image_avif_enabled, "image/avif"_ns};
   static ImageEnablementCookie kJXLCookie = {
       mozilla::StaticPrefs::image_jxl_enabled, "image/jxl"_ns};
-  Preferences::RegisterCallbackAndCall(UpdateDocumentViewerRegistration,
-                                       "image.avif.enabled", &kAVIFCookie);
   Preferences::RegisterCallbackAndCall(UpdateDocumentViewerRegistration,
                                        "image.jxl.enabled", &kJXLCookie);
 

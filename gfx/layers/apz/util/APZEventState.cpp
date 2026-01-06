@@ -387,8 +387,7 @@ void APZEventState::ProcessTouchEvent(
         touch->convertToPointer = true;
       }
     }
-    nsEventStatus status;
-    cancelEvent.mWidget->DispatchEvent(&cancelEvent, status);
+    cancelEvent.mWidget->DispatchEvent(&cancelEvent);
   }
 }
 

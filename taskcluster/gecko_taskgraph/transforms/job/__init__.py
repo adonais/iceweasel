@@ -250,6 +250,33 @@ def use_uv(config, jobs):
 
 
 @transforms.add
+def add_perfherder_fetch_content_artifact(config, jobs):
+    for job in jobs:
+        if not job.get("fetches"):
+            yield job
+            continue
+
+        worker = job.setdefault("worker", {})
+        env = worker.setdefault("env", {})
+        artifacts = worker.setdefault("artifacts", [])
+        perfherder_fetch_content_json_path = (
+            "/builds/worker/perf/perfherder-data-fetch-content.json"
+            if worker.get("implementation") == "docker-worker"
+            else "./perf/perfherder-data-fetch-content.json"
+        )
+        artifacts.append(
+            {
+                "type": "file",
+                "name": "public/fetch/perfherder-data-fetch-content.json",
+                "path": perfherder_fetch_content_json_path,
+            }
+        )
+        env["PERFHERDER_FETCH_CONTENT_JSON_PATH"] = perfherder_fetch_content_json_path
+
+        yield job
+
+
+@transforms.add
 def use_fetches(config, jobs):
     artifact_names = {}
     extra_env = {}

@@ -15,25 +15,37 @@ GLOBAL(uint8_t, gNumSubPageClasses, []() GLOBAL_CONSTEXPR -> uint8_t {
 }())
 
 GLOBAL(uint8_t, gPageSize2Pow, GLOBAL_LOG2(gPageSize))
+GLOBAL(uint8_t, gRealPageSize2Pow, GLOBAL_LOG2(gRealPageSize))
 GLOBAL(size_t, gPageSizeMask, gPageSize - 1)
+GLOBAL(size_t, gRealPageSizeMask, gRealPageSize - 1)
+
+// For system calls that allocate pages we use this to round-up to a real
+// page boundary.
+GLOBAL(size_t, gPagesPerRealPage,
+       gPageSize < gRealPageSize ? gRealPageSize / gPageSize : 1);
 
 // Number of pages in a chunk.
 GLOBAL(size_t, gChunkNumPages, kChunkSize >> gPageSize2Pow)
 
 // Number of pages necessary for a chunk header plus a guard page.
 GLOBAL(size_t, gChunkHeaderNumPages,
-       1 + (((sizeof(arena_chunk_t) +
-              sizeof(arena_chunk_map_t) * gChunkNumPages + gPageSizeMask) &
-             ~gPageSizeMask) >>
-            gPageSize2Pow))
+       gPagesPerRealPage +
+           (std::max(PAGE_CEILING(sizeof(arena_chunk_t) +
+                                  sizeof(arena_chunk_map_t) * gChunkNumPages),
+                     REAL_PAGE_CEILING(sizeof(arena_chunk_t) +
+                                       sizeof(arena_chunk_map_t) *
+                                           gChunkNumPages)) >>
+            gPageSize2Pow));
 
 // One chunk, minus the header, minus a guard page
 GLOBAL(size_t, gMaxLargeClass,
-       kChunkSize - gPageSize - (gChunkHeaderNumPages << gPageSize2Pow))
+       kChunkSize - gRealPageSize - (gChunkHeaderNumPages << gPageSize2Pow))
 
 // Various checks that regard configuration.
 GLOBAL_ASSERT(1ULL << gPageSize2Pow == gPageSize,
               "Page size is not a power of two");
+GLOBAL_ASSERT(1ULL << gRealPageSize2Pow == gRealPageSize,
+              "Real page size is not a power of two");
 GLOBAL_ASSERT(kQuantum >= sizeof(void*));
 GLOBAL_ASSERT(kQuantum <= kQuantumWide);
 GLOBAL_ASSERT(!kNumQuantumWideClasses ||
@@ -44,4 +56,6 @@ GLOBAL_ASSERT(kQuantumWide <= kMaxQuantumClass);
 GLOBAL_ASSERT(gMaxSubPageClass >= kMinSubPageClass || gMaxSubPageClass == 0);
 GLOBAL_ASSERT(gMaxLargeClass >= gMaxSubPageClass);
 GLOBAL_ASSERT(kChunkSize >= gPageSize);
+GLOBAL_ASSERT(kChunkSize >= gRealPageSize);
+GLOBAL_ASSERT(gPagesPerRealPage < gChunkHeaderNumPages);
 GLOBAL_ASSERT(kQuantum * 4 <= kChunkSize);

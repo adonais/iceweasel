@@ -8,14 +8,22 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/ErrorResult.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSMathSumBinding.h"
+#include "mozilla/dom/CSSNumericArray.h"
+#include "mozilla/dom/CSSNumericValueBinding.h"
+#include "mozilla/dom/CSSUnitValue.h"
+#include "nsString.h"
 
 namespace mozilla::dom {
 
-CSSMathSum::CSSMathSum(nsCOMPtr<nsISupports> aParent)
-    : CSSMathValue(std::move(aParent)) {}
+CSSMathSum::CSSMathSum(nsCOMPtr<nsISupports> aParent,
+                       RefPtr<CSSNumericArray> aValues)
+    : CSSMathValue(std::move(aParent), ValueType::MathSum),
+      mValues(std::move(aValues)) {}
+
+NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(CSSMathSum, CSSMathValue)
+NS_IMPL_CYCLE_COLLECTION_INHERITED(CSSMathSum, CSSMathValue, mValues)
 
 JSObject* CSSMathSum::WrapObject(JSContext* aCx,
                                  JS::Handle<JSObject*> aGivenProto) {
@@ -24,18 +32,82 @@ JSObject* CSSMathSum::WrapObject(JSContext* aCx,
 
 // start of CSSMathSum Web IDL implementation
 
+// https://www.w3.org/TR/css-typed-om-1/#dom-cssmathsum-cssmathsum
+//
 // static
 already_AddRefed<CSSMathSum> CSSMathSum::Constructor(
     const GlobalObject& aGlobal, const Sequence<OwningCSSNumberish>& aArgs,
     ErrorResult& aRv) {
-  return MakeAndAddRef<CSSMathSum>(aGlobal.GetAsSupports());
+  nsCOMPtr<nsISupports> global = aGlobal.GetAsSupports();
+
+  // Step 1.
+
+  nsTArray<RefPtr<CSSNumericValue>> values;
+
+  for (const OwningCSSNumberish& arg : aArgs) {
+    RefPtr<CSSNumericValue> value;
+
+    if (arg.IsDouble()) {
+      value = MakeRefPtr<CSSUnitValue>(global, arg.GetAsDouble(), "number"_ns);
+    } else {
+      MOZ_ASSERT(arg.IsCSSNumericValue());
+
+      value = arg.GetAsCSSNumericValue();
+    }
+
+    values.AppendElement(std::move(value));
+  }
+
+  // Step 2.
+
+  if (values.IsEmpty()) {
+    aRv.ThrowSyntaxError("Arguments can't be empty");
+    return nullptr;
+  }
+
+  // XXX Step 3 is not yet implemented!
+
+  // Step 4.
+
+  auto array = MakeRefPtr<CSSNumericArray>(global, std::move(values));
+
+  return MakeAndAddRef<CSSMathSum>(global, std::move(array));
 }
 
-CSSNumericArray* CSSMathSum::GetValues(ErrorResult& aRv) const {
-  aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
-  return nullptr;
-}
+CSSNumericArray* CSSMathSum::Values() const { return mValues; }
 
 // end of CSSMathSum Web IDL implementation
+
+void CSSMathSum::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                       nsACString& aDest) const {
+  aDest.Append("calc("_ns);
+
+  bool written = false;
+
+  for (uint32_t index = 0; index < mValues->Length(); index++) {
+    bool found;
+    CSSNumericValue* value = mValues->IndexedGetter(index, found);
+    MOZ_ASSERT(found);
+
+    if (value->IsCSSUnitValue()) {
+      CSSUnitValue& unitValue = value->GetAsCSSUnitValue();
+
+      if (written) {
+        aDest.Append(" + "_ns);
+      }
+
+      unitValue.ToCssTextWithProperty(aPropertyId, aDest);
+      written = true;
+    }
+  }
+
+  aDest.Append(")"_ns);
+}
+
+CSSMathSum& CSSStyleValue::GetAsCSSMathSum() {
+  MOZ_DIAGNOSTIC_ASSERT(mValueType == ValueType::MathSum);
+
+  return *static_cast<CSSMathSum*>(this);
+}
 
 }  // namespace mozilla::dom

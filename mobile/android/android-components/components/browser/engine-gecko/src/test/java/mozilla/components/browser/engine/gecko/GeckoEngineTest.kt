@@ -4469,7 +4469,6 @@ class GeckoEngineTest {
         @OptIn(ExperimentalAndroidComponentsApi::class)
         engine.clearBrowserUserPref(
             "test.test.test",
-
             onSuccess = {
                 onSuccessCalled = true
             },

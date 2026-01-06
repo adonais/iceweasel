@@ -85,8 +85,8 @@ class GCVector {
   [[nodiscard]] bool growBy(size_t amount) { return vector.growBy(amount); }
   [[nodiscard]] bool resize(size_t newLen) { return vector.resize(newLen); }
 
-  void clear() { return vector.clear(); }
-  void clearAndFree() { return vector.clearAndFree(); }
+  void clear() { vector.clear(); }
+  void clearAndFree() { vector.clearAndFree(); }
 
   template <typename U>
   bool append(U&& item) {
@@ -185,7 +185,7 @@ class GCVector {
   // Like eraseIf, but may mutate the contents of the vector. Iterates from
   // |startIndex| to the last element of the vector.
   template <typename Pred>
-  void mutableEraseIf(Pred pred, size_t startIndex = 0) {
+  void mutableEraseIf(Pred&& pred, size_t startIndex = 0) {
     MOZ_ASSERT(startIndex <= length());
 
     T* src = begin() + startIndex;

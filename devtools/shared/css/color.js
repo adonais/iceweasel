@@ -53,7 +53,7 @@ const SPECIALVALUES = new Set([
  */
 class CssColor {
   /**
-   * @param  {String} colorValue: Any valid color string
+   * @param  {string} colorValue: Any valid color string
    */
   constructor(colorValue) {
     // Store a lower-cased version of the color to help with format
@@ -315,7 +315,7 @@ class CssColor {
    * Check whether the current color value is in the special list e.g.
    * transparent or invalid.
    *
-   * @return {String|Boolean}
+   * @return {string | boolean}
    *         - If the current color is a special value e.g. "transparent" then
    *           return the color.
    *         - If the current color is a system value e.g. "accentcolor" then
@@ -459,7 +459,7 @@ class CssColor {
   /**
    * Check whether the color is fully transparent (alpha === 0).
    *
-   * @return {Boolean} True if the color is transparent and valid.
+   * @return {boolean} True if the color is transparent and valid.
    */
   isTransparent() {
     return this.getRGBATuple().a === 0;
@@ -469,9 +469,9 @@ class CssColor {
 /**
  * Convert rgb value to hsl
  *
- * @param {array} rgb
+ * @param {Array} rgb
  *         Array of rgb values
- * @return {array}
+ * @return {Array}
  *         Array of hsl values.
  */
 function rgbToHsl([r, g, b]) {
@@ -514,9 +514,9 @@ function rgbToHsl([r, g, b]) {
 /**
  * Convert RGB value to HWB
  *
- * @param {array} rgb
+ * @param {Array} rgb
  *         Array of RGB values
- * @return {array}
+ * @return {Array}
  *         Array of HWB values.
  */
 function rgbToHwb([r, g, b]) {
@@ -540,9 +540,9 @@ function roundTo(number, digits) {
  * Given a color, classify its type as one of the possible color
  * units, as known by |CssColor.COLORUNIT|.
  *
- * @param  {String} value
+ * @param  {string} value
  *         The color, in any form accepted by CSS.
- * @return {String}
+ * @return {string}
  *         The color classification, one of "rgb", "hsl", "hwb",
  *         "hex", "name", or if no format is recognized, "authored".
  */
@@ -565,10 +565,10 @@ function classifyColor(value) {
 /**
  * A helper function to convert a hex string like "F0C" or "F0C8" to a color.
  *
- * @param {String} name the color string
- * @param {Boolean} highResolution Forces returned alpha value to be in the
+ * @param {string} name the color string
+ * @param {boolean} highResolution Forces returned alpha value to be in the
  *                  range 0 - 255 as opposed to 0.0 - 1.0.
- * @return {Object} an object of the form {r, g, b, a}; or null if the
+ * @return {object} an object of the form {r, g, b, a}; or null if the
  *         name was not a valid color
  */
 function hexToRGBA(name, highResolution) {
@@ -618,6 +618,7 @@ function hexToRGBA(name, highResolution) {
 
 /**
  * Blend background and foreground colors takign alpha into account.
+ *
  * @param  {Array} foregroundColor
  *         An array with [r,g,b,a] values containing the foreground color.
  * @param  {Array} backgroundColor
@@ -651,7 +652,7 @@ function blendColors(foregroundColor, backgroundColor = [255, 255, 255, 1]) {
  * the background color.
  * @param {Array} textColor An array with [r,g,b,a] values containing
  * the text color.
- * @return {Number} The calculated luminance.
+ * @return {number} The calculated luminance.
  */
 function calculateContrastRatio(backgroundColor, textColor) {
   // Do not modify given colors.

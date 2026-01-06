@@ -40,6 +40,7 @@ UNIFIED_SOURCES += [
     "TestBufferReader.cpp",
     "TestCubebInputStream.cpp",
     "TestDataMutex.cpp",
+    "TestDecodedStream.cpp",
     "TestDeviceInputTrack.cpp",
     "TestDriftCompensation.cpp",
     "TestGMPUtils.cpp",

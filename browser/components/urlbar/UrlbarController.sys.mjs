@@ -14,6 +14,8 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   Interactions: "moz-src:///browser/components/places/Interactions.sys.mjs",
+  SearchbarProvidersManager:
+    "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderSemanticHistorySearch:
     "moz-src:///browser/components/urlbar/UrlbarProviderSemanticHistorySearch.sys.mjs",
@@ -88,7 +90,11 @@ export class UrlbarController {
     /**
      * @type {ProvidersManager}
      */
-    this.manager = options.manager || lazy.UrlbarProvidersManager;
+    this.manager =
+      options.manager ||
+      (this.input.sapName == "searchbar"
+        ? lazy.SearchbarProvidersManager
+        : lazy.UrlbarProvidersManager);
 
     this._listeners = new Set();
     this._userSelectionBehavior = "none";
@@ -560,7 +566,8 @@ export class UrlbarController {
           if (result.type == lazy.UrlbarUtils.RESULT_TYPE.SEARCH) {
             // Speculative connect only if search suggestions are enabled.
             if (
-              lazy.UrlbarPrefs.get("suggest.searches") &&
+              (lazy.UrlbarPrefs.get("suggest.searches") ||
+                context.sapName == "searchbar") &&
               lazy.UrlbarPrefs.get("browser.search.suggest.enabled")
             ) {
               let engine = Services.search.getEngineByName(
@@ -731,11 +738,11 @@ export class UrlbarController {
     // Set tabindex to be focusable.
     switcher.setAttribute("tabindex", "-1");
     // Remove blur listener to avoid closing urlbar view panel.
-    this.input.removeEventListener("blur", this.input);
+    this.input.inputField.removeEventListener("blur", this.input);
     // Move the focus.
     switcher.focus();
     // Restore all.
-    this.input.addEventListener("blur", this.input);
+    this.input.inputField.addEventListener("blur", this.input);
     switcher.addEventListener(
       "blur",
       /** @type {(e: FocusEvent) => void} */
@@ -745,7 +752,7 @@ export class UrlbarController {
         let relatedTarget = /** @type {HTMLElement} */ (e.relatedTarget);
         if (
           this.input.hasAttribute("focused") &&
-          !relatedTarget?.closest("#urlbar")
+          !this.input.contains(relatedTarget)
         ) {
           // If the focus is not back to urlbar, fire blur event explicitly to
           // clear the urlbar. Because the input field has been losing an

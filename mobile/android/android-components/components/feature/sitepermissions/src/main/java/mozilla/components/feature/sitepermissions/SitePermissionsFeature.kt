@@ -596,7 +596,7 @@ class SitePermissionsFeature(
     }
 
     @VisibleForTesting
-    @Suppress("ComplexMethod")
+    @Suppress("CyclomaticComplexMethod")
     internal fun updatePermissionToolbarIndicator(
         request: PermissionRequest,
         value: SitePermissions.Status,

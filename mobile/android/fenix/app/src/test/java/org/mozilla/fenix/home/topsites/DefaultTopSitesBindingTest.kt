@@ -16,7 +16,6 @@ import mozilla.components.browser.state.search.RegionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.top.sites.DefaultTopSitesStorage
 import mozilla.components.lib.crash.CrashReporter
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.Assert.assertEquals
@@ -66,7 +65,6 @@ class DefaultTopSitesBindingTest {
         browserStore.dispatch(
             SearchAction.SetRegionAction(RegionState.Default),
         )
-        browserStore.waitUntilIdle()
 
         verify(exactly = 0) {
             topSitesStorage.addTopSites(topSites = any(), isDefault = any())
@@ -84,7 +82,6 @@ class DefaultTopSitesBindingTest {
         browserStore.dispatch(
             SearchAction.SetRegionAction(RegionState.Default),
         )
-        browserStore.waitUntilIdle()
 
         val topSites = binding.getTopSites(region = "XX")
 
@@ -105,7 +102,6 @@ class DefaultTopSitesBindingTest {
         browserStore.dispatch(
             SearchAction.SetRegionAction(RegionState(home = region, current = region)),
         )
-        browserStore.waitUntilIdle()
 
         val topSites = binding.getTopSites(region = region)
 
@@ -126,7 +122,6 @@ class DefaultTopSitesBindingTest {
         browserStore.dispatch(
             SearchAction.SetRegionAction(RegionState(home = region, current = region)),
         )
-        browserStore.waitUntilIdle()
 
         verify(exactly = 0) {
             topSitesStorage.addTopSites(topSites = any(), isDefault = any())

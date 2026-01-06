@@ -30,9 +30,7 @@
 #  include "jit/riscv64/Simulator-riscv64.h"
 
 #  include "mozilla/Casting.h"
-#  include "mozilla/FloatingPoint.h"
 #  include "mozilla/IntegerPrintfMacros.h"
-#  include "mozilla/Likely.h"
 
 #  include <cinttypes>
 #  include <float.h>

@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(this, {
   NewTabUtils: "resource://gre/modules/NewTabUtils.sys.mjs",
   NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   PageThumbs: "resource://gre/modules/PageThumbs.sys.mjs",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
   sinon: "resource://testing-common/Sinon.sys.mjs",
   Screenshots: "resource://newtab/lib/Screenshots.sys.mjs",
   Sampling: "resource://gre/modules/components-utils/Sampling.sys.mjs",
@@ -23,7 +24,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const FAKE_FAVICON = "data987";
 const FAKE_FAVICON_SIZE = 128;
-const FAKE_FRECENCY = 200;
+const FAKE_FRECENCY = PlacesUtils.history.pageFrecencyThreshold(0, 2, false);
 const FAKE_LINKS = new Array(2 * TOP_SITES_MAX_SITES_PER_ROW)
   .fill(null)
   .map((v, i) => ({

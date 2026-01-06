@@ -406,7 +406,7 @@ class WebNotificationTest : BaseSessionTest() {
         val parcel = Parcel.obtain()
         notification.writeToParcel(
             parcel,
-            /* ignored */
+            // ignored
             -1,
         )
 
@@ -450,7 +450,7 @@ class WebNotificationTest : BaseSessionTest() {
         val parcel = Parcel.obtain()
         notification.writeToParcel(
             parcel,
-            /* ignored */
+            // ignored
             -1,
         )
         parcel.setDataPosition(0)

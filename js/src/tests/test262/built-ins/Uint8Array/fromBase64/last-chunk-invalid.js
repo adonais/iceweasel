@@ -1,4 +1,4 @@
-// |reftest| shell-option(--enable-uint8array-base64) skip-if(!Uint8Array.fromBase64||!xulRuntime.shell) -- uint8array-base64 is not enabled unconditionally, requires shell-options
+// |reftest| skip-if(!Uint8Array.fromBase64) -- uint8array-base64 is not enabled unconditionally
 // Copyright (C) 2025 Nikita Skovoroda. All rights reserved.
 // This code is governed by the BSD license found in the LICENSE file.
 /*---

@@ -419,7 +419,7 @@
 
     .urlbarView-row:not([selected]) > .urlbarView-row-buttons > & {
       /* If the row is not selected, use the accent color instead. */
-      outline-color: var(--color-accent-primary);
+      outline-color: var(--border-color-selected);
     }
   }
 
@@ -504,7 +504,7 @@
   &:is([selected], [primary]) {
     color: var(--button-text-color-primary);
     background-color: var(--color-accent-primary);
-    outline-color: var(--color-accent-primary);
+    outline-color: var(--border-color-selected);
     outline-offset: var(--focus-outline-offset);
 
     &:hover {
@@ -684,6 +684,10 @@
   .urlbarView-row:not([has-action], [has-url], [restyled-search]) & {
     display: none;
   }
+
+  #searchbar-new & {
+    display: none;
+  }
 }
 
 /* Action labels */
@@ -733,6 +737,10 @@
        visible even when the chiclet is hidden due to action-override. */
     padding-inline: 0 !important;
     border-inline: 0;
+  }
+
+  #searchbar-new & {
+    display: none;
   }
 }
 

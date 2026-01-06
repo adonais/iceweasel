@@ -910,7 +910,7 @@ interface nsINavHistoryService : nsISupports
   // The current database schema version.
   // To migrate to a new version bump this, add a MigrateVXXUp function to
   // Database.cpp/h, and a test into tests/migration/
-  const unsigned long DATABASE_SCHEMA_VERSION = 82;
+  const unsigned long DATABASE_SCHEMA_VERSION = 84;
 
   /**
    * System Notifications:
@@ -1148,13 +1148,6 @@ interface nsINavHistoryService : nsISupports
    *        The hash mode: `""` (default), `"prefix_lo"`, or `"prefix_hi"`.
    */
   unsigned long long hashURL(in ACString aSpec, [optional] in ACString aMode);
-
-  /**
-   * Whether frecency is in the process of being decayed. The value can also
-   * be read through the is_frecency_decaying() SQL function exposed by Places
-   * database connections.
-   */
-  attribute boolean isFrecencyDecaying;
 
   /**
    * Whether alternative frecency is enabled. This is preferred over directly

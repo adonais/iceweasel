@@ -8,8 +8,6 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <string>
-#include <vector>
 
 bool ElfFileSoVersion(const char* mapping_name, uint32_t* version);
 

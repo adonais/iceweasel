@@ -76,7 +76,6 @@ def test_write_artifact_yml():
 @patch("gecko_taskgraph.decision.get_hg_revision_info")
 @patch("gecko_taskgraph.decision.get_hg_revision_branch")
 @patch("gecko_taskgraph.decision.get_repository")
-@patch("gecko_taskgraph.decision.get_changed_files")
 @pytest.mark.parametrize(
     "extra_options,commit_msg,ttc,expected",
     (
@@ -132,7 +131,6 @@ def test_write_artifact_yml():
     ),
 )
 def test_get_decision_parameters(
-    mock_get_changed_files,
     mock_get_repository,
     mock_get_hg_revision_branch,
     mock_get_hg_revision_info,
@@ -148,8 +146,9 @@ def test_get_decision_parameters(
     mock_repo = MagicMock()
     mock_repo.default_branch = "baseref"
     mock_repo.get_commit_message.return_value = commit_msg or "commit message"
+    mock_repo.get_outgoing_files.return_value = ["foo.txt", "bar/baz.md"]
+    mock_repo.get_changed_files.return_value = ["foo.txt", "bar/baz.md"]
     mock_get_repository.return_value = mock_repo
-    mock_get_changed_files.return_value = ["foo.txt", "bar/baz.md"]
 
     options.update(extra_options)
     contents = None

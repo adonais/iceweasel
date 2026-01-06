@@ -6,8 +6,6 @@
     <!-- Design system color attributes -->
 
     <!-- Layers -->
-    <!-- Default Screen background, Frontlayer background, App Bar Top, App Bar Bottom, Frontlayer header -->
-    <attr name="layer1" format="reference" />
     <!-- Card background, Menu background, Dialog, Banner -->
     <attr name="layer2" format="reference" />
     <!-- Search -->
@@ -65,13 +63,11 @@
     <attr name="accentUsedOnDarkBackground" format="reference" />
     <attr name="neutral" format="reference" />
     <attr name="neutralFaded" format="reference" />
-    <attr name="preferenceSectionHeader" format="reference"/>
 
     <!-- Color used in DefaultToolbarMenu for buttons placed at the end of menu items -->
     <attr name="menuItemButtonTintColor" format="reference"/>
 
     <!-- Misc -->
-    <attr name="homeBackground" format="reference"/>
     <attr name="bottomBarBackground" format="reference"/>
     <attr name="bottomBarBackgroundTop" format="reference"/>
     <attr name="fenixLogo" format="reference" />

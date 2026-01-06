@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Betrügerische Website blockiert</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Die Website auf %1$s wurde als betrügerische Website gemeldet und aufgrund Ihrer Sicherheitseinstellungen blockiert.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Website wurde aus Sicherheitsgründen gesperrt</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Die Webseite auf %1$s wurde blockiert, weil eines Ihrer Add-ons versucht hat, sie zu öffnen. Diese Website könnte verwendet werden, um Ihre Daten zu stehlen – wie Passwörter oder Kreditkartennummern.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Sichere Website nicht verfügbar</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

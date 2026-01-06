@@ -58,7 +58,6 @@ EXPORTS.mozilla.widget += [
     "nsWindowLoggedMessages.h",
     "WinCompositorWidget.h",
     "WinCompositorWindowThread.h",
-    "WindowsEMF.h",
     "WindowsSMTCProvider.h",
     "WinEventObserver.h",
     "WinMessages.h",
@@ -164,11 +163,6 @@ if CONFIG["NS_PRINTING"]:
     ]
     SOURCES += [
         "nsPrintDialogUtil.cpp",
-    ]
-
-if CONFIG["MOZ_ENABLE_SKIA_PDF"]:
-    UNIFIED_SOURCES += [
-        "WindowsEMF.cpp",
     ]
 
 XPIDL_SOURCES += [

@@ -50,6 +50,7 @@ class ConsoleAPIListener {
 
   /**
    * The content window for which we listen to window.console API calls.
+   *
    * @type nsIDOMWindow
    */
   window = null;

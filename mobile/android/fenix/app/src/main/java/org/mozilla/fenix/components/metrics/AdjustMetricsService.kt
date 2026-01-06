@@ -33,6 +33,7 @@ class AdjustMetricsService(
     override val type = MetricServiceType.Marketing
     private val logger = Logger("AdjustMetricsService")
 
+    @Suppress("CognitiveComplexMethod")
     override fun start() {
         val settings = application.components.settings
 
@@ -93,11 +94,7 @@ class AdjustMetricsService(
             triggerPing()
         }
 
-        if (Config.channel.isNightlyOrDebug) {
-            config.setLogLevel(LogLevel.VERBOSE)
-        } else {
-            config.setLogLevel(LogLevel.SUPPRESS)
-        }
+        config.setLogLevel(LogLevel.SUPPRESS)
 
         Adjust.initSdk(config)
         Adjust.enable()

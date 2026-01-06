@@ -2,12 +2,20 @@
 
 gczeal(0); // We need full control here.
 
+var keys = [];
 var maps = Array(1000).fill().map(() => new WeakMap);
 for (const map of maps) {
-    for (let i = 0; i < 100; i++) {
-        map.set({}, {}); // These will all die, but will need to be put into the ephemeron table first.
-    }
+  for (let i = 0; i < 100; i++) {
+    // The key will die the next major collection , but will need to be put
+    // into the ephemeron table first.
+    let key = {};
+    keys.push(key);
+    map.set(key, {}); 
+  }
 }
+
+minorgc();
+keys = undefined;
 
 // Slowly work forward until we reach Mark.
 startgc(10);

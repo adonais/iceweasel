@@ -166,6 +166,12 @@ xul|findbar {
   display: none;
 }
 
+/* Since the find bar is not fully responsive, and most checkboxes cannot fit
+ * within the width of a single split-view panel, we hide them. */
+.split-view-panel .findbar-container > checkbox {
+  display: none;
+}
+
 /* Close button */
 
 /* Increase specificity to override close-icon.css */

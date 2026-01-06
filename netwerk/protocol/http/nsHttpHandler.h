@@ -123,8 +123,8 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
       const std::function<bool(bool, DictionaryCacheEntry*)>& aCallback);
   [[nodiscard]] nsresult AddStandardRequestHeaders(
       nsHttpRequestHead*, nsIURI* aURI, bool aIsHTTPS,
-      ExtContentPolicyType aContentPolicyType,
-      bool aShouldResistFingerprinting);
+      ExtContentPolicyType aContentPolicyType, bool aShouldResistFingerprinting,
+      const nsCString& aLanguageOverride);
   [[nodiscard]] nsresult AddConnectionHeader(nsHttpRequestHead*, uint32_t caps);
   bool IsAcceptableEncoding(const char* encoding, bool isSecure);
 
@@ -142,7 +142,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   uint32_t NetworkChangedTimeout() { return mNetworkChangedTimeout; }
   uint16_t MaxRequestAttempts() { return mMaxRequestAttempts; }
   const nsCString& DefaultSocketType() { return mDefaultSocketType; }
-  uint32_t PhishyUserPassLength() { return mPhishyUserPassLength; }
   uint8_t GetQoSBits() { return mQoSBits; }
   uint16_t GetIdleSynTimeout() { return mIdleSynTimeout; }
   uint16_t GetFallbackSynTimeout() { return mFallbackSynTimeout; }
@@ -615,12 +614,6 @@ class nsHttpHandler final : public nsIHttpProtocolHandler,
   uint8_t mRedirectionLimit{10};
 
   bool mBeConservativeForProxy{true};
-
-  // we'll warn the user if we load an URL containing a userpass field
-  // unless its length is less than this threshold.  this warning is
-  // intended to protect the user against spoofing attempts that use
-  // the userpass field of the URL to obscure the actual origin server.
-  uint8_t mPhishyUserPassLength{1};
 
   uint8_t mQoSBits{0x00};
 

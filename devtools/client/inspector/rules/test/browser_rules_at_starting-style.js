@@ -116,14 +116,19 @@ add_task(async function () {
 
   await selectNode("body", inspector);
   await checkRuleViewContent(view, [
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
     {
-      selector: `body, [data-test="in-starting-style"]`,
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
+    {
+      selector: `body, ~~[data-test="in-starting-style"]~~`,
       ancestorRulesData: ["@starting-style {"],
       declarations: [{ name: "color", value: "navy" }],
     },
     {
-      selector: `body, [data-test="in-starting-style-layer"]`,
+      selector: `body, ~~[data-test="in-starting-style-layer"]~~`,
       ancestorRulesData: ["@starting-style {", "  @layer {"],
       declarations: [{ name: "color", value: "hotpink", overridden: true }],
     },
@@ -132,9 +137,14 @@ add_task(async function () {
 
   await selectNode("h1", inspector);
   await checkRuleViewContent(view, [
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
     {
-      selector: `h1, [data-test="in-starting-style"]`,
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
+    {
+      selector: `h1, ~~[data-test="in-starting-style"]~~`,
       ancestorRulesData: ["@starting-style {"],
       declarations: [{ name: "background-color", value: "salmon" }],
     },
@@ -147,7 +157,7 @@ add_task(async function () {
       declarations: [{ name: "color", value: "gold" }],
     },
     {
-      selector: `h1, [data-test="top-level"]`,
+      selector: `h1, ~~[data-test="top-level"]~~`,
       ancestorRulesData: null,
       declarations: [
         { name: "color", value: "tomato" },
@@ -159,7 +169,12 @@ add_task(async function () {
 
   await selectNode("main", inspector);
   await checkRuleViewContent(view, [
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
     {
       selector: ``,
       ancestorRulesData: [
@@ -198,7 +213,7 @@ add_task(async function () {
       ],
     },
     {
-      selector: `main, [data-test="top-level"]`,
+      selector: `main, ~~[data-test="top-level"]~~`,
       ancestorRulesData: null,
       declarations: [
         { name: "--my-color", value: "white" },
@@ -247,7 +262,7 @@ add_task(async function () {
       ],
     },
     {
-      selector: `main, [data-test="in-starting-style"]`,
+      selector: `main, ~~[data-test="in-starting-style"]~~`,
       ancestorRulesData: ["@starting-style {"],
       declarations: [
         { name: "--my-color", value: "black !important" },
@@ -296,7 +311,7 @@ add_task(async function () {
       ],
     },
     {
-      selector: `main, [data-test="in-starting-style-layer-2"]`,
+      selector: `main, ~~[data-test="in-starting-style-layer-2"]~~`,
       ancestorRulesData: [`@starting-style {`, "  @layer {"],
       declarations: [
         {
@@ -327,7 +342,7 @@ add_task(async function () {
       ],
     },
     {
-      selector: `main, [data-test="in-starting-style-layer"]`,
+      selector: `main, ~~[data-test="in-starting-style-layer"]~~`,
       ancestorRulesData: [`@starting-style {`, "  @layer {"],
       declarations: [
         {

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2025-10-15T13:18:04.980Z",
-  "count": 28,
+  "generatedAt": "2025-12-02T20:33:36.933Z",
+  "count": 29,
   "items": [
     {
       "component": "moz-badge",
@@ -172,6 +172,15 @@
       "storyUrl": "https://firefoxux.github.io/firefox-desktop-components/?path=/story/ui-widgets-message-bar--default",
       "sourceUrl": "https://searchfox.org/firefox-main/source/toolkit/content/widgets/moz-message-bar",
       "bugUrl": "https://bugzilla.mozilla.org/show_bug.cgi?id=1837469"
+    },
+    {
+      "component": "moz-page-header",
+      "title": "UI Widgets/Page Header",
+      "status": "in-development",
+      "storyId": "ui-widgets-page-header--default",
+      "storyUrl": "https://firefoxux.github.io/firefox-desktop-components/?path=/story/ui-widgets-page-header--default",
+      "sourceUrl": "https://searchfox.org/firefox-main/source/toolkit/content/widgets/moz-page-header",
+      "bugUrl": ""
     },
     {
       "component": "moz-page-nav",

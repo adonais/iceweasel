@@ -655,8 +655,6 @@ void gfxUserFontEntry::SetLoadState(UserFontLoadState aLoadState) {
   mUserFontLoadState = aLoadState;
 }
 
-MOZ_DEFINE_MALLOC_SIZE_OF_ON_ALLOC(UserFontMallocSizeOfOnAlloc)
-
 bool gfxUserFontEntry::LoadPlatformFontSync(uint32_t aSrcIndex,
                                             const uint8_t* aFontData,
                                             uint32_t aLength) {
@@ -745,7 +743,6 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
 
   gfxFontEntry* fe = nullptr;
   uint32_t fontCompressionRatio = 0;
-  size_t computedSize = 0;
 
   if (aSanitizedFontData) {
     if (aSanitizedLength) {
@@ -767,14 +764,6 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
     gfxFontUtils::GetFullNameFromSFNT(aSanitizedFontData, aSanitizedLength,
                                       originalFullName);
 
-    // Record size for memory reporting purposes. We measure this now
-    // because by the time we potentially want to collect reports, this
-    // data block may have been handed off to opaque OS font APIs that
-    // don't allow us to retrieve or measure it directly.
-    // The *OnAlloc function will also tell DMD about this block, as the
-    // OS font code may hold on to it for an extended period.
-    computedSize = UserFontMallocSizeOfOnAlloc(aSanitizedFontData);
-
     // Here ownership of aSanitizedFontData is passed to the platform,
     // which will delete it when no longer required
     fe = gfxPlatform::GetPlatform()->MakePlatformFont(
@@ -786,8 +775,6 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
   }
 
   if (fe) {
-    fe->mComputedSizeOfUserFont = computedSize;
-
     // Save a copy of the metadata block (if present) for InspectorUtils
     // to use if required. Ownership of the metadata block will be passed
     // to the gfxUserFontData record below.

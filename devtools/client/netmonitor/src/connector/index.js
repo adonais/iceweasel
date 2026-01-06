@@ -73,9 +73,9 @@ class Connector {
   /**
    * Connect to the backend.
    *
-   * @param {Object} connection object with e.g. reference to the Toolbox.
-   * @param {Object} actions (optional) is used to fire Redux actions to update store.
-   * @param {Object} getState (optional) is used to get access to the state.
+   * @param {object} connection object with e.g. reference to the Toolbox.
+   * @param {object} actions (optional) is used to fire Redux actions to update store.
+   * @param {object} getState (optional) is used to get access to the state.
    */
   async connect(connection, actions, getState) {
     this.actions = actions;
@@ -151,7 +151,6 @@ class Connector {
    * @param {boolean} options.isExplicitClear
    *     Set to true if the call to clear requests is explicitly requested by
    *     the user, to false if this is an automated clear, eg on navigation.
-   *
    */
   clear({ isExplicitClear }) {
     // Clear all the caches in the data provider
@@ -486,6 +485,7 @@ class Connector {
 
   /**
    * Getter that returns the current toolbox instance.
+   *
    * @return {Toolbox} toolbox instance
    */
   getToolbox() {
@@ -494,6 +494,7 @@ class Connector {
 
   /**
    * Open a given source in Debugger
+   *
    * @param {string} sourceURL source url
    * @param {number} sourceLine source line number
    */
@@ -506,6 +507,7 @@ class Connector {
   /**
    * Fetch networkEventUpdate websocket message from back-end when
    * data provider is connected.
+   *
    * @param {object} request network request instance
    * @param {string} type NetworkEventUpdate type
    */

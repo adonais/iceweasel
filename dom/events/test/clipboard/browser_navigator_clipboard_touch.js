@@ -6,17 +6,8 @@
 
 "use strict";
 
-const kBaseUrlForContent = getRootDirectory(gTestPath).replace(
-  "chrome://mochitests/content",
-  "https://example.com"
-);
 const kContentFileUrl =
   kBaseUrlForContent + "simple_navigator_clipboard_readText.html";
-
-Services.scriptloader.loadSubScript(
-  "chrome://mochitests/content/browser/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js",
-  this
-);
 
 // @param aBrowser browser object of the content tab.
 // @param aContentElementId the ID of the element to be tapped.
@@ -48,12 +39,6 @@ function promiseTouchTapContent(aBrowser, aContentElementId) {
     }
   );
 }
-
-add_setup(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [["dom.events.asyncClipboard.readText", true]],
-  });
-});
 
 add_task(async function test_paste_button_position_touch() {
   // Ensure there's text on the clipboard.

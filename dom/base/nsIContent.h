@@ -537,6 +537,21 @@ class nsIContent : public nsINode {
    */
   nsIFrame* GetPrimaryFrame(mozilla::FlushType aType);
 
+  /**
+   * Return true if the related frame is selectable or we need to treat the
+   * content as selectable (e.g., an editable node, a text control).  If the
+   * content does not have primary frame due to e.g., `display:contents`,
+   * `display:none`, `ShadowRoot`, etc, this refers the computed `user-select`
+   * style of this node.  If the `user-select` is `auto`, referring the same
+   * things of closest ancestor elements or shadow DOM host.
+   * NOTE: If this is a generated content like ::before or ::after or not
+   * connected to a Document, this returns false.  I.e., this returns false for
+   * DocumentFragment.
+   * NOTE: Returning true does NOT mean that the content is selectable with a
+   * user's operation.  E.g., can be selectable but invisible.
+   */
+  [[nodiscard]] bool IsSelectable() const;
+
   // Defined in nsIContentInlines.h because it needs nsIFrame.
   inline void SetPrimaryFrame(nsIFrame* aFrame);
 

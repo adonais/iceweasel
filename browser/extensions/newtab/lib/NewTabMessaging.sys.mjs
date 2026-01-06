@@ -103,7 +103,8 @@ export class NewTabMessaging {
 
   /**
    * Send impression to ASRouter
-   * @param {Object} message
+   *
+   * @param {object} message
    */
   handleImpression(message) {
     this.sendTelemetry("IMPRESSION", message);

@@ -130,6 +130,7 @@ function getTempFile(leafName) {
 
 /**
  * Check for file existence.
+ *
  * @param {string} path The file path.
  */
 async function fileExists(path) {

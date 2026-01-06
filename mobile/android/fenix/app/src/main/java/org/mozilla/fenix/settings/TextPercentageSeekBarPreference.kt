@@ -171,23 +171,18 @@ class TextPercentageSeekBarPreference @JvmOverloads constructor(
         }
 
     /**
-     * Returns the amount of increment change via each arrow key click. This value is derived from
-     * user's specified increment value if it's not zero. Otherwise, the default value is picked
-     * from the default mKeyProgressIncrement value in [android.widget.AbsSeekBar].
-     * @return The amount of increment on the [SeekBar] performed after each user's arrow
-     * key press
+     * The amount of increment change applied to the [SeekBar] for each arrow key press.
+     *
+     * If the user-specified increment is non-zero, that value is used. Otherwise, the default
+     * increment comes from [android.widget.AbsSeekBar]'s `mKeyProgressIncrement`.
+     *
+     * When set, the value is clamped to the range `0..(mMax - mMin)` and its absolute value is used.
      */
     var seekBarIncrement: Int
         get() = mSeekBarIncrement
-
-        /**
-         * Sets the increment amount on the [SeekBar] for each arrow key press.
-         * @param seekBarIncrement The amount to increment or decrement when the user presses an
-         * arrow key.
-         */
-        set(seekBarIncrement) {
-            if (seekBarIncrement != mSeekBarIncrement) {
-                mSeekBarIncrement = min(mMax - mMin, abs(seekBarIncrement))
+        set(value) {
+            if (value != mSeekBarIncrement) {
+                mSeekBarIncrement = min(mMax - mMin, abs(value))
                 notifyChanged()
             }
         }
@@ -209,20 +204,12 @@ class TextPercentageSeekBarPreference @JvmOverloads constructor(
         }
 
     /**
-     * Gets whether the current [SeekBar] value is displayed to the user.
-     * @return Whether the current [SeekBar] value is displayed to the user
-     * @see .setShowSeekBarValue
+     * Whether the current [SeekBar] value is displayed to the user.
      */
     var showSeekBarValue: Boolean
         get() = mShowSeekBarValue
-
-        /**
-         * Sets whether the current [SeekBar] value is displayed to the user.
-         * @param showSeekBarValue Whether the current [SeekBar] value is displayed to the user
-         * @see .getShowSeekBarValue
-         */
-        set(showSeekBarValue) {
-            mShowSeekBarValue = showSeekBarValue
+        set(value) {
+            mShowSeekBarValue = value
             notifyChanged()
         }
 

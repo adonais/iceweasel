@@ -61,6 +61,8 @@
   <string name="tab_manager_empty_synced_tabs_page_description">შედით, რომ მართოთ დასინქრონებული ჩანართები ყველა თქვენი მოწყობილობიდან.</string>
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
   <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">შესვლა</string>
+  <!-- Text for the button used to show all stories -->
+  <string name="homepage_all_stories">ყველა სიახლე</string>
   <!--
     Home - Bookmarks
 
@@ -622,6 +624,10 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">გაუზიარეთ Mozilla-ს მოკავშირე სამსახურებს გავრცელების საკითხებში, როგორ აღმოაჩინეთ Firefox და იყენებთ თუ არა. ეს მონაცემები არასდროს გაიყიდება.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">თანხმობა და გვერდების მონახულების დაწყება</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">ხელსაწყოთა ზოლის განთავსება</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -820,8 +826,6 @@
   <string name="preferences_gestures">ჟესტები</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">მორგება</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">შედით ანგარიშზე, რომ დაასინქრონოთ თქვენი ჩანართები, სანიშნები, პაროლები და სხვ.</string>
   <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
   <string name="preferences_sign_in_description">დაასინქრონეთ ჩანართები, სანიშნები, პაროლები და ა. შ.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
@@ -1217,10 +1221,8 @@
   <!--
     Turn On Sync Preferences
 
-    Header of the Sync and save your data preference view
+    Header of the Sign in preference view
   -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">დაასინქრონეთ და გადაინახეთ თქვენი მონაცემები</string>
-  <!-- Header of the Sign in preference view -->
   <string name="preferences_sign_in">შესვლა</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">შესვლა ხელახლა დასაკავშირებლად</string>
@@ -1481,6 +1483,14 @@
   <string name="tab_tray_menu_tab_settings">ჩანართის პარამეტრები</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">ყველა ჩანართის დახურვა</string>
+  <!-- Text shown as the title of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_title">დაიხუროს ყველა ჩანართი?</string>
+  <!-- Text shown in the body of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_body">დაიხურება ყველა გახსნილი ჩანართი.</string>
+  <!-- Text shown on the confirm button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_confirm">ჩანართების დახურვა</string>
+  <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_cancel">გაუქმება</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
   <string name="tab_tray_multiselect_menu_item_bookmark">სანიშნი</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
@@ -1499,8 +1509,6 @@
   <string name="tab_tray_multiselect_menu_content_description">არჩეული ჩანართების მენიუ</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
   <string name="tab_tray_homepage_tab">საწყისი გვერდი</string>
-  <!-- Title text displayed for a homepage tab in the tabs tray. %s is a placeholder that will be replaced by app name. -->
-  <string name="tab_tray_homepage_tab_2" tools:ignore="UnusedResources" moz:removedIn="145">%s – საწყისი გვერდი</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">ჩანართის მოცილება კრებულიდან</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -1527,6 +1535,8 @@
   <string name="delete_from_history">ისტორიიდან ამოშლა</string>
   <!-- Postfix for private WebApp titles. %1$s is the name of the app (for example "Firefox"). -->
   <string name="pwa_site_controls_title_private">%1$s (პირადი რეჟიმი)</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
+  <string name="tab_manager_open_tab_search">გახსენით ჩანართების ძიება</string>
   <!--
     History
 
@@ -2101,8 +2111,6 @@
   <string name="toast_copy_link_to_clipboard">ასლი აღებულია</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">დასინქ. შესვლა</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">დასინქ. და შენახვა</string>
   <!-- An option from the three dot menu to sign in -->
   <string name="sync_menu_sign_in">შესვლა</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
@@ -2223,7 +2231,7 @@
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">შრიფტის ზომა</string>
   <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
-  <string name="a11y_preference_accessibility_font_size_percentage">%d %%.</string>
+  <string name="a11y_preference_accessibility_font_size_percentage" tools:ignore="UnusedResources" moz:removedIn="148">%d %%.</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">შრიფტის ავტომატური ზომა</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
@@ -2691,6 +2699,10 @@
   <string name="edit_login_navigate_back_button_content_description">გადასვლა უკან</string>
   <!-- Content description, used by tools like screenreaders, to press on the edit login button. -->
   <string name="edit_login_button_content_description">შესვლის მონაცემის ჩასწორება</string>
+  <!-- Content description, used by tools like screenreaders, to press on the add new login button. -->
+  <string name="saved_logins_add_new_login_button_content_description">დაამატეთ ახალი ანგარიში</string>
+  <!-- Content description, used by tools like screenreaders, to press on the clear search text button. -->
+  <string name="saved_logins_clear_search_text_button_content_description">ძიების გასუფთავება</string>
   <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
   <string name="saved_login_open_site">საიტის ბრაუზერში გახსნა</string>
   <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
@@ -3893,7 +3905,7 @@
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">ბოლოს მოძიებულები არაა</string>
   <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message">წარმოიქმნა შეცდომა</string>
+  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">წარმოიქმნა შეცდომა</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">ყველას გასუფთავება</string>
   <!-- Section header for recent search results -->
@@ -3902,11 +3914,9 @@
   <string name="settings_search_no_results_title">ვერაფერი მოინახა</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">იქნებ სხვანაირად მოინახოს?</string>
-  <!--
-    Terms of use pop up prompt
+  <!-- ==== Terms of use pop up prompt ==== -->
 
-    Title for the pop up prompt
-  -->
+  <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">გარკვეული ცვლილებებია</string>
   <!--
     Message for the terms of use pop up prompt
@@ -3930,4 +3940,20 @@
   <string name="terms_of_use_prompt_accept">მიღება</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">მოგვიანებით შეხსენება</string>
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
+
+  <!--
+    Privacy notice homepage banner
+
+    A message we show the user on the homepage when there is a new version of the privacy notice. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link using privacy_notice_updated_homepage_message_privacy_notice as text (Privacy Notice)
+    %2$s is replaced by an active link using privacy_notice_updated_homepage_message_learn_more as text (Learn more)
+  -->
+  <string name="privacy_notice_updated_homepage_message" tools:ignore="BrandUsage,UnusedResources">%1$s განახლებულია იმ უახლესი შესაძლებლობების ასახვისთვის, რომელთაც შეიცავს Firefox. %2$s</string>
+  <!-- The first active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">პირადულობის განაცხადი</string>
+  <!-- The second active link used in privacy_notice_updated_homepage_message -->
+  <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">ვრცლად</string>
 </resources>

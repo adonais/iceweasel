@@ -132,16 +132,8 @@ export let DownloadsViewableInternally = {
     {
       extension: "avif",
       mimeTypes: ["image/avif"],
-      initAvailable() {
-        XPCOMUtils.defineLazyPreferenceGetter(
-          this,
-          "available",
-          "image.avif.enabled",
-          false,
-          () => DownloadsViewableInternally._updateHandler(this)
-        );
-      },
-      // available getter is set by initAvailable()
+      available: true,
+      managedElsewhere: false,
     },
     {
       extension: "jxl",

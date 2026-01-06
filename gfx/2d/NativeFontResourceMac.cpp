@@ -5,7 +5,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <unordered_map>
-#include <unordered_set>
 #include "NativeFontResourceMac.h"
 #include "UnscaledFontMac.h"
 #include "Types.h"

@@ -9,6 +9,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BookmarkJSONUtils: "resource://gre/modules/BookmarkJSONUtils.sys.mjs",
+  PlacesDBUtils: "resource://gre/modules/PlacesDBUtils.sys.mjs",
 });
 
 const BOOKMARKS_BACKUP_FILENAME = "bookmarks.jsonlz4";
@@ -68,6 +69,12 @@ export class PlacesBackupResource extends BackupResource {
       ),
     ];
     await Promise.all(timedCopies);
+
+    // Now that both databases are copied, open the places db copy to remove
+    // downloaded files, since they won't be valid in the restored profile.
+    await lazy.PlacesDBUtils.removeDownloadsMetadataFromDb(
+      PathUtils.join(stagingPath, "places.sqlite")
+    );
 
     return null;
   }

@@ -11,6 +11,7 @@ const STORE_NAME = "uploadedProfiles";
 
 /**
  * Initialize the IndexedDB database for storing uploaded profile information.
+ *
  * @returns {Promise<IDBDatabase>}
  */
 function initDB() {
@@ -39,7 +40,8 @@ function initDB() {
 
 /**
  * Save uploaded profile information to IndexedDB.
- * @param {Object} profileInfo
+ *
+ * @param {object} profileInfo
  * @param {string} profileInfo.jwtToken - The JWT token returned by the server
  * @param {string} profileInfo.profileToken - The profile token extracted from JWT
  * @param {string} profileInfo.profileUrl - The full profile URL
@@ -69,6 +71,7 @@ export async function saveUploadedProfile(profileInfo) {
 
 /**
  * Get all uploaded profiles from IndexedDB.
+ *
  * @returns {Promise<Array>} Array of uploaded profile information
  */
 export async function getAllUploadedProfiles() {
@@ -91,6 +94,7 @@ export async function getAllUploadedProfiles() {
 
 /**
  * Delete an uploaded profile from IndexedDB.
+ *
  * @param {number} profileId - The ID of the profile to delete
  * @returns {Promise<void>}
  */
@@ -110,8 +114,9 @@ export async function deleteUploadedProfile(profileId) {
 
 /**
  * Get a specific uploaded profile by ID.
+ *
  * @param {number} profileId - The ID of the profile to retrieve
- * @returns {Promise<Object|null>} The profile information or null if not found
+ * @returns {Promise<object | null>} The profile information or null if not found
  */
 export async function getUploadedProfile(profileId) {
   const db = await initDB();

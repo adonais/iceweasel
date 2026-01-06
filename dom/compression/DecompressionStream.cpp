@@ -7,10 +7,12 @@
 #include "mozilla/dom/DecompressionStream.h"
 
 #include "BaseAlgorithms.h"
+#include "FormatBrotli.h"
 #include "FormatZlib.h"
 #include "FormatZstd.h"
 #include "js/TypeDecls.h"
 #include "mozilla/StaticPrefs_dom.h"
+#include "mozilla/dom/CompressionStreamBinding.h"
 #include "mozilla/dom/DecompressionStreamBinding.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/TextDecoderStream.h"
@@ -23,10 +25,15 @@ using namespace compression;
 
 /*
  * Constructs either a ZLibDecompressionStreamAlgorithms or a
- * ZstdDecompressionStreamAlgorithms, based on the CompressionFormat.
+ * Brotli/ZstdDecompressionStreamAlgorithms, based on the CompressionFormat.
  */
 static Result<already_AddRefed<DecompressionStreamAlgorithms>, nsresult>
 CreateDecompressionStreamAlgorithms(CompressionFormat aFormat) {
+  if (aFormat == CompressionFormat::Brotli) {
+    RefPtr<DecompressionStreamAlgorithms> brotliAlgos =
+        MOZ_TRY(BrotliDecompressionStreamAlgorithms::Create());
+    return brotliAlgos.forget();
+  }
   if (aFormat == CompressionFormat::Zstd) {
     RefPtr<DecompressionStreamAlgorithms> zstdAlgos =
         MOZ_TRY(ZstdDecompressionStreamAlgorithms::Create());

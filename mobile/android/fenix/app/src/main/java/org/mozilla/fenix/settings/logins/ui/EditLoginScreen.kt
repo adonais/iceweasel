@@ -4,8 +4,6 @@
 
 package org.mozilla.fenix.settings.logins.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,10 +14,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -28,18 +27,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.textfield.TextField
-import mozilla.components.compose.base.textfield.TextFieldColors
-import mozilla.components.compose.base.textfield.TextFieldStyle
+import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
-
-private val IconButtonHeight = 48.dp
 
 @Composable
 internal fun EditLoginScreen(store: LoginsStore) {
@@ -53,7 +51,6 @@ internal fun EditLoginScreen(store: LoginsStore) {
                 loginItem = editState.login,
             )
         },
-        containerColor = FirefoxTheme.colors.layer1,
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -83,7 +80,6 @@ internal fun EditLoginTopBar(store: LoginsStore, loginItem: LoginItem) {
     val isLoginValid = validModifiedUser || validModifiedPassword
 
     TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = FirefoxTheme.colors.layer1),
         windowInsets = WindowInsets(
             top = 0.dp,
             bottom = 0.dp,
@@ -91,14 +87,11 @@ internal fun EditLoginTopBar(store: LoginsStore, loginItem: LoginItem) {
         title = {
             Text(
                 text = stringResource(R.string.edit_2),
-                color = FirefoxTheme.colors.textPrimary,
-                style = FirefoxTheme.typography.headline6,
+                style = FirefoxTheme.typography.headline5,
             )
         },
         navigationIcon = {
             IconButton(
-                modifier = Modifier
-                    .padding(horizontal = FirefoxTheme.layout.space.static50),
                 onClick = { store.dispatch(EditLoginBackClicked) },
                 contentDescription = stringResource(
                     R.string.edit_login_navigate_back_button_content_description,
@@ -107,35 +100,25 @@ internal fun EditLoginTopBar(store: LoginsStore, loginItem: LoginItem) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                     contentDescription = null,
-                    tint = FirefoxTheme.colors.iconPrimary,
                 )
             }
         },
         actions = {
-            Box {
-                IconButton(
-                    modifier = Modifier
-                        .padding(horizontal = FirefoxTheme.layout.space.static50),
-                    onClick = {
-                        store.dispatch(
-                            EditLoginAction.SaveEditClicked(loginItem),
-                        )
-                    },
-                    contentDescription = stringResource(
-                        R.string.edit_login_button_content_description,
-                    ),
-                    enabled = isLoginValid,
-                ) {
-                    Icon(
-                        painter = painterResource(iconsR.drawable.mozac_ic_checkmark_24),
-                        contentDescription = null,
-                        tint = if (isLoginValid) {
-                            FirefoxTheme.colors.textPrimary
-                        } else {
-                            FirefoxTheme.colors.textDisabled
-                        },
+            IconButton(
+                onClick = {
+                    store.dispatch(
+                        EditLoginAction.SaveEditClicked(loginItem),
                     )
-                }
+                },
+                contentDescription = stringResource(
+                    R.string.edit_login_button_content_description,
+                ),
+                enabled = isLoginValid,
+            ) {
+                Icon(
+                    painter = painterResource(iconsR.drawable.mozac_ic_checkmark_24),
+                    contentDescription = null,
+                )
             }
         },
     )
@@ -145,8 +128,8 @@ internal fun EditLoginTopBar(store: LoginsStore, loginItem: LoginItem) {
 private fun EditLoginUrl(url: String) {
     Text(
         text = stringResource(R.string.preferences_passwords_saved_logins_site),
-        style = TextFieldStyle.default().labelStyle,
-        color = TextFieldColors.default().labelColor,
+        style = AcornTheme.typography.caption,
+        color = AcornTheme.colors.textPrimary,
         modifier = Modifier
             .padding(horizontal = FirefoxTheme.layout.space.static200)
             .width(FirefoxTheme.layout.size.containerMaxWidth),
@@ -154,8 +137,8 @@ private fun EditLoginUrl(url: String) {
 
     Text(
         text = url,
-        style = TextFieldStyle.default().placeholderStyle,
-        color = FirefoxTheme.colors.textDisabled,
+        style = AcornTheme.typography.subtitle1,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
         modifier = Modifier
             .padding(
                 horizontal = FirefoxTheme.layout.space.static200,
@@ -185,17 +168,13 @@ private fun EditLoginUsername(store: LoginsStore, user: String) {
             )
             .width(FirefoxTheme.layout.size.containerMaxWidth),
         label = stringResource(R.string.preferences_passwords_saved_logins_username),
-        minHeight = IconButtonHeight,
-        trailingIcons = {
+        trailingIcon = {
             if (editState?.newUsername?.isNotEmpty() == true) {
                 CrossTextFieldButton {
                     store.dispatch(EditLoginAction.UsernameChanged(""))
                 }
             }
         },
-        colors = TextFieldColors.default(
-            placeholderColor = FirefoxTheme.colors.textPrimary,
-        ),
     )
 }
 
@@ -221,8 +200,7 @@ private fun EditLoginPassword(store: LoginsStore, pass: String) {
                 )
                 .width(FirefoxTheme.layout.size.containerMaxWidth),
             label = stringResource(R.string.preferences_passwords_saved_logins_password),
-            minHeight = IconButtonHeight,
-            trailingIcons = {
+            trailingIcon = {
                 EyePasswordIconButton(
                     isPasswordVisible = isPasswordVisible,
                     onTrailingIconClick = {
@@ -244,35 +222,42 @@ private fun EditLoginPassword(store: LoginsStore, pass: String) {
             } else {
                 PasswordVisualTransformation()
             },
-            colors = TextFieldColors.default(
-                placeholderColor = FirefoxTheme.colors.textPrimary,
-            ),
         )
     }
 }
 
+private fun createStore() = LoginsStore(
+    initialState = LoginsState.default.copy(
+        loginsEditLoginState = LoginsEditLoginState(
+            login = LoginItem(
+                guid = "123",
+                url = "https://www.justanothersite123.com",
+                username = "username 123",
+                password = "password 123",
+            ),
+            newUsername = "username 456",
+            newPassword = "password 456",
+            isPasswordVisible = true,
+        ),
+    ),
+)
+
 @Composable
 @FlexibleWindowLightDarkPreview
 private fun EditLoginScreenPreview() {
-    val store = LoginsStore(
-        initialState = LoginsState.default.copy(
-            loginsEditLoginState = LoginsEditLoginState(
-                login = LoginItem(
-                    guid = "123",
-                    url = "https://www.justanothersite123.com",
-                    username = "username 123",
-                    password = "password 123",
-                ),
-                newUsername = "username 456",
-                newPassword = "password 456",
-                isPasswordVisible = true,
-            ),
-        ),
-    )
-
     FirefoxTheme {
-        Box(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
-            EditLoginScreen(store)
+        Surface {
+            EditLoginScreen(store = createStore())
+        }
+    }
+}
+
+@Composable
+@Preview
+private fun EditLoginScreenPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        Surface {
+            EditLoginScreen(store = createStore())
         }
     }
 }

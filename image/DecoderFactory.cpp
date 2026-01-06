@@ -88,8 +88,7 @@ DecoderType DecoderFactory::GetDecoderType(const char* aMimeType) {
     // AVIF
   }
 #ifdef MOZ_AV1
-  else if (!strcmp(aMimeType, IMAGE_AVIF) &&
-           StaticPrefs::image_avif_enabled()) {
+  else if (!strcmp(aMimeType, IMAGE_AVIF)) {
     type = DecoderType::AVIF;
   }
 #endif

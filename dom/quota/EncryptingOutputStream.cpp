@@ -6,8 +6,6 @@
 
 #include "EncryptingOutputStream.h"
 
-#include <type_traits>
-
 #include "EncryptingOutputStream_impl.h"
 #include "nsStreamUtils.h"
 

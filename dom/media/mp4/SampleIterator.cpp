@@ -154,12 +154,12 @@ Result<already_AddRefed<MediaRawData>, MediaResult> SampleIterator::GetNext() {
     return sample.forget();
   }
 
+  const nsTArray<Moof>& moofs = moofParser->Moofs();
+  const Moof* currentMoof = &moofs[mCurrentMoof];
   // We need to check if this moof has init data the CDM expects us to surface.
   // This should happen when handling the first sample, even if that sample
   // isn't encrypted (samples later in the moof may be).
   if (mCurrentSample == 0) {
-    const nsTArray<Moof>& moofs = moofParser->Moofs();
-    const Moof* currentMoof = &moofs[mCurrentMoof];
     if (!currentMoof->mPsshes.IsEmpty()) {
       // This Moof contained crypto init data. Report that. We only report
       // the init data on the Moof's first sample, to avoid reporting it more
@@ -189,7 +189,7 @@ Result<already_AddRefed<MediaRawData>, MediaResult> SampleIterator::GetNext() {
              "Sample should not already have a key ID");
   MOZ_ASSERT(writer->mCrypto.mConstantIV.IsEmpty(),
              "Sample should not already have a constant IV");
-  CencSampleEncryptionInfoEntry* sampleInfo = GetSampleEncryptionEntry();
+  const CencSampleEncryptionInfoEntry* sampleInfo = GetSampleEncryptionEntry();
   if (sampleInfo) {
     // Use sample group information if present, this supersedes track level
     // information.
@@ -209,7 +209,8 @@ Result<already_AddRefed<MediaRawData>, MediaResult> SampleIterator::GetNext() {
   }
 
   if ((writer->mCrypto.mIVSize == 0 && writer->mCrypto.mConstantIV.IsEmpty()) ||
-      (writer->mCrypto.mIVSize != 0 && s->mCencRange.IsEmpty())) {
+      (writer->mCrypto.mIVSize != 0 &&
+       (s->mCencRange.IsEmpty() && !currentMoof->SencIsValid()))) {
     // If mIVSize == 0, this indicates that a constant IV is in use, thus we
     // should have a non empty constant IV. Alternatively if IV size is non
     // zero, we should have an IV for this sample, which we need to look up
@@ -219,8 +220,21 @@ Result<already_AddRefed<MediaRawData>, MediaResult> SampleIterator::GetNext() {
                                    RESULT_DETAIL("Crypto IV size inconsistent"),
                                    gMediaDemuxerLog));
   }
-  // Parse auxiliary information if present
-  if (!s->mCencRange.IsEmpty()) {
+  // Retrieve encryption information
+  // This information might come from two places: the senc box, or the
+  // auxiliary data (indicated by saio and saiz boxes)
+  // Try to use senc information first, and fallback to auxiliary data if not
+  // present
+  if (currentMoof->SencIsValid()) {
+    if (writer->mCrypto.mIVSize != s->mIV.Length()) {
+      return Err(MediaResult::Logged(
+          NS_ERROR_DOM_MEDIA_DEMUXER_ERR,
+          RESULT_DETAIL("Inconsistent crypto IV size"), gMediaDemuxerLog));
+    }
+    writer->mCrypto.mIV = s->mIV;
+    writer->mCrypto.mPlainSizes = s->mPlainSizes;
+    writer->mCrypto.mEncryptedSizes = s->mEncryptedSizes;
+  } else if (!s->mCencRange.IsEmpty()) {
     // The size comes from an 8 bit field
     AutoTArray<uint8_t, 256> cencAuxInfo;
     cencAuxInfo.SetLength(s->mCencRange.Length());
@@ -292,61 +306,10 @@ SampleDescriptionEntry* SampleIterator::GetSampleDescriptionEntry() {
   return &sampleDescriptions[sampleDescriptionIndex];
 }
 
-CencSampleEncryptionInfoEntry* SampleIterator::GetSampleEncryptionEntry() {
-  nsTArray<Moof>& moofs = mIndex->mMoofParser->Moofs();
-  Moof* currentMoof = &moofs[mCurrentMoof];
-  SampleToGroupEntry* sampleToGroupEntry = nullptr;
-
-  // Default to using the sample to group entries for the fragment, otherwise
-  // fall back to the sample to group entries for the track.
-  FallibleTArray<SampleToGroupEntry>* sampleToGroupEntries =
-      currentMoof->mFragmentSampleToGroupEntries.Length() != 0
-          ? &currentMoof->mFragmentSampleToGroupEntries
-          : &mIndex->mMoofParser->mTrackSampleToGroupEntries;
-
-  uint32_t seen = 0;
-
-  for (SampleToGroupEntry& entry : *sampleToGroupEntries) {
-    if (seen + entry.mSampleCount > mCurrentSample) {
-      sampleToGroupEntry = &entry;
-      break;
-    }
-    seen += entry.mSampleCount;
-  }
-
-  // ISO-14496-12 Section 8.9.2.3 and 8.9.4 : group description index
-  // (1) ranges from 1 to the number of sample group entries in the track
-  // level SampleGroupDescription Box, or (2) takes the value 0 to
-  // indicate that this sample is a member of no group, in this case, the
-  // sample is associated with the default values specified in
-  // TrackEncryption Box, or (3) starts at 0x10001, i.e. the index value
-  // 1, with the value 1 in the top 16 bits, to reference fragment-local
-  // SampleGroupDescription Box.
-
-  // According to the spec, ISO-14496-12, the sum of the sample counts in this
-  // box should be equal to the total number of samples, and, if less, the
-  // reader should behave as if an extra SampleToGroupEntry existed, with
-  // groupDescriptionIndex 0.
-
-  if (!sampleToGroupEntry || sampleToGroupEntry->mGroupDescriptionIndex == 0) {
-    return nullptr;
-  }
-
-  FallibleTArray<CencSampleEncryptionInfoEntry>* entries =
-      &mIndex->mMoofParser->mTrackSampleEncryptionInfoEntries;
-
-  uint32_t groupIndex = sampleToGroupEntry->mGroupDescriptionIndex;
-
-  // If the first bit is set to a one, then we should use the sample group
-  // descriptions from the fragment.
-  if (groupIndex > SampleToGroupEntry::kFragmentGroupDescriptionIndexBase) {
-    groupIndex -= SampleToGroupEntry::kFragmentGroupDescriptionIndexBase;
-    entries = &currentMoof->mFragmentSampleEncryptionInfoEntries;
-  }
-
-  // The group_index is one based.
-  return groupIndex > entries->Length() ? nullptr
-                                        : &entries->ElementAt(groupIndex - 1);
+const CencSampleEncryptionInfoEntry* SampleIterator::GetSampleEncryptionEntry()
+    const {
+  return mIndex->mMoofParser->GetSampleEncryptionEntry(mCurrentMoof,
+                                                       mCurrentSample);
 }
 
 Result<CryptoScheme, nsCString> SampleIterator::GetEncryptionScheme() {
@@ -381,7 +344,7 @@ Result<CryptoScheme, nsCString> SampleIterator::GetEncryptionScheme() {
         "indicates encryption, but could not find associated sinf box."));
   }
 
-  CencSampleEncryptionInfoEntry* sampleInfo = GetSampleEncryptionEntry();
+  const CencSampleEncryptionInfoEntry* sampleInfo = GetSampleEncryptionEntry();
   if (sampleInfo && !sampleInfo->mIsEncrypted) {
     // May not have sample encryption info, but if we do, it should match other
     // metadata.

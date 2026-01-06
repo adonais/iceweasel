@@ -23,7 +23,7 @@ export class CCAnalyzer {
    * to call nsICycleCollectorListener.processNext()
    * which would call nsICycleCollectorListener.{noteRefCountedObject,noteGCedObject,noteEdge}.
    *
-   * @param {Boolean} wantAllTraces
+   * @param {boolean} wantAllTraces
    *        See nsICycleCollectorListener.allTraces() jsdoc.
    */
   async run(wantAllTraces = false) {

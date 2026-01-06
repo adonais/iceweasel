@@ -70,7 +70,7 @@ exports.getStyleSheetText = getStyleSheetText;
  * Retrieve the content of a given stylesheet
  *
  * @param {StyleSheet} styleSheet
- * @returns {String}
+ * @returns {string}
  */
 async function fetchStyleSheetText(styleSheet) {
   const href = styleSheet.href;
@@ -133,7 +133,7 @@ async function fetchStyleSheetText(styleSheet) {
  * Get charset of a given stylesheet
  *
  * @param {StyleSheet} styleSheet
- * @returns {String}
+ * @returns {string}
  */
 function getCSSCharset(styleSheet) {
   if (styleSheet) {

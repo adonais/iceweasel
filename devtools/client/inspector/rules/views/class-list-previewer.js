@@ -144,9 +144,9 @@ class ClassListPreviewer {
   /**
    * Render a single checkbox for a given classname.
    *
-   * @param {String} name
+   * @param {string} name
    *        The name of this class.
-   * @param {Boolean} isApplied
+   * @param {boolean} isApplied
    *        Is this class currently applied on the DOM node.
    * @return {DOMNode} The DOM element for this checkbox.
    */

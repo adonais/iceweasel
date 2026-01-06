@@ -23,10 +23,13 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
+#include "api/environment/environment.h"
 #include "api/rtc_error.h"
 #include "api/sequence_checker.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/transport/stun.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
 #include "logging/rtc_event_log/ice_logger.h"
@@ -55,19 +58,20 @@ constexpr int kGoogPingVersion = 1;
 // 1200 is the "commonly used" MTU. Subtract M-I attribute (20+4) and FP (4+4).
 constexpr int kMaxStunBindingLength = 1200 - 24 - 8;
 
-// Forward declaration so that a ConnectionRequest can contain a Connection.
-class Connection;
+// TODO: bugs.webrtc.org/42223979 - Delete or mark deprecated functions that
+// use integers to represent time when remaining WebRTC is updated to use
+// Timestamp and TimeDelta types instead.
 
 // Represents a communication link between a port on the local client and a
 // port on the remote client.
 class RTC_EXPORT Connection : public CandidatePairInterface {
  public:
   struct SentPing {
-    SentPing(absl::string_view id, int64_t sent_time, uint32_t nomination)
+    SentPing(absl::string_view id, Timestamp sent_time, uint32_t nomination)
         : id(id), sent_time(sent_time), nomination(nomination) {}
 
     std::string id;
-    int64_t sent_time;
+    Timestamp sent_time;
     uint32_t nomination;
   };
 
@@ -116,17 +120,36 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   bool pending_delete() const { return !port_; }
 
   // A connection is dead if it can be safely deleted.
-  bool dead(int64_t now) const;
+  bool dead(Timestamp now) const;
 
   // Estimate of the round-trip time over this connection.
-  int rtt() const;
+  // [[deprecated("bugs.webrtc.org/42223979")]]
+  int rtt() const { return Rtt().ms(); }
+  TimeDelta Rtt() const;
 
-  int unwritable_timeout() const;
-  void set_unwritable_timeout(const std::optional<int>& value_ms);
+  TimeDelta UnwritableTimeout() const;
+  // [[deprecated("bugs.webrtc.org/42223979")]]
+  void set_unwritable_timeout(const std::optional<int>& value_ms) {
+    if (value_ms.has_value()) {
+      SetUnwritableTimeout(TimeDelta::Millis(*value_ms));
+    } else {
+      SetUnwritableTimeout(std::nullopt);
+    }
+  }
+  void SetUnwritableTimeout(std::optional<TimeDelta> value);
   int unwritable_min_checks() const;
   void set_unwritable_min_checks(const std::optional<int>& value);
-  int inactive_timeout() const;
-  void set_inactive_timeout(const std::optional<int>& value);
+
+  // [[deprecated("bugs.webrtc.org/42223979")]]
+  void set_inactive_timeout(const std::optional<int>& value) {
+    if (value.has_value()) {
+      SetInactiveTimeout(TimeDelta::Millis(*value));
+    } else {
+      SetInactiveTimeout(std::nullopt);
+    }
+  }
+  TimeDelta InactiveTimeout() const;
+  void SetInactiveTimeout(std::optional<TimeDelta> value);
 
   // Gets the `ConnectionInfo` stats, where `best_connection` has not been
   // populated (default value false).
@@ -186,8 +209,16 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   // when receiving a response to a nominating ping.
   bool nominated() const;
 
-  int receiving_timeout() const;
-  void set_receiving_timeout(std::optional<int> receiving_timeout_ms);
+  TimeDelta ReceivingTimeout() const;
+  // [[deprecated("bugs.webrtc.org/42223979")]]
+  void set_receiving_timeout(std::optional<int> receiving_timeout_ms) {
+    if (receiving_timeout_ms.has_value()) {
+      SetReceivingTimeout(TimeDelta::Millis(*receiving_timeout_ms));
+    } else {
+      SetReceivingTimeout(std::nullopt);
+    }
+  }
+  void SetReceivingTimeout(std::optional<TimeDelta> receiving_timeout);
 
   // Deletes a `Connection` instance is by calling the `DestroyConnection`
   // method in `Port`.
@@ -207,25 +238,47 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
   // Checks that the state of this connection is up-to-date.  The argument is
   // the current time, which is compared against various timeouts.
-  void UpdateState(int64_t now);
+  // [[deprecated("bugs.webrtc.org/42223979")]]
+  void UpdateState(int64_t now) { UpdateState(Timestamp::Millis(now)); }
+  void UpdateState(Timestamp now);
 
   void UpdateLocalIceParameters(int component,
                                 absl::string_view username_fragment,
                                 absl::string_view password);
 
   // Called when this connection should try checking writability again.
-  int64_t last_ping_sent() const;
+  // [[deprecated("bugs.webrtc.org/42223979")]]
+  int64_t last_ping_sent() const { return LastPingSent().ms(); }
+  Timestamp LastPingSent() const;
+
+  // [[deprecated("bugs.webrtc.org/42223979")]]
   void Ping(int64_t now,
+            std::unique_ptr<StunByteStringAttribute> delta = nullptr) {
+    Ping(Timestamp::Millis(now), std::move(delta));
+  }
+  void Ping();
+  void Ping(Timestamp now,
             std::unique_ptr<StunByteStringAttribute> delta = nullptr);
+  // [[deprecated("bugs.webrtc.org/42223979")]]
   void ReceivedPingResponse(
       int rtt,
+      absl::string_view request_id,
+      const std::optional<uint32_t>& nomination = std::nullopt) {
+    ReceivedPingResponse(TimeDelta::Millis(rtt), request_id, nomination);
+  }
+  void ReceivedPingResponse(
+      TimeDelta rtt,
       absl::string_view request_id,
       const std::optional<uint32_t>& nomination = std::nullopt);
   std::unique_ptr<IceMessage> BuildPingRequest(
       std::unique_ptr<StunByteStringAttribute> delta)
       RTC_RUN_ON(network_thread_);
 
-  int64_t last_ping_response_received() const;
+  // [[deprecated("bugs.webrtc.org/42223979")]]
+  int64_t last_ping_response_received() const {
+    return LastPingResponseReceived().ms();
+  }
+  Timestamp LastPingResponseReceived() const;
   const std::optional<std::string>& last_ping_id_received() const;
 
   // Used to check if any STUN ping response has been received.
@@ -233,7 +286,9 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
   // Called whenever a valid ping is received on this connection.  This is
   // public because the connection intercepts the first ping for us.
-  int64_t last_ping_received() const;
+  // [[deprecated("bugs.webrtc.org/42223979")]]
+  int64_t last_ping_received() const { return LastPingReceived().ms(); }
+  Timestamp LastPingReceived() const;
 
   void ReceivedPing(
       const std::optional<std::string>& request_id = std::nullopt);
@@ -244,8 +299,10 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   // connectivity check from the peer.
   void HandlePiggybackCheckAcknowledgementIfAny(StunMessage* msg);
   // Timestamp when data was last sent (or attempted to be sent).
-  int64_t last_send_data() const;
-  int64_t last_data_received() const;
+  Timestamp LastSendData() const;
+  // [[deprecated("bugs.webrtc.org/42223979")]]
+  int64_t last_data_received() const { return LastDataReceived().ms(); }
+  Timestamp LastDataReceived() const;
 
   // Debugging description of this connection
   std::string ToDebugId() const;
@@ -287,15 +344,22 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
   // Returns the last received time of any data, stun request, or stun
   // response in milliseconds
-  int64_t last_received() const;
+  Timestamp LastReceived() const;
+
   // Returns the last time when the connection changed its receiving state.
-  int64_t receiving_unchanged_since() const;
+  // [[deprecated("bugs.webrtc.org/42223979")]]
+  int64_t receiving_unchanged_since() const {
+    return ReceivingUnchangedSince().ms();
+  }
+  Timestamp ReceivingUnchangedSince() const;
 
   // Constructs the prflx priority as described in
   // https://datatracker.ietf.org/doc/html/rfc5245#section-4.1.2.1
   uint32_t prflx_priority() const;
 
-  bool stable(int64_t now) const;
+  // [[deprecated("bugs.webrtc.org/42223979")]]
+  bool stable(int64_t now) const { return stable(Timestamp::Millis(now)); }
+  bool stable(Timestamp now) const;
 
   // Check if we sent `val` pings without receving a response.
   bool TooManyOutstandingPings(const std::optional<int>& val) const;
@@ -366,12 +430,23 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
   void DeregisterDtlsPiggyback() { dtls_stun_piggyback_callbacks_.reset(); }
 
+  // TODO: bugs.webrtc.org/439515766 - Make this helper an identity or remove it
+  // when all users provide time queried from `Clock` and passed around with
+  // 'Timestamp' type. Connection class is sensative to current time rounding.
+  // While users pass in `TimeMillis()` as current time, use the same rounding.
+  // At the same time steer users into passing time using `Timestamp` type
+  // queried from a Clock.
+  static constexpr Timestamp AlignTime(Timestamp time) {
+    return Timestamp::Millis(time.us() / 1000);
+  }
+
  protected:
   // A ConnectionRequest is a simple STUN ping used to determine writability.
   class ConnectionRequest;
 
   // Constructs a new connection to the given remote port.
-  Connection(WeakPtr<PortInterface> port,
+  Connection(const Environment& env,
+             WeakPtr<PortInterface> port,
              size_t index,
              const Candidate& candidate);
 
@@ -393,32 +468,22 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 
   // If the response is not received within 2 * RTT, the response is assumed to
   // be missing.
-  bool missing_responses(int64_t now) const;
+  bool missing_responses(Timestamp now) const;
 
   // Changes the state and signals if necessary.
   void set_write_state(WriteState value);
-  void UpdateReceiving(int64_t now);
+  void UpdateReceiving(Timestamp now);
+
   void set_state(IceCandidatePairState state);
   void set_connected(bool value);
 
   // The local port where this connection sends and receives packets.
   PortInterface* port() { return port_.get(); }
 
-  // NOTE: A pointer to the network thread is held by `port_` so in theory we
-  // shouldn't need to hold on to this pointer here, but rather defer to
-  // port_->thread(). However, some tests delete the classes in the wrong order
-  // so `port_` may be deleted before an instance of this class is deleted.
-  // TODO(tommi): This ^^^ should be fixed.
-  TaskQueueBase* const network_thread_;
-  const uint32_t id_;
-  WeakPtr<PortInterface> port_;
-  Candidate local_candidate_ RTC_GUARDED_BY(network_thread_);
-  Candidate remote_candidate_;
-
-  ConnectionInfo stats_;
-  RateTracker recv_rate_tracker_;
-  RateTracker send_rate_tracker_;
-  int64_t last_send_data_ = 0;
+  const Environment& env() { return env_; }
+  ConnectionInfo& mutable_stats() { return stats_; }
+  RateTracker& send_rate_tracker() { return send_rate_tracker_; }
+  void set_last_send_data(Timestamp now) { last_send_data_ = AlignTime(now); }
 
  private:
   // Update the local candidate based on the mapped address attribute.
@@ -436,6 +501,24 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   // to last message ack:ed STUN_BINDING_REQUEST.
   bool ShouldSendGoogPing(const StunMessage* message)
       RTC_RUN_ON(network_thread_);
+
+  const Environment env_;
+
+  // NOTE: A pointer to the network thread is held by `port_` so in theory we
+  // shouldn't need to hold on to this pointer here, but rather defer to
+  // port_->thread(). However, some tests delete the classes in the wrong order
+  // so `port_` may be deleted before an instance of this class is deleted.
+  // TODO(tommi): This ^^^ should be fixed.
+  TaskQueueBase* const network_thread_;
+  const uint32_t id_;
+  WeakPtr<PortInterface> port_;
+  Candidate local_candidate_ RTC_GUARDED_BY(network_thread_);
+  Candidate remote_candidate_;
+
+  ConnectionInfo stats_;
+  RateTracker recv_rate_tracker_;
+  RateTracker send_rate_tracker_;
+  Timestamp last_send_data_;
 
   WriteState write_state_ RTC_GUARDED_BY(network_thread_);
   bool receiving_ RTC_GUARDED_BY(network_thread_);
@@ -461,21 +544,20 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   uint32_t remote_nomination_ RTC_GUARDED_BY(network_thread_) = 0;
 
   StunRequestManager requests_ RTC_GUARDED_BY(network_thread_);
-  int rtt_ RTC_GUARDED_BY(network_thread_);
+  TimeDelta rtt_ RTC_GUARDED_BY(network_thread_);
   int rtt_samples_ RTC_GUARDED_BY(network_thread_) = 0;
   // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-totalroundtriptime
-  uint64_t total_round_trip_time_ms_ RTC_GUARDED_BY(network_thread_) = 0;
+  TimeDelta total_round_trip_time_ RTC_GUARDED_BY(network_thread_);
   // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatepairstats-currentroundtriptime
-  std::optional<uint32_t> current_round_trip_time_ms_
+  std::optional<TimeDelta> current_round_trip_time_
       RTC_GUARDED_BY(network_thread_);
-  int64_t last_ping_sent_ RTC_GUARDED_BY(
-      network_thread_);  // last time we sent a ping to the other side
-  int64_t last_ping_received_
-      RTC_GUARDED_BY(network_thread_);  // last time we received a ping from the
-                                        // other side
-  int64_t last_data_received_ RTC_GUARDED_BY(network_thread_);
-  int64_t last_ping_response_received_ RTC_GUARDED_BY(network_thread_);
-  int64_t receiving_unchanged_since_ RTC_GUARDED_BY(network_thread_) = 0;
+  // last time we sent a ping to the other side
+  Timestamp last_ping_sent_ RTC_GUARDED_BY(network_thread_);
+  // last time we received a ping from the other side
+  Timestamp last_ping_received_ RTC_GUARDED_BY(network_thread_);
+  Timestamp last_data_received_ RTC_GUARDED_BY(network_thread_);
+  Timestamp last_ping_response_received_ RTC_GUARDED_BY(network_thread_);
+  Timestamp receiving_unchanged_since_ RTC_GUARDED_BY(network_thread_);
   std::vector<SentPing> pings_since_last_response_
       RTC_GUARDED_BY(network_thread_);
   // Transaction ID of the last connectivity check received. Null if having not
@@ -483,15 +565,15 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
   std::optional<std::string> last_ping_id_received_
       RTC_GUARDED_BY(network_thread_);
 
-  std::optional<int> unwritable_timeout_ RTC_GUARDED_BY(network_thread_);
+  std::optional<TimeDelta> unwritable_timeout_ RTC_GUARDED_BY(network_thread_);
   std::optional<int> unwritable_min_checks_ RTC_GUARDED_BY(network_thread_);
-  std::optional<int> inactive_timeout_ RTC_GUARDED_BY(network_thread_);
+  std::optional<TimeDelta> inactive_timeout_ RTC_GUARDED_BY(network_thread_);
 
   IceCandidatePairState state_ RTC_GUARDED_BY(network_thread_);
   // Time duration to switch from receiving to not receiving.
-  std::optional<int> receiving_timeout_ RTC_GUARDED_BY(network_thread_);
-  const int64_t time_created_ms_ RTC_GUARDED_BY(network_thread_);
-  const int64_t delta_internal_unix_epoch_ms_ RTC_GUARDED_BY(network_thread_);
+  std::optional<TimeDelta> receiving_timeout_ RTC_GUARDED_BY(network_thread_);
+  const Timestamp time_created_ RTC_GUARDED_BY(network_thread_);
+  const TimeDelta delta_internal_unix_epoch_ RTC_GUARDED_BY(network_thread_);
   int num_pings_sent_ RTC_GUARDED_BY(network_thread_) = 0;
 
   std::optional<IceCandidatePairDescription> log_description_
@@ -528,7 +610,8 @@ class RTC_EXPORT Connection : public CandidatePairInterface {
 // ProxyConnection defers all the interesting work to the port.
 class ProxyConnection : public Connection {
  public:
-  ProxyConnection(WeakPtr<PortInterface> port,
+  ProxyConnection(const Environment& env,
+                  WeakPtr<PortInterface> port,
                   size_t index,
                   const Candidate& remote_candidate);
 

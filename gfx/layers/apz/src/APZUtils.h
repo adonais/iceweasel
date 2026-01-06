@@ -13,7 +13,6 @@
 // Do not include this header from source files outside of gfx/layers.
 
 #include <stdint.h>  // for uint32_t
-#include <type_traits>
 #include "gfxTypes.h"
 #include "FrameMetrics.h"
 #include "LayersTypes.h"

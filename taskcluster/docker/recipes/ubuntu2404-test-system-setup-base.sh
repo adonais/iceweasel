@@ -18,7 +18,6 @@ if [[ "$ARCH" == "amd64" ]]; then
     apt_packages+=('gcc-multilib')
 fi
 
-apt_packages+=('autoconf2.13')
 apt_packages+=('bluez-cups')
 apt_packages+=('build-essential')
 apt_packages+=('ca-certificates')

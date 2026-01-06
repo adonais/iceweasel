@@ -4,13 +4,6 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "gCookiesRejectWhenInvalid",
-  "extensions.cookie.rejectWhenInvalid",
-  false
-);
-
 var { ExtensionError } = ExtensionUtils;
 
 const SAME_SITE_STATUSES = new Map([
@@ -726,15 +719,9 @@ this.cookies = class extends ExtensionAPIPersistent {
 
           let isPartitioned = originAttributes.partitionKey?.length > 0;
 
-          // The permission check may have modified the domain, so use
-          // the new value instead.
-          let fn = gCookiesRejectWhenInvalid
-            ? Services.cookies.add
-            : Services.cookies.addForAddOn;
-
           let cv;
           try {
-            cv = fn(
+            cv = Services.cookies.add(
               cookieAttrs.host,
               path,
               name,
@@ -759,13 +746,7 @@ this.cookies = class extends ExtensionAPIPersistent {
           }
 
           if (cv.result !== Ci.nsICookieValidation.eOK) {
-            if (gCookiesRejectWhenInvalid) {
-              return Promise.reject({ message: cv.errorString });
-            }
-
-            Services.console.logStringMessage(
-              `Extension ${extension.id} tried to create an invalid cookie: ${cv.errorString}`
-            );
+            return Promise.reject({ message: cv.errorString });
           }
 
           return self.cookies.get(details);

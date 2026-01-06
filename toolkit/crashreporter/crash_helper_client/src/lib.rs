@@ -83,10 +83,6 @@ impl CrashHelperClient {
         let message = messages::TransferMinidump::new(pid);
         self.connector.send_message(message)?;
 
-        // HACK: Workaround for a macOS-specific bug
-        #[cfg(target_os = "macos")]
-        self.connector.poll(nix::poll::PollFlags::POLLIN)?;
-
         let reply = self
             .connector
             .recv_reply::<messages::TransferMinidumpReply>()?;

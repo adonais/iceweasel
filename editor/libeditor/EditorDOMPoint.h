@@ -126,6 +126,22 @@ class EditorDOMPointBase final {
     }
   }
 
+  template <typename PT, template <typename> typename StrongPtr>
+  EditorDOMPointBase(
+      StrongPtr<PT>&& aContainer, uint32_t aOffset,
+      InterlinePosition aInterlinePosition = InterlinePosition::Undefined)
+      : mParent(std::forward<StrongPtr<PT>>(aContainer)),
+        mChild(nullptr),
+        mOffset(Some(aOffset)),
+        mInterlinePosition(aInterlinePosition) {
+    NS_WARNING_ASSERTION(
+        !mParent || mOffset.value() <= mParent->Length(),
+        "The offset is larger than the length of aContainer or negative");
+    if (!mParent) {
+      mOffset.reset();
+    }
+  }
+
   template <typename ContainerType, template <typename> typename StrongPtr>
   EditorDOMPointBase(
       const StrongPtr<ContainerType>& aContainer, uint32_t aOffset,
@@ -143,7 +159,7 @@ class EditorDOMPointBase final {
    * which you want to refer.
    */
   explicit EditorDOMPointBase(
-      const nsINode* aPointedNode,
+      const nsINode* aPointedNode,  // FIXME: This should const nsIContent&
       InterlinePosition aInterlinePosition = InterlinePosition::Undefined)
       : mParent(aPointedNode && aPointedNode->IsContent()
                     ? aPointedNode->GetParentNode()
@@ -152,7 +168,21 @@ class EditorDOMPointBase final {
                    ? const_cast<nsIContent*>(aPointedNode->AsContent())
                    : nullptr),
         mInterlinePosition(aInterlinePosition) {
-    mIsChildInitialized = aPointedNode && mChild;
+    mIsChildInitialized = mChild;
+    NS_WARNING_ASSERTION(IsSet(),
+                         "The child is nullptr or doesn't have its parent");
+    NS_WARNING_ASSERTION(mChild && mChild->GetParentNode() == mParent,
+                         "Initializing RangeBoundary with invalid value");
+  }
+
+  template <typename CT, template <typename> typename StrongPtr>
+  explicit EditorDOMPointBase(
+      StrongPtr<CT>&& aChild,
+      InterlinePosition aInterlinePosition = InterlinePosition::Undefined)
+      : mParent(aChild ? aChild->GetParentNode() : nullptr),
+        mChild(std::forward<StrongPtr<CT>>(aChild)),
+        mInterlinePosition(aInterlinePosition) {
+    mIsChildInitialized = !!mChild;
     NS_WARNING_ASSERTION(IsSet(),
                          "The child is nullptr or doesn't have its parent");
     NS_WARNING_ASSERTION(mChild && mChild->GetParentNode() == mParent,
@@ -608,6 +638,16 @@ class EditorDOMPointBase final {
   void Set(const StrongPtr<ContainerType>& aContainer, uint32_t aOffset) {
     Set(aContainer.get(), aOffset);
   }
+  template <typename ContainerType, template <typename> typename StrongPtr>
+  void Set(StrongPtr<ContainerType>&& aContainer, uint32_t aOffset) {
+    mParent = std::forward<StrongPtr<ContainerType>>(aContainer);
+    mChild = nullptr;
+    mOffset = mozilla::Some(aOffset);
+    mIsChildInitialized = false;
+    mInterlinePosition = InterlinePosition::Undefined;
+    NS_ASSERTION(!mParent || mOffset.value() <= mParent->Length(),
+                 "The offset is out of bounds");
+  }
   void Set(const nsINode* aChild) {
     MOZ_ASSERT(aChild);
     if (NS_WARN_IF(!aChild->IsContent())) {
@@ -620,13 +660,26 @@ class EditorDOMPointBase final {
     mIsChildInitialized = true;
     mInterlinePosition = InterlinePosition::Undefined;
   }
+  template <typename CT, template <typename> typename StrongPtr>
+  void Set(StrongPtr<CT>&& aChild) {
+    MOZ_ASSERT(aChild);
+    if (NS_WARN_IF(!aChild->IsContent())) {
+      Clear();
+      return;
+    }
+    mParent = aChild->GetParentNode();
+    mChild = std::forward<StrongPtr<CT>>(aChild);
+    mOffset.reset();
+    mIsChildInitialized = true;
+    mInterlinePosition = InterlinePosition::Undefined;
+  }
 
   /**
    * SetToEndOf() sets this to the end of aContainer.  Then, mChild is always
    * nullptr but marked as initialized and mOffset is always set.
    */
   template <typename ContainerType>
-  MOZ_NEVER_INLINE_DEBUG void SetToEndOf(const ContainerType* aContainer) {
+  void SetToEndOf(const ContainerType* aContainer) {
     MOZ_ASSERT(aContainer);
     mParent = const_cast<ContainerType*>(aContainer);
     mChild = nullptr;
@@ -635,12 +688,19 @@ class EditorDOMPointBase final {
     mInterlinePosition = InterlinePosition::Undefined;
   }
   template <typename ContainerType, template <typename> typename StrongPtr>
-  MOZ_NEVER_INLINE_DEBUG void SetToEndOf(
-      const StrongPtr<ContainerType>& aContainer) {
+  void SetToEndOf(const StrongPtr<ContainerType>& aContainer) {
     SetToEndOf(aContainer.get());
   }
+  template <typename ContainerType, template <typename> typename StrongPtr>
+  void SetToEndOf(StrongPtr<ContainerType>&& aContainer) {
+    mParent = std::forward<StrongPtr<ContainerType>>(aContainer);
+    mChild = nullptr;
+    mOffset = mozilla::Some(mParent->Length());
+    mIsChildInitialized = true;
+    mInterlinePosition = InterlinePosition::Undefined;
+  }
   template <typename ContainerType>
-  MOZ_NEVER_INLINE_DEBUG static SelfType AtEndOf(
+  [[nodiscard]] static SelfType AtEndOf(
       const ContainerType& aContainer,
       InterlinePosition aInterlinePosition = InterlinePosition::Undefined) {
     SelfType point;
@@ -649,11 +709,21 @@ class EditorDOMPointBase final {
     return point;
   }
   template <typename ContainerType, template <typename> typename StrongPtr>
-  MOZ_NEVER_INLINE_DEBUG static SelfType AtEndOf(
+  [[nodiscard]] static SelfType AtEndOf(
       const StrongPtr<ContainerType>& aContainer,
       InterlinePosition aInterlinePosition = InterlinePosition::Undefined) {
     MOZ_ASSERT(aContainer.get());
     return AtEndOf(*aContainer.get(), aInterlinePosition);
+  }
+  template <typename ContainerType, template <typename> typename StrongPtr>
+  [[nodiscard]] static SelfType AtEndOf(
+      StrongPtr<ContainerType>&& aContainer,
+      InterlinePosition aInterlinePosition = InterlinePosition::Undefined) {
+    MOZ_ASSERT(aContainer.get());
+    SelfType result;
+    result.SetToEndOf(std::forward<StrongPtr<ContainerType>>(aContainer));
+    result.mInterlinePosition = aInterlinePosition;
+    return result;
   }
 
   /**

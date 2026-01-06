@@ -60,7 +60,9 @@ data class WebPushSubscription(
         if (appServerKey != null) {
             if (other.appServerKey == null) return false
             if (!appServerKey.contentEquals(other.appServerKey)) return false
-        } else if (other.appServerKey != null) return false
+        } else if (other.appServerKey != null) {
+            return false
+        }
         if (!publicKey.contentEquals(other.publicKey)) return false
         if (!authSecret.contentEquals(other.authSecret)) return false
 

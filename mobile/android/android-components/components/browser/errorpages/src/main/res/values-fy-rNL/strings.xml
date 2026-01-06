@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Probleem mei misliedende website</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>De website op %1$s is rapportearre as in misliedende website en is blokkearre op basis fan jo befeiligingsfoarkarren.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Website blokkearre foar jo feilichheid</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Dizze website op %1$s is blokkearre, omdat ien fan jo add-ons probearre hat dit te iepenjen. Dizze website kin brûkt wurde om jo gegevens te stellen – lykas wachtwurden of creditcardnûmers.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Befeilige website net beskikber</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

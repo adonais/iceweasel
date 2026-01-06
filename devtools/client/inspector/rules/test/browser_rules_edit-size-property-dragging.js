@@ -345,14 +345,14 @@ async function runIncrementTest(editor, view, tests) {
  *
  * @param  {TextPropertyEditor} editor
  * @param  {Array} options
- * @param  {String} options.startValue
- * @param  {String} options.expectedEndValue
- * @param  {Boolean} options.shift Whether or not we press the shift key
- * @param  {Number} options.distance Distance of the dragging
- * @param  {String} options.description
- * @param  {Boolean} options.ctrl Small increment key
- * @param  {Boolean} options.alt Small increment key for macosx
- * @param  {Boolean} options.deadzoneIncluded True if the provided distance
+ * @param  {string} options.startValue
+ * @param  {string} options.expectedEndValue
+ * @param  {boolean} options.shift Whether or not we press the shift key
+ * @param  {number} options.distance Distance of the dragging
+ * @param  {string} options.description
+ * @param  {boolean} options.ctrl Small increment key
+ * @param  {boolean} options.alt Small increment key for macosx
+ * @param  {boolean} options.deadzoneIncluded True if the provided distance
  *         accounts for the deadzone. When false, the deadzone will automatically
  *         be added to the distance.
  */
@@ -390,13 +390,13 @@ async function testIncrement(editor, options) {
  * Synthesizes mouse dragging (mousedown + mousemove + mouseup)
  *
  * @param {TextPropertyEditor} editor
- * @param {Number} distance length of the horizontal dragging (negative if dragging left)
- * @param {Object} option
- * @param {Boolean} option.escape
- * @param {Boolean} option.alt
- * @param {Boolean} option.shift
- * @param {Boolean} option.ctrl
- * @param {Boolean} option.deadzoneIncluded
+ * @param {number} distance length of the horizontal dragging (negative if dragging left)
+ * @param {object} option
+ * @param {boolean} option.escape
+ * @param {boolean} option.alt
+ * @param {boolean} option.shift
+ * @param {boolean} option.ctrl
+ * @param {boolean} option.deadzoneIncluded
  */
 async function synthesizeMouseDragging(editor, distance, options = {}) {
   info(`Start to synthesize mouse dragging (from ${1} to ${1 + distance})`);

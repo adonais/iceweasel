@@ -95,6 +95,7 @@ add_task(async function testHiddenUnusedVariables() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -168,6 +169,7 @@ add_task(async function testHiddenUnusedVariables() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -217,6 +219,7 @@ add_task(async function testHiddenUnusedVariables() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {

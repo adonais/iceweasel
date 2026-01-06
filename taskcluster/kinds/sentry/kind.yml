@@ -15,7 +15,7 @@ task-defaults:
 tasks:
     mach-release:
         description: Inform Sentry of new revisions (aka Mach releases)
-        worker-type: b-linux-gcp
+        worker-type: b-linux
         worker:
             taskcluster-proxy: true
             max-run-time: 3600

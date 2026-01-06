@@ -106,7 +106,6 @@ exports.createExtraActors = createExtraActors;
  * Creates an "actor-like" object which responds in the same way as an ordinary actor
  * but has fewer capabilities (ie, does not manage lifetimes or have it's own pool).
  *
- *
  * @param factories
  *     An object whose own property names are the names of properties to add to
  *     some reply packet (say, a target actor grip or the "listTabs" response

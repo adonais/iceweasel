@@ -18,8 +18,6 @@
 #include "mozilla/IOInterposer.h"
 #include "mozilla/ipc/UtilityProcessChild.h"
 #include "mozilla/Likely.h"
-#include "mozilla/MemoryChecking.h"
-#include "mozilla/Poison.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PreferenceSheet.h"
 #include "mozilla/Printf.h"
@@ -4456,6 +4454,12 @@ int XREMain::XRE_mainInit(bool* aExitFlag) {
   // These arguments do nothing in platforms with no remoting support but we
   // should remove them from the command line anyway.
   CheckArg("new-instance");
+#endif
+
+#ifndef XP_WIN
+  // This command line argument is only implemented on Windows. It should be
+  // removed from the command line if present on other platforms.
+  CheckArg("wait-for-browser");
 #endif
 
   ar = CheckArg("offline");

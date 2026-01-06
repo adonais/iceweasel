@@ -12,14 +12,15 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/strings/string_view.h"
 #include "api/adaptation/resource.h"
 #include "api/fec_controller.h"
-#include "api/field_trials_view.h"
 #include "api/media_types.h"
 #include "api/rtp_headers.h"
+#include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/transport/bitrate_settings.h"
@@ -146,16 +147,16 @@ class Call {
   virtual void SetClientBitratePreferences(
       const BitrateSettings& preferences) = 0;
 
-  virtual void EnableSendCongestionControlFeedbackAccordingToRfc8888() = 0;
-  virtual int FeedbackAccordingToRfc8888Count() = 0;
-  virtual int FeedbackAccordingToTransportCcCount() = 0;
-
-  virtual const FieldTrialsView& trials() const = 0;
+  // Decides which RTCP feedback type to use for congestion control.
+  virtual void SetPreferredRtcpCcAckType(
+      RtcpFeedbackType preferred_rtcp_cc_ack_type) = 0;
+  virtual std::optional<int> FeedbackAccordingToRfc8888Count() = 0;
+  virtual std::optional<int> FeedbackAccordingToTransportCcCount() = 0;
 
   virtual TaskQueueBase* network_thread() const = 0;
   virtual TaskQueueBase* worker_thread() const = 0;
 
-  virtual ~Call() {}
+  virtual ~Call() = default;
 };
 
 }  // namespace webrtc

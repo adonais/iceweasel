@@ -10,7 +10,6 @@ import android.content.Context
 import android.net.Uri
 import android.os.SystemClock
 import android.util.Log
-import android.widget.TimePicker
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertAny
 import androidx.compose.ui.test.assertIsDisplayed
@@ -32,10 +31,8 @@ import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.longClick
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.contrib.PickerActions
 import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.Visibility
-import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withContentDescription
 import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
@@ -51,9 +48,9 @@ import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL_BOX
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.TABS_COUNTER
 import mozilla.components.concept.engine.mediasession.MediaSession
 import mozilla.components.concept.engine.utils.EngineReleaseChannel
-import mozilla.components.ui.tabcounter.TabCounterTestTags.NORMAL_TABS_COUNTER
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -68,6 +65,7 @@ import org.mozilla.fenix.helpers.MatcherHelper.assertItemTextEquals
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectIsGone
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
+import org.mozilla.fenix.helpers.MatcherHelper.itemWithClassNameAndContainingDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResIdAndText
@@ -202,6 +200,12 @@ class BrowserRobot {
                 SupportUtils.getSumoURLForTopic(appContext, SupportUtils.SumoTopic.TOTAL_COOKIE_PROTECTION).replace("https://", ""),
             )
         }
+    }
+
+    fun verifyCrossOriginStorageLearnMoreURL() {
+        Log.i(TAG, "verifyCrossOriginStorageLearnMoreURL: Trying to verify cross origin storage URL")
+        verifyUrl("docs/Web/API/Storage_Access_API")
+        Log.i(TAG, "verifyCrossOriginStorageLearnMoreURL: Verified cross origin storage URL")
     }
 
     fun verifySponsoredShortcutsLearnMoreURL() {
@@ -769,13 +773,21 @@ class BrowserRobot {
     }
 
     fun selectTime(hour: Int, minute: Int) {
-        Log.i(TAG, "selectTime: Trying to select time picker hour: $hour and minute: $minute")
-        onView(
-            isAssignableFrom(TimePicker::class.java),
-        ).inRoot(
-            isDialog(),
-        ).perform(PickerActions.setTime(hour, minute))
-        Log.i(TAG, "selectTime: Selected time picker hour: $hour and minute: $minute")
+        Log.i(TAG, "selectTime: Trying to select time picker hour: $hour and minute: $minute AM")
+        itemWithClassNameAndContainingDescription(
+            "android.widget.TextView",
+            "$hour o'clock",
+        ).click()
+        waitForAppWindowToBeUpdated()
+        itemWithClassNameAndContainingDescription(
+            "android.widget.TextView",
+            "$minute minutes",
+        ).click()
+        itemWithResIdContainingText(
+            "$packageName:id/material_clock_period_am_button",
+            "AM",
+        ).click()
+        Log.i(TAG, "selectTime: Selected time picker hour: $hour and minute: $minute AM")
     }
 
     fun verifySelectedDate() {
@@ -1226,7 +1238,8 @@ class BrowserRobot {
         Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"Describe the problem (optional)\" field is displayed")
         if (appContext.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE) {
             Log.i(
-                TAG, "Release channel is ${appContext.components.core.engine.version.releaseChannel}",
+                TAG,
+                "Release channel is ${appContext.components.core.engine.version.releaseChannel}",
             )
             Log.i(
                 TAG,
@@ -1287,6 +1300,9 @@ class BrowserRobot {
     }
 
     fun clickBrokenSiteFormSendButton(composeTestRule: ComposeTestRule) {
+        Log.i(TAG, "clickBrokenSiteFormSendButton: Trying to close the keyboard.")
+        closeSoftKeyboard()
+        Log.i(TAG, "clickBrokenSiteFormSendButton: Closed the keyboard.")
         Log.i(TAG, "clickBrokenSiteFormSendButton: Trying to click the \"Cancel\" button")
         composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_send))
             .performClick()
@@ -1476,7 +1492,7 @@ class BrowserRobot {
 
         fun openTabDrawerWithComposableToolbar(composeTestRule: HomeActivityComposeTestRule, interact: TabDrawerRobot.() -> Unit): TabDrawerRobot.Transition {
             Log.i(TAG, "openTabDrawerWithComposableToolbar: Trying to click the tab counter button")
-            composeTestRule.onNodeWithTag(NORMAL_TABS_COUNTER).performClick()
+            composeTestRule.onNodeWithTag(TABS_COUNTER).performClick()
             Log.i(TAG, "openTabDrawerWithComposableToolbar: Clicked the tab counter button")
             Log.i(TAG, "openTabDrawerWithComposableToolbar: Trying to verify the tabs tray exists")
             composeTestRule.onNodeWithTag(TabsTrayTestTag.TABS_TRAY).assertExists()

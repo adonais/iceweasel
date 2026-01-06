@@ -80,7 +80,7 @@ module.exports = DragZoom;
  * Only these smoothed values and the container CSS are updated by the loop.
  *
  * @param {HTMLDivElement} container
- * @param {Object} dragZoom
+ * @param {object} dragZoom
  *        The values that represent the current dragZoom state
  * @param {Function} requestAnimationFrame
  */
@@ -147,7 +147,7 @@ function createUpdateLoop(container, dragZoom, requestAnimationFrame) {
 /**
  * Set the various event listeners and return a function to remove them
  *
- * @param  {Object} dragZoom
+ * @param  {object} dragZoom
  * @param  {HTMLElement} container
  * @param  {Function} update
  * @return {Function}  The function to remove the handlers
@@ -179,7 +179,7 @@ function setHandlers(dragZoom, container, update, debounceRate) {
  * object with new translate and offset values.
  *
  * @param  {HTMLElement} container
- * @param  {Object} dragZoom
+ * @param  {object} dragZoom
  * @param  {Function} changed
  * @param  {Function} update
  */
@@ -235,7 +235,7 @@ function setDragHandlers(container, dragZoom, emitChanged, update) {
  * loop is called, and the changed event is emitted.
  *
  * @param  {HTMLDivElement} container
- * @param  {Object} dragZoom
+ * @param  {object} dragZoom
  * @param  {Function} changed
  * @param  {Function} update
  */
@@ -295,7 +295,7 @@ function setScrollHandlers(container, dragZoom, emitChanged, update) {
  * Account for the various mouse wheel event types, per pixel or per line
  *
  * @param  {WheelEvent} event
- * @return {Number} The scroll size in pixels
+ * @return {number} The scroll size in pixels
  */
 function getScrollDelta(event) {
   if (event.deltaMode === LINE_SCROLL_MODE) {
@@ -310,7 +310,7 @@ function getScrollDelta(event) {
  * `dragZoom` object.
  *
  * @param  {HTMLDivElement} container
- * @param  {Object} dragZoom
+ * @param  {object} dragZoom
  */
 function keepInView(container, dragZoom) {
   const { devicePixelRatio } = container.ownerDocument.defaultView;

@@ -135,6 +135,8 @@ using namespace mozilla::places;
 #define TOPIC_PROFILE_CHANGE "profile-before-change"
 #define TOPIC_APP_LOCALES_CHANGED "intl:app-locales-changed"
 
+#define USEC_PER_DAY 86400000000LL
+
 static const char* kObservedPrefs[] = {PREF_HISTORY_ENABLED,
                                        PREF_MATCH_DIACRITICS,
                                        PREF_FREC_NUM_VISITS,
@@ -504,7 +506,6 @@ mozilla::Maybe<nsCString> nsNavHistory::GetTargetFolderGuid(
 
 Atomic<int64_t> nsNavHistory::sLastInsertedPlaceId(0);
 Atomic<int64_t> nsNavHistory::sLastInsertedVisitId(0);
-Atomic<bool> nsNavHistory::sIsFrecencyDecaying(false);
 Atomic<bool> nsNavHistory::sShouldStartFrecencyRecalculation(false);
 
 void  // static
@@ -1818,19 +1819,6 @@ nsNavHistory::MarkPageAsFollowedLink(nsIURI* aURI) {
 }
 
 NS_IMETHODIMP
-nsNavHistory::GetIsFrecencyDecaying(bool* _out) {
-  NS_ENSURE_ARG_POINTER(_out);
-  *_out = nsNavHistory::sIsFrecencyDecaying;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsNavHistory::SetIsFrecencyDecaying(bool aVal) {
-  nsNavHistory::sIsFrecencyDecaying = aVal;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsNavHistory::GetIsAlternativeFrecencyEnabled(bool* _out) {
   *_out =
       StaticPrefs::places_frecency_pages_alternative_featureGate_AtStartup();
@@ -1865,30 +1853,62 @@ nsNavHistory::PageFrecencyThreshold(int32_t aVisitAgeInDays, int32_t aNumVisits,
 int64_t nsNavHistory::CalculateFrecency(int32_t aVisitAgeInDays,
                                         int32_t aNumVisits,
                                         bool aBookmarked) const {
-  int32_t weight = this->GetFrecencyAgedWeight(aVisitAgeInDays);
+  bool useAlternative =
+      StaticPrefs::places_frecency_pages_alternative_featureGate_AtStartup();
+  int32_t halfLifeDays =
+      (useAlternative
+           ? StaticPrefs::
+                 places_frecency_pages_alternative_halfLifeDays_AtStartup()
+           : StaticPrefs::places_frecency_pages_halfLifeDays_AtStartup());
+  int32_t maxSamples =
+      (useAlternative
+           ? StaticPrefs::
+                 places_frecency_pages_alternative_numSampledVisits_AtStartup()
+           : StaticPrefs::places_frecency_pages_numSampledVisits_AtStartup());
+  int32_t highWeight =
+      (useAlternative
+           ? StaticPrefs::
+                 places_frecency_pages_alternative_highWeight_AtStartup()
+           : StaticPrefs::places_frecency_pages_highWeight_AtStartup());
+  int32_t mediumWeight =
+      (useAlternative
+           ? StaticPrefs::
+                 places_frecency_pages_alternative_mediumWeight_AtStartup()
+           : StaticPrefs::places_frecency_pages_mediumWeight_AtStartup());
 
-  if (aNumVisits) {
-    int32_t visitScore = this->GetFrecencyTransitionBonus(
-        nsINavHistoryService::TRANSITION_LINK, true, false);
-    if (aBookmarked) {
-      visitScore += this->GetFrecencyTransitionBonus(
-          nsINavHistoryService::TRANSITION_BOOKMARK, true);
-    }
-    int64_t perVisitScore =
-        static_cast<int64_t>(ceilf(static_cast<float>(weight) *
-                                   (static_cast<float>(visitScore) / 100.0f)));
-    return aNumVisits * perVisitScore;
+  int32_t samplesCount = 0;
+  if (aNumVisits > 0) {
+    // The frecency algorithm only samples a maximum number of visits.
+    samplesCount = std::min(aNumVisits, maxSamples);
+  } else if (aBookmarked) {
+    // An unvisited bookmark is considered a single sample.
+    samplesCount = 1;
   }
 
-  if (aBookmarked) {
-    // Unvisited bookmark.
-    int32_t bookmarkScore = this->GetFrecencyTransitionBonus(
-        nsINavHistoryService::TRANSITION_BOOKMARK, true);
-    return static_cast<int64_t>(
-        ceilf(static_cast<float>(weight) *
-              (static_cast<float>(bookmarkScore) / 100.0f)));
+  if (samplesCount == 0) {
+    return 0;
   }
-  return 0;
+
+  PRTime now = PR_Now();
+  int32_t todayInDaysFromEpoch = static_cast<int32_t>(now / USEC_PER_DAY);
+  int32_t refTimeInDaysFromEpoch = todayInDaysFromEpoch - aVisitAgeInDays;
+
+  int32_t visitWeight = aBookmarked ? highWeight : mediumWeight;
+  double lambda = log(2.0) / static_cast<double>(halfLifeDays);
+  double decayedWeight =
+      static_cast<double>(visitWeight) *
+      exp(-lambda *
+          static_cast<double>(todayInDaysFromEpoch - refTimeInDaysFromEpoch));
+
+  // Note: Since all samples have equal weight in this simplified version,
+  // we can use decayedWeight directly instead of computing the average.
+  double logCountAdjustedScore =
+      log(decayedWeight * std::max(samplesCount, aNumVisits));
+  // The future date when the score would decay to a value of 1.
+  int32_t frecency = refTimeInDaysFromEpoch +
+                     static_cast<int32_t>(logCountAdjustedScore / lambda);
+
+  return static_cast<int64_t>(std::max(frecency, 0));
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -10,6 +10,7 @@ import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
+import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 
 /**
@@ -26,6 +27,7 @@ import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
  * @property syncedTabs The list of synced tabs.
  * @property syncing Whether the Synced Tabs feature should fetch the latest tabs from paired devices.
  * @property selectedTabId The ID of the currently selected (active) tab.
+ * @property backStack The navigation history of the Tab Manager feature.
  */
 data class TabsTrayState(
     val selectedPage: Page = Page.NormalTabs,
@@ -37,6 +39,7 @@ data class TabsTrayState(
     val syncedTabs: List<SyncedTabsListItem> = emptyList(),
     val syncing: Boolean = false,
     val selectedTabId: String? = null,
+    val backStack: List<TabManagerNavDestination> = listOf(TabManagerNavDestination.Root),
 ) : State {
 
     /**
@@ -60,6 +63,22 @@ data class TabsTrayState(
          */
         data class Select(override val selectedTabs: Set<TabSessionState>) : Mode()
     }
+
+    /**
+     * Whether the Tab Search button is visible.
+     */
+    val searchIconVisible: Boolean
+        get() = selectedPage != Page.SyncedTabs
+
+    /**
+     * Whether the Tab Search button is enabled.
+     */
+    val searchIconEnabled: Boolean
+        get() = when {
+            selectedPage == Page.NormalTabs && normalTabs.isNotEmpty() -> true
+            selectedPage == Page.PrivateTabs && privateTabs.isNotEmpty() -> true
+            else -> false
+        }
 }
 
 /**
@@ -242,6 +261,16 @@ sealed class TabsTrayAction : Action {
      * [TabsTrayAction] fired when the user requests to bookmark selected tabs.
      */
     data class BookmarkSelectedTabs(val tabCount: Int) : TabsTrayAction()
+
+    /**
+     * [TabsTrayAction] fired when the user clicks on the Tab Search icon.
+     */
+    object TabSearchClicked : TabsTrayAction()
+
+    /**
+     * [TabsTrayAction] fired when the user clicks on the back button or swipes to navigate back.
+     */
+    object NavigateBackInvoked : TabsTrayAction()
 }
 
 /**
@@ -291,6 +320,14 @@ internal object TabsTrayReducer {
             is TabsTrayAction.CloseAllPrivateTabs -> state
             is TabsTrayAction.BookmarkSelectedTabs -> state
             is TabsTrayAction.ThreeDotMenuShown -> state
+            is TabsTrayAction.TabSearchClicked ->
+                state.copy(backStack = state.backStack + TabManagerNavDestination.TabSearch)
+            is TabsTrayAction.NavigateBackInvoked -> {
+                when {
+                    state.mode is TabsTrayState.Mode.Select -> state.copy(mode = TabsTrayState.Mode.Normal)
+                    else -> state.copy(backStack = state.backStack.dropLast(1))
+                }
+            }
         }
     }
 }

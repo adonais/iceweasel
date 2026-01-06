@@ -351,14 +351,14 @@ def verify_run_task_caches(task, taskgraph, scratch_pad, graph_config, parameter
 
         if not run_task:
             raise Exception(
-                f"{task['label']} is using a cache ({cache}) reserved for run-task "
+                f"{task.label} is using a cache ({cache}) reserved for run-task "
                 "change the task to use run-task or use a different "
                 "cache name"
             )
 
         if suffix not in cache:
             raise Exception(
-                f"{task['label']} is using a cache ({cache}) reserved for run-task "
+                f"{task.label} is using a cache ({cache}) reserved for run-task "
                 "but the cache name is not dependent on the contents "
                 "of run-task; change the cache name to conform to the "
                 "naming requirements"

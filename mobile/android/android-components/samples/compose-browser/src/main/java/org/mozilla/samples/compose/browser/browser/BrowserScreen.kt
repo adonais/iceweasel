@@ -167,7 +167,7 @@ fun TabsTray(
                         selectTab = true,
                     )
                     store.dispatch(BrowserScreenAction.HideTabs)
-                    toolbarStore.dispatch(BrowserToolbarAction.EnterEditMode)
+                    toolbarStore.dispatch(BrowserToolbarAction.EnterEditMode(false))
                 },
             ) {
                 Text("+")

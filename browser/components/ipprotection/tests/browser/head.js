@@ -13,6 +13,10 @@ const { IPProtectionService, IPProtectionStates } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPProtectionService.sys.mjs"
 );
 
+const { IPPProxyManager, IPPProxyStates } = ChromeUtils.importESModule(
+  "resource:///modules/ipprotection/IPPProxyManager.sys.mjs"
+);
+
 const { IPPSignInWatcher } = ChromeUtils.importESModule(
   "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs"
 );
@@ -27,6 +31,10 @@ const { HttpServer, HTTP_403 } = ChromeUtils.importESModule(
 
 const { NimbusTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/NimbusTestUtils.sys.mjs"
+);
+
+const { Server } = ChromeUtils.importESModule(
+  "resource:///modules/ipprotection/IPProtectionServerlist.sys.mjs"
 );
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -205,8 +213,19 @@ async function withProxyServer(testFn, handler) {
 
   server.start(-1);
   await testFn({
-    host: `localhost`,
-    port: server.identity.primaryPort,
+    server: new Server({
+      hostname: "localhost",
+      port: server.identity.primaryPort,
+      quarantined: false,
+      protocols: [
+        {
+          name: "connect",
+          host: "localhost",
+          scheme: "http",
+          port: server.identity.primaryPort,
+        },
+      ],
+    }),
     type: "http",
     gotConnection: promise,
   });
@@ -274,6 +293,7 @@ add_setup(async function setupVPN() {
     Services.prefs.clearUserPref("browser.ipProtection.stateCache");
     Services.prefs.clearUserPref("browser.ipProtection.entitlementCache");
     Services.prefs.clearUserPref("browser.ipProtection.locationListCache");
+    Services.prefs.clearUserPref("browser.ipProtection.onboardingMessageMask");
   });
 });
 

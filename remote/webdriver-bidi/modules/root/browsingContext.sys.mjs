@@ -1980,6 +1980,15 @@ class BrowsingContextModule extends RootBiDiModule {
         "browsingContext.contextCreated",
         browsingContextInfo
       );
+
+      // This is an internal event is used by the script module
+      // to ensure that "script.realmCreated" event is emitted
+      // after "browsingContext.contextCreated".
+      this.messageHandler.emitEvent(
+        "browsingContext._contextCreatedEmitted",
+        { browsingContext },
+        browsingContextInfo
+      );
     }
   };
 
@@ -2127,7 +2136,7 @@ class BrowsingContextModule extends RootBiDiModule {
     }
   };
 
-  #onPromptClosed = async (eventName, data) => {
+  #onPromptClosed = (eventName, data) => {
     if (this.#subscribedEvents.has("browsingContext.userPromptClosed")) {
       const { contentBrowser, detail } = data;
       const navigableId = lazy.NavigableManager.getIdForBrowser(contentBrowser);
@@ -2135,6 +2144,12 @@ class BrowsingContextModule extends RootBiDiModule {
       if (navigableId === null) {
         return;
       }
+
+      lazy.logger.trace(
+        `[${contentBrowser.browsingContext.id}] Prompt closed (type: "${
+          detail.promptType
+        }", accepted: "${detail.accepted}")`
+      );
 
       const params = {
         context: navigableId,
@@ -2155,6 +2170,17 @@ class BrowsingContextModule extends RootBiDiModule {
     if (this.#subscribedEvents.has("browsingContext.userPromptOpened")) {
       const { contentBrowser, prompt } = data;
       const type = prompt.promptType;
+
+      prompt.getText().then(text => {
+        // We need the text to identify a user prompt when it gets
+        // randomly opened. Because on Android the text is asynchronously
+        // retrieved lets delay the logging without making the handler async.
+        lazy.logger.trace(
+          `[${contentBrowser.browsingContext.id}] Prompt opened (type: "${
+            prompt.promptType
+          }", text: "${text}")`
+        );
+      });
 
       // Do not send opened event for unsupported prompt types.
       if (!(type in UserPromptType)) {

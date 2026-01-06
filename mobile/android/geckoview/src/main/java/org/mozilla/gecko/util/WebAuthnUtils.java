@@ -170,7 +170,7 @@ public class WebAuthnUtils {
       }
 
       public Builder setCredProps(final boolean credProps) {
-        this.mCredProps = new Boolean(credProps);
+        this.mCredProps = Boolean.valueOf(credProps);
         return this;
       }
 

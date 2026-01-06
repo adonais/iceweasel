@@ -8,9 +8,7 @@ package org.mozilla.fenix.tabstray.inactivetabs
 
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +21,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -96,7 +96,7 @@ fun InactiveTabsList(
         shape = ROUNDED_CORNER_SHAPE,
         border = BorderStroke(
             width = 1.dp,
-            color = FirefoxTheme.colors.borderPrimary,
+            color = MaterialTheme.colorScheme.outlineVariant,
         ),
     ) {
         Column(
@@ -221,9 +221,9 @@ private fun InactiveTabsHeader(
                 modifier = Modifier.padding(horizontal = 4.dp),
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_delete),
+                    painter = painterResource(iconsR.drawable.mozac_ic_delete_24),
                     contentDescription = stringResource(R.string.inactive_tabs_delete_all),
-                    tint = FirefoxTheme.colors.iconPrimary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -247,7 +247,7 @@ private fun InactiveTabsAutoClosePrompt(
         colors = CardDefaults.cardColors(containerColor = FirefoxTheme.colors.layer2),
         border = BorderStroke(
             width = 1.dp,
-            color = FirefoxTheme.colors.borderPrimary,
+            color = MaterialTheme.colorScheme.outlineVariant,
         ),
     ) {
         Column(
@@ -261,7 +261,7 @@ private fun InactiveTabsAutoClosePrompt(
             ) {
                 Text(
                     text = stringResource(R.string.tab_tray_inactive_auto_close_title),
-                    color = FirefoxTheme.colors.textPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                     style = FirefoxTheme.typography.headline8,
                 )
@@ -274,7 +274,7 @@ private fun InactiveTabsAutoClosePrompt(
                         painter = painterResource(iconsR.drawable.mozac_ic_cross_20),
                         contentDescription =
                         stringResource(R.string.tab_tray_inactive_auto_close_button_content_description),
-                        tint = FirefoxTheme.colors.iconPrimary,
+                        tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
             }
@@ -284,7 +284,7 @@ private fun InactiveTabsAutoClosePrompt(
                     R.string.tab_tray_inactive_auto_close_body_2,
                     stringResource(R.string.app_name),
                 ),
-                color = FirefoxTheme.colors.textSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth(),
                 fontSize = 14.sp,
             )
@@ -301,7 +301,7 @@ private fun InactiveTabsAutoClosePrompt(
 @PreviewLightDark
 private fun InactiveTabsAutoClosePromptPreview() {
     FirefoxTheme {
-        Box(Modifier.background(FirefoxTheme.colors.layer1)) {
+        Surface {
             InactiveTabsAutoClosePrompt(
                 onDismissClick = {},
                 onEnableAutoCloseClick = {},
@@ -317,7 +317,7 @@ private fun InactiveTabsListPreview() {
     var showAutoClosePrompt by remember { mutableStateOf(true) }
 
     FirefoxTheme {
-        Box(Modifier.background(FirefoxTheme.colors.layer1)) {
+        Surface {
             InactiveTabsList(
                 inactiveTabs = generateFakeInactiveTabsList(),
                 expanded = expanded,

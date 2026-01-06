@@ -531,7 +531,7 @@ export class SpecialPowersChild extends JSWindowActorChild {
       throw new Error(
         `Error while executing chrome script '${aUrl}':\n` +
           "The script doesn't exist. Ensure you have registered it in " +
-          "'support-files' in your mochitest.ini."
+          "'support-files' in your mochitest.toml."
       );
     }
 

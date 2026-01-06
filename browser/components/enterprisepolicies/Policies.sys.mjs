@@ -1313,6 +1313,13 @@ export var Policies = {
           param.Locked
         );
       }
+      if ("HarmfulAddon" in param) {
+        PoliciesUtils.setDefaultPref(
+          "privacy.trackingprotection.harmfuladdon.enabled",
+          param.HarmfulAddon,
+          param.Locked
+        );
+      }
       if ("Fingerprinting" in param) {
         PoliciesUtils.setDefaultPref(
           "privacy.trackingprotection.fingerprinting.enabled",

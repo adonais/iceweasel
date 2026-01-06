@@ -29,27 +29,7 @@ class TrackingProtectionBlockingFragmentTest {
     fun `GIVEN total cookie protection is enabled WHEN showing details THEN show the updated cookie protection text`() {
         val expectedTitle = testContext.getString(R.string.etp_cookies_title_2)
         val expectedDescription = testContext.getString(R.string.etp_cookies_description_2)
-
-        val mockSettings = mockk<Settings>(relaxed = true) {
-            every { enabledTotalCookieProtection } returns true
-        }
-
-        val fragment = createFragment(mockSettings)
-
-        val cookiesCategory = fragment.binding.categoryCookies
-        assertEquals(expectedTitle, cookiesCategory.trackingProtectionCategoryTitle.text.toString())
-        assertEquals(expectedDescription, cookiesCategory.trackingProtectionCategoryItemDescription.text.toString())
-    }
-
-    @Test
-    fun `GIVEN total cookie protection is disabled WHEN showing details THEN show the default cookie protection text`() {
-        val expectedTitle = testContext.getString(R.string.etp_cookies_title)
-        val expectedDescription = testContext.getString(R.string.etp_cookies_description)
-
-        val mockSettings = mockk<Settings>(relaxed = true) {
-            every { enabledTotalCookieProtection } returns false
-        }
-
+        val mockSettings = mockk<Settings>(relaxed = true)
         val fragment = createFragment(mockSettings)
 
         val cookiesCategory = fragment.binding.categoryCookies
@@ -90,7 +70,6 @@ class TrackingProtectionBlockingFragmentTest {
     @Test
     fun `GIVEN custom mode WHEN all blocking settings are true THEN all categories are visible`() {
         val mockSettings = mockk<Settings> {
-            every { enabledTotalCookieProtection } returns false
             every { blockFingerprintersInCustomTrackingProtection } returns true
             every { blockCryptominersInCustomTrackingProtection } returns true
             every { blockCookiesInCustomTrackingProtection } returns true
@@ -113,7 +92,6 @@ class TrackingProtectionBlockingFragmentTest {
     @Test
     fun `GIVEN custom mode WHEN all blocking settings are false THEN all categories are hidden`() {
         val mockSettings = mockk<Settings> {
-            every { enabledTotalCookieProtection } returns false
             every { blockFingerprintersInCustomTrackingProtection } returns false
             every { blockCryptominersInCustomTrackingProtection } returns false
             every { blockCookiesInCustomTrackingProtection } returns false

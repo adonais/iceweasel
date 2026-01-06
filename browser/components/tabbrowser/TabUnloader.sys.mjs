@@ -317,6 +317,7 @@ export var TabUnloader = {
 
   /**
    * Select and discard one tab.
+   *
    * @returns true if a tab was unloaded, otherwise false.
    */
   async unloadLeastRecentlyUsedTab(

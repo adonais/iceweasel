@@ -17,7 +17,6 @@
 #include "nsXULAppAPI.h"
 
 #include <limits>
-#include <type_traits>
 #include <utility>
 
 namespace mozilla::widget {

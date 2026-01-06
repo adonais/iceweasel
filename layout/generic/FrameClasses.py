@@ -16,7 +16,6 @@ MATHML = {"MathML"}
 SVG = {"SVG"}
 BFC = {"BlockFormattingContext"}
 LINE_PARTICIPANT = {"LineParticipant"}
-MAY_HAVE_VIEW = {"MayHaveView"}
 
 BLOCK = COMMON | {"CanContainOverflowContainers"}
 
@@ -117,7 +116,7 @@ FRAME_CLASSES = [
     Frame("nsPageSequenceFrame", "PageSequence", COMMON),
     Frame("nsSliderFrame", "Slider", COMMON),
     Frame("nsSplitterFrame", "SimpleXULLeaf", COMMON | LEAF),
-    Frame("nsSubDocumentFrame", "SubDocument", REPLACED_SIZING | LEAF | MAY_HAVE_VIEW),
+    Frame("nsSubDocumentFrame", "SubDocument", REPLACED_SIZING | LEAF),
     Frame("PrintedSheetFrame", "PrintedSheet", COMMON),
     Frame("SVGAFrame", "SVGA", SVG_CONTAINER),
     Frame("SVGClipPathFrame", "SVGClipPath", SVG_RENDERING_OBSERVER_CONTAINER),
@@ -172,7 +171,7 @@ FRAME_CLASSES = [
     Frame("nsTreeBodyFrame", "SimpleXULLeaf", COMMON | LEAF),
     Frame("nsVideoFrame", "HTMLVideo", REPLACED_SIZING),
     Frame("nsAudioFrame", "HTMLVideo", REPLACED_SIZING - {"SupportsAspectRatio"}),
-    Frame("ViewportFrame", "Viewport", COMMON | MAY_HAVE_VIEW),
+    Frame("ViewportFrame", "Viewport", COMMON),
     Frame("WBRFrame", "Wbr", COMMON | LEAF),
     # Non-concrete classes (for FrameIID use)
     AbstractFrame("ButtonControlFrame"),

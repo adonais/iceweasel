@@ -75,6 +75,7 @@ EXPORTS.mozilla += [
     "PresShell.h",
     "PresShellForwards.h",
     "PresShellInlines.h",
+    "PresShellWidgetListener.h",
     "RelativeTo.h",
     "RenderingPhase.h",
     "ScrollStyles.h",
@@ -118,6 +119,7 @@ UNIFIED_SOURCES += [
     "nsRefreshObservers.cpp",
     "PositionedEventTargeting.cpp",
     "PresShell.cpp",
+    "PresShellWidgetListener.cpp",
     "ScrollStyles.cpp",
     "ShapeUtils.cpp",
     "StackArena.cpp",
@@ -151,7 +153,6 @@ LOCAL_INCLUDES += [
     "/dom/html",
     "/dom/svg",
     "/dom/xul",
-    "/view",
 ]
 
 if CONFIG["MOZ_WIDGET_TOOLKIT"] == "android":

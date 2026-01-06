@@ -15,8 +15,8 @@ eventList.push("DOMContentLoaded");
  * Reports if a given DOM Event name is probably supported by Gecko.
  * If it isn't, it is most likely a custom event implemented by the web page.
  *
- * @param {String} name
- * @return {Boolean}
+ * @param {string} name
+ * @return {boolean}
  */
 exports.isUserDefinedEventName = function (name) {
   return !eventList.includes(name);

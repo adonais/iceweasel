@@ -33,7 +33,7 @@ body {
   position: fixed;
   z-index: 1;
   height: 2em;
-  border-bottom: 1px solid var(--in-content-border-color);
+  border-bottom: 1px solid var(--border-color);
   width: 100%;
   background-color: var(--background-color-box);
 }
@@ -62,15 +62,7 @@ th {
 }
 th:not(:first-child) {
   border-inline-start: 1px solid;
-  border-image: linear-gradient(
-      transparent 0%,
-      transparent 20%,
-      var(--in-content-box-border-color) 20%,
-      var(--in-content-box-border-color) 80%,
-      transparent 80%,
-      transparent 100%
-    )
-    1 1;
+  border-image: linear-gradient(transparent 0%, transparent 20%, var(--border-color) 20%, var(--border-color) 80%, transparent 80%, transparent 100%) 1 1;
 }
 th,
 td {
@@ -300,7 +292,7 @@ tr:is([selected], :hover, :focus-visible):not(.killing) > td > .close-icon,
  */
 
 tr.separate-from-previous-process-group {
-  border-top: dotted 1px var(--in-content-box-border-color);
+  border-top: dotted 1px var(--border-color);
   margin-top: -1px;
 }
 

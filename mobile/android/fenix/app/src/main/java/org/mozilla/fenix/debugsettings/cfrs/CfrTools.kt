@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.debugsettings.cfrs
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -15,11 +14,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.OutlinedButton
 import mozilla.components.lib.state.ext.observeAsState
@@ -27,6 +28,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.SwitchWithLabel
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 
 /**
  * CFR Tools UI that allows for the CFR states to be reset.
@@ -38,16 +40,18 @@ import org.mozilla.fenix.theme.FirefoxTheme
 fun CfrTools(
     cfrToolsStore: CfrToolsStore,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(vertical = FirefoxTheme.layout.space.dynamic400),
-        verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.dynamic400),
-    ) {
-        ResetCfrTool(
-            cfrToolsStore = cfrToolsStore,
-        )
+    Surface {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = FirefoxTheme.layout.space.dynamic400),
+            verticalArrangement = Arrangement.spacedBy(FirefoxTheme.layout.space.dynamic400),
+        ) {
+            ResetCfrTool(
+                cfrToolsStore = cfrToolsStore,
+            )
+        }
     }
 }
 
@@ -72,7 +76,6 @@ private fun ResetCfrTool(
         ) {
             Text(
                 text = stringResource(R.string.debug_drawer_cfr_tools_reset_cfr_title),
-                color = FirefoxTheme.colors.textPrimary,
                 style = FirefoxTheme.typography.headline5,
             )
 
@@ -80,7 +83,6 @@ private fun ResetCfrTool(
 
             Text(
                 text = stringResource(R.string.debug_drawer_cfr_tools_reset_cfr_description),
-                color = FirefoxTheme.colors.textPrimary,
                 style = FirefoxTheme.typography.caption,
             )
 
@@ -220,14 +222,18 @@ private fun CfrSectionTitle(
 @FlexibleWindowLightDarkPreview
 private fun CfrToolsPreview() {
     FirefoxTheme {
-        Column(
-            modifier = Modifier.background(
-                color = FirefoxTheme.colors.layer1,
-            ),
-        ) {
-            CfrTools(
-                cfrToolsStore = CfrToolsStore(),
-            )
-        }
+        CfrTools(
+            cfrToolsStore = CfrToolsStore(),
+        )
+    }
+}
+
+@Composable
+@Preview
+private fun CfrToolsPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        CfrTools(
+            cfrToolsStore = CfrToolsStore(),
+        )
     }
 }

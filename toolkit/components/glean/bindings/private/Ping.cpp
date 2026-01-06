@@ -23,7 +23,8 @@ namespace mozilla::glean {
 
 namespace impl {
 
-using CallbackMapType = nsTHashMap<uint32_t, FalliblePingTestCallback>;
+using CallbackMapType =
+    nsTHashMap<NoMemMoveKey<nsUint32HashKey>, FalliblePingTestCallback>;
 using MetricIdToCallbackMutex = StaticDataMutex<UniquePtr<CallbackMapType>>;
 static Maybe<MetricIdToCallbackMutex::AutoLock> GetCallbackMapLock() {
   static MetricIdToCallbackMutex sCallbacks("sCallbacks");

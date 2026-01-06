@@ -5,9 +5,8 @@
 package org.mozilla.fenix.onboarding.widget
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -36,7 +35,7 @@ fun SetSearchWidgetMainImage() {
 @Composable
 private fun SetSearchWidgetMainImagePreview() {
     FirefoxTheme {
-        Box(Modifier.background(FirefoxTheme.colors.layer1)) {
+        Surface {
             SetSearchWidgetMainImage()
         }
     }

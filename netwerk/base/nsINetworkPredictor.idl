@@ -35,16 +35,12 @@ interface nsINetworkPredictor : nsISupports
   /**
    * Prediction reasons
    *
-   * PREDICT_LINK - we are being asked to take predictive action because
-   * the user is hovering over a link.
-   *
    * PREDICT_LOAD - we are being asked to take predictive action because
    * the user has initiated a pageload.
    *
    * PREDICT_STARTUP - we are being asked to take predictive action
    * because the browser is starting up.
    */
-  const PredictorPredictReason PREDICT_LINK = 0;
   const PredictorPredictReason PREDICT_LOAD = 1;
   const PredictorPredictReason PREDICT_STARTUP = 2;
 
@@ -62,9 +58,6 @@ interface nsINetworkPredictor : nsISupports
    *   example).
    * @param reason - The reason we are being asked to take actions. Can be
    *   any of the PREDICT_* values above.
-   *   In the case of PREDICT_LINK, targetURI should be the URI of the link
-   *   that is being hovered over, and sourceURI should be the URI of the page
-   *   on which the link appears.
    *   In the case of PREDICT_LOAD, targetURI should be the URI of the page that
    *   is being loaded and sourceURI should be null.
    *   In the case of PREDICT_STARTUP, both targetURI and sourceURI should be

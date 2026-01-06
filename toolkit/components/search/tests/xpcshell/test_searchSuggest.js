@@ -463,16 +463,16 @@ add_task(async function both_identical_with_more_than_max_results() {
   }
 
   let controller = new SearchSuggestionController();
-  controller.maxLocalResults = 7;
-  controller.maxRemoteResults = 10;
   let result = await controller.fetch({
     searchString: "letter ",
     inPrivateBrowsing: false,
     engine: getEngine,
+    maxLocalResults: 7,
+    maxRemoteResults: 10,
   });
   Assert.equal(result.term, "letter ");
   Assert.equal(result.local.length, 7);
-  for (let i = 0; i < controller.maxLocalResults; i++) {
+  for (let i = 0; i < 7; i++) {
     Assert.equal(
       result.local[i].value,
       "letter " + String.fromCharCode("A".charCodeAt() + i)
@@ -482,8 +482,7 @@ add_task(async function both_identical_with_more_than_max_results() {
   for (let i = 0; i < result.remote.length; i++) {
     Assert.equal(
       result.remote[i].value,
-      "letter " +
-        String.fromCharCode("A".charCodeAt() + controller.maxLocalResults + i)
+      "letter " + String.fromCharCode("A".charCodeAt() + 7 + i)
     );
   }
 });
@@ -494,12 +493,12 @@ add_task(async function noremote_maxLocal() {
   Services.fog.testResetFOG();
 
   let controller = new SearchSuggestionController();
-  controller.maxLocalResults = 2; // (should be ignored because no remote results)
-  controller.maxRemoteResults = 0;
   let result = await controller.fetch({
     searchString: "letter ",
     inPrivateBrowsing: false,
     engine: getEngine,
+    maxLocalResults: 2, // (should be ignored because no remote results)
+    maxRemoteResults: 0,
   });
   Assert.equal(result.term, "letter ");
   Assert.equal(result.local.length, 26);
@@ -516,12 +515,12 @@ add_task(async function noremote_maxLocal() {
 
 add_task(async function someremote_maxLocal() {
   let controller = new SearchSuggestionController();
-  controller.maxLocalResults = 2;
-  controller.maxRemoteResults = 4;
   let result = await controller.fetch({
     searchString: "letter ",
     inPrivateBrowsing: false,
     engine: getEngine,
+    maxLocalResults: 2,
+    maxRemoteResults: 4,
   });
   Assert.equal(result.term, "letter ");
   Assert.equal(result.local.length, 2);
@@ -545,12 +544,12 @@ add_task(async function someremote_maxLocal() {
 
 add_task(async function one_of_each() {
   let controller = new SearchSuggestionController();
-  controller.maxLocalResults = 1;
-  controller.maxRemoteResults = 2;
   let result = await controller.fetch({
     searchString: "letter ",
     inPrivateBrowsing: false,
     engine: getEngine,
+    maxLocalResults: 1,
+    maxRemoteResults: 2,
   });
   Assert.equal(result.term, "letter ");
   Assert.equal(result.local.length, 1);
@@ -566,12 +565,12 @@ add_task(async function local_result_returned_remote_result_disabled() {
 
   Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
   let controller = new SearchSuggestionController();
-  controller.maxLocalResults = 1;
-  controller.maxRemoteResults = 1;
   let result = await controller.fetch({
     searchString: "letter ",
     inPrivateBrowsing: false,
     engine: getEngine,
+    maxLocalResults: 1,
+    maxRemoteResults: 1,
   });
   Assert.equal(result.term, "letter ");
   Assert.equal(result.local.length, 26);
@@ -589,13 +588,13 @@ add_task(async function local_result_returned_remote_result_disabled() {
 add_task(
   async function local_result_returned_remote_result_disabled_after_creation_of_controller() {
     let controller = new SearchSuggestionController();
-    controller.maxLocalResults = 1;
-    controller.maxRemoteResults = 1;
     Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
     let result = await controller.fetch({
       searchString: "letter ",
       inPrivateBrowsing: false,
       engine: getEngine,
+      maxLocalResults: 1,
+      maxRemoteResults: 1,
     });
     Assert.equal(result.term, "letter ");
     Assert.equal(result.local.length, 26);
@@ -615,13 +614,13 @@ add_task(
   async function one_of_each_disabled_before_creation_enabled_after_creation_of_controller() {
     Services.prefs.setBoolPref("browser.search.suggest.enabled", false);
     let controller = new SearchSuggestionController();
-    controller.maxLocalResults = 1;
-    controller.maxRemoteResults = 2;
     Services.prefs.setBoolPref("browser.search.suggest.enabled", true);
     let result = await controller.fetch({
       searchString: "letter ",
       inPrivateBrowsing: false,
       engine: getEngine,
+      maxLocalResults: 1,
+      maxRemoteResults: 2,
     });
     Assert.equal(result.term, "letter ");
     Assert.equal(result.local.length, 1);
@@ -637,12 +636,12 @@ add_task(
 
 add_task(async function one_local_zero_remote() {
   let controller = new SearchSuggestionController();
-  controller.maxLocalResults = 1;
-  controller.maxRemoteResults = 0;
   let result = await controller.fetch({
     searchString: "letter ",
     inPrivateBrowsing: false,
     engine: getEngine,
+    maxLocalResults: 1,
+    maxRemoteResults: 0,
   });
   Assert.equal(result.term, "letter ");
   Assert.equal(result.local.length, 26);
@@ -658,12 +657,12 @@ add_task(async function one_local_zero_remote() {
 
 add_task(async function zero_local_one_remote() {
   let controller = new SearchSuggestionController();
-  controller.maxLocalResults = 0;
-  controller.maxRemoteResults = 1;
   let result = await controller.fetch({
     searchString: "letter ",
     inPrivateBrowsing: false,
     engine: getEngine,
+    maxLocalResults: 0,
+    maxRemoteResults: 1,
   });
   Assert.equal(result.term, "letter ");
   Assert.equal(result.local.length, 0);
@@ -935,12 +934,12 @@ add_task(async function invalid_engine() {
 add_task(async function no_results_requested() {
   Assert.throws(() => {
     let controller = new SearchSuggestionController();
-    controller.maxLocalResults = 0;
-    controller.maxRemoteResults = 0;
     controller.fetch({
       searchString: "No results requested",
       inPrivateBrowsing: false,
       engine: getEngine,
+      maxLocalResults: 0,
+      maxRemoteResults: 0,
     });
   }, /result/i);
 });
@@ -948,11 +947,11 @@ add_task(async function no_results_requested() {
 add_task(async function minus_one_results_requested() {
   Assert.throws(() => {
     let controller = new SearchSuggestionController();
-    controller.maxLocalResults = -1;
     controller.fetch({
       searchString: "-1 results requested",
       inPrivateBrowsing: false,
       engine: getEngine,
+      maxLocalResults: -1,
     });
   }, /result/i);
 });

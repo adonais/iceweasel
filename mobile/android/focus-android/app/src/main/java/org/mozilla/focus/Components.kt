@@ -207,7 +207,7 @@ class Components(
                 AdsTelemetryMiddleware(adsTelemetry),
                 BlockedTrackersMiddleware(context),
                 RecordingDevicesMiddleware(context, notificationsDelegate),
-                CfrMiddleware(context),
+                CfrMiddleware(appStore, settings),
                 FileUploadsDirCleanerMiddleware(fileUploadsDirCleaner),
             ) + EngineMiddleware.create(
                 engine,
@@ -262,8 +262,20 @@ class Components(
         )
     }
 
+    val remoteSettingsService by lazy {
+        RemoteSettingsService(
+            context,
+            if (context.settings.useProductionRemoteSettingsServer) {
+                RemoteSettingsServer.Prod.into()
+            } else {
+                RemoteSettingsServer.Stage.into()
+            },
+            channel = BuildConfig.BUILD_TYPE,
+        )
+    }
+
     val experiments: NimbusApi by lazy {
-        createNimbus(context, BuildConfig.NIMBUS_ENDPOINT)
+        createNimbus(context, BuildConfig.NIMBUS_ENDPOINT, remoteSettingsService.remoteSettingsService)
     }
 
     val adsTelemetry: AdsTelemetry by lazy { AdsTelemetry() }
@@ -290,18 +302,6 @@ class Components(
     val dateTimeProvider: DateTimeProvider by lazy { DefaultDateTimeProvider() }
 
     val downloadEstimator: DownloadEstimator by lazy { DownloadEstimator(dateTimeProvider = dateTimeProvider) }
-
-    val remoteSettingsService by lazy {
-        RemoteSettingsService(
-            context,
-            if (context.settings.useProductionRemoteSettingsServer) {
-                RemoteSettingsServer.Prod.into()
-            } else {
-                RemoteSettingsServer.Stage.into()
-            },
-            channel = BuildConfig.BUILD_TYPE,
-        )
-    }
 }
 
 private fun createCrashReporter(context: Context): CrashReporter {

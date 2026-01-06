@@ -25,7 +25,7 @@ const {
  *
  *   Destroy the browser toolbox and make sure it exits cleanly.
  *
- * @param {Object}:
+ * @param {object}:
  *        - {Function} existingProcessClose: if truth-y, connect to an existing
  *          browser toolbox process rather than launching a new one and
  *          connecting to it.  The given function is expected to return an

@@ -148,18 +148,28 @@ void SVGAnimatedViewBox::SetAnimValue(const SVGViewBox& aRect,
   aSVGElement->DidAnimateViewBox();
 }
 
+void SVGAnimatedViewBox::SetBaseField(float aValue, SVGElement* aSVGElement,
+                                      float& aField) {
+  if (!mHasBaseVal) {
+    aField = aValue;
+    return;
+  }
+  if (aField == aValue) {
+    return;
+  }
+  AutoChangeViewBoxNotifier notifier(this, aSVGElement);
+  aField = aValue;
+}
+
 void SVGAnimatedViewBox::SetBaseValue(const SVGViewBox& aRect,
-                                      SVGElement* aSVGElement) {
-  if (!mHasBaseVal || mBaseVal == aRect) {
-    // This method is used to set a single x, y, width
-    // or height value. It can't create a base value
-    // as the other components may be undefined. We record
-    // the new value though, so as not to lose data.
-    mBaseVal = aRect;
+                                      SVGElement* aSVGElement,
+                                      bool aDoSetAttr) {
+  // Comparison against mBaseVal is only valid if we currently have a base val.
+  if (mHasBaseVal && mBaseVal == aRect) {
     return;
   }
 
-  AutoChangeViewBoxNotifier notifier(this, aSVGElement);
+  AutoChangeViewBoxNotifier notifier(this, aSVGElement, aDoSetAttr);
 
   mBaseVal = aRect;
   mHasBaseVal = true;
@@ -174,15 +184,7 @@ nsresult SVGAnimatedViewBox::SetBaseValueString(const nsAString& aValue,
   if (NS_FAILED(rv)) {
     return rv;
   }
-  // Comparison against mBaseVal is only valid if we currently have a base val.
-  if (mHasBaseVal && viewBox == mBaseVal) {
-    return NS_OK;
-  }
-
-  AutoChangeViewBoxNotifier notifier(this, aSVGElement, aDoSetAttr);
-  mHasBaseVal = true;
-  mBaseVal = viewBox;
-
+  SetBaseValue(viewBox, aSVGElement, aDoSetAttr);
   return NS_OK;
 }
 

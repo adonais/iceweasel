@@ -7,7 +7,6 @@
 #include "mozilla/dom/FileList.h"
 
 #include <new>
-#include <utility>
 
 #include "ErrorList.h"
 #include "js/RootingAPI.h"

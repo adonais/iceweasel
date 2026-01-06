@@ -16,6 +16,12 @@
 
 class gfxFT2FontBase;
 
+namespace mozilla {
+namespace gfx {
+class FTUserFontData;
+}
+}  // namespace mozilla
+
 class gfxFT2FontEntryBase : public gfxFontEntry {
  public:
   explicit gfxFT2FontEntryBase(const nsACString& aName) : gfxFontEntry(aName) {}
@@ -25,6 +31,11 @@ class gfxFT2FontEntryBase : public gfxFontEntry {
   static bool FaceHasTable(mozilla::gfx::SharedFTFace*, uint32_t aTableTag);
   static nsresult CopyFaceTable(mozilla::gfx::SharedFTFace*, uint32_t aTableTag,
                                 nsTArray<uint8_t>&);
+
+  virtual mozilla::gfx::FTUserFontData* GetUserFontData() = 0;
+
+  size_t ComputedSizeOfExcludingThis(
+      mozilla::MallocSizeOf aMallocSizeOf) override;
 
  private:
   enum { kNumCmapCacheSlots = 256 };

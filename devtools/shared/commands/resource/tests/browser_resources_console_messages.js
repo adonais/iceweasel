@@ -184,7 +184,7 @@ async function logExistingMessages(browser, executeInIframe) {
  * preceding stack.
  *
  * @param {BrowsingContext} The browsing context into which the script should be evaluated
- * @param {Function|String} The JS to execute in the browsing context
+ * @param {Function | string} The JS to execute in the browsing context
  *
  * @return {Promise} Which resolves once the JS is done executing in the page
  */

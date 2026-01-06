@@ -37,6 +37,7 @@ export var PopupAndRedirectBlockerObserver = {
   /**
    * Handles a "DOMUpdateBlockedPopups" or "DOMUpdateBlockedRedirect" event
    * received from the JSWindowActorParent.
+   *
    * @param {*} aEvent
    */
   onDOMUpdateBlockedPopupsAndRedirect(aEvent) {
@@ -132,6 +133,7 @@ export var PopupAndRedirectBlockerObserver = {
   /**
    * Event handler that is triggered when a user clicks on the "options"
    * button in the notification which opens a popup.
+   *
    * @param {*} aEvent
    */
   async onPopupShowing(aEvent) {
@@ -263,6 +265,7 @@ export var PopupAndRedirectBlockerObserver = {
   /**
    * Event handler that is triggered when the "options" popup of the
    * notification closes.
+   *
    * @param {*} aEvent
    */
   onPopupHiding(aEvent) {
@@ -296,6 +299,7 @@ export var PopupAndRedirectBlockerObserver = {
   /**
    * Event handler that is triggered when a user clicks on one of the
    * fields in the "options" popup of the notification.
+   *
    * @param {*} aEvent
    */
   onCommand(aEvent) {

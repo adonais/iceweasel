@@ -32,6 +32,11 @@ object BrowserToolbarTestTags {
     const val SEARCH_SELECTOR = "SEARCH_SELECTOR"
 
     /**
+     * Test tag for tabs counter button shown in the toolbar while in "display" mode.
+     */
+    const val TABS_COUNTER = "ADDRESSBAR_TABS_COUNTER"
+
+    /**
      * Test tag for the toolbar while in "edit" mode.
      * Useful for entering text to search or an URL to load.
      */

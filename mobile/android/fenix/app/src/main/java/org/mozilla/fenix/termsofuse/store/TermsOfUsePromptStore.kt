@@ -79,9 +79,10 @@ sealed interface TermsOfUsePromptAction : Action {
  * A [Store] that holds the [TermsOfUsePromptState].
  */
 class TermsOfUsePromptStore(
+    initialState: TermsOfUsePromptState = TermsOfUsePromptState,
     middleware: List<Middleware<TermsOfUsePromptState, TermsOfUsePromptAction>>,
 ) : Store<TermsOfUsePromptState, TermsOfUsePromptAction>(
-    initialState = TermsOfUsePromptState,
+    initialState = initialState,
     reducer = { _, _ -> TermsOfUsePromptState },
     middleware = middleware,
 )

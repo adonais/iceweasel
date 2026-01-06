@@ -21,4 +21,6 @@
   <string name="mozac_toolbar_cfr_title">Ստեղծված է Android-ի համար։ Կատարելագործված է ձեզ համար</string>
   <!-- Text for the description displayed in the contextual feature recommendation popup promoting the new toolbar redesign. -->
   <string name="mozac_toolbar_cfr_description">Մենք թարմացրել ենք ձևավորումը՝ այն դարձնելով նորաձև և ժամանակակից։</string>
+  <!-- Content description (not visible, for screen readers etc.) for the "minimal toolbar" containing just the URL instead of the big toolbar containing also other buttons. %1$s will be replaced with the domain name of the current website. -->
+  <string name="mozac_minimal_display_toolbar_content_description">Տեքստ է մուտքագրվում %1$s-ում։ Կրկնակի հպեք՝ դադարեցնելու համար։</string>
 </resources>

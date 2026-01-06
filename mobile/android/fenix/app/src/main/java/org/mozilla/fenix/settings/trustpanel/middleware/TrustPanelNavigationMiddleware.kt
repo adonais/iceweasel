@@ -43,7 +43,7 @@ class TrustPanelNavigationMiddleware(
             when (action) {
                 is TrustPanelAction.Navigate.PrivacySecuritySettings -> navController.nav(
                     R.id.trustPanelFragment,
-                    TrustPanelFragmentDirections.actionGlobalSettingsFragment(
+                    TrustPanelFragmentDirections.actionGlobalTrackingProtectionFragment(
                         preferenceToScrollTo = privacySecurityPrefKey,
                     ),
                 )

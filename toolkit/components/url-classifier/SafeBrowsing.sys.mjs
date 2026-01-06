@@ -314,6 +314,25 @@ const FEATURES = [
       );
     },
   },
+  {
+    name: "harmfuladdon-protection",
+    list: [
+      "urlclassifier.features.harmfuladdon.blocklistTables",
+      "urlclassifier.features.harmfuladdon.entitylistTables",
+    ],
+    enabled() {
+      return Services.prefs.getBoolPref(
+        "privacy.trackingprotection.harmfuladdon.enabled",
+        false
+      );
+    },
+    update() {
+      return Services.prefs.getBoolPref(
+        "browser.safebrowsing.features.harmfuladdon.update",
+        this.enabled()
+      );
+    },
+  },
 ];
 
 export var SafeBrowsing = {

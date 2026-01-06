@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.settings.trustpanel
 
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -34,7 +33,7 @@ class TrustPanelTelemetryMiddlewareTest {
         )
         assertNull(TrackingProtection.exceptionAdded.testGetValue())
 
-        store.dispatch(TrustPanelAction.ToggleTrackingProtection).joinBlocking()
+        store.dispatch(TrustPanelAction.ToggleTrackingProtection)
 
         assertNotNull(TrackingProtection.exceptionAdded.testGetValue())
     }
@@ -48,7 +47,7 @@ class TrustPanelTelemetryMiddlewareTest {
         )
         assertNull(TrackingProtection.exceptionAdded.testGetValue())
 
-        store.dispatch(TrustPanelAction.ToggleTrackingProtection).joinBlocking()
+        store.dispatch(TrustPanelAction.ToggleTrackingProtection)
 
         assertNull(TrackingProtection.exceptionAdded.testGetValue())
     }

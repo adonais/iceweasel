@@ -8,8 +8,6 @@
 
 #include "nsVideoFrame.h"
 
-#include <algorithm>
-
 #include "ImageContainer.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/dom/HTMLImageElement.h"
@@ -357,19 +355,20 @@ nsresult nsVideoFrame::GetFrameName(nsAString& aResult) const {
 #endif
 
 nsIFrame::SizeComputationResult nsVideoFrame::ComputeSize(
-    gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
-    nscoord aAvailableISize, const LogicalSize& aMargin,
-    const LogicalSize& aBorderPadding, const StyleSizeOverrides& aSizeOverrides,
-    ComputeSizeFlags aFlags) {
+    const SizeComputationInput& aSizingInput, WritingMode aWM,
+    const LogicalSize& aCBSize, nscoord aAvailableISize,
+    const LogicalSize& aMargin, const LogicalSize& aBorderPadding,
+    const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) {
   if (!HasVideoElement()) {
     return nsContainerFrame::ComputeSize(
-        aRenderingContext, aWM, aCBSize, aAvailableISize, aMargin,
-        aBorderPadding, aSizeOverrides, aFlags);
+        aSizingInput, aWM, aCBSize, aAvailableISize, aMargin, aBorderPadding,
+        aSizeOverrides, aFlags);
   }
 
   return {ComputeSizeWithIntrinsicDimensions(
-              aRenderingContext, aWM, GetIntrinsicSize(), GetAspectRatio(),
-              aCBSize, aMargin, aBorderPadding, aSizeOverrides, aFlags),
+              aSizingInput.mRenderingContext, aWM, GetIntrinsicSize(),
+              GetAspectRatio(), aCBSize, aMargin, aBorderPadding,
+              aSizeOverrides, aFlags),
           AspectRatioUsage::None};
 }
 

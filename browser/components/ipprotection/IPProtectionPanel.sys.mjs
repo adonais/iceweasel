@@ -9,9 +9,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   IPPEnrollAndEntitleManager:
     "resource:///modules/ipprotection/IPPEnrollAndEntitleManager.sys.mjs",
+  IPPProxyManager: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
+  IPPProxyStates: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
-  IPProtectionStates:
     "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
   IPProtection: "resource:///modules/ipprotection/IPProtection.sys.mjs",
   IPPSignInWatcher: "resource:///modules/ipprotection/IPPSignInWatcher.sys.mjs",
@@ -81,6 +81,8 @@ export class IPProtectionPanel {
    *  True if we're running the Alpha variant, else false.
    * @property {boolean} hasUpgraded
    *  True if a Mozilla VPN subscription is linked to the user's Mozilla account.
+   * @property {string} onboardingMessage
+   * Continuous onboarding message to display in-panel, empty string if none applicable
    */
 
   /**
@@ -113,7 +115,7 @@ export class IPProtectionPanel {
   constructor(window) {
     this.handleEvent = this.#handleEvent.bind(this);
 
-    let { activatedAt: protectionEnabledSince } = lazy.IPProtectionService;
+    let { activatedAt: protectionEnabledSince } = lazy.IPPProxyManager;
 
     this.state = {
       isSignedOut: !lazy.IPPSignInWatcher.isSignedIn,
@@ -126,6 +128,7 @@ export class IPProtectionPanel {
       error: "",
       isAlpha: lazy.IPPEnrollAndEntitleManager.isAlpha,
       hasUpgraded: lazy.IPPEnrollAndEntitleManager.hasUpgraded,
+      onboardingMessage: "",
     };
 
     if (window) {
@@ -175,11 +178,11 @@ export class IPProtectionPanel {
   }
 
   #startProxy() {
-    lazy.IPProtectionService.start();
+    lazy.IPPProxyManager.start();
   }
 
   #stopProxy() {
-    lazy.IPProtectionService.stop();
+    lazy.IPPProxyManager.stop();
   }
 
   /**
@@ -189,7 +192,7 @@ export class IPProtectionPanel {
    */
   static showHelpPage(e) {
     let win = e.target?.ownerGlobal;
-    if (win && !Cu.isInAutomation) {
+    if (win) {
       win.openWebLinkIn(LINKS.SUPPORT_URL, "tab");
     }
 
@@ -241,6 +244,11 @@ export class IPProtectionPanel {
     this.destroy();
   }
 
+  /**
+   * Creates a panel component in a panelView.
+   *
+   * @param {MozBrowser} panelView
+   */
   #createPanel(panelView) {
     let { ownerDocument } = panelView;
 
@@ -281,6 +289,11 @@ export class IPProtectionPanel {
 
     ownerDocument.l10n.setAttributes(headerButton, "ipprotection-help-button");
     headerButton.addEventListener("click", IPProtectionPanel.showHelpPage);
+    headerButton.addEventListener("keypress", e => {
+      if (e.code == "Space" || e.code == "Enter") {
+        IPProtectionPanel.showHelpPage(e);
+      }
+    });
     return headerButton;
   }
 
@@ -373,6 +386,10 @@ export class IPProtectionPanel {
       "IPProtectionService:StateChanged",
       this.handleEvent
     );
+    lazy.IPPProxyManager.addEventListener(
+      "IPPProxyManager:StateChanged",
+      this.handleEvent
+    );
     lazy.IPPEnrollAndEntitleManager.addEventListener(
       "IPPEnrollAndEntitleManager:StateChanged",
       this.handleEvent
@@ -382,6 +399,10 @@ export class IPProtectionPanel {
   #removeProxyListeners() {
     lazy.IPPEnrollAndEntitleManager.removeEventListener(
       "IPPEnrollAndEntitleManager:StateChanged",
+      this.handleEvent
+    );
+    lazy.IPPProxyManager.removeEventListener(
+      "IPPProxyManager:StateChanged",
       this.handleEvent
     );
     lazy.IPProtectionService.removeEventListener(
@@ -408,14 +429,14 @@ export class IPProtectionPanel {
     } else if (event.type == "IPProtection:SignIn") {
       this.startLoginFlow();
     } else if (
+      event.type == "IPPProxyManager:StateChanged" ||
       event.type == "IPProtectionService:StateChanged" ||
       event.type === "IPPEnrollAndEntitleManager:StateChanged"
     ) {
-      let { state, activatedAt: protectionEnabledSince } =
-        lazy.IPProtectionService;
+      let { activatedAt: protectionEnabledSince } = lazy.IPPProxyManager;
       let hasError =
-        state === lazy.IPProtectionStates.ERROR &&
-        lazy.IPProtectionService.errors.includes(ERRORS.GENERIC);
+        lazy.IPPProxyManager.state === lazy.IPPProxyStates.ERROR &&
+        lazy.IPPProxyManager.errors.includes(ERRORS.GENERIC);
 
       this.setState({
         isSignedOut: !lazy.IPPSignInWatcher.isSignedIn,

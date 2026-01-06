@@ -89,12 +89,8 @@ bool RenderCompositorEGL::BeginFrame() {
     return false;
   }
 #ifdef MOZ_WAYLAND
-  if (mWidget->AsGTK()) {
-    if (!mWidget->AsGTK()->SetEGLNativeWindowSize(GetBufferSize())) {
-      // Wayland only check we have correct window size to avoid
-      // rendering artifacts.
-      return false;
-    }
+  if (auto* gtkWidget = mWidget->AsGTK()) {
+    gtkWidget->SetEGLNativeWindowSize(GetBufferSize());
   }
 #endif
   if (!MakeCurrent()) {

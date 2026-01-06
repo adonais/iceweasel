@@ -9,7 +9,6 @@
 #include <stdint.h>
 
 #include <algorithm>
-#include <limits>
 
 #include "AnnexB.h"
 #include "BufferStream.h"

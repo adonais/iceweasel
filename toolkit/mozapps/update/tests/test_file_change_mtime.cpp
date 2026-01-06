@@ -1,6 +1,5 @@
 #include <windows.h>
 #include <iostream>
-#include <string>
 
 void usage(int argc, wchar_t** argv) {
   std::wcout << L"Usage:\n"

@@ -377,8 +377,10 @@ export class ProfilesParent extends JSWindowActorParent {
         let { shouldEnable } = message.data;
         if (shouldEnable) {
           await profile.ensureDesktopShortcut();
+          Glean.profilesExisting.shortcut.record({ value: "create" });
         } else {
           await profile.removeDesktopShortcut();
+          Glean.profilesExisting.shortcut.record({ value: "delete" });
         }
         return {
           hasDesktopShortcut: profile.hasDesktopShortcut(),

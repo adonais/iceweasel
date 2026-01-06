@@ -385,6 +385,7 @@ UNIFIED_SOURCES += [
     "vm/HelperThreads.cpp",
     "vm/Id.cpp",
     "vm/Initialization.cpp",
+    "vm/Int128.cpp",
     "vm/InternalThreadPool.cpp",
     "vm/InvalidatingFuse.cpp",
     "vm/Iteration.cpp",

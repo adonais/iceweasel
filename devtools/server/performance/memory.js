@@ -168,9 +168,9 @@ Memory.prototype = {
    * Save a heap snapshot scoped to the current debuggees' portion of the heap
    * graph.
    *
-   * @param {Object|null} boundaries
+   * @param {object | null} boundaries
    *
-   * @returns {String} The snapshot id.
+   * @returns {string} The snapshot id.
    */
   saveHeapSnapshot: expectState(
     "attached",

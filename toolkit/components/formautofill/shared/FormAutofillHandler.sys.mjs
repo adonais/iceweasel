@@ -418,7 +418,11 @@ export class FormAutofillHandler {
 
       let value = this.getFilledValueFromProfile(fieldDetail, profile);
       if (!value) {
-        this.changeFieldState(fieldDetail, FIELD_STATES.NORMAL);
+        // A field could have been filled by a previous fill, so only
+        // clear when in the preview state.
+        if (element.autofillState == FIELD_STATES.PREVIEW) {
+          this.changeFieldState(fieldDetail, FIELD_STATES.NORMAL);
+        }
         continue;
       }
 
@@ -1182,7 +1186,43 @@ class ProfileTransformer {
     this.#creditCardExpiryDateTransformer();
     this.#creditCardExpMonthAndYearTransformer();
     this.#creditCardNameTransformer();
+    this.#addressLevelOneTransformer();
     this.#adaptFieldMaxLength();
+  }
+
+  /**
+   * Replaces an abbreviated address-level1 code (e.g. "B") with the full
+   * region name (e.g. "Buenos Aires") if the target field is a text input.
+   */
+  #addressLevelOneTransformer() {
+    const fieldName = "address-level1";
+    const fieldDetail = this.getFieldDetailByName(fieldName);
+    if (!fieldDetail || !FormAutofillUtils.isTextControl(fieldDetail.element)) {
+      return;
+    }
+
+    const element = fieldDetail.element;
+    const abbreviatedValue = this.getField(fieldName);
+    const country = this.getField("country");
+
+    const fullSubregionName = FormAutofillUtils.getFullSubregionName(
+      abbreviatedValue,
+      country
+    );
+
+    if (!fullSubregionName || fullSubregionName === abbreviatedValue) {
+      return;
+    }
+
+    // No point in using full subregion name if allowed string length is too small.
+    if (
+      element.maxLength !== -1 &&
+      fullSubregionName.length > element.maxLength
+    ) {
+      return;
+    }
+
+    this.setField(fieldName, fullSubregionName);
   }
 
   // This function mostly uses getUpdatedField as it relies on the modified

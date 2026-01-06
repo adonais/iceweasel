@@ -208,9 +208,6 @@ class DownloadMiddleware(
 
     @VisibleForTesting
     internal fun startForegroundService(intent: Intent) {
-        /**
-         * @see [StartForegroundService]
-         */
         startForegroundService {
             ContextCompat.startForegroundService(applicationContext, intent)
         }

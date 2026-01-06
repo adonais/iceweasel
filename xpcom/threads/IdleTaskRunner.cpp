@@ -238,6 +238,12 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
     DebugOnly<nsresult> rv = mScheduleTimer->InitWithNamedFuncCallback(
         ScheduleTimedOut, this, waitToSchedule,
         nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, mName);
+#ifdef DEBUG
+    if (NS_FAILED(rv)) {
+      NS_WARNING(nsCString("Failed to set IdleTaskRunner timer for:"_ns + mName)
+                     .get());
+    }
+#endif
     MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 }
@@ -282,6 +288,12 @@ void IdleTaskRunner::ResetTimer(TimeDuration aDelay) {
     DebugOnly<nsresult> rv = mTimer->InitWithNamedFuncCallback(
         TimedOut, this, aDelay.ToMilliseconds(), nsITimer::TYPE_ONE_SHOT,
         mName);
+#ifdef DEBUG
+    if (NS_FAILED(rv)) {
+      NS_WARNING(nsCString("Failed to set IdleTaskRunner timer for:"_ns + mName)
+                     .get());
+    }
+#endif
     MOZ_ASSERT(NS_SUCCEEDED(rv));
     mTimerActive = true;
   }

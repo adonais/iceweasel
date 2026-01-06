@@ -33,21 +33,17 @@ class XULInfo:
         """Return JS that when executed sets up variables so that JS expression
         predicates on XUL build info evaluate properly."""
 
-        return (
-            "var winWidget = {};"
-            "var gtkWidget = {};"
-            "var cocoaWidget = {};"
-            "var is64Bit = {};"
-            "var xulRuntime = {{ shell: true }};"
-            "var release_or_beta = getBuildConfiguration('release_or_beta');"
-            "var isDebugBuild={}; var Android={}; ".format(
-                str(self.os == "WINNT").lower(),
-                str(self.os == "Darwin").lower(),
-                str(self.os == "Linux").lower(),
-                str("x86-" not in self.abi).lower(),
-                str(self.isdebug).lower(),
-                str(self.os == "Android").lower(),
-            )
+        return f"""
+var winWidget = {str(self.os == "WINNT").lower()};
+var gtkWidget = {str(self.os == "Linux").lower()};
+var cocoaWidget = {str(self.os == "Darwin").lower()};
+var is64Bit = {str("x86-" not in self.abi).lower()};
+var xulRuntime = {{ shell: true }};
+var release_or_beta = getBuildConfiguration('release_or_beta');
+var isDebugBuild={str(self.isdebug).lower()};
+var Android={str(self.os == "Android").lower()};
+""".replace(
+            "\n", ""
         )
 
     @classmethod

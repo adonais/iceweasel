@@ -54,14 +54,14 @@ use webdriver::command::WebDriverCommand::{
     AcceptAlert, AddCookie, CloseWindow, DeleteCookie, DeleteCookies, DeleteSession, DismissAlert,
     ElementClear, ElementClick, ElementSendKeys, ExecuteAsyncScript, ExecuteScript, Extension,
     FindElement, FindElementElement, FindElementElements, FindElements, FindShadowRootElement,
-    FindShadowRootElements, FullscreenWindow, Get, GetActiveElement, GetAlertText, GetCSSValue,
-    GetComputedLabel, GetComputedRole, GetCookies, GetCurrentUrl, GetElementAttribute,
-    GetElementProperty, GetElementRect, GetElementTagName, GetElementText, GetGlobalPrivacyControl,
-    GetNamedCookie, GetPageSource, GetShadowRoot, GetTimeouts, GetTitle, GetWindowHandle,
-    GetWindowHandles, GetWindowRect, GoBack, GoForward, IsDisplayed, IsEnabled, IsSelected,
-    MaximizeWindow, MinimizeWindow, NewSession, NewWindow, PerformActions, Print, Refresh,
-    ReleaseActions, SendAlertText, SetGlobalPrivacyControl, SetPermission, SetTimeouts,
-    SetWindowRect, Status, SwitchToFrame, SwitchToParentFrame, SwitchToWindow,
+    FindShadowRootElements, FullscreenWindow, GPCGetGlobalPrivacyControl,
+    GPCSetGlobalPrivacyControl, Get, GetActiveElement, GetAlertText, GetCSSValue, GetComputedLabel,
+    GetComputedRole, GetCookies, GetCurrentUrl, GetElementAttribute, GetElementProperty,
+    GetElementRect, GetElementTagName, GetElementText, GetNamedCookie, GetPageSource,
+    GetShadowRoot, GetTimeouts, GetTitle, GetWindowHandle, GetWindowHandles, GetWindowRect, GoBack,
+    GoForward, IsDisplayed, IsEnabled, IsSelected, MaximizeWindow, MinimizeWindow, NewSession,
+    NewWindow, PerformActions, Print, Refresh, ReleaseActions, SendAlertText, SetPermission,
+    SetTimeouts, SetWindowRect, Status, SwitchToFrame, SwitchToParentFrame, SwitchToWindow,
     TakeElementScreenshot, TakeScreenshot, WebAuthnAddCredential, WebAuthnAddVirtualAuthenticator,
     WebAuthnGetCredentials, WebAuthnRemoveAllCredentials, WebAuthnRemoveCredential,
     WebAuthnRemoveVirtualAuthenticator, WebAuthnSetUserVerified,
@@ -470,15 +470,15 @@ impl MarionetteSession {
             | Print(_)
             | SetPermission(_)
             | TakeElementScreenshot(_)
+            | GPCGetGlobalPrivacyControl
+            | GPCSetGlobalPrivacyControl(_)
             | WebAuthnAddVirtualAuthenticator(_)
             | WebAuthnRemoveVirtualAuthenticator
             | WebAuthnAddCredential(_)
             | WebAuthnGetCredentials
             | WebAuthnRemoveCredential
             | WebAuthnRemoveAllCredentials
-            | WebAuthnSetUserVerified(_)
-            | GetGlobalPrivacyControl
-            | SetGlobalPrivacyControl(_) => {
+            | WebAuthnSetUserVerified(_) => {
                 WebDriverResponse::Generic(resp.into_value_response(true)?)
             }
             GetTimeouts => {
@@ -980,6 +980,12 @@ fn try_convert_to_marionette_message(
         Print(ref x) => Some(Command::WebDriver(MarionetteWebDriverCommand::Print(
             x.to_marionette()?,
         ))),
+        GPCGetGlobalPrivacyControl => Some(Command::WebDriver(
+            MarionetteWebDriverCommand::GPCGetGlobalPrivacyControl,
+        )),
+        GPCSetGlobalPrivacyControl(ref x) => Some(Command::WebDriver(
+            MarionetteWebDriverCommand::GPCSetGlobalPrivacyControl(x.to_marionette()?),
+        )),
         WebAuthnAddVirtualAuthenticator(ref x) => Some(Command::WebDriver(
             MarionetteWebDriverCommand::WebAuthnAddVirtualAuthenticator(x.to_marionette()?),
         )),
@@ -1000,12 +1006,6 @@ fn try_convert_to_marionette_message(
         )),
         WebAuthnSetUserVerified(ref x) => Some(Command::WebDriver(
             MarionetteWebDriverCommand::WebAuthnSetUserVerified(x.to_marionette()?),
-        )),
-        GetGlobalPrivacyControl => Some(Command::WebDriver(
-            MarionetteWebDriverCommand::GetGlobalPrivacyControl,
-        )),
-        SetGlobalPrivacyControl(ref x) => Some(Command::WebDriver(
-            MarionetteWebDriverCommand::SetGlobalPrivacyControl(x.to_marionette()?),
         )),
         Refresh => Some(Command::WebDriver(MarionetteWebDriverCommand::Refresh)),
         ReleaseActions => Some(Command::WebDriver(

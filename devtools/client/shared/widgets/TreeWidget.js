@@ -13,7 +13,7 @@ const { KeyCodes } = require("resource://devtools/client/shared/keycodes.js");
  *
  * @param {Node} node
  *        The container element for the tree widget.
- * @param {Object} options
+ * @param {object} options
  *        - emptyText {string}: text to display when no entries in the table.
  *        - defaultType {string}: The default type of the tree items. For ex.
  *          'js'
@@ -54,7 +54,7 @@ TreeWidget.prototype = {
   /**
    * Select any node in the tree.
    *
-   * @param {array} ids
+   * @param {Array} ids
    *        An array of ids leading upto the selected item
    */
   set selectedItem(ids) {
@@ -88,7 +88,7 @@ TreeWidget.prototype = {
   /**
    * Gets the selected item in the tree.
    *
-   * @return {array}
+   * @return {Array}
    *        An array of ids leading upto the selected item
    */
   get selectedItem() {
@@ -98,7 +98,7 @@ TreeWidget.prototype = {
   /**
    * Returns if the passed array corresponds to the selected item in the tree.
    *
-   * @return {array}
+   * @return {Array}
    *        An array of ids leading upto the requested item
    */
   isSelected(item) {
@@ -158,7 +158,7 @@ TreeWidget.prototype = {
   /**
    * Select any node in the tree.
    *
-   * @param {array} id
+   * @param {Array} id
    *        An array of ids leading upto the selected item
    */
   selectItem(id) {
@@ -286,7 +286,7 @@ TreeWidget.prototype = {
   /**
    * Check if an item exists.
    *
-   * @param {array} item
+   * @param {Array} item
    *        The array of ids leading up to the item.
    */
   exists(item) {
@@ -305,7 +305,7 @@ TreeWidget.prototype = {
   /**
    * Removes the specified item and all of its child items from the tree.
    *
-   * @param {array} item
+   * @param {Array} item
    *        The array of ids leading up to the item.
    */
   remove(item) {
@@ -492,7 +492,7 @@ TreeItem.prototype = {
    * Adds the item to the sub tree contained by this node. The item to be
    * inserted can be a direct child of this node, or further down the tree.
    *
-   * @param {array} items
+   * @param {Array} items
    *        Same as TreeWidget.add method's argument
    * @param {string} defaultType
    *        The default type of the item to be used when items[i].type is null
@@ -567,7 +567,7 @@ TreeItem.prototype = {
    * recursive method goes on till we have reached the end of the branch or the
    * current item is to be removed.
    *
-   * @param {array} items
+   * @param {Array} items
    *        Ids of items leading up to the item to be removed.
    */
   remove(items = []) {
@@ -590,7 +590,7 @@ TreeItem.prototype = {
    * If this item is to be selected, then selected and expands the item.
    * Otherwise, if a child item is to be selected, just expands this item.
    *
-   * @param {array} items
+   * @param {Array} items
    *        Ids of items leading up to the item to be selected.
    */
   setSelectedItem(items) {

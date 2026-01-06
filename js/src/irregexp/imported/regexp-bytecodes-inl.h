@@ -8,7 +8,6 @@
 #include "irregexp/imported/regexp-bytecodes.h"
 // Include the non-inl header before the rest of the headers.
 
-#include <limits>
 #include <type_traits>
 
 namespace v8 {

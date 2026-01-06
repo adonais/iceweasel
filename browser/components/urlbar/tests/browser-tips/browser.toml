@@ -21,13 +21,21 @@ https_first_disabled = true
 ["browser_tip_richSuggestion.js"]
 
 ["browser_updateAsk.js"]
-run-if = ["!msix"] # Updater is disabled in MSIX builds
+run-if = [
+  "!msix", # Updater is disabled in MSIX builds
+]
 
 ["browser_updateRefresh.js"]
-run-if = ["!msix"] # Updater is disabled in MSIX builds
+run-if = [
+  "!msix", # Updater is disabled in MSIX builds
+]
 
 ["browser_updateRestart.js"]
-run-if = ["!msix"] # Updater is disabled in MSIX builds
+run-if = [
+  "!msix", # Updater is disabled in MSIX builds
+]
 
 ["browser_updateWeb.js"]
-run-if = ["!msix"] # Updater is disabled in MSIX builds
+run-if = [
+  "!msix", # Updater is disabled in MSIX builds
+]

@@ -18,7 +18,6 @@
 #include "js/ProfilingCategory.h"
 #include "js/ProfilingStack.h"
 #include "js/RootingAPI.h"
-#include "mozilla/Assertions.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/BaseProfilerRAIIMacro.h"
 #include "mozilla/Maybe.h"

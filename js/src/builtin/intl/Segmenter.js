@@ -130,7 +130,7 @@ function InitializeSegmenter(segmenter, locales, options) {
   }
 
   // Step 6.
-  var opt = new_Record();
+  var opt = NEW_RECORD();
   lazySegmenterData.opt = opt;
 
   // Steps 7-8.

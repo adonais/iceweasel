@@ -9,9 +9,9 @@
  * editor.  An "original" source is one that is mentioned in a source
  * map.
  *
- * @param {String} url
+ * @param {string} url
  *        The URL of the original source.
- * @param {String} sourceID
+ * @param {string} sourceID
  *        The source ID of the original source, as used by the source
  *        map service.
  * @param {SourceMapLoader} sourceMapLoader
@@ -68,9 +68,9 @@ OriginalSource.prototype = {
    *
    * @param {StyleSheetResource} relatedSheet
    *        The generated style sheet's resource
-   * @param {Number} line
+   * @param {number} line
    *        Line number.
-   * @param {Number} column
+   * @param {number} column
    *        Column number.
    * @return {Location}
    *        The original location, an object with at least

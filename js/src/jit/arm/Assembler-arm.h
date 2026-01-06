@@ -11,7 +11,6 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
-#include <iterator>
 #include <type_traits>
 
 #include "jit/arm/Architecture-arm.h"

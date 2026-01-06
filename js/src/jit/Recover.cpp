@@ -2279,6 +2279,28 @@ bool RObjectKeys::recover(JSContext* cx, SnapshotIterator& iter) const {
   return true;
 }
 
+bool MObjectKeysFromIterator::writeRecoverData(
+    CompactBufferWriter& writer) const {
+  MOZ_ASSERT(canRecoverOnBailout());
+  writer.writeUnsigned(uint32_t(RInstruction::Recover_ObjectKeysFromIterator));
+  return true;
+}
+
+RObjectKeysFromIterator::RObjectKeysFromIterator(CompactBufferReader& reader) {}
+
+bool RObjectKeysFromIterator::recover(JSContext* cx,
+                                      SnapshotIterator& iter) const {
+  Rooted<JSObject*> iterObj(cx, iter.readObject());
+
+  JSObject* resultKeys = ObjectKeysFromIterator(cx, iterObj);
+  if (!resultKeys) {
+    return false;
+  }
+
+  iter.storeInstructionResult(ObjectValue(*resultKeys));
+  return true;
+}
+
 bool MObjectState::writeRecoverData(CompactBufferWriter& writer) const {
   MOZ_ASSERT(canRecoverOnBailout());
   writer.writeUnsigned(uint32_t(RInstruction::Recover_ObjectState));

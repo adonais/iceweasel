@@ -349,7 +349,7 @@ add_task(async function multipleEnginesForHostname() {
   // results.
   let otherVisitResults = [];
   for (let i = 0; i < maxResultCount; i++) {
-    let url = "https://mochi.test:8888/example/" + i;
+    let url = `https://mochi${i}.test:8888/example/` + i;
     await PlacesTestUtils.addVisits(url);
     otherVisitResults.unshift(
       makeVisitResult(context, {

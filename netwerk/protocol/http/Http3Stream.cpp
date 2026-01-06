@@ -184,6 +184,7 @@ nsresult Http3Stream::OnReadSegment(const char* buf, uint32_t count,
       rv = mSession->SendRequestBody(mStreamId, buf, count, countRead);
       if (rv == NS_BASE_STREAM_WOULD_BLOCK) {
         mSendingBlockedByFlowControlCount++;
+        mBlockedByFlowControl = true;
       }
 
       if (NS_FAILED(rv)) {

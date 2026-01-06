@@ -51,3 +51,4 @@ fuzzy(0-2,0-6229) random-if(Android) == 1912431-emoji-globalAlpha.html 1912431-e
 == 1961387-1.html 1961387-1-ref.html
 == 1961387-2.html 1961387-2-ref.html
 skip-if(!cocoaWidget) == 1964225-1.html 1964225-1-ref.html
+skip-if(useDrawSnapshot) == 2001073.html 2001073-ref.html

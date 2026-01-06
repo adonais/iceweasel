@@ -135,7 +135,7 @@ function getCCArrayElements(array) {
  * Return the shortest path between a given CCObject and a CCObject root.
  *
  * @param {CCObject} object
- * @param {array} path (shouldn't be passed from the top callsite)
+ * @param {Array} path (shouldn't be passed from the top callsite)
  * @param {set} processed (shouldn't be passed from the top callsite)
  * @returns {Array<Object{from:CCObject, name:String}>} List of CC Edges from object to root.
  */

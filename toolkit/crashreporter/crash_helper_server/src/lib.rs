@@ -16,7 +16,10 @@ use crash_helper_common::Pid;
 #[cfg(target_os = "android")]
 use crash_helper_common::RawAncillaryData;
 use crash_helper_common::{BreakpadData, BreakpadRawData, IPCConnector, IPCListener};
-use std::ffi::{c_char, CStr, OsString};
+use std::{
+    ffi::{c_char, CStr, OsString},
+    fmt::Display,
+};
 
 use crash_generation::CrashGenerator;
 use ipc_server::{IPCServer, IPCServerState};
@@ -52,26 +55,25 @@ pub unsafe extern "C" fn crash_generator_logic_desktop(
         .unwrap();
     let minidump_path = OsString::from(minidump_path);
     let listener = unsafe { CStr::from_ptr(listener) };
-    let listener = IPCListener::deserialize(listener, client_pid)
-        .map_err(|error| {
-            log::error!("Could not parse the crash generator's listener (error: {error})");
-        })
-        .unwrap();
+    let listener = unwrap_with_message(
+        IPCListener::deserialize(listener, client_pid),
+        "Could not parse the crash generator's listener",
+    );
     let pipe = unsafe { CStr::from_ptr(pipe) };
-    let connector = IPCConnector::deserialize(pipe)
-        .map_err(|error| {
-            log::error!("Could not parse the crash generator's connector (error: {error})");
-        })
-        .unwrap();
+    let connector = unwrap_with_message(
+        IPCConnector::deserialize(pipe),
+        "Could not parse the crash generator's connector",
+    );
 
-    let crash_generator = CrashGenerator::new(breakpad_data, minidump_path)
-        .map_err(|error| {
-            log::error!("Could not create the crash generator (error: {error})");
-            error
-        })
-        .unwrap();
+    let crash_generator = unwrap_with_message(
+        CrashGenerator::new(breakpad_data, minidump_path),
+        "Could not create the crash generator",
+    );
 
-    let ipc_server = IPCServer::new(listener, connector);
+    let ipc_server = unwrap_with_message(
+        IPCServer::new(listener, connector),
+        "Could not create the IPC server",
+    );
 
     main_loop(ipc_server, crash_generator)
 }
@@ -102,26 +104,28 @@ pub unsafe extern "C" fn crash_generator_logic_android(
         .into_string()
         .unwrap();
     let minidump_path = OsString::from(minidump_path);
-    let crash_generator = CrashGenerator::new(breakpad_data, minidump_path)
-        .map_err(|error| {
-            log::error!("Could not create the crash generator (error: {error})");
-            error
-        })
-        .unwrap();
-
-    let listener = IPCListener::new(0).unwrap();
-    // SAFETY: The `pipe` file descriptor passed in from the caller is
-    // guaranteed to be valid.
-    let connector = unsafe { IPCConnector::from_raw_ancillary(pipe) }
-        .map_err(|error| {
-            log::error!("Could not use the pipe (error: {error})");
-        })
-        .unwrap();
-    let ipc_server = IPCServer::new(listener, connector);
 
     // On Android the main thread is used to respond to the intents so we
     // can't block it. Run the crash generation loop in a separate thread.
-    let _ = std::thread::spawn(move || main_loop(ipc_server, crash_generator));
+    let _ = std::thread::spawn(move || {
+        let crash_generator = unwrap_with_message(
+            CrashGenerator::new(breakpad_data, minidump_path),
+            "Could not create the crash generator",
+        );
+
+        let listener = IPCListener::new(0).unwrap();
+        // SAFETY: The `pipe` file descriptor passed in from the caller is
+        // guaranteed to be valid.
+        let connector = unwrap_with_message(
+            unsafe { IPCConnector::from_raw_ancillary(pipe) },
+            "Could not use the pipe",
+        );
+        let ipc_server = unwrap_with_message(
+            IPCServer::new(listener, connector),
+            "Could not create the IPC server",
+        );
+        main_loop(ipc_server, crash_generator)
+    });
 }
 
 fn main_loop(mut ipc_server: IPCServer, mut crash_generator: CrashGenerator) -> i32 {
@@ -176,6 +180,16 @@ fn daemonize() {
                 // We're done, exit cleanly
                 nix::libc::_exit(0);
             },
+        }
+    }
+}
+
+fn unwrap_with_message<T, E: Display>(res: Result<T, E>, error_string: &str) -> T {
+    match res {
+        Ok(value) => value,
+        Err(error) => {
+            log::error!("{error_string} (error: {error})");
+            panic!("{} (error: {})", error_string, error);
         }
     }
 }

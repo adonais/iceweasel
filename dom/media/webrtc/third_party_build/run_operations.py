@@ -4,6 +4,7 @@
 import os
 import subprocess
 import sys
+from enum import Enum, auto
 
 # This is a collection of helper functions that use the subprocess.run
 # command to execute commands.  In the future, if we have cases where
@@ -98,3 +99,16 @@ def update_resume_state(state, resume_state_filename):
     with open(resume_state_filename, "w") as ofile:
         ofile.write(state)
         ofile.write("\n")
+
+
+class RepoType(Enum):
+    HG = auto()
+    GIT = auto()
+
+
+def detect_repo_type():
+    if os.path.exists(".git"):
+        return RepoType.GIT
+    elif os.path.exists(".hg"):
+        return RepoType.HG
+    return None

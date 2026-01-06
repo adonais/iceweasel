@@ -26,9 +26,19 @@ MARKUPMAP(
     },
     0)
 
-MARKUPMAP(abbr, New_HyperText, 0)
+MARKUPMAP(
+    abbr,
+    [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
+      return new HTMLAbbreviationAccessible(aElement, aContext->Document());
+    },
+    0)
 
-MARKUPMAP(acronym, New_HyperText, 0)
+MARKUPMAP(
+    acronym,
+    [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
+      return new HTMLAbbreviationAccessible(aElement, aContext->Document());
+    },
+    0)
 
 MARKUPMAP(address, New_HyperText, roles::GROUPING)
 

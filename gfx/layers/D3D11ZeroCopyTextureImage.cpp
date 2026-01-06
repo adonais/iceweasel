@@ -5,7 +5,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <d3d11.h>
-#include <memory>
 #include <mfobjects.h>
 
 #include "D3D11ZeroCopyTextureImage.h"

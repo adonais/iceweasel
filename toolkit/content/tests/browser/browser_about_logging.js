@@ -41,6 +41,7 @@ function clearUploadedProfilesDB(content) {
 /**
  * This function will select a node from the XPath.
  * This function has been copied from the devtools' performance panel's tests.
+ *
  * @returns {HTMLElement?}
  */
 function getElementByXPath(document, path) {

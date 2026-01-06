@@ -229,7 +229,7 @@ public:
 
     int onGetUPEM() const override
     {
-        return 0;
+        return fFTFace->units_per_EM;
     }
 
     SkTypeface::LocalizedStrings* onCreateFamilyNameIterator() const override

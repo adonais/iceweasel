@@ -7,7 +7,6 @@
 #include "mozilla/intl/calendar/ICU4XCalendar.h"
 
 #include <stdint.h>
-#include <string_view>
 
 namespace mozilla::intl::calendar {
 
@@ -36,17 +35,8 @@ class ICU4XChineseBasedCalendar : public ICU4XCalendar {
   bool requiresFallbackForExtendedYear(int32_t year) const override;
   bool requiresFallbackForGregorianYear(int32_t year) const override;
 
-  /**
-   * Difference to the related Gregorian year.
-   */
-  virtual int32_t relatedYearDifference() const = 0;
-
-  static constexpr int32_t chineseRelatedYearDiff = -2637;
-
  public:
   bool inTemporalLeapYear(UErrorCode& status) const override;
-  int32_t getRelatedYear(UErrorCode& status) const override;
-  void setRelatedYear(int32_t year) override;
 
  protected:
   void handleComputeFields(int32_t julianDay, UErrorCode& status) override;

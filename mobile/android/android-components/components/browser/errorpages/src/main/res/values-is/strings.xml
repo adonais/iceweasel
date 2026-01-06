@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Villa vegna svindlsvæðis</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Vefsvæðið %1$s hefur verið tilkynnt sem svindlsvæði og aðgangur hefur verið hindraður vegna öryggisstillinga.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Lokað á vefsvæði til öryggis</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Lokað hefur verið á þessa vefsíðu á %1$s vegna þess að ein af viðbótunum þínum reyndi að opna hana. Þessi síða gæti verið notuð til að stela upplýsingum frá þér - eins og til dæmis lykilorðum eða greiðslukortanúmerum.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Öruggt vefsvæði ekki tiltækt</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

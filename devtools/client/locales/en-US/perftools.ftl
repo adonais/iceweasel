@@ -164,6 +164,9 @@ perftools-presets-power-description = Preset for investigating power use bugs in
 perftools-presets-debug-label = Debug
 perftools-presets-debug-description = Preset for debugging in { -brand-shorter-name }. High overhead, do not use for performance work but use for focusing on understanding browser behavior.
 
+perftools-presets-web-compat-label = Web Compat
+perftools-presets-web-compat-description = Recommended preset for debugging web compatibility issues in websites, rather than tracking performance.
+
 perftools-presets-custom-label = Custom
 
 ##

@@ -124,7 +124,7 @@
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_browsing_malware_uri_message"><![CDATA[<p>A(z) %1$s címen működő webhelyről bejelentés érkezett, hogy támadó webhely, ezért a biztonsági beállítások alapján a böngésző a hozzáférést nem engedélyezi.</p>]]></string>
   <!-- The document title and heading of an error page. -->
-  <string name="mozac_browser_errorpages_safe_browsing_unwanted_uri_title">Nem kívánt szoftvert terjesztő webhely probléma</string>
+  <string name="mozac_browser_errorpages_safe_browsing_unwanted_uri_title">Nem kívánt webhely miatti probléma</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_browsing_unwanted_uri_message"><![CDATA[<p>A(z) %1$s címen működő webhelyről bejelentés érkezett, hogy nem kívánatos szoftvereket szolgál ki, ezért a biztonsági beállítások alapján a böngésző a hozzáférést nem engedélyezi.</p>]]></string>
   <!-- The document title and heading of an error page. -->
@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Félrevezető oldal probléma</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>A(z) %1$s címen működő webhelyről bejelentés érkezett, hogy félrevezető webhely, ezért a biztonsági beállítások alapján a böngésző a hozzáférést nem engedélyezi.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">A webhely az Ön biztonsága érdekében blokkolva</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>A(z) %1$s címen található weboldal le lett tiltva, mert az egyik kiegészítője megpróbálta megnyitni. Ez a webhely felhasználható arra, hogy ellopják az információit – például a jelszavait vagy bankkártyaszámait.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Biztonságos webhely nem érhető el</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

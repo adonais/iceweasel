@@ -78,7 +78,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   // Start reading the cache entry into memory and call completion
   // function when done
   nsresult Prefetch(nsILoadContextInfo* aLoadContextInfo, bool& aShouldSuspend,
-                    const std::function<void()>& aFunc);
+                    const std::function<void(nsresult)>& aFunc);
 
   const nsCString& GetHash() const { return mHash; }
 
@@ -117,7 +117,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
 
   // aFunc is called when we have finished reading a dictionary from the
   // cache, or we have no users waiting for cache data (cancelled, etc)
-  void CallbackOnCacheRead(const std::function<void()>& aFunc) {
+  void CallbackOnCacheRead(const std::function<void(nsresult)>& aFunc) {
     // the reasons to call back are identical to Prefetch()
     mWaitingPrefetch.AppendElement(aFunc);
   }
@@ -125,6 +125,13 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   const nsACString& GetURI() const { return mURI; }
 
   const Vector<uint8_t>& GetDictionary() const { return mDictionaryData; }
+
+  // Clear dictionary data for testing (forces reload from cache on next
+  // prefetch)
+  void ClearDataForTesting() {
+    mDictionaryData.clear();
+    mDictionaryDataComplete = false;
+  }
 
   // Accumulate a hash while saving a file being received to the cache
   void AccumulateHash(const char* aBuf, int32_t aCount);
@@ -193,7 +200,7 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   nsCOMPtr<nsICryptoHash> mCrypto;
 
   // call these when prefetch is complete
-  nsTArray<std::function<void()>> mWaitingPrefetch;
+  nsTArray<std::function<void(nsresult)>> mWaitingPrefetch;
 
   // If we need to Write() an entry before we know the hash, remember the origin
   // here (creates a temporary cycle). Clear on StopRequest
@@ -349,6 +356,12 @@ class DictionaryCache final {
 
   // Clears all ports at host
   void Clear();
+
+  // Corrupt the hash of a dictionary entry for testing
+  void CorruptHashForTesting(const nsACString& aURI);
+
+  // Clear the dictionary data while keeping the entry (for testing)
+  void ClearDictionaryDataForTesting(const nsACString& aURI);
 
   // return an entry
   void GetDictionaryFor(

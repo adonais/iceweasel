@@ -238,7 +238,7 @@ class Searchfox(ReferenceRole):
         See :searchfox:`browser/base/content/browser-places.js` for more details.
 
     Will generate a link to
-    ``https://searchfox.org/mozilla-central/source/browser/base/content/browser-places.js``
+    ``https://searchfox.org/firefox-main/source/browser/base/content/browser-places.js``
 
     The example above will use the path as the text, to use custom text:
 
@@ -247,7 +247,7 @@ class Searchfox(ReferenceRole):
 
     To specify a different source tree:
 
-        See :searchfox:`mozilla-beta:browser/base/content/browser-places.js`
+        See :searchfox:`firefox-beta:browser/base/content/browser-places.js`
         for more details.
     """
 
@@ -257,7 +257,7 @@ class Searchfox(ReferenceRole):
         if ":" in self.target:
             source, path = self.target.split(":", 1)
         else:
-            source = "mozilla-central"
+            source = "firefox-main"
             path = self.target
 
         url = base.format(source=source, path=path)

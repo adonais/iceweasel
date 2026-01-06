@@ -21,7 +21,6 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
  * is visible. You can use the "expanded" attribute to force the accordion
  * card to show its content on initial render.
  *
- *
  * @property {string} heading - The heading text that will be used for the card.
  * @property {string} iconSrc - Path to the icon that should be displayed in the card.
  * @property {string} type - (optional) The type of card. No type specified

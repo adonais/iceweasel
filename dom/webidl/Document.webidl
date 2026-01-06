@@ -176,7 +176,7 @@ partial interface Document {
   boolean queryCommandIndeterm(DOMString commandId);
   [Throws]
   boolean queryCommandState(DOMString commandId);
-  [Throws, NeedsCallerType]
+  [Throws, NeedsSubjectPrincipal]
   boolean queryCommandSupported(DOMString commandId);
   [Throws]
   DOMString queryCommandValue(DOMString commandId);
@@ -739,14 +739,22 @@ partial interface Document {
     readonly attribute FragmentDirective fragmentDirective;
 };
 
-// https://drafts.csswg.org/css-view-transitions-1/#additions-to-document-api
-partial interface Document {
-  [Pref="dom.viewTransitions.enabled"]
-  ViewTransition startViewTransition(optional ViewTransitionUpdateCallback updateCallback);
+
+callback ViewTransitionUpdateCallback = Promise<any> ();
+dictionary StartViewTransitionOptions {
+  ViewTransitionUpdateCallback? update = null;
+  sequence<DOMString>? types = null;
 };
 
-// https://github.com/w3c/csswg-drafts/pull/10767 for the name divergence in the spec
-callback ViewTransitionUpdateCallback = Promise<any> ();
+// https://drafts.csswg.org/css-view-transitions-2/#idl-index
+partial interface Document {
+  [Pref="dom.viewTransitions.enabled"]
+  ViewTransition startViewTransition(
+    optional (ViewTransitionUpdateCallback or StartViewTransitionOptions) callbackOptions = {}
+  );
+  [Pref="dom.viewTransitions.enabled"]
+  readonly attribute ViewTransition? activeViewTransition;
+};
 
 // https://wicg.github.io/sanitizer-api/#sanitizer-api
 partial interface Document {

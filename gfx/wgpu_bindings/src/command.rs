@@ -9,7 +9,7 @@ use wgc::{
         ComputePassDescriptor, PassTimestampWrites, RenderPassColorAttachment,
         RenderPassDepthStencilAttachment,
     },
-    id::CommandEncoderId,
+    id::{CommandEncoderId, TextureViewId},
 };
 use wgt::{BufferAddress, BufferSize, Color, DynamicOffset, IndexFormat};
 
@@ -51,7 +51,7 @@ pub struct Pass<C> {
 pub struct RecordedRenderPass {
     base: Pass<RenderCommand>,
     color_attachments: Vec<Option<RenderPassColorAttachment>>,
-    depth_stencil_attachment: Option<RenderPassDepthStencilAttachment>,
+    depth_stencil_attachment: Option<RenderPassDepthStencilAttachment<TextureViewId>>,
     timestamp_writes: Option<PassTimestampWrites>,
     occlusion_query_set_id: Option<id::QuerySetId>,
 }
@@ -60,7 +60,7 @@ impl RecordedRenderPass {
     pub fn new(
         label: Option<String>,
         color_attachments: Vec<Option<RenderPassColorAttachment>>,
-        depth_stencil_attachment: Option<RenderPassDepthStencilAttachment>,
+        depth_stencil_attachment: Option<RenderPassDepthStencilAttachment<TextureViewId>>,
         timestamp_writes: Option<PassTimestampWrites>,
         occlusion_query_set_id: Option<id::QuerySetId>,
     ) -> Self {
@@ -717,6 +717,7 @@ pub fn replay_render_pass(
             depth_stencil_attachment: src_pass.depth_stencil_attachment.as_ref(),
             timestamp_writes: src_pass.timestamp_writes.as_ref(),
             occlusion_query_set: src_pass.occlusion_query_set_id,
+            multiview_mask: None,
         },
     );
     if let Some(err) = err {

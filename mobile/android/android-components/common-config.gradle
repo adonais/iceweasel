@@ -6,7 +6,7 @@ android {
         }
     }
 
-    compileSdk config.compileSdkVersion
+    compileSdk { version = release(config.compileSdkMajorVersion) { minorApiLevel = config.compileSdkMinorVersion } }
 
     defaultConfig {
         minSdk config.minSdkVersion
@@ -21,6 +21,7 @@ android {
                 // With our L10N process its totally possible to have missing or (temporarily) extra translations.
         disable 'MissingTranslation',
                 'ExtraTranslation',
+                'MissingDefaultResource',
                 // We do not want to enforce this as a generic rule for all languages (see #6117, #6056, #6118)
                 'TypographyEllipsis',
                 // https://github.com/mozilla-mobile/android-components/issues/10641

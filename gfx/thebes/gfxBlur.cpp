@@ -15,7 +15,6 @@
 #include "nsExpirationTracker.h"
 #include "nsClassHashtable.h"
 #include "gfxUtils.h"
-#include <limits>
 #include <cmath>
 
 using namespace mozilla;

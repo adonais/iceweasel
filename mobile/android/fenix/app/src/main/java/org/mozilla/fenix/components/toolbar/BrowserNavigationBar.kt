@@ -49,7 +49,7 @@ class BrowserNavigationBar(
     private val hideWhenKeyboardShown: Boolean,
     customTabSession: CustomTabSessionState? = null,
 ) : FenixBrowserToolbarView(
-    context = context,
+    parent = container,
     settings = settings,
     customTabSession = customTabSession,
 ) {

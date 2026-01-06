@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <cstdio>
-#include <type_traits>
 #include <utility>
 
 #include "CipherStrategy.h"

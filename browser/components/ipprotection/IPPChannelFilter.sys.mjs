@@ -70,35 +70,90 @@ export class IPPChannelFilter {
   }
 
   /**
+   * Takes a protocol definition and constructs the appropriate nsIProxyInfo
+   *
+   * @typedef {import("./IPProtectionServerlist.sys.mjs").MasqueProtocol} MasqueProtocol
+   * @typedef {import("./IPProtectionServerlist.sys.mjs").ConnectProtocol } ConnectProtocol
+   *
+   * @param {string} authToken - a bearer token for the proxy server.
+   * @param {string} isolationKey - the isolation key for the proxy connection.
+   * @param {MasqueProtocol|ConnectProtocol} protocol - the protocol definition.
+   * @param {nsIProxyInfo} fallBackInfo - optional fallback proxy info.
+   * @returns {nsIProxyInfo}
+   */
+  static constructProxyInfo(
+    authToken,
+    isolationKey,
+    protocol,
+    fallBackInfo = null
+  ) {
+    switch (protocol.name) {
+      case "masque":
+        return lazy.ProxyService.newMASQUEProxyInfo(
+          protocol.host,
+          protocol.port,
+          protocol.templateString,
+          authToken,
+          isolationKey,
+          TRANSPARENT_PROXY_RESOLVES_HOST,
+          failOverTimeout,
+          fallBackInfo
+        );
+      case "connect":
+        return lazy.ProxyService.newProxyInfo(
+          protocol.scheme,
+          protocol.host,
+          protocol.port,
+          authToken,
+          isolationKey,
+          TRANSPARENT_PROXY_RESOLVES_HOST,
+          failOverTimeout,
+          fallBackInfo
+        );
+      default:
+        throw new Error(
+          "Cannot construct ProxyInfo for Unknown server-protocol: " +
+            protocol.name
+        );
+    }
+  }
+  /**
+   * Takes a server definition and constructs the appropriate nsIProxyInfo
+   * If the server supports multiple Protocols, a fallback chain will be created.
+   * The first protocol in the list will be the primary one, with the others as fallbacks.
+   *
+   * @typedef {import("./IPProtectionServerlist.sys.mjs").Server} Server
+   * @param {string} authToken - a bearer token for the proxy server.
+   * @param {Server} server - the server to connect to.
+   * @returns {nsIProxyInfo}
+   */
+  static serverToProxyInfo(authToken, server) {
+    const isolationKey = IPPChannelFilter.makeIsolationKey();
+    return server.protocols.reduceRight((fallBackInfo, protocol) => {
+      return IPPChannelFilter.constructProxyInfo(
+        authToken,
+        isolationKey,
+        protocol,
+        fallBackInfo
+      );
+    }, null);
+  }
+
+  /**
    * Initialize a IPPChannelFilter object. After this step, the filter, if
    * active, will process the new and the pending channels.
    *
+   * @typedef {import("./IPProtectionServerlist.sys.mjs").Server} Server
    * @param {string} authToken - a bearer token for the proxy server.
-   * @param {string} host - the host of the proxy server.
-   * @param {number} port - the port of the proxy server.
-   * @param {string} proxyType - "socks" or "http" or "https"
+   * @param {Server} server - the server to connect to.
    */
-  initialize(authToken = "", host = "", port = 443, proxyType = "https") {
+  initialize(authToken = "", server) {
     if (this.proxyInfo) {
       throw new Error("Double initialization?!?");
     }
-
-    const newInfo = lazy.ProxyService.newProxyInfo(
-      proxyType,
-      host,
-      port,
-      authToken,
-      IPPChannelFilter.makeIsolationKey(),
-      TRANSPARENT_PROXY_RESOLVES_HOST,
-      failOverTimeout,
-      null // Failover proxy info
-    );
-    if (!newInfo) {
-      throw new Error("Failed to create proxy info");
-    }
-
-    Object.freeze(newInfo);
-    this.proxyInfo = newInfo;
+    const proxyInfo = IPPChannelFilter.serverToProxyInfo(authToken, server);
+    Object.freeze(proxyInfo);
+    this.proxyInfo = proxyInfo;
 
     this.#processPendingChannels();
   }

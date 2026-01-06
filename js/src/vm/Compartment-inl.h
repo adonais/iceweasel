@@ -9,8 +9,6 @@
 
 #include "vm/Compartment.h"
 
-#include <type_traits>
-
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "jsnum.h"

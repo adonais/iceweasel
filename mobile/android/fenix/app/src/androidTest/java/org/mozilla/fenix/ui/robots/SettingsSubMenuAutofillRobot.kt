@@ -8,16 +8,17 @@ import android.util.Log
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isNotDisplayed
 import androidx.compose.ui.test.junit4.ComposeTestRule
-import androidx.compose.ui.test.onChildAt
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.onView
@@ -33,21 +34,21 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.uiautomator.UiSelector
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.endsWith
-import org.junit.Assert.assertEquals
 import org.mozilla.fenix.R
 import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.hasCousin
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 import org.mozilla.fenix.helpers.click
+import org.mozilla.fenix.helpers.ext.clearAndSetText
 import org.mozilla.fenix.settings.address.ui.edit.EditAddressTestTag
+import org.mozilla.fenix.settings.creditcards.ui.CreditCardEditorTestTags
 
 class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule) {
 
@@ -91,7 +92,6 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
             saveAndAutofillCreditCardsOption(),
             saveAndAutofillCreditCardsSummary(),
             syncCreditCardsAcrossDevicesButton(),
-
         )
 
         if (userHasSavedCreditCard) {
@@ -280,6 +280,7 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         Log.i(TAG, "clickAddAddressButton: Trying to click the \"Add address\" button")
         addAddressButton().click()
         Log.i(TAG, "clickAddAddressButton: Clicked the \"Add address\" button")
+        waitForAppWindowToBeUpdated()
     }
     fun clickManageAddressesButton() {
         Log.i(TAG, "clickManageAddressesButton: Trying to click the \"Manage addresses\" button")
@@ -325,6 +326,10 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
     }
 
     fun clickCountryDropdown() {
+        Log.i(TAG, "clickCountryDropdown: Trying to close the keyboard.")
+        closeSoftKeyboard()
+        Log.i(TAG, "clickCountryDropdown: Closed the keyboard.")
+        waitForAppWindowToBeUpdated()
         Log.i(TAG, "clickCountryDropdown: Trying to click \"Country or region\" dropdown")
         composeTestRule.countryDropDown().performClick()
         Log.i(TAG, "clickCountryDropdown: Clicked \"Country or region\" dropdown")
@@ -387,6 +392,9 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Zip\" to $zipCode")
         composeTestRule.zipCodeTextInput().performTextInput(zipCode)
         Log.i(TAG, "fillAndSaveAddress: \"Zip\" was set to $zipCode")
+        Log.i(TAG, "fillAndSaveAddress: Trying to close the keyboard.")
+        closeSoftKeyboard()
+        Log.i(TAG, "fillAndSaveAddress: Closed the keyboard.")
         Log.i(TAG, "fillAndSaveAddress: Trying to click \"Country or region\" dropdown button")
         composeTestRule.countryDropDown().performClick()
         Log.i(TAG, "fillAndSaveAddress: Clicked \"Country or region\" dropdown button")
@@ -396,9 +404,15 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Phone\" to $phoneNumber")
         composeTestRule.phoneTextInput().performTextInput(phoneNumber)
         Log.i(TAG, "fillAndSaveAddress: \"Phone\" was set to $phoneNumber")
+        Log.i(TAG, "fillAndSaveAddress: Trying to close the keyboard.")
+        closeSoftKeyboard()
+        Log.i(TAG, "fillAndSaveAddress: Closed the keyboard.")
         Log.i(TAG, "fillAndSaveAddress: Trying to set \"Email\" to $emailAddress")
         composeTestRule.emailTextInput().performTextInput(emailAddress)
         Log.i(TAG, "fillAndSaveAddress: \"Email\" was set to $emailAddress")
+        Log.i(TAG, "fillAndSaveAddress: Trying to close the keyboard.")
+        closeSoftKeyboard()
+        Log.i(TAG, "fillAndSaveAddress: Closed the keyboard.")
         Log.i(TAG, "fillAndSaveAddress: Trying to click the \"Save\" button")
         if (composeTestRule.saveButton().isNotDisplayed()) {
             composeTestRule.saveButton().performScrollTo()
@@ -430,20 +444,30 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         savedCreditCardNumber().clickAndWaitForNewWindow(waitingTime)
         Log.i(TAG, "clickSavedCreditCard: Clicked the saved credit card and and waited for $waitingTime ms for a new window")
     }
+
+    @OptIn(ExperimentalTestApi::class)
     fun clickDeleteCreditCardToolbarButton() {
         Log.i(TAG, "clickDeleteCreditCardToolbarButton: Waiting for $waitingTime ms for the delete credit card toolbar button to exist")
-        deleteCreditCardToolbarButton().waitForExists(waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasTestTag(CreditCardEditorTestTags.TOPBAR_DELETE_BUTTON),
+            waitingTime,
+        )
         Log.i(TAG, "clickDeleteCreditCardToolbarButton: Waited for $waitingTime ms for the delete credit card toolbar button to exist")
         Log.i(TAG, "clickDeleteCreditCardToolbarButton: Trying to click the delete credit card toolbar button")
-        deleteCreditCardToolbarButton().click()
+        composeTestRule.deleteCreditCardToolbarButton().performClick()
         Log.i(TAG, "clickDeleteCreditCardToolbarButton: Clicked the delete credit card toolbar button")
     }
+
+    @OptIn(ExperimentalTestApi::class)
     fun clickDeleteCreditCardMenuButton() {
         Log.i(TAG, "clickDeleteCreditCardMenuButton: Waiting for $waitingTime ms for the delete credit card menu button to exist")
-        deleteCreditCardMenuButton().waitForExists(waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasTestTag(CreditCardEditorTestTags.DELETE_BUTTON),
+            waitingTime,
+        )
         Log.i(TAG, "clickDeleteCreditCardMenuButton: Waited for $waitingTime ms for the delete credit card menu button to exist")
         Log.i(TAG, "clickDeleteCreditCardMenuButton: Trying to click the delete credit card menu button")
-        deleteCreditCardMenuButton().click()
+        composeTestRule.deleteFormButton().performClick()
         Log.i(TAG, "clickDeleteCreditCardMenuButton: Clicked the delete credit card menu button")
     }
     fun clickSaveAndAutofillCreditCardsOption() {
@@ -454,89 +478,112 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
 
     fun clickConfirmDeleteCreditCardButton() {
         Log.i(TAG, "clickConfirmDeleteCreditCardButton: Trying to click the \"Delete\" credit card dialog button")
-        confirmDeleteCreditCardButton().click()
+        composeTestRule.confirmDeleteCreditCardButton().performClick()
         Log.i(TAG, "clickConfirmDeleteCreditCardButton: Clicked the \"Delete\" credit card dialog button")
     }
 
     fun clickCancelDeleteCreditCardButton() {
         Log.i(TAG, "clickCancelDeleteCreditCardButton: Trying to click the \"Cancel\" credit card dialog button")
-        cancelDeleteCreditCardButton().click()
+        composeTestRule.cancelDeleteCreditCardButton().performClick()
         Log.i(TAG, "clickCancelDeleteCreditCardButton: Clicked the \"Cancel\" credit card dialog button")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun clickExpiryMonthOption(expiryMonth: String) {
         Log.i(TAG, "clickExpiryMonthOption: Waiting for $waitingTime ms for the $expiryMonth expiry month option to exist")
-        expiryMonthOption(expiryMonth).waitForExists(waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasText(expiryMonth, substring = true, ignoreCase = true),
+            waitingTime,
+        )
         Log.i(TAG, "clickExpiryMonthOption: Waited for $waitingTime ms for the $expiryMonth expiry month option to exist")
         Log.i(TAG, "clickExpiryMonthOption: Trying to click $expiryMonth expiry month option")
-        expiryMonthOption(expiryMonth).click()
+        composeTestRule.expiryMonthOption(expiryMonth).performClick()
         Log.i(TAG, "clickExpiryMonthOption: Clicked $expiryMonth expiry month option")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun clickExpiryYearOption(expiryYear: String) {
         Log.i(TAG, "clickExpiryYearOption: Waiting for $waitingTime ms for the $expiryYear expiry year option to exist")
-        expiryYearOption(expiryYear).waitForExists(waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasText(expiryYear, substring = true, ignoreCase = true),
+            waitingTime,
+        )
         Log.i(TAG, "clickExpiryYearOption: Waited for $waitingTime ms for the $expiryYear expiry year option to exist")
+
         Log.i(TAG, "clickExpiryYearOption: Trying to click $expiryYear expiry year option")
-        expiryYearOption(expiryYear).click()
+        composeTestRule.expiryYearOption(expiryYear).performClick()
         Log.i(TAG, "clickExpiryYearOption: Clicked $expiryYear expiry year option")
     }
 
     fun verifyAddCreditCardsButton() = assertUIObjectExists(addCreditCardButton())
 
+    @OptIn(ExperimentalTestApi::class)
     fun fillAndSaveCreditCard(cardNumber: String, cardName: String, expiryMonth: String, expiryYear: String) {
         Log.i(TAG, "fillAndSaveCreditCard: Waiting for $waitingTime ms for the credit card number text field to exist")
-        creditCardNumberTextInput().waitForExists(waitingTime)
+        composeTestRule.waitUntilAtLeastOneExists(
+            hasTestTag(CreditCardEditorTestTags.CARD_NUMBER_FIELD),
+            waitingTime,
+        )
         Log.i(TAG, "fillAndSaveCreditCard: Waited for $waitingTime ms for the credit card number text field to exist")
         Log.i(TAG, "fillAndSaveCreditCard: Trying to set the credit card number to: $cardNumber")
-        creditCardNumberTextInput().setText(cardNumber)
+        composeTestRule.creditCardNumberTextInput().clearAndSetText(cardNumber)
         Log.i(TAG, "fillAndSaveCreditCard: The credit card number was set to: $cardNumber")
         Log.i(TAG, "fillAndSaveCreditCard: Trying to set the name on card to: $cardName")
-        nameOnCreditCardTextInput().setText(cardName)
+        composeTestRule.nameOnCreditCardTextInput().clearAndSetText(cardName)
         Log.i(TAG, "fillAndSaveCreditCard: The credit card name was set to: $cardName")
         Log.i(TAG, "fillAndSaveCreditCard: Trying to click the expiry month dropdown")
-        expiryMonthDropDown().click()
+        composeTestRule.expiryMonthDropDown().performClick()
+
         Log.i(TAG, "fillAndSaveCreditCard: Clicked the expiry month dropdown")
         Log.i(TAG, "fillAndSaveCreditCard: Trying to click $expiryMonth expiry month option")
         clickExpiryMonthOption(expiryMonth)
         Log.i(TAG, "fillAndSaveCreditCard: Clicked $expiryMonth expiry month option")
         Log.i(TAG, "fillAndSaveCreditCard: Trying to click the expiry year dropdown")
-        expiryYearDropDown().click()
+        composeTestRule.expiryYearDropDown().performClick()
         Log.i(TAG, "fillAndSaveCreditCard: Clicked the expiry year dropdown")
         Log.i(TAG, "fillAndSaveCreditCard: Trying to click $expiryYear expiry year option")
         clickExpiryYearOption(expiryYear)
         Log.i(TAG, "fillAndSaveCreditCard: Clicked $expiryYear expiry year option")
         Log.i(TAG, "fillAndSaveCreditCard: Trying to click the \"Save\" button")
-        saveButton().click()
+        composeTestRule.saveFormButton().performClick()
         Log.i(TAG, "fillAndSaveCreditCard: Clicked the \"Save\" button")
         Log.i(TAG, "fillAndSaveCreditCard: Waiting for $waitingTime ms for the \"Manage saved cards\" button to exist")
         manageSavedCreditCardsButton().waitForExists(waitingTime)
         Log.i(TAG, "fillAndSaveCreditCard: Waited for $waitingTime ms for the \"Manage saved cards\" button to exist")
     }
 
+    @OptIn(ExperimentalTestApi::class)
     fun clearCreditCardNumber() =
-        creditCardNumberTextInput().also {
+        composeTestRule.creditCardNumberTextInput().also {
             Log.i(TAG, "clearCreditCardNumber: Waiting for $waitingTime ms for the credit card number text field to exist")
-            it.waitForExists(waitingTime)
+            composeTestRule.waitUntilAtLeastOneExists(
+                hasTestTag(CreditCardEditorTestTags.CARD_NUMBER_FIELD),
+                waitingTime,
+            )
             Log.i(TAG, "clearCreditCardNumber: Waited for $waitingTime ms for the credit card number text field to exist")
+
             Log.i(TAG, "clearCreditCardNumber: Trying to clear the credit card number text field")
-            it.clearTextField()
+            it.performTextClearance()
             Log.i(TAG, "clearCreditCardNumber: Cleared the credit card number text field")
         }
 
+    @OptIn(ExperimentalTestApi::class)
     fun clearNameOnCreditCard() =
-        nameOnCreditCardTextInput().also {
+        composeTestRule.nameOnCreditCardTextInput().also {
             Log.i(TAG, "clearNameOnCreditCard: Waiting for $waitingTime ms for name on card text field to exist")
-            it.waitForExists(waitingTime)
+            composeTestRule.waitUntilAtLeastOneExists(
+                hasTestTag(CreditCardEditorTestTags.NAME_ON_CARD_FIELD),
+                waitingTime,
+            )
             Log.i(TAG, "clearNameOnCreditCard: Waited for $waitingTime ms for name on card text field to exist")
             Log.i(TAG, "clearNameOnCreditCard: Trying to clear the name on card text field")
-            it.clearTextField()
+            it.performTextClearance()
             Log.i(TAG, "clearNameOnCreditCard: Cleared the name on card text field")
         }
 
     fun clickSaveCreditCardToolbarButton() {
         Log.i(TAG, "clickSaveCreditCardToolbarButton: Trying to click the save credit card toolbar button")
-        saveCreditCardToolbarButton().click()
+        composeTestRule.saveCreditCardToolbarButton().performClick()
         Log.i(TAG, "clickSaveCreditCardToolbarButton: Clicked the save credit card toolbar button")
     }
 
@@ -545,46 +592,55 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         cardName: String,
         expiryMonth: String,
         expiryYear: String,
-    ) {
-        assertUIObjectExists(
-            editCreditCardToolbarTitle(),
-            navigateBackButton(),
-            deleteCreditCardToolbarButton(),
-            saveCreditCardToolbarButton(),
-        )
+    ) = with(composeTestRule) {
+        editCreditCardToolbarTitle()
+            .assertExists("Unable to assert that the edit credit card toolbar title exists")
+        deleteCreditCardToolbarButton()
+            .assertExists("Unable to assert that the delete credit card toolbar button exists")
+        saveCreditCardToolbarButton()
+            .assertExists("Unable to assert that the save credit card toolbar button exists")
+
         Log.i(TAG, "verifyEditCreditCardView: Trying to verify that the card number text field is set to: $cardNumber")
-        assertEquals(cardNumber, creditCardNumberTextInput().text)
+        creditCardNumberTextInput()
+            .assertTextContains(cardNumber)
         Log.i(TAG, "verifyEditCreditCardView: Verified that the card number text field was set to: $cardNumber")
         Log.i(TAG, "verifyEditCreditCardView: Trying to verify that the card name text field is set to: $cardName")
-        assertEquals(cardName, nameOnCreditCardTextInput().text)
+        nameOnCreditCardTextInput().assertTextContains(cardName)
         Log.i(TAG, "verifyEditCreditCardView: Verified that the card card name text field was set to: $cardName")
 
         // Can't get the text from the drop-down items, need to verify them individually
-        assertUIObjectExists(
-            expiryYearDropDown(),
-            expiryMonthDropDown(),
-        )
+        expiryMonthDropDown()
+            .assertExists("Unable to assert that the expiry month dropdown exists")
+        expiryYearDropDown()
+            .assertExists("Unable to assert that the expiry year dropdown exists")
 
-        assertUIObjectExists(
-            itemContainingText(expiryMonth),
-            itemContainingText(expiryYear),
-        )
+        onNodeWithText(expiryMonth, substring = true)
+            .assertExists("Unable to assert that the $expiryMonth expiry month is shown")
+        onNodeWithText(expiryYear, substring = true)
+            .assertExists("Unable to assert that the $expiryYear expiry year is shown")
 
-        assertUIObjectExists(
-            saveButton(),
-            cancelButton(),
-        )
-
-        assertUIObjectExists(deleteCreditCardMenuButton())
+        saveFormButton().assertExists("Unable to assert that the save button exists")
+        cancelFormButton().assertExists("Unable to assert that the cancel button exists")
+        deleteFormButton().assertExists("Unable to assert that the delete button exists")
     }
 
-    fun verifyEditCreditCardToolbarTitle() = assertUIObjectExists(editCreditCardToolbarTitle())
+    fun verifyEditCreditCardToolbarTitle() = composeTestRule.editCreditCardToolbarTitle()
+        .assertExists("Unable to assert that the edit credit card toolbar title exists")
 
-    fun verifyCreditCardNumberErrorMessage() =
-        assertUIObjectExists(itemContainingText(getStringResource(R.string.credit_cards_number_validation_error_message_2)))
+    fun verifyCreditCardNumberErrorMessage() {
+        val errorMessage =
+            getStringResource(R.string.credit_cards_number_validation_error_message_2)
 
-    fun verifyNameOnCreditCardErrorMessage() =
-        assertUIObjectExists(itemContainingText(getStringResource(R.string.credit_cards_name_on_card_validation_error_message_2)))
+        composeTestRule.creditCardNumberTextInput()
+            .assertTextContains(errorMessage)
+    }
+
+    fun verifyNameOnCreditCardErrorMessage() {
+        val errorMessage =
+            getStringResource(R.string.credit_cards_name_on_card_validation_error_message_2)
+        composeTestRule.nameOnCreditCardTextInput()
+            .assertTextContains(errorMessage)
+    }
 
     class Transition(private val composeTestRule: ComposeTestRule) {
         fun goBack(interact: SettingsRobot.() -> Unit): SettingsRobot.Transition {
@@ -616,7 +672,7 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
 
         fun goBackToSavedCreditCards(interact: SettingsSubMenuAutofillRobot.() -> Unit): SettingsSubMenuAutofillRobot.Transition {
             Log.i(TAG, "goBackToSavedCreditCards: Trying to click the navigate up toolbar button")
-            navigateBackButton().click()
+            composeTestRule.navigateBackButton().performClick()
             Log.i(TAG, "goBackToSavedCreditCards: Clicked the navigate up toolbar button")
 
             SettingsSubMenuAutofillRobot(composeTestRule).interact()
@@ -663,14 +719,14 @@ private fun ComposeTestRule.editAddressToolbarTitle() = onNodeWithText(getString
 private fun ComposeTestRule.toolbarCheckmarkButton() = onNodeWithContentDescription(getStringResource(R.string.address_menu_save_address))
 private fun navigateBackButton() = itemWithDescription(getStringResource(R.string.action_bar_up_description))
 private fun ComposeTestRule.navigateBackButton() = onNodeWithContentDescription("Navigate back")
-private fun ComposeTestRule.nameTextInput() = onNodeWithTag(EditAddressTestTag.NAME_FIELD).onChildAt(0)
-private fun ComposeTestRule.streetAddressTextInput() = onNodeWithTag(EditAddressTestTag.STREET_ADDRESS_FIELD).onChildAt(0)
-private fun ComposeTestRule.cityTextInput() = onNodeWithTag(EditAddressTestTag.ADDRESS_LEVEL2_FIELD).onChildAt(0)
+private fun ComposeTestRule.nameTextInput() = onNodeWithTag(EditAddressTestTag.NAME_FIELD)
+private fun ComposeTestRule.streetAddressTextInput() = onNodeWithTag(EditAddressTestTag.STREET_ADDRESS_FIELD)
+private fun ComposeTestRule.cityTextInput() = onNodeWithTag(EditAddressTestTag.ADDRESS_LEVEL2_FIELD)
 private fun ComposeTestRule.subRegionDropDown() = onNodeWithTag(EditAddressTestTag.ADDRESS_LEVEL1_FIELD)
-private fun ComposeTestRule.zipCodeTextInput() = onNodeWithTag(EditAddressTestTag.POSTAL_CODE_FIELD).onChildAt(0)
+private fun ComposeTestRule.zipCodeTextInput() = onNodeWithTag(EditAddressTestTag.POSTAL_CODE_FIELD)
 private fun ComposeTestRule.countryDropDown() = onNodeWithTag(EditAddressTestTag.COUNTRY_FIELD)
-private fun ComposeTestRule.phoneTextInput() = onNodeWithTag(EditAddressTestTag.TEL_FIELD).onChildAt(0)
-private fun ComposeTestRule.emailTextInput() = onNodeWithTag(EditAddressTestTag.EMAIL_FIELD).onChildAt(0)
+private fun ComposeTestRule.phoneTextInput() = onNodeWithTag(EditAddressTestTag.TEL_FIELD)
+private fun ComposeTestRule.emailTextInput() = onNodeWithTag(EditAddressTestTag.EMAIL_FIELD)
 private fun ComposeTestRule.saveButton() = onNodeWithTag(EditAddressTestTag.SAVE_BUTTON)
 private fun ComposeTestRule.cancelButton() = onNodeWithTag(EditAddressTestTag.CANCEL_BUTTON)
 private fun ComposeTestRule.deleteAddressButton() = onNodeWithTag(EditAddressTestTag.DELETE_BUTTON)
@@ -684,24 +740,33 @@ private fun saveAndAutofillCreditCardsSummary() = itemContainingText(getStringRe
 private fun syncCreditCardsAcrossDevicesButton() = itemContainingText(getStringResource(R.string.preferences_credit_cards_sync_cards_across_devices))
 private fun addCreditCardButton() = mDevice.findObject(UiSelector().textContains(getStringResource(R.string.preferences_credit_cards_add_credit_card_2)))
 private fun savedCreditCardsToolbarTitle() = itemContainingText(getStringResource(R.string.credit_cards_saved_cards))
-private fun editCreditCardToolbarTitle() = itemContainingText(getStringResource(R.string.credit_cards_edit_card))
+private fun ComposeTestRule.editCreditCardToolbarTitle() = onNodeWithText(getStringResource(R.string.credit_cards_edit_card))
 private fun manageSavedCreditCardsButton() = mDevice.findObject(UiSelector().textContains(getStringResource(R.string.preferences_credit_cards_manage_saved_cards_2)))
-private fun creditCardNumberTextInput() = mDevice.findObject(UiSelector().resourceId("$packageName:id/card_number_input"))
-private fun nameOnCreditCardTextInput() = mDevice.findObject(UiSelector().resourceId("$packageName:id/name_on_card_input"))
-private fun expiryMonthDropDown() = mDevice.findObject(UiSelector().resourceId("$packageName:id/expiry_month_drop_down"))
-private fun expiryYearDropDown() = mDevice.findObject(UiSelector().resourceId("$packageName:id/expiry_year_drop_down"))
+
+private fun ComposeTestRule.creditCardNumberTextInput() = onNodeWithTag(CreditCardEditorTestTags.CARD_NUMBER_FIELD)
+
+private fun ComposeTestRule.nameOnCreditCardTextInput() = onNodeWithTag(CreditCardEditorTestTags.NAME_ON_CARD_FIELD)
+
+private fun ComposeTestRule.expiryMonthDropDown() =
+    onNodeWithTag(CreditCardEditorTestTags.EXPIRATION_MONTH_FIELD)
+
+private fun ComposeTestRule.expiryYearDropDown() =
+    onNodeWithTag(CreditCardEditorTestTags.EXPIRATION_YEAR_FIELD)
+
 private fun savedCreditCardNumber() = mDevice.findObject(UiSelector().resourceId("$packageName:id/credit_card_logo"))
-private fun deleteCreditCardToolbarButton() = mDevice.findObject(UiSelector().resourceId("$packageName:id/delete_credit_card_button"))
-private fun saveCreditCardToolbarButton() = itemWithResId("$packageName:id/save_credit_card_button")
-private fun deleteCreditCardMenuButton() = itemContainingText(getStringResource(R.string.credit_cards_delete_card_button))
-private fun confirmDeleteCreditCardButton() = onView(withId(android.R.id.button1)).inRoot(RootMatchers.isDialog())
-private fun cancelDeleteCreditCardButton() = onView(withId(android.R.id.button2)).inRoot(RootMatchers.isDialog())
+private fun ComposeTestRule.deleteCreditCardToolbarButton() = onNodeWithTag(CreditCardEditorTestTags.TOPBAR_DELETE_BUTTON)
+private fun ComposeTestRule.saveCreditCardToolbarButton() = onNodeWithTag(CreditCardEditorTestTags.TOPBAR_SAVE_BUTTON)
+private fun ComposeTestRule.confirmDeleteCreditCardButton() = onNodeWithTag(CreditCardEditorTestTags.DELETE_DIALOG_DELETE_BUTTON)
+private fun ComposeTestRule.cancelDeleteCreditCardButton() = onNodeWithTag(CreditCardEditorTestTags.DELETE_DIALOG_CANCEL_BUTTON)
 private fun securedCreditCardsLaterButton() = onView(withId(android.R.id.button2)).inRoot(RootMatchers.isDialog())
-private fun saveButton() = itemWithResId("$packageName:id/save_button")
-private fun cancelButton() = itemWithResId("$packageName:id/cancel_button")
-private fun savedAddress(name: String) = mDevice.findObject(UiSelector().textContains(name))
+private fun ComposeTestRule.saveFormButton() = onNodeWithTag(CreditCardEditorTestTags.SAVE_BUTTON)
+private fun ComposeTestRule.cancelFormButton() = onNodeWithTag(CreditCardEditorTestTags.CANCEL_BUTTON)
+private fun ComposeTestRule.deleteFormButton() = onNodeWithTag(CreditCardEditorTestTags.DELETE_BUTTON)
+
 private fun ComposeTestRule.subRegionOption(subRegion: String) = onNodeWithTag(EditAddressTestTag.ADDRESS_LEVEL1_FIELD + ".$subRegion")
 private fun ComposeTestRule.countryOption(country: String) = onNodeWithTag(EditAddressTestTag.COUNTRY_FIELD + ".$country")
 
-private fun expiryMonthOption(expiryMonth: String) = mDevice.findObject(UiSelector().textContains(expiryMonth))
-private fun expiryYearOption(expiryYear: String) = mDevice.findObject(UiSelector().textContains(expiryYear))
+private fun ComposeTestRule.expiryMonthOption(expiryMonth: String) =
+    onNodeWithText(expiryMonth, substring = true, ignoreCase = true)
+
+private fun ComposeTestRule.expiryYearOption(expiryYear: String) = onNodeWithText(expiryYear, substring = true, ignoreCase = true)

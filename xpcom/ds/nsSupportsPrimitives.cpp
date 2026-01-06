@@ -7,7 +7,6 @@
 #include "nsSupportsPrimitives.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Sprintf.h"
-#include <algorithm>
 
 template <typename T>
 static char* DataToString(const char* aFormat, T aData) {

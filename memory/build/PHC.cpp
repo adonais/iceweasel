@@ -365,10 +365,18 @@ static_assert((kPhcAlign % kPageSize) == 0);
 
 // PHC will reserve some address space this large, then depending on runtime
 // configuration will use a smaller fraction of it.  Making
-// kPhcVirtualReservation the upper-bound of PHC's memory size.  On 32bit
-// systems with less available address space we choose a more moderate value.
+// kPhcVirtualReservation the upper-bound of PHC's memory size.
+//  * On 32bit systems with less available address space we choose a more
+//    moderate value.
+//  * On 64bit systems we set the limit to so that there are no more than 32,768
+//    mappings, half of Linux's default limit (Bug 1969856).  For 4KB pages
+//    that's 128MB.
 #ifdef HAVE_64BIT_BUILD
-static const size_t kPhcVirtualReservation = 1024 * 1024 * 1024;
+#  if defined(XP_DARWIN) && defined(__aarch64__)
+static const size_t kPhcVirtualReservation = 512 * 1024 * 1024;
+#  else
+static const size_t kPhcVirtualReservation = 128 * 1024 * 1024;
+#  endif
 #else
 static const size_t kPhcVirtualReservation = 2 * 1024 * 1024;
 #endif

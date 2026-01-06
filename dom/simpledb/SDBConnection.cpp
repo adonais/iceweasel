@@ -21,8 +21,6 @@
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/MacroForEach.h"
-#include "mozilla/Maybe.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/dom/PBackgroundSDBConnection.h"

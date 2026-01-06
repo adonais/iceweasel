@@ -2,7 +2,9 @@
 https_first_disabled = true
 tags = "devtools"
 subsuite = "devtools"
-skip-if = ["http3"]
+skip-if = [
+  "http3",
+]
 support-files = [
   "../head.js",
 ]
@@ -23,7 +25,7 @@ support-files = [
 
 ["browser_net_new_request_panel_context_menu.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858037
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858037
 ]
 
 ["browser_net_new_request_panel_persisted_content.js"]
@@ -31,7 +33,9 @@ skip-if = [
 ["browser_net_new_request_panel_send_request.js"]
 
 ["browser_net_new_request_panel_sync_url_params.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_resend.js"]
 

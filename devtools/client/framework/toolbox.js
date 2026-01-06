@@ -539,7 +539,7 @@ Toolbox.prototype = {
    * Note that this does not open the tool, use selectTool if you'd
    * like to select the tool right away.
    *
-   * @param  {String} id
+   * @param  {string} id
    *         The id of the panel, for example "jsdebugger".
    * @returns Promise
    *          A promise that resolves once the panel is ready.
@@ -639,6 +639,7 @@ Toolbox.prototype = {
 
   /**
    * Get the enabled split console setting, and if it's not set, set it with updateIsSplitConsoleEnabled
+   *
    * @returns {boolean} devtools.toolbox.splitconsole.enabled option
    */
   isSplitConsoleEnabled() {
@@ -660,7 +661,7 @@ Toolbox.prototype = {
   /**
    * Set a given target as selected (which may impact the console evaluation context selector).
    *
-   * @param {String} targetActorID: The actorID of the target we want to select.
+   * @param {string} targetActorID: The actorID of the target we want to select.
    */
   selectTarget(targetActorID) {
     if (this.getSelectedTargetFront()?.actorID !== targetActorID) {
@@ -710,7 +711,7 @@ Toolbox.prototype = {
   /**
    * Called on each new THREAD_STATE resource
    *
-   * @param {Object} resource The THREAD_STATE resource
+   * @param {object} resource The THREAD_STATE resource
    */
   _onThreadStateChanged(resource) {
     if (resource.state == "paused") {
@@ -745,7 +746,7 @@ Toolbox.prototype = {
   /**
    * Called on each new JSTRACER_STATE resource
    *
-   * @param {Object} resource The JSTRACER_STATE resource
+   * @param {object} resource The JSTRACER_STATE resource
    */
   async _onTracingStateChanged(resource) {
     const { profile } = resource;
@@ -946,9 +947,6 @@ Toolbox.prototype = {
       // Mount toolbox React components and update all its state that can be updated synchronously.
       this.onReactLoaded = this._initializeReactComponent();
 
-      // Bug 1709063: Use commands.resourceCommand instead of toolbox.resourceCommand
-      this.resourceCommand = this.commands.resourceCommand;
-
       this.commands.targetCommand.on(
         "target-thread-wrong-order-on-resume",
         this._onTargetThreadFrontResumeWrongOrder.bind(this)
@@ -981,10 +979,10 @@ Toolbox.prototype = {
       const watchedResources = [
         // Watch for console API messages, errors and network events in order to populate
         // the error count icon in the toolbox.
-        this.resourceCommand.TYPES.CONSOLE_MESSAGE,
-        this.resourceCommand.TYPES.ERROR_MESSAGE,
-        this.resourceCommand.TYPES.DOCUMENT_EVENT,
-        this.resourceCommand.TYPES.THREAD_STATE,
+        this.commands.resourceCommand.TYPES.CONSOLE_MESSAGE,
+        this.commands.resourceCommand.TYPES.ERROR_MESSAGE,
+        this.commands.resourceCommand.TYPES.DOCUMENT_EVENT,
+        this.commands.resourceCommand.TYPES.THREAD_STATE,
       ];
 
       let tracerInitialization;
@@ -994,7 +992,9 @@ Toolbox.prototype = {
           false
         )
       ) {
-        watchedResources.push(this.resourceCommand.TYPES.JSTRACER_STATE);
+        watchedResources.push(
+          this.commands.resourceCommand.TYPES.JSTRACER_STATE
+        );
         tracerInitialization = this.commands.tracerCommand.initialize();
         this.onTracerToggled = this.onTracerToggled.bind(this);
         this.commands.tracerCommand.on("toggle", this.onTracerToggled);
@@ -1006,10 +1006,12 @@ Toolbox.prototype = {
         // as tabs, in order to ensure there is always at least one listener existing
         // for network events across the lifetime of the various panels, so stopping
         // the resource command from clearing out its cache of network event resources.
-        watchedResources.push(this.resourceCommand.TYPES.NETWORK_EVENT);
+        watchedResources.push(
+          this.commands.resourceCommand.TYPES.NETWORK_EVENT
+        );
       }
 
-      const onResourcesWatched = this.resourceCommand.watchResources(
+      const onResourcesWatched = this.commands.resourceCommand.watchResources(
         watchedResources,
         {
           onAvailable: this._onResourceAvailable,
@@ -1321,7 +1323,7 @@ Toolbox.prototype = {
   /**
    * Reload the debugged context.
    *
-   * @param {Boolean} bypassCache
+   * @param {boolean} bypassCache
    *        If true, bypass any cache when reloading.
    */
   async reload(bypassCache) {
@@ -1656,17 +1658,17 @@ Toolbox.prototype = {
    * "updatechecked" event any time the isChecked value is updated, allowing any consuming
    * components to listen and respond to updates.
    *
-   * @param {Object} options:
+   * @param {object} options:
    *
-   * @property {String} id - The id of the button or command.
-   * @property {String} className - An optional additional className for the button.
-   * @property {String} description - The value that will display as a tooltip and in
+   * @property {string} id - The id of the button or command.
+   * @property {string} className - An optional additional className for the button.
+   * @property {string} description - The value that will display as a tooltip and in
    *                    the options panel for enabling/disabling.
-   * @property {Boolean} disabled - An optional disabled state for the button.
+   * @property {boolean} disabled - An optional disabled state for the button.
    * @property {Function} onClick - The function to run when the button is activated by
    *                      click or keyboard shortcut. First argument will be the 'click'
    *                      event, and second argument is the toolbox instance.
-   * @property {Boolean} isInStartContainer - Buttons can either be placed at the start
+   * @property {boolean} isInStartContainer - Buttons can either be placed at the start
    *                     of the toolbar, or at the end.
    * @property {Function} setup - Function run immediately to listen for events changing
    *                      whenever the button is checked or unchecked. The toolbox object
@@ -1798,11 +1800,11 @@ Toolbox.prototype = {
    * Add a shortcut key that should work when a split console
    * has focus to the toolbox.
    *
-   * @param {String} key
+   * @param {string} key
    *        The electron key shortcut.
    * @param {Function} handler
    *        The callback that should be called when the provided key shortcut is pressed.
-   * @param {String} whichTool
+   * @param {string} whichTool
    *        The tool the key belongs to. The corresponding handler will only be triggered
    *        if this tool is active.
    */
@@ -1890,6 +1892,7 @@ Toolbox.prototype = {
   /**
    * Handle any custom key events.  Returns true if there was a custom key
    * binding run.
+   *
    * @param {string} toolId Which tool to run the command on (skip if not
    * current)
    */
@@ -2093,6 +2096,7 @@ Toolbox.prototype = {
    * Reset tabindex attributes across all focusable elements inside the toolbar.
    * Only have one element with tabindex=0 at a time to make sure that tabbing
    * results in navigating away from the toolbar container.
+   *
    * @param  {FocusEvent} event
    */
   _onToolbarFocus(id) {
@@ -2105,6 +2109,7 @@ Toolbox.prototype = {
    * as it is difficult to coordinate between different component elements.
    * The components are responsible for setting the correct tabindex value
    * for if they are the focused element.
+   *
    * @param  {KeyboardEvent} event
    */
   _onToolbarArrowKeypress(event) {
@@ -2311,8 +2316,8 @@ Toolbox.prototype = {
    * needs to know when the picker is active or not.
    * This method communicates with the RDM Manager if it exists.
    *
-   * @param {Boolean} state
-   * @param {String} pickerType
+   * @param {boolean} state
+   * @param {string} pickerType
    *        One of devtools/shared/picker-constants
    */
   async tellRDMAboutPickerState(state, pickerType) {
@@ -2357,7 +2362,7 @@ Toolbox.prototype = {
    * Get the tooltip for the element picker button.
    * It has multiple possible keyboard shortcuts for macOS.
    *
-   * @return {String}
+   * @return {string}
    */
   _getPickerTooltip() {
     let shortcut = L10N.getStr("toolbox.elementPicker.key");
@@ -2428,9 +2433,9 @@ Toolbox.prototype = {
    * changes.
    * This is used to communicate the new setting's value to the server.
    *
-   * @param {String} subject
-   * @param {String} topic
-   * @param {String} prefName
+   * @param {string} subject
+   * @param {string} topic
+   * @param {string} prefName
    *        The preference name which changed
    */
   async _onBooleanConfigurationPrefChange(subject, topic, prefName) {
@@ -2659,7 +2664,6 @@ Toolbox.prototype = {
    *        the id of the tool to test for existence.
    *
    * @return {boolean}
-   *
    */
   hasAdditionalTool(toolId) {
     return this.additionalToolDefinitions.has(toolId);
@@ -2706,10 +2710,10 @@ Toolbox.prototype = {
   /**
    * Register an extension sidebar for the inspector panel.
    *
-   * @param {String} id
+   * @param {string} id
    *        An unique sidebar id
-   * @param {Object} options
-   * @param {String} options.title
+   * @param {object} options
+   * @param {string} options.title
    *        A title for the sidebar
    */
   async registerInspectorExtensionSidebar(id, options) {
@@ -2733,7 +2737,7 @@ Toolbox.prototype = {
   /**
    * Unregister an extension sidebar for the inspector panel.
    *
-   * @param {String} id
+   * @param {string} id
    *        An unique sidebar id
    */
   unregisterInspectorExtensionSidebar(id) {
@@ -2791,7 +2795,7 @@ Toolbox.prototype = {
    *
    * @param {string} id
    *        The id of the tool to load.
-   * @param {Object} options
+   * @param {object} options
    *        Object that will be passed to the panel `open` method.
    */
   loadTool(id, options) {
@@ -2935,6 +2939,7 @@ Toolbox.prototype = {
 
   /**
    * Mark all in collection as unselected; and id as selected
+   *
    * @param {string} collection
    *        DOM collection of items
    * @param {string} id
@@ -3022,7 +3027,7 @@ Toolbox.prototype = {
    *        The id of the tool to switch to
    * @param {string} reason
    *        Reason the tool was opened
-   * @param {Object} options
+   * @param {object} options
    *        Object that will be passed to the panel
    */
   selectTool(id, reason = "unknown", options) {
@@ -3158,6 +3163,7 @@ Toolbox.prototype = {
 
   /**
    * Focus a tool's panel by id
+   *
    * @param  {string} id
    *         The id of tool to focus
    */
@@ -3520,8 +3526,8 @@ Toolbox.prototype = {
    * For a given URL, return its pathname.
    * This is handy for Web Extension as it should be the addon ID.
    *
-   * @param {String} url
-   * @return {String} pathname
+   * @param {string} url
+   * @return {string} pathname
    */
   getExtensionPathName(url) {
     const parsedURL = URL.parse(url);
@@ -3658,7 +3664,7 @@ Toolbox.prototype = {
   /**
    * Called by the iframe picker when the user selected a frame.
    *
-   * @param {String} frameIdOrTargetActorId
+   * @param {string} frameIdOrTargetActorId
    */
   onIframePickerFrameSelected(frameIdOrTargetActorId) {
     if (!this.frameMap.has(frameIdOrTargetActorId)) {
@@ -3686,7 +3692,7 @@ Toolbox.prototype = {
   /**
    * Highlight a frame in the page
    *
-   * @param {String} frameIdOrTargetActorId
+   * @param {string} frameIdOrTargetActorId
    */
   async onHighlightFrame(frameIdOrTargetActorId) {
     // Only enable frame highlighting when the top level document is targeted
@@ -3716,19 +3722,19 @@ Toolbox.prototype = {
   /**
    * Handles changes in document frames.
    *
-   * @param {Object} data
-   * @param {Boolean} data.destroyAll: All frames have been destroyed.
-   * @param {Number} data.selected: A frame has been selected
-   * @param {Object} data.frameData: Some frame data were updated
-   * @param {String} data.frameData.url: new frame URL (it might have been blank or about:blank)
-   * @param {String} data.frameData.title: new frame title
-   * @param {Number|String} data.frameData.id: frame ID / targetFront actorID when EFT is enabled.
-   * @param {Array<Object>} data.frames: List of frames. Every frame can have:
-   * @param {Number|String} data.frames[].id: frame ID / targetFront actorID when EFT is enabled.
-   * @param {String} data.frames[].url: frame URL
-   * @param {String} data.frames[].title: frame title
-   * @param {Boolean} data.frames[].destroy: Set to true if destroyed
-   * @param {Boolean} data.frames[].isTopLevel: true for top level window
+   * @param {object} data
+   * @param {boolean} data.destroyAll: All frames have been destroyed.
+   * @param {number} data.selected: A frame has been selected
+   * @param {object} data.frameData: Some frame data were updated
+   * @param {string} data.frameData.url: new frame URL (it might have been blank or about:blank)
+   * @param {string} data.frameData.title: new frame title
+   * @param {number | string} data.frameData.id: frame ID / targetFront actorID when EFT is enabled.
+   * @param {Array<object>} data.frames: List of frames. Every frame can have:
+   * @param {number | string} data.frames[].id: frame ID / targetFront actorID when EFT is enabled.
+   * @param {string} data.frames[].url: frame URL
+   * @param {string} data.frames[].title: frame title
+   * @param {boolean} data.frames[].destroy: Set to true if destroyed
+   * @param {boolean} data.frames[].isTopLevel: true for top level window
    */
   _updateFrames(data) {
     // At the moment, frames `id` can either be outerWindowID (a Number),
@@ -3887,7 +3893,7 @@ Toolbox.prototype = {
    * This is used when we move a toolbox to a new popup opened by the tab we were currently debugging.
    * We also move the toolbox back to the original tab we were debugging if we select it via Firefox tabs.
    *
-   * @param {String} tabBrowsingContextID
+   * @param {string} tabBrowsingContextID
    *        The BrowsingContext ID of the tab we want to move to.
    * @returns {Promise<undefined>}
    *        This will resolve only once we moved to the new tab.
@@ -3926,7 +3932,7 @@ Toolbox.prototype = {
    * This fires when the toolbox itself requests to be moved to another tab,
    * but also when we select the original tab where the toolbox originally was.
    *
-   * @param {String} browsingContextID
+   * @param {string} browsingContextID
    *        The BrowsingContext ID of the tab the toolbox has been moved to.
    */
   _onSwitchedHostToTab(browsingContextID) {
@@ -4038,6 +4044,7 @@ Toolbox.prototype = {
 
   /**
    * Handler for the tool-registered event.
+   *
    * @param  {string} toolId
    *         Id of the tool that was registered
    */
@@ -4068,6 +4075,7 @@ Toolbox.prototype = {
 
   /**
    * Handler for the tool-unregistered event.
+   *
    * @param  {string} toolId
    *         id of the tool that was unregistered
    */
@@ -4086,7 +4094,7 @@ Toolbox.prototype = {
    * higligher show and hide events. The event helpers are used in tests where it is
    * cumbersome to load the Inspector panel in order to listen to highlighter events.
    *
-   * @returns {Object} an object of the following shape:
+   * @returns {object} an object of the following shape:
    *   - {AsyncFunction} highlight: A function that will show a Box Model Highlighter
    *                     for the provided NodeFront or node grip.
    *   - {AsyncFunction} unhighlight: A function that will hide any Box Model Highlighter
@@ -4098,7 +4106,6 @@ Toolbox.prototype = {
    *   - {AsyncFunction} waitForHighlighterHidden: Returns a promise which resolves with
    *                     the "highlighter-hidden" event data once the highlighter is
    *                     hidden.
-   *
    */
   getHighlighter() {
     let pendingHighlight;
@@ -4106,7 +4113,7 @@ Toolbox.prototype = {
     /**
      * Return a promise wich resolves with a reference to the Inspector panel.
      *
-     * @param {Object} options: Options that will be passed to the inspector initialization
+     * @param {object} options: Options that will be passed to the inspector initialization
      */
     const _getInspector = async options => {
       const inspector = this.getPanel("inspector");
@@ -4120,7 +4127,7 @@ Toolbox.prototype = {
     /**
      * Returns a promise which resolves when a Box Model Highlighter emits the given event
      *
-     * @param  {String} eventName
+     * @param  {string} eventName
      *         Name of the event to listen to.
      * @return {Promise}
      *         Promise which resolves when the highlighter event occurs.
@@ -4404,14 +4411,14 @@ Toolbox.prototype = {
     });
 
     const watchedResources = [
-      this.resourceCommand.TYPES.CONSOLE_MESSAGE,
-      this.resourceCommand.TYPES.ERROR_MESSAGE,
-      this.resourceCommand.TYPES.DOCUMENT_EVENT,
-      this.resourceCommand.TYPES.THREAD_STATE,
+      this.commands.resourceCommand.TYPES.CONSOLE_MESSAGE,
+      this.commands.resourceCommand.TYPES.ERROR_MESSAGE,
+      this.commands.resourceCommand.TYPES.DOCUMENT_EVENT,
+      this.commands.resourceCommand.TYPES.THREAD_STATE,
     ];
 
     if (!this.isBrowserToolbox) {
-      watchedResources.push(this.resourceCommand.TYPES.NETWORK_EVENT);
+      watchedResources.push(this.commands.resourceCommand.TYPES.NETWORK_EVENT);
     }
 
     if (
@@ -4420,11 +4427,11 @@ Toolbox.prototype = {
         false
       )
     ) {
-      watchedResources.push(this.resourceCommand.TYPES.JSTRACER_STATE);
+      watchedResources.push(this.commands.resourceCommand.TYPES.JSTRACER_STATE);
       this.commands.tracerCommand.off("toggle", this.onTracerToggled);
     }
 
-    this.resourceCommand.unwatchResources(watchedResources, {
+    this.commands.resourceCommand.unwatchResources(watchedResources, {
       onAvailable: this._onResourceAvailable,
     });
 
@@ -4514,7 +4521,6 @@ Toolbox.prototype = {
             this._win = null;
             this._toolPanels.clear();
             this._descriptorFront = null;
-            this.resourceCommand = null;
             this.commands = null;
             this._visibleIframes.clear();
 
@@ -4548,8 +4554,9 @@ Toolbox.prototype = {
    * Open the textbox context menu at given coordinates.
    * Panels in the toolbox can call this on contextmenu events with event.screenX/Y
    * instead of having to implement their own copy/paste/selectAll menu.
-   * @param {Number} x
-   * @param {Number} y
+   *
+   * @param {number} x
+   * @param {number} y
    */
   openTextBoxContextMenu(x, y) {
     const menu = createEditContextMenu(this.topWindow, "toolbox-menu");
@@ -4754,6 +4761,7 @@ Toolbox.prototype = {
 
   /**
    * Opens source in plain "view-source:".
+   *
    * @see devtools/client/shared/source-utils.js
    */
   viewSource(sourceURL, sourceLine, sourceColumn) {
@@ -4804,7 +4812,7 @@ Toolbox.prototype = {
   /**
    * Add listener for `onRequestFinished` events.
    *
-   * @param {Object} listener
+   * @param {object} listener
    *        The listener to be called it's expected to be
    *        a function that takes ({harEntry, requestId})
    *        as first argument.
@@ -4835,7 +4843,7 @@ Toolbox.prototype = {
    * Used to lazily fetch HTTP response content within
    * `onRequestFinished` event listener.
    *
-   * @param {String} requestId
+   * @param {string} requestId
    *        Id of the request for which the response content
    *        should be fetched.
    */
@@ -4850,6 +4858,7 @@ Toolbox.prototype = {
    * List the subset of the active WebExtensions which have a devtools_page (used by
    * toolbox-options.js to create the list of the tools provided by the enabled
    * WebExtensions).
+   *
    * @see devtools/client/framework/toolbox-options.js
    */
   listWebExtensions() {
@@ -4866,6 +4875,7 @@ Toolbox.prototype = {
    * a unique id assigned to an extension when it is installed, and its name),
    * and emit a "webextension-registered" event to allow toolbox-options.js
    * to refresh the listed tools accordingly.
+   *
    * @see browser/components/extensions/ext-devtools.js
    */
   registerWebExtension(extensionUUID, { name, pref }) {
@@ -4881,6 +4891,7 @@ Toolbox.prototype = {
    * extension UUID, a unique id assigned to an extension when it is installed, and its
    * name), and emit a "webextension-unregistered" event to allow toolbox-options.js
    * to refresh the listed tools accordingly.
+   *
    * @see browser/components/extensions/ext-devtools.js
    */
   unregisterWebExtension(extensionUUID) {
@@ -4894,6 +4905,7 @@ Toolbox.prototype = {
    * A helper function which returns true if the extension with the given UUID is listed
    * as active for the toolbox and has its related devtools about:config preference set
    * to true.
+   *
    * @see browser/components/extensions/ext-devtools.js
    */
   isWebExtensionEnabled(extensionUUID) {
@@ -4907,7 +4919,7 @@ Toolbox.prototype = {
    * the permitted length of event telemetry property values and what we actually
    * want to see in our telemetry.
    *
-   * @param {String} id
+   * @param {string} id
    *        The panel id we would like to process.
    */
   getTelemetryPanelNameOrOther(id) {
@@ -4945,7 +4957,7 @@ Toolbox.prototype = {
   _onResourceAvailable(resources) {
     let errors = this._errorCount || 0;
 
-    const { TYPES } = this.resourceCommand;
+    const { TYPES } = this.commands.resourceCommand;
     for (const resource of resources) {
       const { resourceType } = resource;
       if (
@@ -5034,7 +5046,8 @@ Toolbox.prototype = {
     for (const { update } of resources) {
       // In order to match webconsole behaviour, we treat 4xx and 5xx network calls as errors.
       if (
-        update.resourceType === this.resourceCommand.TYPES.NETWORK_EVENT &&
+        update.resourceType ===
+          this.commands.resourceCommand.TYPES.NETWORK_EVENT &&
         update.resourceUpdates.status &&
         update.resourceUpdates.status.toString().match(REGEX_4XX_5XX)
       ) {
@@ -5048,7 +5061,7 @@ Toolbox.prototype = {
   /**
    * Set the number of errors in the toolbar icon.
    *
-   * @param {Number} count
+   * @param {number} count
    */
   setErrorCount(count) {
     // Don't re-render if the number of errors changed

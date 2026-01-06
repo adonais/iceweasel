@@ -118,7 +118,6 @@ add_task(async function test_per_engine() {
 
   let context = createContext("", {
     isPrivate: false,
-    formHistoryName: "test",
   });
   await check_results({
     context,

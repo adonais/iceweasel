@@ -16,7 +16,7 @@ task-defaults:
     shipping-phase: promote
     index:
         product: firefox
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     worker:
         docker-image:
             in-tree: "update-verify"

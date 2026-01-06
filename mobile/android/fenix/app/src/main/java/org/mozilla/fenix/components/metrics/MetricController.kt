@@ -147,7 +147,7 @@ internal class ReleaseMetricController(
     }
 
     @VisibleForTesting
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "CognitiveComplexMethod")
     internal fun Fact.process(): Unit = when (component to item) {
         Component.FEATURE_PROMPTS to LoginDialogFacts.Items.DISPLAY -> {
             LoginDialog.displayed.record(NoExtras())

@@ -136,7 +136,7 @@ fun TabGridItem(
     }
 }
 
-@Suppress("LongMethod")
+@Suppress("LongMethod", "CognitiveComplexMethod")
 @Composable
 private fun TabContent(
     tab: TabSessionState,

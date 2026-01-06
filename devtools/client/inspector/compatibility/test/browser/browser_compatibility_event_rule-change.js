@@ -24,11 +24,11 @@ const TEST_DATA_SELECTED = {
     expectedProperties: [
       {
         property: "overflow-anchor",
-        url: "https://developer.mozilla.org/docs/Web/CSS/overflow-anchor",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/overflow-anchor",
       },
       {
         property: "scrollbar-color",
-        url: "https://developer.mozilla.org/docs/Web/CSS/scrollbar-color",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scrollbar-color",
       },
     ],
     expectedNodes: [
@@ -46,7 +46,7 @@ const TEST_DATA_SELECTED = {
     expectedProperties: [
       {
         property: "overflow-anchor",
-        url: "https://developer.mozilla.org/docs/Web/CSS/overflow-anchor",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/overflow-anchor",
       },
     ],
     expectedNodes: [
@@ -60,7 +60,7 @@ const TEST_DATA_SELECTED = {
     expectedProperties: [
       {
         property: "scrollbar-color",
-        url: "https://developer.mozilla.org/docs/Web/CSS/scrollbar-color",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scrollbar-color",
       },
     ],
     expectedNodes: [
@@ -77,11 +77,11 @@ const TEST_DATA_ALL = {
     expectedProperties: [
       {
         property: "overflow-anchor",
-        url: "https://developer.mozilla.org/docs/Web/CSS/overflow-anchor",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/overflow-anchor",
       },
       {
         property: "scrollbar-color",
-        url: "https://developer.mozilla.org/docs/Web/CSS/scrollbar-color",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scrollbar-color",
       },
     ],
     expectedNodes: [
@@ -99,7 +99,7 @@ const TEST_DATA_ALL = {
     expectedProperties: [
       {
         property: "overflow-anchor",
-        url: "https://developer.mozilla.org/docs/Web/CSS/overflow-anchor",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/overflow-anchor",
       },
     ],
     expectedNodes: [
@@ -113,7 +113,7 @@ const TEST_DATA_ALL = {
     expectedProperties: [
       {
         property: "scrollbar-color",
-        url: "https://developer.mozilla.org/docs/Web/CSS/scrollbar-color",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scrollbar-color",
       },
     ],
     expectedNodes: [

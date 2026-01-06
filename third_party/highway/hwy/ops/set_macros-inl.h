@@ -44,6 +44,7 @@
 #undef HWY_MEM_OPS_MIGHT_FAULT
 #undef HWY_NATIVE_FMA
 #undef HWY_NATIVE_DOT_BF16
+#undef HWY_NATIVE_MASK
 #undef HWY_CAP_GE256
 #undef HWY_CAP_GE512
 
@@ -141,57 +142,65 @@
 #define HWY_TARGET_STR_AVX2 \
   HWY_TARGET_STR_SSE4 ",avx,avx2" HWY_TARGET_STR_BMI2_FMA HWY_TARGET_STR_F16C
 
-#if (HWY_COMPILER_GCC_ACTUAL >= 1400 && HWY_COMPILER_GCC_ACTUAL < 1600) || \
-    HWY_COMPILER_CLANG >= 1800
+#ifndef HWY_HAVE_EVEX512  // allow override
+// evex512 has been removed from clang 22, see
+// https://github.com/llvm/llvm-project/pull/157034
+#if (1400 <= HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1600) || \
+    (1800 <= HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 2200)
+#define HWY_HAVE_EVEX512 1
+#else
+#define HWY_HAVE_EVEX512 0
+#endif
+#endif
+
+#if (HWY_HAVE_EVEX512 == 1)
 #define HWY_TARGET_STR_AVX3_VL512 ",evex512"
 #else
 #define HWY_TARGET_STR_AVX3_VL512
 #endif
 
-#define HWY_TARGET_STR_AVX3_256 \
-  HWY_TARGET_STR_AVX2           \
+#define HWY_TARGET_STR_AVX3 \
+  HWY_TARGET_STR_AVX2       \
   ",avx512f,avx512cd,avx512vl,avx512dq,avx512bw" HWY_TARGET_STR_AVX3_VL512
 
-#define HWY_TARGET_STR_AVX3 HWY_TARGET_STR_AVX3_256 HWY_TARGET_STR_AVX3_VL512
-
-#define HWY_TARGET_STR_AVX3_DL_256                                   \
-  HWY_TARGET_STR_AVX3_256                                            \
+#define HWY_TARGET_STR_AVX3_DL                                       \
+  HWY_TARGET_STR_AVX3                                                \
   ",vpclmulqdq,avx512vbmi,avx512vbmi2,vaes,avx512vnni,avx512bitalg," \
   "avx512vpopcntdq,gfni"
 
-#define HWY_TARGET_STR_AVX3_DL \
-  HWY_TARGET_STR_AVX3_DL_256 HWY_TARGET_STR_AVX3_VL512
-
-// Force-disable for compilers that do not properly support avx512bf16.
-#if !defined(HWY_AVX3_DISABLE_AVX512BF16) &&                        \
+// Opt-out for compilers that do not properly support avx512bf16.
+#ifndef HWY_AVX3_ENABLE_AVX512BF16  // allow override
+// Default is to disable if the DISABLE macro is defined, or if old compiler.
+// clang-cl 21.1.4 reportedly works; feel free to define this to 1 there.
+#if defined(HWY_AVX3_DISABLE_AVX512BF16) ||                         \
     (HWY_COMPILER_CLANGCL ||                                        \
      (HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1000) || \
      (HWY_COMPILER_CLANG && HWY_COMPILER_CLANG < 900))
-#define HWY_AVX3_DISABLE_AVX512BF16
-#endif
-
-#if !defined(HWY_AVX3_DISABLE_AVX512BF16)
-#define HWY_TARGET_STR_AVX3_ZEN4_256 HWY_TARGET_STR_AVX3_DL ",avx512bf16"
+#define HWY_AVX3_ENABLE_AVX512BF16 0
 #else
-#define HWY_TARGET_STR_AVX3_ZEN4_256 HWY_TARGET_STR_AVX3_DL
+#define HWY_AVX3_ENABLE_AVX512BF16 1
 #endif
+#endif  // HWY_AVX3_ENABLE_AVX512BF16
 
-#define HWY_TARGET_STR_AVX3_ZEN4 \
-  HWY_TARGET_STR_AVX3_ZEN4_256 HWY_TARGET_STR_AVX3_VL512
+#if HWY_AVX3_ENABLE_AVX512BF16
+#define HWY_TARGET_STR_AVX3_ZEN4 HWY_TARGET_STR_AVX3_DL ",avx512bf16"
+#else
+#define HWY_TARGET_STR_AVX3_ZEN4 HWY_TARGET_STR_AVX3_DL
+#endif
 
 #if HWY_COMPILER_GCC_ACTUAL >= 1200 || HWY_COMPILER_CLANG >= 1400
-#define HWY_TARGET_STR_AVX3_SPR_256 HWY_TARGET_STR_AVX3_ZEN4_256 ",avx512fp16"
+#define HWY_TARGET_STR_AVX3_SPR HWY_TARGET_STR_AVX3_ZEN4 ",avx512fp16"
 #else
-#define HWY_TARGET_STR_AVX3_SPR_256 HWY_TARGET_STR_AVX3_ZEN4_256
+#define HWY_TARGET_STR_AVX3_SPR HWY_TARGET_STR_AVX3_ZEN4
 #endif
 
-#define HWY_TARGET_STR_AVX3_SPR \
-  HWY_TARGET_STR_AVX3_SPR_256 HWY_TARGET_STR_AVX3_VL512
-
-#if HWY_COMPILER_GCC_ACTUAL >= 1500
-#define HWY_TARGET_STR_AVX10_2 HWY_TARGET_STR_AVX3_SPR ",avx10.2"
-#elif HWY_COMPILER_CLANG >= 2000
+// Support for avx10.2-512 was removed between clang 22 and 23 without a
+// feature test macro.
+#if HWY_COMPILER_CLANG >= 2200 && HWY_HAVE_EVEX512
 #define HWY_TARGET_STR_AVX10_2 HWY_TARGET_STR_AVX3_SPR ",avx10.2-512"
+// Recent compilers drop the -512 suffix because 512 bits are always available.
+#elif HWY_COMPILER_GCC_ACTUAL >= 1500 || HWY_COMPILER_CLANG >= 2200
+#define HWY_TARGET_STR_AVX10_2 HWY_TARGET_STR_AVX3_SPR ",avx10.2"
 #else
 #define HWY_TARGET_STR_AVX10_2 HWY_TARGET_STR_AVX3_SPR
 #endif
@@ -243,6 +252,7 @@
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
 #define HWY_NATIVE_DOT_BF16 0
+#define HWY_NATIVE_MASK 0  // a few actually are
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -263,6 +273,7 @@
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
 #define HWY_NATIVE_DOT_BF16 0
+#define HWY_NATIVE_MASK 0  // a few actually are
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -284,6 +295,7 @@
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
 #define HWY_NATIVE_DOT_BF16 0
+#define HWY_NATIVE_MASK 0  // a few actually are
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -310,6 +322,7 @@
 #define HWY_NATIVE_FMA 1
 #endif
 #define HWY_NATIVE_DOT_BF16 0
+#define HWY_NATIVE_MASK 0  // a few actually are
 
 #define HWY_CAP_GE256 1
 #define HWY_CAP_GE512 0
@@ -317,10 +330,8 @@
 #define HWY_TARGET_STR HWY_TARGET_STR_AVX2
 
 //-----------------------------------------------------------------------------
-// AVX3[_DL]/AVX10
-#elif HWY_TARGET == HWY_AVX3 || HWY_TARGET == HWY_AVX3_DL ||     \
-    HWY_TARGET == HWY_AVX3_ZEN4 || HWY_TARGET == HWY_AVX3_SPR || \
-    HWY_TARGET == HWY_AVX10_2
+// AVX3[_DL/ZEN4/SPR]/AVX10
+#elif HWY_TARGET <= HWY_AVX3
 
 #define HWY_ALIGN alignas(64)
 #define HWY_MAX_BYTES 64
@@ -329,7 +340,7 @@
 #define HWY_HAVE_SCALABLE 0
 #define HWY_HAVE_INTEGER64 1
 #if HWY_TARGET <= HWY_AVX3_SPR &&                              \
-    (HWY_COMPILER_GCC_ACTUAL || HWY_COMPILER_CLANG >= 1901) && \
+    (HWY_COMPILER_GCC_ACTUAL || HWY_COMPILER_CLANG >= 2200) && \
     HWY_HAVE_SCALAR_F16_TYPE
 #define HWY_HAVE_FLOAT16 1
 #else
@@ -338,11 +349,12 @@
 #define HWY_HAVE_FLOAT64 1
 #define HWY_MEM_OPS_MIGHT_FAULT 0
 #define HWY_NATIVE_FMA 1
-#if (HWY_TARGET <= HWY_AVX3_ZEN4) && !defined(HWY_AVX3_DISABLE_AVX512BF16)
+#if (HWY_TARGET <= HWY_AVX3_ZEN4) && HWY_AVX3_ENABLE_AVX512BF16
 #define HWY_NATIVE_DOT_BF16 1
 #else
 #define HWY_NATIVE_DOT_BF16 0
 #endif
+#define HWY_NATIVE_MASK 1
 #define HWY_CAP_GE256 1
 
 #if HWY_MAX_BYTES >= 64
@@ -395,6 +407,7 @@
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 1
 #define HWY_NATIVE_DOT_BF16 0
+#define HWY_NATIVE_MASK 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -432,6 +445,7 @@
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 1
 #define HWY_NATIVE_DOT_BF16 0
+#define HWY_NATIVE_MASK 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -508,6 +522,8 @@
 #define HWY_NATIVE_DOT_BF16 0
 #endif
 
+#define HWY_NATIVE_MASK 0
+
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -553,12 +569,20 @@
 #define HWY_TARGET_STR_FP16 "+fp16"
 #endif
 
+#define HWY_TARGET_STR_I8MM "+i8mm"
+
 #if HWY_TARGET == HWY_NEON_WITHOUT_AES
+#if HWY_COMPILER_GCC_ACTUAL && HWY_COMPILER_GCC_ACTUAL < 1400
+// Prevents inadvertent use of SVE by GCC 13.4 and earlier, see #2689.
+#define HWY_TARGET_STR "+nosve"
+#else
 // Do not define HWY_TARGET_STR (no pragma).
+#endif  // HWY_COMPILER_GCC_ACTUAL
 #elif HWY_TARGET == HWY_NEON
 #define HWY_TARGET_STR HWY_TARGET_STR_NEON
 #elif HWY_TARGET == HWY_NEON_BF16
-#define HWY_TARGET_STR HWY_TARGET_STR_FP16 "+bf16+dotprod" HWY_TARGET_STR_NEON
+#define HWY_TARGET_STR \
+  HWY_TARGET_STR_FP16 HWY_TARGET_STR_I8MM "+bf16+dotprod" HWY_TARGET_STR_NEON
 #else
 #error "Logic error, missing case"
 #endif  // HWY_TARGET
@@ -589,6 +613,7 @@
 #else
 #define HWY_NATIVE_DOT_BF16 0
 #endif
+#define HWY_NATIVE_MASK 1
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -610,15 +635,17 @@
 #define HWY_HAVE_SCALABLE 1
 #endif
 
+#define HWY_TARGET_STR_I8MM "+i8mm"
+
 // Can use pragmas instead of -march compiler flag
 #if HWY_HAVE_RUNTIME_DISPATCH
 #if HWY_TARGET == HWY_SVE2 || HWY_TARGET == HWY_SVE2_128
 // Static dispatch with -march=armv8-a+sve2+aes, or no baseline, hence dynamic
 // dispatch, which checks for AES support at runtime.
 #if defined(__ARM_FEATURE_SVE2_AES) || (HWY_BASELINE_SVE2 == 0)
-#define HWY_TARGET_STR "+sve2+sve2-aes,+sve"
+#define HWY_TARGET_STR "+sve2+sve2-aes,+sve" HWY_TARGET_STR_I8MM
 #else  // SVE2 without AES
-#define HWY_TARGET_STR "+sve2,+sve"
+#define HWY_TARGET_STR "+sve2,+sve" HWY_TARGET_STR_I8MM
 #endif
 #else  // not SVE2 target
 #define HWY_TARGET_STR "+sve"
@@ -642,6 +669,7 @@
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
 #define HWY_NATIVE_DOT_BF16 0
+#define HWY_NATIVE_MASK 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -664,6 +692,7 @@
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
 #define HWY_NATIVE_DOT_BF16 0
+#define HWY_NATIVE_MASK 0
 #define HWY_CAP_GE256 1
 #define HWY_CAP_GE512 0
 
@@ -692,6 +721,7 @@
 #define HWY_MEM_OPS_MIGHT_FAULT 0
 #define HWY_NATIVE_FMA 1
 #define HWY_NATIVE_DOT_BF16 0
+#define HWY_NATIVE_MASK 1
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -717,9 +747,15 @@
 #if HWY_TARGET == HWY_LSX
 #define HWY_ALIGN alignas(16)
 #define HWY_MAX_BYTES 16
+#ifndef __loongarch_sx
+#define HWY_TARGET_STR "lsx"
+#endif
 #else
 #define HWY_ALIGN alignas(32)
 #define HWY_MAX_BYTES 32
+#ifndef __loongarch_asx
+#define HWY_TARGET_STR "lsx,lasx"
+#endif
 #endif
 
 #define HWY_LANES(T) (HWY_MAX_BYTES / sizeof(T))
@@ -731,6 +767,7 @@
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 1
 #define HWY_NATIVE_DOT_BF16 0
+#define HWY_NATIVE_MASK 0
 
 #if HWY_TARGET == HWY_LSX
 #define HWY_CAP_GE256 0
@@ -763,6 +800,7 @@
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #define HWY_NATIVE_FMA 0
 #define HWY_NATIVE_DOT_BF16 0
+#define HWY_NATIVE_MASK 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 
@@ -785,6 +823,7 @@
 #define HWY_MEM_OPS_MIGHT_FAULT 0
 #define HWY_NATIVE_FMA 0
 #define HWY_NATIVE_DOT_BF16 0
+#define HWY_NATIVE_MASK 0
 #define HWY_CAP_GE256 0
 #define HWY_CAP_GE512 0
 

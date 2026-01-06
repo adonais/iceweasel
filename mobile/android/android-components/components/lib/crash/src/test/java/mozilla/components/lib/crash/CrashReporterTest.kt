@@ -15,7 +15,10 @@ import mozilla.components.concept.base.crash.Breadcrumb
 import mozilla.components.lib.crash.db.CrashDao
 import mozilla.components.lib.crash.db.CrashDatabase
 import mozilla.components.lib.crash.db.CrashEntity
+import mozilla.components.lib.crash.db.CrashReporterUnableToRestoreException
 import mozilla.components.lib.crash.db.CrashType
+import mozilla.components.lib.crash.db.toCrash
+import mozilla.components.lib.crash.db.toEntity
 import mozilla.components.lib.crash.service.CrashReporterService
 import mozilla.components.lib.crash.service.CrashTelemetryService
 import mozilla.components.support.test.any
@@ -27,6 +30,7 @@ import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.After
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -1433,12 +1437,51 @@ class CrashReporterTest {
         assertEquals(crashReporter.findCrashReports(crashIDs).get(0).uuid, crashEntity1.uuid)
         assertEquals(crashReporter.findCrashReports(crashIDs).get(1).uuid, crashEntity3.uuid)
     }
+
+    @Test
+    fun `Round-trip through CrashEntity preserves (serializable) Throwable info`() {
+        val crash = createUncaughtExceptionCrash()
+
+        val entity = crash.toEntity()
+        val otherCrash = entity.toCrash() as Crash.UncaughtExceptionCrash
+
+        assertEquals(crash.throwable.javaClass, otherCrash.throwable.javaClass)
+        assertEquals(crash.throwable.message, otherCrash.throwable.message)
+        assertArrayEquals(crash.throwable.stackTrace, otherCrash.throwable.stackTrace)
+    }
+
+    @Test
+    fun `Round-trip through CrashEntity for unserializable Throwable preserves stack`() {
+        val crash = createUnserializableUncaughtExceptionCrash()
+        val expectedMessage = "${crash.throwable.javaClass.name}: This exception has a bad field!"
+
+        val entity = crash.toEntity()
+        val otherCrash = entity.toCrash() as Crash.UncaughtExceptionCrash
+
+        assertTrue(otherCrash.throwable is CrashReporterUnableToRestoreException)
+        assertEquals(expectedMessage, otherCrash.throwable.message)
+        assertArrayEquals(crash.throwable.stackTrace, otherCrash.throwable.stackTrace)
+    }
 }
 
 private fun createUncaughtExceptionCrash(): Crash.UncaughtExceptionCrash {
     return Crash.UncaughtExceptionCrash(
         0,
         RuntimeException(),
+        ArrayList(),
+    )
+}
+
+private class UnserializableException(
+    @Suppress("unused")
+    val badField: Thread = Thread.currentThread(),
+) : Exception("This exception has a bad field!")
+
+private fun createUnserializableUncaughtExceptionCrash(): Crash.UncaughtExceptionCrash {
+    val throwable = UnserializableException()
+    return Crash.UncaughtExceptionCrash(
+        0,
+        throwable,
         ArrayList(),
     )
 }

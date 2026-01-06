@@ -23,10 +23,16 @@ import {
 export let searchParams = new URLSearchParams(
   document.documentURI.split("?")[1]
 );
-
+export const MDN_DOCS_HEADERS =
+  "https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/";
+export const COOP_MDN_DOCS = MDN_DOCS_HEADERS + "Cross-Origin-Opener-Policy";
+export const COEP_MDN_DOCS = MDN_DOCS_HEADERS + "Cross-Origin-Embedder-Policy";
 export let gErrorCode = searchParams.get("e");
 export let gIsCertError = gErrorCode == "nssBadCert";
 export let gHasSts = gIsCertError && getCSSClass() === "badStsCert";
+export let gNoConnectivity =
+  gErrorCode == "dnsNotFound" && !RPMHasConnectivity();
+export let gOffline = gErrorCode === "netOffline" || gNoConnectivity;
 const HOST_NAME = getHostName();
 
 export function isCaptive() {
@@ -38,12 +44,12 @@ export function getCSSClass() {
 }
 
 export function getHostName() {
-  try {
-    return new URL(RPMGetInnerMostURI(document.location.href)).hostname;
-  } catch (error) {
-    console.error("Could not parse URL", error);
-  }
-  return "";
+  return RPMGetHostForDisplay(document);
+}
+
+export function retryThis(buttonEl) {
+  RPMSendAsyncMessage("Browser:EnableOnlineMode");
+  buttonEl.disabled = true;
 }
 
 export async function getFailedCertificatesAsPEMString() {
@@ -155,4 +161,34 @@ export async function recordSecurityUITelemetry(category, name, errorInfo) {
     }
   }
   RPMRecordGleanEvent(category, name, extraKeys);
+}
+
+// Returns true if the error identified by the given error code string has no
+// particular action the user can take to fix it.
+export function errorHasNoUserFix(errorCodeString) {
+  switch (errorCodeString) {
+    case "MOZILLA_PKIX_ERROR_INSUFFICIENT_CERTIFICATE_TRANSPARENCY":
+    case "MOZILLA_PKIX_ERROR_INVALID_INTEGER_ENCODING":
+    case "MOZILLA_PKIX_ERROR_ISSUER_NO_LONGER_TRUSTED":
+    case "MOZILLA_PKIX_ERROR_KEY_PINNING_FAILURE":
+    case "MOZILLA_PKIX_ERROR_SIGNATURE_ALGORITHM_MISMATCH":
+    case "SEC_ERROR_BAD_DER":
+    case "SEC_ERROR_BAD_SIGNATURE":
+    case "SEC_ERROR_CERT_NOT_IN_NAME_SPACE":
+    case "SEC_ERROR_EXTENSION_VALUE_INVALID":
+    case "SEC_ERROR_INADEQUATE_CERT_TYPE":
+    case "SEC_ERROR_INADEQUATE_KEY_USAGE":
+    case "SEC_ERROR_INVALID_KEY":
+    case "SEC_ERROR_PATH_LEN_CONSTRAINT_INVALID":
+    case "SEC_ERROR_REVOKED_CERTIFICATE":
+    case "SEC_ERROR_UNKNOWN_CRITICAL_EXTENSION":
+    case "SEC_ERROR_UNSUPPORTED_EC_POINT_FORM":
+    case "SEC_ERROR_UNSUPPORTED_ELLIPTIC_CURVE":
+    case "SEC_ERROR_UNSUPPORTED_KEYALG":
+    case "SEC_ERROR_UNTRUSTED_CERT":
+    case "SEC_ERROR_UNTRUSTED_ISSUER":
+      return true;
+    default:
+      return false;
+  }
 }

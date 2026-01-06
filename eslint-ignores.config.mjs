@@ -248,11 +248,11 @@ export default [
   "servo/",
 
   // Rust/Cargo output from running `cargo` directly
-  "/target/",
-  "/servo/ports/geckolib/target/",
-  "/dom/base/rust/target/",
-  "/servo/components/style/target/",
-  "/dom/webgpu/tests/cts/vendor/target/",
+  "target/",
+  "servo/ports/geckolib/target/",
+  "dom/base/rust/target/",
+  "servo/components/style/target/",
+  "dom/webgpu/tests/cts/vendor/target/",
 
   // Test files that we don't want to lint (preprocessed, minified etc)
   "testing/condprofile/condprof/tests/profile",
@@ -275,6 +275,7 @@ export default [
   // Intentionally invalid files
   "toolkit/components/workerloader/tests/moduleF-syntax-error.js",
   "toolkit/components/enterprisepolicies/tests/browser/config_broken_json.json",
+  "toolkit/components/normandy/test/unit/mock_api/api/v1/extension/index.json",
   "toolkit/mozapps/extensions/test/xpcshell/data/test_AddonRepository_fail.json",
 
   // Built files

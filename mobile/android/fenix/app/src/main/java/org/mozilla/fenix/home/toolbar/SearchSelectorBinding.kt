@@ -6,6 +6,8 @@ package org.mozilla.fenix.home.toolbar
 
 import android.content.Context
 import androidx.core.graphics.drawable.toDrawable
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -33,7 +35,8 @@ internal class SearchSelectorBinding(
     private val toolbarView: HomeToolbarView,
     private val searchSelectorMenu: SearchSelectorMenu,
     browserStore: BrowserStore,
-) : AbstractBinding<BrowserState>(browserStore) {
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+) : AbstractBinding<BrowserState>(browserStore, mainDispatcher) {
 
     override fun start() {
         super.start()

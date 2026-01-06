@@ -81,6 +81,14 @@ testRule({
       description: "Using currentColor is valid.",
     },
     {
+      code: ".a { border-color: white; }",
+      description: "Using white is valid.",
+    },
+    {
+      code: ".a { border-color: black; }",
+      description: "Using black is valid.",
+    },
+    {
       code: ".a { border: none; }",
       description: "Using none is valid.",
     },
@@ -240,6 +248,51 @@ testRule({
       message: messages.rejected("1px solid var(--custom-token)"),
       description:
         "1px solid var(--custom-token) should use a border-color design token.",
+    },
+  ],
+});
+
+testRule({
+  plugins: [plugin],
+  ruleName,
+  config: true,
+  fix: true,
+  reject: [
+    {
+      code: ".a { border-color: #fff; }",
+      fixed: ".a { border-color: white; }",
+      message: messages.rejected("#fff"),
+      description: "#fff should be fixed to white",
+    },
+    {
+      code: ".a { border: 1px solid #ffffff; }",
+      fixed: ".a { border: 1px solid white; }",
+      message: messages.rejected("1px solid #ffffff"),
+      description: "#ffffff should be fixed to white",
+    },
+    {
+      code: ".a { outline-color: #FFF; }",
+      fixed: ".a { outline-color: white; }",
+      message: messages.rejected("#FFF"),
+      description: "#FFF should be fixed to white",
+    },
+    {
+      code: ".a { border-left-color: #FFFFFF; }",
+      fixed: ".a { border-left-color: white; }",
+      message: messages.rejected("#FFFFFF"),
+      description: "#FFFFFF should be fixed to white",
+    },
+    {
+      code: ".a { outline: 1px solid #000; }",
+      fixed: ".a { outline: 1px solid black; }",
+      message: messages.rejected("1px solid #000"),
+      description: "#000 should be fixed to black",
+    },
+    {
+      code: ".a { border-block-end-color: #000000; }",
+      fixed: ".a { border-block-end-color: black; }",
+      message: messages.rejected("#000000"),
+      description: "#000000 should be fixed to black",
     },
   ],
 });

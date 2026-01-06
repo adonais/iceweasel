@@ -143,14 +143,12 @@ struct MOZ_STACK_CLASS RubyColumn {
       return ret;
     }
 
-    friend bool operator==(const Iterator& aIter1, const Iterator& aIter2) {
-      MOZ_ASSERT(&aIter1.mColumn == &aIter2.mColumn,
+    bool operator==(const Iterator& aIter2) const {
+      MOZ_ASSERT(&mColumn == &aIter2.mColumn,
                  "Should only compare iterators of the same ruby column");
-      return aIter1.mIndex == aIter2.mIndex;
+      return mIndex == aIter2.mIndex;
     }
-    friend bool operator!=(const Iterator& aIter1, const Iterator& aIter2) {
-      return !(aIter1 == aIter2);
-    }
+    bool operator!=(const Iterator& aIter2) const = default;
 
    private:
     Iterator(const RubyColumn& aColumn, int32_t aIndex)

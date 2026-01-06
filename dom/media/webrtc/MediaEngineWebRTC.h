@@ -27,6 +27,8 @@ class MediaEngineWebRTC : public MediaEngine {
   void EnumerateDevices(dom::MediaSourceEnum, MediaSinkEnum,
                         nsTArray<RefPtr<MediaDevice>>*) override;
   RefPtr<MediaEngineSource> CreateSource(const MediaDevice* aDevice) override;
+  RefPtr<MediaEngineSource> CreateSourceFrom(const MediaEngineSource* aSource,
+                                             const MediaDevice*) override;
 
   MediaEventSource<void>& DeviceListChangeEvent() override {
     return mDeviceListChangeEvent;

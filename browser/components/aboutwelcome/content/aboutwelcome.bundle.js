@@ -1930,11 +1930,11 @@ const CTAParagraph = props => {
     "data-l10n-id": content.text.string_id,
     onClick: onClick,
     onKeyUp: event => ["Enter", " "].includes(event.key) ? onClick(event) : null,
-    value: "cta_paragraph",
-    role: "link"
+    value: "cta_paragraph"
   }, " ", /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("a", {
     "data-l10n-name": content.text.string_name,
-    tabIndex: "0"
+    tabIndex: "0",
+    role: "link"
   })) : null));
 };
 

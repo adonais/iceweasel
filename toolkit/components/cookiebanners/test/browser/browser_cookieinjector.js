@@ -42,6 +42,7 @@ function assertNoCookies() {
 
 /**
  * Loads a list of urls consecutively from the same tab.
+ *
  * @param {string[]} urls - List of urls to load.
  */
 async function visitTestSites(urls = [ORIGIN_A, ORIGIN_B, ORIGIN_C]) {

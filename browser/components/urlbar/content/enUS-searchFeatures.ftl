@@ -285,6 +285,10 @@ urlbar-result-yelp-realtime-business-hours-closed =
 #   $review_count (integer) - The review count of this.
 urlbar-result-yelp-realtime-popularity = { $rating } ({ $review_count })
 
+# This a11y label is read by screen readers when an item in the row is selected.
+urlbar-result-aria-group-yelp-realtime =
+  .aria-label = { -yelp-brand-name } suggestions
+
 ## These strings are used for flight status suggestions in the urlbar.
 ## The flight status suggestions shows the flight time, origin and destination
 ## and the status like delayed, etc.
@@ -337,6 +341,10 @@ urlbar-result-flight-status-airport = { $city } ({ $code })
 #   $airlineName (string) - The airline name.
 urlbar-result-flight-status-flight-number-with-airline = { $flightNumber }, { $airlineName }
 
+# This a11y label is read by screen readers when an item in the row is selected.
+urlbar-result-aria-group-flight-status =
+  .aria-label = Flight status suggestions
+
 ## These strings are used for sports suggestions in the urlbar. Sports
 ## suggestions show team names, scores, game times, etc.
 
@@ -368,3 +376,7 @@ urlbar-result-menu-dont-show-sports =
 
 # A message that replaces a result when the user dismisses sports suggestions.
 urlbar-result-dismissal-acknowledgment-sports = Thanks for your feedback. You won’t see sports suggestions anymore.
+
+# This a11y label is read by screen readers when an item in the row is selected.
+urlbar-result-aria-group-sports =
+  .aria-label = Sports suggestions

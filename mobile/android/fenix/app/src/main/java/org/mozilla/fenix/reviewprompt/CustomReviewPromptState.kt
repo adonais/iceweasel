@@ -9,14 +9,13 @@ import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
-import mozilla.components.lib.state.UiStore
 import org.mozilla.fenix.reviewprompt.ui.CustomReviewPrompt
 
 /** [Store] for holding [CustomReviewPromptState] and applying [CustomReviewPromptAction]s. */
 class CustomReviewPromptStore(
     initialState: CustomReviewPromptState,
     middleware: List<Middleware<CustomReviewPromptState, CustomReviewPromptAction>> = emptyList(),
-) : UiStore<CustomReviewPromptState, CustomReviewPromptAction>(
+) : Store<CustomReviewPromptState, CustomReviewPromptAction>(
     initialState = initialState,
     reducer = ::reduceCustomReviewPromptActions,
     middleware = middleware,

@@ -187,6 +187,10 @@
   <string name="search_engine_suggestions_title">%s تلاش کریں</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">ایڈریس بار سے براہ راست تلاش کریں</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">تلاش کریں</string>
   <!-- Text preview for larger sized widgets -->
@@ -1209,4 +1213,10 @@
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

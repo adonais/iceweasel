@@ -106,6 +106,12 @@ interface nsIAlertNotification : nsISupports
             [optional] in Array<uint32_t> aVibrate);
 
   /**
+   * Initializes an alert notification with another instance.
+   * Can be useful in JS as it can provide a dictionary object.
+   */
+  void initWithObject(in nsIAlertNotification aAlertNotification);
+
+  /**
    * The unique ID of the notification, based on the profile path and the caller
    * given name.
    *
@@ -266,12 +272,11 @@ interface nsIAlertNotification : nsISupports
 [scriptable, uuid(f7a36392-d98b-4141-a7d7-4e46642684e3)]
 interface nsIAlertsService : nsISupports
 {
-  void showAlert(in nsIAlertNotification aAlert,
-                 [optional] in nsIObserver aAlertListener);
   /**
    * Initializes and shows an |nsIAlertNotification| with the given parameters.
    *
-   * @param aAlertListener Used for callbacks. May be null if the caller
+   * @param aAlert The alert notification to show.
+   * @param aAlertListener Used for callbacks. May be omitted if the caller
    *                       doesn't care about callbacks.
    * @see nsIAlertNotification for descriptions of all other parameters.
    * @throws NS_ERROR_NOT_AVAILABLE If the notification cannot be displayed.
@@ -284,26 +289,15 @@ interface nsIAlertsService : nsISupports
    *             "alertsettingscallback" when alert settings should be opened
    *             "alertclickcallback" when the text is clicked
    *             "alertshow" when the alert is shown
-   *   data    - the value of the cookie parameter passed to showAlertNotification.
+   *   data    - the value of the cookie attribute of the alert parameter.
    *
    * @note Depending on current circumstances (if the user's in a fullscreen
    *       application, for instance), the alert might not be displayed at all.
    *       In that case, if an alert listener is passed in it will receive the
    *       "alertfinished" notification immediately.
    */
-  void showAlertNotification(in AString aImageURL,
-                             in AString aTitle,
-                             in AString aText,
-                             [optional] in boolean aTextClickable,
-                             [optional] in AString aCookie,
-                             [optional] in nsIObserver aAlertListener,
-                             [optional] in AString aName,
-                             [optional] in AString aDir,
-                             [optional] in AString aLang,
-                             [optional] in AString aData,
-                             [optional] in nsIPrincipal aPrincipal,
-                             [optional] in boolean aInPrivateBrowsing,
-                             [optional] in boolean aRequireInteraction);
+  void showAlert(in nsIAlertNotification aAlert,
+                 [optional] in nsIObserver aAlertListener);
 
   /**
    * Close alerts created by the service.

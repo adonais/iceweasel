@@ -1618,10 +1618,9 @@ static void MaybeWriteRawStartTimeValue(SpliceableJSONWriter& aWriter,
 #endif
 
 #ifdef XP_WIN
-  Maybe<uint64_t> startTimeQPC = aStartTime.RawQueryPerformanceCounterValue();
-  if (startTimeQPC)
-    aWriter.DoubleProperty("startTimeAsQueryPerformanceCounterValue",
-                           static_cast<double>(*startTimeQPC));
+  uint64_t startTimeQPC = aStartTime.RawQueryPerformanceCounterValue();
+  aWriter.DoubleProperty("startTimeAsQueryPerformanceCounterValue",
+                         static_cast<double>(startTimeQPC));
 #endif
 }
 

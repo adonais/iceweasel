@@ -212,6 +212,7 @@ Preferences.addAll([
 
   // Popups
   { id: "dom.disable_open_during_load", type: "bool" },
+
   // Passwords
   { id: "signon.rememberSignons", type: "bool" },
   { id: "signon.generation.enabled", type: "bool" },
@@ -281,10 +282,14 @@ Preferences.addAll([
   { id: "network.trr.uri", type: "string" },
   { id: "network.trr.default_provider_uri", type: "string" },
   { id: "network.trr.custom_uri", type: "string" },
+  { id: "network.trr_ui.fallback_was_checked", type: "bool" },
   { id: "doh-rollout.disable-heuristics", type: "bool" },
 
   // Local Network Access
   { id: "network.lna.blocking", type: "bool" },
+
+  // Permissions
+  { id: "media.setsinkid.enabled", type: "bool" },
 ]);
 
 if (Services.prefs.getBoolPref("privacy.ui.status_card", false)) {
@@ -566,58 +571,211 @@ if (Services.prefs.getBoolPref("privacy.ui.status_card", false)) {
     pref: "browser.contentblocking.category",
     get: prefValue => prefValue == "strict",
   });
-  Preferences.addSetting({
-    id: "trackerCount",
-    cachedValue: null,
-    async setup(emitChange) {
-      const now = Date.now();
-      const aMonthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
-      const events = await lazy.TrackingDBService.getEventsByDateRange(
-        now,
-        aMonthAgo
-      );
-      const total = events.reduce((acc, day) => {
-        return acc + day.getResultByName("count");
-      }, 0);
-      this.cachedValue = total;
-      emitChange();
-    },
-    get() {
-      return this.cachedValue;
-    },
-  });
-  Preferences.addSetting({
-    id: "appUpdateStatus",
-    cachedValue: AppUpdater.STATUS.NO_UPDATER,
-    async setup(emitChange) {
-      if (AppConstants.MOZ_UPDATER && !gIsPackagedApp) {
-        let appUpdater = new AppUpdater();
-        let listener = (status, ..._args) => {
-          this.cachedValue = status;
-          emitChange();
-        };
-        appUpdater.addListener(listener);
-        await appUpdater.check();
-        return () => {
-          appUpdater.removeListener(listener);
-          appUpdater.stop();
-        };
-      }
-      return () => {};
-    },
-    get() {
-      return this.cachedValue;
-    },
-    set(value) {
-      this.cachedValue = value;
-    },
-  });
+  Preferences.addSetting(
+    /** @type {{ cachedValue: number, loadTrackerCount: (emitChange: SettingEmitChange) => Promise<void> } & SettingConfig} */ ({
+      id: "trackerCount",
+      cachedValue: null,
+      async loadTrackerCount(emitChange) {
+        const now = Date.now();
+        const aMonthAgo = new Date(now - 30 * 24 * 60 * 60 * 1000);
+        /** @type {{ getResultByName: (_: string) => number }[]} */
+        const events = await lazy.TrackingDBService.getEventsByDateRange(
+          now,
+          aMonthAgo
+        );
+
+        const total = events.reduce((acc, day) => {
+          return acc + day.getResultByName("count");
+        }, 0);
+        this.cachedValue = total;
+        emitChange();
+      },
+      setup(emitChange) {
+        this.loadTrackerCount(emitChange);
+      },
+      get() {
+        return this.cachedValue;
+      },
+    })
+  );
+  Preferences.addSetting(
+    /** @type {{ cachedValue: any } & SettingConfig} */ ({
+      id: "appUpdateStatus",
+      cachedValue: AppUpdater.STATUS.NO_UPDATER,
+      setup(emitChange) {
+        if (AppConstants.MOZ_UPDATER && !gIsPackagedApp) {
+          let appUpdater = new AppUpdater();
+          /**
+           * @param {number} status
+           * @param {any[]} _args
+           */
+          let listener = (status, ..._args) => {
+            this.cachedValue = status;
+            emitChange();
+          };
+          appUpdater.addListener(listener);
+          appUpdater.check();
+          return () => {
+            appUpdater.removeListener(listener);
+            appUpdater.stop();
+          };
+        }
+        return () => {};
+      },
+      get() {
+        return this.cachedValue;
+      },
+      set(value) {
+        this.cachedValue = value;
+      },
+    })
+  );
 }
+
+Preferences.addSetting({
+  id: "savePasswords",
+  pref: "signon.rememberSignons",
+  controllingExtensionInfo: {
+    storeId: "services.passwordSavingEnabled",
+    l10nId: "extension-controlling-password-saving",
+  },
+});
+
+Preferences.addSetting({
+  id: "managePasswordExceptions",
+  onUserClick: () => {
+    gPrivacyPane.showPasswordExceptions();
+  },
+});
+
+Preferences.addSetting({
+  id: "fillUsernameAndPasswords",
+  pref: "signon.autofillForms",
+});
+
+Preferences.addSetting({
+  id: "suggestStrongPasswords",
+  pref: "signon.generation.enabled",
+  visible: () => Services.prefs.getBoolPref("signon.generation.available"),
+});
+
+Preferences.addSetting({
+  id: "requireOSAuthForPasswords",
+  visible: () => OSKeyStore.canReauth(),
+  get: () => LoginHelper.getOSAuthEnabled(),
+  async set(checked) {
+    const [messageText, captionText] = await Promise.all([
+      lazy.AboutLoginsL10n.formatValue("about-logins-os-auth-dialog-message"),
+      lazy.AboutLoginsL10n.formatValue("about-logins-os-auth-dialog-caption"),
+    ]);
+
+    await LoginHelper.trySetOSAuthEnabled(
+      window,
+      checked,
+      messageText,
+      captionText
+    );
+
+    // Trigger change event to keep checkbox UI in sync with pref value
+    Services.obs.notifyObservers(null, "PasswordsOSAuthEnabledChange");
+  },
+  setup: emitChange => {
+    Services.obs.addObserver(emitChange, "PasswordsOSAuthEnabledChange");
+    return () =>
+      Services.obs.removeObserver(emitChange, "PasswordsOSAuthEnabledChange");
+  },
+});
+
+Preferences.addSetting({
+  id: "manageSavedPasswords",
+  onUserClick: ({ target }) => {
+    target.ownerGlobal.gPrivacyPane.showPasswords();
+  },
+});
+
+Preferences.addSetting({
+  id: "additionalProtectionsGroup",
+});
+
+Preferences.addSetting({
+  id: "primaryPasswordNotSet",
+  setup(emitChange) {
+    const topic = "passwordmgr-primary-pw-changed";
+    Services.obs.addObserver(emitChange, topic);
+    return () => Services.obs.removeObserver(emitChange, topic);
+  },
+  visible: () => {
+    return !LoginHelper.isPrimaryPasswordSet();
+  },
+});
+
+Preferences.addSetting({
+  id: "usePrimaryPassword",
+  deps: ["primaryPasswordNotSet"],
+});
+
+Preferences.addSetting({
+  id: "addPrimaryPassword",
+  deps: ["primaryPasswordNotSet"],
+  onUserClick: ({ target }) => {
+    target.ownerGlobal.gPrivacyPane.changeMasterPassword();
+  },
+  disabled: () => {
+    return !Services.policies.isAllowed("createMasterPassword");
+  },
+});
+
+Preferences.addSetting({
+  id: "primaryPasswordSet",
+  setup(emitChange) {
+    const topic = "passwordmgr-primary-pw-changed";
+    Services.obs.addObserver(emitChange, topic);
+    return () => Services.obs.removeObserver(emitChange, topic);
+  },
+  visible: () => {
+    return LoginHelper.isPrimaryPasswordSet();
+  },
+});
+
+Preferences.addSetting({
+  id: "statusPrimaryPassword",
+  deps: ["primaryPasswordSet"],
+  onUserClick: e => {
+    if (e.target.localName == "moz-button") {
+      e.target.ownerGlobal.gPrivacyPane._removeMasterPassword();
+    }
+  },
+  getControlConfig(config) {
+    config.options[0].controlAttrs = {
+      ...config.options[0].controlAttrs,
+      ...(!Services.policies.isAllowed("removeMasterPassword")
+        ? { disabled: "" }
+        : {}),
+    };
+    return config;
+  },
+});
+
+Preferences.addSetting({
+  id: "changePrimaryPassword",
+  deps: ["primaryPasswordSet"],
+  onUserClick: ({ target }) => {
+    target.ownerGlobal.gPrivacyPane.changeMasterPassword();
+  },
+});
+
+Preferences.addSetting({
+  id: "breachAlerts",
+  pref: "signon.management.page.breach-alerts.enabled",
+});
+
 /**
  * This class is used to create Settings that are used to warn the user about
  * potential misconfigurations. It should be passed into Preferences.addSetting
  * to create the Preference for a <moz-box-item> because it creates
  * separate members on pref.config
+ *
+ * @implements {SettingConfig}
  */
 class WarningSettingConfig {
   /**
@@ -633,7 +791,7 @@ class WarningSettingConfig {
   /**
    *
    * @param {string} id - The unique setting ID for the setting created by this config
-   * @param {Object.<string,string>} prefMapping - A map from member name (to be used in the
+   * @param {{[key: string]: string}} prefMapping - A map from member name (to be used in the
    * `problematic` arg's arg) to pref string, containing all of the preferences this Setting
    * relies upon. On setup, this object will create properties for each entry here, where the
    * value is the result of Preferences.get(key).
@@ -687,9 +845,9 @@ class WarningSettingConfig {
    * This initializes the Setting created with this config, starting listeners for all dependent
    * Preferences and providing a cleanup callback to remove them
    *
-   * @param {Function} emitChange - a callback to be invoked any time that the Setting created
+   * @param {() => any} emitChange - a callback to be invoked any time that the Setting created
    * with this config is changed
-   * @returns {Function} a function that cleans up the state from this Setting, namely pref change listeners.
+   * @returns {() => any} a function that cleans up the state from this Setting, namely pref change listeners.
    */
   setup(emitChange) {
     for (let [getter, prefId] of Object.entries(this.prefMapping)) {
@@ -708,7 +866,7 @@ class WarningSettingConfig {
    * "dismiss" action depending on the target, and those callbacks are defined
    * in this class.
    *
-   * @param {Event} event - The event for the user click
+   * @param {PointerEvent} event - The event for the user click
    */
   onUserClick(event) {
     switch (event.target.id) {
@@ -1110,6 +1268,7 @@ if (Services.prefs.getBoolPref("privacy.ui.status_card", false)) {
   );
 }
 
+/** @type {SettingControlConfig[]} */
 const SECURITY_WARNINGS = [
   {
     l10nId: "security-privacy-issue-warning-test",
@@ -1205,39 +1364,41 @@ const SECURITY_WARNINGS = [
   },
 ];
 
-Preferences.addSetting({
-  id: "securityWarningsGroup",
-  makeSecurityWarningItems() {
-    return SECURITY_WARNINGS.map(({ id, l10nId }) => ({
-      id,
-      l10nId,
-      control: "moz-box-item",
-      options: [
-        {
-          control: "moz-button",
-          l10nId: "issue-card-reset-button",
-          controlAttrs: { slot: "actions", size: "small", id: "reset" },
-        },
-        {
-          control: "moz-button",
-          l10nId: "issue-card-dismiss-button",
-          controlAttrs: {
-            slot: "actions",
-            size: "small",
-            iconsrc: "chrome://global/skin/icons/close.svg",
-            id: "dismiss",
+Preferences.addSetting(
+  /** @type {{ makeSecurityWarningItems: () => SettingControlConfig[] } & SettingConfig} */ ({
+    id: "securityWarningsGroup",
+    makeSecurityWarningItems() {
+      return SECURITY_WARNINGS.map(({ id, l10nId }) => ({
+        id,
+        l10nId,
+        control: "moz-box-item",
+        options: [
+          {
+            control: "moz-button",
+            l10nId: "issue-card-reset-button",
+            controlAttrs: { slot: "actions", size: "small", id: "reset" },
           },
-        },
-      ],
-    }));
-  },
-  getControlConfig(config) {
-    if (!config.items) {
-      return { ...config, items: this.makeSecurityWarningItems() };
-    }
-    return config;
-  },
-});
+          {
+            control: "moz-button",
+            l10nId: "issue-card-dismiss-button",
+            controlAttrs: {
+              slot: "actions",
+              size: "small",
+              iconsrc: "chrome://global/skin/icons/close.svg",
+              id: "dismiss",
+            },
+          },
+        ],
+      }));
+    },
+    getControlConfig(config) {
+      if (!config.items) {
+        return { ...config, items: this.makeSecurityWarningItems() };
+      }
+      return config;
+    },
+  })
+);
 
 Preferences.addSetting({
   id: "privacyCard",
@@ -1520,7 +1681,7 @@ Preferences.addSetting({
     deps.blockUnwantedDownloads.value = value;
 
     let malwareTable = Preferences.get("urlclassifier.malwareTable");
-    let malware = malwareTable.value
+    let malware = /** @type {string} */ (malwareTable.value)
       .split(",")
       .filter(
         x =>
@@ -1557,161 +1718,175 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "manageDataSettingsGroup",
 });
-Preferences.addSetting({
-  id: "siteDataSize",
-  setup(emitChange) {
-    let onUsageChanged = async () => {
-      let [siteDataUsage, cacheUsage] = await Promise.all([
-        SiteDataManager.getTotalUsage(),
-        SiteDataManager.getCacheSize(),
-      ]);
-      let totalUsage = siteDataUsage + cacheUsage;
-      let [value, unit] = DownloadUtils.convertByteUnits(totalUsage);
-      this.usage = { value, unit };
+Preferences.addSetting(
+  /** @type {{ isUpdatingSites: boolean, usage: { value: number, unit: string } | void } & SettingConfig} */ ({
+    id: "siteDataSize",
+    usage: null,
+    isUpdatingSites: false,
+    setup(emitChange) {
+      let onUsageChanged = async () => {
+        let [siteDataUsage, cacheUsage] = await Promise.all([
+          SiteDataManager.getTotalUsage(),
+          SiteDataManager.getCacheSize(),
+        ]);
+        let totalUsage = siteDataUsage + cacheUsage;
+        let [value, unit] = DownloadUtils.convertByteUnits(totalUsage);
+        this.usage = { value, unit };
 
-      this.isUpdatingSites = false;
-      emitChange();
-    };
+        this.isUpdatingSites = false;
+        emitChange();
+      };
 
-    let onUpdatingSites = () => {
-      this.isUpdatingSites = true;
-      emitChange();
-    };
+      let onUpdatingSites = () => {
+        this.isUpdatingSites = true;
+        emitChange();
+      };
 
-    Services.obs.addObserver(onUsageChanged, "sitedatamanager:sites-updated");
-    Services.obs.addObserver(onUpdatingSites, "sitedatamanager:updating-sites");
-
-    return () => {
-      Services.obs.removeObserver(
-        onUsageChanged,
-        "sitedatamanager:sites-updated"
-      );
-      Services.obs.removeObserver(
+      Services.obs.addObserver(onUsageChanged, "sitedatamanager:sites-updated");
+      Services.obs.addObserver(
         onUpdatingSites,
         "sitedatamanager:updating-sites"
       );
-    };
-  },
-  getControlConfig(config) {
-    if (this.isUpdatingSites || !this.usage) {
-      // Data not retrieved yet, show a loading state.
+
+      return () => {
+        Services.obs.removeObserver(
+          onUsageChanged,
+          "sitedatamanager:sites-updated"
+        );
+        Services.obs.removeObserver(
+          onUpdatingSites,
+          "sitedatamanager:updating-sites"
+        );
+      };
+    },
+    getControlConfig(config) {
+      if (this.isUpdatingSites || !this.usage) {
+        // Data not retrieved yet, show a loading state.
+        return {
+          ...config,
+          l10nId: "sitedata-total-size-calculating",
+        };
+      }
+
+      let { value, unit } = this.usage;
       return {
         ...config,
-        l10nId: "sitedata-total-size-calculating",
+        l10nId: "sitedata-total-size2",
+        l10nArgs: {
+          value,
+          unit,
+        },
       };
-    }
-
-    let { value, unit } = this.usage;
-    return {
-      ...config,
-      l10nId: "sitedata-total-size2",
-      l10nArgs: {
-        value,
-        unit,
-      },
-    };
-  },
-});
-
-// Register the setting for simpler access in settings that depend on this, but it hasn't been converted yet.
-Preferences.addSetting({
-  id: "privateBrowsingAutostart",
-  pref: "browser.privatebrowsing.autostart",
-});
+    },
+  })
+);
 
 Preferences.addSetting({
   id: "deleteOnCloseInfo",
-  deps: ["privateBrowsingAutostart"],
-  visible({ privateBrowsingAutostart }) {
-    return privateBrowsingAutostart.value;
+  deps: ["privateBrowsingAutoStart"],
+  visible({ privateBrowsingAutoStart }) {
+    return privateBrowsingAutoStart.value;
   },
 });
 
-Preferences.addSetting({
-  id: "clearSiteDataButton",
-  setup(emitChange) {
-    let onSitesUpdated = async () => {
-      this.isUpdatingSites = false;
-      emitChange();
-    };
+Preferences.addSetting(
+  /** @type {{ isUpdatingSites: boolean } & SettingConfig} */ ({
+    id: "clearSiteDataButton",
+    isUpdatingSites: false,
+    setup(emitChange) {
+      let onSitesUpdated = async () => {
+        this.isUpdatingSites = false;
+        emitChange();
+      };
 
-    let onUpdatingSites = () => {
-      this.isUpdatingSites = true;
-      emitChange();
-    };
+      let onUpdatingSites = () => {
+        this.isUpdatingSites = true;
+        emitChange();
+      };
 
-    Services.obs.addObserver(onSitesUpdated, "sitedatamanager:sites-updated");
-    Services.obs.addObserver(onUpdatingSites, "sitedatamanager:updating-sites");
-
-    return () => {
-      Services.obs.removeObserver(
-        onSitesUpdated,
-        "sitedatamanager:sites-updated"
-      );
-      Services.obs.removeObserver(
+      Services.obs.addObserver(onSitesUpdated, "sitedatamanager:sites-updated");
+      Services.obs.addObserver(
         onUpdatingSites,
         "sitedatamanager:updating-sites"
       );
-    };
-  },
-  onUserClick() {
-    let uri;
-    if (useOldClearHistoryDialog) {
-      uri = "chrome://browser/content/preferences/dialogs/clearSiteData.xhtml";
-    } else {
-      uri = "chrome://browser/content/sanitize_v2.xhtml";
-    }
 
-    gSubDialog.open(
-      uri,
-      {
-        features: "resizable=no",
-      },
-      {
-        mode: "clearSiteData",
+      return () => {
+        Services.obs.removeObserver(
+          onSitesUpdated,
+          "sitedatamanager:sites-updated"
+        );
+        Services.obs.removeObserver(
+          onUpdatingSites,
+          "sitedatamanager:updating-sites"
+        );
+      };
+    },
+    onUserClick() {
+      let uri;
+      if (useOldClearHistoryDialog) {
+        uri =
+          "chrome://browser/content/preferences/dialogs/clearSiteData.xhtml";
+      } else {
+        uri = "chrome://browser/content/sanitize_v2.xhtml";
       }
-    );
-  },
-  disabled() {
-    return this.isUpdatingSites;
-  },
-});
-Preferences.addSetting({
-  id: "siteDataSettings",
-  setup(emitChange) {
-    let onSitesUpdated = async () => {
-      this.isUpdatingSites = false;
-      emitChange();
-    };
 
-    let onUpdatingSites = () => {
-      this.isUpdatingSites = true;
-      emitChange();
-    };
-
-    Services.obs.addObserver(onSitesUpdated, "sitedatamanager:sites-updated");
-    Services.obs.addObserver(onUpdatingSites, "sitedatamanager:updating-sites");
-
-    return () => {
-      Services.obs.removeObserver(
-        onSitesUpdated,
-        "sitedatamanager:sites-updated"
+      gSubDialog.open(
+        uri,
+        {
+          features: "resizable=no",
+        },
+        {
+          mode: "clearSiteData",
+        }
       );
-      Services.obs.removeObserver(
+    },
+    disabled() {
+      return this.isUpdatingSites;
+    },
+  })
+);
+Preferences.addSetting(
+  /** @type {{ isUpdatingSites: boolean } & SettingConfig} */ ({
+    id: "siteDataSettings",
+    isUpdatingSites: false,
+    setup(emitChange) {
+      let onSitesUpdated = async () => {
+        this.isUpdatingSites = false;
+        emitChange();
+      };
+
+      let onUpdatingSites = () => {
+        this.isUpdatingSites = true;
+        emitChange();
+      };
+
+      Services.obs.addObserver(onSitesUpdated, "sitedatamanager:sites-updated");
+      Services.obs.addObserver(
         onUpdatingSites,
         "sitedatamanager:updating-sites"
       );
-    };
-  },
-  onUserClick() {
-    gSubDialog.open(
-      "chrome://browser/content/preferences/dialogs/siteDataSettings.xhtml"
-    );
-  },
-  disabled() {
-    return this.isUpdatingSites;
-  },
-});
+
+      return () => {
+        Services.obs.removeObserver(
+          onSitesUpdated,
+          "sitedatamanager:sites-updated"
+        );
+        Services.obs.removeObserver(
+          onUpdatingSites,
+          "sitedatamanager:updating-sites"
+        );
+      };
+    },
+    onUserClick() {
+      gSubDialog.open(
+        "chrome://browser/content/preferences/dialogs/siteDataSettings.xhtml"
+      );
+    },
+    disabled() {
+      return this.isUpdatingSites;
+    },
+  })
+);
 Preferences.addSetting({
   id: "cookieExceptions",
   onUserClick() {
@@ -1797,9 +1972,9 @@ Preferences.addSetting({
     "clearOnCloseCache",
     "clearOnCloseStorage",
     "sanitizeOnShutdown",
-    "privateBrowsingAutostart",
-    "historyModeCustom",
+    "privateBrowsingAutoStart",
     "cookieBehavior",
+    "alwaysClear",
   ],
   setup() {
     // Make sure to do the migration for the clear history dialog before implementing logic for delete on close
@@ -1807,21 +1982,20 @@ Preferences.addSetting({
     // overwriting prefs
     Sanitizer.maybeMigratePrefs("clearOnShutdown");
   },
-  disabled({ privateBrowsingAutostart, cookieBehavior }) {
+  disabled({ privateBrowsingAutoStart, cookieBehavior }) {
     return (
-      privateBrowsingAutostart.value ||
+      privateBrowsingAutoStart.value ||
       cookieBehavior.value == Ci.nsICookieService.BEHAVIOR_REJECT
     );
   },
-  get(_, { privateBrowsingAutostart }) {
+  get(_, { privateBrowsingAutoStart }) {
     return (
-      isCookiesAndStorageClearingOnShutdown() || privateBrowsingAutostart.value
+      isCookiesAndStorageClearingOnShutdown() || privateBrowsingAutoStart.value
     );
   },
   set(
     value,
     {
-      historyModeCustom,
       clearOnCloseCookies,
       clearOnCloseCache,
       clearOnCloseStorage,
@@ -1842,14 +2016,240 @@ Preferences.addSetting({
     // If no other cleaning category is selected, sanitizeOnShutdown gets synced with deleteOnClose
     sanitizeOnShutdown.value =
       gPrivacyPane._isCustomCleaningPrefPresent() || value;
+  },
+});
 
-    // Update the view of the history settings
-    if (value && !historyModeCustom.value) {
-      historyModeCustom.value = true;
-      gPrivacyPane.initializeHistoryMode();
-      gPrivacyPane.updateHistoryModePane();
-      gPrivacyPane.updatePrivacyMicroControls();
+Preferences.addSetting({
+  id: "historyModeCustom",
+  pref: "privacy.history.custom",
+});
+Preferences.addSetting({
+  id: "historyEnabled",
+  pref: "places.history.enabled",
+});
+Preferences.addSetting({
+  id: "formFillEnabled",
+  pref: "browser.formfill.enable",
+});
+
+// Store this on the window so tests can suppress the prompt.
+window._shouldPromptForRestartPBM = true;
+async function onChangePrivateBrowsingAutoStart(value, revertFn) {
+  if (!window._shouldPromptForRestartPBM) {
+    return false;
+  }
+
+  // The PBM autostart pref has changed so we need to prompt for restart.
+  let buttonIndex = await confirmRestartPrompt(value, 1, true, false);
+
+  // User accepts, restart the browser.
+  if (buttonIndex == CONFIRM_RESTART_PROMPT_RESTART_NOW) {
+    Services.startup.quit(
+      Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart
+    );
+    return false;
+  }
+
+  // Don't prompt for the revert operation itself.
+  window._shouldPromptForRestartPBM = false;
+  revertFn();
+  window._shouldPromptForRestartPBM = true;
+
+  // User cancels, do nothing. The caller will clean up the pref change.
+  return true;
+}
+
+Preferences.addSetting({
+  id: "historyMode",
+  deps: [
+    "historyModeCustom",
+    "privateBrowsingAutoStart",
+    "historyEnabled",
+    "formFillEnabled",
+    "sanitizeOnShutdown",
+  ],
+  get(
+    _,
+    {
+      historyModeCustom,
+      privateBrowsingAutoStart,
+      historyEnabled,
+      formFillEnabled,
+      sanitizeOnShutdown,
     }
+  ) {
+    if (historyModeCustom.value) {
+      return "custom";
+    }
+
+    if (privateBrowsingAutoStart.value) {
+      return "dontremember";
+    }
+
+    if (
+      historyEnabled.value &&
+      formFillEnabled.value &&
+      !sanitizeOnShutdown.value
+    ) {
+      return "remember";
+    }
+
+    return "custom";
+  },
+  set(
+    value,
+    {
+      historyModeCustom,
+      privateBrowsingAutoStart,
+      historyEnabled,
+      formFillEnabled,
+      sanitizeOnShutdown,
+    }
+  ) {
+    let lastHistoryModeCustom = historyModeCustom.value;
+    let lastHistoryEnabled = historyEnabled.value;
+    let lastFormFillEnabled = formFillEnabled.value;
+    let lastSanitizeOnShutdown = sanitizeOnShutdown.value;
+    let lastPrivateBrowsingAutoStart = privateBrowsingAutoStart.value;
+
+    historyModeCustom.value = value == "custom";
+
+    if (value == "remember") {
+      historyEnabled.value = true;
+      formFillEnabled.value = true;
+      sanitizeOnShutdown.value = false;
+      privateBrowsingAutoStart.value = false;
+    } else if (value == "dontremember") {
+      privateBrowsingAutoStart.value = true;
+    }
+
+    if (privateBrowsingAutoStart.value !== lastPrivateBrowsingAutoStart) {
+      // The PBM autostart pref has changed so we need to prompt for restart.
+      onChangePrivateBrowsingAutoStart(privateBrowsingAutoStart.value, () => {
+        // User cancelled the action, revert the change.
+        // Simply reverting the setting value itself is not enough, because a
+        // state transition to "custom" does not override any of the sub-prefs.
+        // We need to update them all manually.
+        historyModeCustom.value = lastHistoryModeCustom;
+        historyEnabled.value = lastHistoryEnabled;
+        formFillEnabled.value = lastFormFillEnabled;
+        sanitizeOnShutdown.value = lastSanitizeOnShutdown;
+        privateBrowsingAutoStart.value = lastPrivateBrowsingAutoStart;
+      });
+    }
+  },
+  disabled({ privateBrowsingAutoStart }) {
+    // Disable history dropdown if PBM autostart is locked on.
+    return privateBrowsingAutoStart.locked && privateBrowsingAutoStart.value;
+  },
+  getControlConfig(config, { privateBrowsingAutoStart }, setting) {
+    let l10nId = null;
+    if (setting.value == "remember") {
+      l10nId = "history-remember-description3";
+    } else if (setting.value == "dontremember") {
+      l10nId = "history-dontremember-description3";
+    } else if (setting.value == "custom") {
+      l10nId = "history-custom-description3";
+    }
+
+    let dontRememberOption = config.options.find(
+      opt => opt.value == "dontremember"
+    );
+
+    // If PBM is unavailable hide the "Never remember history" option.
+    dontRememberOption.hidden = !PrivateBrowsingUtils.enabled;
+
+    // If the PBM autostart pref is locked disable the "Never remember history"
+    // option.
+    dontRememberOption.disabled =
+      privateBrowsingAutoStart.locked && !privateBrowsingAutoStart.value;
+
+    return {
+      ...config,
+      l10nId,
+    };
+  },
+});
+
+Preferences.addSetting({
+  id: "privateBrowsingAutoStart",
+  pref: "browser.privatebrowsing.autostart",
+  deps: ["historyMode"],
+  onUserChange(value, _, setting) {
+    onChangePrivateBrowsingAutoStart(value, () => {
+      // User cancelled the action, revert the setting.
+      setting.value = !value;
+    });
+  },
+  visible({ historyMode }) {
+    return PrivateBrowsingUtils.enabled && historyMode.value == "custom";
+  },
+});
+Preferences.addSetting({
+  id: "rememberHistory",
+  pref: "places.history.enabled",
+  deps: ["historyMode", "privateBrowsingAutoStart"],
+  visible({ historyMode }) {
+    return historyMode.value == "custom";
+  },
+  disabled({ privateBrowsingAutoStart }) {
+    return privateBrowsingAutoStart.value;
+  },
+});
+Preferences.addSetting({
+  id: "rememberForms",
+  pref: "browser.formfill.enable",
+  deps: ["historyMode", "privateBrowsingAutoStart"],
+  visible({ historyMode }) {
+    return historyMode.value == "custom";
+  },
+  disabled({ privateBrowsingAutoStart }) {
+    return privateBrowsingAutoStart.value;
+  },
+});
+Preferences.addSetting({
+  id: "alwaysClear",
+  pref: "privacy.sanitize.sanitizeOnShutdown",
+  deps: ["historyMode", "privateBrowsingAutoStart"],
+  visible({ historyMode }) {
+    return historyMode.value == "custom";
+  },
+  disabled({ privateBrowsingAutoStart }) {
+    return privateBrowsingAutoStart.value;
+  },
+});
+
+Preferences.addSetting({
+  id: "clearDataSettings",
+  deps: ["historyMode", "alwaysClear"],
+  visible({ historyMode }) {
+    return historyMode.value == "custom";
+  },
+  disabled({ alwaysClear }) {
+    return !alwaysClear.value || alwaysClear.disabled;
+  },
+  onUserClick() {
+    let dialogFile = useOldClearHistoryDialog
+      ? "chrome://browser/content/preferences/dialogs/sanitize.xhtml"
+      : "chrome://browser/content/sanitize_v2.xhtml";
+
+    gSubDialog.open(
+      dialogFile,
+      {
+        features: "resizable=no",
+      },
+      {
+        mode: "clearOnShutdown",
+      }
+    );
+  },
+});
+
+Preferences.addSetting({
+  id: "clearHistoryButton",
+  deps: ["historyMode"],
+  onUserClick(_, { historyMode }) {
+    gPrivacyPane.clearPrivateDataNow(historyMode.value == "dontremember");
   },
 });
 
@@ -1895,6 +2295,618 @@ Preferences.addSetting({
       (AppConstants.platform == "win" || AppConstants.platform == "macosx") &&
       typeof Services.policies.getActivePolicies()?.Certificates
         ?.ImportEnterpriseRoots == "undefined"
+    );
+  },
+});
+
+Preferences.addSetting({
+  id: "permissionBox",
+});
+Preferences.addSetting({
+  id: "popupPolicy",
+  pref: "dom.disable_open_during_load",
+});
+Preferences.addSetting({
+  id: "popupPolicyButton",
+  deps: ["popupPolicy"],
+  onUserClick: () => gPrivacyPane.showPopupExceptions(),
+  disabled: ({ popupPolicy }) => {
+    return !popupPolicy.value || popupPolicy.locked;
+  },
+});
+Preferences.addSetting({
+  id: "warnAddonInstall",
+  pref: "xpinstall.whitelist.required",
+});
+Preferences.addSetting({
+  id: "addonExceptions",
+  deps: ["warnAddonInstall"],
+  onUserClick: () => gPrivacyPane.showAddonExceptions(),
+  disabled: ({ warnAddonInstall }) => {
+    return !warnAddonInstall.value || warnAddonInstall.locked;
+  },
+});
+Preferences.addSetting({
+  id: "notificationsDoNotDisturb",
+  get: () => {
+    return AlertsServiceDND?.manualDoNotDisturb ?? false;
+  },
+  set: value => {
+    if (AlertsServiceDND) {
+      AlertsServiceDND.manualDoNotDisturb = value;
+    }
+  },
+  visible: () => {
+    return AlertsServiceDND != undefined;
+  },
+});
+Preferences.addSetting({
+  id: "locationSettingsButton",
+  onUserClick: () => gPrivacyPane.showLocationExceptions(),
+});
+Preferences.addSetting({
+  id: "cameraSettingsButton",
+  onUserClick: () => gPrivacyPane.showCameraExceptions(),
+});
+Preferences.addSetting({
+  id: "enabledLNA",
+  pref: "network.lna.blocking",
+});
+Preferences.addSetting({
+  id: "localNetworkSettingsButton",
+  onUserClick: () => gPrivacyPane.showLocalNetworkExceptions(),
+  deps: ["enabledLNA"],
+  visible: deps => {
+    return deps.enabledLNA.value;
+  },
+});
+Preferences.addSetting({
+  id: "localHostSettingsButton",
+  onUserClick: () => gPrivacyPane.showLocalHostExceptions(),
+  deps: ["enabledLNA"],
+  visible: deps => {
+    return deps.enabledLNA.value;
+  },
+});
+Preferences.addSetting({
+  id: "microphoneSettingsButton",
+  onUserClick: () => gPrivacyPane.showMicrophoneExceptions(),
+});
+Preferences.addSetting({
+  id: "enabledSpeakerControl",
+  pref: "media.setsinkid.enabled",
+});
+Preferences.addSetting({
+  id: "speakerSettingsButton",
+  onUserClick: () => gPrivacyPane.showSpeakerExceptions(),
+  deps: ["enabledSpeakerControl"],
+  visible: ({ enabledSpeakerControl }) => {
+    return enabledSpeakerControl.value;
+  },
+});
+Preferences.addSetting({
+  id: "notificationSettingsButton",
+  onUserClick: () => gPrivacyPane.showNotificationExceptions(),
+});
+Preferences.addSetting({
+  id: "autoplaySettingsButton",
+  onUserClick: () => gPrivacyPane.showAutoplayMediaExceptions(),
+});
+Preferences.addSetting({
+  id: "xrSettingsButton",
+  onUserClick: () => gPrivacyPane.showXRExceptions(),
+});
+
+Preferences.addSetting({
+  id: "dohBox",
+});
+
+Preferences.addSetting({
+  id: "dohAdvancedButton",
+  onUserClick(e) {
+    e.preventDefault();
+    gotoPref("paneDnsOverHttps");
+  },
+});
+
+Preferences.addSetting({
+  id: "dohExceptionsButton",
+  onUserClick: () => gPrivacyPane.showDoHExceptions(),
+});
+
+Preferences.addSetting({
+  id: "dohMode",
+  pref: "network.trr.mode",
+  setup(emitChange) {
+    Services.obs.addObserver(emitChange, "network:trr-mode-changed");
+    Services.obs.addObserver(emitChange, "network:trr-confirmation");
+    return () => {
+      Services.obs.removeObserver(emitChange, "network:trr-mode-changed");
+      Services.obs.removeObserver(emitChange, "network:trr-confirmation");
+    };
+  },
+});
+
+Preferences.addSetting({
+  id: "dohURL",
+  pref: "network.trr.uri",
+  setup(emitChange) {
+    Services.obs.addObserver(emitChange, "network:trr-uri-changed");
+    Services.obs.addObserver(emitChange, "network:trr-confirmation");
+    return () => {
+      Services.obs.removeObserver(emitChange, "network:trr-uri-changed");
+      Services.obs.removeObserver(emitChange, "network:trr-confirmation");
+    };
+  },
+});
+
+Preferences.addSetting({
+  id: "dohDefaultURL",
+  pref: "network.trr.default_provider_uri",
+});
+
+Preferences.addSetting({
+  id: "dohDisableHeuristics",
+  pref: "doh-rollout.disable-heuristics",
+});
+
+Preferences.addSetting({
+  id: "dohModeBoxItem",
+  deps: ["dohMode"],
+  getControlConfig: (config, deps) => {
+    let l10nId = "preferences-doh-overview-off";
+    if (deps.dohMode.value == Ci.nsIDNSService.MODE_NATIVEONLY) {
+      l10nId = "preferences-doh-overview-default";
+    } else if (
+      deps.dohMode.value == Ci.nsIDNSService.MODE_TRRFIRST ||
+      deps.dohMode.value == Ci.nsIDNSService.MODE_TRRONLY
+    ) {
+      l10nId = "preferences-doh-overview-custom";
+    }
+    return {
+      ...config,
+      l10nId,
+    };
+  },
+});
+
+Preferences.addSetting({
+  id: "dohStatusBox",
+  deps: ["dohMode", "dohURL"],
+  getControlConfig: config => {
+    let l10nId = "preferences-doh-status-item-off";
+    let l10nArgs = {};
+    let supportPage = "";
+    let controlAttrs = { type: "info" };
+
+    let trrURI = Services.dns.currentTrrURI;
+    let hostname = URL.parse(trrURI)?.hostname;
+
+    let name = hostname || trrURI;
+    let nameFound = false;
+    let steering = false;
+    for (let resolver of DoHConfigController.currentConfig.providerList) {
+      if (resolver.uri == trrURI) {
+        name = resolver.UIName || name;
+        nameFound = true;
+        break;
+      }
+    }
+    if (!nameFound) {
+      for (let resolver of DoHConfigController.currentConfig.providerSteering
+        .providerList) {
+        if (resolver.uri == trrURI) {
+          steering = true;
+          name = resolver.UIName || name;
+          break;
+        }
+      }
+    }
+
+    let mode = Services.dns.currentTrrMode;
+    if (
+      (mode == Ci.nsIDNSService.MODE_TRRFIRST ||
+        mode == Ci.nsIDNSService.MODE_TRRONLY) &&
+      lazy.gParentalControlsService?.parentalControlsEnabled
+    ) {
+      l10nId = "preferences-doh-status-item-not-active";
+      supportPage = "doh-status";
+      l10nArgs = {
+        reason: Services.dns.getTRRSkipReasonName(
+          Ci.nsITRRSkipReason.TRR_PARENTAL_CONTROL
+        ),
+        name,
+      };
+    } else {
+      let confirmationState = Services.dns.currentTrrConfirmationState;
+      if (
+        mode != Ci.nsIDNSService.MODE_TRRFIRST &&
+        mode != Ci.nsIDNSService.MODE_TRRONLY
+      ) {
+        l10nId = "preferences-doh-status-item-off";
+      } else if (
+        confirmationState == Ci.nsIDNSService.CONFIRM_TRYING_OK ||
+        confirmationState == Ci.nsIDNSService.CONFIRM_OK ||
+        confirmationState == Ci.nsIDNSService.CONFIRM_DISABLED
+      ) {
+        if (steering) {
+          l10nId = "preferences-doh-status-item-active-local";
+          controlAttrs = { type: "success" };
+        } else {
+          l10nId = "preferences-doh-status-item-active";
+          controlAttrs = { type: "success" };
+        }
+      } else if (steering) {
+        l10nId = "preferences-doh-status-item-not-active-local";
+        supportPage = "doh-status";
+        controlAttrs = { type: "warning" };
+      } else {
+        l10nId = "preferences-doh-status-item-not-active";
+        supportPage = "doh-status";
+        controlAttrs = { type: "warning" };
+      }
+
+      let confirmationStatus = Services.dns.lastConfirmationStatus;
+      if (confirmationStatus != Cr.NS_OK) {
+        l10nArgs = {
+          reason: ChromeUtils.getXPCOMErrorName(confirmationStatus),
+          name,
+        };
+      } else {
+        l10nArgs = {
+          reason: Services.dns.getTRRSkipReasonName(
+            Services.dns.lastConfirmationSkipReason
+          ),
+          name,
+        };
+        if (
+          Services.dns.lastConfirmationSkipReason ==
+            Ci.nsITRRSkipReason.TRR_BAD_URL ||
+          !name
+        ) {
+          l10nId = "preferences-doh-status-item-not-active-bad-url";
+          supportPage = "doh-status";
+          controlAttrs = { type: "warning" };
+        }
+      }
+    }
+
+    return {
+      ...config,
+      l10nId,
+      l10nArgs,
+      supportPage,
+      controlAttrs,
+    };
+  },
+});
+
+Preferences.addSetting({
+  id: "dohRadioGroup",
+  // These deps are complicated:
+  // this radio group, along with dohFallbackIfCustom controls the mode and URL.
+  // Therefore, we set dohMode and dohURL as deps here. This is a smell, but needed
+  // for the mismatch of control-to-pref.
+  deps: ["dohFallbackIfCustom", "dohMode", "dohURL"],
+  onUserChange: (val, deps) => {
+    let value = null;
+    if (val == "default") {
+      value = "dohDefaultRadio";
+    } else if (val == "off") {
+      value = "dohOffRadio";
+    } else if (val == "custom" && deps.dohFallbackIfCustom.value) {
+      value = "dohEnabledRadio";
+    } else if (val == "custom" && !deps.dohFallbackIfCustom.value) {
+      value = "dohStrictRadio";
+    }
+    if (value) {
+      Glean.securityDohSettings.modeChangedButton.record({
+        value,
+      });
+    }
+  },
+  get: (_val, deps) => {
+    switch (deps.dohMode.value) {
+      case Ci.nsIDNSService.MODE_NATIVEONLY:
+        return "default";
+      case Ci.nsIDNSService.MODE_TRRFIRST:
+      case Ci.nsIDNSService.MODE_TRRONLY:
+        return "custom";
+      case Ci.nsIDNSService.MODE_TRROFF:
+      case Ci.nsIDNSService.MODE_RESERVED1:
+      case Ci.nsIDNSService.MODE_RESERVED4:
+      default:
+        return "off";
+    }
+  },
+  set: (val, deps) => {
+    if (val == "custom") {
+      if (deps.dohFallbackIfCustom.value) {
+        deps.dohMode.value = Ci.nsIDNSService.MODE_TRRFIRST;
+      } else {
+        deps.dohMode.value = Ci.nsIDNSService.MODE_TRRONLY;
+      }
+    } else if (val == "off") {
+      deps.dohMode.value = Ci.nsIDNSService.MODE_TRROFF;
+    } else {
+      deps.dohMode.value = Ci.nsIDNSService.MODE_NATIVEONLY;
+    }
+
+    // When the mode is set to 0 we need to clear the URI so
+    // doh-rollout can kick in.
+    if (deps.dohMode.value == Ci.nsIDNSService.MODE_NATIVEONLY) {
+      deps.dohURL.pref.value = undefined;
+      Services.prefs.clearUserPref("doh-rollout.disable-heuristics");
+    }
+
+    // Bug 1861285
+    // When the mode is set to 2 or 3, we need to check if network.trr.uri is a empty string.
+    // In this case, we need to update network.trr.uri to default to fallbackProviderURI.
+    // This occurs when the mode is previously set to 0 (Default Protection).
+    if (
+      deps.dohMode.value == Ci.nsIDNSService.MODE_TRRFIRST ||
+      deps.dohMode.value == Ci.nsIDNSService.MODE_TRRONLY
+    ) {
+      if (!deps.dohURL.value) {
+        deps.dohURL.value =
+          DoHConfigController.currentConfig.fallbackProviderURI;
+      }
+    }
+
+    // Bug 1900672
+    // When the mode is set to 5, clear the pref to ensure that
+    // network.trr.uri is set to fallbackProviderURIwhen the mode is set to 2 or 3 afterwards
+    if (deps.dohMode.value == Ci.nsIDNSService.MODE_TRROFF) {
+      deps.dohURL.pref.value = undefined;
+    }
+  },
+});
+
+Preferences.addSetting({
+  id: "dohFallbackIfCustom",
+  pref: "network.trr_ui.fallback_was_checked",
+  // These deps are complicated:
+  // this checkbox, along with dohRadioGroup controls the mode and URL.
+  // Therefore, we set dohMode as a dep here. This is a smell, but needed
+  // for the mismatch of control-to-pref.
+  deps: ["dohMode"],
+  onUserChange: val => {
+    if (val) {
+      Glean.securityDohSettings.modeChangedButton.record({
+        value: "dohEnabledRadio",
+      });
+    } else {
+      Glean.securityDohSettings.modeChangedButton.record({
+        value: "dohStrictRadio",
+      });
+    }
+  },
+  get: (val, deps) => {
+    // If we are in a custom mode, we need to get the value from the Setting
+    if (deps.dohMode.value == Ci.nsIDNSService.MODE_TRRFIRST) {
+      return true;
+    }
+    if (deps.dohMode.value == Ci.nsIDNSService.MODE_TRRONLY) {
+      return false;
+    }
+
+    // Propagate the preference otherwise
+    return val;
+  },
+  set: (val, deps) => {
+    // Toggle the preference that controls the setting if are in a custom mode
+    // This should be the only case where the checkbox is enabled, but we can be
+    // careful and test.
+    if (deps.dohMode.value == Ci.nsIDNSService.MODE_TRRFIRST && !val) {
+      deps.dohMode.value = Ci.nsIDNSService.MODE_TRRONLY;
+    } else if (deps.dohMode.value == Ci.nsIDNSService.MODE_TRRONLY && val) {
+      deps.dohMode.value = Ci.nsIDNSService.MODE_TRRFIRST;
+    }
+    // Propagate to the real preference
+    return val;
+  },
+});
+
+Preferences.addSetting({
+  id: "dohCustomProvider",
+  deps: ["dohProviderSelect", "dohURL"],
+  _value: null,
+  visible: deps => {
+    return deps.dohProviderSelect.value == "custom";
+  },
+  get(_val, deps) {
+    if (this._value === null) {
+      return deps.dohURL.value;
+    }
+    return this._value;
+  },
+  set(val, deps) {
+    this._value = val;
+    if (val == "") {
+      val = " ";
+    }
+    deps.dohURL.value = val;
+  },
+});
+
+Preferences.addSetting({
+  id: "dohProviderSelect",
+  deps: ["dohURL", "dohDefaultURL"],
+  _custom: false,
+  onUserChange: value => {
+    Glean.securityDohSettings.providerChoiceValue.record({
+      value,
+    });
+  },
+  getControlConfig(config, deps) {
+    let options = [];
+
+    let resolvers = DoHConfigController.currentConfig.providerList;
+    // if there's no default, we'll hold its position with an empty string
+    let defaultURI = DoHConfigController.currentConfig.fallbackProviderURI;
+    let defaultFound = resolvers.some(p => p.uri == defaultURI);
+    if (!defaultFound && defaultURI) {
+      // the default value for the pref isn't included in the resolvers list
+      // so we'll make a stub for it. Without an id, we'll have to use the url as the label
+      resolvers.unshift({ uri: defaultURI });
+    }
+    let currentURI = deps.dohURL.value;
+    if (currentURI && !resolvers.some(p => p.uri == currentURI)) {
+      this._custom = true;
+    }
+
+    options = resolvers.map(resolver => {
+      let option = {
+        value: resolver.uri,
+        l10nArgs: {
+          name: resolver.UIName || resolver.uri,
+        },
+      };
+      if (resolver.uri == defaultURI) {
+        option.l10nId = "connection-dns-over-https-url-item-default";
+      } else {
+        option.l10nId = "connection-dns-over-https-url-item";
+      }
+      return option;
+    });
+    options.push({
+      value: "custom",
+      l10nId: "connection-dns-over-https-url-custom",
+    });
+
+    return {
+      options,
+      ...config,
+    };
+  },
+  get(_val, deps) {
+    if (this._custom) {
+      return "custom";
+    }
+    let currentURI = deps.dohURL.value;
+    if (!currentURI) {
+      currentURI = deps.dohDefaultURL.value;
+    }
+    return currentURI;
+  },
+  set(val, deps, setting) {
+    if (val != "custom") {
+      this._custom = false;
+      deps.dohURL.value = val;
+    } else {
+      this._custom = true;
+    }
+    setting.emit("change");
+    return val;
+  },
+});
+
+Preferences.addSetting({
+  id: "contentBlockingCategory",
+  pref: "browser.contentblocking.category",
+});
+
+Preferences.addSetting({
+  id: "etpStatusBoxGroup",
+});
+
+Preferences.addSetting({
+  id: "etpStatusItem",
+  deps: ["contentBlockingCategory"],
+  getControlConfig(config, { contentBlockingCategory }) {
+    // Display a different description and label depending on the content blocking category (= ETP level).
+    let categoryToL10nId = {
+      standard: "preferences-etp-level-standard",
+      strict: "preferences-etp-level-strict",
+      custom: "preferences-etp-level-custom",
+    };
+
+    return {
+      ...config,
+      l10nId:
+        categoryToL10nId[contentBlockingCategory.value] ??
+        "preferences-etp-level-standard",
+    };
+  },
+});
+
+Preferences.addSetting({
+  id: "etpStatusAdvancedButton",
+  onUserClick(e) {
+    e.preventDefault();
+    gotoPref("etp");
+  },
+});
+
+Preferences.addSetting({
+  id: "protectionsDashboardLink",
+});
+
+Preferences.addSetting({
+  id: "etpBannerEl",
+});
+
+Preferences.addSetting({
+  id: "etpAllowListBaselineEnabled",
+  pref: "privacy.trackingprotection.allow_list.baseline.enabled",
+  deps: ["contentBlockingCategory"],
+  visible({ contentBlockingCategory }) {
+    return contentBlockingCategory.value == "strict";
+  },
+});
+
+Preferences.addSetting({
+  id: "etpAllowListConvenienceEnabled",
+  pref: "privacy.trackingprotection.allow_list.convenience.enabled",
+});
+
+Preferences.addSetting({
+  id: "etpCustomizeButton",
+  onUserClick(e) {
+    e.preventDefault();
+    gotoPref("etpCustomize");
+  },
+});
+
+Preferences.addSetting({
+  id: "resistFingerprinting",
+  pref: "privacy.resistFingerprinting",
+});
+
+Preferences.addSetting({
+  id: "resistFingerprintingPBM",
+  pref: "privacy.resistFingerprinting.pbmode",
+});
+
+Preferences.addSetting({
+  id: "rfpWarning",
+  deps: ["resistFingerprinting", "resistFingerprintingPBM"],
+  visible({ resistFingerprinting, resistFingerprintingPBM }) {
+    return resistFingerprinting.value || resistFingerprintingPBM.value;
+  },
+});
+
+Preferences.addSetting({
+  id: "etpLevelWarning",
+  deps: ["contentBlockingCategory"],
+  visible({ contentBlockingCategory }) {
+    return contentBlockingCategory.value != "standard";
+  },
+});
+
+Preferences.addSetting({
+  id: "etpManageExceptionsButton",
+  onUserClick() {
+    let params = {
+      permissionType: "trackingprotection",
+      disableETPVisible: true,
+      prefilledHost: "",
+      hideStatusColumn: true,
+    };
+    gSubDialog.open(
+      "chrome://browser/content/preferences/dialogs/permissions.xhtml",
+      undefined,
+      params
     );
   },
 });
@@ -2456,12 +3468,13 @@ var gPrivacyPane = {
     initSettingGroup("cookiesAndSiteData");
     initSettingGroup("certificates");
     initSettingGroup("ipprotection");
-
-    this._updateSanitizeSettingsButton();
-    this.initializeHistoryMode();
-    this.updateHistoryModePane();
-    this.updatePrivacyMicroControls();
-    this.initAutoStartPrivateBrowsingReverter();
+    initSettingGroup("history");
+    initSettingGroup("permissions");
+    initSettingGroup("dnsOverHttps");
+    initSettingGroup("dnsOverHttpsAdvanced");
+    initSettingGroup("etpStatus");
+    initSettingGroup("etpBanner");
+    initSettingGroup("etpAdvanced");
 
     /* Initialize Content Blocking */
     this.initContentBlocking();
@@ -2511,40 +3524,10 @@ var gPrivacyPane = {
       gPrivacyPane.showTrackingProtectionExceptions
     );
 
-    Preferences.get("privacy.sanitize.sanitizeOnShutdown").on(
-      "change",
-      gPrivacyPane._updateSanitizeSettingsButton.bind(gPrivacyPane)
-    );
-    Preferences.get("browser.privatebrowsing.autostart").on(
-      "change",
-      gPrivacyPane.updatePrivacyMicroControls.bind(gPrivacyPane)
-    );
-    setEventListener("historyMode", "command", function () {
-      gPrivacyPane.updateHistoryModePane();
-      gPrivacyPane.updateHistoryModePrefs();
-      gPrivacyPane.updatePrivacyMicroControls();
-      gPrivacyPane.updateAutostart();
-    });
-    setEventListener("clearHistoryButton", "command", function () {
-      let historyMode = document.getElementById("historyMode");
-      // Select "everything" in the clear history dialog if the
-      // user has set their history mode to never remember history.
-      gPrivacyPane.clearPrivateDataNow(historyMode.value == "dontremember");
-    });
-    setEventListener(
-      "privateBrowsingAutoStart",
-      "command",
-      gPrivacyPane.updateAutostart
-    );
     setEventListener(
       "dohExceptionsButton",
       "command",
       gPrivacyPane.showDoHExceptions
-    );
-    setEventListener(
-      "clearDataSettings",
-      "command",
-      gPrivacyPane.showClearPrivateDataSettings
     );
     setEventListener(
       "passwordExceptions",
@@ -2562,11 +3545,6 @@ var gPrivacyPane = {
       gPrivacyPane.changeMasterPassword
     );
     setEventListener("showPasswords", "command", gPrivacyPane.showPasswords);
-    setEventListener(
-      "addonExceptions",
-      "command",
-      gPrivacyPane.showAddonExceptions
-    );
 
     this._pane = document.getElementById("panePrivacy");
 
@@ -2575,65 +3553,10 @@ var gPrivacyPane = {
     this._initMasterPasswordUI();
     this._initOSAuthentication();
 
-    this.initListenersForExtensionControllingPasswordManager();
+    // Init passwords settings group
+    initSettingGroup("passwords");
 
-    setEventListener(
-      "autoplaySettingsButton",
-      "command",
-      gPrivacyPane.showAutoplayMediaExceptions
-    );
-    setEventListener(
-      "notificationSettingsButton",
-      "command",
-      gPrivacyPane.showNotificationExceptions
-    );
-    setEventListener(
-      "locationSettingsButton",
-      "command",
-      gPrivacyPane.showLocationExceptions
-    );
-    setEventListener(
-      "localHostSettingsButton",
-      "command",
-      gPrivacyPane.showLocalHostExceptions
-    );
-    setEventListener(
-      "localNetworkSettingsButton",
-      "command",
-      gPrivacyPane.showLocalNetworkExceptions
-    );
-    setEventListener(
-      "xrSettingsButton",
-      "command",
-      gPrivacyPane.showXRExceptions
-    );
-    setEventListener(
-      "cameraSettingsButton",
-      "command",
-      gPrivacyPane.showCameraExceptions
-    );
-    setEventListener(
-      "microphoneSettingsButton",
-      "command",
-      gPrivacyPane.showMicrophoneExceptions
-    );
-    document.getElementById("speakerSettingsRow").hidden =
-      !Services.prefs.getBoolPref("media.setsinkid.enabled", false);
-    setEventListener(
-      "speakerSettingsButton",
-      "command",
-      gPrivacyPane.showSpeakerExceptions
-    );
-    setEventListener(
-      "popupPolicyButton",
-      "command",
-      gPrivacyPane.showPopupExceptions
-    );
-    setEventListener(
-      "notificationsDoNotDisturb",
-      "command",
-      gPrivacyPane.toggleDoNotDisturbNotifications
-    );
+    this.initListenersForExtensionControllingPasswordManager();
 
     setSyncFromPrefListener("contentBlockingBlockCookiesCheckbox", () =>
       this.readBlockCookies()
@@ -2649,19 +3572,6 @@ var gPrivacyPane = {
     );
 
     setSyncFromPrefListener("savePasswords", () => this.readSavePasswords());
-
-    let microControlHandler = el =>
-      this.ensurePrivacyMicroControlUncheckedWhenDisabled(el);
-    setSyncFromPrefListener("rememberHistory", microControlHandler);
-    setSyncFromPrefListener("rememberForms", microControlHandler);
-    setSyncFromPrefListener("alwaysClear", microControlHandler);
-
-    setSyncFromPrefListener("popupPolicy", () =>
-      this.updateButtons("popupPolicyButton", "dom.disable_open_during_load")
-    );
-    setSyncFromPrefListener("warnAddonInstall", () =>
-      this.readWarnAddonInstall()
-    );
 
     if (AlertsServiceDND) {
       let notificationsDoNotDisturbBox = document.getElementById(
@@ -2705,26 +3615,6 @@ var gPrivacyPane = {
     appendSearchKeywords("showPasswords", [
       signonBundle.getString("loginsDescriptionAll2"),
     ]);
-    if (!PrivateBrowsingUtils.enabled) {
-      document.getElementById("privateBrowsingAutoStart").hidden = true;
-      document.querySelector("menuitem[value='dontremember']").hidden = true;
-    }
-
-    let privateBrowsingPref = Preferences.get(
-      "browser.privatebrowsing.autostart"
-    );
-
-    if (privateBrowsingPref.locked) {
-      // If permanent private browsing mode is locked to off,
-      // disable the "Never Remember History" option
-      document.querySelector("menuitem[value='dontremember']").disabled =
-        !privateBrowsingPref.value;
-
-      // If we're locked in permanent private browsing mode,
-      // disable the dropdown menu completely
-      document.getElementById("historyMode").disabled =
-        privateBrowsingPref.value;
-    }
 
     setEventListener(
       "contentBlockingBaselineExceptionsStrict",
@@ -2753,12 +3643,6 @@ var gPrivacyPane = {
     this.initDoH();
 
     this.initWebAuthn();
-
-    Preferences.get("network.lna.blocking").on(
-      "change",
-      this.setUpLocalNetworkAccessPermissionUI
-    );
-    this.setUpLocalNetworkAccessPermissionUI();
 
     // Notify observers that the UI is now ready
     Services.obs.notifyObservers(window, "privacy-pane-loaded");
@@ -3388,175 +4272,6 @@ var gPrivacyPane = {
     );
   },
 
-  // HISTORY MODE
-
-  /**
-   * The list of preferences which affect the initial history mode settings.
-   * If the auto start private browsing mode pref is active, the initial
-   * history mode would be set to "Don't remember anything".
-   * If ALL of these preferences are set to the values that correspond
-   * to keeping some part of history, and the auto-start
-   * private browsing mode is not active, the initial history mode would be
-   * set to "Remember everything".
-   * Otherwise, the initial history mode would be set to "Custom".
-   *
-   * Extensions adding their own preferences can set values here if needed.
-   */
-  prefsForKeepingHistory: {
-    "places.history.enabled": true, // History is enabled
-    "browser.formfill.enable": true, // Form information is saved
-    "privacy.sanitize.sanitizeOnShutdown": false, // Private date is NOT cleared on shutdown
-  },
-
-  /**
-   * The list of control IDs which are dependent on the auto-start private
-   * browsing setting, such that in "Custom" mode they would be disabled if
-   * the auto-start private browsing checkbox is checked, and enabled otherwise.
-   *
-   * Extensions adding their own controls can append their IDs to this array if needed.
-   */
-  dependentControls: [
-    "rememberHistory",
-    "rememberForms",
-    "alwaysClear",
-    "clearDataSettings",
-  ],
-
-  /**
-   * Check whether preferences values are set to keep history
-   *
-   * @param aPrefs an array of pref names to check for
-   * @returns boolean true if all of the prefs are set to keep history,
-   *                  false otherwise
-   */
-  _checkHistoryValues(aPrefs) {
-    for (let pref of Object.keys(aPrefs)) {
-      if (Preferences.get(pref).value != aPrefs[pref]) {
-        return false;
-      }
-    }
-    return true;
-  },
-
-  /**
-   * Initialize the history mode menulist based on the privacy preferences
-   */
-  initializeHistoryMode() {
-    let mode;
-    let getVal = aPref => Preferences.get(aPref).value;
-
-    if (getVal("privacy.history.custom")) {
-      mode = "custom";
-    } else if (this._checkHistoryValues(this.prefsForKeepingHistory)) {
-      if (getVal("browser.privatebrowsing.autostart")) {
-        mode = "dontremember";
-      } else {
-        mode = "remember";
-      }
-    } else {
-      mode = "custom";
-    }
-
-    document.getElementById("historyMode").value = mode;
-  },
-
-  /**
-   * Update the selected pane based on the history mode menulist
-   */
-  updateHistoryModePane() {
-    let selectedIndex = -1;
-    switch (document.getElementById("historyMode").value) {
-      case "remember":
-        selectedIndex = 0;
-        break;
-      case "dontremember":
-        selectedIndex = 1;
-        break;
-      case "custom":
-        selectedIndex = 2;
-        break;
-    }
-    document.getElementById("historyPane").selectedIndex = selectedIndex;
-    Preferences.get("privacy.history.custom").value = selectedIndex == 2;
-  },
-
-  /**
-   * Update the private browsing auto-start pref and the history mode
-   * micro-management prefs based on the history mode menulist
-   */
-  updateHistoryModePrefs() {
-    let pref = Preferences.get("browser.privatebrowsing.autostart");
-    switch (document.getElementById("historyMode").value) {
-      case "remember":
-        if (pref.value) {
-          pref.value = false;
-        }
-
-        // select the remember history option if needed
-        Preferences.get("places.history.enabled").value = true;
-
-        // select the remember forms history option
-        Preferences.get("browser.formfill.enable").value = true;
-
-        // select the clear on close option
-        Preferences.get("privacy.sanitize.sanitizeOnShutdown").value = false;
-        break;
-      case "dontremember":
-        if (!pref.value) {
-          pref.value = true;
-        }
-        break;
-    }
-  },
-
-  /**
-   * Update the privacy micro-management controls based on the
-   * value of the private browsing auto-start preference.
-   */
-  updatePrivacyMicroControls() {
-    let clearDataSettings = document.getElementById("clearDataSettings");
-
-    if (document.getElementById("historyMode").value == "custom") {
-      let disabled = Preferences.get("browser.privatebrowsing.autostart").value;
-      this.dependentControls.forEach(aElement => {
-        let control = document.getElementById(aElement);
-        let preferenceId = control.getAttribute("preference");
-        if (!preferenceId) {
-          let dependentControlId = control.getAttribute("control");
-          if (dependentControlId) {
-            let dependentControl = document.getElementById(dependentControlId);
-            preferenceId = dependentControl.getAttribute("preference");
-          }
-        }
-
-        let preference = preferenceId ? Preferences.get(preferenceId) : {};
-        control.disabled = disabled || preference.locked;
-        if (control != clearDataSettings) {
-          this.ensurePrivacyMicroControlUncheckedWhenDisabled(control);
-        }
-      });
-
-      clearDataSettings.removeAttribute("hidden");
-
-      if (!disabled) {
-        // adjust the Settings button for sanitizeOnShutdown
-        this._updateSanitizeSettingsButton();
-      }
-    } else {
-      clearDataSettings.hidden = true;
-    }
-  },
-
-  ensurePrivacyMicroControlUncheckedWhenDisabled(el) {
-    if (Preferences.get("browser.privatebrowsing.autostart").value) {
-      // Set checked to false when called from updatePrivacyMicroControls
-      el.checked = false;
-      // return false for the onsyncfrompreference case:
-      return false;
-    }
-    return undefined; // tell preferencesBindings to assign the 'right' value.
-  },
-
   // CLEAR PRIVATE DATA
 
   /*
@@ -3627,91 +4342,6 @@ var gPrivacyPane = {
     return sanitizeOnShutdownPrefsArray.some(
       pref => Preferences.get(pref).value
     );
-  },
-
-  /**
-   * Enables or disables the "Settings..." button depending
-   * on the privacy.sanitize.sanitizeOnShutdown preference value
-   */
-  _updateSanitizeSettingsButton() {
-    var settingsButton = document.getElementById("clearDataSettings");
-    var sanitizeOnShutdownPref = Preferences.get(
-      "privacy.sanitize.sanitizeOnShutdown"
-    );
-
-    settingsButton.disabled = !sanitizeOnShutdownPref.value;
-  },
-
-  toggleDoNotDisturbNotifications(event) {
-    AlertsServiceDND.manualDoNotDisturb = event.target.checked;
-  },
-
-  // PRIVATE BROWSING
-
-  /**
-   * Initialize the starting state for the auto-start private browsing mode pref reverter.
-   */
-  initAutoStartPrivateBrowsingReverter() {
-    // We determine the mode in initializeHistoryMode, which is guaranteed to have been
-    // called before now, so this is up-to-date.
-    let mode = document.getElementById("historyMode");
-    this._lastMode = mode.selectedIndex;
-    // The value of the autostart pref, on the other hand, is gotten from Preferences,
-    // which updates the DOM asynchronously, so we can't rely on the DOM. Get it directly
-    // from the prefs.
-    this._lastCheckState = Preferences.get(
-      "browser.privatebrowsing.autostart"
-    ).value;
-  },
-
-  _lastMode: null,
-  _lastCheckState: null,
-  async updateAutostart() {
-    let mode = document.getElementById("historyMode");
-    let autoStart = document.getElementById("privateBrowsingAutoStart");
-    let pref = Preferences.get("browser.privatebrowsing.autostart");
-    if (
-      (mode.value == "custom" && this._lastCheckState == autoStart.checked) ||
-      (mode.value == "remember" && !this._lastCheckState) ||
-      (mode.value == "dontremember" && this._lastCheckState)
-    ) {
-      // These are all no-op changes, so we don't need to prompt.
-      this._lastMode = mode.selectedIndex;
-      this._lastCheckState = autoStart.hasAttribute("checked");
-      return;
-    }
-
-    if (!this._shouldPromptForRestart) {
-      // We're performing a revert. Just let it happen.
-      return;
-    }
-
-    let buttonIndex = await confirmRestartPrompt(
-      autoStart.checked,
-      1,
-      true,
-      false
-    );
-    if (buttonIndex == CONFIRM_RESTART_PROMPT_RESTART_NOW) {
-      pref.value = autoStart.hasAttribute("checked");
-      Services.startup.quit(
-        Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart
-      );
-      return;
-    }
-
-    this._shouldPromptForRestart = false;
-
-    if (this._lastCheckState) {
-      autoStart.checked = "checked";
-    } else {
-      autoStart.removeAttribute("checked");
-    }
-    pref.value = autoStart.hasAttribute("checked");
-    mode.selectedIndex = this._lastMode;
-    mode.doCommand();
-
-    this._shouldPromptForRestart = true;
   },
 
   /**
@@ -4231,7 +4861,10 @@ var gPrivacyPane = {
       this._initMasterPasswordUI();
     } else {
       gSubDialog.open("chrome://mozapps/content/preferences/removemp.xhtml", {
-        closingCallback: this._initMasterPasswordUI.bind(this),
+        closingCallback: () => {
+          Services.obs.notifyObservers(null, "passwordmgr-primary-pw-changed");
+          this._initMasterPasswordUI();
+        },
       });
     }
   },
@@ -4280,7 +4913,10 @@ var gPrivacyPane = {
 
     gSubDialog.open("chrome://mozapps/content/preferences/changemp.xhtml", {
       features: "resizable=no",
-      closingCallback: this._initMasterPasswordUI.bind(this),
+      closingCallback: () => {
+        Services.obs.notifyObservers(null, "passwordmgr-primary-pw-changed");
+        this._initMasterPasswordUI();
+      },
     });
   },
 
@@ -4443,20 +5079,6 @@ var gPrivacyPane = {
       PASSWORD_MANAGER_PREF_ID,
       this._passwordManagerCheckbox
     );
-  },
-
-  /**
-   * Enables/disables the add-ons Exceptions button depending on whether
-   * or not add-on installation warnings are displayed.
-   */
-  readWarnAddonInstall() {
-    var warn = Preferences.get("xpinstall.whitelist.required");
-    var exceptions = document.getElementById("addonExceptions");
-
-    exceptions.disabled = !warn.value || warn.locked;
-
-    // don't override the preference value
-    return undefined;
   },
 
   /**
@@ -4667,12 +5289,6 @@ var gPrivacyPane = {
       SelectableProfileService.off("enableChanged", listener)
     );
     this.updateProfilesPrivacyInfo();
-  },
-
-  setUpLocalNetworkAccessPermissionUI() {
-    const isLNADisabled = !Preferences.get("network.lna.blocking").value;
-    document.getElementById("localHostSettingsRow").hidden = isLNADisabled;
-    document.getElementById("localNetworkSettingsRow").hidden = isLNADisabled;
   },
 
   updateProfilesPrivacyInfo() {

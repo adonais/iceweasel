@@ -89,7 +89,7 @@ data class ExtensionMenuState(
     val webExtensionsCount: Int
         get() {
             return when (accesspoint) {
-                MenuAccessPoint.Browser -> {
+                MenuAccessPoint.Browser, MenuAccessPoint.External -> {
                     browserWebExtensionMenuItem.size
                 }
                 MenuAccessPoint.Home -> {
@@ -105,11 +105,11 @@ data class ExtensionMenuState(
     val allWebExtensionsDisabled: Boolean
         get() {
             return (
-                recommendedAddons.isEmpty() &&
+                (recommendedAddons.isEmpty() || accesspoint == MenuAccessPoint.External) &&
                         availableAddons.isEmpty() && browserWebExtensionMenuItem.isEmpty()
             ) ||
             (
-                accesspoint == MenuAccessPoint.Browser &&
+                (accesspoint == MenuAccessPoint.Browser || accesspoint == MenuAccessPoint.External) &&
                     browserWebExtensionMenuItem.isEmpty() && availableAddons.isNotEmpty()
             )
         }

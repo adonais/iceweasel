@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -63,11 +64,11 @@ internal fun DownloadsTopAppBar(
 private fun DownloadsTopAppBarPreview() {
     FirefoxTheme {
         DownloadsTopAppBar(
-            backgroundColor = FirefoxTheme.colors.layerAccent,
+            backgroundColor = MaterialTheme.colorScheme.primary,
             title = {
                 Text(
-                    color = FirefoxTheme.colors.textOnColorPrimary,
-                    style = FirefoxTheme.typography.headline6,
+                    color = MaterialTheme.colorScheme.inverseOnSurface,
+                    style = FirefoxTheme.typography.headline5,
                     text = stringResource(
                         R.string.download_multi_select_title,
                         1,
@@ -79,7 +80,7 @@ private fun DownloadsTopAppBarPreview() {
                     Icon(
                         painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                         contentDescription = stringResource(R.string.download_navigate_back_description),
-                        tint = FirefoxTheme.colors.iconPrimary,
+                        tint = MaterialTheme.colorScheme.inverseOnSurface,
                     )
                 }
             },
@@ -90,7 +91,7 @@ private fun DownloadsTopAppBarPreview() {
                         contentDescription = stringResource(
                             R.string.content_description_menu,
                         ),
-                        tint = FirefoxTheme.colors.iconOnColor,
+                        tint = MaterialTheme.colorScheme.inverseOnSurface,
                     )
                 }
             },

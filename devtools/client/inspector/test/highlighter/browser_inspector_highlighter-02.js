@@ -52,7 +52,7 @@ add_task(async function () {
   const ulBeforeNodeFront = ulChildren[0];
   is(
     ulBeforeNodeFront.displayName,
-    "_moz_generated_content_before",
+    "::before",
     "Got expexected ul::before pseudo element"
   );
 
@@ -74,7 +74,7 @@ add_task(async function () {
   const ulBeforeMarkerNodeFront = ulBeforeChildren[0];
   is(
     ulBeforeMarkerNodeFront.displayName,
-    "_moz_generated_content_marker",
+    "::marker",
     "Got expexected ul::before::marker pseudo element"
   );
 
@@ -92,6 +92,83 @@ add_task(async function () {
     (await getHighlighterInfobarText()).startsWith("ul#pseudo::before::marker"),
     `::before::marker is properly displayed (${await getHighlighterInfobarText()})`
   );
+
+  info("Check highlighting for ::view-transition pseudo elements");
+  const onMarkupMutation = inspector.once("markupmutation");
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+    const document = content.document;
+    content.testTransition = document.startViewTransition(() => {
+      document.querySelector("#simple-div").replaceChildren("updated");
+    });
+    await content.testTransition.ready;
+    await content.testTransition.updateCallbackDone;
+  });
+  await onMarkupMutation;
+
+  const htmlNodeFront = await getNodeFront("html", inspector);
+  const htmlContainer = await getContainerForNodeFront(
+    htmlNodeFront,
+    inspector
+  );
+
+  const viewTransitionMarkupNodeEl = htmlContainer.children.childNodes[2];
+  is(
+    viewTransitionMarkupNodeEl.textContent,
+    "::view-transition",
+    "Got ::view-transition node"
+  );
+
+  info("Highlighting the ::view-transition node");
+  onHighlighterShown = waitForHighlighterTypeShown(
+    inspector.highlighters.TYPES.BOXMODEL
+  );
+  await selectNode(
+    viewTransitionMarkupNodeEl.container.node,
+    inspector,
+    "test-highlight"
+  );
+  await onHighlighterShown;
+
+  ok(
+    // Make sure the infobar starts with the expected text
+    (await getHighlighterInfobarText()).startsWith("html::view-transition"),
+    `::view-transition is properly displayed (${await getHighlighterInfobarText()})`
+  );
+
+  info("Expand ::view-transition node");
+  await expandContainer(inspector, viewTransitionMarkupNodeEl.container);
+  const viewTransitionGroupRootEl =
+    viewTransitionMarkupNodeEl.container.children.childNodes[0];
+  is(
+    viewTransitionGroupRootEl.textContent,
+    "::view-transition-group(root)",
+    "Got ::view-transition-group(root) node"
+  );
+
+  info("Highlighting the ::view-transition-group(root) node");
+  onHighlighterShown = waitForHighlighterTypeShown(
+    inspector.highlighters.TYPES.BOXMODEL
+  );
+  await selectNode(
+    viewTransitionGroupRootEl.container.node,
+    inspector,
+    "test-highlight"
+  );
+  await onHighlighterShown;
+
+  ok(
+    // Make sure the infobar starts with the expected text
+    (await getHighlighterInfobarText()).startsWith(
+      "html::view-transition-group(root)"
+    ),
+    `::view-transition-group(root) is properly displayed (${await getHighlighterInfobarText()})`
+  );
+
+  // Cancel transition
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async () => {
+    content.testTransition.skipTransition();
+    delete content.testTransition;
+  });
 });
 
 async function getHighlighterInfobarText() {

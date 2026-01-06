@@ -783,11 +783,19 @@ function readRequestBody(request) {
   });
 }
 
-function startMockOpenAI({ echo = "This gets echoed." } = {}) {
+function startMockOpenAI({
+  echo = "This gets echoed.",
+  onRequest = null,
+} = {}) {
   const server = new HttpServer();
 
   server.registerPathHandler("/v1/chat/completions", (request, response) => {
     info("GET /v1/chat/completions");
+
+    // Call the onRequest callback if provided to allow test inspection
+    if (onRequest) {
+      onRequest(request);
+    }
 
     let bodyText = "";
     if (request.method === "POST") {

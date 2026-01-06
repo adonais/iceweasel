@@ -81,7 +81,9 @@ def split_variants(config, tasks):
     def replace_task_items(task_key, variant_key):
         for item in variant_key:
             if isinstance(variant_key[item], dict):
-                task_key[item] = replace_task_items(task_key[item], variant_key[item])
+                task_key[item] = replace_task_items(
+                    task_key.get(item, {}), variant_key[item]
+                )
             else:
                 task_key[item] = variant_key[item]
         return task_key

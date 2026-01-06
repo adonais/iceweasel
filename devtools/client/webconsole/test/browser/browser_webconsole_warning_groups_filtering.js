@@ -324,7 +324,7 @@ function emitEnhancedTrackingProtectionMessage() {
  * ordering still works fine).
  *
  * @param {WebConsole} hud
- * @param {String} str
+ * @param {string} str
  */
 function logStrings(hud, str) {
   const onFirstMessage = waitForMessageByType(hud, `${str} #1`, ".console-api");

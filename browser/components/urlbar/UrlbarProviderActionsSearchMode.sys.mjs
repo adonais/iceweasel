@@ -109,7 +109,7 @@ export class UrlbarProviderActionsSearchMode extends UrlbarProvider {
 
     return {
       label: {
-        l10n: { id: action.label, cacheable: true },
+        l10n: { id: action.label },
       },
     };
   }

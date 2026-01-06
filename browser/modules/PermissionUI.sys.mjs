@@ -72,6 +72,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AddonManager: "resource://gre/modules/AddonManager.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   SitePermissions: "resource:///modules/SitePermissions.sys.mjs",
+  clearTimeout: "resource://gre/modules/Timer.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -110,6 +112,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   "sitePermsAddonsProviderEnabled",
   SITEPERMS_ADDON_PROVIDER_PREF,
   false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "lnaPromptTimeoutMs",
+  "network.lna.prompt.timeout",
+  300000
 );
 
 /**
@@ -736,7 +745,7 @@ class SitePermsAddonInstallRequest extends PermissionPromptForRequest {
    * This should be overriden by children classes.
    *
    * @param {Components.Exception} err
-   * @returns {String} The error message
+   * @returns {string} The error message
    */
   getInstallErrorMessage() {
     return null;
@@ -1009,18 +1018,88 @@ class XRPermissionPrompt extends PermissionPromptForRequest {
 }
 
 /**
+ * Base class for Local Network Access (LNA) permission prompts.
+ * Provides automatic timeout handling for LNA prompts.
+ *
+ * If the user doesn't respond to the prompt within the timeout period,
+ * the prompt is automatically cancelled and the network request fails.
+ */
+class LNAPermissionPromptBase extends PermissionPromptForRequest {
+  static DEFAULT_PROMPT_TIMEOUT_MS = 300000;
+
+  #timeoutTimer = null;
+
+  constructor(request) {
+    super();
+    this.request = request;
+  }
+
+  onShown() {
+    this.#startTimeoutTimer();
+  }
+
+  onAfterShow() {
+    this.#clearTimeoutTimer();
+  }
+
+  cancel() {
+    super.cancel();
+  }
+
+  allow(choices) {
+    super.allow(choices);
+  }
+
+  #startTimeoutTimer() {
+    this.#clearTimeoutTimer();
+
+    this.#timeoutTimer = lazy.setTimeout(() => {
+      let scriptError = Cc["@mozilla.org/scripterror;1"].createInstance(
+        Ci.nsIScriptError
+      );
+      scriptError.initWithWindowID(
+        `LNA permission prompt timed out after ${lazy.lnaPromptTimeoutMs / 1000} seconds`,
+        null,
+        0,
+        0,
+        Ci.nsIScriptError.warningFlag,
+        "content javascript",
+        this.browser.browsingContext.currentWindowGlobal.innerWindowId
+      );
+      Services.console.logMessage(scriptError);
+
+      this.#removePrompt();
+      this.cancel();
+    }, lazy.lnaPromptTimeoutMs);
+  }
+
+  #removePrompt() {
+    let chromeWin = this.browser?.ownerGlobal;
+    let notification = chromeWin?.PopupNotifications.getNotification(
+      this.notificationID,
+      this.browser
+    );
+    if (notification) {
+      chromeWin.PopupNotifications.remove(notification);
+    }
+  }
+
+  #clearTimeoutTimer() {
+    if (this.#timeoutTimer) {
+      lazy.clearTimeout(this.#timeoutTimer);
+      this.#timeoutTimer = null;
+    }
+  }
+}
+
+/**
  * Creates a PermissionPrompt for a nsIContentPermissionRequest for
  * the Local Host Access.
  *
  * @param request (nsIContentPermissionRequest)
  *        The request for a permission from content.
  */
-class LocalHostPermissionPrompt extends PermissionPromptForRequest {
-  constructor(request) {
-    super();
-    this.request = request;
-  }
-
+class LocalHostPermissionPrompt extends LNAPermissionPromptBase {
   get type() {
     return "localhost";
   }
@@ -1240,12 +1319,7 @@ class DesktopNotificationPermissionPrompt extends PermissionPromptForRequest {
  * @param request (nsIContentPermissionRequest)
  *        The request for a permission from content.
  */
-class LocalNetworkPermissionPrompt extends PermissionPromptForRequest {
-  constructor(request) {
-    super();
-    this.request = request;
-  }
-
+class LocalNetworkPermissionPrompt extends LNAPermissionPromptBase {
   get type() {
     return "local-network";
   }
@@ -1508,7 +1582,7 @@ class MIDIPermissionPrompt extends SitePermsAddonInstallRequest {
   /**
    * @override
    * @param {Components.Exception} err
-   * @returns {String}
+   * @returns {string}
    */
   getInstallErrorMessage(err) {
     return `WebMIDI access request was denied: ❝${err.message}❞. See https://developer.mozilla.org/docs/Web/API/Navigator/requestMIDIAccess for more information`;

@@ -6,10 +6,10 @@ This transform splits the jobs it receives into per-locale tasks. Locales are
 provided by the `locales-file`.
 """
 
-from copy import deepcopy
 from pprint import pprint
 
 from taskgraph.transforms.base import TransformSequence
+from taskgraph.util.copy import deepcopy
 from taskgraph.util.schema import Schema
 from voluptuous import Extra, Optional, Required
 

@@ -377,6 +377,10 @@
   <string name="onboarding_term_of_service_line_two_link_text">Хосусыйлык аңлатмасы</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Идарә итү</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Кораллар панеленең урнашуын сайлагыз</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -754,12 +758,6 @@
   <string name="preference_experiments_2">Тикшеренүләр</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">Mozilla-га тикшеренүләр урнаштырырга һәм үткәрергә рөхсәт итү</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Мәгълүматыгызны синхронлау һәм саклау</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Яңадан тоташу өчен керегез</string>
   <!-- Preference for removing FxA account -->
@@ -1292,8 +1290,6 @@
   <string name="toast_copy_link_to_clipboard">Алмашу буферына күчереп алынды</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Синхронлауга керү</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Синхронлау һәм мәгълүматны саклау</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Барлык җиһазларга җибәрү</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2324,4 +2320,10 @@
   -->
   <string name="beta_feature">BETA</string>
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

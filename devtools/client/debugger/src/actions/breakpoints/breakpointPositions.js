@@ -21,17 +21,17 @@ import { validateSource } from "../../utils/context";
  * and map them to location objects.
  * During this process, the SourceMapLoader will be queried to map the positions from generated to original locations.
  *
- * @param {Object} breakpointPositions
+ * @param {object} breakpointPositions
  *        The positions to map related to the generated source:
  *          {
  *            1: [ 2, 6 ], // Line 1 is breakable on column 2 and 6
  *            2: [ 2 ], // Line 2 is only breakable on column 2
  *          }
- * @param {Object} generatedSource
- * @param {Object} location
+ * @param {object} generatedSource
+ * @param {object} location
  *        The current location we are computing breakable positions.
- * @param {Object} thunk arguments
- * @return {Object}
+ * @param {object} thunk arguments
+ * @return {object}
  *         The mapped breakable locations in the original source:
  *          {
  *            1: [ { source, line: 1, column: 2} , { source, line: 1, column 6 } ], // Line 1 is not mapped as location are same as breakpointPositions.

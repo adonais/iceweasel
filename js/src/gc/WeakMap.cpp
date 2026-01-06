@@ -12,6 +12,7 @@
 #include "vm/JSObject.h"
 
 #include "gc/Marking-inl.h"
+#include "gc/StoreBuffer-inl.h"
 
 using namespace js;
 using namespace js::gc;
@@ -24,8 +25,6 @@ WeakMapBase::WeakMapBase(JSObject* memOf, Zone* zone)
 
 void WeakMapBase::unmarkZone(JS::Zone* zone) {
   zone->gcEphemeronEdges().clearAndCompact();
-  MOZ_ASSERT(zone->gcNurseryEphemeronEdges().count() == 0);
-
   for (WeakMapBase* m : zone->gcWeakMapList()) {
     m->setMapColor(CellColor::White);
   }
@@ -64,11 +63,26 @@ bool WeakMapBase::markMap(MarkColor markColor) {
   }
 }
 
-bool WeakMapBase::addEphemeronEdgesForEntry(MarkColor mapColor, Cell* key,
-                                            Cell* delegate,
+bool WeakMapBase::addEphemeronEdgesForEntry(MarkColor mapColor,
+                                            TenuredCell* key, Cell* delegate,
                                             TenuredCell* value) {
-  if (delegate && !addEphemeronEdge(mapColor, delegate, key)) {
-    return false;
+  if (delegate) {
+    if (!delegate->isTenured()) {
+      MOZ_ASSERT(false);
+      // This case is probably not possible, or wasn't at the time of this
+      // writing. It requires a tenured wrapper with a nursery wrappee delegate,
+      // which is tough to create given that the wrapper has to be created after
+      // its target, and in fact appears impossible because the delegate has to
+      // be created after the GC begins to avoid being tenured at the beginning
+      // of the GC, and adding the key to the weakmap will mark the key via a
+      // pre-barrier. But still, handling this case is straightforward:
+
+      // The delegate is already being kept alive in a minor GC since it has an
+      // edge from a tenured cell (the key). Make sure the key stays alive too.
+      delegate->storeBuffer()->putWholeCell(key);
+    } else if (!addEphemeronEdge(mapColor, &delegate->asTenured(), key)) {
+      return false;
+    }
   }
 
   if (value && !addEphemeronEdge(mapColor, key, value)) {
@@ -78,11 +92,11 @@ bool WeakMapBase::addEphemeronEdgesForEntry(MarkColor mapColor, Cell* key,
   return true;
 }
 
-bool WeakMapBase::addEphemeronEdge(MarkColor color, gc::Cell* src,
-                                   gc::Cell* dst) {
+bool WeakMapBase::addEphemeronEdge(MarkColor color, gc::TenuredCell* src,
+                                   gc::TenuredCell* dst) {
   // Add an implicit edge from |src| to |dst|.
 
-  auto& edgeTable = src->zone()->gcEphemeronEdges(src);
+  auto& edgeTable = src->zone()->gcEphemeronEdges();
   auto p = edgeTable.lookupForAdd(src);
   if (!p) {
     if (!edgeTable.add(p, src, EphemeronEdgeVector())) {
@@ -185,6 +199,19 @@ void WeakMapBase::restoreMarkedWeakMaps(WeakMapColors& markedWeakMaps) {
     MOZ_ASSERT(!IsMarked(map->mapColor()));
     map->setMapColor(r.front().value());
   }
+}
+
+void WeakMapBase::setHasNurseryEntries() {
+  MOZ_ASSERT(!hasNurseryEntries);
+
+  AutoEnterOOMUnsafeRegion oomUnsafe;
+
+  GCRuntime* gc = &zone()->runtimeFromMainThread()->gc;
+  if (!gc->nursery().addWeakMapWithNurseryEntries(this)) {
+    oomUnsafe.crash("WeakMapBase::setHasNurseryEntries");
+  }
+
+  hasNurseryEntries = true;
 }
 
 namespace js {

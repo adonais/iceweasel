@@ -2726,10 +2726,10 @@
      *
      *   Category: Variables and scopes
      *   Type: Initialization
-     *   Operands: uint8_t hops, uint24_t slot
+     *   Operands: uint16_t hops, uint24_t slot
      *   Stack: v => v
      */ \
-    MACRO(InitAliasedLexical, init_aliased_lexical, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_PROPINIT) \
+    MACRO(InitAliasedLexical, init_aliased_lexical, NULL, 6, 1, 1, JOF_ENVCOORD|JOF_PROPINIT) \
     /*
      * Throw a ReferenceError if the value on top of the stack is uninitialized.
      *
@@ -2758,10 +2758,10 @@
      *
      *   Category: Variables and scopes
      *   Type: Initialization
-     *   Operands: uint8_t hops, uint24_t slot
+     *   Operands: uint16_t hops, uint24_t slot
      *   Stack: v => v
      */ \
-    MACRO(CheckAliasedLexical, check_aliased_lexical, NULL, 5, 1, 1, JOF_ENVCOORD) \
+    MACRO(CheckAliasedLexical, check_aliased_lexical, NULL, 6, 1, 1, JOF_ENVCOORD) \
     /*
      * Throw a ReferenceError if the value on top of the stack is
      * `MagicValue(JS_UNINITIALIZED_LEXICAL)`. Used in derived class
@@ -2937,20 +2937,20 @@
      *
      *   Category: Variables and scopes
      *   Type: Getting binding values
-     *   Operands: uint8_t hops, uint24_t slot
+     *   Operands: uint16_t hops, uint24_t slot
      *   Stack: => aliasedVar
      */ \
-    MACRO(GetAliasedVar, get_aliased_var, NULL, 5, 0, 1, JOF_ENVCOORD|JOF_USES_ENV) \
+    MACRO(GetAliasedVar, get_aliased_var, NULL, 6, 0, 1, JOF_ENVCOORD|JOF_USES_ENV) \
     /*
      * Push the value of an aliased binding, which may have to bypass a DebugEnvironmentProxy
      * on the environment chain.
      *
      *   Category: Variables and scopes
      *   Type: Getting binding values
-     *   Operands: uint8_t hops, uint24_t slot
+     *   Operands: uint16_t hops, uint24_t slot
      *   Stack: => aliasedVar
      */ \
-    MACRO(GetAliasedDebugVar, get_aliased_debug_var, NULL, 5, 0, 1, JOF_DEBUGCOORD) \
+    MACRO(GetAliasedDebugVar, get_aliased_debug_var, NULL, 6, 0, 1, JOF_DEBUGCOORD) \
     /*
      * Get the value of a module import by name and pushes it onto the stack.
      *
@@ -3029,10 +3029,10 @@
      *
      *   Category: Variables and scopes
      *   Type: Getting binding values
-     *   Operands: uint8_t numHops
+     *   Operands: uint16_t numHops
      *   Stack: => callee
      */ \
-    MACRO(EnvCallee, env_callee, NULL, 2, 0, 1, JOF_UINT8) \
+    MACRO(EnvCallee, env_callee, NULL, 3, 0, 1, JOF_UINT16) \
     /*
      * Assign `val` to the binding in `env` with the name given by `nameIndex`.
      * Throw a ReferenceError if the binding is an uninitialized lexical.
@@ -3126,10 +3126,10 @@
      *
      *   Category: Variables and scopes
      *   Type: Setting binding values
-     *   Operands: uint8_t hops, uint24_t slot
+     *   Operands: uint16_t hops, uint24_t slot
      *   Stack: val => val
      */ \
-    MACRO(SetAliasedVar, set_aliased_var, NULL, 5, 1, 1, JOF_ENVCOORD|JOF_PROPSET|JOF_USES_ENV) \
+    MACRO(SetAliasedVar, set_aliased_var, NULL, 6, 1, 1, JOF_ENVCOORD|JOF_PROPSET|JOF_USES_ENV) \
     /*
      * Assign to an intrinsic.
      *

@@ -287,9 +287,9 @@ class StackMaps {
  public:
   StackMaps() : stackMaps_(4096, js::BackgroundMallocArena) {}
 
-  // Allocates a new empty StackMap. After configuring the StackMap to your
+  // Allocates a new empty stack map. After configuring the stack map to your
   // liking, you must call finalize().
-  StackMap* create(uint32_t numMappedWords) {
+  [[nodiscard]] StackMap* create(uint32_t numMappedWords) {
     MOZ_ASSERT(!createdButNotFinalized_,
                "a previous StackMap has been created but not finalized");
 
@@ -306,10 +306,10 @@ class StackMaps {
     return newMap;
   }
 
-  // Allocates a new StackMap with a given header, e.g. one that had been
-  // previously serialized. After configuring the StackMap to your liking, you
+  // Allocates a new stack map with a given header, e.g. one that had been
+  // previously serialized. After configuring the stack map to your liking, you
   // must call finalize().
-  StackMap* create(const StackMapHeader& header) {
+  [[nodiscard]] StackMap* create(const StackMapHeader& header) {
     StackMap* map = create(header.numMappedWords);
     if (!map) {
       return nullptr;
@@ -318,11 +318,10 @@ class StackMaps {
     return map;
   }
 
-  // Finalizes a StackMap allocated by create(), adding it to the hash map
-  // with a particular code offset. Upon calling finalize(), `map` is "moved"
-  // into the StackMaps class and must no longer be accessed. (This is because
-  // it may be deduplicated.)
-  [[nodiscard]] bool finalize(uint32_t codeOffset, StackMap* map) {
+  // Finalizes a stack map allocated by create(). The `map` is no longer valid
+  // to access as it may have been deduplicated. The returned stack map must be
+  // used instead. This operation is infallible.
+  [[nodiscard]] StackMap* finalize(StackMap* map) {
 #ifdef DEBUG
     MOZ_ASSERT(
         map == createdButNotFinalized_,
@@ -335,13 +334,27 @@ class StackMaps {
       // allocation that created the new map and add the existing one to the
       // hash map.
       stackMaps_.release(beforeLastCreated_);
-      return codeOffsetToStackMap_.put(codeOffset, lastAdded_);
+      return lastAdded_;
     }
 
     // This stack map is new.
     lastAdded_ = map;
     stackMaps_.cancelMark(beforeLastCreated_);
+    return map;
+  }
+
+  // Add a finalized stack map with a given code offset.
+  [[nodiscard]] bool add(uint32_t codeOffset, StackMap* map) {
+    MOZ_ASSERT(!createdButNotFinalized_);
+    MOZ_ASSERT(stackMaps_.contains(map));
     return codeOffsetToStackMap_.put(codeOffset, map);
+  }
+
+  // Finalizes a stack map created by create() and adds it to the given code
+  // offset. The `map` is no longer valid to use as it may be deduplicated and
+  // freed.
+  [[nodiscard]] bool finalize(uint32_t codeOffset, StackMap* map) {
+    return add(codeOffset, finalize(map));
   }
 
   void clear() {

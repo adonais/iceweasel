@@ -17,20 +17,20 @@
  */
 
 /**
- * @typedef {Object} StateProps
+ * @typedef {object} StateProps
  * @property {RecordingState} recordingState
  * @property {boolean?} isSupportedPlatform
  */
 
 /**
- * @typedef {Object} ThunkDispatchProps
+ * @typedef {object} ThunkDispatchProps
  * @property {typeof actions.reportProfilerReady} reportProfilerReady
  * @property {typeof actions.reportProfilerStarted} reportProfilerStarted
  * @property {typeof actions.reportProfilerStopped} reportProfilerStopped
  */
 
 /**
- * @typedef {Object} OwnProps
+ * @typedef {object} OwnProps
  * @property {PerfFront} perfFront
  * @property {RootTraits} traits
  */

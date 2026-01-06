@@ -526,6 +526,10 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Innis do chom-pàirtichean margaideachd mar a fhuair thusa lorg air Firefox is gu bheil thu ga chleachdadh. Cha tèid an dàta seo a reic idir.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Aontaich is tòisich air brabhsadh</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Tagh àite dhan bhàr-inneal</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -698,8 +702,6 @@
   <string name="preferences_gestures">Gluasadan</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Gnàthaich</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Clàraich a-steach gus na tabaichean, comharran-lìn, faclan-faire is mòran a bharrachd a shioncronachadh.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Cunntas Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -1029,12 +1031,6 @@
   <string name="preference_experiments_2">Rannsachadh</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">Leig le Mozilla rannsachadh a stàladh is a ruith an-còmhnaidh</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Sioncronaich is sàbhail an dàta agad</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Clàraich a-steach airson ceangal ris às ùr</string>
   <!-- Preference for removing FxA account -->
@@ -1578,8 +1574,6 @@
   <string name="toast_copy_link_to_clipboard">Air lethbhreac a chur air an stòr-bhòrd</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Clàraich a-steach a shioncronachadh</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Sioncronaich is sàbhail an dàta</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Cuir gun a h-uile uidheam</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2814,4 +2808,10 @@
   -->
   <string name="beta_feature">Beta</string>
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

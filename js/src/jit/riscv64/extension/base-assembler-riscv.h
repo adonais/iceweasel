@@ -35,8 +35,6 @@
 #ifndef jit_riscv64_extension_Base_assembler_riscv_h
 #define jit_riscv64_extension_Base_assembler_riscv_h
 
-#include <memory>
-#include <set>
 #include <stdio.h>
 
 #include "jit/Label.h"
@@ -91,10 +89,18 @@ namespace jit {
 typedef FloatRegister FPURegister;
 #define zero_reg zero
 
-#define DEBUG_PRINTF(...)     \
-  if (FLAG_riscv_debug) {     \
-    std::printf(__VA_ARGS__); \
-  }
+#if defined(DEBUG)
+// Only useful when defined(DEBUG). See op.getBoolOption("riscv-debug") in
+// js/src/shell/js.cpp.
+#  define DEBUG_PRINTF(...)     \
+    if (FLAG_riscv_debug) {     \
+      std::printf(__VA_ARGS__); \
+    }
+#else
+#  define DEBUG_PRINTF(...) \
+    do {                    \
+    } while (0)
+#endif /* defined(DEBUG) */
 
 int ToNumber(Register reg);
 Register ToRegister(uint32_t num);

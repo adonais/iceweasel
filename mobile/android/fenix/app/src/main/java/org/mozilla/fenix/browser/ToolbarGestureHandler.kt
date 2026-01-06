@@ -156,6 +156,7 @@ class ToolbarGestureHandler(
         }
     }
 
+    @Suppress("CognitiveComplexMethod")
     private fun getDestination(): Destination {
         val isLtr = activity.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_LTR
         val currentTab = store.state.selectedTab ?: return Destination.None

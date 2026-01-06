@@ -11,10 +11,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/0ec1b33b95dbb2d39
  2 files changed, 7 insertions(+)
 
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index b95f1aa2d0..6f18642622 100644
+index 4c4366dad2..b4860feadb 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
-@@ -388,6 +388,9 @@ rtc_library("desktop_capture") {
+@@ -389,6 +389,9 @@ rtc_library("desktop_capture") {
        "Xrender",
        "Xtst",
      ]
@@ -25,7 +25,7 @@ index b95f1aa2d0..6f18642622 100644
  
    if (!is_win && !is_mac && !rtc_use_x11_extensions && !rtc_use_pipewire &&
 diff --git a/modules/desktop_capture/linux/x11/shared_x_display.cc b/modules/desktop_capture/linux/x11/shared_x_display.cc
-index a5781a5fb3..e4360bd1b3 100644
+index 3cb2636f09..f7eca06820 100644
 --- a/modules/desktop_capture/linux/x11/shared_x_display.cc
 +++ b/modules/desktop_capture/linux/x11/shared_x_display.cc
 @@ -11,7 +11,9 @@
@@ -38,7 +38,7 @@ index a5781a5fb3..e4360bd1b3 100644
  
  #include <algorithm>
  #include <cstddef>
-@@ -100,6 +102,7 @@ void SharedXDisplay::ProcessPendingXEvents() {
+@@ -98,6 +100,7 @@ void SharedXDisplay::ProcessPendingXEvents() {
  }
  
  void SharedXDisplay::IgnoreXServerGrabs() {
@@ -46,7 +46,7 @@ index a5781a5fb3..e4360bd1b3 100644
    int test_event_base = 0;
    int test_error_base = 0;
    int major = 0;
-@@ -108,6 +111,7 @@ void SharedXDisplay::IgnoreXServerGrabs() {
+@@ -106,6 +109,7 @@ void SharedXDisplay::IgnoreXServerGrabs() {
                            &minor)) {
      XTestGrabControl(display(), true);
    }

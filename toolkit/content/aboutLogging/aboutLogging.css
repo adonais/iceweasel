@@ -9,7 +9,7 @@
    * Bug 1986645: We should ship these variables in Android and remove here. */
   --aboutlogging-text-color-deemphasized: var(--text-color-deemphasized, color-mix(in srgb, currentColor 69%, transparent));
   --aboutlogging-box-background: var(--background-color-box, light-dark(#fff, #23222b));
-  --aboutlogging-box-border-color: var(--in-content-box-border-color, color-mix(in srgb, currentColor 41%, transparent));
+  --aboutlogging-box-border-color: var(--border-color, color-mix(in srgb, currentColor 41%, transparent));
   --aboutlogging-border-radius-small: var(--border-radius-small, 4px);
 }
 

@@ -22,6 +22,7 @@
 #include "mozilla/dom/HTMLButtonElementBinding.h"
 #include "mozilla/dom/HTMLFormElement.h"
 #include "nsAttrValueInlines.h"
+#include "nsAttrValueOrString.h"
 #include "nsError.h"
 #include "nsFocusManager.h"
 #include "nsGkAtoms.h"
@@ -575,8 +576,9 @@ void HTMLButtonElement::GetCommand(nsAString& aCommand) const {
   }
   if (command == Command::Custom) {
     const nsAttrValue* attr = GetParsedAttr(nsGkAtoms::command);
-    MOZ_ASSERT(attr->Type() == nsAttrValue::eString);
-    aCommand.Assign(attr->GetStringValue());
+    MOZ_ASSERT(attr->Type() == nsAttrValue::eString ||
+               attr->Type() == nsAttrValue::eAtom);
+    aCommand.Assign(nsAttrValueOrString(attr).String());
     MOZ_ASSERT(
         aCommand.Length() >= 2,
         "Custom commands start with '--' so must be atleast 2 chars long!");
@@ -602,7 +604,7 @@ Element::Command HTMLButtonElement::GetCommand() const {
       }
       return command;
     }
-    if (StringBeginsWith(attr->GetStringValue(), u"--"_ns)) {
+    if (StringBeginsWith(nsAttrValueOrString(attr).String(), u"--"_ns)) {
       return Command::Custom;
     }
   }

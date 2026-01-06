@@ -27,8 +27,6 @@ import mozilla.components.concept.fetch.Response
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
-import mozilla.components.support.test.ext.joinBlocking
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.rule.runTestOnMain
@@ -71,7 +69,7 @@ class DownloadMiddlewareTest {
         )
 
         val download = DownloadState("https://mozilla.org/download", destinationDirectory = "")
-        store.dispatch(DownloadAction.AddDownloadAction(download)).joinBlocking()
+        store.dispatch(DownloadAction.AddDownloadAction(download))
 
         val intentCaptor = argumentCaptor<Intent>()
         verify(downloadMiddleware).startForegroundService(intentCaptor.capture())
@@ -82,7 +80,7 @@ class DownloadMiddlewareTest {
         // We don't store private downloads in the storage.
         val privateDownload = download.copy(id = "newId", private = true)
 
-        store.dispatch(DownloadAction.AddDownloadAction(privateDownload)).joinBlocking()
+        store.dispatch(DownloadAction.AddDownloadAction(privateDownload))
 
         verify(downloadMiddleware, never()).saveDownload(any(), any())
         verify(downloadMiddleware.downloadStorage, never()).add(privateDownload)
@@ -109,7 +107,7 @@ class DownloadMiddlewareTest {
 
         val privateDownload = DownloadState("https://mozilla.org/download", private = true)
 
-        store.dispatch(DownloadAction.AddDownloadAction(privateDownload)).joinBlocking()
+        store.dispatch(DownloadAction.AddDownloadAction(privateDownload))
 
         verify(downloadMiddleware.downloadStorage, never()).add(privateDownload)
     }
@@ -131,12 +129,12 @@ class DownloadMiddlewareTest {
         )
 
         var download = DownloadState("https://mozilla.org/download", destinationDirectory = "")
-        store.dispatch(DownloadAction.RestoreDownloadStateAction(download)).joinBlocking()
+        store.dispatch(DownloadAction.RestoreDownloadStateAction(download))
 
         verify(downloadStorage, never()).add(download)
 
         download = DownloadState("https://mozilla.org/download", destinationDirectory = "")
-        store.dispatch(DownloadAction.AddDownloadAction(download)).joinBlocking()
+        store.dispatch(DownloadAction.AddDownloadAction(download))
 
         verify(downloadStorage).add(download)
     }
@@ -160,7 +158,7 @@ class DownloadMiddlewareTest {
             middleware = listOf(downloadMiddleware),
         )
 
-        store.dispatch(DownloadAction.AddDownloadAction(download)).joinBlocking()
+        store.dispatch(DownloadAction.AddDownloadAction(download))
 
         verify(downloadStorage, never()).add(download)
     }
@@ -198,9 +196,9 @@ class DownloadMiddlewareTest {
                 fileName = tempFile.name,
             )
 
-            store.dispatch(DownloadAction.AddDownloadAction(download)).joinBlocking()
+            store.dispatch(DownloadAction.AddDownloadAction(download))
 
-            store.dispatch(DownloadAction.RemoveDownloadAction(download.id)).joinBlocking()
+            store.dispatch(DownloadAction.RemoveDownloadAction(download.id))
 
             verify(downloadStorage).remove(download)
 
@@ -235,9 +233,9 @@ class DownloadMiddlewareTest {
                 fileName = tempFile.name,
             )
 
-            store.dispatch(DownloadAction.AddDownloadAction(download)).joinBlocking()
+            store.dispatch(DownloadAction.AddDownloadAction(download))
 
-            store.dispatch(DownloadAction.RemoveDownloadAction(download.id)).joinBlocking()
+            store.dispatch(DownloadAction.RemoveDownloadAction(download.id))
 
             verify(downloadStorage).remove(download)
 
@@ -261,9 +259,9 @@ class DownloadMiddlewareTest {
         )
 
         val download = DownloadState("https://mozilla.org/download", destinationDirectory = "")
-        store.dispatch(DownloadAction.AddDownloadAction(download)).joinBlocking()
+        store.dispatch(DownloadAction.AddDownloadAction(download))
 
-        store.dispatch(DownloadAction.RemoveAllDownloadsAction).joinBlocking()
+        store.dispatch(DownloadAction.RemoveAllDownloadsAction)
 
         verify(downloadStorage).removeAllDownloads()
     }
@@ -285,28 +283,28 @@ class DownloadMiddlewareTest {
         )
 
         val download = DownloadState("https://mozilla.org/download", status = INITIATED)
-        store.dispatch(DownloadAction.AddDownloadAction(download)).joinBlocking()
+        store.dispatch(DownloadAction.AddDownloadAction(download))
 
         val downloadInTheStore = store.state.downloads.getValue(download.id)
 
         assertEquals(download, downloadInTheStore)
 
         var updatedDownload = download.copy(status = COMPLETED, skipConfirmation = true)
-        store.dispatch(DownloadAction.UpdateDownloadAction(updatedDownload)).joinBlocking()
+        store.dispatch(DownloadAction.UpdateDownloadAction(updatedDownload))
 
         verify(downloadStorage).update(updatedDownload)
 
         // skipConfirmation is value that we are not storing in the storage,
         // changes on it shouldn't trigger an update on the storage.
         updatedDownload = updatedDownload.copy(skipConfirmation = false)
-        store.dispatch(DownloadAction.UpdateDownloadAction(updatedDownload)).joinBlocking()
+        store.dispatch(DownloadAction.UpdateDownloadAction(updatedDownload))
 
         verify(downloadStorage, times(1)).update(any())
 
         // Private downloads are not updated in the storage.
         updatedDownload = updatedDownload.copy(private = true)
 
-        store.dispatch(DownloadAction.UpdateDownloadAction(updatedDownload)).joinBlocking()
+        store.dispatch(DownloadAction.UpdateDownloadAction(updatedDownload))
         verify(downloadStorage, times(1)).update(any())
     }
 
@@ -343,10 +341,9 @@ class DownloadMiddlewareTest {
 
             assertTrue(store.state.downloads.isEmpty())
 
-            store.dispatch(DownloadAction.RestoreDownloadsStateAction).joinBlocking()
+            store.dispatch(DownloadAction.RestoreDownloadsStateAction)
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             assertEquals(download, store.state.downloads.values.first())
             verify(downloadStorage, never()).remove(download)
@@ -374,10 +371,9 @@ class DownloadMiddlewareTest {
 
         assertTrue(store.state.downloads.isEmpty())
 
-        store.dispatch(DownloadAction.RestoreDownloadsStateAction).joinBlocking()
+        store.dispatch(DownloadAction.RestoreDownloadsStateAction)
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         assertTrue(store.state.downloads.isEmpty())
     }
@@ -431,10 +427,9 @@ class DownloadMiddlewareTest {
             val actions = listOf(TabListAction.RemoveAllTabsAction(), TabListAction.RemoveAllPrivateTabsAction)
 
             actions.forEach {
-                store.dispatch(it).joinBlocking()
+                store.dispatch(it)
 
                 dispatcher.scheduler.advanceUntilIdle()
-                store.waitUntilIdle()
 
                 verify(downloadMiddleware, times(1)).removePrivateNotifications(any())
                 reset(downloadMiddleware)
@@ -464,10 +459,9 @@ class DownloadMiddlewareTest {
                 middleware = listOf(downloadMiddleware),
             )
 
-            store.dispatch(TabListAction.RemoveTabsAction(listOf("test-tab1", "test-tab3"))).joinBlocking()
+            store.dispatch(TabListAction.RemoveTabsAction(listOf("test-tab1", "test-tab3")))
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             verify(downloadMiddleware, times(1)).removePrivateNotifications(any())
             reset(downloadMiddleware)
@@ -496,10 +490,9 @@ class DownloadMiddlewareTest {
                 middleware = listOf(downloadMiddleware),
             )
 
-            store.dispatch(TabListAction.RemoveTabsAction(listOf("test-tab1", "test-tab2"))).joinBlocking()
+            store.dispatch(TabListAction.RemoveTabsAction(listOf("test-tab1", "test-tab2")))
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             verify(downloadMiddleware, times(0)).removePrivateNotifications(any())
             reset(downloadMiddleware)
@@ -528,10 +521,9 @@ class DownloadMiddlewareTest {
                 middleware = listOf(downloadMiddleware),
             )
 
-            store.dispatch(TabListAction.RemoveTabAction("test-tab3")).joinBlocking()
+            store.dispatch(TabListAction.RemoveTabAction("test-tab3"))
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             verify(downloadMiddleware, times(1)).removePrivateNotifications(any())
         }
@@ -559,10 +551,9 @@ class DownloadMiddlewareTest {
                 middleware = listOf(downloadMiddleware),
             )
 
-            store.dispatch(TabListAction.RemoveTabAction("test-tab3")).joinBlocking()
+            store.dispatch(TabListAction.RemoveTabAction("test-tab3"))
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             verify(downloadMiddleware, times(0)).removePrivateNotifications(any())
         }
@@ -660,12 +651,11 @@ class DownloadMiddlewareTest {
 
             val tab = createTab("https://www.mozilla.org")
 
-            store.dispatch(TabListAction.AddTabAction(tab, select = true)).joinBlocking()
-            store.dispatch(ContentAction.UpdateDownloadAction(tab.id, download = download)).joinBlocking()
-            store.dispatch(ContentAction.CancelDownloadAction(tab.id, download.id)).joinBlocking()
+            store.dispatch(TabListAction.AddTabAction(tab, select = true))
+            store.dispatch(ContentAction.UpdateDownloadAction(tab.id, download = download))
+            store.dispatch(ContentAction.CancelDownloadAction(tab.id, download.id))
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             verify(downloadMiddleware, times(1)).closeDownloadResponse(any(), any())
             verify(response).close()
@@ -692,8 +682,8 @@ class DownloadMiddlewareTest {
         val response = mock<Response>()
         val download = DownloadState(url = "https://www.mozilla.org/file.txt", sessionId = tab.id, response = response)
 
-        store.dispatch(TabListAction.AddTabAction(tab, select = true)).joinBlocking()
-        store.dispatch(ContentAction.UpdateDownloadAction(tab.id, download = download)).joinBlocking()
+        store.dispatch(TabListAction.AddTabAction(tab, select = true))
+        store.dispatch(ContentAction.UpdateDownloadAction(tab.id, download = download))
 
         downloadMiddleware.closeDownloadResponse(store, tab.id)
         verify(response).close()
@@ -709,7 +699,6 @@ class DownloadMiddlewareTest {
                 coroutineContext = dispatcher,
                 downloadStorage = downloadStorage,
                 deleteFileFromStorage = { false },
-
                 )
             val store = BrowserStore(
                 initialState = BrowserState(),
@@ -732,10 +721,9 @@ class DownloadMiddlewareTest {
             assertTrue(store.state.downloads.isEmpty())
             tempFile.delete()
 
-            store.dispatch(DownloadAction.RestoreDownloadsStateAction).joinBlocking()
+            store.dispatch(DownloadAction.RestoreDownloadsStateAction)
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             verify(downloadStorage).remove(download)
         }
@@ -768,10 +756,9 @@ class DownloadMiddlewareTest {
 
             assertTrue(store.state.downloads.isNotEmpty())
 
-            store.dispatch(DownloadAction.RemoveDeletedDownloads).joinBlocking()
+            store.dispatch(DownloadAction.RemoveDeletedDownloads)
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             val expected = BrowserState(downloads = mapOf())
             assertEquals(expected, store.state)
@@ -811,10 +798,9 @@ class DownloadMiddlewareTest {
 
             assertTrue(store.state.downloads.isNotEmpty())
 
-            store.dispatch(DownloadAction.RemoveDeletedDownloads).joinBlocking()
+            store.dispatch(DownloadAction.RemoveDeletedDownloads)
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             val expected = BrowserState(downloads = mapOf(download.id to download))
             assertEquals(expected, store.state)
@@ -850,10 +836,9 @@ class DownloadMiddlewareTest {
 
             assertTrue(store.state.downloads.isNotEmpty())
 
-            store.dispatch(DownloadAction.RemoveDeletedDownloads).joinBlocking()
+            store.dispatch(DownloadAction.RemoveDeletedDownloads)
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             val expected = BrowserState(downloads = mapOf(download.id to download))
             assertEquals(expected, store.state)
@@ -887,10 +872,9 @@ class DownloadMiddlewareTest {
 
             assertTrue(store.state.downloads.isNotEmpty())
 
-            store.dispatch(DownloadAction.RemoveDeletedDownloads).joinBlocking()
+            store.dispatch(DownloadAction.RemoveDeletedDownloads)
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             val expected = BrowserState(downloads = mapOf(download.id to download))
             assertEquals(expected, store.state)
@@ -924,10 +908,9 @@ class DownloadMiddlewareTest {
 
             assertTrue(store.state.downloads.isNotEmpty())
 
-            store.dispatch(DownloadAction.RemoveDeletedDownloads).joinBlocking()
+            store.dispatch(DownloadAction.RemoveDeletedDownloads)
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             val expected = BrowserState(downloads = mapOf(download.id to download))
             assertEquals(expected, store.state)
@@ -961,10 +944,9 @@ class DownloadMiddlewareTest {
 
             assertTrue(store.state.downloads.isNotEmpty())
 
-            store.dispatch(DownloadAction.RemoveDeletedDownloads).joinBlocking()
+            store.dispatch(DownloadAction.RemoveDeletedDownloads)
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             val expected = BrowserState(downloads = mapOf(download.id to download))
             assertEquals(expected, store.state)
@@ -998,10 +980,9 @@ class DownloadMiddlewareTest {
 
             assertTrue(store.state.downloads.isNotEmpty())
 
-            store.dispatch(DownloadAction.RemoveDeletedDownloads).joinBlocking()
+            store.dispatch(DownloadAction.RemoveDeletedDownloads)
 
             dispatcher.scheduler.advanceUntilIdle()
-            store.waitUntilIdle()
 
             val expected = BrowserState(downloads = mapOf())
             assertEquals(expected, store.state)

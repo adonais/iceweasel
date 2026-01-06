@@ -554,6 +554,13 @@ GraphicsDrawShader:
   type: string
   scope: report
 
+GraphicsFontFile:
+  description: >
+    Error and path of the font file that has failed to load. The user's profile
+    dir is removed from the front of the path if necessary.
+  type: string
+  scope: report
+
 GraphicsNumActiveRenderers:
   description: >
     Number of webrender renderer instances that are not in a paused state.

@@ -7,7 +7,6 @@
 #ifndef nsFmtCString_h___
 #define nsFmtCString_h___
 
-#include <type_traits>
 #include "fmt/format.h"
 #include "fmt/xchar.h"
 #include "nsString.h"

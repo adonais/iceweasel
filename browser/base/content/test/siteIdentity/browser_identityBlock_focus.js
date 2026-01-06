@@ -39,7 +39,9 @@ function synthesizeKeyAndWaitForFocus(element, keyCode, options) {
 add_task(async function testWithoutNotifications() {
   await SpecialPowers.pushPrefEnv({ set: [["accessibility.tabfocus", 7]] });
   await BrowserTestUtils.withNewTab("https://example.com", async function () {
-    await synthesizeKeyAndWaitForFocus(gURLBar, "l", { accelKey: true });
+    await synthesizeKeyAndWaitForFocus(gURLBar.inputField, "l", {
+      accelKey: true,
+    });
     is(document.activeElement, gURLBar.inputField, "urlbar should be focused");
     await synthesizeKeyAndWaitForFocus(
       gProtectionsHandler._trackingProtectionIconContainer,
@@ -67,7 +69,9 @@ add_task(async function testWithNotifications() {
     BrowserTestUtils.synthesizeMouseAtCenter("#geo", {}, browser);
     await popupshown;
 
-    await synthesizeKeyAndWaitForFocus(gURLBar, "l", { accelKey: true });
+    await synthesizeKeyAndWaitForFocus(gURLBar.inputField, "l", {
+      accelKey: true,
+    });
     is(document.activeElement, gURLBar.inputField, "urlbar should be focused");
     await synthesizeKeyAndWaitForFocus(
       gProtectionsHandler._trackingProtectionIconContainer,
@@ -105,7 +109,9 @@ add_task(async function testInvalidPageProxyState() {
     // Loading about:blank will automatically focus the urlbar, which, however, can
     // race with the test code. So we only send the shortcut if the urlbar isn't focused yet.
     if (document.activeElement != gURLBar.inputField) {
-      await synthesizeKeyAndWaitForFocus(gURLBar, "l", { accelKey: true });
+      await synthesizeKeyAndWaitForFocus(gURLBar.inputField, "l", {
+        accelKey: true,
+      });
     }
     is(document.activeElement, gURLBar.inputField, "urlbar should be focused");
     let nextElement = document.getElementById(

@@ -46,6 +46,8 @@ already_AddRefed<PrintTargetWindows> PrintTargetWindows::CreateOrNull(HDC aDC) {
     return nullptr;
   }
 
+  // TODO(emilio): Use SkPDF rather than cairo if possible? See bug 1503537 and
+  // bug 2001909 for some EMF code which was supposed to deal with some of this.
   cairo_surface_t* surface = cairo_win32_printing_surface_create(aDC);
 
   if (cairo_surface_status(surface)) {

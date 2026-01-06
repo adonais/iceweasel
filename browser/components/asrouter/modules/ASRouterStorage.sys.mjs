@@ -97,10 +97,9 @@ export class ASRouterStorage {
   }
 
   /**
-   * createOrOpenDb - Open a db (with this.dbName) if it exists.
-   *                  If it does not exist, create it.
-   *                  If an error occurs, deleted the db and attempt to
-   *                  re-create it.
+   * Open a db (with this.dbName) if it exists. If it does not exist, create it.
+   * If an error occurs, deleted the db and attempt to re-create it.
+   *
    * @returns Promise that resolves with a db instance
    */
   async createOrOpenDb() {
@@ -132,6 +131,7 @@ export class ASRouterStorage {
 
   /**
    * Gets all of the message impression data
+   *
    * @returns {object|null} All multiprofile message impressions or null if error occurs
    */
   async getSharedMessageImpressions() {
@@ -174,6 +174,7 @@ export class ASRouterStorage {
 
   /**
    * Gets the message blocklist
+   *
    * @returns {Array|null} The message blocklist, or null if error occurred
    */
   async getSharedMessageBlocklist() {
@@ -203,6 +204,7 @@ export class ASRouterStorage {
 
   /**
    * Set the message impressions for a given message ID
+   *
    * @param {string} messageId - The message ID to set the impressions for
    * @param {Array|null} impressions - The new value of "impressions" (an array of
    *  impression data or an emtpy array, or null to delete)
@@ -275,6 +277,7 @@ export class ASRouterStorage {
    * Adds a message ID to the blocklist and removes impressions
    * for that message ID from the impressions table when isBlocked is true
    * and deletes message ID from the blocklist when isBlocked is false
+   *
    * @param {string} messageId - The message ID to set the blocked status for
    * @param {boolean} [isBlocked=true] - If the message should be blocked (true) or unblocked (false)
    * @returns {boolean} Success status

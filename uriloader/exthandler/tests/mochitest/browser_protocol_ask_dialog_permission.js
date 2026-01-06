@@ -52,6 +52,7 @@ const NULL_PRINCIPAL_SCHEME = Services.scriptSecurityManager
 
 /**
  * Get the open protocol handler permission key for a given protocol scheme.
+ *
  * @param {string} aProtocolScheme - Scheme of protocol to construct permission
  * key with.
  */
@@ -84,6 +85,7 @@ function initTestHandlers() {
 /**
  * Update whether the protocol handler dialog is shown for our test protocol +
  * handler.
+ *
  * @param {string} scheme - Scheme of the protocol to change the ask state for.
  * @param {boolean} ask - true => show dialog, false => skip dialog.
  */
@@ -96,6 +98,7 @@ function updateAlwaysAsk(scheme, ask) {
 /**
  * Test whether the protocol handler dialog is set to show for our
  * test protocol + handler.
+ *
  * @param {string} scheme - Scheme of the protocol to test the ask state for.
  * @param {boolean} ask - true => show dialog, false => skip dialog.
  */
@@ -109,6 +112,7 @@ function testAlwaysAsk(scheme, ask) {
 
 /**
  * Triggers the load via a server redirect.
+ *
  * @param {string} serverRedirect - The redirect type.
  */
 function useServerRedirect(serverRedirect) {
@@ -138,6 +142,7 @@ function useServerRedirect(serverRedirect) {
 /**
  * Triggers the load with a specific principal or the browser's current
  * principal.
+ *
  * @param {nsIPrincipal} [principal] - Principal to use to trigger the load.
  */
 function useTriggeringPrincipal(principal = undefined) {
@@ -153,12 +158,13 @@ function useTriggeringPrincipal(principal = undefined) {
 /**
  * Navigates to a test URL with the given protocol scheme and waits for the
  * result.
+ *
  * @param {MozBrowser} browser - Browser to navigate.
  * @param {string} scheme - Scheme of the test url. e.g. irc
- * @param {Object} [options] - Test options.
- * @param {Object} [options.permDialogOptions] - Test options for the permission
+ * @param {object} [options] - Test options.
+ * @param {object} [options.permDialogOptions] - Test options for the permission
  * dialog. If defined, we expect this dialog to be shown.
- * @param {Object} [options.chooserDialogOptions] - Test options for the chooser
+ * @param {object} [options.chooserDialogOptions] - Test options for the chooser
  * dialog. If defined, we expect this dialog to be shown.
  * @param {Function} [options.triggerLoad] - An async callback function to
  * trigger the load. Will be passed the browser and scheme to use.
@@ -320,10 +326,11 @@ async function testOpenProto(
 
 /**
  * Inspects the checkbox state and interacts with it.
+ *
  * @param {dialog} dialogEl
  * @param {string} dialogType - String identifier of dialog type.
  * Either "permission" or "chooser".
- * @param {Object} options - Test Options.
+ * @param {object} options - Test Options.
  * @param {boolean} [options.hasCheckbox] - Whether the dialog is expected to
  * have a visible checkbox.
  * @param {boolean} [options.hasCheckboxState] - The check state of the checkbox
@@ -377,6 +384,7 @@ async function testCheckbox(
 
 /**
  * Wait for the test handler to be opened.
+ *
  * @param {MozBrowser} browser - The browser the load should occur in.
  * @param {string} scheme - Scheme which triggered the handler to open.
  */
@@ -390,6 +398,7 @@ function waitForHandlerURL(browser, scheme) {
 
 /**
  * Test for open-protocol-handler permission.
+ *
  * @param {nsIPrincipal} principal - The principal to test the permission on.
  * @param {string} scheme - Scheme to generate permission key.
  * @param {boolean} hasPerm - Whether we expect the princial to set the
@@ -407,6 +416,7 @@ function testPermission(principal, scheme, hasPerm) {
 /**
  * Get the checkbox element of the dialog used to remember the handler choice or
  * store the permission.
+ *
  * @param {SubDialog} dialog - Protocol handler dialog embedded in a SubDialog.
  * @param {string} dialogType - Type of the dialog which holds the checkbox.
  * @returns {HTMLInputElement} - Checkbox of the dialog.
@@ -435,6 +445,7 @@ function getDialogType(dialog) {
 
 /**
  * Exit a protocol handler SubDialog and wait for it to be fully closed.
+ *
  * @param {MozBrowser} browser - Browser element of the tab where the dialog is
  * shown.
  * @param {SubDialog} dialog - SubDialog object which holds the protocol handler

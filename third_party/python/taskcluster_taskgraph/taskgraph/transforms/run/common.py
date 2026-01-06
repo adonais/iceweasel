@@ -82,7 +82,7 @@ def generic_worker_add_artifacts(config, task, taskdesc):
     add_artifacts(config, task, taskdesc, path=get_artifact_prefix(taskdesc))
 
 
-def support_vcs_checkout(config, task, taskdesc, repo_configs, sparse=False):
+def support_vcs_checkout(config, task, taskdesc, repo_configs):
     """Update a task with parameters to enable a VCS checkout.
 
     This can only be used with ``run-task`` tasks, as the cache name is

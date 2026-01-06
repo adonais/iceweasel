@@ -157,6 +157,8 @@
     %2$s is the url for the learn-more link.
   -->
   <string name="about_content" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[<p>%1$s daje ti kontrolu.</p>\n<p>Koristi ga kao privatni pretraživač:\n<ul>\n<li>traži i pretražuj direktno u aplikaciji</li>\n<li>blokiraj programe za praćenje (ili ih omogući u postavkama)</li>\n<li>izbriši sve kolačiće kao i povijest pretraživanja i pregledavanja</li>\n</ul> </p>\n<p>%1$s je kreirala Mozilla. Naša misija je njegovanje zdravog i otvorenog interneta.<br/>\n<a href=\"%2$s\">Saznaj više</a></p>]]></string>
+  <!-- A link to SUMO at the bottom of About Focus screen. -->
+  <string name="about_screen_learn_more">Saznaj više</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">Privatnost i sigurnost</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -332,7 +334,7 @@
   <string name="preference_daily_usage_ping_description">Ovo pomaže Mozilli procijeniti broj aktivnih korisnika.</string>
   <string name="preference_daily_usage_ping_learn_more">Saznaj više</string>
   <!-- In-app link (in settings) to Focus privacy notice. -->
-  <string name="preference_privacy_notice">Napomena o privatnosti</string>
+  <string name="preference_privacy_notice">Napomene o privatnosti</string>
   <!-- In-app link (in settings) to Focus licensing information. -->
   <string name="preference_licensing_info">Informacije o licenciranju</string>
   <!-- Link to Focus licensing information from other libraries that we use. -->
@@ -483,7 +485,7 @@
   -->
   <string name="onboarding_first_screen_privacy_notice_text_2" tools:ignore="BrandUsage">Firefox brine o tvojoj privatnosti. Saznaj više na stranici %1$s.</string>
   <!-- Text for the link used in onboarding_first_screen_privacy_notice_text -->
-  <string name="onboarding_first_screen_privacy_notice_link_2">Napomena o privatnosti</string>
+  <string name="onboarding_first_screen_privacy_notice_link_2">Napomene o privatnosti</string>
   <!-- New Onboarding flow first screen button label -->
   <string name="onboarding_first_screen_button_agree_and_continue_2">Nastavi</string>
   <!-- In the first screen of new onboarding flow, additional accessibility description for content that contain urls. -->

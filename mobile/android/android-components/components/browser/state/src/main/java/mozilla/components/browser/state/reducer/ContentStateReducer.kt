@@ -24,7 +24,7 @@ internal object ContentStateReducer {
     /**
      * [ContentAction] Reducer function for modifying a specific [ContentState] of a [SessionState].
      */
-    @Suppress("LongMethod", "ThrowsCount")
+    @Suppress("LongMethod", "ThrowsCount", "CognitiveComplexMethod")
     fun reduce(state: BrowserState, action: ContentAction): BrowserState {
         return when (action) {
             is ContentAction.RemoveIconAction -> updateContentState(state, action.sessionId) {

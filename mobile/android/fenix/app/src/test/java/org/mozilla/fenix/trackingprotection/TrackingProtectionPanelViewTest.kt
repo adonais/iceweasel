@@ -69,21 +69,7 @@ class TrackingProtectionPanelViewTest {
 
     @Test
     fun testNormalModeUiCookiesWithTotalCookieProtectionEnabled() {
-        every { settings.enabledTotalCookieProtection } returns true
-
         val expectedTitle = testContext.getString(R.string.etp_cookies_title_2)
-
-        view.update(baseState.copy(mode = ProtectionsState.Mode.Normal))
-
-        assertEquals(expectedTitle, view.binding.crossSiteTracking.text)
-        assertEquals(expectedTitle, view.binding.crossSiteTrackingLoaded.text)
-    }
-
-    @Test
-    fun testNormalModeUiCookiesWithTotalCookieProtectionDisabled() {
-        every { settings.enabledTotalCookieProtection } returns false
-
-        val expectedTitle = testContext.getString(R.string.etp_cookies_title)
 
         view.update(baseState.copy(mode = ProtectionsState.Mode.Normal))
 
@@ -119,29 +105,8 @@ class TrackingProtectionPanelViewTest {
 
     @Test
     fun testPrivateModeUiCookiesWithTotalCookieProtectionEnabled() {
-        every { settings.enabledTotalCookieProtection } returns true
         val expectedTitle = testContext.getString(R.string.etp_cookies_title_2)
         val expectedDescription = testContext.getString(R.string.etp_cookies_description_2)
-
-        view.update(
-            baseState.copy(
-                mode = ProtectionsState.Mode.Details(
-                    selectedCategory = CROSS_SITE_TRACKING_COOKIES,
-                    categoryBlocked = false,
-                ),
-            ),
-        )
-
-        assertEquals(expectedTitle, view.binding.categoryTitle.text)
-        assertEquals(expectedDescription, view.binding.categoryDescription.text)
-    }
-
-    @Test
-    fun testPrivateModeUiCookiesWithTotalCookieProtectionDisabled() {
-        every { settings.enabledTotalCookieProtection } returns false
-
-        val expectedTitle = testContext.getString(R.string.etp_cookies_title)
-        val expectedDescription = testContext.getString(R.string.etp_cookies_description)
 
         view.update(
             baseState.copy(

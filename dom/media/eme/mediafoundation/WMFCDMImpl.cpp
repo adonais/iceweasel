@@ -6,8 +6,6 @@
 
 #include "WMFCDMImpl.h"
 
-#include <unordered_map>
-
 #include "mozilla/AppShutdown.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ScopeExit.h"

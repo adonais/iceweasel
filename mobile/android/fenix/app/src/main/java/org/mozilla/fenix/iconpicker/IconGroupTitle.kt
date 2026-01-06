@@ -11,4 +11,6 @@ import androidx.annotation.StringRes
  *
  * @property titleId A string resource describing the group title.
  */
-data class IconGroupTitle(@param:StringRes val titleId: Int)
+data class IconGroupTitle(
+    @param:StringRes val titleId: Int,
+)

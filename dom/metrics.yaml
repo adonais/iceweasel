@@ -790,30 +790,11 @@ security:
       - https://bugzil.la/1955578
     notification_emails:
       - tschuster@mozilla.com
-    expires: 148
+    expires: 152
     extra_keys:
       name:
         description: >
           Name of the shadowed HTML property that was accessed.
-        type: string
-
-  shadowed_html_form_element_property_access:
-    type: event
-    description: >
-      When accessing a property on a HTMLFormElement like (form.attributes),
-      if that property was shadowed/"clobbered", the
-      name of the shadowed built-in property is collected.
-    bugs:
-      - https://bugzil.la/1979041
-    data_reviews:
-      - https://bugzil.la/1979041
-    notification_emails:
-      - tschuster@mozilla.com
-    expires: 148
-    extra_keys:
-      name:
-        description: >
-          Name of the shadowed property that was accessed.
         type: string
 
 dom.contentprocess:

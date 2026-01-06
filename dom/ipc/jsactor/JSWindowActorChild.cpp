@@ -6,8 +6,11 @@
 
 #include "mozilla/dom/JSWindowActorChild.h"
 
+#include "JSIPCValueUtils.h"
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/JSIPCValue.h"
+#include "mozilla/dom/JSIPCValueUtils.h"
 #include "mozilla/dom/JSWindowActorBinding.h"
 #include "mozilla/dom/MessageManagerBinding.h"
 #include "mozilla/dom/WindowGlobalChild.h"
@@ -34,11 +37,12 @@ void JSWindowActorChild::Init(const nsACString& aName,
                               WindowGlobalChild* aManager) {
   MOZ_ASSERT(!mManager, "Cannot Init() a JSWindowActorChild twice!");
   mManager = aManager;
-  JSActor::Init(aName);
+  bool sendTyped = !mManager->IsInProcess() && JSActorSupportsTypedSend(aName);
+  JSActor::Init(aName, sendTyped);
 }
 
 void JSWindowActorChild::SendRawMessage(
-    const JSActorMessageMeta& aMeta, UniquePtr<ipc::StructuredCloneData> aData,
+    const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
     UniquePtr<ipc::StructuredCloneData> aStack, ErrorResult& aRv) {
   if (!CanSend() || !mManager || !mManager->CanSend()) {
     aRv.ThrowInvalidStateError("JSWindowActorChild cannot send at the moment");
@@ -53,16 +57,13 @@ void JSWindowActorChild::SendRawMessage(
   }
 
   // Cross-process case - send data over WindowGlobalChild to other side.
-  UniquePtr<ClonedMessageData> msgData;
-  if (aData) {
-    msgData = MakeUnique<ClonedMessageData>();
-    if (!aData->BuildClonedMessageData(*msgData)) {
-      aRv.ThrowDataCloneError(
-          nsPrintfCString("JSWindowActorChild serialization error: cannot "
-                          "clone, in actor '%s'",
-                          PromiseFlatCString(aMeta.actorName()).get()));
-      return;
-    }
+  JSIPCValueUtils::SCDHolder holder;
+  if (!JSIPCValueUtils::PrepareForSending(holder, aData)) {
+    aRv.ThrowDataCloneError(
+        nsPrintfCString("JSWindowActorChild serialization error: cannot "
+                        "clone, in actor '%s'",
+                        PromiseFlatCString(aMeta.actorName()).get()));
+    return;
   }
 
   UniquePtr<ClonedMessageData> stackData;
@@ -73,7 +74,7 @@ void JSWindowActorChild::SendRawMessage(
     }
   }
 
-  if (!mManager->SendRawMessage(aMeta, msgData, stackData)) {
+  if (!mManager->SendRawMessage(aMeta, aData, stackData)) {
     aRv.ThrowOperationError(
         nsPrintfCString("JSWindowActorChild send error in actor '%s'",
                         PromiseFlatCString(aMeta.actorName()).get()));

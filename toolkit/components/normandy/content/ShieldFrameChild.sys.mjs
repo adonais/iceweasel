@@ -154,8 +154,9 @@ export class ShieldFrameChild extends JSWindowActorChild {
   }
   /**
    * Trigger an event to communicate with the unprivileged about:studies page.
-   * @param {String} type The type of event to trigger.
-   * @param {Object} detail The data to pass along to the event.
+   *
+   * @param {string} type The type of event to trigger.
+   * @param {object} detail The data to pass along to the event.
    */
   triggerPageCallback(type, detail) {
     // Clone details and use the event class from the unprivileged context.

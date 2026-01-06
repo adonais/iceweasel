@@ -312,6 +312,14 @@ beetmover-apt
 -------------------
 Beetmover-apt publishes Linux .deb packages from the Mozilla archive to our APT repositories.
 
+beetmover-rpm
+-------------------
+Beetmover-rpm publishes Linux .rpm packages from the Mozilla archive to our RPM repositories.
+
+beetmover-repackage-rpm
+-----------------------
+Beetmover-repackage-rpm publishes Linux .rpm packages (main package and all langpacks) to the candidates directory.
+
 condprof
 --------
 condprof creates and updates realistic profiles.

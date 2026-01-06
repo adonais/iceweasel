@@ -314,6 +314,7 @@ static auto ToDurationValue(const temporal::Duration& duration,
       return DurationValue{duration.microseconds};
     case TemporalUnit::Nanosecond:
       return DurationValue{duration.nanoseconds};
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
       break;
   }
@@ -348,6 +349,7 @@ static PropertyName* DurationDisplayName(temporal::TemporalUnit unit,
       return cx->names().microsecondsDisplay;
     case TemporalUnit::Nanosecond:
       return cx->names().nanosecondsDisplay;
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
       break;
   }
@@ -403,6 +405,7 @@ static PropertyName* DurationStyleName(temporal::TemporalUnit unit,
       return cx->names().microsecondsStyle;
     case TemporalUnit::Nanosecond:
       return cx->names().nanosecondsStyle;
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
       break;
   }
@@ -481,6 +484,7 @@ static DurationUnitOptions GetUnitOptions(const DurationFormatOptions& options,
       return GET_UNIT_OPTIONS(microseconds);
     case TemporalUnit::Nanosecond:
       return GET_UNIT_OPTIONS(nanoseconds);
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
       break;
 
@@ -531,6 +535,7 @@ static void SetUnitOptions(DurationFormatOptions& options,
     case TemporalUnit::Nanosecond:
       SET_UNIT_OPTIONS(nanoseconds);
       return;
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
       break;
 
@@ -688,6 +693,7 @@ static std::string_view UnitName(temporal::TemporalUnit unit) {
       return "microsecond";
     case TemporalUnit::Nanosecond:
       return "nanosecond";
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
       break;
   }
@@ -721,6 +727,7 @@ static auto PartUnitName(temporal::TemporalUnit unit) {
       return &JSAtomState::microsecond;
     case TemporalUnit::Nanosecond:
       return &JSAtomState::nanosecond;
+    case TemporalUnit::Unset:
     case TemporalUnit::Auto:
       break;
   }

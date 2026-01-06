@@ -37,6 +37,9 @@ support-files = [
 ["browser_translations_select_telemetry_keypresses_cancel_button.js"]
 
 ["browser_translations_select_telemetry_keypresses_copy_button.js"]
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && ccov",
+]
 
 ["browser_translations_select_telemetry_keypresses_done_button.js"]
 

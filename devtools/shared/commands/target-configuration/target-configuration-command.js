@@ -77,9 +77,9 @@ class TargetConfigurationCommand {
    * we won't be using the target configuration actor and report all keys
    * as not supported.
    *
-   * @param {Object} configurationKey
+   * @param {object} configurationKey
    *                 Name of the configuration you would like to set.
-   * @return {Promise<Boolean>} True, if this configuration can be set via this API.
+   * @return {Promise<boolean>} True, if this configuration can be set via this API.
    */
   async supports(configurationKey) {
     if (!this._hasTargetWatcherSupport()) {

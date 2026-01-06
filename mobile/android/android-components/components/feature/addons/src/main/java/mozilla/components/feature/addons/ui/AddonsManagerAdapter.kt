@@ -409,10 +409,15 @@ class AddonsManagerAdapter(
     }
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal data class Section(@param:StringRes val title: Int, val visibleDivider: Boolean = true)
+    internal data class Section(
+        @param:StringRes val title: Int,
+        val visibleDivider: Boolean = true,
+    )
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-    internal data class NotYetSupportedSection(@param:StringRes val title: Int)
+    internal data class NotYetSupportedSection(
+        @param:StringRes val title: Int,
+    )
 
     @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
     internal object FooterSection

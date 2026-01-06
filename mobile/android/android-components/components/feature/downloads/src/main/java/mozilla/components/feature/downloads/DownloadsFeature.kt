@@ -43,6 +43,7 @@ import mozilla.components.support.ktx.android.content.appName
 import mozilla.components.support.ktx.android.content.isPermissionGranted
 import mozilla.components.support.ktx.kotlin.isSameOriginAs
 import mozilla.components.support.utils.Browsers
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 
 /**
  * The name of the file to be downloaded.
@@ -492,7 +493,7 @@ class DownloadsFeature(
      */
     @VisibleForTesting
     internal fun getDownloaderApps(context: Context, download: DownloadState): List<DownloaderApp> {
-        val packageManager = context.packageManager
+        val packageManager = context.packageManagerCompatHelper
 
         val browsers = Browsers.findResolvers(context, packageManager, includeThisApp = true)
             .associateBy { it.activityInfo.identifier }

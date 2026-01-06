@@ -37,7 +37,8 @@ MOZ_RAII class UserFontConfigHelper final {
  public:
   UserFontConfigHelper(const wchar_t* aUserFontKeyPath,
                        const nsString& aWinUserProfile,
-                       const nsString& aLocalAppData);
+                       const nsString& aLocalAppData,
+                       const nsString& aRoamingAppData);
   ~UserFontConfigHelper();
 
   void AddRules(sandboxing::SizeTrackingConfig& aConfig) const;
@@ -48,6 +49,7 @@ MOZ_RAII class UserFontConfigHelper final {
  private:
   const nsString& mWinUserProfile;
   const nsString& mLocalAppData;
+  const nsString& mRoamingAppData;
   HKEY mUserFontKey = nullptr;
 };
 

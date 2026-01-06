@@ -453,6 +453,7 @@ static int8_t GetClass(uint32_t u, LineBreakRule aLevel,
       /* AKSARA_START = 45,                 [AS] */ CLASS_CHARACTER,
       /* VIRAMA_FINAL = 46,                 [VF] */ CLASS_CHARACTER,
       /* VIRAMA = 47,                       [VI] */ CLASS_CHARACTER,
+      /* UNAMBIGUOUS_HYPHEN = 48            [HH] */ CLASS_BREAKABLE,
   };
 
   static_assert(U_LB_COUNT == std::size(sUnicodeLineBreakToClass),

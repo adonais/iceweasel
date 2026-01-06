@@ -83,9 +83,6 @@ static mozilla::LazyLogModule sPBContext("PBContext");
 // Global count of canonical browsing contexts with the private attribute set
 static uint32_t gNumberOfPrivateContexts = 0;
 
-// Current parent process epoch for parent initiated navigations
-static uint64_t gParentInitiatedNavigationEpoch = 0;
-
 static void IncreasePrivateCount() {
   gNumberOfPrivateContexts++;
   MOZ_LOG(sPBContext, mozilla::LogLevel::Debug,
@@ -635,6 +632,10 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
   }
   MOZ_DIAGNOSTIC_ASSERT(entry);
 
+  if (aLoadState->GetNavigationType() == NavigationType::Replace) {
+    MaybeReuseNavigationKeyFromActiveEntry(entry);
+  }
+
   UniquePtr<LoadingSessionHistoryInfo> loadingInfo;
   if (existingLoadingInfo) {
     loadingInfo = MakeUnique<LoadingSessionHistoryInfo>(*existingLoadingInfo);
@@ -678,7 +679,11 @@ CanonicalBrowsingContext::CreateLoadingSessionHistoryEntryForLoad(
                              .map([](auto& entry) { return &entry; })
                              .valueOr(nullptr)));
 
-    loadingInfo->mTriggeringNavigationType = navigationType;
+    if (!existingLoadingInfo ||
+        !existingLoadingInfo->mTriggeringNavigationType) {
+      loadingInfo->mTriggeringNavigationType = navigationType;
+    }
+
     MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Verbose,
                 "Triggering navigation type was {}.", *navigationType);
 
@@ -754,6 +759,11 @@ CanonicalBrowsingContext::ReplaceLoadingSessionHistoryEntryForLoad(
       loadingEntry->SetDocshellID(GetHistoryID());
       loadingEntry->SetIsDynamicallyAdded(CreatedDynamically());
 
+      if (aInfo->mTriggeringNavigationType &&
+          *aInfo->mTriggeringNavigationType == NavigationType::Replace) {
+        MaybeReuseNavigationKeyFromActiveEntry(loadingEntry);
+      }
+
       auto result = MakeUnique<LoadingSessionHistoryInfo>(loadingEntry, aInfo);
       MOZ_LOG_FMT(
           gNavigationAPILog, LogLevel::Debug,
@@ -781,11 +791,13 @@ void CanonicalBrowsingContext::GetContiguousEntriesForLoad(
           targetURI, uri, false, false));
   if (aEntry->isInList() ||
       (mActiveEntry && mActiveEntry->isInList() && sameOrigin)) {
+    MOZ_DIAGNOSTIC_ASSERT(aLoadingInfo.mTriggeringNavigationType);
+    NavigationType navigationType =
+        aLoadingInfo.mTriggeringNavigationType.valueOr(NavigationType::Push);
     nsSHistory::WalkContiguousEntriesInOrder(
         aEntry->isInList() ? aEntry : mActiveEntry,
         [activeEntry = mActiveEntry, entries = &aLoadingInfo.mContiguousEntries,
-         navigationType =
-             *aLoadingInfo.mTriggeringNavigationType](auto* aEntry) {
+         navigationType](auto* aEntry) {
           nsCOMPtr<SessionHistoryEntry> entry = do_QueryObject(aEntry);
           MOZ_ASSERT(entry);
           if (navigationType == NavigationType::Replace &&
@@ -805,6 +817,33 @@ void CanonicalBrowsingContext::GetContiguousEntriesForLoad(
   if (!aLoadingInfo.mLoadIsFromSessionHistory || !sameOrigin) {
     aLoadingInfo.mContiguousEntries.AppendElement(aEntry->Info());
   }
+}
+
+void CanonicalBrowsingContext::MaybeReuseNavigationKeyFromActiveEntry(
+    SessionHistoryEntry* aEntry) {
+  MOZ_ASSERT(aEntry);
+
+  // https://html.spec.whatwg.org/#finalize-a-cross-document-navigation
+  // 9. If entryToReplace is null, then: ...
+  //    Otherwise: ...
+  //      4. If historyEntry's document state's origin is same origin with
+  //         entryToReplace's document state's origin, then set
+  //         historyEntry's navigation API key to entryToReplace's
+  //         navigation API key.
+  if (!mActiveEntry) {
+    return;
+  }
+
+  nsCOMPtr<nsIURI> uri = mActiveEntry->GetURIOrInheritedForAboutBlank();
+  nsCOMPtr<nsIURI> targetURI = aEntry->GetURIOrInheritedForAboutBlank();
+  bool sameOrigin =
+      NS_SUCCEEDED(nsContentUtils::GetSecurityManager()->CheckSameOriginURI(
+          targetURI, uri, false, false));
+  if (!sameOrigin) {
+    return;
+  }
+
+  aEntry->SetNavigationKey(mActiveEntry->Info().NavigationKey());
 }
 
 using PrintPromise = CanonicalBrowsingContext::PrintPromise;
@@ -1203,7 +1242,7 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
         if (LOAD_TYPE_HAS_FLAGS(aLoadType,
                                 nsIWebNavigation::LOAD_FLAGS_REPLACE_HISTORY)) {
           // Replace the current entry with the new entry.
-          int32_t index = shistory->GetIndexForReplace();
+          int32_t index = shistory->GetTargetIndexForHistoryOperation();
 
           // If we're trying to replace an inexistant shistory entry then we
           // should append instead.
@@ -1359,12 +1398,13 @@ void CanonicalBrowsingContext::SessionHistoryCommit(
 }
 
 already_AddRefed<nsDocShellLoadState> CanonicalBrowsingContext::CreateLoadInfo(
-    SessionHistoryEntry* aEntry) {
+    SessionHistoryEntry* aEntry, NavigationType aNavigationType) {
   const SessionHistoryInfo& info = aEntry->Info();
   RefPtr<nsDocShellLoadState> loadState(new nsDocShellLoadState(info.GetURI()));
   info.FillLoadInfo(*loadState);
   UniquePtr<LoadingSessionHistoryInfo> loadingInfo;
   loadingInfo = MakeUnique<LoadingSessionHistoryInfo>(aEntry);
+  loadingInfo->mTriggeringNavigationType = Some(aNavigationType);
   mLoadingEntries.AppendElement(
       LoadingSessionHistoryEntry{loadingInfo->mLoadId, aEntry});
   loadState->SetLoadingSessionHistoryInfo(std::move(loadingInfo));
@@ -1388,7 +1428,8 @@ void CanonicalBrowsingContext::NotifyOnHistoryReload(
   }
 
   if (mActiveEntry) {
-    aLoadState.emplace(WrapMovingNotNull(RefPtr{CreateLoadInfo(mActiveEntry)}));
+    aLoadState.emplace(WrapMovingNotNull(
+        RefPtr{CreateLoadInfo(mActiveEntry, NavigationType::Reload)}));
     aReloadActiveEntry.emplace(true);
     if (aForceReload) {
       shistory->RemoveFrameEntries(mActiveEntry);
@@ -1397,8 +1438,8 @@ void CanonicalBrowsingContext::NotifyOnHistoryReload(
     const LoadingSessionHistoryEntry& loadingEntry =
         mLoadingEntries.LastElement();
     uint64_t loadId = loadingEntry.mLoadId;
-    aLoadState.emplace(
-        WrapMovingNotNull(RefPtr{CreateLoadInfo(loadingEntry.mEntry)}));
+    aLoadState.emplace(WrapMovingNotNull(
+        RefPtr{CreateLoadInfo(loadingEntry.mEntry, NavigationType::Reload)}));
     aReloadActiveEntry.emplace(false);
     if (aForceReload) {
       SessionHistoryEntry::LoadingEntry* entry =
@@ -1570,9 +1611,7 @@ Maybe<int32_t> CanonicalBrowsingContext::HistoryGo(
     return Nothing();
   }
 
-  CheckedInt<int32_t> index = shistory->GetRequestedIndex() >= 0
-                                  ? shistory->GetRequestedIndex()
-                                  : shistory->Index();
+  CheckedInt<int32_t> index = shistory->GetTargetIndexForHistoryOperation();
   MOZ_LOG(gSHLog, LogLevel::Debug,
           ("HistoryGo(%d->%d) epoch %" PRIu64 "/id %" PRIu64, aOffset,
            (index + aOffset).value(), aHistoryEpoch,
@@ -1614,13 +1653,28 @@ Maybe<int32_t> CanonicalBrowsingContext::HistoryGo(
 
   // GoToIndex checks that index is >= 0 and < length.
   nsTArray<nsSHistory::LoadEntryResult> loadResults;
-  nsresult rv = shistory->GotoIndex(index.value(), loadResults, sameEpoch,
+  const int32_t oldRequestedIndex = shistory->GetRequestedIndex();
+
+  nsresult rv = shistory->GotoIndex(this, index.value(), loadResults, sameEpoch,
                                     aOffset == 0, aUserActivation);
   if (NS_FAILED(rv)) {
     MOZ_LOG(gSHLog, LogLevel::Debug,
             ("Dropping HistoryGo - bad index or same epoch (not in same doc)"));
     return Nothing();
   }
+
+  for (auto& loadResult : loadResults) {
+    if (nsresult result = loadResult.mBrowsingContext->CheckSandboxFlags(
+            loadResult.mLoadState);
+        NS_FAILED(result)) {
+      aResolver(result);
+      MOZ_LOG(gSHLog, LogLevel::Debug,
+              ("Dropping HistoryGo - sandbox check failed"));
+      shistory->InternalSetRequestedIndex(oldRequestedIndex);
+      return Nothing();
+    }
+  }
+
   if (epoch < aHistoryEpoch || aContentId != id) {
     MOZ_LOG(gSHLog, LogLevel::Debug, ("Set epoch"));
     shistory->SetEpoch(aHistoryEpoch, aContentId);
@@ -1658,10 +1712,12 @@ void CanonicalBrowsingContext::NavigationTraverse(
         return true;
       });
 
+  // Step 12.2
   if (!targetEntry) {
     return aResolver(NS_ERROR_DOM_INVALID_STATE_ERR);
   }
 
+  // Step 12.3
   if (targetEntry == mActiveEntry) {
     return aResolver(NS_OK);
   }
@@ -1678,8 +1734,16 @@ void CanonicalBrowsingContext::NavigationTraverse(
   }
 
   int32_t offset = targetIndex - activeIndex;
-  MOZ_LOG_FMT(gNavigationAPILog, LogLevel::Debug, "Performing traversal by {}",
-              offset);
+
+  int32_t requestedIndex = shistory->GetTargetIndexForHistoryOperation();
+  // Step 12.3
+  if (requestedIndex == targetIndex) {
+    return aResolver(NS_OK);
+  }
+
+  // Reset the requested index since this is not a relative traversal, and the
+  // offset is overriding any currently ongoing history traversals.
+  shistory->InternalSetRequestedIndex(-1);
 
   HistoryGo(offset, aHistoryEpoch, false, aUserActivation, aCheckForCancelation,
             aContentId, std::move(aResolver));
@@ -2713,42 +2777,13 @@ bool CanonicalBrowsingContext::SupportsLoadingInParent(
   return true;
 }
 
-bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
-                                            bool aSetNavigating) {
-  // We currently only support starting loads directly from the
-  // CanonicalBrowsingContext for top-level BCs.
-  // We currently only support starting loads directly from the
-  // CanonicalBrowsingContext for top-level BCs.
-  if (!IsTopContent() || !GetContentParent() ||
-      !StaticPrefs::browser_tabs_documentchannel_parent_controlled()) {
-    return false;
-  }
-
-  uint64_t outerWindowId = 0;
-  if (!SupportsLoadingInParent(aLoadState, &outerWindowId)) {
-    return false;
-  }
-
-  MOZ_ASSERT(!aLoadState->URI()->SchemeIs("javascript"));
-
-  MOZ_ALWAYS_SUCCEEDS(
-      SetParentInitiatedNavigationEpoch(++gParentInitiatedNavigationEpoch));
-  // Note: If successful, this will recurse into StartDocumentLoad and
-  // set mCurrentLoad to the DocumentLoadListener instance created.
-  // Ideally in the future we will only start loads from here, and we can
-  // just set this directly instead.
-  return net::DocumentLoadListener::LoadInParent(this, aLoadState,
-                                                 aSetNavigating);
-}
-
 bool CanonicalBrowsingContext::AttemptSpeculativeLoadInParent(
     nsDocShellLoadState* aLoadState) {
   // We currently only support starting loads directly from the
   // CanonicalBrowsingContext for top-level BCs.
   // We currently only support starting loads directly from the
   // CanonicalBrowsingContext for top-level BCs.
-  if (!IsTopContent() || !GetContentParent() ||
-      (StaticPrefs::browser_tabs_documentchannel_parent_controlled())) {
+  if (!IsTopContent() || !GetContentParent()) {
     return false;
   }
 
@@ -2765,18 +2800,6 @@ bool CanonicalBrowsingContext::AttemptSpeculativeLoadInParent(
 
 bool CanonicalBrowsingContext::StartDocumentLoad(
     net::DocumentLoadListener* aLoad) {
-  // If we're controlling loads from the parent, then starting a new load means
-  // that we need to cancel any existing ones.
-  if (StaticPrefs::browser_tabs_documentchannel_parent_controlled() &&
-      mCurrentLoad) {
-    // Make sure we are not loading a javascript URI.
-    MOZ_ASSERT(!aLoad->IsLoadingJSURI());
-
-    // If we want to do a download, don't cancel the current navigation.
-    if (!aLoad->IsDownload()) {
-      mCurrentLoad->Cancel(NS_BINDING_CANCELLED_OLD_LOAD, ""_ns);
-    }
-  }
   mCurrentLoad = aLoad;
 
   if (NS_FAILED(SetCurrentLoadIdentifier(Some(aLoad->GetLoadIdentifier())))) {
@@ -3733,6 +3756,11 @@ EntryList* CanonicalBrowsingContext::GetActiveEntries() {
     }
   }
   return mActiveEntryList;
+}
+
+already_AddRefed<net::DocumentLoadListener>
+CanonicalBrowsingContext::GetCurrentLoad() {
+  return do_AddRef(this->mCurrentLoad);
 }
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(CanonicalBrowsingContext)

@@ -42,7 +42,7 @@ export default {
   },
 
   create(context) {
-    const filename = context.getFilename();
+    const filename = context.filename;
 
     // Hard-code some directories and files that should always be exempt.
     if (

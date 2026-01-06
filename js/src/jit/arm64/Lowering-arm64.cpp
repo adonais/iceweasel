@@ -294,27 +294,98 @@ void LIRGeneratorARM64::lowerModI(MMod* mod) {
 }
 
 void LIRGeneratorARM64::lowerDivI64(MDiv* div) {
+  if (div->rhs()->isConstant()) {
+    LAllocation lhs = useRegister(div->lhs());
+    int64_t rhs = div->rhs()->toConstant()->toInt64();
+
+    if (mozilla::IsPowerOfTwo(mozilla::Abs(rhs))) {
+      int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
+
+      auto* lir = new (alloc()) LDivPowTwoI64(lhs, shift, rhs < 0);
+      define(lir, div);
+      return;
+    }
+
+    auto* lir = new (alloc()) LDivConstantI64(lhs, rhs);
+    define(lir, div);
+    return;
+  }
+
   auto* lir = new (alloc())
       LDivI64(useRegisterAtStart(div->lhs()), useRegisterAtStart(div->rhs()));
-  defineInt64(lir, div);
+  define(lir, div);
 }
 
 void LIRGeneratorARM64::lowerModI64(MMod* mod) {
-  auto* lir =
-      new (alloc()) LModI64(useRegister(mod->lhs()), useRegister(mod->rhs()));
-  defineInt64(lir, mod);
+  LAllocation lhs = useRegister(mod->lhs());
+
+  if (mod->rhs()->isConstant()) {
+    int64_t rhs = mod->rhs()->toConstant()->toInt64();
+
+    if (mozilla::IsPowerOfTwo(mozilla::Abs(rhs))) {
+      int32_t shift = mozilla::FloorLog2(mozilla::Abs(rhs));
+
+      auto* lir = new (alloc()) LModPowTwoI64(lhs, shift);
+      define(lir, mod);
+      return;
+    }
+
+    auto* lir = new (alloc()) LModConstantI64(lhs, rhs);
+    define(lir, mod);
+    return;
+  }
+
+  auto* lir = new (alloc()) LModI64(lhs, useRegister(mod->rhs()));
+  define(lir, mod);
 }
 
 void LIRGeneratorARM64::lowerUDivI64(MDiv* div) {
+  if (div->rhs()->isConstant()) {
+    LAllocation lhs = useRegister(div->lhs());
+
+    // NOTE: the result of toInt64 is coerced to uint64_t.
+    uint64_t rhs = div->rhs()->toConstant()->toInt64();
+
+    if (mozilla::IsPowerOfTwo(rhs)) {
+      int32_t shift = mozilla::FloorLog2(rhs);
+
+      auto* lir = new (alloc()) LDivPowTwoI64(lhs, shift, false);
+      define(lir, div);
+      return;
+    }
+
+    auto* lir = new (alloc()) LUDivConstantI64(lhs, rhs);
+    define(lir, div);
+    return;
+  }
+
   auto* lir = new (alloc())
       LUDivI64(useRegisterAtStart(div->lhs()), useRegisterAtStart(div->rhs()));
-  defineInt64(lir, div);
+  define(lir, div);
 }
 
 void LIRGeneratorARM64::lowerUModI64(MMod* mod) {
-  auto* lir =
-      new (alloc()) LUModI64(useRegister(mod->lhs()), useRegister(mod->rhs()));
-  defineInt64(lir, mod);
+  LAllocation lhs = useRegister(mod->lhs());
+
+  if (mod->rhs()->isConstant()) {
+    // NOTE: the result of toInt64 is coerced to uint64_t.
+    uint64_t rhs = mod->rhs()->toConstant()->toInt64();
+
+    if (mozilla::IsPowerOfTwo(rhs)) {
+      int32_t shift = mozilla::FloorLog2(rhs);
+
+      auto* lir = new (alloc()) LModPowTwoI64(lhs, shift);
+      define(lir, mod);
+      return;
+    }
+
+    auto* lir = new (alloc()) LUModConstantI64(lhs, rhs);
+    define(lir, mod);
+    return;
+  }
+
+  auto* lir = new (alloc()) LUModI64(lhs, useRegister(mod->rhs()));
+  define(lir, mod);
 }
 
 void LIRGeneratorARM64::lowerWasmBuiltinDivI64(MWasmBuiltinDivI64* div) {

@@ -78,7 +78,6 @@
 #include "mozilla/RefPtr.h"
 
 #include <string.h>
-#include <type_traits>
 
 #if defined(MOZILLA_INTERNAL_API)
 // For thread safety checking.

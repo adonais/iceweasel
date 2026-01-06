@@ -8,7 +8,6 @@
 #include "mozilla/net/DocumentChannel.h"
 
 #include <inttypes.h>
-#include <utility>
 #include "mozIDOMWindow.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"

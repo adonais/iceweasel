@@ -87,8 +87,6 @@
 #include "mozilla/layers/CompositorSession.h"
 #include "VRManagerChild.h"
 #include "gfxConfig.h"
-#include "nsView.h"
-#include "nsViewManager.h"
 
 static mozilla::LazyLogModule sBaseWidgetLog("BaseWidget");
 
@@ -310,7 +308,6 @@ nsIWidget::nsIWidget(BorderStyle aBorderStyle)
       mPopupType(PopupType::Any),
       mHasRemoteContent(false),
       mUpdateCursor(true),
-      mUseAttachedEvents(false),
       mIMEHasFocus(false),
       mIMEHasQuit(false),
       mIsFullyOccluded(false),
@@ -491,8 +488,8 @@ nsIFrame* nsIWidget::GetFrame() const {
   if (auto* popup = GetPopupFrame()) {
     return popup;
   }
-  if (nsView* view = nsView::GetViewFor(this)) {
-    return view->GetFrame();
+  if (auto* ps = GetPresShell()) {
+    return ps->GetRootFrame();
   }
   return nullptr;
 }
@@ -535,14 +532,6 @@ LayoutDeviceIntRect nsIWidget::MaybeRoundToDisplayPixels(
 //
 //-------------------------------------------------------------------------
 
-nsIWidgetListener* nsIWidget::GetWidgetListener() const {
-  return mWidgetListener;
-}
-
-void nsIWidget::SetWidgetListener(nsIWidgetListener* aWidgetListener) {
-  mWidgetListener = aWidgetListener;
-}
-
 already_AddRefed<nsIWidget> nsIWidget::CreateChild(
     const LayoutDeviceIntRect& aRect, const widget::InitData& aInitData) {
   MOZ_ASSERT(aInitData.mWindowType == WindowType::Popup,
@@ -576,33 +565,6 @@ already_AddRefed<nsIWidget> nsIWidget::CreateChild(
   }
 
   return widget.forget();
-}
-
-// Attach a view to our widget which we'll send events to.
-void nsIWidget::AttachViewToTopLevel(bool aUseAttachedEvents) {
-  NS_ASSERTION(mWindowType == WindowType::TopLevel ||
-                   mWindowType == WindowType::Dialog ||
-                   mWindowType == WindowType::Invisible,
-               "Can't attach to window of that type");
-
-  mUseAttachedEvents = aUseAttachedEvents;
-}
-
-nsIWidgetListener* nsIWidget::GetAttachedWidgetListener() const {
-  return mAttachedWidgetListener;
-}
-
-nsIWidgetListener* nsIWidget::GetPreviouslyAttachedWidgetListener() {
-  return mPreviouslyAttachedWidgetListener;
-}
-
-void nsIWidget::SetPreviouslyAttachedWidgetListener(
-    nsIWidgetListener* aListener) {
-  mPreviouslyAttachedWidgetListener = aListener;
-}
-
-void nsIWidget::SetAttachedWidgetListener(nsIWidgetListener* aListener) {
-  mAttachedWidgetListener = aListener;
 }
 
 //-------------------------------------------------------------------------
@@ -674,6 +636,16 @@ LayoutDeviceIntSize nsIWidget::NormalSizeModeClientToWindowSizeDifference() {
   MOZ_ASSERT(margin.right >= 0, "Window should be bigger than client area");
   MOZ_ASSERT(margin.bottom >= 0, "Window should be bigger than client area");
   return {margin.LeftRight(), margin.TopBottom()};
+}
+
+nsEventStatus nsIWidget::DispatchEvent(WidgetGUIEvent* aEvent) {
+  if (mAttachedWidgetListener) {
+    return mAttachedWidgetListener->HandleEvent(aEvent);
+  }
+  if (mWidgetListener) {
+    return mWidgetListener->HandleEvent(aEvent);
+  }
+  return nsEventStatus_eIgnore;
 }
 
 RefPtr<mozilla::VsyncDispatcher> nsIWidget::GetVsyncDispatcher() {
@@ -1142,9 +1114,8 @@ nsEventStatus nsIWidget::ProcessUntransformedAPZEvent(
   // Make a copy of the original event for the APZCCallbackHelper helpers that
   // we call later, because the event passed to DispatchEvent can get mutated in
   // ways that we don't want (i.e. touch points can get stripped out).
-  nsEventStatus status;
   UniquePtr<WidgetEvent> original(aEvent->Duplicate());
-  DispatchEvent(aEvent, status);
+  nsEventStatus status = DispatchEvent(aEvent);
 
   if (mAPZC && !InputAPZContext::WasRoutedToChildProcess() &&
       !InputAPZContext::WasDropped() && inputBlockId) {
@@ -1295,9 +1266,7 @@ void nsIWidget::DispatchTouchInput(MultiTouchInput& aInput) {
     ProcessUntransformedAPZEvent(&event, result);
   } else {
     WidgetTouchEvent event = aInput.ToWidgetEvent(this);
-
-    nsEventStatus status;
-    DispatchEvent(&event, status);
+    DispatchEvent(&event);
   }
 }
 
@@ -1315,8 +1284,7 @@ void nsIWidget::DispatchPanGestureInput(PanGestureInput& aInput) {
     ProcessUntransformedAPZEvent(&event, result);
   } else {
     WidgetWheelEvent event = aInput.ToWidgetEvent(this);
-    nsEventStatus status;
-    DispatchEvent(&event, status);
+    DispatchEvent(&event);
   }
 }
 
@@ -1333,8 +1301,7 @@ void nsIWidget::DispatchPinchGestureInput(PinchGestureInput& aInput) {
     ProcessUntransformedAPZEvent(&event, result);
   } else {
     WidgetWheelEvent event = aInput.ToWidgetEvent(this);
-    nsEventStatus status;
-    DispatchEvent(&event, status);
+    DispatchEvent(&event);
   }
 }
 
@@ -1403,7 +1370,7 @@ nsIWidget::ContentAndAPZEventStatus nsIWidget::DispatchInputEvent(
     }
   }
 
-  DispatchEvent(aEvent, status.mContentStatus);
+  status.mContentStatus = DispatchEvent(aEvent);
   return status;
 }
 
@@ -1430,9 +1397,7 @@ void nsIWidget::DispatchEventToAPZOnly(mozilla::WidgetInputEvent* aEvent) {
 }
 
 bool nsIWidget::DispatchWindowEvent(WidgetGUIEvent& event) {
-  nsEventStatus status;
-  DispatchEvent(&event, status);
-  return ConvertStatus(status);
+  return ConvertStatus(DispatchEvent(&event));
 }
 
 Document* nsIWidget::GetDocument() const {
@@ -2017,6 +1982,28 @@ nsIWidget::TextEventDispatcher* nsIWidget::GetTextEventDispatcher() {
   return mTextEventDispatcher;
 }
 
+PresShell* nsIWidget::GetPresShell() const {
+  if (mWidgetListener) {
+    if (auto* ps = mWidgetListener->GetPresShell()) {
+      return ps;
+    }
+  }
+  if (mAttachedWidgetListener) {
+    if (auto* ps = mAttachedWidgetListener->GetPresShell()) {
+      return ps;
+    }
+  }
+  return nullptr;
+}
+
+nsIWidgetListener* nsIWidget::GetPaintListener() const {
+  if (mPreviouslyAttachedWidgetListener && mAttachedWidgetListener &&
+      mAttachedWidgetListener->IsPaintSuppressed()) {
+    return mPreviouslyAttachedWidgetListener;
+  }
+  return mAttachedWidgetListener ? mAttachedWidgetListener : mWidgetListener;
+}
+
 void* nsIWidget::GetPseudoIMEContext() {
   TextEventDispatcher* dispatcher = GetTextEventDispatcher();
   if (!dispatcher) {
@@ -2404,8 +2391,7 @@ bool nsIWidget::MayStartSwipeForNonAPZ(const PanGestureInput& aPanInput) {
 
   WidgetWheelEvent event = aPanInput.ToWidgetEvent(this);
   event.mCanTriggerSwipe = swipeInfo.wantsSwipe;
-  nsEventStatus status;
-  DispatchEvent(&event, status);
+  DispatchEvent(&event);
   if (swipeInfo.wantsSwipe) {
     if (context.WasRoutedToChildProcess()) {
       // We don't know whether this event can start a swipe, so we need

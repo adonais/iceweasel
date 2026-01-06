@@ -564,10 +564,10 @@ add_task(async function testSourceTreeWithEncodedPaths() {
 /**
  * Assert the location displayed in the breakpoint list, in the right sidebar.
  *
- * @param {Object} dbg
- * @param {String} label
+ * @param {object} dbg
+ * @param {string} label
  *        The expected displayed location
- * @param {Number} index
+ * @param {number} index
  *        The position of the breakpoint in the list to verify
  */
 function assertBreakpointHeading(dbg, label, index) {

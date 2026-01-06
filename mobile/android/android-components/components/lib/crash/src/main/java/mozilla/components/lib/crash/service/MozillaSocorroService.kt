@@ -18,7 +18,7 @@ import mozilla.components.lib.crash.service.CrashReport.Annotation
 import mozilla.components.support.base.ext.getStacktraceAsJsonString
 import mozilla.components.support.base.ext.getStacktraceAsString
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.utils.ext.getPackageInfoCompat
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -109,7 +109,10 @@ class MozillaSocorroService(
 
     init {
         val packageInfo = try {
-            applicationContext.packageManager.getPackageInfoCompat(applicationContext.packageName, 0)
+            applicationContext.packageManagerCompatHelper.getPackageInfoCompat(
+                applicationContext.packageName,
+                0,
+            )
         } catch (e: PackageManager.NameNotFoundException) {
             logger.error("package name not found, failed to get application version")
             null
@@ -188,8 +191,16 @@ class MozillaSocorroService(
             conn.setRequestProperty("Content-Encoding", "gzip")
 
             sendCrashData(
-                conn.outputStream, boundary, crash.timestamp, throwable, miniDumpFilePath, extrasFilePath,
-                isNativeCodeCrash, isFatalCrash, breadcrumbsJson.toString(), crashVersionName,
+                conn.outputStream,
+                boundary,
+                crash.timestamp,
+                throwable,
+                miniDumpFilePath,
+                extrasFilePath,
+                isNativeCodeCrash,
+                isFatalCrash,
+                breadcrumbsJson.toString(),
+                crashVersionName,
             )
 
             BufferedReader(InputStreamReader(conn.inputStream)).use { reader ->
@@ -237,7 +248,7 @@ class MozillaSocorroService(
     internal fun createFormDataWriter(os: OutputStream, boundary: String, logger: Logger) =
         FormDataWriter(os, boundary, logger)
 
-    @Suppress("LongParameterList", "LongMethod")
+    @Suppress("LongParameterList", "LongMethod", "CognitiveComplexMethod")
     private fun sendCrashData(
         os: OutputStream,
         boundary: String,
@@ -462,7 +473,7 @@ class MozillaSocorroService(
         }
 
         fun sendPackageInstallTime(applicationContext: Context) {
-            val packageManager = applicationContext.packageManager
+            val packageManager = applicationContext.packageManagerCompatHelper
             try {
                 val packageInfo = packageManager.getPackageInfoCompat(applicationContext.packageName, 0)
                 sendAnnotation(

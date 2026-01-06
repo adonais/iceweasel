@@ -8,7 +8,6 @@
 #define mozilla_dom_quota_usageinfo_h__
 
 #include <cstdint>
-#include <utility>
 
 #include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"

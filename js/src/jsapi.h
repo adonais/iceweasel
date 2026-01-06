@@ -11,9 +11,6 @@
 
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Maybe.h"
-#include "mozilla/MemoryReporting.h"
-#include "mozilla/RangedPtr.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Variant.h"
 

@@ -22,7 +22,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.requirePreference
 import org.mozilla.fenix.utils.Settings
@@ -58,7 +57,7 @@ class SitePermissionsDetailsExceptionsFragmentTest {
         fragment.sitePermissions = permissions
 
         every { permissions.origin } returns "mozilla.org"
-        every { settings.isLnaBlockingEnabled } returns false
+        every { settings.isLnaFeatureEnabled } returns false
         every { fragment.provideContext() } returns context
         every { fragment.provideSettings() } returns settings
     }
@@ -86,7 +85,7 @@ class SitePermissionsDetailsExceptionsFragmentTest {
 
     @Test
     fun `WHEN bindCategoryPhoneFeatures is called AND LNA is not enabled THEN LNA preference is hidden`() {
-        every { settings.isLnaBlockingEnabled } returns false
+        every { settings.isLnaFeatureEnabled } returns false
 
         fragment.bindCategoryPhoneFeatures()
 
@@ -106,7 +105,7 @@ class SitePermissionsDetailsExceptionsFragmentTest {
 
     @Test
     fun `WHEN bindCategoryPhoneFeatures is called AND LNA is enabled THEN LNA preference is shown`() {
-        every { settings.isLnaBlockingEnabled } returns true
+        every { settings.isLnaFeatureEnabled } returns true
 
         fragment.bindCategoryPhoneFeatures()
 

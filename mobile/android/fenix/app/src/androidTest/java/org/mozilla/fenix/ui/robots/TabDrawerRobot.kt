@@ -10,6 +10,7 @@ import android.util.Log
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
@@ -26,6 +27,7 @@ import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
@@ -477,6 +479,16 @@ class TabDrawerRobot(private val composeTestRule: ComposeTestRule) {
             Log.i(TAG, "closeAllTabs: Trying to click the \"Close all tabs\" menu button")
             composeTestRule.dropdownMenuItemCloseAllTabs().performClick()
             Log.i(TAG, "closeAllTabs: Clicked the \"Close all tabs\" menu button")
+
+            val confirmButtonText = getStringResource(R.string.tab_manager_close_all_tabs_dialog_confirm)
+
+            Log.i(TAG, "closeAllTabs: Waiting for the \"$confirmButtonText\" dialog button to be displayed")
+            composeTestRule
+                .onNodeWithText(confirmButtonText, useUnmergedTree = true)
+                .assertIsDisplayed()
+                .performClick()
+            Log.i(TAG, "closeAllTabs: Clicked the \"$confirmButtonText\" dialog button")
+
             HomeScreenRobot().interact()
             return HomeScreenRobot.Transition()
         }

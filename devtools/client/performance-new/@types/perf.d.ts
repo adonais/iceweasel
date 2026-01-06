@@ -203,6 +203,7 @@ export interface RecordingSettings {
   objdirs: string[];
   // The duration is currently not wired up to the UI yet. See Bug 1587165.
   duration?: number;
+  mozLogs?: string;
 }
 
 /**
@@ -447,6 +448,7 @@ export interface PresetDefinition {
   threads: string[];
   duration: number;
   profilerViewMode?: ProfilerViewMode;
+  mozLogs?: string;
   l10nIds: {
     popup: {
       label: string;

@@ -90,6 +90,10 @@ ipprotection-message-generic-error =
   .heading = Couldn’t connect to VPN
   .message = Try again in a few minutes.
 
+ipprotection-message-continuous-onboarding-intro = Turn on VPN to hide your location and add extra encryption to your browsing.
+ipprotection-message-continuous-onboarding-autostart = <a data-l10n-name="setting-link">Set VPN to turn on</a> every time you open { -brand-short-name } for an extra layer of protection.
+ipprotection-message-continuous-onboarding-site-settings = { -brand-short-name } will remember which websites you’ve set to use VPN. Update these in <a data-l10n-name="setting-link">settings</a> anytime.
+
 ## IP Protection Settings
 
 ip-protection-description =
@@ -130,7 +134,10 @@ ip-protection-site-exceptions-select-sites-button =
 
 ip-protection-exceptions-dialog-window =
   .title = Where to use { -firefox-vpn-brand-name }
-ip-protection-exclusions-desc = Use VPN for all websites except ones on this list.
-ip-protection-inclusions-desc = Use VPN for only select websites.
+ip-protection-exclusions-desc = Use VPN for all websites except ones on this list. Add websites to this list by turning { -firefox-vpn-brand-name } on or off for any site in the VPN panel.
+ip-protection-inclusions-desc = Use VPN only for select websites. Add websites to this list by turning { -firefox-vpn-brand-name } on or off for any site in the VPN panel.
+
+ipprotection-site-settings-title =
+  .title = VPN site settings
 
 ##

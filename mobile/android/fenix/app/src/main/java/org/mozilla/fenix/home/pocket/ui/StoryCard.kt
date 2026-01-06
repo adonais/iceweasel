@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,6 +27,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.modifier.skeletonLoader
 import mozilla.components.service.pocket.PocketStory
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
 import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
@@ -33,7 +35,6 @@ import mozilla.components.service.pocket.PocketStory.PocketSponsoredStory
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.compose.Image
-import org.mozilla.fenix.compose.skeletonLoader
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.theme.FirefoxTheme
 import kotlin.math.roundToInt
@@ -65,7 +66,7 @@ internal fun StoryCard(
         modifier = modifier,
         shape = cardShape,
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = FirefoxTheme.colors.layer2),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
     ) {
         Column(
             modifier = Modifier.padding(all = defaultCardContentPadding),
@@ -90,7 +91,6 @@ internal fun StoryCard(
             ) {
                 Text(
                     text = story.title,
-                    color = FirefoxTheme.colors.textPrimary,
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 2,
                     style = FirefoxTheme.typography.headline7,
@@ -122,7 +122,7 @@ internal fun StoryCard(
 
                         Text(
                             text = subtitle,
-                            color = FirefoxTheme.colors.textSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             overflow = TextOverflow.Ellipsis,
                             style = FirefoxTheme.typography.subtitle1,
                         )
@@ -148,7 +148,7 @@ private fun StoryCardPreview() {
     FirefoxTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             StoryCard(
-                story = FakeHomepagePreview.pocketStories(limit = 1).first(),
+                story = FakeHomepagePreview.stories(limit = 1).first(),
                 onClick = { _, _ -> },
             )
         }

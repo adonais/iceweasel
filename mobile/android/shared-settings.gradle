@@ -42,24 +42,31 @@ class Config {
     public final String componentsVersion
     public final String componentsGroupId
     public final Integer jvmTargetCompatibility
-    public final Integer compileSdkVersion
+    public final Integer compileSdkMajorVersion
+    public final Integer compileSdkMinorVersion
     public final Integer minSdkVersion
     public final Integer targetSdkVersion
+    public final String ndkVersion
+
 
     Config(
             String componentsVersion,
             String componentsGroupId,
             Integer jvmTargetCompatibility,
-            Integer compileSdkVersion,
+            Integer compileSdkMajorVersion,
+            Integer compileSdkMinorVersion,
             Integer minSdkVersion,
-            Integer targetSdkVersion
+            Integer targetSdkVersion,
+            String ndkVersion
     ) {
         this.componentsVersion = componentsVersion
         this.componentsGroupId = componentsGroupId
         this.jvmTargetCompatibility = jvmTargetCompatibility
-        this.compileSdkVersion = compileSdkVersion
+        this.compileSdkMajorVersion = compileSdkMajorVersion
+        this.compileSdkMinorVersion = compileSdkMinorVersion
         this.minSdkVersion = minSdkVersion
         this.targetSdkVersion = targetSdkVersion
+        this.ndkVersion = ndkVersion
     }
 }
 
@@ -141,6 +148,8 @@ gradle.projectsLoaded { ->
     } else if (gradle.hasProperty("localProperties.branchBuild.android-components.version")) {
         version = gradle.getProperty("localProperties.branchBuild.android-components.version")
     }
+    // get the ndk version from the external build environment.
+    def ndkVersion = "${gradle.mozconfig.substs.ANDROID_NDK_MAJOR_VERSION}.${gradle.mozconfig.substs.ANDROID_NDK_MINOR_VERSION}"
 
     // Wait until root project is "loaded" before we set "config"
     // Note that since this is set on "rootProject.ext", it will be "in scope" during the evaluation of all projects'
@@ -149,9 +158,11 @@ gradle.projectsLoaded { ->
             version,
             configData.componentsGroupId,
             configData.jvmTargetCompatibility,
-            configData.compileSdkVersion,
+            configData.compileSdkMajorVersion,
+            configData.compileSdkMinorVersion,
             configData.minSdkVersion,
-            configData.targetSdkVersion
+            configData.targetSdkVersion,
+            ndkVersion
     )
 
     gradle.rootProject.ext.buildConfig = buildconfig

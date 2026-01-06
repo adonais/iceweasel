@@ -25,6 +25,19 @@ const GENERATED_WEDIDL_FILES = [
   "CSSStyleProperties.webidl",
 ];
 
+// Support overrides using the syntax from @typescript/dom-lib-generator which
+// is parsing our webidl files and generating types.
+// https://github.com/microsoft/TypeScript-DOM-lib-generator/blob/main/inputfiles/overridingTypes.jsonc
+const OVERRIDE_TYPES = {
+  callbackFunctions: {
+    callbackFunction: {
+      CustomElementConstructor: {
+        overrideSignatures: ["new (...params: any[]): HTMLElement"],
+      },
+    },
+  },
+};
+
 const HEADER = `/**
  * NOTE: Do not modify this file by hand.
  * Content was generated from source .webidl files.
@@ -166,6 +179,8 @@ async function emitDom(webidls, builtin = "builtin.webidl") {
       target.implements.push(inc.includes);
     }
   }
+
+  merge(all, OVERRIDE_TYPES);
 
   let additionalExports = customize(all, baseTypeConversionMap);
   let exposed = getExposedTypes(all, ["Window"], new Set());

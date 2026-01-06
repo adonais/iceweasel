@@ -280,7 +280,7 @@ addAccessibleTask(
     const empty = findAccessibleChildByID(docAcc, "empty");
     testAccessibleTree(empty, {
       role: ROLE_HEADING,
-      name: "inside alt",
+      name: "insidealt",
       children: [
         { role: ROLE_TEXT_LEAF, name: "inside" },
         { role: ROLE_STATICTEXT, name: "alt" },

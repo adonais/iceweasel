@@ -16,8 +16,8 @@ skip-if = [
 
 ["browser_unknownContentType_delayedbutton.js"]
 skip-if = [
-  "os == 'linux' && bits == 64 && debug", # Bug 1747285
-  "os == 'linux' && fission && tsan", # Bug 1747285
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1747285
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && fission && tsan", # Bug 1747285
 ]
 
 ["browser_unknownContentType_dialog_layout.js"]
@@ -29,7 +29,9 @@ support-files = [
 ]
 
 ["browser_unknownContentType_policy.js"]
-run-if = ["os == 'win'"] # jnlp file are not considered executable on macOS or Linux
+run-if = [
+  "os == 'win'", # jnlp file are not considered executable on macOS or Linux
+]
 support-files = [
   "example.jnlp",
   "example.jnlp^headers^",

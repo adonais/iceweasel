@@ -61,13 +61,13 @@ async protocol PCameras
   manager PBackground;
 
 child:
-  async CaptureEnded(int streamId);
+  async CaptureEnded(int[] streamIds);
   // transfers ownership of |buffer| from parent to child
-  async DeliverFrame(int streamId, Shmem buffer, VideoFrameProperties props);
+  async DeliverFrame(int captureId, int[] streamIds, Shmem buffer, VideoFrameProperties props);
   async DeviceChange();
   async ReplyNumberOfCaptureDevices(int deviceCount);
   async ReplyNumberOfCapabilities(int capabilityCount);
-  async ReplyAllocateCapture(int captureId);
+  async ReplyAllocateCapture(int streamId);
   async ReplyGetCaptureCapability(VideoCaptureCapability cap);
   async ReplyGetCaptureDevice(nsCString device_name, nsCString device_id, bool scary);
   async ReplyFailure();
@@ -84,15 +84,15 @@ parent:
 
   async AllocateCapture(CaptureEngine engine, nsCString unique_idUTF8,
                         uint64_t windowID);
-  async ReleaseCapture(CaptureEngine engine, int captureId);
-  async StartCapture(CaptureEngine engine, int captureId,
+  async ReleaseCapture(CaptureEngine engine, int streamId);
+  async StartCapture(CaptureEngine engine, int streamId,
                      VideoCaptureCapability capability,
                      NormalizedConstraints constraints,
                      VideoResizeModeEnum resizeMode);
-  async FocusOnSelectedSource(CaptureEngine engine, int captureId);
-  async StopCapture(CaptureEngine engine, int captureId);
+  async FocusOnSelectedSource(CaptureEngine engine, int streamId);
+  async StopCapture(CaptureEngine engine, int streamId);
   // transfers frame back
-  async ReleaseFrame(Shmem s);
+  async ReleaseFrame(int captureId, Shmem s);
 
   // setup camera engine
   async EnsureInitialized(CaptureEngine engine);

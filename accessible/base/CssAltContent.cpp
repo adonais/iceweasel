@@ -17,6 +17,10 @@
 namespace mozilla::a11y {
 
 CssAltContent::CssAltContent(nsIContent* aContent) {
+  if (!aContent) {
+    return;
+  }
+
   nsIFrame* frame = aContent->GetPrimaryFrame();
   if (!frame) {
     return;

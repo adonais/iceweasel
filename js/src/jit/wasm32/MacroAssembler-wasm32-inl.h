@@ -288,6 +288,8 @@ void MacroAssembler::add32(Imm32 imm, Register src, Register dest) {
 
 void MacroAssembler::add32(Imm32 imm, const Address& dest) { MOZ_CRASH(); }
 
+void MacroAssembler::add32(const Address& src, Register dest) { MOZ_CRASH(); }
+
 void MacroAssembler::addFloat32(FloatRegister src, FloatRegister dest) {
   MOZ_CRASH();
 }

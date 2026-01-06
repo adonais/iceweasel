@@ -7,20 +7,17 @@
 #include "DecodedStream.h"
 
 #include "AudioDecoderInputTrack.h"
-#include "AudioSegment.h"
 #include "MediaData.h"
 #include "MediaDecoderStateMachine.h"
 #include "MediaQueue.h"
 #include "MediaTrackGraph.h"
 #include "MediaTrackListener.h"
-#include "SharedBuffer.h"
 #include "Tracing.h"
 #include "VideoSegment.h"
 #include "VideoUtils.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/CheckedInt.h"
 #include "mozilla/ProfilerLabels.h"
-#include "mozilla/ProfilerMarkerTypes.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/gfx/Point.h"
@@ -467,19 +464,20 @@ void DecodedStreamData::GetDebugInfo(dom::DecodedStreamDataDebugInfo& aInfo) {
 }
 
 DecodedStream::DecodedStream(
-    MediaDecoderStateMachine* aStateMachine,
+    AbstractThread* aOwnerThread,
     nsMainThreadPtrHandle<SharedDummyTrack> aDummyTrack,
-    CopyableTArray<RefPtr<ProcessedMediaTrack>> aOutputTracks, double aVolume,
-    double aPlaybackRate, bool aPreservesPitch,
-    MediaQueue<AudioData>& aAudioQueue, MediaQueue<VideoData>& aVideoQueue,
-    RefPtr<AudioDeviceInfo> aAudioDevice)
-    : mOwnerThread(aStateMachine->OwnerThread()),
+    CopyableTArray<RefPtr<ProcessedMediaTrack>> aOutputTracks,
+    AbstractCanonical<PrincipalHandle>* aCanonicalOutputPrincipal,
+    double aVolume, double aPlaybackRate, bool aPreservesPitch,
+    MediaQueue<AudioData>& aAudioQueue, MediaQueue<VideoData>& aVideoQueue)
+    : mOwnerThread(aOwnerThread),
       mDummyTrack(std::move(aDummyTrack)),
+
       mWatchManager(this, mOwnerThread),
       mPlaying(false, "DecodedStream::mPlaying"),
-      mPrincipalHandle(aStateMachine->OwnerThread(), PRINCIPAL_HANDLE_NONE,
+      mPrincipalHandle(aOwnerThread, PRINCIPAL_HANDLE_NONE,
                        "DecodedStream::mPrincipalHandle (Mirror)"),
-      mCanonicalOutputPrincipal(aStateMachine->CanonicalOutputPrincipal()),
+      mCanonicalOutputPrincipal(aCanonicalOutputPrincipal),
       mOutputTracks(std::move(aOutputTracks)),
       mVolume(aVolume),
       mPlaybackRate(aPlaybackRate),

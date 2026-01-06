@@ -7,8 +7,6 @@
 #ifndef WEBGLQUEUEPARAMTRAITS_H_
 #define WEBGLQUEUEPARAMTRAITS_H_
 
-#include <type_traits>
-
 #include "TexUnpackBlob.h"
 #include "WebGLTypes.h"
 #include "ipc/EnumSerializer.h"

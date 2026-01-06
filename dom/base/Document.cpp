@@ -17,11 +17,9 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <initializer_list>
-#include <iterator>
 #include <limits>
-#include <type_traits>
 
+#include "AnchorPositioningUtils.h"
 #include "Attr.h"
 #include "ErrorList.h"
 #include "ExpandedPrincipal.h"
@@ -29,6 +27,7 @@
 #include "MobileViewportManager.h"
 #include "NSSErrorsService.h"
 #include "NodeUbiReporting.h"
+#include "NonCustomCSSPropertyId.h"
 #include "PLDHashTable.h"
 #include "StorageAccessPermissionRequest.h"
 #include "ThirdPartyUtil.h"
@@ -287,12 +286,12 @@
 #include "mozilla/net/NeckoChannelParams.h"
 #include "mozilla/net/RequestContextService.h"
 #include "nsAboutProtocolUtils.h"
+#include "nsAtom.h"
 #include "nsAttrValue.h"
 #include "nsAttrValueInlines.h"
 #include "nsBaseHashtable.h"
 #include "nsBidiUtils.h"
 #include "nsCRT.h"
-#include "nsCSSPropertyID.h"
 #include "nsCSSProps.h"
 #include "nsCSSPseudoElements.h"
 #include "nsCSSRendering.h"
@@ -455,6 +454,7 @@
 #include "nsXPCOMCID.h"
 #include "nsXULAppAPI.h"
 #include "nsXULCommandDispatcher.h"
+#include "nsXULElement.h"
 #include "nsXULPopupManager.h"
 #include "nsXULPrototypeDocument.h"
 #include "prthread.h"
@@ -4314,6 +4314,11 @@ void Document::EnsureNotEnteringAndExitFullscreen() {
   }
 }
 
+// https://html.spec.whatwg.org/#document-state-request-referrer-policy
+ReferrerPolicy Document::ReferrerPolicyUsedToFetchThisDocument() const {
+  return mRequestReferrerPolicy;
+}
+
 void Document::SetReferrerInfo(nsIReferrerInfo* aReferrerInfo) {
   mReferrerInfo = aReferrerInfo;
   mCachedReferrerInfoForInternalCSSAndSVGResources = nullptr;
@@ -4358,6 +4363,7 @@ nsresult Document::InitReferrerInfo(nsIChannel* aChannel) {
 
   if (nsCOMPtr<nsIReferrerInfo> referrerInfo = httpChannel->GetReferrerInfo()) {
     SetReferrerInfo(referrerInfo);
+    mRequestReferrerPolicy = referrerInfo->ReferrerPolicy();
   }
 
   // Override policy if we get one from Referrerr-Policy header
@@ -5985,13 +5991,16 @@ bool Document::QueryCommandEnabled(const nsAString& aHTMLCommandName,
       break;
   }
 
-  // cut & copy are always allowed
+  // Report false for restricted commands
   if (commandData.IsCutOrCopyCommand()) {
+    // XXX: should we report "disabled" when the target is not editable for cut
+    // command?
     return nsContentUtils::IsCutCopyAllowed(this, aSubjectPrincipal);
   }
 
-  // Report false for restricted commands
-  if (commandData.IsPasteCommand() && !aSubjectPrincipal.IsSystemPrincipal()) {
+  if (commandData.IsPasteCommand() &&
+      !nsContentUtils::PrincipalHasPermission(aSubjectPrincipal,
+                                              nsGkAtoms::clipboardRead)) {
     return false;
   }
 
@@ -6179,7 +6188,8 @@ bool Document::QueryCommandState(const nsAString& aHTMLCommandName,
 }
 
 bool Document::QueryCommandSupported(const nsAString& aHTMLCommandName,
-                                     CallerType aCallerType, ErrorResult& aRv) {
+                                     nsIPrincipal& aSubjectPrincipal,
+                                     ErrorResult& aRv) {
   // Only allow on HTML documents.
   if (!IsHTMLOrXHTML()) {
     aRv.ThrowInvalidStateError(
@@ -6210,17 +6220,15 @@ bool Document::QueryCommandSupported(const nsAString& aHTMLCommandName,
   // may also be disallowed to be called from non-privileged content.
   // For that reason, we report the support status of corresponding
   // command accordingly.
-  if (aCallerType != CallerType::System) {
-    if (commandData.IsPasteCommand()) {
-      return false;
-    }
-    if (commandData.IsCutOrCopyCommand() &&
-        !StaticPrefs::dom_allow_cut_copy()) {
-      // XXXbz should we worry about correctly reporting "true" in the
-      // "restricted, but we're an addon with clipboardWrite permissions" case?
-      // See also nsContentUtils::IsCutCopyAllowed.
-      return false;
-    }
+  if (commandData.IsPasteCommand() &&
+      !nsContentUtils::PrincipalHasPermission(aSubjectPrincipal,
+                                              nsGkAtoms::clipboardRead)) {
+    return false;
+  }
+  if (commandData.IsCutOrCopyCommand() && !StaticPrefs::dom_allow_cut_copy() &&
+      !nsContentUtils::PrincipalHasPermission(aSubjectPrincipal,
+                                              nsGkAtoms::clipboardWrite)) {
+    return false;
   }
 
   // aHTMLCommandName is supported if it can be converted to a Midas command
@@ -7509,7 +7517,7 @@ static inline void AssertNoStaleServoDataIn(nsINode& aSubtreeRoot) {
 }
 
 already_AddRefed<PresShell> Document::CreatePresShell(
-    nsPresContext* aContext, nsViewManager* aViewManager) {
+    nsPresContext* aContext, nsSubDocumentFrame* aEmbedderFrame) {
   MOZ_DIAGNOSTIC_ASSERT(!mPresShell, "We have a presshell already!");
 
   NS_ENSURE_FALSE(GetBFCacheEntry(), nullptr);
@@ -7520,11 +7528,17 @@ already_AddRefed<PresShell> Document::CreatePresShell(
   // Note: we don't hold a ref to the shell (it holds a ref to us)
   mPresShell = presShell;
 
+  if (aEmbedderFrame) {
+    // It's important to do this as soon as possible so that
+    // GetRootPresContext() and so on do the right thing from the get go.
+    aEmbedderFrame->AddEmbeddingPresShell(presShell);
+  }
+
   if (!mStyleSetFilled) {
     FillStyleSet();
   }
 
-  presShell->Init(aContext, aViewManager);
+  presShell->Init(aContext);
   if (RefPtr<class HighlightRegistry> highlightRegistry = mHighlightRegistry) {
     highlightRegistry->AddHighlightSelectionsToFrameSelection();
   }
@@ -13512,8 +13526,11 @@ bool Document::CanRewriteURL(nsIURI* aTargetURL, bool aReportErrors) const {
   if (nsContentUtils::URIIsLocalFile(aTargetURL)) {
     // It's a file:// URI
     nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
-    return NS_SUCCEEDED(principal->CheckMayLoadWithReporting(aTargetURL, false,
-                                                             InnerWindowID()));
+    if (aReportErrors) {
+      return NS_SUCCEEDED(principal->CheckMayLoadWithReporting(
+          aTargetURL, false, InnerWindowID()));
+    }
+    return NS_SUCCEEDED(principal->CheckMayLoad(aTargetURL, false));
   }
 
   nsCOMPtr<nsIScriptSecurityManager> secMan =
@@ -14409,13 +14426,7 @@ void Document::WarnOnceAbout(
     return;
   }
   mDeprecationWarnedAbout[static_cast<size_t>(aOperation)] = true;
-  // Don't count deprecated operations for about pages since those pages
-  // are almost in our control, and we always need to remove uses there
-  // before we remove the operation itself anyway.
-  if (!IsAboutPage()) {
-    const_cast<Document*>(this)->SetUseCounter(
-        OperationToUseCounter(aOperation));
-  }
+  const_cast<Document*>(this)->SetUseCounter(OperationToUseCounter(aOperation));
   uint32_t flags =
       asError ? nsIScriptError::errorFlag : nsIScriptError::warningFlag;
   nsContentUtils::ReportToConsole(
@@ -17199,13 +17210,6 @@ void Document::PropagateImageUseCounters(Document* aReferencingDocument) {
   aReferencingDocument->mChildDocumentUseCounters |= mChildDocumentUseCounters;
 }
 
-void Document::CollectShadowedHTMLFormElementProperty(const nsAString& aName) {
-  if (mShadowedHTMLFormElementProperties.Length() <= 10 &&
-      !mShadowedHTMLFormElementProperties.Contains(aName)) {
-    mShadowedHTMLFormElementProperties.AppendElement(aName);
-  }
-}
-
 bool Document::HasScriptsBlockedBySandbox() const {
   return mSandboxFlags & SANDBOXED_SCRIPTS;
 }
@@ -17213,7 +17217,7 @@ bool Document::HasScriptsBlockedBySandbox() const {
 void Document::SetCssUseCounterBits() {
   if (StaticPrefs::layout_css_use_counters_enabled()) {
     for (size_t i = 0; i < eCSSProperty_COUNT_with_aliases; ++i) {
-      auto id = nsCSSPropertyID(i);
+      auto id = NonCustomCSSPropertyId(i);
       if (Servo_IsPropertyIdRecordedInUseCounter(mStyleUseCounters.get(), id)) {
         SetUseCounter(nsCSSProps::UseCounterFor(id));
       }
@@ -17350,13 +17354,6 @@ void Document::ReportShadowedProperties() {
     glean::security::ShadowedHtmlDocumentPropertyAccessExtra extra = {};
     extra.name = Some(NS_ConvertUTF16toUTF8(property));
     glean::security::shadowed_html_document_property_access.Record(Some(extra));
-  }
-
-  for (const nsString& property : mShadowedHTMLFormElementProperties) {
-    glean::security::ShadowedHtmlFormElementPropertyAccessExtra extra = {};
-    extra.name = Some(NS_ConvertUTF16toUTF8(property));
-    glean::security::shadowed_html_form_element_property_access.Record(
-        Some(extra));
   }
 }
 
@@ -17499,7 +17496,7 @@ void Document::MaybeRecomputePartitionKey() {
   // Set the partition key to the document's node principal. So we will use the
   // right partition key afterward.
   mozilla::net::CookieJarSettings::Cast(mCookieJarSettings)
-      ->SetPartitionKey(originURI, false);
+      ->SetPartitionKey(originURI);
 }
 
 bool Document::RecomputeResistFingerprinting(bool aForceRefreshRTPCallerType) {
@@ -18064,7 +18061,8 @@ FontFaceSet* Document::Fonts() {
   return mFontFaceSet;
 }
 
-void Document::ReportHasScrollLinkedEffect(const TimeStamp& aTimeStamp) {
+void Document::ReportHasScrollLinkedEffect(
+    const TimeStamp& aTimeStamp, ReportToConsole aReportToConsole /* = Yes */) {
   MOZ_ASSERT(!aTimeStamp.IsNull());
 
   if (!mLastScrollLinkedEffectDetectionTime.IsNull() &&
@@ -18072,7 +18070,8 @@ void Document::ReportHasScrollLinkedEffect(const TimeStamp& aTimeStamp) {
     return;
   }
 
-  if (mLastScrollLinkedEffectDetectionTime.IsNull()) {
+  if (aReportToConsole == ReportToConsole::Yes &&
+      mLastScrollLinkedEffectDetectionTime.IsNull()) {
     // Report to console just once.
     nsContentUtils::ReportToConsole(
         nsIScriptError::warningFlag, "Async Pan/Zoom"_ns, this,
@@ -18186,7 +18185,8 @@ void Document::NotifyUserGestureActivation(
 
   // 3. "...windows with the active window of each of document's ancestor
   // navigables."
-  for (WindowContext* wc = currentWC; wc; wc = wc->GetParentWindowContext()) {
+  for (WindowContext* wc = currentWC->GetParentWindowContext(); wc;
+       wc = wc->GetParentWindowContext()) {
     wc->NotifyUserGestureActivation(aModifiers);
   }
 
@@ -18195,7 +18195,8 @@ void Document::NotifyUserGestureActivation(
   // document's origin is same origin with document's origin"
   currentBC->PreOrderWalk([&](BrowsingContext* bc) {
     WindowContext* wc = bc->GetCurrentWindowContext();
-    if (!wc) {
+    // currentWC has already been notified
+    if (!wc || wc == currentWC) {
       return;
     }
 
@@ -18624,6 +18625,8 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
       interruptible ? FlushType::InterruptibleLayout : FlushType::Layout,
       /* aFlushAnimations = */ false, /* aUpdateRelevancy = */ false);
 
+  bool initialAnchorOverflowDone = false;
+
   // 2. While true:
   while (true) {
     // 2.1. Recalculate styles and update layout for doc.
@@ -18651,6 +18654,16 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
     //
     // https://github.com/whatwg/html/issues/11210 for the timing of this.
     UpdateLastRememberedSizes();
+
+    const bool evaluateAllFallbacksIfNeeded = !initialAnchorOverflowDone;
+    initialAnchorOverflowDone = true;
+    if (AnchorPositioningUtils::TriggerLayoutOnOverflow(
+            ps, evaluateAllFallbacksIfNeeded)) {
+      // If any of the anchor positioned items overflow its cb, then we trigger
+      // a layout for them. If we triggered for any item, we have to restart the
+      // loop to flush all layouts.
+      continue;
+    }
 
     // 2.2. Let hadInitialVisibleContentVisibilityDetermination be false.
     //      (this is part of "result").
@@ -18797,10 +18810,27 @@ void Document::ClearStaleServoData() {
 
 // https://drafts.csswg.org/css-view-transitions-1/#dom-document-startviewtransition
 already_AddRefed<ViewTransition> Document::StartViewTransition(
-    const Optional<OwningNonNull<ViewTransitionUpdateCallback>>& aCallback) {
+    const ViewTransitionUpdateCallbackOrStartViewTransitionOptions& aOptions) {
   // Steps 1-3
-  RefPtr transition = new ViewTransition(
-      *this, aCallback.WasPassed() ? &aCallback.Value() : nullptr);
+
+  nsTArray<RefPtr<nsAtom>> types;
+  ViewTransitionUpdateCallback* cb = nullptr;
+  if (aOptions.IsViewTransitionUpdateCallback()) {
+    cb = &aOptions.GetAsViewTransitionUpdateCallback();
+  } else {
+    MOZ_ASSERT(aOptions.IsStartViewTransitionOptions());
+    const auto& options = aOptions.GetAsStartViewTransitionOptions();
+    cb = options.mUpdate.get();
+    if (!options.mTypes.IsNull()) {
+      const auto& optionsTypes = options.mTypes.Value();
+      types.SetCapacity(optionsTypes.Length());
+      for (const auto& type : optionsTypes) {
+        // TODO(emilio): should probably de-duplicate here.
+        types.AppendElement(NS_AtomizeMainThread(type));
+      }
+    }
+  }
+  RefPtr transition = new ViewTransition(*this, cb, std::move(types));
   if (Hidden()) {
     // Step 4:
     //

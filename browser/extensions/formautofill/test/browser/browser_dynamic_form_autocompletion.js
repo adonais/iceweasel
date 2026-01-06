@@ -7,6 +7,16 @@ const { FormAutofill } = ChromeUtils.importESModule(
   "resource://autofill/FormAutofill.sys.mjs"
 );
 
+const FormAutofillSharedUtils = ChromeUtils.importESModule(
+  "resource://gre/modules/shared/FormAutofillUtils.sys.mjs"
+);
+const getFullSubregionName = (abbreviated, country) => {
+  return FormAutofillSharedUtils.FormAutofillUtils.getFullSubregionName(
+    abbreviated,
+    country
+  );
+};
+
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -51,7 +61,13 @@ const expectedFilledAddressFields = {
       fieldName: "street-address",
       autofill: TEST_ADDRESS_1["street-address"].replace("\n", " "),
     },
-    { fieldName: "address-level1", autofill: TEST_ADDRESS_1["address-level1"] },
+    {
+      fieldName: "address-level1",
+      autofill: getFullSubregionName(
+        TEST_ADDRESS_1["address-level1"],
+        TEST_ADDRESS_1.country
+      ),
+    },
     { fieldName: "address-level2", autofill: TEST_ADDRESS_1["address-level2"] },
     { fieldName: "postal-code", autofill: TEST_ADDRESS_1["postal-code"] },
   ],
@@ -228,7 +244,10 @@ add_task(
             },
             {
               fieldName: "address-level1",
-              autofill: TEST_ADDRESS_1["address-level1"],
+              autofill: getFullSubregionName(
+                TEST_ADDRESS_1["address-level1"],
+                TEST_ADDRESS_1.country
+              ),
             },
             {
               fieldName: "address-level2",

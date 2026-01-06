@@ -7,7 +7,6 @@
 #include <stdlib.h>
 
 #include <bitset>
-#include <iterator>
 #include <set>
 #include <string>
 #include <utility>

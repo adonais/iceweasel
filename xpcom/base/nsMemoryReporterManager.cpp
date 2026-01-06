@@ -30,7 +30,6 @@
 #include "nsThread.h"
 #include "VRProcessManager.h"
 #include "mozilla/MemoryReportingProcess.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RDDProcessManager.h"
 #include "mozilla/Services.h"

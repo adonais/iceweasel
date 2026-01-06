@@ -52,6 +52,7 @@
       gap: var(--space-large);
 
       img {
+        width: 100px;
         justify-self: initial;
       }
 
@@ -66,7 +67,9 @@
       gap: var(--space-large);
 
       img {
-        width: 75px;
+        width: 130px;
+        align-self: end;
+        grid-row: 1 / span 2;
       }
 
       .personalized-card-cta-wrapper {
@@ -75,10 +78,16 @@
         grid-template-columns: subgrid;
         grid-row: 2;
         grid-column: 2 / span 2;
+        padding-block-end: var(--space-xxlarge);
       }
 
       p {
-        width: 230px;
+        width: 210px;
+        margin: 0;
+      }
+
+      h2 {
+        margin: 0;
       }
     }
 
@@ -88,7 +97,8 @@
       gap: var(--space-large);
 
       img {
-        width: 75px;
+        width: 100px;
+        align-self: end;
       }
 
       h2 {
@@ -134,6 +144,6 @@
   }
 
   @media (min-width: $break-point-layout-variant) {
-    padding: var(--space-xxlarge);
+    padding-block-end: 0;
   }
 }

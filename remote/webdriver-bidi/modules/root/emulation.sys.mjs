@@ -362,28 +362,26 @@ class EmulationModule extends RootBiDiModule {
     } = options;
 
     let locale;
-    if (localeArg !== undefined) {
-      if (localeArg === null) {
-        // The API requires an empty string to reset the override.
-        locale = "";
-      } else {
-        locale = lazy.assert.string(
-          localeArg,
-          lazy.pprint`Expected "locale" to be a string, got ${localeArg}`
-        );
+    if (localeArg === null) {
+      // The API requires an empty string to reset the override.
+      locale = "";
+    } else {
+      locale = lazy.assert.string(
+        localeArg,
+        lazy.pprint`Expected "locale" to be a string, got ${localeArg}`
+      );
 
-        // Validate if locale is a structurally valid language tag.
-        try {
-          Intl.getCanonicalLocales(localeArg);
-        } catch (err) {
-          if (err instanceof RangeError) {
-            throw new lazy.error.InvalidArgumentError(
-              `Expected "locale" to be a structurally valid language tag (e.g., "en-GB"), got ${localeArg}`
-            );
-          }
-
-          throw err;
+      // Validate if locale is a structurally valid language tag.
+      try {
+        Intl.getCanonicalLocales(localeArg);
+      } catch (err) {
+        if (err instanceof RangeError) {
+          throw new lazy.error.InvalidArgumentError(
+            `Expected "locale" to be a structurally valid language tag (e.g., "en-GB"), got ${localeArg}`
+          );
         }
+
+        throw err;
       }
     }
 
@@ -453,42 +451,16 @@ class EmulationModule extends RootBiDiModule {
       );
     }
 
-    const sessionDataItems = [];
-    // In case of resetting the override, remove existing session data items
-    // for the required context descriptors.
-    const onlyRemoveSessionDataItem = locale === "";
-
-    if (userContextIds !== null) {
-      for (const userContext of userContexts) {
-        sessionDataItems.push(
-          ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
-            "_configuration",
-            "locale-override",
-            {
-              type: lazy.ContextDescriptorType.UserContext,
-              id: userContext,
-            },
-            onlyRemoveSessionDataItem,
-            locale
-          )
-        );
-      }
-    } else {
-      for (const navigable of navigables) {
-        sessionDataItems.push(
-          ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
-            "_configuration",
-            "locale-override",
-            {
-              type: lazy.ContextDescriptorType.TopBrowsingContext,
-              id: navigable.browserId,
-            },
-            onlyRemoveSessionDataItem,
-            locale
-          )
-        );
-      }
-    }
+    const sessionDataItems = this.#generateSessionDataUpdate({
+      category: "locale-override",
+      contextOverride: contextIds !== null,
+      hasGlobalOverride: false,
+      navigables,
+      resetValue: "",
+      userContexts,
+      userContextOverride: userContextIds !== null,
+      value: locale,
+    });
 
     if (sessionDataItems.length) {
       // TODO: Bug 1953079. Saving the locale override in the session data works fine
@@ -497,30 +469,15 @@ class EmulationModule extends RootBiDiModule {
       await this.messageHandler.updateSessionData(sessionDataItems);
     }
 
-    const commands = [];
-
-    for (const navigable of navigables) {
-      const overrideValue = this.#getOverrideValue({
-        category: "locale-override",
-        context: navigable,
-        contextIds,
-        userContextIds,
-        value: locale,
-      });
-
-      if (overrideValue === null) {
-        continue;
-      }
-
-      commands.push(
-        this._setLocaleForBrowsingContext({
-          locale: overrideValue,
-          context: navigable,
-        })
-      );
-    }
-
-    await Promise.all(commands);
+    await this.#applyOverride({
+      async: true,
+      callback: this._setLocaleForBrowsingContext.bind(this),
+      category: "locale-override",
+      contextIds,
+      navigables,
+      userContextIds,
+      value: locale,
+    });
   }
 
   /**
@@ -710,6 +667,157 @@ class EmulationModule extends RootBiDiModule {
   }
 
   /**
+   * Used as an argument for emulation.setScreenSettingsOverride command
+   * to represent an object which holds screen area settings which
+   * should override screen dimensions.
+   *
+   * @typedef {object} ScreenArea
+   *
+   * @property {number} height
+   * @property {number} width
+   */
+
+  /**
+   * Set the screen settings override to the list of top-level navigables
+   * or user contexts.
+   *
+   * @param {object=} options
+   * @param {Array<string>=} options.contexts
+   *     Optional list of browsing context ids.
+   * @param {(ScreenArea|null)} options.screenArea
+   *     An object which has to override
+   *     the return result of JavaScript APIs which return
+   *     screen dimensions. Null value resets the override.
+   * @param {Array<string>=} options.userContexts
+   *     Optional list of user context ids.
+   *
+   * @throws {InvalidArgumentError}
+   *     Raised if an argument is of an invalid type or value.
+   * @throws {NoSuchFrameError}
+   *     If the browsing context cannot be found.
+   * @throws {NoSuchUserContextError}
+   *     Raised if the user context id could not be found.
+   */
+  async setScreenSettingsOverride(options = {}) {
+    const {
+      contexts: contextIds = null,
+      screenArea,
+      userContexts: userContextIds = null,
+    } = options;
+
+    if (screenArea !== null) {
+      lazy.assert.object(
+        screenArea,
+        lazy.pprint`Expected "screenArea" to be an object, got ${screenArea}`
+      );
+
+      const { height, width } = screenArea;
+      lazy.assert.positiveNumber(
+        height,
+        lazy.pprint`Expected "screenArea.height" to be a positive number, got ${height}`
+      );
+      lazy.assert.positiveNumber(
+        width,
+        lazy.pprint`Expected "screenArea.width" to be a positive number, got ${width}`
+      );
+    }
+
+    if (contextIds !== null && userContextIds !== null) {
+      throw new lazy.error.InvalidArgumentError(
+        `Providing both "contexts" and "userContexts" arguments is not supported`
+      );
+    }
+
+    const navigables = new Set();
+    const userContexts = new Set();
+    if (contextIds !== null) {
+      lazy.assert.isNonEmptyArray(
+        contextIds,
+        lazy.pprint`Expected "contexts" to be a non-empty array, got ${contextIds}`
+      );
+
+      for (const contextId of contextIds) {
+        lazy.assert.string(
+          contextId,
+          lazy.pprint`Expected elements of "contexts" to be a string, got ${contextId}`
+        );
+
+        const context = this._getNavigable(contextId);
+
+        lazy.assert.topLevel(
+          context,
+          `Browsing context with id ${contextId} is not top-level`
+        );
+
+        navigables.add(context);
+      }
+    } else if (userContextIds !== null) {
+      lazy.assert.isNonEmptyArray(
+        userContextIds,
+        lazy.pprint`Expected "userContexts" to be a non-empty array, got ${userContextIds}`
+      );
+
+      for (const userContextId of userContextIds) {
+        lazy.assert.string(
+          userContextId,
+          lazy.pprint`Expected elements of "userContexts" to be a string, got ${userContextId}`
+        );
+
+        const internalId =
+          lazy.UserContextManager.getInternalIdById(userContextId);
+
+        if (internalId === null) {
+          throw new lazy.error.NoSuchUserContextError(
+            `User context with id: ${userContextId} doesn't exist`
+          );
+        }
+
+        userContexts.add(internalId);
+
+        // Prepare the list of navigables to update.
+        lazy.UserContextManager.getTabsForUserContext(internalId).forEach(
+          tab => {
+            const contentBrowser = lazy.TabManager.getBrowserForTab(tab);
+            navigables.add(contentBrowser.browsingContext);
+          }
+        );
+      }
+    } else {
+      throw new lazy.error.InvalidArgumentError(
+        `At least one of "contexts" or "userContexts" arguments should be provided`
+      );
+    }
+
+    const sessionDataItems = this.#generateSessionDataUpdate({
+      category: "screen-settings-override",
+      contextOverride: contextIds !== null,
+      hasGlobalOverride: false,
+      navigables,
+      resetValue: null,
+      userContexts,
+      userContextOverride: userContextIds !== null,
+      value: screenArea,
+    });
+
+    if (sessionDataItems.length) {
+      // TODO: Bug 1953079. Saving the locale override in the session data works fine
+      // with one session, but when we start supporting multiple BiDi session, we will
+      // have to rethink this approach.
+      await this.messageHandler.updateSessionData(sessionDataItems);
+    }
+
+    this.#applyOverride({
+      callback: this._setScreenSettingsOverride,
+      category: "screen-settings-override",
+      contextIds,
+      navigables,
+      resetValue: null,
+      userContextIds,
+      value: screenArea,
+    });
+  }
+
+  /**
    * Set the timezone override to the list of top-level navigables
    * or user contexts.
    *
@@ -829,42 +937,16 @@ class EmulationModule extends RootBiDiModule {
       );
     }
 
-    const sessionDataItems = [];
-    // In case of resetting the override, remove existing session data items
-    // for the required context descriptors.
-    const onlyRemoveSessionDataItem = timezone === "";
-
-    if (userContextIds !== null) {
-      for (const userContext of userContexts) {
-        sessionDataItems.push(
-          ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
-            "_configuration",
-            "timezone-override",
-            {
-              type: lazy.ContextDescriptorType.UserContext,
-              id: userContext,
-            },
-            onlyRemoveSessionDataItem,
-            timezone
-          )
-        );
-      }
-    } else {
-      for (const navigable of navigables) {
-        sessionDataItems.push(
-          ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
-            "_configuration",
-            "timezone-override",
-            {
-              type: lazy.ContextDescriptorType.TopBrowsingContext,
-              id: navigable.browserId,
-            },
-            onlyRemoveSessionDataItem,
-            timezone
-          )
-        );
-      }
-    }
+    const sessionDataItems = this.#generateSessionDataUpdate({
+      category: "timezone-override",
+      contextOverride: contextIds !== null,
+      hasGlobalOverride: false,
+      navigables,
+      resetValue: "",
+      userContexts,
+      userContextOverride: userContextIds !== null,
+      value: timezone,
+    });
 
     if (sessionDataItems.length) {
       // TODO: Bug 1953079. Saving the timezone override in the session data works fine
@@ -873,30 +955,15 @@ class EmulationModule extends RootBiDiModule {
       await this.messageHandler.updateSessionData(sessionDataItems);
     }
 
-    const commands = [];
-
-    for (const navigable of navigables) {
-      const overrideValue = this.#getOverrideValue({
-        category: "timezone-override",
-        context: navigable,
-        contextIds,
-        userContextIds,
-        value: timezone,
-      });
-
-      if (overrideValue === null) {
-        continue;
-      }
-
-      commands.push(
-        this._setTimezoneOverride({
-          context: navigable,
-          timezone: overrideValue,
-        })
-      );
-    }
-
-    await Promise.all(commands);
+    await this.#applyOverride({
+      async: true,
+      callback: this._setTimezoneOverride.bind(this),
+      category: "timezone-override",
+      contextIds,
+      navigables,
+      userContextIds,
+      value: timezone,
+    });
   }
 
   /**
@@ -1006,54 +1073,16 @@ class EmulationModule extends RootBiDiModule {
       );
     }
 
-    const sessionDataItems = [];
-    // In case of resetting the override, remove existing session data items
-    // for the required context descriptors.
-    const onlyRemoveSessionDataItem = userAgent === "";
-
-    if (userContextIds !== undefined) {
-      for (const userContext of userContexts) {
-        sessionDataItems.push(
-          ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
-            "_configuration",
-            "user-agent-override",
-            {
-              type: lazy.ContextDescriptorType.UserContext,
-              id: userContext,
-            },
-            onlyRemoveSessionDataItem,
-            userAgent
-          )
-        );
-      }
-    } else if (contextIds !== undefined) {
-      for (const navigable of navigables) {
-        sessionDataItems.push(
-          ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
-            "_configuration",
-            "user-agent-override",
-            {
-              type: lazy.ContextDescriptorType.TopBrowsingContext,
-              id: navigable.browserId,
-            },
-            onlyRemoveSessionDataItem,
-            userAgent
-          )
-        );
-      }
-    } else {
-      sessionDataItems.push(
-        ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
-          "_configuration",
-          "user-agent-override",
-          {
-            type: lazy.ContextDescriptorType.All,
-          },
-          onlyRemoveSessionDataItem,
-          userAgent
-        )
-      );
-    }
+    const sessionDataItems = this.#generateSessionDataUpdate({
+      category: "user-agent-override",
+      contextOverride: contextIds !== undefined,
+      hasGlobalOverride: true,
+      navigables,
+      resetValue: "",
+      userContexts,
+      userContextOverride: userContextIds !== undefined,
+      value: userAgent,
+    });
 
     if (sessionDataItems.length) {
       // TODO: Bug 1953079. Saving the user agent override in the session data works fine
@@ -1062,24 +1091,14 @@ class EmulationModule extends RootBiDiModule {
       await this.messageHandler.updateSessionData(sessionDataItems);
     }
 
-    for (const navigable of navigables) {
-      const overrideValue = this.#getOverrideValue({
-        category: "user-agent-override",
-        context: navigable,
-        contextIds,
-        userContextIds,
-        value: userAgent,
-      });
-
-      if (overrideValue === null) {
-        continue;
-      }
-
-      this._setUserAgentOverride({
-        context: navigable,
-        userAgent: overrideValue,
-      });
-    }
+    this.#applyOverride({
+      callback: this._setUserAgentOverride,
+      category: "user-agent-override",
+      contextIds,
+      navigables,
+      userContextIds,
+      value: userAgent,
+    });
   }
 
   /**
@@ -1111,15 +1130,15 @@ class EmulationModule extends RootBiDiModule {
    * @param {BrowsingContext} options.context
    *     Top-level browsing context object which is a target
    *     for the locale override.
-   * @param {(string|null)} options.locale
+   * @param {(string|null)} options.value
    *     Locale string which have to override
    *     the return result of JavaScript Intl APIs.
    *     Null value resets the override.
    */
   async _setLocaleForBrowsingContext(options) {
-    const { context, locale } = options;
+    const { context, value } = options;
 
-    context.languageOverride = locale;
+    context.languageOverride = value;
 
     await this.messageHandler.handleCommand({
       moduleName: "emulation",
@@ -1132,9 +1151,32 @@ class EmulationModule extends RootBiDiModule {
         },
       },
       params: {
-        locale,
+        locale: value,
       },
     });
+  }
+
+  /**
+   * Set the screen settings override to the top-level browsing context.
+   *
+   * @param {object} options
+   * @param {BrowsingContext} options.context
+   *     Top-level browsing context object which is a target
+   *     for the locale override.
+   * @param {(ScreenArea|null)} options.value
+   *     An object which has to override
+   *     the return result of JavaScript APIs which return
+   *     screen dimensions. Null value resets the override.
+   */
+  _setScreenSettingsOverride(options) {
+    const { context, value } = options;
+
+    if (value === null) {
+      context.resetScreenAreaOverride();
+    } else {
+      const { height, width } = value;
+      context.setScreenAreaOverride(width, height);
+    }
   }
 
   /**
@@ -1144,15 +1186,15 @@ class EmulationModule extends RootBiDiModule {
    * @param {BrowsingContext} options.context
    *     Top-level browsing context object which is a target
    *     for the locale override.
-   * @param {(string|null)} options.timezone
+   * @param {(string|null)} options.value
    *     Timezone string which has to override
    *     the return result of JavaScript Intl/Date APIs.
    *     Null value resets the override.
    */
   async _setTimezoneOverride(options) {
-    const { context, timezone } = options;
+    const { context, value } = options;
 
-    context.timezoneOverride = timezone;
+    context.timezoneOverride = value;
 
     await this.messageHandler.handleCommand({
       moduleName: "emulation",
@@ -1165,7 +1207,7 @@ class EmulationModule extends RootBiDiModule {
         },
       },
       params: {
-        timezone,
+        timezone: value,
       },
     });
   }
@@ -1177,15 +1219,15 @@ class EmulationModule extends RootBiDiModule {
    * @param {BrowsingContext} options.context
    *     Top-level browsing context object which is a target
    *     for the locale override.
-   * @param {string} options.userAgent
+   * @param {string} options.value
    *     User agent string which has to override
    *     the browser user agent.
    */
   _setUserAgentOverride(options) {
-    const { context, userAgent } = options;
+    const { context, value } = options;
 
     try {
-      context.customUserAgent = userAgent;
+      context.customUserAgent = value;
     } catch (e) {
       const contextId = lazy.NavigableManager.getIdForBrowsingContext(context);
 
@@ -1195,34 +1237,142 @@ class EmulationModule extends RootBiDiModule {
     }
   }
 
-  #getOverrideValue(params) {
+  async #applyOverride(options) {
+    const {
+      async = false,
+      callback,
+      category,
+      contextIds,
+      navigables,
+      resetValue = "",
+      userContextIds,
+      value,
+    } = options;
+
+    const commands = [];
+
+    for (const navigable of navigables) {
+      const overrideValue = this.#getOverrideValue(
+        {
+          category,
+          context: navigable,
+          contextIds,
+          userContextIds,
+          value,
+        },
+        resetValue
+      );
+
+      if (overrideValue === undefined) {
+        continue;
+      }
+
+      const commandArgs = {
+        context: navigable,
+        value: overrideValue,
+      };
+
+      if (async) {
+        commands.push(callback(commandArgs));
+      } else {
+        callback(commandArgs);
+      }
+    }
+
+    if (async) {
+      await Promise.all(commands);
+    }
+  }
+
+  #generateSessionDataUpdate(options) {
+    const {
+      category,
+      contextOverride,
+      hasGlobalOverride,
+      navigables,
+      resetValue,
+      userContexts,
+      userContextOverride,
+      value,
+    } = options;
+    const sessionDataItems = [];
+    const onlyRemoveSessionDataItem = value === resetValue;
+
+    if (userContextOverride) {
+      for (const userContext of userContexts) {
+        sessionDataItems.push(
+          ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
+            "_configuration",
+            category,
+            {
+              type: lazy.ContextDescriptorType.UserContext,
+              id: userContext,
+            },
+            onlyRemoveSessionDataItem,
+            value
+          )
+        );
+      }
+    } else if (contextOverride) {
+      for (const navigable of navigables) {
+        sessionDataItems.push(
+          ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
+            "_configuration",
+            category,
+            {
+              type: lazy.ContextDescriptorType.TopBrowsingContext,
+              id: navigable.browserId,
+            },
+            onlyRemoveSessionDataItem,
+            value
+          )
+        );
+      }
+    } else if (hasGlobalOverride) {
+      sessionDataItems.push(
+        ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
+          "_configuration",
+          category,
+          {
+            type: lazy.ContextDescriptorType.All,
+          },
+          onlyRemoveSessionDataItem,
+          value
+        )
+      );
+    }
+
+    return sessionDataItems;
+  }
+
+  #getOverrideValue(params, resetValue = "") {
     const { category, context, contextIds, userContextIds, value } = params;
     const [overridePerContext, overridePerUserContext, overrideGlobal] =
       this.#findExistingOverrideForContext(category, context);
 
     if (contextIds) {
-      if (value === "") {
+      if (value === resetValue) {
         // In case of resetting an override for navigable,
         // if there is an existing override for user context or global,
         // we should apply it to browsing context.
-        return overridePerUserContext || overrideGlobal || "";
+        return overridePerUserContext || overrideGlobal || resetValue;
       }
     } else if (userContextIds) {
       // No need to do anything if there is an override
       // for the browsing context.
       if (overridePerContext) {
-        return null;
+        return undefined;
       }
 
       // In case of resetting an override for user context,
       // apply a global override if it exists
-      if (value === "" && overrideGlobal) {
+      if (value === resetValue && overrideGlobal) {
         return overrideGlobal;
       }
     } else if (overridePerContext || overridePerUserContext) {
       // No need to do anything if there is an override
       // for the browsing or user context.
-      return null;
+      return undefined;
     }
 
     return value;

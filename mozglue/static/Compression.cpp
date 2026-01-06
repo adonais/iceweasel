@@ -10,7 +10,6 @@
 // Without including <string>, MSVC 2015 complains about e.g. the impossibility
 // to convert `const void* const` to `void*` when calling memchr from
 // corecrt_memory.h.
-#include <string>
 
 #include "lz4/lz4.h"
 #include "lz4/lz4frame.h"

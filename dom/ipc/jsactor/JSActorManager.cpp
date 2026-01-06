@@ -15,6 +15,8 @@
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/JSActorService.h"
+#include "mozilla/dom/JSIPCValue.h"
+#include "mozilla/dom/JSIPCValueUtils.h"
 #include "mozilla/dom/JSProcessActorProtocol.h"
 #include "mozilla/dom/JSWindowActorProtocol.h"
 #include "mozilla/dom/MessagePort.h"
@@ -132,8 +134,7 @@ already_AddRefed<JSActor> JSActorManager::GetExistingActor(
   } while (0)
 
 void JSActorManager::ReceiveRawMessage(
-    const JSActorMessageMeta& aMetadata,
-    UniquePtr<ipc::StructuredCloneData> aData,
+    const JSActorMessageMeta& aMetadata, JSIPCValue&& aData,
     UniquePtr<ipc::StructuredCloneData> aStack) {
   MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
 
@@ -197,23 +198,11 @@ void JSActorManager::ReceiveRawMessage(
 #endif  // DEBUG
 
   JS::Rooted<JS::Value> data(cx);
-  if (aData) {
-    aData->Read(cx, &data, error);
-    // StructuredCloneHolder populates an array of ports for MessageEvent.ports
-    // which we don't need, but which StructuredCloneHolder's destructor will
-    // assert on for thread safety reasons (that do not apply in this case) if
-    // we do not consume the array.  It's possible for the Read call above to
-    // populate this array even in event of an error, so we must consume the
-    // array before processing the error.
-    nsTArray<RefPtr<MessagePort>> ports = aData->TakeTransferredPorts();
-    // Cast to void so that the ports will actually be moved, and then
-    // discarded.
-    (void)ports;
-    if (error.Failed()) {
-      CHILD_DIAGNOSTIC_ASSERT(CycleCollectedJSRuntime::Get()->OOMReported(),
-                              "Should not receive non-decodable data");
-      return;
-    }
+  JSIPCValueUtils::ToJSVal(cx, std::move(aData), &data, error);
+  if (error.Failed()) {
+    CHILD_DIAGNOSTIC_ASSERT(CycleCollectedJSRuntime::Get()->OOMReported(),
+                            "Should not receive non-decodable data");
+    return;
   }
 
   switch (aMetadata.kind()) {

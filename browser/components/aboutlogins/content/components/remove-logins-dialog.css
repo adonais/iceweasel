@@ -100,6 +100,6 @@
 .buttons {
   padding-block: 16px 32px;
   padding-inline: 48px 0;
-  border-top: 1px solid var(--in-content-border-color);
+  border-top: 1px solid var(--border-color);
   margin-inline: 48px;
 }

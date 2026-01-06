@@ -15,8 +15,6 @@
 #import <UIKit/UIWindow.h>
 #import <QuartzCore/QuartzCore.h>
 
-#include <algorithm>
-
 #include "nsWindow.h"
 #include "ScreenHelperUIKit.h"
 #include "nsAppShell.h"
@@ -249,8 +247,7 @@ class nsAutoRetainUIKitObject {
   event.mButton = MouseButton::ePrimary;
   event.mInputSource = mozilla::dom::MouseEvent_Binding::MOZ_SOURCE_UNKNOWN;
 
-  nsEventStatus status;
-  aWindow->DispatchEvent(&event, status);
+  aWindow->DispatchEvent(&event);
 }
 
 - (void)handleTap:(UITapGestureRecognizer*)sender {
@@ -415,11 +412,7 @@ class nsAutoRetainUIKitObject {
   if (!mGeckoChild->IsVisible()) return;
 
   mWaitingForPaint = NO;
-
-  LayoutDeviceIntRect geckoBounds = mGeckoChild->GetBounds();
-  LayoutDeviceIntRegion region(geckoBounds);
-
-  mGeckoChild->PaintWindow(region);
+  mGeckoChild->PaintWindow();
 }
 
 // Called asynchronously after setNeedsDisplay in order to avoid entering the
@@ -961,23 +954,10 @@ void nsWindow::SetFocus(Raise, mozilla::dom::CallerType) {
   [mNativeView becomeFirstResponder];
 }
 
-void nsWindow::WillPaintWindow() {
+void nsWindow::PaintWindow() {
   if (mWidgetListener) {
-    mWidgetListener->WillPaintWindow(this);
+    mWidgetListener->PaintWindow(this);
   }
-}
-
-bool nsWindow::PaintWindow(LayoutDeviceIntRegion aRegion) {
-  if (!mWidgetListener) return false;
-
-  bool returnValue = false;
-  returnValue = mWidgetListener->PaintWindow(this, aRegion);
-
-  if (mWidgetListener) {
-    mWidgetListener->DidPaintWindow();
-  }
-
-  return returnValue;
 }
 
 void nsWindow::ReportMoveEvent() { NotifyWindowMoved(mBounds.x, mBounds.y); }
@@ -1034,21 +1014,6 @@ LayoutDeviceIntPoint nsWindow::WidgetToScreenOffset() {
   offset.y += static_cast<int32_t>(temp.y);
 
   return offset;
-}
-
-nsresult nsWindow::DispatchEvent(mozilla::WidgetGUIEvent* aEvent,
-                                 nsEventStatus& aStatus) {
-  aStatus = nsEventStatus_eIgnore;
-  nsCOMPtr<nsIWidget> kungFuDeathGrip(aEvent->mWidget);
-  (void)kungFuDeathGrip;  // Not used within this function
-
-  if (mAttachedWidgetListener) {
-    aStatus = mAttachedWidgetListener->HandleEvent(aEvent, mUseAttachedEvents);
-  } else if (mWidgetListener) {
-    aStatus = mWidgetListener->HandleEvent(aEvent, mUseAttachedEvents);
-  }
-
-  return NS_OK;
 }
 
 void nsWindow::SetInputContext(const InputContext& aContext,
@@ -1159,13 +1124,11 @@ layers::NativeLayerRoot* nsWindow::GetNativeLayerRoot() {
 }
 
 void nsWindow::HandleMainThreadCATransaction() {
-  WillPaintWindow();
-
   // Trigger a synchronous OMTC composite. This will call NextSurface and
   // NotifySurfaceReady on the compositor thread to update mNativeLayerRoot's
   // contents, and the main thread (this thread) will wait inside PaintWindow
   // during that time.
-  PaintWindow(LayoutDeviceIntRegion(GetBounds()));
+  PaintWindow();
 
   {
     // Apply the changes inside mNativeLayerRoot to the underlying CALayers. Now

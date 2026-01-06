@@ -12,7 +12,7 @@
 
 <head>
   <!-- @CSP: We should remove 'unsafe-inline' from style-src, see Bug 1579160 -->
-  <meta http-equiv="Content-Security-Policy" content="default-src chrome:; img-src chrome: moz-icon: https: blob: data:; style-src chrome: data: 'unsafe-inline'; object-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src chrome:; img-src chrome: moz-icon: moz-remote-image: https: blob: data:; style-src chrome: data: 'unsafe-inline'; object-src 'none'" />
 
   <title data-l10n-id="settings-page-title"></title>
 
@@ -44,6 +44,7 @@
   <link rel="stylesheet" href="chrome://browser/skin/preferences/privacy.css" />
   <link rel="stylesheet" href="chrome://browser/content/preferences/widgets/setting-group.css" />
   <link rel="stylesheet" href="chrome://browser/skin/preferences/iceweasel.css" />
+  <link rel="stylesheet" href="chrome://browser/content/preferences/widgets/setting-pane.css" />
   <link rel="stylesheet" href="chrome://browser/content/preferences/widgets/setting-control.css" />
 
   <link rel="localization" href="branding/brand.ftl"/>
@@ -100,6 +101,7 @@
   <script type="module" src="chrome://browser/content/preferences/widgets/security-privacy-card.mjs"></script>
   <script type="module" src="chrome://global/content/elements/moz-input-color.mjs"></script>
   <script type="module" src="chrome://browser/content/preferences/widgets/sync-device-name.mjs"></script>
+  <script type="module" src="chrome://browser/content/preferences/widgets/sync-engines-list.mjs"></script>
 </head>
 
 <html:body xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
@@ -208,6 +210,10 @@
         <richlistitem
                       class="category hidden-category"
                       value="paneContainers"/>
+
+        <richlistitem
+                      class="category hidden-category"
+                      value="paneProfiles"/>
 
         <richlistitem
                       class="category hidden-category"

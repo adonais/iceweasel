@@ -41,7 +41,6 @@ function sendCommandAsync(command) {
  *       If true, the subprocess may return with a zero exit code.
  *       Certain types of crashes may not cause the process to
  *       exit with an error.
- *
  */
 async function do_crash(setup, callback, canReturnZero) {
   // get current process filename (xpcshell)
@@ -274,7 +273,6 @@ async function do_triggered_content_crash(trigger, callback) {
  *       If true, the subprocess may return with a zero exit code.
  *       Certain types of crashes may not cause the process to
  *       exit with an error.
- *
  */
 async function do_backgroundtask_crash(
   crashType,

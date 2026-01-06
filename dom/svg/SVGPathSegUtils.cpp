@@ -129,15 +129,12 @@ void SVGPathSegUtils::TraversePathSegment(const StylePathCommand& aCommand,
       break;
     }
     case StylePathCommand::Tag::CubicCurve: {
-      const bool isRelative = aCommand.cubic_curve.point.IsByCoordinate();
-      Point to = isRelative
+      Point to = aCommand.cubic_curve.point.IsByCoordinate()
                      ? aState.pos + aCommand.cubic_curve.point.ToGfxPoint()
                      : aCommand.cubic_curve.point.ToGfxPoint();
       if (aState.ShouldUpdateLengthAndControlPoints()) {
-        Point cp1 = aCommand.cubic_curve.control1.ToGfxPoint(aState.pos, to,
-                                                             isRelative);
-        Point cp2 = aCommand.cubic_curve.control2.ToGfxPoint(aState.pos, to,
-                                                             isRelative);
+        Point cp1 = aCommand.cubic_curve.control1.ToGfxPoint(aState.pos, to);
+        Point cp2 = aCommand.cubic_curve.control2.ToGfxPoint(aState.pos, to);
         aState.length +=
             (float)CalcLengthOfCubicBezier(aState.pos, cp1, cp2, to);
         aState.cp2 = cp2;
@@ -147,13 +144,11 @@ void SVGPathSegUtils::TraversePathSegment(const StylePathCommand& aCommand,
       break;
     }
     case StylePathCommand::Tag::QuadCurve: {
-      const bool isRelative = aCommand.quad_curve.point.IsByCoordinate();
-      Point to = isRelative
+      Point to = aCommand.quad_curve.point.IsByCoordinate()
                      ? aState.pos + aCommand.quad_curve.point.ToGfxPoint()
                      : aCommand.quad_curve.point.ToGfxPoint();
       if (aState.ShouldUpdateLengthAndControlPoints()) {
-        Point cp =
-            aCommand.quad_curve.control1.ToGfxPoint(aState.pos, to, isRelative);
+        Point cp = aCommand.quad_curve.control1.ToGfxPoint(aState.pos, to);
         aState.length += (float)CalcLengthOfQuadraticBezier(aState.pos, cp, to);
         aState.cp1 = cp;
         aState.cp2 = to;
@@ -188,9 +183,8 @@ void SVGPathSegUtils::TraversePathSegment(const StylePathCommand& aCommand,
       break;
     }
     case StylePathCommand::Tag::HLine: {
-      Point to(aCommand.h_line.by_to == StyleByTo::To
-                   ? aCommand.h_line.x
-                   : aState.pos.x + aCommand.h_line.x,
+      const auto x = aCommand.h_line.x.ToGfxCoord();
+      Point to(aCommand.h_line.x.IsToPosition() ? x : aState.pos.x + x,
                aState.pos.y);
       if (aState.ShouldUpdateLengthAndControlPoints()) {
         aState.length += std::fabs(to.x - aState.pos.x);
@@ -200,9 +194,9 @@ void SVGPathSegUtils::TraversePathSegment(const StylePathCommand& aCommand,
       break;
     }
     case StylePathCommand::Tag::VLine: {
-      Point to(aState.pos.x, aCommand.v_line.by_to == StyleByTo::To
-                                 ? aCommand.v_line.y
-                                 : aState.pos.y + aCommand.v_line.y);
+      const auto y = aCommand.v_line.y.ToGfxCoord();
+      Point to(aState.pos.x,
+               aCommand.v_line.y.IsToPosition() ? y : aState.pos.y + y);
       if (aState.ShouldUpdateLengthAndControlPoints()) {
         aState.length += std::fabs(to.y - aState.pos.y);
         aState.cp1 = aState.cp2 = to;
@@ -211,14 +205,12 @@ void SVGPathSegUtils::TraversePathSegment(const StylePathCommand& aCommand,
       break;
     }
     case StylePathCommand::Tag::SmoothCubic: {
-      const bool isRelative = aCommand.smooth_cubic.point.IsByCoordinate();
-      Point to = isRelative
+      Point to = aCommand.smooth_cubic.point.IsByCoordinate()
                      ? aState.pos + aCommand.smooth_cubic.point.ToGfxPoint()
                      : aCommand.smooth_cubic.point.ToGfxPoint();
       if (aState.ShouldUpdateLengthAndControlPoints()) {
         Point cp1 = aState.pos - (aState.cp2 - aState.pos);
-        Point cp2 = aCommand.smooth_cubic.control2.ToGfxPoint(aState.pos, to,
-                                                              isRelative);
+        Point cp2 = aCommand.smooth_cubic.control2.ToGfxPoint(aState.pos, to);
         aState.length +=
             (float)CalcLengthOfCubicBezier(aState.pos, cp1, cp2, to);
         aState.cp2 = cp2;
@@ -434,8 +426,8 @@ Maybe<gfx::Rect> SVGPathToAxisAlignedRect(Span<const StylePathCommand> aPath) {
         break;
       }
       case StylePathCommand::Tag::HLine: {
-        Point to = gfx::Point(cmd.h_line.x, segStart.y);
-        if (cmd.h_line.by_to == StyleByTo::By) {
+        Point to = gfx::Point(cmd.h_line.x.ToGfxCoord(), segStart.y);
+        if (cmd.h_line.x.IsByCoordinate()) {
           to.x += segStart.x;
         }
 
@@ -446,8 +438,8 @@ Maybe<gfx::Rect> SVGPathToAxisAlignedRect(Span<const StylePathCommand> aPath) {
         break;
       }
       case StylePathCommand::Tag::VLine: {
-        Point to = gfx::Point(segStart.x, cmd.v_line.y);
-        if (cmd.h_line.by_to == StyleByTo::By) {
+        Point to = gfx::Point(segStart.x, cmd.v_line.y.ToGfxCoord());
+        if (cmd.v_line.y.IsByCoordinate()) {
           to.y += segStart.y;
         }
 

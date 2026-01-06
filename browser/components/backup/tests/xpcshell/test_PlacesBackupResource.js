@@ -9,6 +9,9 @@ const { BookmarkJSONUtils } = ChromeUtils.importESModule(
 const { PlacesBackupResource } = ChromeUtils.importESModule(
   "resource:///modules/backup/PlacesBackupResource.sys.mjs"
 );
+const { PlacesDBUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/PlacesDBUtils.sys.mjs"
+);
 
 registerCleanupFunction(() => {
   /**
@@ -109,6 +112,7 @@ add_task(async function test_backup() {
     close: sandbox.stub().resolves(true),
   };
   sandbox.stub(Sqlite, "openConnection").returns(fakeConnection);
+  sandbox.stub(PlacesDBUtils, "removeDownloadsMetadataFromDb");
 
   let manifestEntry = await placesBackupResource.backup(
     stagingPath,
@@ -120,6 +124,10 @@ add_task(async function test_backup() {
     "PlacesBackupResource.backup should return null as its ManifestEntry"
   );
 
+  Assert.ok(
+    PlacesDBUtils.removeDownloadsMetadataFromDb.calledOnce,
+    "PlacesDBUtils.removeDownloadsMetadataFromDb was called"
+  );
   Assert.ok(
     fakeConnection.backup.calledTwice,
     "Backup should have been called twice"

@@ -767,9 +767,18 @@ def image_digest(args):
     action="store_true",
     default=False,
     help="Setup the task but pause execution before executing its command. "
-    "Repositories will be cloned, environment variables will be set and an"
+    "Repositories will be cloned, environment variables will be set and an "
     "executable script named `exec-task` will be provided to resume task "
     "execution. Only supported for `run-task` based tasks.",
+)
+@argument(
+    "--develop",
+    "--use-local-checkout",
+    dest="develop",
+    action="store_true",
+    default=False,
+    help="Configure the task to use the local source checkout at the current "
+    "revision instead of cloning and using the revision from CI.",
 )
 @argument(
     "--keep",
@@ -792,10 +801,41 @@ def image_digest(args):
     default="taskcluster",
     help="Relative path to the root of the Taskgraph definition.",
 )
+@argument(
+    "--volume",
+    "-v",
+    metavar="HOST_DIR:CONTAINER_DIR",
+    default=[],
+    action="append",
+    help="Mount local path into the container.",
+)
 def load_task(args):
     from taskgraph.config import load_graph_config  # noqa: PLC0415
     from taskgraph.docker import load_task  # noqa: PLC0415
     from taskgraph.util import json  # noqa: PLC0415
+
+    no_warn = "TASKGRAPH_LOAD_TASK_NO_WARN"
+    if args["develop"] and not os.environ.get(no_warn):
+        print(
+            dedent(
+                f"""
+            warning: Using --develop can cause data loss.
+
+            Running `taskgraph load-task --develop` means the task will operate
+            on your actual source repository. Make sure you verify the task
+            doesn't perform any destructive operations against your repository.
+
+            Set {no_warn}=1 to disable this warning.
+            """
+            ).lstrip()
+        )
+        while True:
+            proceed = input("Proceed? [y/N]: ").lower().strip()
+            if proceed == "y":
+                break
+            if not proceed or proceed == "n":
+                return 1
+            print(f"invalid option: {proceed}")
 
     validate_docker()
 
@@ -806,6 +846,19 @@ def load_task(args):
         except ValueError:
             args["task"] = data  # assume it is a taskId
 
+    volumes = []
+    for vol in args["volume"]:
+        if ":" not in vol:
+            raise ValueError(
+                "Invalid volume specification '{vol}', expected HOST_DIR:CONTAINER_DIR"
+            )
+        k, v = vol.split(":", 1)
+        if not k or not v:
+            raise ValueError(
+                "Invalid volume specification '{vol}', expected HOST_DIR:CONTAINER_DIR"
+            )
+        volumes.append((k, v))
+
     root = args["root"]
     graph_config = load_graph_config(root)
     return load_task(
@@ -815,6 +868,8 @@ def load_task(args):
         remove=args["remove"],
         user=args["user"],
         custom_image=args["image"],
+        volumes=volumes,
+        develop=args["develop"],
     )
 
 

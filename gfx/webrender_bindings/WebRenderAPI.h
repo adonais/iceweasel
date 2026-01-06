@@ -11,7 +11,6 @@
 #include <stdint.h>
 #include <vector>
 #include <unordered_map>
-#include <unordered_set>
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/gfx/CompositorHitTestInfo.h"
@@ -616,6 +615,8 @@ class DisplayListBuilder final {
                               wr::LayoutRect aClipRect);
 
   wr::WrSpatialId DefineStickyFrame(
+      const ActiveScrolledRoot* aStickyAsr,
+      Maybe<wr::WrSpatialId> aParentSpatialId,
       const wr::LayoutRect& aContentRect, const float* aTopMargin,
       const float* aRightMargin, const float* aBottomMargin,
       const float* aLeftMargin, const StickyOffsetBounds& aVerticalBounds,
@@ -625,6 +626,8 @@ class DisplayListBuilder final {
 
   Maybe<wr::WrSpatialId> GetScrollIdForDefinedScrollLayer(
       layers::ScrollableLayerGuid::ViewID aViewId) const;
+  Maybe<wr::WrSpatialId> GetSpatialIdForDefinedStickyLayer(
+      const ActiveScrolledRoot* aASR) const;
   wr::WrSpatialId DefineScrollLayer(
       const layers::ScrollableLayerGuid::ViewID& aViewId,
       const Maybe<wr::WrSpatialId>& aParent, const wr::LayoutRect& aContentRect,
@@ -917,6 +920,13 @@ class DisplayListBuilder final {
   // as that results in undefined behaviour in WR.
   std::unordered_map<layers::ScrollableLayerGuid::ViewID, wr::WrSpatialId>
       mScrollIds;
+
+  // Track spatial ids that we've created corresponding to ActiveScrolledRoot
+  // objects. Currently only used for sticky ASRs.
+  // FIXME(follow-up to bug 1730749): Use this for scroll ASRs as well,
+  // replacing mScrollIds.
+  std::unordered_map<const ActiveScrolledRoot*, wr::WrSpatialId>
+      mASRToSpatialIdMap;
 
   wr::WrSpaceAndClipChain mCurrentSpaceAndClipChain;
 

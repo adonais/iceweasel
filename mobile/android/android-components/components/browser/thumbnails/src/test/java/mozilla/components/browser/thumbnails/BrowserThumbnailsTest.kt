@@ -12,7 +12,6 @@ import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.support.test.any
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
@@ -48,6 +47,7 @@ class BrowserThumbnailsTest {
                     ),
                     selectedTabId = tabId,
                 ),
+                middleware = listOf(ThumbnailsMiddleware(mock())),
             ),
         )
         engineView = mock()
@@ -59,7 +59,7 @@ class BrowserThumbnailsTest {
         thumbnails.start()
         thumbnails.stop()
 
-        store.dispatch(ContentAction.UpdateThumbnailAction(tabId, mock())).joinBlocking()
+        store.dispatch(ContentAction.UpdateThumbnailAction(tabId, mock()))
 
         verifyNoMoreInteractions(engineView)
     }
@@ -69,7 +69,7 @@ class BrowserThumbnailsTest {
     fun `feature must capture thumbnail when a site finishes loading and first paint`() {
         val bitmap: Bitmap? = mock()
 
-        store.dispatch(ContentAction.UpdateLoadingStateAction(tabId, true)).joinBlocking()
+        store.dispatch(ContentAction.UpdateLoadingStateAction(tabId, true))
 
         thumbnails.start()
 
@@ -81,8 +81,8 @@ class BrowserThumbnailsTest {
 
         verify(store, never()).dispatch(ContentAction.UpdateThumbnailAction(tabId, bitmap!!))
 
-        store.dispatch(ContentAction.UpdateLoadingStateAction(tabId, false)).joinBlocking()
-        store.dispatch(ContentAction.UpdateFirstContentfulPaintStateAction(tabId, true)).joinBlocking()
+        store.dispatch(ContentAction.UpdateLoadingStateAction(tabId, false))
+        store.dispatch(ContentAction.UpdateFirstContentfulPaintStateAction(tabId, true))
 
         verify(store).dispatch(ContentAction.UpdateThumbnailAction(tabId, bitmap))
     }
@@ -131,7 +131,7 @@ class BrowserThumbnailsTest {
 
     @Test
     fun `when a page is loaded and the os is in low memory condition thumbnail should not be captured`() {
-        store.dispatch(ContentAction.UpdateThumbnailAction(tabId, mock())).joinBlocking()
+        store.dispatch(ContentAction.UpdateThumbnailAction(tabId, mock()))
 
         thumbnails.testLowMemory = true
 

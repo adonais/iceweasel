@@ -50,9 +50,9 @@ const def = {
 /**
  * Compute the URL which may be displayed in the Source Tree.
  *
- * @param {String} url
+ * @param {string} url
  *        The source absolute URL as a string
- * @param {String} extensionName
+ * @param {string} extensionName
  *        Optional, but mandatory when passing a moz-extension URL.
  *        Name of the extension serving this moz-extension source.
  * @return URL Object

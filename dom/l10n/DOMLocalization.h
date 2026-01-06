@@ -118,6 +118,8 @@ class DOMLocalization : public intl::Localization {
   DOMLocalization(nsIGlobalObject* aGlobal, bool aSync);
   DOMLocalization(nsIGlobalObject* aGlobal, bool aIsSync,
                   const intl::ffi::LocalizationRc* aRaw);
+  DOMLocalization(nsIGlobalObject* aGlobal, bool aSync,
+                  const nsTArray<nsCString>& aLocales);
 
  protected:
   virtual ~DOMLocalization();

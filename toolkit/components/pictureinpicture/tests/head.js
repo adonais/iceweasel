@@ -106,7 +106,7 @@ const DEFAULT_TOGGLE_STYLES = {
  * @param {Element,BrowsingContext} browser The <xul:browser> or
  * BrowsingContext hosting the <video>
  *
- * @param {String} videoID The ID of the video to trigger
+ * @param {string} videoID The ID of the video to trigger
  * Picture-in-Picture on.
  *
  * @param {boolean} triggerFn Use the given function to open the pip window,
@@ -162,7 +162,7 @@ async function triggerPictureInPicture(browser, videoID, triggerFn) {
  * @param {Element,BrowsingContext} browser The <xul:browser> or
  * BrowsingContext hosting the <video>
  *
- * @param {String} videoID The ID of the video to trigger
+ * @param {string} videoID The ID of the video to trigger
  * Picture-in-Picture on.
  *
  * @param {bool} expected True if we expect the message to be showing.
@@ -239,11 +239,11 @@ async function ensureVideosReady(browser) {
  * a reasonable time.
  *
  * @param {Element} browser The <xul:browser> that has the <video> in it.
- * @param {String} videoID The ID of the video element that we expect the toggle
+ * @param {string} videoID The ID of the video element that we expect the toggle
  * to appear on.
- * @param {String} stage The stage for which the opacity is going to change. This
+ * @param {string} stage The stage for which the opacity is going to change. This
  * should be one of "hoverVideo" or "hoverToggle".
- * @param {Object} toggleStyles Optional argument. See the documentation for the
+ * @param {object} toggleStyles Optional argument. See the documentation for the
  * DEFAULT_TOGGLE_STYLES object for a sense of what styleRules is expected to be.
  *
  * @return Promise
@@ -307,9 +307,9 @@ async function toggleOpacityReachesThreshold(
  * will soon be visible.
  *
  * @param {Element} browser The <xul:browser> that has the <video> in it.
- * @param {String} videoID The ID of the video element that we expect the toggle
+ * @param {string} videoID The ID of the video element that we expect the toggle
  * to appear on.
- * @param {Number} policy Optional argument. If policy is defined, then it should
+ * @param {number} policy Optional argument. If policy is defined, then it should
  * be one of the values in the TOGGLE_POLICIES from PictureInPictureControls.sys.mjs.
  * If undefined, this function will ensure no policy attribute is set.
  *
@@ -427,7 +427,7 @@ async function assertSawClickEventOnly(browser) {
  * as whether or not the <video> element is showing the built-in controls.
  *
  * @param {Element} browser The <xul:browser> that has the <video> loaded in it.
- * @param {String} videoID The ID of the video that has the toggle.
+ * @param {string} videoID The ID of the video that has the toggle.
  *
  * @return Promise
  * @resolves With the following Object structure:
@@ -504,7 +504,7 @@ async function prepareForToggleClick(browser, videoID) {
  * associated ID.
  *
  * @param {Element} browser The <xul:browser> that has the <video> loaded in it.
- * @param {String} videoID The ID of the video that has the toggle.
+ * @param {string} videoID The ID of the video that has the toggle.
  *
  * @return Promise
  * @resolves With the following Object structure:
@@ -554,6 +554,7 @@ async function getToggleClientRect(
 /**
  * This function will hover over the middle of the video and then
  * hover over the toggle.
+ *
  * @param browser The current browser
  * @param videoID The video element id
  */
@@ -608,8 +609,8 @@ async function hoverToggle(browser, videoID) {
  * tests the provided video elements for the toggle both appearing and
  * opening the Picture-in-Picture window in the expected cases.
  *
- * @param {String} testURL The URL of the page with the <video> elements.
- * @param {Object} expectations An object with the following schema:
+ * @param {string} testURL The URL of the page with the <video> elements.
+ * @param {object} expectations An object with the following schema:
  *   <video-element-id>: {
  *     canToggle: {Boolean}
  *     policy: {Number} (optional)
@@ -671,12 +672,12 @@ async function testToggle(testURL, expectations, prepFn = async () => {}) {
  * with by the mouse.
  *
  * @param {Element} browser The <xul:browser> that has the <video> loaded in it.
- * @param {String} videoID The ID of the video that has the toggle.
- * @param {Boolean} canToggle True if we expect the toggle to be visible and
+ * @param {string} videoID The ID of the video that has the toggle.
+ * @param {boolean} canToggle True if we expect the toggle to be visible and
  * clickable by the mouse for the associated video.
- * @param {Number} policy Optional argument. If policy is defined, then it should
+ * @param {number} policy Optional argument. If policy is defined, then it should
  * be one of the values in the TOGGLE_POLICIES from PictureInPictureControls.sys.mjs.
- * @param {Object} toggleStyles Optional argument. See the documentation for the
+ * @param {object} toggleStyles Optional argument. See the documentation for the
  * DEFAULT_TOGGLE_STYLES object for a sense of what styleRules is expected to be.
  *
  * @return Promise
@@ -931,9 +932,9 @@ async function promiseFullscreenExited(window, asyncFn) {
  * then closes the player window
  *
  * @param {Element} browser The <xul:browser> that has the <video> loaded in it.
- * @param {String} videoID The ID of the video that has the toggle.
+ * @param {string} videoID The ID of the video that has the toggle.
  * @param {Element} pipWin The Picture-in-Picture window that was opened
- * @param {Boolean} iframe True if the test is on an Iframe, which modifies
+ * @param {boolean} iframe True if the test is on an Iframe, which modifies
  * the test behavior
  */
 async function ensureMessageAndClosePiP(browser, videoID, pipWin, isIframe) {
@@ -966,7 +967,7 @@ async function ensureMessageAndClosePiP(browser, videoID, pipWin, isIframe) {
  * and False if the specified video is not paused.
  *
  * @param {Element} browser The <xul:browser> that has the <video> loaded in it.
- * @param {String} videoID The ID of the video to check.
+ * @param {string} videoID The ID of the video to check.
  */
 async function isVideoPaused(browser, videoID) {
   return SpecialPowers.spawn(browser, [videoID], async videoID => {
@@ -979,7 +980,7 @@ async function isVideoPaused(browser, videoID) {
  * and False if the specified video is not muted.
  *
  * @param {Element} browser The <xul:browser> that has the <video> loaded in it.
- * @param {String} videoID The ID of the video to check.
+ * @param {string} videoID The ID of the video to check.
  */
 async function isVideoMuted(browser, videoID) {
   return SpecialPowers.spawn(browser, [videoID], async videoID => {
@@ -992,10 +993,11 @@ async function isVideoMuted(browser, videoID) {
  * First track is the default track to be loaded onto the video.
  * Once initialization is done, play then pause the requested video.
  * so that text tracks are loaded.
+ *
  * @param {Element} browser The <xul:browser> hosting the <video>
- * @param {String} videoID The ID of the video being checked
+ * @param {string} videoID The ID of the video being checked
  * @param {Integer} defaultTrackIndex The index of the track to be loaded, or none if -1
- * @param {String} trackMode the mode that the video's textTracks should be set to
+ * @param {string} trackMode the mode that the video's textTracks should be set to
  */
 async function prepareVideosAndWebVTTTracks(
   browser,
@@ -1035,8 +1037,9 @@ async function prepareVideosAndWebVTTTracks(
 /**
  * Plays originating video until the next cue is loaded.
  * Once the next cue is loaded, pause the video.
+ *
  * @param {Element} browser The <xul:browser> hosting the <video>
- * @param {String} videoID The ID of the video being checked
+ * @param {string} videoID The ID of the video being checked
  * @param {Integer} textTrackIndex The index of the track to be loaded, or none if -1
  */
 async function waitForNextCue(browser, videoID, textTrackIndex = 0) {
@@ -1090,8 +1093,9 @@ function overrideSavedPosition(left, top, width, height) {
 /**
  * Function used to filter events when waiting for the correct number
  * telemetry events.
- * @param {String} expected The expected string or undefined
- * @param {String} actual The actual string
+ *
+ * @param {string} expected The expected string or undefined
+ * @param {string} actual The actual string
  * @returns true if the expected is undefined or if expected matches actual
  */
 function matches(expected, actual) {
@@ -1103,14 +1107,15 @@ function matches(expected, actual) {
 
 /**
  * Function that waits for the expected number of events aftering filtering.
- * @param {Object} filter An object containing optional filters
+ *
+ * @param {object} filter An object containing optional filters
  *  {
  *    category: (optional) The category of the event. Ex. "pictureinpicture"
  *    method: (optional) The method of the event. Ex. "create"
  *    object: (optional) The object of the event. Ex. "player"
  *  }
- * @param {Number} length The number of events to wait for
- * @param {String} process Should be "content" or "parent" depending on the event
+ * @param {number} length The number of events to wait for
+ * @param {string} process Should be "content" or "parent" depending on the event
  */
 async function waitForTelemeryEvents(filter, length, process) {
   let {

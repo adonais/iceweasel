@@ -102,10 +102,37 @@ export class PrefsFeed {
 
   /**
    * Handler for when experiment data updates.
+   * Supports two formats:
+   * - Single payload: { type: "feature", payload: { "enabled": true, ... }}
+   * - Multi-payload: { type: "multi-payload", payload: [{ type: "feature", payload: { "enabled": true, ... }}] }
+   * Both formats output the same structure: { "feature": { "enabled": true, ... }}
    */
   onTrainhopExperimentUpdated() {
     const allEnrollments =
       lazy.NimbusFeatures.newtabTrainhop.getAllEnrollments() || [];
+
+    let enrollmentsToProcess = [];
+
+    allEnrollments.forEach(enrollment => {
+      if (
+        enrollment?.value?.type === "multi-payload" &&
+        Array.isArray(enrollment?.value?.payload)
+      ) {
+        enrollment.value.payload.forEach(item => {
+          if (item?.type && item?.payload) {
+            enrollmentsToProcess.push({
+              value: {
+                type: item.type,
+                payload: item.payload,
+              },
+              meta: enrollment.meta,
+            });
+          }
+        });
+      } else if (enrollment?.value?.type) {
+        enrollmentsToProcess.push(enrollment);
+      }
+    });
 
     // Combine all trainhop experiments keyed by type.
     // Rules for duplicates:
@@ -113,8 +140,8 @@ export class PrefsFeed {
     // - If multiple experiments or multiple rollouts exist for the same type,
     //   only the first is kept. This is nondeterministic and considered an error;
     //   those experiments/rollouts should be relaunched.
-    const value = {};
-    allEnrollments.reduce((accumulator, currentValue) => {
+    const valueObj = {};
+    enrollmentsToProcess.reduce((accumulator, currentValue) => {
       if (currentValue?.value?.type) {
         if (
           !accumulator[currentValue.value.type] ||
@@ -122,8 +149,7 @@ export class PrefsFeed {
             !currentValue.meta.isRollout)
         ) {
           accumulator[currentValue.value.type] = currentValue;
-          // Shorten the data chain.
-          value[currentValue.value.type] = currentValue.value.payload;
+          valueObj[currentValue.value.type] = currentValue.value.payload;
         }
       }
       return accumulator;
@@ -134,7 +160,7 @@ export class PrefsFeed {
         type: at.PREF_CHANGED,
         data: {
           name: "trainhopConfig",
-          value,
+          value: valueObj,
         },
       })
     );

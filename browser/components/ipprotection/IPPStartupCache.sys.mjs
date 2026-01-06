@@ -50,12 +50,6 @@ class IPPStartupCacheSingleton {
       "IPProtectionService:StateChanged",
       this.handleEvent
     );
-
-    // The state cannot be "ACTIVE" from cache. In case we need to activate the
-    // proxy at startup time, something else will take care of it.
-    if (this.#stateFromCache === lazy.IPProtectionStates.ACTIVE) {
-      this.#stateFromCache = lazy.IPProtectionStates.READY;
-    }
   }
 
   async initOnStartupCompleted() {}

@@ -73,6 +73,7 @@ class GMPVideoEncoderParent final : public GMPVideoEncoderProxy,
       const GMPVideoEncodedFrameData& aEncodedFrame,
       nsTArray<uint8_t>&& aEncodedData,
       nsTArray<uint8_t>&& aCodecSpecificInfo) override;
+  mozilla::ipc::IPCResult RecvDroppedFrame(const uint64_t& aTimestamp) override;
   mozilla::ipc::IPCResult RecvError(const GMPErr& aError) override;
   mozilla::ipc::IPCResult RecvShutdown() override;
 

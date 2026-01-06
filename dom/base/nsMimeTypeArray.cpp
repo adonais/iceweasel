@@ -79,7 +79,11 @@ void nsMimeTypeArray::GetSupportedNames(nsTArray<nsString>& retval) {
   }
 }
 
-bool nsMimeTypeArray::ForceNoPlugins() { return StaticPrefs::pdfjs_disabled(); }
+bool nsMimeTypeArray::ForceNoPlugins() {
+  return StaticPrefs::pdfjs_disabled() &&
+         !nsContentUtils::ShouldResistFingerprinting(
+             mWindow ? mWindow->GetDocShell() : nullptr, RFPTarget::PdfjsSpoof);
+}
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(nsMimeType, mPluginElement)
 

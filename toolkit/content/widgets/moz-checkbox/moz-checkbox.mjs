@@ -39,6 +39,21 @@ export default class MozCheckbox extends MozBaseInputElement {
     this.checked = false;
   }
 
+  connectedCallback() {
+    super.connectedCallback();
+    this.defaultChecked = this.getAttribute("checked") || this.checked;
+    this.checked = !!this.defaultChecked;
+    let val = this.getAttribute("value");
+    if (!val) {
+      this.defaultValue = "on";
+      this.value = "on";
+    } else {
+      this.defaultValue = val;
+      this.value = val;
+    }
+    this.setFormValue(this.value);
+  }
+
   /**
    * Handles click events and keeps the checkbox checked value in sync
    *
@@ -47,6 +62,16 @@ export default class MozCheckbox extends MozBaseInputElement {
    */
   handleStateChange(event) {
     this.checked = event.target.checked;
+    if (this.checked) {
+      this.setFormValue(this.value);
+    } else {
+      this.setFormValue(null);
+    }
+  }
+
+  formResetCallback() {
+    this.checked = this.defaultChecked;
+    this.value = this.defaultValue;
   }
 
   inputTemplate() {

@@ -195,6 +195,7 @@ Notification.prototype = {
 /**
  * The PopupNotifications object manages popup notifications for a given browser
  * window.
+ *
  * @param tabbrowser
  *        window's TabBrowser. Used to observe tab switching events and
  *        for determining the active browser element.
@@ -380,6 +381,7 @@ PopupNotifications.prototype = {
 
   /**
    * Retrieve one or many Notification object/s associated with the browser/ID pair.
+   *
    * @param {string|string[]} id
    *        The Notification ID or an array of IDs to search for.
    * @param [browser]
@@ -402,6 +404,7 @@ PopupNotifications.prototype = {
 
   /**
    * Adds a new popup notification.
+   *
    * @param browser
    *        The <xul:browser> element associated with the notification. Must not
    *        be null.
@@ -798,8 +801,9 @@ PopupNotifications.prototype = {
 
   /**
    * Removes one or many Notifications.
+   *
    * @param {Notification|Notification[]} notification - The Notification object/s to remove.
-   * @param {Boolean} [isCancel] - Whether to signal,  in the notification event, that removal
+   * @param {boolean} [isCancel] - Whether to signal,  in the notification event, that removal
    *  should be treated as cancel. This is currently used to cancel permission requests
    *  when their Notifications are removed.
    */

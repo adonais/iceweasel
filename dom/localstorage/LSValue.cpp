@@ -7,6 +7,7 @@
 #include "mozilla/dom/LSValue.h"
 
 #include "mozIStorageStatement.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/TextUtils.h"
 #include "mozilla/dom/SnappyUtils.h"
 #include "mozilla/fallible.h"

@@ -446,8 +446,34 @@ impl SpatialNode {
                     ReferenceFrameKind::Transform { .. } => source_transform,
                 };
 
+                // Previously, the origin of a stacking context transform was snapped
+                // in Gecko. However, this causes jittering issues during scrolling in
+                // some cases when fractional scrolling is enabled. The origin used in
+                // Gecko doesn't have the external scroll offset from the content process
+                // removed, so if that content-side scroll amount is fractional, it can
+                // cause inconsistent snapping during scene building. Instead, we need
+                // to apply the device-pixel snap _after_ the external scroll offset
+                // has been removed. To further complicate matters, we _don't_ want to
+                // snap this if this spatial node has a snapping transform, as we rely
+                // on the fractional intermediate nodes in order to arrive at a correct
+                // final snapping result. If we don't have a snapping offset, we've
+                // reached a spatial node where snapping will no longer apply (e.g. a
+                // complex transform) and then we need to snap the device pixel position
+                // of that transform.
+                let parent_origin = match self.snapping_transform {
+                    Some(..) => {
+                        info.origin_in_parent_reference_frame
+                    }
+                    None => {
+                        snap_offset(
+                            info.origin_in_parent_reference_frame,
+                            state.coordinate_system_relative_scale_offset.scale,
+                        )
+                    }
+                };
+
                 let resolved_transform =
-                    LayoutFastTransform::with_vector(info.origin_in_parent_reference_frame)
+                    LayoutFastTransform::with_vector(parent_origin)
                         .pre_transform(&source_transform);
 
                 // The transformation for this viewport in world coordinates is the transformation for

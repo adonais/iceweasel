@@ -656,7 +656,8 @@ SVGUseElement::IsAttributeMapped(const nsAtom* name) const {
          SVGUseElementBase::IsAttributeMapped(name);
 }
 
-nsCSSPropertyID SVGUseElement::GetCSSPropertyIdForAttrEnum(uint8_t aAttrEnum) {
+NonCustomCSSPropertyId SVGUseElement::GetCSSPropertyIdForAttrEnum(
+    uint8_t aAttrEnum) {
   switch (aAttrEnum) {
     case ATTR_X:
       return eCSSProperty_x;

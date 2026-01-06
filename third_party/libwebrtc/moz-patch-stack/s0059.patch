@@ -23,7 +23,7 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8e9a326a99cd5eaa6
  4 files changed, 55 insertions(+)
 
 diff --git a/api/video/frame_buffer.cc b/api/video/frame_buffer.cc
-index 251b464f37..90fbb7780f 100644
+index 467ceaa42d..b6e67a4309 100644
 --- a/api/video/frame_buffer.cc
 +++ b/api/video/frame_buffer.cc
 @@ -25,6 +25,7 @@
@@ -83,7 +83,7 @@ index 251b464f37..90fbb7780f 100644
        return false;
      }
    }
-@@ -158,16 +176,31 @@ void FrameBuffer::DropNextDecodableTemporalUnit() {
+@@ -159,16 +177,31 @@ void FrameBuffer::DropNextDecodableTemporalUnit() {
  
  void FrameBuffer::UpdateDroppedFramesAndDiscardedPackets(FrameIterator begin_it,
                                                           FrameIterator end_it) {
@@ -116,7 +116,7 @@ index 251b464f37..90fbb7780f 100644
    num_discarded_packets_ += num_discarded_packets;
  }
 diff --git a/video/receive_statistics_proxy.cc b/video/receive_statistics_proxy.cc
-index 252cd3ecc2..cf5bab267e 100644
+index aa36333a10..e8e5e5ba08 100644
 --- a/video/receive_statistics_proxy.cc
 +++ b/video/receive_statistics_proxy.cc
 @@ -39,6 +39,7 @@
@@ -127,7 +127,7 @@ index 252cd3ecc2..cf5bab267e 100644
  #include "system_wrappers/include/clock.h"
  #include "system_wrappers/include/metrics.h"
  #include "video/stats_counter.h"
-@@ -785,6 +786,9 @@ void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
+@@ -788,6 +789,9 @@ void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
                                               VideoContentType content_type) {
    RTC_DCHECK_RUN_ON(&main_thread_);
  
@@ -137,7 +137,7 @@ index 252cd3ecc2..cf5bab267e 100644
    // Content type extension is set only for keyframes and should be propagated
    // for all the following delta frames. Here we may receive frames out of order
    // and miscategorise some delta frames near the layer switch.
-@@ -810,6 +814,8 @@ void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
+@@ -813,6 +817,8 @@ void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
  void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
    // Can be called on either the decode queue or the worker thread
    // See FrameBuffer2 for more details.
@@ -146,7 +146,7 @@ index 252cd3ecc2..cf5bab267e 100644
    worker_thread_->PostTask(
        SafeTask(task_safety_.flag(), [frames_dropped, this]() {
          RTC_DCHECK_RUN_ON(&main_thread_);
-@@ -820,6 +826,9 @@ void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
+@@ -823,6 +829,9 @@ void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
  void ReceiveStatisticsProxy::OnDiscardedPackets(uint32_t packets_discarded) {
    // Can be called on either the decode queue or the worker thread
    // See FrameBuffer2 for more details.
@@ -156,7 +156,7 @@ index 252cd3ecc2..cf5bab267e 100644
    worker_thread_->PostTask(
        SafeTask(task_safety_.flag(), [packets_discarded, this]() {
          RTC_DCHECK_RUN_ON(&main_thread_);
-@@ -848,6 +857,8 @@ void ReceiveStatisticsProxy::OnStreamInactive() {
+@@ -851,6 +860,8 @@ void ReceiveStatisticsProxy::OnStreamInactive() {
  
  void ReceiveStatisticsProxy::OnRttUpdate(int64_t avg_rtt_ms) {
    RTC_DCHECK_RUN_ON(&main_thread_);
@@ -166,10 +166,10 @@ index 252cd3ecc2..cf5bab267e 100644
  }
  
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index d27a24c3bd..859dfb3d44 100644
+index 4573171a5f..a5b1a12fd0 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
-@@ -91,6 +91,7 @@
+@@ -89,6 +89,7 @@
  #include "rtc_base/numerics/sequence_number_util.h"
  #include "rtc_base/strings/string_builder.h"
  #include "rtc_base/thread.h"
@@ -177,7 +177,7 @@ index d27a24c3bd..859dfb3d44 100644
  #include "system_wrappers/include/ntp_time.h"
  #include "video/buffered_frame_decryptor.h"
  
-@@ -1406,6 +1407,9 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
+@@ -1361,6 +1362,9 @@ void RtpVideoStreamReceiver2::FrameDecoded(int64_t picture_id) {
                          packet_infos_.upper_bound(unwrapped_rtp_seq_num));
      uint32_t num_packets_cleared = packet_buffer_.ClearTo(seq_num);
      if (num_packets_cleared > 0) {

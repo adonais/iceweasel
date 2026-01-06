@@ -660,6 +660,7 @@ export class _ExperimentFeature {
 
   /**
    * Lookup feature variables in experiments, rollouts, and fallback prefs.
+   *
    * @param {{defaultValues?: {[variableName: string]: any}}} options
    * @returns {{[variableName: string]: any}} The feature value
    */

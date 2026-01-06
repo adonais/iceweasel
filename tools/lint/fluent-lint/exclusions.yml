@@ -144,6 +144,8 @@ CO01:
         - identity-description-custom-root2
         # browser/components/urlbar/content/enUS-searchFeatures.ftl
         - addressbar-firefox-suggest-online
+        # browser/customkeys.ftl
+        - customkeys-dev-network
         # browser/migrationWizard.ftl
         - migration-wizard-migrator-display-name-firefox
         # browser/newtab/onboarding.ftl

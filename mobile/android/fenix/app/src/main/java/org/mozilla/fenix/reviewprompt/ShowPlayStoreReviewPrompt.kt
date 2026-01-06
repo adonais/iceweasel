@@ -6,7 +6,9 @@ package org.mozilla.fenix.reviewprompt
 
 import android.app.Activity
 import androidx.navigation.NavDirections
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -30,7 +32,8 @@ class ShowPlayStoreReviewPrompt(
     private val activityRef: WeakReference<Activity>,
     private val uiScope: CoroutineScope,
     private val navigationDirection: (NavDirections) -> Unit,
-) : AbstractBinding<AppState>(appStore) {
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+) : AbstractBinding<AppState>(appStore, mainDispatcher) {
 
     override suspend fun onState(flow: Flow<AppState>) {
         flow.map { it.reviewPrompt }

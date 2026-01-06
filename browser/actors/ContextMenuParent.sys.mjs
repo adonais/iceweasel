@@ -17,6 +17,13 @@ XPCOMUtils.defineLazyServiceGetters(lazy, {
   BrowserHandler: ["@mozilla.org/browser/clh;1", Ci.nsIBrowserHandler],
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "TEXT_FRAGMENTS_ENABLED",
+  "dom.text_fragments.enabled",
+  false
+);
+
 export class ContextMenuParent extends JSWindowActorParent {
   receiveMessage(message) {
     let browser = this.manager.rootFrameLoader.ownerElement;
@@ -128,7 +135,9 @@ export class ContextMenuParent extends JSWindowActorParent {
   }
 
   getTextDirective() {
-    return this.sendQuery("ContextMenu:GetTextDirective");
+    return lazy.TEXT_FRAGMENTS_ENABLED
+      ? this.sendQuery("ContextMenu:GetTextDirective")
+      : null;
   }
 
   removeAllTextFragments() {

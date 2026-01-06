@@ -253,7 +253,7 @@ FxAccountsClient.prototype = {
    *
    * @param String sessionTokenHex
    *        The session token encoded in hex
-   * @param {Object} options
+   * @param {object} options
    * @param options.client_id
    * @param options.state
    * @param options.scope
@@ -261,7 +261,7 @@ FxAccountsClient.prototype = {
    * @param options.code_challenge_method
    * @param options.code_challenge
    * @param [options.keys_jwe]
-   * @returns {Promise<Object>} Object containing `code` and `state`.
+   * @returns {Promise<object>} Object containing `code` and `state`.
    */
   async oauthAuthorize(sessionTokenHex, options) {
     const credentials = await deriveHawkCredentials(
@@ -291,7 +291,7 @@ FxAccountsClient.prototype = {
    * @param String verifier: OAuth PKCE verifier
    * @param String clientId: OAuth client ID
    *
-   * @returns { Object } object containing `refresh_token`, `access_token` and `keys_jwe`
+   * @returns {object} object containing `refresh_token`, `access_token` and `keys_jwe`
    */
   async oauthToken(sessionTokenHex, code, verifier, clientId) {
     const credentials = await deriveHawkCredentials(
@@ -464,14 +464,14 @@ FxAccountsClient.prototype = {
   /**
    * Obtain an OAuth access token by authenticating using a session token.
    *
-   * @param {String} sessionTokenHex
+   * @param {string} sessionTokenHex
    *        The session token encoded in hex
-   * @param {String} clientId
-   * @param {String} scope
+   * @param {string} clientId
+   * @param {string} scope
    *        List of space-separated scopes.
-   * @param {Number} ttl
+   * @param {number} ttl
    *        Token time to live.
-   * @return {Promise<Object>} Object containing an `access_token`.
+   * @return {Promise<object>} Object containing an `access_token`.
    */
   async accessTokenWithSessionToken(sessionTokenHex, clientId, scope, ttl) {
     const credentials = await deriveHawkCredentials(

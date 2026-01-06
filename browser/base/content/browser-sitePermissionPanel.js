@@ -205,6 +205,7 @@ var gPermissionPanel = {
 
   /**
    * Shows the permission popup.
+   *
    * @param {Event} event - Event which caused the popup to show.
    */
   openPopup(event) {
@@ -980,7 +981,8 @@ var gPermissionPanel = {
   /**
    * Create a permission item for a WebRTC permission. May return null if there
    * already is a suitable permission item for this device type.
-   * @param {Object} permission - Permission object.
+   *
+   * @param {object} permission - Permission object.
    * @param {string} id - Permission ID without suffix.
    * @param {string} [key] - Secondary permission key.
    * @returns {xul:hbox|null} - Element for permission or null if permission
@@ -1138,6 +1140,7 @@ var gPermissionPanel = {
  * Returns an object containing two booleans: {camGrace, micGrace},
  * whether permission grace periods are found for camera/microphone AND
  * persistent permissions do not exist for said permissions.
+ *
  * @param browser - Browser element to get permissions for.
  */
 function hasMicCamGracePeriodsSolely(browser) {

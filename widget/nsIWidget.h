@@ -543,30 +543,20 @@ class nsIWidget : public nsSupportsWeakReference {
                                           const InitData&);
 
   /**
-   * Attach to a top level widget.
-   *
-   * In cases where a top level chrome widget is being used as a content
-   * container, attach a secondary listener and update the device
-   * context. The primary widget listener will continue to be called for
-   * notifications relating to the top-level window, whereas other
-   * notifications such as painting and events will instead be called via
-   * the attached listener. SetAttachedWidgetListener should be used to
-   * assign the attached listener.
-   *
-   * aUseAttachedEvents if true, events are sent to the attached listener
-   * instead of the normal listener.
+   * Accessor functions to get and set the attached listener.
    */
-  virtual void AttachViewToTopLevel(bool aUseAttachedEvents);
-
-  /**
-   * Accessor functions to get and set the attached listener. Used by
-   * nsView in connection with AttachViewToTopLevel above.
-   */
-  virtual void SetAttachedWidgetListener(nsIWidgetListener* aListener);
-  virtual nsIWidgetListener* GetAttachedWidgetListener() const;
-  virtual void SetPreviouslyAttachedWidgetListener(
-      nsIWidgetListener* aListener);
-  virtual nsIWidgetListener* GetPreviouslyAttachedWidgetListener();
+  void SetAttachedWidgetListener(nsIWidgetListener* aListener) {
+    mAttachedWidgetListener = aListener;
+  }
+  nsIWidgetListener* GetAttachedWidgetListener() const {
+    return mAttachedWidgetListener;
+  }
+  void SetPreviouslyAttachedWidgetListener(nsIWidgetListener* aListener) {
+    mPreviouslyAttachedWidgetListener = aListener;
+  }
+  nsIWidgetListener* GetPreviouslyAttachedWidgetListener() {
+    return mPreviouslyAttachedWidgetListener;
+  }
 
   /**
    * Notifies the root widget of a non-blank paint.
@@ -577,8 +567,13 @@ class nsIWidget : public nsSupportsWeakReference {
    * Accessor functions to get and set the listener which handles various
    * actions for the widget.
    */
-  virtual nsIWidgetListener* GetWidgetListener() const;
-  virtual void SetWidgetListener(nsIWidgetListener* alistener);
+  nsIWidgetListener* GetWidgetListener() const { return mWidgetListener; }
+  void SetWidgetListener(nsIWidgetListener* aListener) {
+    mWidgetListener = aListener;
+  }
+
+  /** Returns the listener used for painting */
+  nsIWidgetListener* GetPaintListener() const;
 
   /**
    * Close and destroy the internal native window.
@@ -1494,8 +1489,7 @@ class nsIWidget : public nsSupportsWeakReference {
   /**
    * Dispatches an event to the widget
    */
-  virtual nsresult DispatchEvent(mozilla::WidgetGUIEvent* event,
-                                 nsEventStatus& aStatus) = 0;
+  virtual nsEventStatus DispatchEvent(mozilla::WidgetGUIEvent*);
 
   /**
    * Dispatches an event to APZ only.
@@ -2269,6 +2263,9 @@ class nsIWidget : public nsSupportsWeakReference {
    */
   TextEventDispatcher* GetTextEventDispatcher();
 
+  // Gets the pres shell this widget is managed by.
+  mozilla::PresShell* GetPresShell() const;
+
   /**
    * GetNativeTextEventDispatcherListener() returns a
    * TextEventDispatcherListener instance which is used when the widget
@@ -2431,7 +2428,6 @@ class nsIWidget : public nsSupportsWeakReference {
   mozilla::Maybe<FullscreenSavedState> mSavedBounds;
 
   bool mUpdateCursor;
-  bool mUseAttachedEvents;
   bool mIMEHasFocus;
   bool mIMEHasQuit;
   // if the window is fully occluded (rendering may be paused in response)

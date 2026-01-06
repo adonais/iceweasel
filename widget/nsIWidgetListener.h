@@ -21,6 +21,7 @@ class nsMenuPopupFrame;
 
 namespace mozilla {
 class PresShell;
+class PresShellWidgetListener;
 }  // namespace mozilla
 
 /**
@@ -34,26 +35,18 @@ enum nsSizeMode {
   nsSizeMode_Invalid
 };
 
-/**
- * different types of (top-level) window z-level positioning
- */
-enum nsWindowZ {
-  nsWindowZTop = 0,  // on top
-  nsWindowZBottom,   // on bottom
-  nsWindowZRelative  // just below some specified widget
-};
-
 class nsIWidgetListener {
  public:
   /**
    * If this listener is for an nsIAppWindow, return it. If this is null, then
-   * this is likely a listener for a view, which can be determined using
-   * GetView. If both methods return null, this will be an nsWebBrowser.
+   * this is likely a listener for a popup or a pres shell.
    */
   virtual nsIAppWindow* GetAppWindow() { return nullptr; }
 
-  /** If this listener is for an nsView, return it. */
-  virtual nsView* GetView() { return nullptr; }
+  /** If this listener is for a pres shell, return it. */
+  virtual mozilla::PresShellWidgetListener* GetAsPresShellWidgetListener() {
+    return nullptr;
+  }
 
   /** If this listener is for an nsMenuPopupFrame, return it. */
   virtual nsMenuPopupFrame* GetAsMenuPopupFrame() { return nullptr; }
@@ -88,11 +81,9 @@ class nsIWidgetListener {
   virtual void DynamicToolbarMaxHeightChanged(mozilla::ScreenIntCoord aHeight) {
   }
   virtual void DynamicToolbarOffsetChanged(mozilla::ScreenIntCoord aOffset) {}
-#ifdef MOZ_WIDGET_ANDROID
   /** Called when the software keyboard appears/disappears. */
   virtual void KeyboardHeightChanged(mozilla::ScreenIntCoord aHeight) {}
   virtual void AndroidPipModeChanged(bool) {}
-#endif
 
   /** Called when the macOS titlebar is shown while in fullscreen. */
   virtual void MacFullscreenMenubarOverlapChanged(
@@ -120,41 +111,13 @@ class nsIWidgetListener {
    */
   virtual bool RequestWindowClose(nsIWidget* aWidget) { return false; }
 
-  /*
-   * Indicate that a paint is about to occur on this window. This is called
-   * at a time when it's OK to change the geometry of this widget or of
-   * other widgets. Must be called before every call to PaintWindow.
-   */
+  /** Paint the window if needed. */
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual void WillPaintWindow(nsIWidget* aWidget) {}
-
-  /**
-   * Paint the specified region of the window. Returns true if the
-   * notification was handled.
-   * This is called at a time when it is not OK to change the geometry of
-   * this widget or of other widgets.
-   */
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual bool PaintWindow(nsIWidget* aWidget,
-                           mozilla::LayoutDeviceIntRegion aRegion) {
-    return false;
-  }
-  /**
-   * Indicates that a paint occurred.
-   * This is called at a time when it is OK to change the geometry of
-   * this widget or of other widgets.
-   * Must be called after every call to PaintWindow.
-   */
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  virtual void DidPaintWindow() {}
+  virtual void PaintWindow(nsIWidget* aWidget) {}
 
   virtual void DidCompositeWindow(mozilla::layers::TransactionId aTransactionId,
                                   const mozilla::TimeStamp& aCompositeStart,
                                   const mozilla::TimeStamp& aCompositeEnd) {}
-
-  /** Request that layout schedules a repaint on the next refresh driver tick.
-   */
-  virtual void RequestRepaint() {}
 
   /**
    * Returns true if this is a popup that should not be visible. If this
@@ -163,9 +126,11 @@ class nsIWidgetListener {
    */
   virtual bool ShouldNotBeVisible() { return false; }
 
+  /** Returns true if painting should be suppressed for this listener */
+  virtual bool IsPaintSuppressed() const { return false; }
+
   /** Handle an event. */
-  virtual nsEventStatus HandleEvent(mozilla::WidgetGUIEvent* aEvent,
-                                    bool aUseAttachedEvents) {
+  virtual nsEventStatus HandleEvent(mozilla::WidgetGUIEvent* aEvent) {
     return nsEventStatus_eIgnore;
   }
 

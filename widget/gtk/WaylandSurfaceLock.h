@@ -25,7 +25,7 @@ class WaylandSurface;
 class WaylandSurfaceLock final {
  public:
   explicit WaylandSurfaceLock(RefPtr<WaylandSurface> aWaylandSurface,
-                              bool aForceCommit = false);
+                              bool aSkipCommit = false);
   ~WaylandSurfaceLock();
 
   WaylandSurface* GetWaylandSurface() const;
@@ -44,6 +44,7 @@ class WaylandSurfaceLock final {
   RefPtr<WaylandSurface> mWaylandSurface;
   wl_surface* mSurface = nullptr;
   bool mForceCommit = false;
+  bool mSkipCommit = false;
 #endif
 };
 

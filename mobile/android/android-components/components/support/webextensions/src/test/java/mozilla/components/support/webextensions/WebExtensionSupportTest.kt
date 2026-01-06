@@ -4,6 +4,7 @@
 
 package mozilla.components.support.webextensions
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.CustomTabListAction
 import mozilla.components.browser.state.action.EngineAction
@@ -33,8 +34,6 @@ import mozilla.components.support.base.facts.processor.CollectionProcessor
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
-import mozilla.components.support.test.ext.joinBlocking
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.whenever
@@ -49,6 +48,7 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.Mockito.never
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.spy
@@ -56,6 +56,7 @@ import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import mozilla.components.support.base.facts.Action as FactsAction
 
+@RunWith(AndroidJUnit4::class)
 class WebExtensionSupportTest {
 
     @get:Rule
@@ -202,7 +203,6 @@ class WebExtensionSupportTest {
         val tabHandlerCaptor = argumentCaptor<TabHandler>()
         WebExtensionSupport.initialize(engine, store)
 
-        store.waitUntilIdle()
         verify(ext).registerTabHandler(eq(engineSession), tabHandlerCaptor.capture())
         tabHandlerCaptor.value.onCloseTab(ext, engineSession)
         verify(store).dispatch(TabListAction.RemoveTabAction(tabId))
@@ -235,7 +235,6 @@ class WebExtensionSupportTest {
         val tabHandlerCaptor = argumentCaptor<TabHandler>()
         WebExtensionSupport.initialize(engine, store)
 
-        store.waitUntilIdle()
         verify(ext).registerTabHandler(eq(engineSession), tabHandlerCaptor.capture())
         tabHandlerCaptor.value.onCloseTab(ext, engineSession)
         verify(store).dispatch(CustomTabListAction.RemoveCustomTabAction(tabId))
@@ -275,7 +274,6 @@ class WebExtensionSupportTest {
             onCloseTabOverride = { _, _ -> onCloseTabCalled = true },
         )
 
-        store.waitUntilIdle()
         verify(ext).registerTabHandler(eq(engineSession), tabHandlerCaptor.capture())
         tabHandlerCaptor.value.onCloseTab(ext, engineSession)
         assertTrue(onCloseTabCalled)
@@ -311,7 +309,6 @@ class WebExtensionSupportTest {
         verify(ext).registerTabHandler(eq(engineSession), tabHandlerCaptor.capture())
         assertNull(store.state.selectedTabId)
         assertTrue(tabHandlerCaptor.value.onUpdateTab(ext, engineSession, true, null))
-        store.waitUntilIdle()
         assertEquals("testTabId", store.state.selectedTabId)
 
         // Update URL of tab
@@ -319,7 +316,7 @@ class WebExtensionSupportTest {
         verify(engineSession).loadUrl("url")
 
         // Update non-existing tab
-        store.dispatch(TabListAction.RemoveTabAction(tabId)).joinBlocking()
+        store.dispatch(TabListAction.RemoveTabAction(tabId))
         assertFalse(tabHandlerCaptor.value.onUpdateTab(ext, engineSession, true, "url"))
     }
 
@@ -353,14 +350,13 @@ class WebExtensionSupportTest {
         verify(ext).registerTabHandler(eq(engineSession), tabHandlerCaptor.capture())
         assertNull(store.state.selectedTabId)
         assertTrue(tabHandlerCaptor.value.onUpdateTab(ext, engineSession, true, null))
-        store.waitUntilIdle()
 
         // Update URL of tab
         assertTrue(tabHandlerCaptor.value.onUpdateTab(ext, engineSession, false, "url"))
         verify(engineSession).loadUrl("url")
 
         // Update non-existing tab
-        store.dispatch(CustomTabListAction.RemoveCustomTabAction(tabId)).joinBlocking()
+        store.dispatch(CustomTabListAction.RemoveCustomTabAction(tabId))
         assertFalse(tabHandlerCaptor.value.onUpdateTab(ext, engineSession, true, "url"))
     }
 
@@ -426,7 +422,7 @@ class WebExtensionSupportTest {
         verify(store, times(3)).dispatch(webExtensionActionCaptor.capture())
         assertEquals(ext.id, (webExtensionActionCaptor.allValues.last() as WebExtensionAction.UpdateTabBrowserAction).extensionId)
 
-        store.dispatch(ContentAction.UpdateUrlAction(sessionId = "1", url = "https://www.firefox.com")).joinBlocking()
+        store.dispatch(ContentAction.UpdateUrlAction(sessionId = "1", url = "https://www.firefox.com"))
         verify(ext, times(1)).registerActionHandler(eq(engineSession), actionHandlerCaptor.capture())
         verify(ext, times(1)).registerTabHandler(eq(engineSession), tabHandlerCaptor.capture())
 
@@ -667,12 +663,12 @@ class WebExtensionSupportTest {
         )
 
         val engineSession1: EngineSession = mock()
-        store.dispatch(EngineAction.LinkEngineSessionAction(tab.id, engineSession1)).joinBlocking()
+        store.dispatch(EngineAction.LinkEngineSessionAction(tab.id, engineSession1))
         verify(ext).registerActionHandler(eq(engineSession1), actionHandlerCaptor.capture())
         verify(ext).registerTabHandler(eq(engineSession1), tabHandlerCaptor.capture())
 
         val engineSession2: EngineSession = mock()
-        store.dispatch(EngineAction.LinkEngineSessionAction(customTab.id, engineSession2)).joinBlocking()
+        store.dispatch(EngineAction.LinkEngineSessionAction(customTab.id, engineSession2))
         verify(ext).registerActionHandler(eq(engineSession2), actionHandlerCaptor.capture())
         verify(ext).registerTabHandler(eq(engineSession2), tabHandlerCaptor.capture())
     }
@@ -774,7 +770,6 @@ class WebExtensionSupportTest {
         val actionCaptor = argumentCaptor<mozilla.components.browser.state.action.BrowserAction>()
         delegateCaptor.value.onToggleActionPopup(ext, engineSession, browserAction)
 
-        store.waitUntilIdle()
         verify(store, times(1)).dispatch(actionCaptor.capture())
         assertEquals("popupTab", (actionCaptor.value as TabListAction.SelectTabAction).tabId)
     }
@@ -805,7 +800,6 @@ class WebExtensionSupportTest {
         // Toggling again should close tab
         val actionCaptor = argumentCaptor<mozilla.components.browser.state.action.BrowserAction>()
         delegateCaptor.value.onToggleActionPopup(ext, engineSession, browserAction)
-        store.waitUntilIdle()
 
         verify(store).dispatch(actionCaptor.capture())
         assertEquals("popupTab", (actionCaptor.value as TabListAction.RemoveTabAction).tabId)
@@ -920,7 +914,6 @@ class WebExtensionSupportTest {
         verify(engine).registerWebExtensionDelegate(delegateCaptor.capture())
 
         delegateCaptor.value.onExtensionListUpdated()
-        store.waitUntilIdle()
 
         val actionCaptor = argumentCaptor<WebExtensionAction>()
         verify(store, times(3)).dispatch(actionCaptor.capture())
@@ -940,7 +933,6 @@ class WebExtensionSupportTest {
         // Verify installed extensions are cleared
         installedList.clear()
         delegateCaptor.value.onExtensionListUpdated()
-        store.waitUntilIdle()
         assertTrue(WebExtensionSupport.installedExtensions.isEmpty())
     }
 
@@ -985,8 +977,6 @@ class WebExtensionSupportTest {
         assertEquals(1, WebExtensionSupport.installedExtensions.size)
         assertEquals(extOnceReady, WebExtensionSupport.installedExtensions[ext.id])
         assertEquals(extOnceReadyMeta, WebExtensionSupport.installedExtensions[ext.id]?.getMetadata())
-
-        store.waitUntilIdle()
     }
 
     @Test
@@ -1001,7 +991,6 @@ class WebExtensionSupportTest {
         verify(engine).registerWebExtensionDelegate(delegateCaptor.capture())
 
         delegateCaptor.value.onDisabledExtensionProcessSpawning()
-        store.waitUntilIdle()
 
         assertTrue(store.state.showExtensionsProcessDisabledPrompt)
     }
@@ -1041,16 +1030,13 @@ class WebExtensionSupportTest {
 
         WebExtensionSupport.initialize(engine, store)
 
-        store.waitUntilIdle()
         assertNotNull(store.state.findTab("1"))
         assertNotNull(store.state.findTab("2"))
         assertNull(store.state.findTab("3"))
 
         // Make sure we're running a single cleanup and stop the scope after
         store.dispatch(TabListAction.AddTabAction(createTab(id = "4", url = "moz-extension://1234-5678-90/")))
-            .joinBlocking()
 
-        store.waitUntilIdle()
         assertNotNull(store.state.findTab("4"))
     }
 

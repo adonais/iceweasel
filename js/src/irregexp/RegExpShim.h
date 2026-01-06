@@ -20,7 +20,6 @@
 
 #include <algorithm>
 #include <cctype>
-#include <iterator>
 #include <optional>
 
 #include "irregexp/RegExpTypes.h"

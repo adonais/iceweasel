@@ -5,7 +5,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <string>
-#include <vector>
 
 #include "GMPUtils.h"
 #include "gtest/gtest.h"

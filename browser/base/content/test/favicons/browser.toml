@@ -106,6 +106,12 @@ support-files = [
   "file_favicon.png",
 ]
 
+["browser_multiple_ico.js"]
+support-files = [
+  "file_multiple_ico.html",
+  "file_multiple.ico",
+]
+
 ["browser_multiple_icons_in_short_timeframe.js"]
 
 ["browser_oversized.js"]

@@ -2424,26 +2424,19 @@ impl Global {
                     error_buf.init(err, device_id);
                 }
             }
-            CommandEncoderAction::RunComputePass {
-                base,
-                timestamp_writes,
-            } => self.compute_pass_end_with_unresolved_commands(
-                self_id,
-                base,
-                timestamp_writes.as_ref(),
-            ),
+            CommandEncoderAction::RunComputePass { .. } => unimplemented!(),
             CommandEncoderAction::WriteTimestamp {
-                query_set_id,
+                query_set,
                 query_index,
             } => {
                 if let Err(err) =
-                    self.command_encoder_write_timestamp(self_id, query_set_id, query_index)
+                    self.command_encoder_write_timestamp(self_id, query_set, query_index)
                 {
                     error_buf.init(err, device_id);
                 }
             }
             CommandEncoderAction::ResolveQuerySet {
-                query_set_id,
+                query_set,
                 start_query,
                 query_count,
                 destination,
@@ -2451,7 +2444,7 @@ impl Global {
             } => {
                 if let Err(err) = self.command_encoder_resolve_query_set(
                     self_id,
-                    query_set_id,
+                    query_set,
                     start_query,
                     query_count,
                     destination,
@@ -2460,20 +2453,7 @@ impl Global {
                     error_buf.init(err, device_id);
                 }
             }
-            CommandEncoderAction::RunRenderPass {
-                base,
-                target_colors,
-                target_depth_stencil,
-                timestamp_writes,
-                occlusion_query_set_id,
-            } => self.render_pass_end_with_unresolved_commands(
-                self_id,
-                base,
-                &target_colors,
-                target_depth_stencil.as_ref(),
-                timestamp_writes.as_ref(),
-                occlusion_query_set_id,
-            ),
+            CommandEncoderAction::RunRenderPass { .. } => unimplemented!(),
             CommandEncoderAction::ClearBuffer { dst, offset, size } => {
                 if let Err(err) = self.command_encoder_clear_buffer(self_id, dst, offset, size) {
                     error_buf.init(err, device_id);
@@ -2506,6 +2486,9 @@ impl Global {
             }
             CommandEncoderAction::BuildAccelerationStructures { .. } => {
                 unreachable!("internal error: attempted to build acceleration structures")
+            }
+            CommandEncoderAction::TransitionResources { .. } => {
+                unreachable!("internal error: attempted to transition resources")
             }
         }
     }
@@ -2739,9 +2722,9 @@ unsafe fn process_message(
             global.command_encoder_action(device_id, id, action, error_buf)
         }
         Message::CommandEncoderFinish(device_id, command_encoder_id, command_buffer_id, desc) => {
-            let (_, error) =
+            let (_, label_and_error) =
                 global.command_encoder_finish(command_encoder_id, &desc, Some(command_buffer_id));
-            if let Some(err) = error {
+            if let Some((_label, err)) = label_and_error {
                 error_buf.init(err, device_id);
             }
         }
@@ -2991,9 +2974,9 @@ pub extern "C" fn wgpu_server_encoder_finish(
 ) {
     let label = wgpu_string(desc.label);
     let desc = desc.map_label(|_| label);
-    let (_, error) =
+    let (_, label_and_error) =
         global.command_encoder_finish(command_encoder_id, &desc, Some(command_buffer_id));
-    if let Some(err) = error {
+    if let Some((_label, err)) = label_and_error {
         error_buf.init(err, device_id);
     }
 }

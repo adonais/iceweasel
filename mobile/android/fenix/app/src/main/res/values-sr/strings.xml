@@ -417,6 +417,10 @@
   <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">Додај Firefox виџет</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">Не сада</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!--
     Search Widget
 
@@ -560,8 +564,6 @@
   <string name="preferences_gestures">Гестикулације</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Прилагоди</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Пријавите се да бисте синхронизовали своје језичке, обележиваче, лозинке и друго.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Mozilla налог</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -811,12 +813,6 @@
   <string name="preference_experiments_2">Студије</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">Омогућава Mozilla-и да инсталира и покреће студије</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Синхронизујте и сачувате своје податке</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Пријавите се за поновно повезивање</string>
   <!-- Preference for removing FxA account -->
@@ -1378,8 +1374,6 @@
   <string name="toast_copy_link_to_clipboard">Копирано у привременој меморији</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Пријави се на Sync</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Синхронизуј и сачувај податке</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Пошаљи на све уређаје</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2612,4 +2606,10 @@
   -->
   <string name="beta_feature">BETA</string>
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

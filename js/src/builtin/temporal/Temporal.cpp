@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <initializer_list>
 #include <iterator>
 #include <limits>
 #include <stdint.h>
@@ -28,7 +27,6 @@
 #include "jspubtd.h"
 #include "NamespaceImports.h"
 
-#include "builtin/temporal/Int128.h"
 #include "builtin/temporal/PlainDate.h"
 #include "builtin/temporal/PlainDateTime.h"
 #include "builtin/temporal/PlainMonthDay.h"
@@ -51,6 +49,7 @@
 #include "js/Value.h"
 #include "vm/BytecodeUtil.h"
 #include "vm/GlobalObject.h"
+#include "vm/Int128.h"
 #include "vm/JSAtomState.h"
 #include "vm/JSAtomUtils.h"
 #include "vm/JSContext.h"
@@ -202,6 +201,7 @@ static bool ToTemporalUnit(JSContext* cx, JSLinearString* str,
   };
 
   static constexpr UnitMap mapping[] = {
+      {"auto", TemporalUnit::Auto},
       {"year", TemporalUnit::Year},
       {"years", TemporalUnit::Year},
       {"month", TemporalUnit::Month},
@@ -273,71 +273,79 @@ static std::pair<TemporalUnit, TemporalUnit> AllowedValues(
 }
 
 /**
- * GetTemporalUnitValuedOption ( normalizedOptions, key, unitGroup, default [ ,
- * extraValues ] )
+ * GetTemporalUnitValuedOption ( options, key, default )
  */
 bool js::temporal::GetTemporalUnitValuedOption(JSContext* cx,
                                                Handle<JSObject*> options,
                                                TemporalUnitKey key,
-                                               TemporalUnitGroup unitGroup,
                                                TemporalUnit* unit) {
-  // Steps 1-8. (Not applicable in our implementation.)
+  // Steps 1-5. (Not applicable in our implementation.)
 
-  // Step 9.
+  // Step 6.
   Rooted<JSString*> value(cx);
   if (!GetStringOption(cx, options, ToPropertyName(cx, key), &value)) {
     return false;
   }
 
+  // Step 7.
+  //
   // Caller should fill in the fallback.
   if (!value) {
     return true;
   }
 
-  return GetTemporalUnitValuedOption(cx, value, key, unitGroup, unit);
+  // Steps 8-9.
+  auto* linear = value->ensureLinear(cx);
+  if (!linear) {
+    return false;
+  }
+  return ToTemporalUnit(cx, linear, key, unit);
 }
 
 /**
- * GetTemporalUnitValuedOption ( normalizedOptions, key, unitGroup, default [ ,
- * extraValues ] )
+ * GetTemporalUnitValuedOption ( options, key, default )
  */
 bool js::temporal::GetTemporalUnitValuedOption(JSContext* cx,
                                                Handle<JSString*> value,
                                                TemporalUnitKey key,
-                                               TemporalUnitGroup unitGroup,
                                                TemporalUnit* unit) {
-  // Steps 1-9. (Not applicable in our implementation.)
+  // Steps 1-7. (Not applicable in our implementation.)
 
-  // Step 10. (Handled in caller.)
-
-  Rooted<JSLinearString*> linear(cx, value->ensureLinear(cx));
+  // Steps 8-9.
+  auto* linear = value->ensureLinear(cx);
   if (!linear) {
     return false;
   }
+  return ToTemporalUnit(cx, linear, key, unit);
+}
 
-  // Caller should fill in the fallback.
-  if (key == TemporalUnitKey::LargestUnit) {
-    if (StringEqualsLiteral(linear, "auto")) {
-      return true;
-    }
+/**
+ * ValidateTemporalUnitValue ( value, unitGroup [ , extraValues ] )
+ */
+bool js::temporal::ValidateTemporalUnitValue(JSContext* cx, TemporalUnitKey key,
+                                             TemporalUnit unit,
+                                             TemporalUnitGroup unitGroup) {
+  // Step 1.
+  if (unit == TemporalUnit::Unset) {
+    return true;
   }
 
-  // Step 11.
-  if (!ToTemporalUnit(cx, linear, key, unit)) {
-    return false;
+  // Step 2. (Partial)
+  if (key == TemporalUnitKey::LargestUnit && unit == TemporalUnit::Auto) {
+    return true;
   }
 
+  // Steps 2-5.
   auto allowedValues = AllowedValues(unitGroup);
-  if (*unit < allowedValues.first || *unit > allowedValues.second) {
-    if (auto chars = QuoteString(cx, linear, '"')) {
-      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_INVALID_OPTION_VALUE, ToCString(key),
-                                chars.get());
-    }
-    return false;
+  if (allowedValues.first <= unit && unit <= allowedValues.second) {
+    return true;
   }
 
-  return true;
+  // Step 6.
+  JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                            JSMSG_INVALID_OPTION_VALUE, ToCString(key),
+                            TemporalUnitToString(unit));
+  return false;
 }
 
 /**
@@ -822,7 +830,7 @@ bool js::temporal::GetTemporalFractionalSecondDigitsOption(
  */
 SecondsStringPrecision js::temporal::ToSecondsStringPrecision(
     TemporalUnit smallestUnit, Precision fractionalDigitCount) {
-  MOZ_ASSERT(smallestUnit == TemporalUnit::Auto ||
+  MOZ_ASSERT(smallestUnit == TemporalUnit::Unset ||
              smallestUnit >= TemporalUnit::Minute);
   MOZ_ASSERT(fractionalDigitCount == Precision::Auto() ||
              fractionalDigitCount.value() <= 9);
@@ -849,9 +857,10 @@ SecondsStringPrecision js::temporal::ToSecondsStringPrecision(
     case TemporalUnit::Nanosecond:
       return {Precision{9}, TemporalUnit::Nanosecond, Increment{1}};
 
-    case TemporalUnit::Auto:
+    case TemporalUnit::Unset:
       break;
 
+    case TemporalUnit::Auto:
     case TemporalUnit::Year:
     case TemporalUnit::Month:
     case TemporalUnit::Week:
@@ -1261,14 +1270,47 @@ bool js::temporal::GetDifferenceSettings(
     TemporalUnitGroup unitGroup, TemporalUnit smallestAllowedUnit,
     TemporalUnit fallbackSmallestUnit, TemporalUnit smallestLargestDefaultUnit,
     DifferenceSettings* result) {
+  MOZ_ASSERT(TemporalUnit::Auto < fallbackSmallestUnit &&
+             fallbackSmallestUnit <= smallestAllowedUnit);
+  MOZ_ASSERT(TemporalUnit::Auto < smallestLargestDefaultUnit &&
+             smallestLargestDefaultUnit <= smallestAllowedUnit);
+
   // Steps 1-2.
   auto largestUnit = TemporalUnit::Auto;
   if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::LargestUnit,
-                                   unitGroup, &largestUnit)) {
+                                   &largestUnit)) {
     return false;
   }
 
   // Step 3.
+  auto roundingIncrement = Increment{1};
+  if (!GetRoundingIncrementOption(cx, options, &roundingIncrement)) {
+    return false;
+  }
+
+  // Step 4.
+  auto roundingMode = TemporalRoundingMode::Trunc;
+  if (!GetRoundingModeOption(cx, options, &roundingMode)) {
+    return false;
+  }
+
+  // Step 5.
+  auto smallestUnit = fallbackSmallestUnit;
+  if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
+                                   &smallestUnit)) {
+    return false;
+  }
+
+  // Step 6.
+  if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::LargestUnit, largestUnit,
+                                 unitGroup)) {
+    return false;
+  }
+
+  // Step 7. (Not applicable in our implementation.)
+  MOZ_ASSERT(largestUnit != TemporalUnit::Unset);
+
+  // Step 8.
   if (largestUnit > smallestAllowedUnit) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_INVALID_UNIT_OPTION,
@@ -1276,31 +1318,16 @@ bool js::temporal::GetDifferenceSettings(
     return false;
   }
 
-  // Step 4.
-  auto roundingIncrement = Increment{1};
-  if (!GetRoundingIncrementOption(cx, options, &roundingIncrement)) {
+  // Step 9.
+  if (!ValidateTemporalUnitValue(cx, TemporalUnitKey::SmallestUnit,
+                                 smallestUnit, unitGroup)) {
     return false;
   }
 
-  // Step 5.
-  auto roundingMode = TemporalRoundingMode::Trunc;
-  if (!GetRoundingModeOption(cx, options, &roundingMode)) {
-    return false;
-  }
+  // Step 10. (Not applicable in our implementation.)
+  MOZ_ASSERT(smallestUnit != TemporalUnit::Unset);
 
-  // Step 6.
-  if (operation == TemporalDifference::Since) {
-    roundingMode = NegateRoundingMode(roundingMode);
-  }
-
-  // Step 7.
-  auto smallestUnit = fallbackSmallestUnit;
-  if (!GetTemporalUnitValuedOption(cx, options, TemporalUnitKey::SmallestUnit,
-                                   unitGroup, &smallestUnit)) {
-    return false;
-  }
-
-  // Step 8.
+  // Step 11.
   if (smallestUnit > smallestAllowedUnit) {
     JS_ReportErrorNumberASCII(
         cx, GetErrorMessage, nullptr, JSMSG_TEMPORAL_INVALID_UNIT_OPTION,
@@ -1308,34 +1335,39 @@ bool js::temporal::GetDifferenceSettings(
     return false;
   }
 
-  // Step 9. (Inlined call to LargerOfTwoTemporalUnits)
+  // Step 12. (Inlined call to LargerOfTwoTemporalUnits)
   auto defaultLargestUnit = std::min(smallestLargestDefaultUnit, smallestUnit);
 
-  // Step 10.
+  // Step 13.
   if (largestUnit == TemporalUnit::Auto) {
     largestUnit = defaultLargestUnit;
   }
 
-  // Step 11.
+  // Step 14.
   if (largestUnit > smallestUnit) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_INVALID_UNIT_RANGE);
     return false;
   }
 
-  // Steps 12-13.
+  // Steps 15-16.
   if (smallestUnit > TemporalUnit::Day) {
-    // Step 12.
+    // Step 15.
     auto maximum = MaximumTemporalDurationRoundingIncrement(smallestUnit);
 
-    // Step 13.
+    // Step 16.
     if (!ValidateTemporalRoundingIncrement(cx, roundingIncrement, maximum,
                                            false)) {
       return false;
     }
   }
 
-  // Step 14.
+  // Step 17.
+  if (operation == TemporalDifference::Since) {
+    roundingMode = NegateRoundingMode(roundingMode);
+  }
+
+  // Step 18.
   *result = {smallestUnit, largestUnit, roundingMode, roundingIncrement};
   return true;
 }

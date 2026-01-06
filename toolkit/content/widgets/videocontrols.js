@@ -126,11 +126,11 @@ this.VideoControlsWidget = class {
    * media.videocontrols.picture-in-picture.video-toggle.always-show pref, which
    * is mostly used for testing.
    *
-   * @param {Object} prefs
+   * @param {object} prefs
    *   The preferences set that was passed to the UAWidget.
    * @param {Element} someVideo
    *   The <video> to test.
-   * @param {Object} reflowedDimensions
+   * @param {object} reflowedDimensions
    *   An object representing the reflowed dimensions of the <video>. Properties
    *   are:
    *
@@ -140,7 +140,7 @@ this.VideoControlsWidget = class {
    *     videoHeight (Number):
    *       The height of the video in pixels.
    *
-   * @return {Boolean}
+   * @return {boolean}
    */
   static shouldShowPictureInPictureToggle(
     prefs,
@@ -193,13 +193,13 @@ this.VideoControlsWidget = class {
    * that they're being used. It also will enable the appropriate stylesheet for
    * the preferred toggle experiment.
    *
-   * @param {Object} prefs
+   * @param {object} prefs
    *   The preferences set that was passed to the UAWidget.
    * @param {ShadowRoot} shadowRoot
    *   The shadowRoot of the <video> element where the video controls are.
    * @param {Element} toggle
    *   The toggle element.
-   * @param {Object} reflowedDimensions
+   * @param {object} reflowedDimensions
    *   An object representing the reflowed dimensions of the <video>. Properties
    *   are:
    *

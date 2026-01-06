@@ -232,7 +232,10 @@ class CustomTabsToolbarFeature(
      * When clicked, it calls [closeListener].
      */
     @VisibleForTesting
-    internal fun addCloseButton(@ColorInt readableColor: Int, bitmap: Bitmap?) {
+    internal fun addCloseButton(
+        @ColorInt readableColor: Int,
+        bitmap: Bitmap?,
+    ) {
         val drawableIcon = bitmap?.toDrawable(context.resources)
             ?: getDrawable(context, iconsR.drawable.mozac_ic_cross_24)!!.mutate()
 
@@ -294,7 +297,9 @@ class CustomTabsToolbarFeature(
      * When clicked, it activates [CustomTabsToolbarListeners.refreshListener].
      */
     @VisibleForTesting
-    internal fun addRefreshButton(@ColorInt readableColor: Int) {
+    internal fun addRefreshButton(
+        @ColorInt readableColor: Int,
+    ) {
         val drawableIcon = getDrawable(context, iconsR.drawable.mozac_ic_arrow_clockwise_24)
         drawableIcon?.setTint(readableColor)
 
@@ -315,7 +320,9 @@ class CustomTabsToolbarFeature(
      * and defaults to the [share] KTX helper.
      */
     @VisibleForTesting
-    internal fun addShareButton(@ColorInt readableColor: Int) {
+    internal fun addShareButton(
+        @ColorInt readableColor: Int,
+    ) {
         val drawableIcon = getDrawable(context, iconsR.drawable.mozac_ic_share_android_24)!!
         drawableIcon.setTint(readableColor)
 

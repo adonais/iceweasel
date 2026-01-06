@@ -8,4 +8,4 @@ DESIRED_CSS = ".ultp-block-image"
 @pytest.mark.without_interventions
 async def test_regression(client):
     await client.navigate(URL)
-    assert client.find_css(DESIRED_CSS, is_displayed=True)
+    assert client.await_css(DESIRED_CSS, is_displayed=True)

@@ -73,14 +73,20 @@ rtc_library("enable_media_with_defaults") {
   ]
 }
 
-rtc_source_set("create_modular_peer_connection_factory") {
+rtc_library("create_modular_peer_connection_factory") {
   visibility = [ "*" ]
   allow_poison = [ "environment_construction" ]
-  sources = [ "create_modular_peer_connection_factory.h" ]
+  sources = [
+    "create_modular_peer_connection_factory.cc",
+    "create_modular_peer_connection_factory.h",
+  ]
   deps = [
     ":libjingle_peerconnection_api",
     ":scoped_refptr",
+    ":sequence_checker",
     "../pc:peer_connection_factory",
+    "../pc:peer_connection_factory_proxy",
+    "../rtc_base:threading",
     "../rtc_base/system:rtc_export",
     "../stats:rtc_stats",
   ]
@@ -236,6 +242,7 @@ rtc_source_set("ice_transport_interface") {
     ":ref_count",
     ":rtc_error",
     ":scoped_refptr",
+    "environment",
     "rtc_event_log",
   ]
 }
@@ -316,17 +323,6 @@ rtc_library("rtp_sender_setparameters_callback") {
   ]
 }
 
-# TODO: bugs.webrtc.org/42220069 - Remove when downstream has been updated
-# to depend on `create_modular_peer_connection_factory` instead.
-rtc_source_set("create_modular_peer_connection_factory_internal") {
-  visibility = [ ":libjingle_peerconnection_api" ]
-  sources = [ "create_modular_peer_connection_factory_internal.h" ]
-  deps = [
-    ":scoped_refptr",
-    "../rtc_base/system:rtc_export",
-  ]
-}
-
 rtc_library("libjingle_peerconnection_api") {
 if (!build_with_mozilla) {
   visibility = [ "*" ]
@@ -368,7 +364,6 @@ if (!build_with_mozilla) {
     ":async_dns_resolver",
     ":audio_options_api",
     ":candidate",
-    ":create_modular_peer_connection_factory_internal",
     ":data_channel_event_observer_interface",
     ":dtls_transport_interface",
     ":fec_controller_api",
@@ -1688,6 +1683,9 @@ if (rtc_include_tests) {
       "video:rtp_video_frame_assembler_unittests",
       "video:video_frame",
       "video:video_frame_metadata_unittest",
+      "video/corruption_detection:frame_instrumentation_data_reader_unittest",
+      "video/corruption_detection:frame_instrumentation_data_unittest",
+      "video/corruption_detection:frame_instrumentation_evaluation_unittest",
       "//third_party/abseil-cpp/absl/functional:any_invocable",
       "//third_party/abseil-cpp/absl/strings",
       "//third_party/abseil-cpp/absl/strings:string_view",

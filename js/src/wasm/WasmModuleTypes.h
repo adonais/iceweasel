@@ -825,10 +825,9 @@ struct MemoryDesc {
   // Whether a backing store for this memory may move when grown.
   bool canMovingGrow() const { return limits.maximum.isNothing(); }
 
-  // Whether the bounds check limit (see the doc comment in
-  // ArrayBufferObject.cpp regarding linear memory structure) can ever be
-  // larger than 32-bits.
-  bool boundsCheckLimitIs32Bits() const {
+  // Whether the boundsCheckLimit will always fit within 32 bits. See the SMDOC
+  // for "WASM Linear Memory structure".
+  bool boundsCheckLimitIsAlways32Bits() const {
     return limits.maximum.isSome() &&
            limits.maximum.value() < (0x100000000 / PageSize);
   }

@@ -12,7 +12,6 @@
 
 #include "mozilla/Maybe.h"
 
-#include <algorithm>
 #include <string.h>
 
 #include "jsapi.h"
@@ -1482,8 +1481,10 @@ static bool CreateDynamicFunction(JSContext* cx, const CallArgs& args,
   }
 
   // Block this call if security callbacks forbid it.
-  bool canCompileStrings = false;
-  if (!cx->isRuntimeCodeGenEnabled(JS::RuntimeCode::JS, functionText,
+  bool canCompileStrings = cx->bypassCSPForDebugger;
+
+  if (!canCompileStrings &&
+      !cx->isRuntimeCodeGenEnabled(JS::RuntimeCode::JS, functionText,
                                    JS::CompilationType::Function,
                                    parameterStrings, bodyString, parameterArgs,
                                    bodyArg, &canCompileStrings)) {

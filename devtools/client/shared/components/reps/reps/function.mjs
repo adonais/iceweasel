@@ -145,8 +145,8 @@ function getFunctionTitle(grip, props) {
 /**
  * Returns a ReactElement representing the function name.
  *
- * @param {Object} grip : Function grip
- * @param {Object} props: Function rep props
+ * @param {object} grip : Function grip
+ * @param {object} props: Function rep props
  */
 function getFunctionName(grip, props = {}) {
   let { functionName } = props;
@@ -189,7 +189,7 @@ const annonymousProperty = /([\w\d]+)\(\^\)$/;
  * spider monkey implements based on "Naming Anonymous JavaScript Functions"
  * http://johnjbarton.github.io/nonymous/index.html
  *
- * @param {String} name : Function name to clean up
+ * @param {string} name : Function name to clean up
  * @returns String
  */
 function cleanFunctionName(name) {

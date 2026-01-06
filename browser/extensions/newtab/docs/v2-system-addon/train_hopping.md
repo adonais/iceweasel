@@ -183,13 +183,13 @@ These tests are currently `Tier 2`, so failures do not automatically result in a
 
 [This link](https://treeherder.mozilla.org/jobs?repo=mozilla-central&searchStr=trainhop) should show the most recent `trainhop` jobs occurring on `main`.
 
-The Treeherder "group name" for those jobs is `nt-trainhop`, and the symbol for the `mochitest-browser` tests are `Mbc-beta` and `Mbc-release` for the tests running on the most recent Beta and Release versions, respectively.
+The Treeherder "group name" for those jobs is `M-trainhop-rel` and `M-trainhop-beta`, and the symbol is `bc` for the tests running on the most recent Beta and Release versions, respectively.
 
 As these are `mochitest-browser` tests, they suffer some of the same issues with intermittency that plague all `mochitest-browser` tests. The jobs can be retriggered in the event that a given failure appears to be intermittent, but we should all continue to strive to write more resilient and less non-deterministic tests when possible. It is righteous and useful to attempt to fix intermittent test failures for these jobs.
 
 ## Debugging automated tests
 
-If it comes to pass that the automated train-hop compatibility tests report a permanent failure on Beta and/or Release via the `Mbc-beta` or `Mbc-release` jobs, train-hop compatibility should be considered broken for that channel, and an investigation should begin immediately to determine what needs to be done to restore train-hop compatibility. No train-hops should be performed on the channel for which train-hop compatibility is broken.
+If it comes to pass that the automated train-hop compatibility tests report a permanent failure on Beta and/or Release via the `M-trainhop-*(bc)` jobs, train-hop compatibility should be considered broken for that channel, and an investigation should begin immediately to determine what needs to be done to restore train-hop compatibility. No train-hops should be performed on the channel for which train-hop compatibility is broken.
 
 The first step is to examine the failure logs from automation to determine if anything immediately obvious jumps out as a “smoking gun”. Look for relevant error messages near the point where the test job failed. If a specific test failed, look for clues around when that test started and concluded. If no tests managed to run correctly, then the issue is likely to do with initializing the XPI (or in rare cases, [might be related to the test framework itself](https://bugzilla.mozilla.org/show_bug.cgi?id=1971180)).
 

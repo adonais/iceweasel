@@ -390,7 +390,7 @@ var InterventionHelpers = {
 
   async getOS() {
     const os =
-      (await browser.aboutConfigPrefs.getPref("platform_override")) ??
+      browser.aboutConfigPrefs.getPref("platform_override") ??
       (await browser.runtime.getPlatformInfo()).os;
     if (os === "win") {
       return "windows";

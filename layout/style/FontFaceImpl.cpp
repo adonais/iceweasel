@@ -451,7 +451,7 @@ bool FontFaceImpl::SetDescriptor(nsCSSFontDesc aFontDesc,
     if (aFontDesc == eCSSFontDesc_Family) {
       // TODO: Warn to the console?
       nsAutoCString quoted;
-      nsStyleUtil::AppendEscapedCSSString(aValue, quoted, '"');
+      nsStyleUtil::AppendQuotedCSSString(aValue, quoted, '"');
       if (Servo_FontFaceRule_SetDescriptor(GetData(), aFontDesc, &quoted, url,
                                            &changed)) {
         return true;
@@ -609,7 +609,12 @@ static already_AddRefed<gfxCharacterMap> ComputeCharacterMap(
   if (ranges.IsEmpty()) {
     return nullptr;
   }
-  auto charMap = MakeRefPtr<gfxCharacterMap>();
+  // A single range covering the entire Unicode code space is equivalent to
+  // having no range at all.
+  if (ranges.Length() == 1 && ranges[0] == StyleUnicodeRange{0, 0x10ffff}) {
+    return nullptr;
+  }
+  auto charMap = MakeRefPtr<gfxCharacterMap>(256);
   for (auto& range : ranges) {
     charMap->SetRange(range.start, range.end);
   }

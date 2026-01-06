@@ -4193,6 +4193,46 @@ preferences:
       tags:
         - Toolbar
         - Settings
+  toolbar_simple_shortcut:
+    type: string
+    description: |
+      The toolbar shortcut used in simple toolbar.
+      Possible values are: new_tab, share, bookmark, translate, homepage or back.
+    send_in_pings:
+      - metrics
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2002636
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D274608
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Toolbar
+        - Settings
+  toolbar_expanded_shortcut:
+    type: string
+    description: |
+      The toolbar shortcut used in expanded toolbar.
+      Possible values are: bookmark, translate, homepage or back.
+    send_in_pings:
+      - metrics
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2002636
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D274608
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Toolbar
+        - Settings
 
   accessibility_services:
     type: string_list
@@ -5418,6 +5458,48 @@ settings:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1841152
     data_reviews:
       - https://github.com/mozilla-mobile/firefox-android/pull/2802
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Settings
+settings_search:
+  opened:
+    type: event
+    description: |
+      A user has opened the settings search screen.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1992006
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D271516
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Settings
+  search_result_clicked:
+    type: event
+    description: |
+      A user has clicked on a search result in the settings search screen.
+    extra_keys:
+      item_preference_key:
+        description: |
+          The preference key of the setting clicked on.
+        type: string
+      is_recent_search:
+        description: |
+          If the result item was in the recent searches category.
+        type: boolean
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1992006
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D271516
     data_sensitivity:
       - interaction
     notification_emails:
@@ -6657,6 +6739,23 @@ tabs_tray:
     expires: never
 
 tab_strip:
+  enabled:
+    type: boolean
+    lifetime: application
+    description: |
+      Whether or not Tab Strip is enabled by the user.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999344
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1999344
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Tabs
   new_tab_tapped:
     type: event
     description: |
@@ -12857,6 +12956,28 @@ customization_settings:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
+  toolbar_shortcut_selection:
+    type: event
+    description: When a toolbar shortcut is selected.
+    extra_keys:
+      toolbar_type:
+        description: |
+          Where the interaction occurred. One of: simple, expanded.
+        type: string
+      item:
+        description: |
+          A string containing the name of the shortcut the user selected. These items include:
+          new_tab, share, bookmark, translate, homepage, back
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2002636
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D274607
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
 
 app_icon_selection:
   app_icon_selection_confirmed:
@@ -12873,6 +12994,25 @@ app_icon_selection:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1979161
     data_reviews:
       - https://phabricator.services.mozilla.com/D260059
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  error_snackbar_shown:
+    type: event
+    description: When a error snackbar was shown signaling a system error while applying the new icon.
+    extra_keys:
+      old_icon:
+        description: The title of the currently used app icon.
+        type: string
+      new_icon:
+        description: The title of the app icon that the system tried and failed to apply.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1955888
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D273375
     data_sensitivity:
       - interaction
     notification_emails:
@@ -12977,84 +13117,6 @@ partnerships:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1912325
     data_reviews:
       - https://phabricator.services.mozilla.com/D218866
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-  dt_001_detected:
-    type: event
-    description: |
-      When a dt-001 preinstall is detected using the DefaultDistributionProviderChecker
-    data_sensitivity:
-      - technical
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1968291
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D252908
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-  dt_002_detected:
-    type: event
-    description: |
-      When a dt-002 preinstall is detected using the DefaultDistributionProviderChecker
-    data_sensitivity:
-      - technical
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1968291
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D252908
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-  dt_003_detected:
-    type: event
-    description: |
-      When a dt-003 preinstall is detected using the DefaultDistributionProviderChecker
-    data_sensitivity:
-      - technical
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1968291
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D252908
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-  dt_001_legacy_detected:
-    type: event
-    description: |
-      When a dt-001 preinstall is detected using the LegacyDistributionProviderChecker
-    data_sensitivity:
-      - technical
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1968291
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D252908
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-  dt_002_legacy_detected:
-    type: event
-    description: |
-      When a dt-002 preinstall is detected using the LegacyDistributionProviderChecker
-    data_sensitivity:
-      - technical
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1968291
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D252908
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-  dt_003_legacy_detected:
-    type: event
-    description: |
-      When a dt-003 preinstall is detected using the LegacyDistributionProviderChecker
-    data_sensitivity:
-      - technical
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1968291
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D252908
     notification_emails:
       - android-probes@mozilla.com
     expires: never
@@ -13953,6 +14015,21 @@ broken_site_report.browser_info.security:
       - broken-site-report
 
 webcompatreporting:
+  previewed:
+    type: event
+    description: |
+      The user clicked the report preview button.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1992050
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D267154
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - twisniewski@mozilla.com
+      - android-probes@mozilla.com
+      - webcompat-reporting-tool-telemetry@mozilla.com
+    expires: never
   reason_dropdown:
     type: string
     description: |
@@ -13986,10 +14063,10 @@ webcompatreporting:
         description: >
           Whether the user opted into including blocked tracker origins.
         type: boolean
-  send_more_info:
+  add_more_info:
     type: event
     description: |
-      Recorded when a user clicks on the Send More Info link in the reporting UI
+      Recorded when a user clicks on the Add More Info link in the reporting UI
       The user will be redirected to webcompat.com to submit a more comprehensive report.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1932462
@@ -14314,6 +14391,32 @@ client_association:
       - fx-accounts
 
 toolbar:
+  cfr_shown:
+    type: event
+    description: |
+      Toolbar cfr was shown to the user.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2000490
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2000490
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  cfr_dismissed:
+    type: event
+    description: |
+      Toolbar cfr was dismissed by the user.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2000490
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2000490
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
   button_tapped:
     type: event
     description: |
@@ -14332,7 +14435,7 @@ toolbar:
           add_new_tab, add_new_tab_long_press, add_new_private_tab, tab_counter, tab_counter_long_press,
           menu, share, clear, refresh, stop, add_bookmark, edit_bookmark, security_indicator, qr_code,
           home, reader_mode, microphone, open_in_fenix, close, site_custom, search_engine_selector,
-          search_engine_selected.
+          search_engine_selected, translate.
         type: string
       extra:
         description: |

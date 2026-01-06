@@ -50,6 +50,12 @@ interface nsICacheInfoChannel : nsISupports
   boolean isFromCache();
 
   /**
+   * True if this channel has a corresponding cache entry.  This can be true
+   * even if isFromCache() is false.
+   */
+  boolean hasCacheEntry();
+
+  /**
    * Returns true if the channel raced the cache and network requests.
    * In order to determine if the response is coming from the cache or the
    * network, the consumer can check isFromCache().

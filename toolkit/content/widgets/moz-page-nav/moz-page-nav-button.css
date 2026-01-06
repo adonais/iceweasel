@@ -90,7 +90,7 @@ button {
     font-weight: var(--font-weight-semibold);
 
     @media (prefers-contrast) {
-      border-color: var(--color-accent-primary);
+      border-color: var(--border-color-selected);
     }
 
     &::before {

@@ -502,29 +502,29 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   nsCOMPtr<nsITransferable> mTransferable;
 
   // the drop effect and effect allowed
-  uint32_t mDropEffect;
-  uint32_t mEffectAllowed;
+  uint32_t mDropEffect = nsIDragService::DRAGDROP_ACTION_NONE;
+  uint32_t mEffectAllowed = nsIDragService::DRAGDROP_ACTION_UNINITIALIZED;
 
   // the event message this data transfer is for. This will correspond to an
   // event->mMessage value.
   EventMessage mEventMessage;
 
   // Indicates the behavior of the cursor during drag operations
-  bool mCursorState;
+  bool mCursorState = false;
 
   // The current "Drag Data Store Mode" which the DataTransfer is in.
   Mode mMode;
 
   // true for drags started without a data transfer, for example, those from
   // another application.
-  bool mIsExternal;
+  bool mIsExternal = false;
 
   // true if the user cancelled the drag. Used only for the dragend event.
-  bool mUserCancelled;
+  bool mUserCancelled = false;
 
   // true if this is a cross-domain drop from a subframe where access to the
   // data should be prevented
-  bool mIsCrossDomainSubFrameDrop;
+  bool mIsCrossDomainSubFrameDrop = false;
 
   // Indicates which clipboard type to use for clipboard operations. Ignored for
   // drag and drop.
@@ -543,8 +543,8 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
   // the custom drag image and coordinates within the image. If mDragImage is
   // null, the default image is created from the drag target.
   nsCOMPtr<mozilla::dom::Element> mDragImage;
-  uint32_t mDragImageX;
-  uint32_t mDragImageY;
+  uint32_t mDragImageX = 0;
+  uint32_t mDragImageY = 0;
 
   // Whether to animate the drag back to its starting point if it fails.
   // Not supported everywhere.

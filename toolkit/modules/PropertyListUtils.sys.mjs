@@ -194,6 +194,7 @@ export var PropertyListUtils = Object.freeze({
   /**
    * Wraps a 64-bit stored in the form of a string primitive as a String object,
    * which we can later distiguish from regular string values.
+   *
    * @param aPrimitive
    *        a number in the form of either a primitive string or a primitive number.
    * @return a String wrapper around aNumberStr that can later be identified
@@ -500,6 +501,7 @@ BinaryPropertyListReader.prototype = {
 
   /**
    * Read array from the buffer and wrap it as a js array.
+   *
    * @param aObjectOffset
    *        the offset in the buffer at which the array starts.
    * @param aNumberOfObjects
@@ -536,6 +538,7 @@ BinaryPropertyListReader.prototype = {
 
   /**
    * Reads dictionary from the buffer and wraps it as a Map object.
+   *
    * @param aObjectOffset
    *        the offset in the buffer at which the dictionary starts
    * @param aNumberOfObjects
@@ -572,6 +575,7 @@ BinaryPropertyListReader.prototype = {
 
   /**
    * Reads an object at the spcified index in the object table
+   *
    * @param aObjectIndex
    *        index at the object table
    * @return the property list object at the given index.
@@ -707,6 +711,7 @@ XMLPropertyListReader.prototype = {
 
   /**
    * Convert a dom element to a property list object.
+   *
    * @param aDOMElt
    *        a dom element in a xml tree of a property list.
    * @return a js object representing the property list object.
@@ -820,6 +825,7 @@ XMLPropertyListReader.prototype = {
  * Simple handler method to proxy calls to dict/Map objects to implement the
  * setAsLazyGetter API. With this, a value can be set as a function that will
  * evaluate its value and only be called when it's first retrieved.
+ *
  * @member _lazyGetters
  *         Set() object to hold keys invoking LazyGetter.
  * @method get

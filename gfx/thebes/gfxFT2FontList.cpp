@@ -379,7 +379,7 @@ nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
     return NS_OK;
   }
 
-  RefPtr<gfxCharacterMap> charmap = new gfxCharacterMap();
+  RefPtr<gfxCharacterMap> charmap = new gfxCharacterMap(256);
 
   nsresult rv = NS_ERROR_NOT_AVAILABLE;
   uint32_t uvsOffset = 0;
@@ -452,7 +452,7 @@ nsresult FT2FontEntry::ReadCMAP(FontInfoData* aFontInfoData) {
     mHasCmapTable = true;
   } else {
     // if error occurred, initialize to null cmap
-    charmap = new gfxCharacterMap();
+    charmap = new gfxCharacterMap(0);
     mHasCmapTable = false;
   }
   if (setCharMap) {

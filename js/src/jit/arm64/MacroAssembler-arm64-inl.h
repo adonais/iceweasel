@@ -314,6 +314,14 @@ void MacroAssembler::add32(Imm32 imm, const Address& dest) {
   Str(scratch32, toMemOperand(dest));
 }
 
+void MacroAssembler::add32(const Address& src, Register dest) {
+  vixl::UseScratchRegisterScope temps(this);
+  const ARMRegister scratch32 = temps.AcquireW();
+  MOZ_ASSERT(scratch32.asUnsized() != src.base);
+  load32(src, scratch32.asUnsized());
+  Add(ARMRegister(dest, 32), ARMRegister(dest, 32), Operand(scratch32));
+}
+
 void MacroAssembler::addPtr(Register src, Register dest) {
   addPtr(src, dest, dest);
 }

@@ -284,7 +284,7 @@ bool CanvasTranslator::AddBuffer(
 }
 
 ipc::IPCResult CanvasTranslator::RecvSetDataSurfaceBuffer(
-    ipc::MutableSharedMemoryHandle&& aBufferHandle) {
+    uint32_t aId, ipc::MutableSharedMemoryHandle&& aBufferHandle) {
   if (mDeactivated) {
     // The other side might have sent a resume message before we deactivated.
     return IPC_OK();
@@ -293,19 +293,84 @@ ipc::IPCResult CanvasTranslator::RecvSetDataSurfaceBuffer(
   if (UsePendingCanvasTranslatorEvents()) {
     MutexAutoLock lock(mCanvasTranslatorEventsLock);
     mPendingCanvasTranslatorEvents.push_back(
-        CanvasTranslatorEvent::SetDataSurfaceBuffer(std::move(aBufferHandle)));
+        CanvasTranslatorEvent::SetDataSurfaceBuffer(aId,
+                                                    std::move(aBufferHandle)));
     PostCanvasTranslatorEvents(lock);
   } else {
-    DispatchToTaskQueue(NewRunnableMethod<ipc::MutableSharedMemoryHandle&&>(
-        "CanvasTranslator::SetDataSurfaceBuffer", this,
-        &CanvasTranslator::SetDataSurfaceBuffer, std::move(aBufferHandle)));
+    DispatchToTaskQueue(
+        NewRunnableMethod<uint32_t, ipc::MutableSharedMemoryHandle&&>(
+            "CanvasTranslator::SetDataSurfaceBuffer", this,
+            &CanvasTranslator::SetDataSurfaceBuffer, aId,
+            std::move(aBufferHandle)));
   }
 
   return IPC_OK();
 }
 
+void CanvasTranslator::UnlinkDataSurfaceShmemOwner(
+    const RefPtr<gfx::DataSourceSurface>& aSurface) {
+  if (!aSurface) {
+    return;
+  }
+  // Remove the associated id key
+  aSurface->RemoveUserData(&mDataSurfaceShmemIdKey);
+  // Force copy-on-write of contained shmem if applicable
+  gfx::DataSourceSurface::ScopedMap map(
+      aSurface, gfx::DataSourceSurface::MapType::READ_WRITE);
+}
+
+void CanvasTranslator::DataSurfaceBufferWillChange(uint32_t aId,
+                                                   bool aKeepAlive,
+                                                   size_t aLimit) {
+  if (aId) {
+    // If a specific id is changing, then attempt to copy it.
+    auto it = mDataSurfaceShmems.find(aId);
+    if (it != mDataSurfaceShmems.end()) {
+      RefPtr<gfx::DataSourceSurface> owner(it->second.mOwner);
+      if (owner) {
+        UnlinkDataSurfaceShmemOwner(owner);
+        it->second.mOwner = nullptr;
+      }
+      // Erase the shmem if it's not the last used id.
+      if (!aKeepAlive || aId != mLastDataSurfaceShmemId) {
+        mDataSurfaceShmems.erase(it);
+      }
+    }
+  } else {
+    // If no limit is requested, clear everything.
+    if (!aLimit) {
+      aLimit = mDataSurfaceShmems.size();
+    }
+    // Ensure all shmems still alive are copied.
+    DataSurfaceShmem lastShmem;
+    auto it = mDataSurfaceShmems.begin();
+    for (; aLimit > 0 && it != mDataSurfaceShmems.end(); ++it, --aLimit) {
+      RefPtr<gfx::DataSourceSurface> owner(it->second.mOwner);
+      if (owner) {
+        UnlinkDataSurfaceShmemOwner(owner);
+        it->second.mOwner = nullptr;
+      }
+      // If the last shmem id needs to be kept alive, move it before clearing
+      // the hashtable.
+      if (aKeepAlive && it->first == mLastDataSurfaceShmemId) {
+        lastShmem = std::move(it->second);
+      }
+    }
+    // Clear all iterated shmem mappings.
+    if (it == mDataSurfaceShmems.end()) {
+      mDataSurfaceShmems.clear();
+    } else if (it != mDataSurfaceShmems.begin()) {
+      mDataSurfaceShmems.erase(mDataSurfaceShmems.begin(), it);
+    }
+    // Restore the last shmem id if necessary.
+    if (lastShmem.mShmem.IsValid()) {
+      mDataSurfaceShmems[mLastDataSurfaceShmemId] = std::move(lastShmem);
+    }
+  }
+}
+
 bool CanvasTranslator::SetDataSurfaceBuffer(
-    ipc::MutableSharedMemoryHandle&& aBufferHandle) {
+    uint32_t aId, ipc::MutableSharedMemoryHandle&& aBufferHandle) {
   MOZ_ASSERT(IsInTaskQueue());
   if (mHeader->readerState == State::Failed) {
     // We failed before we got to the pause event.
@@ -322,15 +387,53 @@ bool CanvasTranslator::SetDataSurfaceBuffer(
     return false;
   }
 
-  mDataSurfaceShmem = aBufferHandle.Map();
-  if (!mDataSurfaceShmem) {
+  if (!aId) {
     return false;
+  }
+
+  if (aId < mLastDataSurfaceShmemId) {
+    // The id space has overflowed, so clear out all existing mapping.
+    DataSurfaceBufferWillChange(0, false);
+  } else if (mLastDataSurfaceShmemId != aId) {
+    // The last shmem id will be kept alive, even if there is no owner. The last
+    // shmem id is about to change, so if the current last id has no owner, it
+    // needs to be erased.
+    auto it = mDataSurfaceShmems.find(mLastDataSurfaceShmemId);
+    if (it != mDataSurfaceShmems.end() && it->second.mOwner.IsDead()) {
+      mDataSurfaceShmems.erase(it);
+    }
+    // Ensure the current shmems don't exceed the maximum allowed.
+    size_t maxShmems = StaticPrefs::gfx_canvas_accelerated_max_data_shmems();
+    if (maxShmems > 0 && mDataSurfaceShmems.size() >= maxShmems) {
+      DataSurfaceBufferWillChange(0, false,
+                                  (mDataSurfaceShmems.size() - maxShmems) + 1);
+    }
+  }
+  mLastDataSurfaceShmemId = aId;
+
+  // If the id is being reused, then ensure the old contents is copied before
+  // the buffer is changed.
+  DataSurfaceBufferWillChange(aId);
+
+  // Finally, change the shmem mapping.
+  {
+    auto& dataSurfaceShmem = mDataSurfaceShmems[aId];
+    dataSurfaceShmem.mShmem = aBufferHandle.Map();
+    if (!dataSurfaceShmem.mShmem) {
+      // Try clearing out old mappings to see if resource limits were reached.
+      DataSurfaceBufferWillChange(0, false);
+      // Try mapping one last time.
+      dataSurfaceShmem.mShmem = aBufferHandle.Map();
+      if (!dataSurfaceShmem.mShmem) {
+        return false;
+      }
+    }
   }
 
   return TranslateRecording();
 }
 
-void CanvasTranslator::GetDataSurface(uint64_t aSurfaceRef) {
+void CanvasTranslator::GetDataSurface(uint32_t aId, uint64_t aSurfaceRef) {
   MOZ_ASSERT(IsInTaskQueue());
 
   ReferencePtr surfaceRef = reinterpret_cast<void*>(aSurfaceRef);
@@ -345,38 +448,49 @@ void CanvasTranslator::GetDataSurface(uint64_t aSurfaceRef) {
       return;
     }
   }
-  gfx::DataSourceSurface::ScopedMap map(dataSurface,
-                                        gfx::DataSourceSurface::READ);
-  if (!map.IsMapped()) {
-    return;
-  }
-
   auto dstSize = dataSurface->GetSize();
-  auto srcSize = map.GetSurface()->GetSize();
   gfx::SurfaceFormat format = dataSurface->GetFormat();
-  int32_t bpp = BytesPerPixel(format);
-  int32_t dataFormatWidth = dstSize.width * bpp;
-  int32_t srcStride = map.GetStride();
-  if (dataFormatWidth > srcStride || srcSize != dstSize) {
-    return;
-  }
-
   int32_t dstStride =
       ImageDataSerializer::ComputeRGBStride(format, dstSize.width);
   auto requiredSize =
       ImageDataSerializer::ComputeRGBBufferSize(dstSize, format);
-  if (requiredSize <= 0 || size_t(requiredSize) > mDataSurfaceShmem.Size()) {
+  if (requiredSize <= 0) {
     return;
   }
 
-  uint8_t* dst = mDataSurfaceShmem.DataAs<uint8_t>();
-  const uint8_t* src = map.GetData();
-  const uint8_t* endSrc = src + (srcSize.height * srcStride);
-  while (src < endSrc) {
-    memcpy(dst, src, dataFormatWidth);
-    src += srcStride;
-    dst += dstStride;
+  // Ensure any old references to the shmem are copied before modification.
+  DataSurfaceBufferWillChange(aId);
+
+  // Ensure a shmem exists with the given id.
+  auto it = mDataSurfaceShmems.find(aId);
+  if (it == mDataSurfaceShmems.end()) {
+    return;
   }
+
+  // Try directly reading the data surface into shmem to avoid further copies.
+  if (size_t(requiredSize) > it->second.mShmem.Size()) {
+    return;
+  }
+
+  uint8_t* dst = it->second.mShmem.DataAs<uint8_t>();
+  if (dataSurface->ReadDataInto(dst, dstStride)) {
+    // If reading directly into the shmem, then mark the data surface as the
+    // shmem's owner.
+    it->second.mOwner = dataSurface;
+    dataSurface->AddUserData(&mDataSurfaceShmemIdKey,
+                             reinterpret_cast<void*>(aId), nullptr);
+    return;
+  }
+
+  // Otherwise, map the data surface and do an explicit copy.
+  gfx::DataSourceSurface::ScopedMap map(dataSurface,
+                                        gfx::DataSourceSurface::MapType::READ);
+  if (!map.IsMapped()) {
+    return;
+  }
+
+  gfx::SwizzleData(map.GetData(), map.GetStride(), format, dst, dstStride,
+                   format, dstSize);
 }
 
 already_AddRefed<gfx::SourceSurface> CanvasTranslator::WaitForSurface(
@@ -776,8 +890,8 @@ void CanvasTranslator::HandleCanvasTranslatorEvents() {
         dispatchTranslate = AddBuffer(event->TakeBufferHandle());
         break;
       case CanvasTranslatorEvent::Tag::SetDataSurfaceBuffer:
-        dispatchTranslate =
-            SetDataSurfaceBuffer(event->TakeDataSurfaceBufferHandle());
+        dispatchTranslate = SetDataSurfaceBuffer(
+            event->mId, event->TakeDataSurfaceBufferHandle());
         break;
       case CanvasTranslatorEvent::Tag::ClearCachedResources:
         ClearCachedResources();
@@ -998,6 +1112,8 @@ void CanvasTranslator::PrepareShmem(
 }
 
 void CanvasTranslator::CacheDataSnapshots() {
+  DataSurfaceBufferWillChange();
+
   if (mSharedContext) {
     // If there are any DrawTargetWebgls, then try to cache their framebuffers
     // in software surfaces, just in case the GL context is lost. So long as
@@ -1372,6 +1488,8 @@ bool CanvasTranslator::PushRemoteTexture(
 void CanvasTranslator::ClearTextureInfo() {
   MOZ_ASSERT(mIPDLClosed);
 
+  DataSurfaceBufferWillChange(0, false);
+
   mUsedDataSurfaceForSurfaceDescriptor = nullptr;
   mUsedWrapperForSurfaceDescriptor = nullptr;
   mUsedSurfaceDescriptorForSurfaceDescriptor = Nothing();
@@ -1739,7 +1857,25 @@ void CanvasTranslator::AddDataSurface(
 }
 
 void CanvasTranslator::RemoveDataSurface(gfx::ReferencePtr aRefPtr) {
-  mDataSurfaces.Remove(aRefPtr);
+  RefPtr<gfx::DataSourceSurface> surface;
+  if (mDataSurfaces.Remove(aRefPtr, getter_AddRefs(surface))) {
+    // If the data surface is the assigned owner of a shmem, and if the shmem
+    // is not the last shmem id used, then erase the shmem.
+    if (auto id = reinterpret_cast<uintptr_t>(
+            surface->GetUserData(&mDataSurfaceShmemIdKey))) {
+      if (id != mLastDataSurfaceShmemId) {
+        auto it = mDataSurfaceShmems.find(id);
+        if (it != mDataSurfaceShmems.end()) {
+          // If this is not the last reference to the surface, then the shmem
+          // contents needs to be copied.
+          if (!surface->hasOneRef()) {
+            UnlinkDataSurfaceShmemOwner(surface);
+          }
+          mDataSurfaceShmems.erase(it);
+        }
+      }
+    }
+  }
 }
 
 }  // namespace layers

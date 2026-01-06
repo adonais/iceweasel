@@ -74,6 +74,9 @@ class ConnectionEntry : public SupportsWeakPtr {
   void RemoveExtendedCONNECTConns(HttpConnectionBase* conn);
 
   HttpConnectionBase* GetH2orH3ActiveConn();
+  // Find an H2 tunnel connection (nsHttpConnection with UsingSpdy()) in active
+  // connections. This is used for WebSocket/WebTransport through H3 proxy.
+  already_AddRefed<nsHttpConnection> GetH2TunnelActiveConn();
   // Make an active spdy connection DontReuse.
   // TODO: this is a helper function and should nbe improved.
   bool MakeFirstActiveSpdyConnDontReuse();

@@ -215,7 +215,6 @@ ServerWBO.prototype = {
  *        collection. This should be in the format returned by new_timestamp().
  *
  * @return the new ServerCollection instance.
- *
  */
 function ServerCollection(wbos, acceptNew, timestamp) {
   this._wbos = wbos || {};
@@ -766,7 +765,6 @@ SyncServer.prototype = {
    *
    * @param cb
    *        A callback function. Invoked after the server has been stopped.
-   *
    */
   stop: function stop(cb) {
     if (!this.started) {

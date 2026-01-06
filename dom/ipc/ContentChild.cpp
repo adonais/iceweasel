@@ -15,6 +15,7 @@
 #include "Geolocation.h"
 #include "HandlerServiceChild.h"
 #include "ScrollingMetrics.h"
+#include "gfxUtils.h"
 #include "imgLoader.h"
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Attributes.h"
@@ -91,9 +92,11 @@
 #include "mozilla/dom/ipc/SharedMap.h"
 #include "mozilla/extensions/ExtensionsChild.h"
 #include "mozilla/extensions/StreamFilterParent.h"
+#include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/hal_sandbox/PHalChild.h"
+#include "mozilla/image/FetchDecodedImage.h"
 #include "mozilla/intl/L10nRegistry.h"
 #include "mozilla/intl/LocaleService.h"
 #include "mozilla/intl/OSPreferences.h"
@@ -1475,6 +1478,58 @@ mozilla::ipc::IPCResult ContentChild::RecvRequestMemoryReport(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult ContentChild::RecvDecodeImage(
+    NotNull<nsIURI*> aURI, const ImageIntSize& aSize,
+    DecodeImageResolver&& aResolver) {
+  auto size = aSize.ToUnknownSize();
+  // TODO(Bug 1999930): Investigate using  a content-principal for
+  // moz-remote-image: requests
+  image::FetchDecodedImage(aURI, size, nsContentUtils::GetSystemPrincipal())
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [size, aResolver](already_AddRefed<imgIContainer> aImage) {
+            using Result = std::tuple<nsresult, mozilla::Maybe<IPCImage>>;
+
+            nsCOMPtr<imgIContainer> image(std::move(aImage));
+
+            const int32_t flags = imgIContainer::FLAG_SYNC_DECODE |
+                                  imgIContainer::FLAG_ASYNC_NOTIFY;
+            RefPtr<gfx::SourceSurface> surface;
+            if (size.Width() && size.Height()) {
+              surface = image->GetFrameAtSize(size, imgIContainer::FRAME_FIRST,
+                                              flags);
+              if (surface && surface->GetSize() != size) {
+                surface = gfxUtils::ScaleSourceSurface(*surface, size);
+              }
+            } else {
+              surface = image->GetFrame(imgIContainer::FRAME_FIRST, flags);
+            }
+
+            if (!surface) {
+              aResolver(Result(NS_ERROR_FAILURE, Nothing()));
+              return;
+            }
+
+            if (RefPtr<gfx::DataSourceSurface> dataSurface =
+                    surface->GetDataSurface()) {
+              if (Maybe<IPCImage> image =
+                      nsContentUtils::SurfaceToIPCImage(*dataSurface)) {
+                aResolver(Result(NS_OK, std::move(image)));
+                return;
+              }
+            }
+
+            aResolver(Result(NS_ERROR_FAILURE, Nothing()));
+            return;
+          },
+          [aResolver](nsresult aStatus) {
+            aResolver(std::tuple<nsresult, mozilla::Maybe<IPCImage>>(
+                aStatus, Nothing()));
+          });
+
+  return IPC_OK();
+}
+
 #if defined(XP_WIN)
 mozilla::ipc::IPCResult ContentChild::RecvGetUntrustedModulesData(
     GetUntrustedModulesDataResolver&& aResolver) {
@@ -2093,6 +2148,11 @@ mozilla::ipc::IPCResult ContentChild::RecvClearScriptCache(
     const Maybe<nsCString>& aURL) {
   SharedScriptCache::Clear(aChrome, aPrincipal, aSchemelessSite, aPattern,
                            aURL);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult ContentChild::RecvInvalidateScriptCache() {
+  SharedScriptCache::Invalidate();
   return IPC_OK();
 }
 
@@ -4591,19 +4651,14 @@ already_AddRefed<JSActor> ContentChild::InitJSActor(
 }
 
 IPCResult ContentChild::RecvRawMessage(
-    const JSActorMessageMeta& aMeta, const UniquePtr<ClonedMessageData>& aData,
+    const JSActorMessageMeta& aMeta, JSIPCValue&& aData,
     const UniquePtr<ClonedMessageData>& aStack) {
-  UniquePtr<StructuredCloneData> data;
-  if (aData) {
-    data = MakeUnique<StructuredCloneData>();
-    data->BorrowFromClonedMessageData(*aData);
-  }
   UniquePtr<StructuredCloneData> stack;
   if (aStack) {
     stack = MakeUnique<StructuredCloneData>();
     stack->BorrowFromClonedMessageData(*aStack);
   }
-  ReceiveRawMessage(aMeta, std::move(data), std::move(stack));
+  ReceiveRawMessage(aMeta, std::move(aData), std::move(stack));
   return IPC_OK();
 }
 

@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Cuuriɗum %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -157,6 +157,10 @@
   <string name="search_engine_suggestions_title">Yiylo %s</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">Yiylo beƴ e palal ñiiɓirɗe ngal</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!--
     Search Widget
 
@@ -343,12 +347,6 @@
   <string name="exceptions_empty_message_description">Paltooje ina mbaawnuma daaƴde ndeenka dewindol e lowe cuɓaaɗe ɗee.</string>
   <!-- Text displayed when there are no exceptions, with learn more link that brings users to a tracking protection SUMO page -->
   <string name="exceptions_empty_message_learn_more_link">Ɓeydu humpito</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Sanngoɗin ngam daɗnude keɓe maa</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Seŋo ngam seŋaade kadi</string>
   <!-- Preference for removing FxA account -->
@@ -719,8 +717,6 @@
   <string name="toast_copy_link_to_clipboard">Natto faade ɗakkitorde</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Seŋo ngam yahdinde</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Sanngoɗin ngam daɗnude keɓe</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Neldu to masiŋon kon fof</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1046,4 +1042,10 @@
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

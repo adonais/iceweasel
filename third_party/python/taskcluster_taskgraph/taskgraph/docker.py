@@ -28,6 +28,7 @@ from taskgraph.config import GraphConfig
 from taskgraph.generator import load_tasks_for_kind
 from taskgraph.transforms import docker_image
 from taskgraph.util import docker, json
+from taskgraph.util.caches import CACHES
 from taskgraph.util.taskcluster import (
     find_task_id,
     get_artifact_url,
@@ -36,8 +37,10 @@ from taskgraph.util.taskcluster import (
     get_task_definition,
     status_task,
 )
+from taskgraph.util.vcs import get_repository
 
 logger = logging.getLogger(__name__)
+RUN_TASK_RE = re.compile(r"run-task(-(git|hg))?$")
 
 
 def get_image_digest(image_name: str) -> str:
@@ -188,11 +191,11 @@ def build_image(
 
         output_dir = temp_dir / "out"
         output_dir.mkdir()
-        volumes = {
+        volumes = [
             # TODO write artifacts to tmpdir
-            str(output_dir): "/workspace/out",
-            str(image_context): "/workspace/context.tar.gz",
-        }
+            (str(output_dir), "/workspace/out"),
+            (str(image_context), "/workspace/context.tar.gz"),
+        ]
 
         assert label in image_tasks
         task = image_tasks[label]
@@ -211,7 +214,7 @@ def build_image(
                 parent = task.dependencies["parent"][len("docker-image-") :]
                 parent_tar = temp_dir / "parent.tar"
                 build_image(graph_config, parent, save_image=str(parent_tar))
-                volumes[str(parent_tar)] = "/workspace/parent.tar"
+                volumes.append((str(parent_tar), "/workspace/parent.tar"))
 
         task_def["payload"]["env"]["CHOWN_OUTPUT"] = f"{os.getuid()}:{os.getgid()}"
         load_task(
@@ -385,6 +388,27 @@ def _index(l: list, s: str) -> Optional[int]:
         pass
 
 
+def _extract_arg(cmd: list[str], arg: str) -> Optional[str]:
+    if index := _index(cmd, arg):
+        return cmd[index + 1]
+
+    for item in cmd:
+        if item.startswith(f"{arg}="):
+            return item.split("=", 1)[1]
+
+
+def _delete_arg(cmd: list[str], arg: str) -> bool:
+    if index := _index(cmd, arg):
+        del cmd[index : index + 2]
+        return True
+
+    for i, item in enumerate(cmd):
+        if item.startswith(f"{arg}="):
+            del cmd[i]
+            return True
+    return False
+
+
 def _resolve_image(image: Union[str, dict[str, str]], graph_config: GraphConfig) -> str:
     image_task_id = None
 
@@ -418,6 +442,11 @@ def _resolve_image(image: Union[str, dict[str, str]], graph_config: GraphConfig)
     return load_image_by_task_id(image_task_id)
 
 
+def _is_run_task(task_def: dict[str, str]):
+    cmd = task_def["payload"].get("command")  # type: ignore
+    return cmd and re.search(RUN_TASK_RE, cmd[0])
+
+
 def load_task(
     graph_config: GraphConfig,
     task: Union[str, dict[str, Any]],
@@ -425,7 +454,8 @@ def load_task(
     user: Optional[str] = None,
     custom_image: Optional[str] = None,
     interactive: Optional[bool] = False,
-    volumes: Optional[dict[str, str]] = None,
+    volumes: Optional[list[tuple[str, str]]] = None,
+    develop: bool = False,
 ) -> int:
     """Load and run a task interactively in a Docker container.
 
@@ -443,6 +473,8 @@ def load_task(
         interactive: If True, execution of the task will be paused and user
           will be dropped into a shell. They can run `exec-task` to resume
           it (default: False).
+        develop: If True, the task will be configured to use the current
+          local checkout at the current revision (default: False).
 
     Returns:
         int: The exit code from the Docker container.
@@ -465,9 +497,13 @@ def load_task(
 
         return 1
 
-    task_command = task_def["payload"].get("command")  # type: ignore
-    if interactive and (not task_command or not task_command[0].endswith("run-task")):
-        logger.error("Only tasks using `run-task` are supported with interactive!")
+    is_run_task = _is_run_task(task_def)
+    if interactive and not is_run_task:
+        logger.error("Only tasks using `run-task` are supported with --interactive!")
+        return 1
+
+    if develop and not is_run_task:
+        logger.error("Only tasks using `run-task` are supported with --develop!")
         return 1
 
     try:
@@ -476,6 +512,49 @@ def load_task(
     except Exception as e:
         logger.exception(e)
         return 1
+
+    task_command = task_def["payload"].get("command")  # type: ignore
+    task_env = task_def["payload"].get("env", {})
+
+    if develop:
+        repositories = json.loads(task_env.get("REPOSITORIES", "{}"))
+        if not repositories:
+            logger.error(
+                "Can't use --develop with task that doesn't define any $REPOSITORIES!"
+            )
+            return 1
+
+        try:
+            repo = get_repository(os.getcwd())
+        except RuntimeError:
+            logger.error("Can't use --develop from outside a source repository!")
+            return 1
+
+        checkout_name = list(repositories.keys())[0]
+        checkout_arg = f"--{checkout_name}-checkout"
+        checkout_dir = _extract_arg(task_command, checkout_arg)
+        if not checkout_dir:
+            logger.error(
+                f"Can't use --develop with task that doesn't use {checkout_arg}"
+            )
+            return 1
+        volumes = volumes or []
+        volumes.append((repo.path, checkout_dir))
+
+        # Delete cache environment variables for cache directories that aren't mounted.
+        # This prevents tools from trying to write to inaccessible cache paths.
+        mount_paths = {v[1] for v in volumes}
+        for cache in CACHES.values():
+            var = cache.get("env")
+            if var in task_env and task_env[var] not in mount_paths:
+                del task_env[var]
+
+        # Delete environment and arguments related to this repo so that
+        # `run-task` doesn't attempt to fetch or checkout a new revision.
+        del repositories[checkout_name]
+        task_env["REPOSITORIES"] = json.dumps(repositories)
+        for arg in ("checkout", "sparse-profile", "shallow-clone"):
+            _delete_arg(task_command, f"--{checkout_name}-{arg}")
 
     exec_command = task_cwd = None
     if interactive:
@@ -496,16 +575,7 @@ def load_task(
             ]
 
         # Parse `--task-cwd` so we know where to execute the task's command later.
-        if index := _index(task_command, "--task-cwd"):
-            task_cwd = task_command[index + 1]
-        else:
-            for arg in task_command:
-                if arg.startswith("--task-cwd="):
-                    task_cwd = arg.split("=", 1)[1]
-                    break
-            else:
-                task_cwd = "$TASK_WORKDIR"
-
+        task_cwd = _extract_arg(task_command, "--task-cwd") or "$TASK_WORKDIR"
         task_command = [
             "bash",
             "-c",
@@ -520,12 +590,28 @@ def load_task(
         "TASKCLUSTER_ROOT_URL": get_root_url(),
     }
     # Add the task's environment variables.
-    env.update(task_def["payload"].get("env", {}))  # type: ignore
+    env.update(task_env)  # type: ignore
 
     # run-task expects the worker to mount a volume for each path defined in
-    # TASKCLUSTER_CACHES, delete them to avoid needing to do the same.
+    # TASKCLUSTER_CACHES; delete them to avoid needing to do the same, unless
+    # they're passed in as volumes.
     if "TASKCLUSTER_CACHES" in env:
-        del env["TASKCLUSTER_CACHES"]
+        if volumes:
+            caches = env["TASKCLUSTER_CACHES"].split(";")
+            caches = [
+                cache for cache in caches if any(path == cache for _, path in volumes)
+            ]
+        else:
+            caches = []
+        if caches:
+            env["TASKCLUSTER_CACHES"] = ";".join(caches)
+        else:
+            del env["TASKCLUSTER_CACHES"]
+
+    # run-task expects volumes listed under `TASKCLUSTER_VOLUMES` to be empty.
+    # This can interfere with load-task when using custom volumes.
+    if volumes and "TASKCLUSTER_VOLUMES" in env:
+        del env["TASKCLUSTER_VOLUMES"]
 
     envfile = None
     initfile = None
@@ -570,7 +656,7 @@ def load_task(
             command.extend(["-v", f"{initfile.name}:/builds/worker/.bashrc"])
 
         if volumes:
-            for k, v in volumes.items():
+            for k, v in volumes:
                 command.extend(["-v", f"{k}:{v}"])
 
         command.append(image_tag)

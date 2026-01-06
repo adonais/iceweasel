@@ -649,6 +649,11 @@ void FFmpegVideoDecoder<LIBAV_VER>::InitHWDecoderIfAllowed() {
 }
 #endif  // MOZ_USE_HWDECODE
 
+static bool ShouldEnable8BitConversion(const struct AVCodec* aCodec) {
+  return 0 == strncmp(aCodec->name, "libdav1d", 8) ||
+         0 == strncmp(aCodec->name, "vp9", 3);
+}
+
 RefPtr<MediaDataDecoder::InitPromise> FFmpegVideoDecoder<LIBAV_VER>::Init() {
   AUTO_PROFILER_LABEL("FFmpegVideoDecoder::Init", MEDIA_PLAYBACK);
   FFMPEG_LOG("FFmpegVideoDecoder, init, IsHardwareAccelerated=%d\n",
@@ -661,11 +666,9 @@ RefPtr<MediaDataDecoder::InitPromise> FFmpegVideoDecoder<LIBAV_VER>::Init() {
   if (NS_FAILED(rv)) {
     return InitPromise::CreateAndReject(rv, __func__);
   }
-  // Enable 8-bit conversion only for dav1d.
-  m8BitOutput =
-      m8BitOutput && 0 == strncmp(mCodecContext->codec->name, "libdav1d", 8);
+  m8BitOutput = m8BitOutput && ShouldEnable8BitConversion(mCodecContext->codec);
   if (m8BitOutput) {
-    FFMPEG_LOG("Enable 8-bit output for dav1d");
+    FFMPEG_LOG("Enable 8-bit output for %s", mCodecContext->codec->name);
     m8BitRecycleBin = MakeRefPtr<BufferRecycleBin>();
   }
   return InitPromise::CreateAndResolve(TrackInfo::kVideoTrack, __func__);
@@ -1197,21 +1200,9 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::DoDecode(
   });
 
 #if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
-  RefPtr<MediaDrmCryptoInfo> cryptoInfo;
-  if (aSample->mCrypto.IsEncrypted()) {
-    if (NS_WARN_IF(!mCDM)) {
-      return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
-                         RESULT_DETAIL("Missing CDM for encrypted sample"));
-    }
-
-    cryptoInfo = mCDM->CreateCryptoInfo(aSample);
-    if (NS_WARN_IF(!cryptoInfo)) {
-      return MediaResult(
-          NS_ERROR_DOM_MEDIA_DECODE_ERR,
-          RESULT_DETAIL("Failed to create CryptoInfo for encrypted sample"));
-    }
-
-    packet->moz_ndk_crypto_info = cryptoInfo->GetNdkCryptoInfo();
+  MediaResult ret = MaybeAttachCryptoInfo(aSample, packet);
+  if (NS_FAILED(ret)) {
+    return ret;
   }
 #endif
 
@@ -1699,6 +1690,11 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::CreateImage(
   // that. If this shared memory buffer path also generated a
   // MacIOSurfaceImage, then we could use it for HDR.
   requiresCopy = (b.mColorDepth != gfx::ColorDepth::COLOR_8);
+#  endif
+#  ifdef MOZ_WIDGET_ANDROID
+  // Some Android devices can only render 8-bit images and cannot use high
+  // bit-depth decoded data directly.
+  requiresCopy = m8BitOutput && b.mColorDepth != gfx::ColorDepth::COLOR_8;
 #  endif
   if (mIsUsingShmemBufferForDecode && *mIsUsingShmemBufferForDecode &&
       !requiresCopy) {
@@ -2462,6 +2458,14 @@ MediaResult FFmpegVideoDecoder<LIBAV_VER>::InitMediaCodecDecoder() {
     FFMPEG_LOG("  failed to allocate extradata.");
     return ret;
   }
+
+#  ifdef USING_MOZFFVPX
+  ret = MaybeAttachCDM();
+  if (NS_FAILED(ret)) {
+    FFMPEG_LOG("  failed to attach CDM.");
+    return ret;
+  }
+#  endif
 
   if (mLib->avcodec_open2(mCodecContext, codec, nullptr) < 0) {
     FFMPEG_LOG("  avcodec_open2 failed for MediaCodec decoder");

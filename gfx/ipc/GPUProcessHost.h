@@ -11,7 +11,7 @@
 #include "mozilla/gfx/Types.h"
 #include "mozilla/ipc/GeckoChildProcessHost.h"
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/ipc/TaskFactory.h"
+#include "mozilla/media/MediaUtils.h"
 
 #ifdef MOZ_WIDGET_ANDROID
 #  include "mozilla/java/CompositorSurfaceManagerWrappers.h"
@@ -60,17 +60,19 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
 
   // Launch the subprocess asynchronously. On failure, false is returned.
   // Otherwise, true is returned, and the OnProcessLaunchComplete listener
-  // callback will be invoked either when a connection has been established, or
-  // if a connection could not be established due to an asynchronous error.
+  // callback will be invoked either when a connection has been established and
+  // process initialization is complete, or if a connection could not be
+  // established due to an asynchronous error.
   //
   // @param aExtraOpts (geckoargs::ChildProcessArgs)
   //        Extra options to pass to the subprocess.
   bool Launch(geckoargs::ChildProcessArgs aExtraOpts);
 
   // If the process is being launched, block until it has launched and
-  // connected. If a launch task is pending, it will fire immediately.
+  // connected, and any initialization has completed. If a launch task is
+  // pending, it will fire immediately.
   //
-  // Returns true if the process is successfully connected; false otherwise.
+  // Returns true if the process is successfully initialized; false otherwise.
   bool WaitForLaunch();
 
   // Inform the process that it should clean up its resources and shut down.
@@ -124,12 +126,15 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
  private:
   ~GPUProcessHost();
 
-  // Called on the main thread.
-  void OnChannelConnectedTask();
-  void OnChannelErrorTask();
-
   // Called on the main thread after a connection has been established.
+  // Creates the PGPU endpoints and begins asynchronous initialization.
   void InitAfterConnect(bool aSucceeded);
+  // Called on the main thread after post-connection initialization tasks have
+  // completed asynchronously.
+  void OnAsyncInitComplete();
+  // Synchronously completes any outstanding post-connection initialization
+  // tasks which have not yet completed asynchronously.
+  bool CompleteInitSynchronously();
 
   // Called on the main thread when the mGPUChild actor is shutting down.
   void OnChannelClosed();
@@ -150,9 +155,8 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   DISALLOW_COPY_AND_ASSIGN(GPUProcessHost);
 
   Listener* mListener;
-  mozilla::ipc::TaskFactory<GPUProcessHost> mTaskFactory;
 
-  enum class LaunchPhase { Unlaunched, Waiting, Complete };
+  enum class LaunchPhase { Unlaunched, Waiting, Connected, Complete };
   LaunchPhase mLaunchPhase;
 
   RefPtr<GPUChild> mGPUChild;
@@ -164,6 +168,14 @@ class GPUProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   bool mChannelClosed;
 
   TimeStamp mLaunchTime;
+
+  // Set to true on construction and to false just prior deletion.
+  // The GPUProcessHost isn't refcounted; so we can capture this by value in
+  // lambdas along with a strong reference to mLiveToken and check if that value
+  // is true before accessing "this".
+  // While a reference to mLiveToken can be taken on any thread; its value can
+  // only be read on the main thread.
+  const RefPtr<media::Refcountable<bool>> mLiveToken;
 
 #ifdef MOZ_WIDGET_ANDROID
   // Binder interface used to send compositor surfaces to GPU process. There is

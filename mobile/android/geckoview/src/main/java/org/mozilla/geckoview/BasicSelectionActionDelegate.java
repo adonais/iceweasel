@@ -482,7 +482,7 @@ public class BasicSelectionActionDelegate
 
     // outRect has to convert to current window coordinate.
     final Matrix matrix = new Matrix();
-    mSession.getScreenToWindowManagerOffsetMatrix(matrix);
+    mSession.getScreenToWindowManagerOffsetMatrix(mActivity, matrix);
     final RectF transformedRect = new RectF();
     matrix.mapRect(transformedRect, mSelection.screenRect);
     transformedRect.roundOut(outRect);

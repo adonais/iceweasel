@@ -7,8 +7,6 @@
 #ifndef jit_mips64_Assembler_mips64_h
 #define jit_mips64_Assembler_mips64_h
 
-#include <iterator>
-
 #include "jit/mips-shared/Assembler-mips-shared.h"
 
 #include "jit/mips64/Architecture-mips64.h"

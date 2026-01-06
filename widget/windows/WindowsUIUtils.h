@@ -59,6 +59,7 @@ class WindowsUIUtils final : public nsIWindowsUIUtils {
   static bool ComputeOverlayScrollbars();
   static double ComputeTextScaleFactor();
   static bool ComputeTransparencyEffects();
+  static void AssociateWithWinAppSDK(HWND aWnd);
   static void SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed);
 
  protected:

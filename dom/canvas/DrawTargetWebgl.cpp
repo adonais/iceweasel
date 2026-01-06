@@ -1258,7 +1258,7 @@ bool SharedContextWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride,
 }
 
 already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshot(
-    TextureHandle* aHandle) {
+    TextureHandle* aHandle, uint8_t* aData, int32_t aStride) {
   // Allocate a data surface, map it, and read from the WebGL context into the
   // surface.
   SurfaceFormat format = SurfaceFormat::UNKNOWN;
@@ -1274,7 +1274,9 @@ already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshot(
     bounds = mCurrentTarget->GetRect();
   }
   RefPtr<DataSourceSurface> surface =
-      Factory::CreateDataSourceSurface(bounds.Size(), format);
+      aData ? Factory::CreateWrappingDataSourceSurface(aData, aStride,
+                                                       bounds.Size(), format)
+            : Factory::CreateDataSourceSurface(bounds.Size(), format);
   if (!surface) {
     return nullptr;
   }
@@ -1284,6 +1286,10 @@ already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshot(
     return nullptr;
   }
   return surface.forget();
+}
+
+static inline int32_t GetPBOStride(int32_t aWidth, SurfaceFormat aFormat) {
+  return GetAlignedStride<16>(aWidth, BytesPerPixel(aFormat));
 }
 
 already_AddRefed<WebGLBuffer> SharedContextWebgl::ReadSnapshotIntoPBO(
@@ -1301,8 +1307,8 @@ already_AddRefed<WebGLBuffer> SharedContextWebgl::ReadSnapshotIntoPBO(
     format = mCurrentTarget->GetFormat();
     bounds = mCurrentTarget->GetRect();
   }
-  int32_t stride = GetAlignedStride<16>(bounds.width, BytesPerPixel(format));
-  size_t bufSize = BufferSizeFromStrideAndHeight(stride, bounds.height);
+  int32_t pboStride = GetPBOStride(bounds.width, format);
+  size_t bufSize = BufferSizeFromStrideAndHeight(pboStride, bounds.height);
   if (!bufSize) {
     return nullptr;
   }
@@ -1323,7 +1329,7 @@ already_AddRefed<WebGLBuffer> SharedContextWebgl::ReadSnapshotIntoPBO(
   mWebgl->UninitializedBufferData_SizeOnly(LOCAL_GL_PIXEL_PACK_BUFFER, bufSize,
                                            LOCAL_GL_STREAM_READ);
   mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
-  if (!ReadInto(nullptr, stride, format, bounds, aHandle, pbo)) {
+  if (!ReadInto(nullptr, pboStride, format, bounds, aHandle, pbo)) {
     return nullptr;
   }
 
@@ -1340,16 +1346,20 @@ already_AddRefed<WebGLBuffer> SharedContextWebgl::ReadSnapshotIntoPBO(
 
 already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshotFromPBO(
     const RefPtr<WebGLBuffer>& aBuffer, SurfaceFormat aFormat,
-    const IntSize& aSize) {
+    const IntSize& aSize, uint8_t* aData, int32_t aStride) {
   // For an existing PBO where a readback has been initiated previously, create
   // a new data surface and copy the PBO's data into the data surface.
-  int32_t stride = GetAlignedStride<16>(aSize.width, BytesPerPixel(aFormat));
-  size_t bufSize = BufferSizeFromStrideAndHeight(stride, aSize.height);
+  int32_t pboStride = GetPBOStride(aSize.width, aFormat);
+  size_t bufSize =
+      BufferSizeFromStrideAndHeight(aData ? aStride : pboStride, aSize.height);
   if (!bufSize) {
     return nullptr;
   }
   RefPtr<DataSourceSurface> surface =
-      Factory::CreateDataSourceSurfaceWithStride(aSize, aFormat, stride);
+      aData ? Factory::CreateWrappingDataSourceSurface(aData, aStride, aSize,
+                                                       aFormat)
+            : Factory::CreateDataSourceSurfaceWithStride(aSize, aFormat,
+                                                         pboStride);
   if (!surface) {
     return nullptr;
   }
@@ -1359,8 +1369,9 @@ already_AddRefed<DataSourceSurface> SharedContextWebgl::ReadSnapshotFromPBO(
   }
   mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, aBuffer);
   Range<uint8_t> range = {dstMap.GetData(), bufSize};
-  bool success = static_cast<WebGL2Context*>(mWebgl.get())
-                     ->GetBufferSubData(LOCAL_GL_PIXEL_PACK_BUFFER, 0, range);
+  bool success = mWebgl->AsWebGL2()->GetBufferSubData(
+      LOCAL_GL_PIXEL_PACK_BUFFER, 0, range, aSize.height,
+      BytesPerPixel(aFormat) * aSize.height, pboStride, dstMap.GetStride());
   mWebgl->BindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, 0);
   if (success) {
     return surface.forget();
@@ -1374,8 +1385,8 @@ void SharedContextWebgl::RemoveSnapshotPBO(
   MOZ_ASSERT(aOwner && buffer);
   IntSize size = aOwner->GetSize();
   SurfaceFormat format = aOwner->GetFormat();
-  int32_t stride = GetAlignedStride<16>(size.width, BytesPerPixel(format));
-  size_t bufSize = BufferSizeFromStrideAndHeight(stride, size.height);
+  int32_t pboStride = GetPBOStride(size.width, format);
+  size_t bufSize = BufferSizeFromStrideAndHeight(pboStride, size.height);
   // If the queue is empty, no memory should be used. Otherwise, deduct the
   // usage from the queue.
   if (mSnapshotPBOs.empty()) {
@@ -1410,13 +1421,14 @@ bool DrawTargetWebgl::ReadInto(uint8_t* aDstData, int32_t aDstStride) {
 }
 
 // Utility method to install the target before reading a snapshot.
-already_AddRefed<DataSourceSurface> DrawTargetWebgl::ReadSnapshot() {
+already_AddRefed<DataSourceSurface> DrawTargetWebgl::ReadSnapshot(
+    uint8_t* aData, int32_t aStride) {
   AutoRestoreContext restore(this);
   if (!PrepareContext(false)) {
     return nullptr;
   }
   mProfile.OnReadback();
-  return mSharedContext->ReadSnapshot();
+  return mSharedContext->ReadSnapshot(nullptr, aData, aStride);
 }
 
 already_AddRefed<WebGLBuffer> DrawTargetWebgl::ReadSnapshotIntoPBO(
@@ -3935,11 +3947,10 @@ already_AddRefed<SourceSurface> SharedContextWebgl::DownscaleBlurInput(
       if (fullHandle) {
         fullBounds += fullHandle->GetBounds().TopLeft();
       }
-      static_cast<WebGL2Context*>(mWebgl.get())
-          ->BlitFramebuffer(fullBounds.x, fullBounds.y, fullBounds.XMost(),
-                            fullBounds.YMost(), halfBounds.x, halfBounds.y,
-                            halfBounds.XMost(), halfBounds.YMost(),
-                            LOCAL_GL_COLOR_BUFFER_BIT, LOCAL_GL_LINEAR);
+      mWebgl->AsWebGL2()->BlitFramebuffer(
+          fullBounds.x, fullBounds.y, fullBounds.XMost(), fullBounds.YMost(),
+          halfBounds.x, halfBounds.y, halfBounds.XMost(), halfBounds.YMost(),
+          LOCAL_GL_COLOR_BUFFER_BIT, LOCAL_GL_LINEAR);
 
       fullHandle = halfHandle;
       fullTex = halfBacking->GetWebGLTexture();

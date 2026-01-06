@@ -517,7 +517,11 @@ nsPluginArray* Navigator::GetPlugins(ErrorResult& aRv) {
   return mPlugins;
 }
 
-bool Navigator::PdfViewerEnabled() { return !StaticPrefs::pdfjs_disabled(); }
+bool Navigator::PdfViewerEnabled() {
+  return !StaticPrefs::pdfjs_disabled() ||
+         nsContentUtils::ShouldResistFingerprinting(GetDocShell(),
+                                                    RFPTarget::PdfjsSpoof);
+}
 
 Permissions* Navigator::GetPermissions(ErrorResult& aRv) {
   if (!mWindow) {
@@ -888,8 +892,8 @@ uint32_t Navigator::MaxTouchPoints(CallerType aCallerType) {
 
   // Responsive Design Mode overrides the maxTouchPoints property when
   // touch simulation is enabled.
-  if (bc && bc->InRDMPane()) {
-    return bc->GetMaxTouchPointsOverride();
+  if (bc && bc->Top()->InRDMPane()) {
+    return bc->Top()->GetMaxTouchPointsOverride();
   }
 
   // The maxTouchPoints is going to reveal the detail of users' hardware. So,

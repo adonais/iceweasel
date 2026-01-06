@@ -4,7 +4,7 @@
 // @ts-check
 
 /**
- * @typedef {Object} StateProps
+ * @typedef {object} StateProps
  * @property {number} interval
  * @property {number} entries
  * @property {string[]} features
@@ -15,7 +15,7 @@
  */
 
 /**
- * @typedef {Object} ThunkDispatchProps
+ * @typedef {object} ThunkDispatchProps
  * @property {typeof actions.changeInterval} changeInterval
  * @property {typeof actions.changeEntries} changeEntries
  * @property {typeof actions.changeFeatures} changeFeatures
@@ -28,7 +28,7 @@
  */
 
 /**
- * @typedef {Object} State
+ * @typedef {object} State
  * @property {null | string} temporaryThreadText
  */
 
@@ -215,6 +215,7 @@ const jvmThreadColumns = [
 
 /**
  * This component manages the settings for recording a performance profile.
+ *
  * @extends {React.PureComponent<Props, State>}
  */
 class Settings extends PureComponent {
@@ -238,6 +239,7 @@ class Settings extends PureComponent {
 
   /**
    * Handle the checkbox change.
+   *
    * @param {React.ChangeEvent<HTMLInputElement>} event
    */
   _handleThreadCheckboxChange = event => {
@@ -255,6 +257,7 @@ class Settings extends PureComponent {
 
   /**
    * Handle the checkbox change.
+   *
    * @param {React.ChangeEvent<HTMLInputElement>} event
    */
   _handleFeaturesCheckboxChange = event => {
@@ -597,6 +600,7 @@ class Settings extends PureComponent {
 
 /**
  * Clean up the thread list string into a list of values.
+ *
  * @param {string} threads - Comma separated values.
  * @return {string[]}
  */
@@ -614,6 +618,7 @@ function _threadTextToList(threads) {
 
 /**
  * Format the interval number for display.
+ *
  * @param {number} value
  * @return {React.ReactNode}
  */
@@ -626,6 +631,7 @@ function _intervalTextDisplay(value) {
 
 /**
  * Format the entries number for display.
+ *
  * @param {number} value
  * @return {string}
  */

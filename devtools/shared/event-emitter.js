@@ -30,11 +30,11 @@ class EventEmitter {
    * Registers an event `listener` that is called every time events of
    * specified `type` is emitted on this instance.
    *
-   * @param {String} type
+   * @param {string} type
    *    The type of event.
    * @param {Function} listener
    *    The listener that processes the event.
-   * @param {Object} options
+   * @param {object} options
    * @param {AbortSignal} options.signal
    *     The listener will be removed when linked AbortController’s abort() method is called
    * @returns {Function}
@@ -76,7 +76,8 @@ class EventEmitter {
    * Removes an event `listener` for the given event `type` on this instance
    * If no `listener` is passed removes all listeners of the given
    * `type`. If `type` is not passed removes all the listeners of this instance.
-   * @param {String} [type]
+   *
+   * @param {string} [type]
    *    The type of event.
    * @param {Function} [listener]
    *    The listener that processes the event.
@@ -128,11 +129,11 @@ class EventEmitter {
    * of the specified `type` is emitted on this instance.
    * It returns a Promise resolved once the specified event `type` is emitted.
    *
-   * @param {String} type
+   * @param {string} type
    *    The type of the event.
    * @param {Function} [listener]
    *    The listener that processes the event.
-   * @param {Object} options
+   * @param {object} options
    * @param {AbortSignal} options.signal
    *     The listener will be removed when linked AbortController’s abort() method is called
    * @return {Promise}
@@ -165,9 +166,9 @@ class EventEmitter {
   /**
    * Emit an event of a given `type` on this instance.
    *
-   * @param {String} type
+   * @param {string} type
    *    The type of the event.
-   * @param {Boolean} async
+   * @param {boolean} async
    *    If true, this function will wait for each listener completion.
    *    Each listener has to return a promise, which will be awaited for.
    * @param {Array} args
@@ -252,9 +253,9 @@ class EventEmitter {
   /**
    * Returns a number of event listeners registered for the given event `type` on this instance.
    *
-   * @param {String} type
+   * @param {string} type
    *    The type of event.
-   * @return {Number}
+   * @return {number}
    *    The number of event listeners.
    */
   count(type) {

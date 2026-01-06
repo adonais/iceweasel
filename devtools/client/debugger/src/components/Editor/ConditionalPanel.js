@@ -101,9 +101,9 @@ export class ConditionalPanel extends PureComponent {
   /**
    * Set the breakpoint/logpoint if expression isn't empty, and close the panel.
    *
-   * @param {String} expression: The expression that will be used for setting the
+   * @param {string} expression: The expression that will be used for setting the
    *        conditional breakpoint/logpoint
-   * @param {Boolean} showStacktrace: Whether to show the stacktrace for the logpoint
+   * @param {boolean} showStacktrace: Whether to show the stacktrace for the logpoint
    */
   saveAndClose = (expression = null, showStacktrace = false) => {
     if (typeof expression === "string") {

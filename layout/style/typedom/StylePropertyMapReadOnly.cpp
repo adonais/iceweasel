@@ -14,9 +14,13 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
 #include "mozilla/dom/CSSKeywordValue.h"
+#include "mozilla/dom/CSSMathSum.h"
+#include "mozilla/dom/CSSNumericArray.h"
 #include "mozilla/dom/CSSStyleValue.h"
+#include "mozilla/dom/CSSUnitValue.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/StylePropertyMapReadOnlyBinding.h"
+#include "nsCSSProps.h"
 #include "nsComputedDOMStyle.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsQueryObject.h"
@@ -47,7 +51,6 @@ struct DeclarationTraits<InlineStyleDeclarations> {
     }
 
     if (!block->GetPropertyTypedValue(aProperty, result)) {
-      aRv.ThrowTypeError("Invalid CSS property");
       return result;
     }
 
@@ -74,7 +77,6 @@ struct DeclarationTraits<ComputedStyleDeclarations> {
     }
 
     if (!style->GetPropertyTypedValue(aProperty, result)) {
-      aRv.ThrowTypeError("Invalid CSS property");
       return result;
     }
 
@@ -112,6 +114,8 @@ JSObject* StylePropertyMapReadOnly::WrapObject(
 
 // start of StylePropertyMapReadOnly Web IDL implementation
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-stylepropertymapreadonly-get
+//
 // XXX This is not yet fully implemented and optimized!
 void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
                                    OwningUndefinedOrCSSStyleValue& aRetVal,
@@ -120,6 +124,14 @@ void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
   RefPtr<Element> element = do_QueryObject(mParent);
   if (!element) {
     aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);
+    return;
+  }
+
+  // Step 2.
+
+  NonCustomCSSPropertyId id = nsCSSProps::LookupProperty(aProperty);
+  if (id == eCSSProperty_UNKNOWN) {
+    aRv.ThrowTypeError("Invalid property: "_ns + aProperty);
     return;
   }
 
@@ -134,36 +146,86 @@ void StylePropertyMapReadOnly::Get(const nsACString& aProperty,
     return;
   }
 
-  // XXX Consider switch on result.tag
-  if (result.IsTyped()) {
-    auto typedValue = result.AsTyped();
+  // XXX Move the creation of CSSStyleValue to a dedicated class for example
+  // CSSStyleValueFactory and eventually split the handling of tags into
+  // separate methods to make the code more readable and accessible for
+  // CSSStyleValue::Parse. See bug 2004057
 
-    MOZ_ASSERT(typedValue.IsKeyword());
-    auto value = typedValue.AsKeyword();
+  RefPtr<CSSStyleValue> styleValue;
 
-    auto keywordValue = MakeRefPtr<CSSKeywordValue>(mParent, value);
+  switch (result.tag) {
+    case StylePropertyTypedValueResult::Tag::Typed: {
+      const auto& typedValue = result.AsTyped();
 
-    aRetVal.SetAsCSSStyleValue() = std::move(keywordValue);
-    return;
+      switch (typedValue.tag) {
+        case StyleTypedValue::Tag::Keyword:
+          styleValue =
+              MakeRefPtr<CSSKeywordValue>(mParent, typedValue.AsKeyword());
+          break;
+
+        case StyleTypedValue::Tag::Numeric: {
+          auto numericValue = typedValue.AsNumeric();
+
+          switch (numericValue.tag) {
+            case StyleNumericValue::Tag::Unit: {
+              auto unitValue = numericValue.AsUnit();
+
+              styleValue = MakeRefPtr<CSSUnitValue>(mParent, unitValue.value,
+                                                    unitValue.unit);
+              break;
+            }
+
+            case StyleNumericValue::Tag::Sum: {
+              auto mathSum = numericValue.AsSum();
+
+              nsTArray<RefPtr<CSSNumericValue>> values;
+
+              for (const auto& value : mathSum.values) {
+                // XXX Only supporting units for now
+                if (value.IsUnit()) {
+                  auto unitValue = value.AsUnit();
+
+                  values.AppendElement(MakeRefPtr<CSSUnitValue>(
+                      mParent, unitValue.value, unitValue.unit));
+                }
+              }
+
+              auto array =
+                  MakeRefPtr<CSSNumericArray>(mParent, std::move(values));
+
+              styleValue = MakeAndAddRef<CSSMathSum>(mParent, std::move(array));
+              break;
+            }
+          }
+
+          break;
+        }
+      }
+      break;
+    }
+
+    case StylePropertyTypedValueResult::Tag::Unsupported: {
+      auto propertyId = CSSPropertyId::FromIdOrCustomProperty(id, aProperty);
+      auto rawBlock = result.AsUnsupported();
+      auto block = MakeRefPtr<DeclarationBlock>(rawBlock.Consume());
+      styleValue = MakeRefPtr<CSSUnsupportedValue>(mParent, propertyId,
+                                                   std::move(block));
+      break;
+    }
+
+    case StylePropertyTypedValueResult::Tag::None:
+      break;
   }
 
-  if (result.IsUnsupported()) {
-    auto rawBlock = result.AsUnsupported();
-
-    auto block = MakeRefPtr<DeclarationBlock>(rawBlock.Consume());
-
-    auto unsupportedValue =
-        MakeRefPtr<CSSUnsupportedValue>(mParent, aProperty, std::move(block));
-
-    aRetVal.SetAsCSSStyleValue() = std::move(unsupportedValue);
-    return;
+  if (styleValue) {
+    aRetVal.SetAsCSSStyleValue() = std::move(styleValue);
+  } else {
+    aRetVal.SetUndefined();
   }
-
-  MOZ_ASSERT(result.IsNone());
-
-  aRetVal.SetUndefined();
 }
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-stylepropertymapreadonly-getall
+//
 // XXX This is not yet fully implemented and optimized!
 void StylePropertyMapReadOnly::GetAll(const nsACString& aProperty,
                                       nsTArray<RefPtr<CSSStyleValue>>& aRetVal,

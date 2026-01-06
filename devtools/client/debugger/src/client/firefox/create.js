@@ -26,8 +26,8 @@ let store;
  * and allow having access to any instances of classes that are
  * useful for this module
  *
- * @param {Object} dependencies
- * @param {Object} dependencies.store
+ * @param {object} dependencies
+ * @param {object} dependencies.store
  *                 The redux store object of the debugger frontend.
  */
 export function setupCreate(dependencies) {
@@ -67,11 +67,11 @@ export async function createFrame(thread, frame, index = 0) {
  * For example, location and generatedLocation will be different.
  *
  * @param {Function} getState
- * @param {Object} frame
+ * @param {object} frame
  *        The frame for the generated location, i.e. WASM binary code.
- * @param {String} id
+ * @param {string} id
  *        The new ID to use for the new frame object.
- * @param {Object} originalFrame
+ * @param {object} originalFrame
  *        An object crafted by the SourceMap Worker with additional information
  *        about the original source code. i.e. the Rust, C++, whatever original source code.
  *        See XScope.search() for definition of this object.
@@ -104,7 +104,7 @@ export function createWasmOriginalFrame(
 /**
  * This method wait for the given source actor to be registered in Redux store.
  *
- * @param {String} sourceActorId
+ * @param {string} sourceActorId
  *                 Actor ID of the source to be waiting for.
  */
 async function waitForSourceActorToBeRegisteredInStore(sourceActorId) {
@@ -132,7 +132,7 @@ async function waitForSourceActorToBeRegisteredInStore(sourceActorId) {
 /**
  * This method wait for the given source to be registered in Redux store.
  *
- * @param {String} sourceId
+ * @param {string} sourceId
  *                 The id of the source to be waiting for.
  */
 export async function waitForSourceToBeRegisteredInStore(sourceId) {
@@ -317,11 +317,11 @@ function createSourceObject({
  * on the server side. It is associated with a generated source for the related bundle file
  * which itself relates to an actual code that runs in the runtime.
  *
- * @param {String} id
+ * @param {string} id
  *        The ID of the source, computed by source map codebase.
- * @param {String} url
+ * @param {string} url
  *        The URL of the original source file.
- * @param {Object} generatedSource
+ * @param {object} generatedSource
  *        The Source object for the related generated source this original source maps to.
  */
 export function createSourceMapOriginalSource(id, url, generatedSource) {
@@ -340,12 +340,12 @@ export function createSourceMapOriginalSource(id, url, generatedSource) {
  * It is associated with a generated source for the non-pretty-printed file
  * which itself relates to an actual code that runs in the runtime.
  *
- * @param {String} id
+ * @param {string} id
  *        The ID of the source, computed by pretty print.
- * @param {String} url
+ * @param {string} url
  *        The URL of the pretty-printed source file.
  *        This URL doesn't work. It is the URL of the non-pretty-printed file with ":formated" suffix.
- * @param {Object} generatedSource
+ * @param {object} generatedSource
  *        The Source object for the related minimized source that related to this pretty printed source.
  */
 export function createPrettyPrintOriginalSource(id, url, generatedSource) {
@@ -365,7 +365,7 @@ export function createPrettyPrintOriginalSource(id, url, generatedSource) {
  * @param {SOURCE} sourceResource
  *        SOURCE resource coming from the ResourceCommand API.
  *        This represents the `SourceActor` from the server codebase.
- * @param {Object} sourceObject
+ * @param {object} sourceObject
  *        Source object stored in redux, i.e. created via createSourceObject.
  */
 export function createSourceActor(sourceResource, sourceObject) {

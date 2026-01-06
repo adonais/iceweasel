@@ -94,6 +94,7 @@ function ensureButtonInNavbar() {
 
 /**
  * Opens the popup for the profiler.
+ *
  * @param {Document} document
  */
 function openPopup(document) {
@@ -116,6 +117,7 @@ function openPopup(document) {
 /**
  * This function creates the widget definition for the CustomizableUI. It should
  * only be run if the profiler button is enabled.
+ *
  * @param {(isEnabled: boolean) => void} toggleProfilerKeyShortcuts
  * @return {void}
  */

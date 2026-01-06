@@ -6,8 +6,6 @@
 
 #include "MediaDrmRemoteCDMParent.h"
 
-#include <dlfcn.h>
-
 #include <limits>
 
 #include "mozilla/CheckedInt.h"
@@ -516,9 +514,7 @@ mozilla::ipc::IPCResult MediaDrmRemoteCDMParent::RecvCreateSession(
   NS_ConvertUTF8toUTF16 sessionIdStr(
       reinterpret_cast<const char*>(sessionId.ptr), sessionId.length);
   mSessions[sessionIdStr] = {sessionId, std::move(mimeType)};
-  aResolver(std::move(sessionIdStr));
-
-  (void)SendOnSessionKeyMessage(RemoteCDMKeyMessageIPDL(
+  aResolver(RemoteCDMKeyMessageIPDL(
       std::move(sessionIdStr), MediaKeyMessageType::License_request,
       nsTArray<uint8_t>(reinterpret_cast<const uint8_t*>(keyRequest),
                         keyRequestSize)));
@@ -730,7 +726,7 @@ void MediaDrmRemoteCDMParent::HandleEvent(nsString&& aSessionId,
 }
 
 void MediaDrmRemoteCDMParent::HandleExpirationUpdate(nsString&& aSessionId,
-                                                     int aExpiryTimeInMS) {
+                                                     int64_t aExpiryTimeInMS) {
   const auto i = mSessions.find(aSessionId);
   if (i == mSessions.end()) {
     EME_LOG(
@@ -741,8 +737,8 @@ void MediaDrmRemoteCDMParent::HandleExpirationUpdate(nsString&& aSessionId,
   }
 
   EME_LOG("[%p] MediaDrmRemoteCDMParent::HandleExpirationUpdate", this);
-  (void)SendOnSessionKeyExpiration(
-      RemoteCDMKeyExpirationIPDL(std::move(aSessionId), aExpiryTimeInMS));
+  (void)SendOnSessionKeyExpiration(RemoteCDMKeyExpirationIPDL(
+      std::move(aSessionId), static_cast<double>(aExpiryTimeInMS)));
 }
 
 void MediaDrmRemoteCDMParent::HandleKeysChange(
@@ -781,41 +777,72 @@ already_AddRefed<MediaDrmCryptoInfo> MediaDrmRemoteCDMParent::CreateCryptoInfo(
   // Deep copy the plain and encrypted sizes so we can modify them.
   nsTArray<size_t> plainSizes(cryptoObj.mPlainSizes.Length());
   nsTArray<size_t> encryptedSizes(cryptoObj.mEncryptedSizes.Length());
-  uint32_t totalSubSamplesSize = 0;
-  for (const auto& size : cryptoObj.mPlainSizes) {
-    plainSizes.AppendElement(size);
-    totalSubSamplesSize += size;
-  }
-  for (const auto& size : cryptoObj.mEncryptedSizes) {
-    encryptedSizes.AppendElement(size);
-    totalSubSamplesSize += size;
-  }
+  if (numSubSamples > 0) {
+    uint32_t totalSubSamplesSize = 0;
+    for (const auto& size : cryptoObj.mPlainSizes) {
+      plainSizes.AppendElement(size);
+      totalSubSamplesSize += size;
+    }
+    for (const auto& size : cryptoObj.mEncryptedSizes) {
+      encryptedSizes.AppendElement(size);
+      totalSubSamplesSize += size;
+    }
 
-  auto codecSpecificDataSize =
-      CheckedInt<size_t>(aSample->Size()) - totalSubSamplesSize;
-  if (!codecSpecificDataSize.isValid()) {
-    MOZ_ASSERT_UNREACHABLE("totalSubSamplesSize greater than sample size");
-    return nullptr;
-  }
-
-  // Size of codec specific data("CSD") for Android java::sdk::MediaCodec usage
-  // should be included in the 1st plain size if it exists.
-  if (codecSpecificDataSize.value() && !plainSizes.IsEmpty()) {
-    // This shouldn't overflow as the the plain size should be UINT16_MAX at
-    // most, and the CSD should never be that large. Checked int acts like a
-    // diagnostic assert here to help catch if we ever have insane inputs.
-    auto newLeadingPlainSize = codecSpecificDataSize + plainSizes[0];
-    if (!newLeadingPlainSize.isValid()) {
-      MOZ_ASSERT_UNREACHABLE("newLeadingPlainSize overflowed");
+    auto codecSpecificDataSize =
+        CheckedInt<size_t>(aSample->Size()) - totalSubSamplesSize;
+    if (!codecSpecificDataSize.isValid()) {
+      MOZ_ASSERT_UNREACHABLE("totalSubSamplesSize greater than sample size");
       return nullptr;
     }
-    plainSizes[0] = newLeadingPlainSize.value();
+
+    // Size of codec specific data("CSD") for Android java::sdk::MediaCodec
+    // usage should be included in the 1st plain size if it exists.
+    if (codecSpecificDataSize.value() && !plainSizes.IsEmpty()) {
+      // This shouldn't overflow as the the plain size should be UINT16_MAX at
+      // most, and the CSD should never be that large. Checked int acts like a
+      // diagnostic assert here to help catch if we ever have insane inputs.
+      auto newLeadingPlainSize = codecSpecificDataSize + plainSizes[0];
+      if (!newLeadingPlainSize.isValid()) {
+        MOZ_ASSERT_UNREACHABLE("newLeadingPlainSize overflowed");
+        return nullptr;
+      }
+      plainSizes[0] = newLeadingPlainSize.value();
+    }
+  } else {
+    // MediaCodec expects us to provide at least one subsample. Whole-block full
+    // sample encryption does not carry subsample information, so we need to
+    // synthesize it by creating a subsample as big as the sample itself. See
+    // bug 1759936.
+    numSubSamples = 1;
+    plainSizes.AppendElement(0);
+    encryptedSizes.AppendElement(aSample->Size());
+  }
+
+  const CopyableTArray<uint8_t>* srcIV;
+  cryptoinfo_mode_t mode;
+  switch (cryptoObj.mCryptoScheme) {
+    case CryptoScheme::None:
+      mode = AMEDIACODECRYPTOINFO_MODE_CLEAR;
+      srcIV = &cryptoObj.mIV;
+      break;
+    case CryptoScheme::Cenc:
+      mode = AMEDIACODECRYPTOINFO_MODE_AES_CTR;
+      srcIV = &cryptoObj.mIV;
+      break;
+    case CryptoScheme::Cbcs:
+    case CryptoScheme::Cbcs_1_9:
+      mode = AMEDIACODECRYPTOINFO_MODE_AES_CBC;
+      srcIV = &cryptoObj.mConstantIV;
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unhandled CryptoScheme!");
+      return nullptr;
   }
 
   uint8_t key[16] = {};
   uint8_t iv[16] = {};
 
-  if (NS_WARN_IF(cryptoObj.mIV.Length() > sizeof(iv))) {
+  if (NS_WARN_IF(srcIV->Length() > sizeof(iv))) {
     MOZ_ASSERT_UNREACHABLE("IV too big for Android!");
     return nullptr;
   }
@@ -825,29 +852,12 @@ already_AddRefed<MediaDrmCryptoInfo> MediaDrmRemoteCDMParent::CreateCryptoInfo(
     return nullptr;
   }
 
-  if (!cryptoObj.mIV.IsEmpty()) {
-    memcpy(iv, cryptoObj.mIV.Elements(), cryptoObj.mIV.Length());
+  if (!srcIV->IsEmpty()) {
+    memcpy(iv, srcIV->Elements(), srcIV->Length());
   }
 
   if (!cryptoObj.mKeyId.IsEmpty()) {
     memcpy(key, cryptoObj.mKeyId.Elements(), cryptoObj.mKeyId.Length());
-  }
-
-  cryptoinfo_mode_t mode;
-  switch (cryptoObj.mCryptoScheme) {
-    case CryptoScheme::None:
-      mode = AMEDIACODECRYPTOINFO_MODE_CLEAR;
-      break;
-    case CryptoScheme::Cenc:
-      mode = AMEDIACODECRYPTOINFO_MODE_AES_CTR;
-      break;
-    case CryptoScheme::Cbcs:
-    case CryptoScheme::Cbcs_1_9:
-      mode = AMEDIACODECRYPTOINFO_MODE_AES_CBC;
-      break;
-    default:
-      MOZ_ASSERT_UNREACHABLE("Unhandled CryptoScheme!");
-      return nullptr;
   }
 
   AMediaCodecCryptoInfo* cryptoInfo = AMediaCodecCryptoInfo_new(

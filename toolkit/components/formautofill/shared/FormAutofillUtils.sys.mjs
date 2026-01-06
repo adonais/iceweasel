@@ -167,6 +167,13 @@ FormAutofillUtils = {
     "cc-csc": "creditCard",
   },
 
+  // This list includes autocomplete attributes that indicate that the field
+  // is an address or credit-card field, but the field name is not one we
+  // currently support for autofill. In these cases, we ignore the field
+  // name so that our heuristic can still classify the field using a
+  // supported field name.
+  _unsupportedFieldNameInfo: ["address-level4"],
+
   _collators: {},
   _reAlternativeCountryNames: {},
 
@@ -180,6 +187,12 @@ FormAutofillUtils = {
     return this._fieldNameInfo?.[fieldName] == "creditCard";
   },
 
+  // Returns true if the field is one we don't fill handle via the autocomplete
+  // attribute. It should be identified using heuristics.
+  isUnsupportedField(fieldName) {
+    return this._unsupportedFieldNameInfo.includes(fieldName);
+  },
+
   isCCNumber(ccNumber) {
     return ccNumber && lazy.CreditCard.isValidNumber(ccNumber);
   },
@@ -189,6 +202,17 @@ FormAutofillUtils = {
       HTMLInputElement.isInstance(element) ||
       HTMLTextAreaElement.isInstance(element)
     );
+  },
+
+  isValidSection(fieldDetails) {
+    // If one of the fields has the autocomplete reason, the section is valid.
+    if (fieldDetails.some(f => f.reason == "autocomplete")) {
+      return true;
+    }
+
+    // Otherwise, there must be a minimum number of fields.
+    const fields = new Set(fieldDetails.map(f => f.fieldName));
+    return fields.size >= this.AUTOFILL_FIELDS_THRESHOLD;
   },
 
   queryEligibleElements(element, includeIframe = false) {
@@ -835,6 +859,53 @@ FormAutofillUtils = {
       let subKey = subKeys[speculatedSubIndexes.find(i => !!~i)];
       if (subKey) {
         return subKey;
+      }
+    }
+    return null;
+  },
+
+  /**
+   * Attempts to find the full sub-region name from an abbreviated / ISO code,
+   * using the address metadata for the specified country.
+   *
+   * @param   {string} abbreviatedValue A short sub-region code (e.g. "B").
+   * @param   {string} country The country code (e.g. "AR").
+   * @returns {string|null} The full sub-region name (e.g. "Buenos Aires") or null.
+   */
+  getFullSubregionName(abbreviatedValue, country) {
+    if (!abbreviatedValue || !country) {
+      return null;
+    }
+
+    const collators = this.getSearchCollators(country);
+    for (const metadata of this.getCountryAddressDataWithLocales(country)) {
+      const {
+        sub_keys: subKeys,
+        sub_names: subNames,
+        sub_lnames: subLnames,
+        sub_isoids: subIsoids,
+      } = metadata;
+      if (!subKeys) {
+        continue;
+      }
+
+      // Use latin names if available, otherwise use native names.
+      const targetNames = subLnames || subNames || subKeys;
+
+      // Check if the abbreviatedValue matches an ISO ID (e.g. "B") or a key (which may also be an ISO ID).
+      let matchIndex = subKeys.findIndex(key =>
+        this.strCompare(abbreviatedValue, key, collators)
+      );
+
+      if (matchIndex === -1 && subIsoids) {
+        matchIndex = subIsoids.findIndex(isoid =>
+          this.strCompare(abbreviatedValue, isoid, collators)
+        );
+      }
+
+      if (matchIndex !== -1 && targetNames.length > matchIndex) {
+        // Return the full or latin name from the targetNames list at the matching index.
+        return targetNames[matchIndex];
       }
     }
     return null;

@@ -343,6 +343,7 @@ def test_generate_rpm_archive(monkeypatch, does_rpm_package_exist, expectation):
                 "PKG_NAME": "firefox",
                 "PKG_VERSION": "111.0",
                 "PKG_BUILD_NUMBER": 1,
+                "LANGUAGES": ["dummy"],
             },
             arch="x86",
         )
@@ -365,14 +366,17 @@ def test_generate_rpm_archive(monkeypatch, does_rpm_package_exist, expectation):
         )
         assert ("copy", expected_rpm_path, "target.rpm") in copy_call_history
 
-        # Finally, it copies any additional RPM files from the noarch directory.
-        # Since our pathlib.Path.glob returns one dummy file from the noarch dir:
+        # Finally, it copies any langpack RPM files from the noarch directory based on the LANGUAGES build variable.
         expected_dummy_path = mozpath.join(
-            temp_testing_dir_name, "target_dir", "noarch", "langpack.dummy.rpm"
+            temp_testing_dir_name,
+            "target_dir",
+            "noarch",
+            "firefox-l10n-dummy-111.0-1.noarch.rpm",
         )
-        # Look for a call that copies the dummy file to the upload dir:
+        expected_dest = mozpath.join(upload_dir, "langpack-dummy.noarch.rpm")
+        # Look for a call that copies the langpack file to the upload dir:
         found = any(
-            src == expected_dummy_path and dst == upload_dir
+            str(src) == expected_dummy_path and dst == expected_dest
             for _, src, dst in copy_call_history
         )
         assert found, "The dummy langpack RPM file was not copied to the upload_dir."

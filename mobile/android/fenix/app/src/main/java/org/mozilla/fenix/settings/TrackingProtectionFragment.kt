@@ -6,8 +6,10 @@ package org.mozilla.fenix.settings
 
 import android.content.DialogInterface
 import android.os.Bundle
+import android.text.SpannableStringBuilder
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import androidx.core.text.HtmlCompat
 import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
 import androidx.preference.CheckBoxPreference
@@ -81,6 +83,12 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
     internal lateinit var strictAllowListConvenienceTrackingProtection: CheckBoxPreference
 
     @VisibleForTesting
+    internal lateinit var strictAllowListTrackingProtectionSubheader: Preference
+
+    @VisibleForTesting
+    internal lateinit var customAllowListTrackingProtectionSubheader: Preference
+
+    @VisibleForTesting
     lateinit var alertDialog: AlertDialog
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -125,22 +133,6 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
         }
         learnMorePreference.summary = getString(
             R.string.preference_enhanced_tracking_protection_explanation_2,
-            getString(R.string.app_name),
-        )
-
-        val strictAllowListBaseline =
-            requirePreference<Preference>(R.string.pref_key_tracking_protection_strict_allow_list_baseline)
-
-        strictAllowListBaseline.summary = getString(
-            R.string.preference_enhanced_tracking_protection_allow_list_baseline,
-            getString(R.string.app_name),
-        )
-
-        val customAllowListBaseline =
-            requirePreference<Preference>(R.string.pref_key_tracking_protection_custom_allow_list_baseline)
-
-        customAllowListBaseline.summary = getString(
-            R.string.preference_enhanced_tracking_protection_allow_list_baseline,
             getString(R.string.app_name),
         )
 
@@ -195,6 +187,17 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
 
         strictAllowListConvenienceTrackingProtection =
             requirePreference(R.string.pref_key_tracking_protection_strict_allow_list_convenience)
+
+        strictAllowListTrackingProtectionSubheader =
+            requirePreference(R.string.pref_key_tracking_protection_strict_allow_list_subheader)
+
+        val learnMore =
+            getString(R.string.preference_enhanced_tracking_protection_allow_list_learn_more)
+        strictAllowListTrackingProtectionSubheader.summary = getLink(learnMore)
+        strictAllowListTrackingProtectionSubheader.setOnPreferenceClickListener {
+            openSumoArticle()
+            true
+        }
 
         strictAllowListBaselineTrackingProtection.onPreferenceChangeListener = object : SharedPreferenceUpdater() {
             override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
@@ -258,6 +261,17 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
 
         customAllowListConvenienceTrackingProtection =
             requirePreference(R.string.pref_key_tracking_protection_custom_allow_list_convenience)
+
+        customAllowListTrackingProtectionSubheader =
+            requirePreference(R.string.pref_key_tracking_protection_custom_allow_list_subheader)
+
+        val learnMore =
+            getString(R.string.preference_enhanced_tracking_protection_allow_list_learn_more)
+        customAllowListTrackingProtectionSubheader.summary = getLink(learnMore)
+        customAllowListTrackingProtectionSubheader.setOnPreferenceClickListener {
+            openSumoArticle()
+            true
+        }
 
         customCookies.onPreferenceChangeListener = object : SharedPreferenceUpdater() {
             override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
@@ -374,6 +388,7 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
         val isStrictSelected = requireContext().settings().useStrictTrackingProtection
         strictAllowListBaselineTrackingProtection.isVisible = isStrictSelected
         strictAllowListConvenienceTrackingProtection.isVisible = isStrictSelected
+        strictAllowListTrackingProtectionSubheader.isVisible = isStrictSelected
     }
 
     private fun updateCustomOptionsVisibility() {
@@ -389,6 +404,7 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
         customSuspectedFingerprintersSelect.isVisible = isCustomSelected && customSuspectedFingerprinters.isChecked
         customAllowListBaselineTrackingProtection.isVisible = isCustomSelected
         customAllowListConvenienceTrackingProtection.isVisible = isCustomSelected
+        customAllowListTrackingProtectionSubheader.isVisible = isCustomSelected
     }
 
     private fun updateFingerprintingProtection() {
@@ -414,6 +430,24 @@ class TrackingProtectionFragment : PreferenceFragmentCompat() {
                 it.core.engine.settings.fingerprintingProtectionPrivateBrowsing = true
             }
         }
+    }
+
+    private fun getLink(text: String): SpannableStringBuilder {
+        val rawTextWithLink = HtmlCompat.fromHtml(
+            "<a href=\"\">$text</a>",
+            HtmlCompat.FROM_HTML_MODE_COMPACT,
+        )
+        return SpannableStringBuilder(rawTextWithLink)
+    }
+
+    private fun openSumoArticle() {
+        (activity as HomeActivity).openToBrowserAndLoad(
+            searchTermOrURL = SupportUtils.getGenericSumoURLForTopic(
+                SupportUtils.SumoTopic.TRACKING_PROTECTION,
+            ),
+            newTab = true,
+            from = BrowserDirection.FromTrackingProtection,
+        )
     }
 
     /**

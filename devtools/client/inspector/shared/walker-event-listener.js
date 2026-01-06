@@ -11,7 +11,7 @@
 class WalkerEventListener {
   /**
    * @param {Inspector} - inspector
-   * @param {Object} - listenerMap
+   * @param {object} - listenerMap
    *        The structure of listenerMap should be as follows.
    *        {
    *          walkerEventName1: eventHandler1,

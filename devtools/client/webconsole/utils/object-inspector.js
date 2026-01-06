@@ -49,11 +49,11 @@ loader.lazyRequireGetter(
 /**
  * Create and return an ObjectInspector for the given front.
  *
- * @param {Object} grip
+ * @param {object} grip
  *        The object grip to create an ObjectInspector for.
- * @param {Object} serviceContainer
+ * @param {object} serviceContainer
  *        Object containing various utility functions
- * @param {Object} override
+ * @param {object} override
  *        Object containing props that should override the default props passed to
  *        ObjectInspector.
  * @returns {ObjectInspector}

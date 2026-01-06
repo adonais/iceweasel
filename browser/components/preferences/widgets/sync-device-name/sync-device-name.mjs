@@ -71,6 +71,7 @@ class SyncDeviceName extends MozLitElement {
   /**
    * Handles key presses in the device name input.
    * Pressing Enter saves the name, pressing Escape cancels editing.
+   *
    * @param {KeyboardEvent} event
    */
   onDeviceNameKeyDown(event) {

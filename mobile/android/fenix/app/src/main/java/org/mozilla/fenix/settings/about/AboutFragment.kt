@@ -18,7 +18,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.DividerItemDecoration
-import mozilla.components.support.utils.ext.getPackageInfoCompat
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.mozilla.fenix.BrowserDirection
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.GleanMetrics.Events
@@ -155,8 +155,10 @@ class AboutFragment(
 
     private fun populateAboutHeader() {
         val aboutText = try {
-            val packageInfo =
-                requireContext().packageManager.getPackageInfoCompat(requireContext().packageName, 0)
+            val packageInfo = requireContext().packageManagerCompatHelper.getPackageInfoCompat(
+                requireContext().packageName,
+                0,
+            )
             val versionCode = PackageInfoCompat.getLongVersionCode(packageInfo).toString()
             val maybeFenixVcsHash = if (BuildConfig.VCS_HASH.isNotBlank()) ", ${BuildConfig.VCS_HASH}" else ""
             val maybeGecko = getString(R.string.gecko_view_abbreviation)

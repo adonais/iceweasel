@@ -115,8 +115,8 @@ exports.CustomHighlighterActor = class CustomHighligherActor extends Actor {
    * provided CSS selector on.
    *
    * @param {NodeActor} The node to be highlighted
-   * @param {Object} Options for the custom highlighter
-   * @return {Boolean} True, if the highlighter has been successfully shown
+   * @param {object} Options for the custom highlighter
+   * @return {boolean} True, if the highlighter has been successfully shown
    */
   show(node, options) {
     if (!this._highlighter) {

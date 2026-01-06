@@ -4,6 +4,7 @@
 :root {
   --newtab-card-height: 282px;
   --newtab-card-width-medium: 300px;
+  --newtab-card-grid-layout-width: 296px; // Matches widget used in Base.jsx
 }
 
 $primary-blue: var(--color-accent-primary);

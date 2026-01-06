@@ -23,6 +23,7 @@
       --tabpanel-background-color: linear-gradient(45deg, #722291 0%, #45278d 50%, #393473 100%) !important;
     }
   }
+  --dialog-backdrop-color: rgba(28, 27, 34, 0.45);
 }
 
 #navigator-toolbox {
@@ -70,26 +71,6 @@
   position: relative;
   z-index: var(--browser-area-z-index-tabbox);
   margin: 0;
-
-  /* stylelint-disable-next-line media-query-no-invalid */
-  @media -moz-pref("sidebar.revamp") {
-    outline: 0.01px solid var(--chrome-content-separator-color);
-    box-shadow: var(--content-area-shadow);
-
-    /* stylelint-disable-next-line media-query-no-invalid */
-    @media -moz-pref("sidebar.revamp.round-content-area") {
-      :root:not([inDOMFullscreen]) &[sidebar-shown] {
-        overflow: clip;
-        border-start-end-radius: var(--border-radius-medium);
-
-        /* stylelint-disable-next-line media-query-no-invalid */
-        @media -moz-pref("sidebar.position_start") {
-          border-start-start-radius: var(--border-radius-medium);
-          border-start-end-radius: 0;
-        }
-      }
-    }
-  }
 }
 
 /* We set large flex on both containers to allow the devtools toolbox to
@@ -107,6 +88,31 @@
 
   /* .browserContainer only contains the devtools when docked horizontally */
   min-height: 0;
+
+  /* We want to be able to show the frame color behind the clipped radiused corner */
+  background: var(--tabpanel-background-color);
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("sidebar.revamp") {
+    outline: 0.01px solid var(--chrome-content-separator-color);
+    box-shadow: var(--content-area-shadow);
+  }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("sidebar.revamp") and -moz-pref("sidebar.revamp.round-content-area") {
+    overflow: clip;
+
+    :root:not([inDOMFullscreen]) #tabbrowser-tabbox[sidebar-shown] & {
+      /* stylelint-disable-next-line media-query-no-invalid */
+      @media -moz-pref("sidebar.position_start") {
+        border-start-start-radius: var(--border-radius-medium);
+      }
+      /* stylelint-disable-next-line media-query-no-invalid */
+      @media not -moz-pref("sidebar.position_start") {
+        border-start-end-radius: var(--border-radius-medium);
+      }
+    }
+  }
 }
 
 .browserSidebarContainer {
@@ -129,7 +135,6 @@
   appearance: none;
   padding: 0;
   color-scheme: unset;
-  background: var(--tabpanel-background-color);
   display: flex;
 
   &[pendingpaint] {
@@ -161,13 +166,19 @@
       max-width: calc(100% - var(--panel-min-width));
       margin: var(--space-xsmall);
     }
+    /* Ensure any dialogs are clipped in an inactive/not-selected panel. */
+    :root:not([inDOMFullscreen]) & > .split-view-panel:not(.deck-selected) {
+      overflow: clip;
+    }
 
-    .browserStack {
+    .browserContainer {
       border-radius: var(--border-radius-medium);
       overflow: clip;
       outline: var(--border-width) solid var(--border-color);
 
-      .deck-selected > .browserContainer > & {
+      /* The selected panel's dialogs need to sit above the non-selected tab panels. */
+      .deck-selected > & {
+        z-index: 1;
         outline: var(--focus-outline);
       }
     }
@@ -217,6 +228,9 @@ split-view-footer {
 
   padding-block: var(--space-xxsmall);
   padding-inline: var(--space-small) var(--space-xsmall);
+
+  -moz-context-properties: fill;
+  fill: var(--button-icon-fill);
 }
 
 .split-view-icon {
@@ -358,6 +372,7 @@ split-view-footer {
 }
 
 #ask-chat-shortcuts {
+  font: menu;
   max-width: 345px;
 }
 
@@ -461,6 +476,11 @@ split-view-footer {
     /* Make dialogs overlap with upper chrome UI. Not necessary for Spotlight
     dialogs that are intended to be centered above the window or content area. */
     margin-top: -5px;
+
+    /* When the dialog is in a splitview, the offset is a little larger */
+    .deck-selected.split-view-panel & {
+      margin-top: -8px;
+    }
   }
 
   /* Spotlight dialogs are full-size on the content or window area */
@@ -517,9 +537,23 @@ split-view-footer {
   width: 34em;
 }
 
+/* Radius the backdrop so it doesnt occlude the radiused .browserContainer below it */
+:root:not([inDOMFullscreen]) #tabbrowser-tabbox[sidebar-shown] .dialogOverlay[topmost="true"] {
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("sidebar.revamp.round-content-area") {
+    border-start-end-radius: var(--border-radius-medium);
+
+    /* stylelint-disable-next-line media-query-no-invalid */
+    @media -moz-pref("sidebar.position_start") {
+      border-start-start-radius: var(--border-radius-medium);
+      border-start-end-radius: 0;
+    }
+  }
+}
+
 .dialogOverlay[topmost="true"],
 #window-modal-dialog::backdrop {
-  background-color: rgba(28, 27, 34, 0.45);
+  background-color: var(--dialog-backdrop-color);
 }
 
 .dialogOverlay[hideContent="true"][topmost="true"] {

@@ -6,6 +6,7 @@
 
 /**
  * UI reducer
+ *
  * @module reducers/ui
  */
 

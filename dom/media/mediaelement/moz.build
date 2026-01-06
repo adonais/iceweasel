@@ -33,7 +33,6 @@ include("/ipc/chromium/chromium-config.mozbuild")
 LOCAL_INCLUDES += [
     "/dom/base",
     "/dom/media",
-    "/netwerk/base",
     "/third_party/abseil-cpp",
     "/third_party/libwebrtc",
 ]

@@ -7,7 +7,6 @@
 #define mozilla_BasicEvents_h__
 
 #include <stdint.h>
-#include <type_traits>
 
 #include "mozilla/EventForwards.h"
 #include "mozilla/TimeStamp.h"

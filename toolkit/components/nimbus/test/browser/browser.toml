@@ -8,8 +8,8 @@ prefs = [
   "messaging-system.log=all", # Enable all Nimbus logging.
 ]
 skip-if = [
-  "os == 'android'",
   "appname == 'thunderbird'",
+  "os == 'android'",
 ]
 
 ["browser_SharedDataMap.js"]

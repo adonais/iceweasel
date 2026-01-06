@@ -171,10 +171,6 @@ export const INITIAL_STATE = {
     locationSearchString: "",
     suggestedLocations: [],
   },
-  TrendingSearch: {
-    suggestions: [],
-    collapsed: false,
-  },
   // Widgets
   ListsWidget: {
     // value pointing to last selectled list
@@ -1096,17 +1092,6 @@ function Ads(prevState = INITIAL_STATE.Ads, action) {
   }
 }
 
-function TrendingSearch(prevState = INITIAL_STATE.TrendingSearch, action) {
-  switch (action.type) {
-    case at.TRENDING_SEARCH_UPDATE:
-      return { ...prevState, suggestions: action.data };
-    case at.TRENDING_SEARCH_TOGGLE_COLLAPSE:
-      return { ...prevState, collapsed: action.data.collapsed };
-    default:
-      return prevState;
-  }
-}
-
 function TimerWidget(prevState = INITIAL_STATE.TimerWidget, action) {
   // fallback to current timerType in state if not provided in action
   const timerType = action.data?.timerType || prevState.timerType;
@@ -1210,7 +1195,6 @@ export const reducers = {
   Search,
   TimerWidget,
   ListsWidget,
-  TrendingSearch,
   Wallpapers,
   Weather,
 };

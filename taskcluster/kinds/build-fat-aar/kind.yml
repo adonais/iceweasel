@@ -23,7 +23,7 @@ task-defaults:
         artifact_map: taskcluster/gecko_taskgraph/manifests/fennec_geckoview.yml
     index:
         product: mobile
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     use-python: default
     worker:
         docker-image: {in-tree: android-build}
@@ -145,7 +145,7 @@ tasks:
             x86_64: build-android-x86_64-shippable/opt
             armeabi-v7a: build-android-arm-shippable/opt
             arm64-v8a: build-android-aarch64-shippable/opt
-        worker-type: b-linux-xlarge-amd
+        worker-type: b-linux-docker-xlarge-amd
         worker:
             env:
                 PERFHERDER_EXTRA_OPTIONS: android-geckoview-fat-aar-nightly
@@ -182,7 +182,7 @@ tasks:
             x86_64: build-android-x86_64-shippable-lite/opt
             armeabi-v7a: build-android-arm-shippable-lite/opt
             arm64-v8a: build-android-aarch64-shippable-lite/opt
-        worker-type: b-linux-xlarge-amd
+        worker-type: b-linux-docker-xlarge-amd
         worker:
             env:
                 PERFHERDER_EXTRA_OPTIONS: android-geckoview-fat-aar-nightly-lite

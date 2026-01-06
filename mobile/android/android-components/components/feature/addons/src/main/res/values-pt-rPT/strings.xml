@@ -33,7 +33,7 @@
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Aceder aos seus dados noutros domínios</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
   <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">Aceder aos seus dados para sites em %1$d domínios</string>
-  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2" tools:ignore="MissingQuantity">
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
     <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
     <item quantity="one">Aceder aos seus dados para sites em %1$d domínios</item>
     <item quantity="other">Aceder aos seus dados para sites em %1$d domínios</item>
@@ -429,11 +429,11 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">Esta extensão está restrita por violar as políticas da Mozilla e foi desativada. Pode ativá-la, mas pode ser perigoso.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
-  <string name="mozac_feature_addons_status_softblocked_2">Esta extensão é restrita e foi desativada. Pode ativá-lo, mas isto pode ser perigoso.</string>
+  <string name="mozac_feature_addons_status_softblocked_2">Esta extensão está restrita e foi desativada. Pode ativá-la, mas isto pode ser perigoso.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">Esta extensão viola as políticas da Mozilla. A sua utilização pode ser perigosa.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
-  <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Esta extensão é restrita. A sua utilização pode ser perigosa.</string>
+  <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Esta extensão está restrita. A sua utilização pode ser perigosa.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">%1$s não pôde ser verificado como sendo seguro e foi desativado.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

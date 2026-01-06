@@ -69,7 +69,7 @@ impl ExternalImageHandler for ImageGenerator {
         _key: ExternalImageId,
         channel_index: u8,
         _is_composited: bool,
-    ) -> ExternalImage {
+    ) -> ExternalImage<'_> {
         self.generate_image(channel_index as i32);
         ExternalImage {
             uv: TexelRect::new(0.0, 0.0, 1.0, 1.0),

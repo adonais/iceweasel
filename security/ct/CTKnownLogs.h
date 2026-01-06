@@ -14,7 +14,7 @@
 
 #include <stddef.h>
 
-static const PRTime kCTExpirationTime = INT64_C(1770634340000000);
+static const PRTime kCTExpirationTime = INT64_C(1773669196000000);
 
 namespace mozilla::ct {
 
@@ -208,7 +208,7 @@ const CTLogInfo kCTLogList[] = {
      "\x99",
      91},
     {"DigiCert 'Wyvern2027h1'", CTLogState::Admissible, CTLogFormat::RFC6962,
-     1760119200000,  // 2025-10-10T18:00:00Z
+     1766253600000,  // 2025-12-20T18:00:00Z
      2,              // operated by DigiCert
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\x6a\xcb\x71\x62\x3d\x66\x9e\xd1\xae"
@@ -218,7 +218,7 @@ const CTLogInfo kCTLogList[] = {
      "\xee",
      91},
     {"DigiCert 'Wyvern2027h2'", CTLogState::Admissible, CTLogFormat::RFC6962,
-     1760119200000,  // 2025-10-10T18:00:00Z
+     1766253600000,  // 2025-12-20T18:00:00Z
      2,              // operated by DigiCert
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\xb8\xe8\x3c\x85\xc8\x1a\x61\x3f\xcc"
@@ -258,7 +258,7 @@ const CTLogInfo kCTLogList[] = {
      "\xcd",
      91},
     {"DigiCert 'sphinx2027h1'", CTLogState::Admissible, CTLogFormat::RFC6962,
-     1760119200000,  // 2025-10-10T18:00:00Z
+     1766253600000,  // 2025-12-20T18:00:00Z
      2,              // operated by DigiCert
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\xbe\x2a\xc8\xab\x55\xcf\xc2\x0c\x06"
@@ -268,7 +268,7 @@ const CTLogInfo kCTLogList[] = {
      "\x21",
      91},
     {"DigiCert 'sphinx2027h2'", CTLogState::Admissible, CTLogFormat::RFC6962,
-     1760119200000,  // 2025-10-10T18:00:00Z
+     1766253600000,  // 2025-12-20T18:00:00Z
      2,              // operated by DigiCert
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\x50\x27\xb6\xdc\xcf\x3c\xf6\x60\x2c"
@@ -438,7 +438,7 @@ const CTLogInfo kCTLogList[] = {
      "\xc9",
      91},
     {"Let's Encrypt 'Oak2025h2'", CTLogState::Admissible, CTLogFormat::RFC6962,
-     1701000000000,  // 2023-11-26T12:00:00Z
+     1765578600000,  // 2025-12-12T22:30:00Z
      4,              // operated by Let's Encrypt
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\xb5\x76\x30\x07\xad\xc6\xc8\xd2\xe4"
@@ -448,7 +448,7 @@ const CTLogInfo kCTLogList[] = {
      "\xa9",
      91},
     {"Let's Encrypt 'Oak2026h1'", CTLogState::Admissible, CTLogFormat::RFC6962,
-     1730678400000,  // 2024-11-04T00:00:00Z
+     1765578600000,  // 2025-12-12T22:30:00Z
      4,              // operated by Let's Encrypt
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\x99\xd4\x61\x70\x22\xfa\x77\x93\x0d"
@@ -458,7 +458,7 @@ const CTLogInfo kCTLogList[] = {
      "\x49",
      91},
     {"Let's Encrypt 'Oak2026h2'", CTLogState::Admissible, CTLogFormat::RFC6962,
-     1730678400000,  // 2024-11-04T00:00:00Z
+     1765578600000,  // 2025-12-12T22:30:00Z
      4,              // operated by Let's Encrypt
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\x6a\x70\x9d\xb3\x96\xe3\xec\x85\x36"
@@ -617,6 +617,16 @@ const CTLogInfo kCTLogList[] = {
      "\x01\xbb\x4f\xd8\xd3\x8f\xe3\x08\xc8\xb9\xf0\x24\xe9\xfe\xb8\xb1\x8e\x03"
      "\x5a",
      91},
+    {"TrustAsia Luoshu2027", CTLogState::Admissible, CTLogFormat::Tiled,
+     1764700200000,  // 2025-12-02T18:30:00Z
+     5,              // operated by TrustAsia
+     "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
+     "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\xba\x64\x98\xcf\x2e\x9d\x51\x09\x70"
+     "\x4d\xc9\x0f\xcc\xa3\x0a\x02\x93\x11\x8a\x7a\xb1\x1c\x80\x65\x2d\xf9\xab"
+     "\xbf\x1d\x52\x74\xc1\xf5\x45\x30\x02\x8b\x5c\x1b\xd5\x5d\x7c\xb2\xcf\x18"
+     "\x8e\x56\x82\xec\xf7\x21\xd8\xe4\x1a\xf0\xe7\xd1\x7a\xfb\x9b\xe1\x8f\x41"
+     "\x0d",
+     91},
     {"Bogus placeholder log to unbreak misbehaving CT libraries", CTLogState::Retired, CTLogFormat::RFC6962,
      1750489200000,  // 2025-06-21T07:00:00Z
      6,              // operated by Geomys
@@ -688,7 +698,7 @@ const CTLogInfo kCTLogList[] = {
      "\xaa",
      91},
     {"IPng Networks 'Halloumi2025h2'", CTLogState::Admissible, CTLogFormat::Tiled,
-     1759861800000,  // 2025-10-07T18:30:00Z
+     1765996200000,  // 2025-12-17T18:30:00Z
      7,              // operated by IPng Networks
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\xa8\x9c\x52\x9c\x27\x0c\x85\x68\xa4"
@@ -698,7 +708,7 @@ const CTLogInfo kCTLogList[] = {
      "\x01",
      91},
     {"IPng Networks 'Halloumi2026h1'", CTLogState::Admissible, CTLogFormat::Tiled,
-     1759861800000,  // 2025-10-07T18:30:00Z
+     1765996200000,  // 2025-12-17T18:30:00Z
      7,              // operated by IPng Networks
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\xcd\xd7\x27\x1b\x04\x63\x9b\x66\x68"
@@ -718,7 +728,7 @@ const CTLogInfo kCTLogList[] = {
      "\xad",
      91},
     {"IPng Networks 'Halloumi2027h1'", CTLogState::Admissible, CTLogFormat::Tiled,
-     1759861800000,  // 2025-10-07T18:30:00Z
+     1765996200000,  // 2025-12-17T18:30:00Z
      7,              // operated by IPng Networks
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\xc3\x94\x94\x97\x6c\x9f\x77\x94\xc5"
@@ -728,7 +738,7 @@ const CTLogInfo kCTLogList[] = {
      "\x67",
      91},
     {"IPng Networks 'Halloumi2027h2'", CTLogState::Admissible, CTLogFormat::Tiled,
-     1759861800000,  // 2025-10-07T18:30:00Z
+     1765996200000,  // 2025-12-17T18:30:00Z
      7,              // operated by IPng Networks
      "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48"
      "\xce\x3d\x03\x01\x07\x03\x42\x00\x04\xae\x62\x9b\x16\x43\xc6\xed\x07\xd0"

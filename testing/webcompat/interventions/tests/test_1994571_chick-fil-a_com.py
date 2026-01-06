@@ -1,7 +1,7 @@
 import pytest
 
 URL = "https://www.chick-fil-a.com/careers"
-ICONS_CSS = ".classic-callout img"
+ICONS_CSS = ".wp-pattern-multi-column-icon-content figure>img"
 
 
 async def are_icons_stretched(client):
@@ -24,22 +24,7 @@ async def are_icons_stretched(client):
     )
 
 
-@pytest.mark.skip_platforms("android")
-@pytest.mark.asyncio
-@pytest.mark.with_interventions
-async def test_enabled(client):
-    assert not await are_icons_stretched(client)
-
-
-@pytest.mark.skip_platforms("android")
 @pytest.mark.asyncio
 @pytest.mark.without_interventions
-async def test_disabled(client):
-    assert await are_icons_stretched(client)
-
-
-@pytest.mark.only_platforms("android")
-@pytest.mark.asyncio
-@pytest.mark.without_interventions
-async def test_works_on_android(client):
+async def test_regression(client):
     assert not await are_icons_stretched(client)

@@ -51,7 +51,6 @@ add_heuristic_tests(
           ],
         },
         {
-          invalid: true,
           default: {
             reason: "autocomplete",
           },
@@ -104,7 +103,6 @@ add_heuristic_tests(
           ],
         },
         {
-          invalid: true,
           default: {
             reason: "autocomplete",
             contactType: "home",

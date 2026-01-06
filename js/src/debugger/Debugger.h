@@ -394,8 +394,13 @@ class DebuggerWeakMap : private WeakMap<Referent*, Wrapper*, ZoneAllocPolicy> {
  public:
   void traceCrossCompartmentEdges(JSTracer* tracer) {
     for (Enum e(*this); !e.empty(); e.popFront()) {
-      TraceEdge(tracer, &e.front().mutableKey(), "Debugger WeakMap key");
+      // The values are debugger objects which contain a cross-compartment
+      // debuggee pointer, so trace their contents.
       e.front().value()->trace(tracer);
+
+      // Trace the keys, which are cross compartment debuggee pointers.
+      // This can rekey the entry and invalidate |e.front()|.
+      Base::traceKey(tracer, e);
     }
   }
 
@@ -425,6 +430,7 @@ class MOZ_RAII EvalOptions {
   JS::UniqueChars filename_;
   unsigned lineno_ = 1;
   bool hideFromDebugger_ = false;
+  bool bypassCSP_ = false;
   EnvKind kind_;
 
  public:
@@ -433,6 +439,7 @@ class MOZ_RAII EvalOptions {
   const char* filename() const { return filename_.get(); }
   unsigned lineno() const { return lineno_; }
   bool hideFromDebugger() const { return hideFromDebugger_; }
+  bool bypassCSP() const { return bypassCSP_; }
   EnvKind kind() const { return kind_; }
   void setUseInnerBindings() {
     MOZ_ASSERT(kind_ == EvalOptions::EnvKind::GlobalWithExtraOuterBindings);
@@ -441,6 +448,7 @@ class MOZ_RAII EvalOptions {
   [[nodiscard]] bool setFilename(JSContext* cx, const char* filename);
   void setLineno(unsigned lineno) { lineno_ = lineno; }
   void setHideFromDebugger(bool hide) { hideFromDebugger_ = hide; }
+  void setBypassCSP(bool bypass) { bypassCSP_ = bypass; }
 };
 
 /*

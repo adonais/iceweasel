@@ -1261,8 +1261,13 @@ DocGroup* txMozillaXSLTProcessor::GetDocGroup() const {
 /* static */
 already_AddRefed<txMozillaXSLTProcessor> txMozillaXSLTProcessor::Constructor(
     const GlobalObject& aGlobal) {
+  nsISupports* supports = aGlobal.GetAsSupports();
+  nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(supports);
+  if (win && win->GetExtantDoc()) {
+    win->GetExtantDoc()->WarnOnceAbout(DeprecatedOperations::eXSLTDeprecated);
+  }
   RefPtr<txMozillaXSLTProcessor> processor =
-      new txMozillaXSLTProcessor(aGlobal.GetAsSupports());
+      new txMozillaXSLTProcessor(supports);
   return processor.forget();
 }
 

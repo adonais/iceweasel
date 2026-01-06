@@ -6,12 +6,14 @@ apply plugin: 'com.android.application'
 
 android {
     buildToolsVersion = project.ext.buildToolsVersion
-    compileSdkVersion = project.ext.compileSdkVersion
+    compileSdk {
+        version = release(project.ext.compileSdkMajorVersion) { minorApiLevel = project.ext.compileSdkMinorVersion }
+    }
 
     defaultConfig {
         applicationId "org.mozilla.geckoview.example.messaging"
-        targetSdkVersion = project.ext.targetSdkVersion
-        minSdkVersion = project.ext.minSdkVersion
+        minSdk project.ext.minSdkVersion
+        targetSdk project.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
     }

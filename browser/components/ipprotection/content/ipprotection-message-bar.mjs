@@ -3,10 +3,16 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
-import { html } from "chrome://global/content/vendor/lit.all.mjs";
+import { html, ifDefined } from "chrome://global/content/vendor/lit.all.mjs";
 
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://global/content/elements/moz-message-bar.mjs";
+
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
+});
 
 /**
  * A custom element that handles the message bar for IP Protection.
@@ -14,6 +20,8 @@ import "chrome://global/content/elements/moz-message-bar.mjs";
 export default class IPProtectionMessageBarElement extends MozLitElement {
   #MESSAGE_TYPE_MAP = new Map([
     ["generic-error", () => this.genericErrorTemplate()],
+
+    ["info", () => this.infoMessageTemplate()],
   ]);
   DISMISS_EVENT = "ipprotection-message-bar:user-dismissed";
 
@@ -23,12 +31,16 @@ export default class IPProtectionMessageBarElement extends MozLitElement {
 
   static properties = {
     type: { type: String },
+    messageId: { type: String },
+    messageLink: { type: String },
+    messageLinkl10nId: { type: String },
   };
 
   constructor() {
     super();
 
     this.handleDismiss = this.handleDismiss.bind(this);
+    this.handleClickSetingsLink = this.handleClickSettingsLink.bind(this);
   }
 
   connectedCallback() {
@@ -51,9 +63,26 @@ export default class IPProtectionMessageBarElement extends MozLitElement {
     return html`
       <moz-message-bar
         type="error"
-        data-l10n-id="ipprotection-message-generic-error"
+        data-l10n-id=${ifDefined(this.messageId)}
         dismissable
       >
+      </moz-message-bar>
+    `;
+  }
+
+  infoMessageTemplate() {
+    return html`
+      <moz-message-bar type="info" dismissable>
+        <span
+          slot="message"
+          data-l10n-id=${ifDefined(this.messageId)}
+          @click=${this.handleClickSettingsLink}
+        >
+          <a
+            data-l10n-name=${ifDefined(this.messageLinkl10nId)}
+            href=${ifDefined(this.messageLink)}
+          ></a>
+        </span>
       </moz-message-bar>
     `;
   }
@@ -66,6 +95,17 @@ export default class IPProtectionMessageBarElement extends MozLitElement {
         once: true,
       }
     );
+  }
+
+  handleClickSettingsLink(event) {
+    if (event.target.hasAttribute("href")) {
+      event.preventDefault();
+      lazy.URILoadingHelper.openTrustedLinkIn(window, this.messageLink, "tab");
+
+      this.dispatchEvent(
+        new CustomEvent("IPProtection:Close", { bubbles: true, composed: true })
+      );
+    }
   }
 
   render() {

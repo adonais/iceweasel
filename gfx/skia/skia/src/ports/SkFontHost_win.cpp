@@ -373,13 +373,16 @@ sk_sp<SkTypeface> SkCreateTypefaceFromLOGFONT(const LOGFONT& origLF) {
  */
 SkTypeface* SkCreateTypefaceFromDWriteFont(IDWriteFactory* aFactory,
                                            IDWriteFontFace* aFontFace,
+                                           IDWriteFont* aFont,
+                                           IDWriteFontFamily* aFontFamily,
                                            SkFontStyle aStyle,
                                            int aRenderingMode,
                                            float aGamma,
                                            float aContrast,
                                            float aClearTypeLevel)
 {
-  return DWriteFontTypeface::Create(aFactory, aFontFace, aStyle,
+  return DWriteFontTypeface::Create(aFactory, aFontFace, aFont, aFontFamily,
+                                    aStyle,
                                     (DWRITE_RENDERING_MODE)aRenderingMode,
                                     aGamma, aContrast, aClearTypeLevel);
 }

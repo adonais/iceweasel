@@ -7,18 +7,18 @@
 #ifndef mozilla_KeyframeUtils_h
 #define mozilla_KeyframeUtils_h
 
+#include "NonCustomCSSPropertyId.h"
 #include "js/RootingAPI.h"                 // For JS::Handle
 #include "mozilla/KeyframeEffectParams.h"  // For CompositeOperation
-#include "nsCSSPropertyID.h"
-#include "nsTArrayForwardDeclare.h"  // For nsTArray
+#include "nsTArrayForwardDeclare.h"        // For nsTArray
 
 struct JSContext;
 class JSObject;
 
 namespace mozilla {
-struct AnimatedPropertyID;
 struct AnimationProperty;
 class ComputedStyle;
+struct CSSPropertyId;
 
 enum class PseudoStyleType : uint8_t;
 class ErrorResult;
@@ -103,7 +103,7 @@ class KeyframeUtils {
    *                  if the property is animatable or not.
    * @return true if |aProperty| is animatable.
    */
-  static bool IsAnimatableProperty(const AnimatedPropertyID& aProperty);
+  static bool IsAnimatableProperty(const CSSPropertyId& aProperty);
 };
 
 }  // namespace mozilla

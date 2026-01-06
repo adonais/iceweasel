@@ -8,8 +8,10 @@
 
 #include "ScriptLoadHandler.h"  // ScriptLoadHandler
 #include "ScriptLoader.h"       // ScriptLoader
+#include "ScriptTrace.h"        // TRACE_FOR_TEST
 #include "js/experimental/CompileScript.h"  // JS::FrontendContext, JS::NewFrontendContext, JS::DestroyFrontendContext
 #include "mozilla/Maybe.h"              // Maybe, Some, Nothing
+#include "mozilla/TaskController.h"     // TaskController, Task
 #include "mozilla/dom/ContentParent.h"  // dom::ContentParent
 #include "nsIMemoryReporter.h"  // nsIMemoryReporter, MOZ_DEFINE_MALLOC_SIZE_OF, RegisterWeakMemoryReporter, UnregisterWeakMemoryReporter, MOZ_COLLECT_REPORT, KIND_HEAP, UNITS_BYTES
 #include "nsIPrefBranch.h"   // nsIPrefBranch, NS_PREFBRANCH_PREFCHANGE_TOPIC_ID
@@ -22,15 +24,16 @@ namespace mozilla::dom {
 
 ScriptHashKey::ScriptHashKey(
     ScriptLoader* aLoader, const JS::loader::ScriptLoadRequest* aRequest,
+    mozilla::dom::ReferrerPolicy aReferrerPolicy,
     const JS::loader::ScriptFetchOptions* aFetchOptions,
     const nsCOMPtr<nsIURI> aURI)
     : PLDHashEntryHdr(),
+      mURI(aURI),
+      mPartitionPrincipal(aLoader->PartitionedPrincipal()),
+      mLoaderPrincipal(aLoader->LoaderPrincipal()),
       mKind(aRequest->mKind),
       mCORSMode(aFetchOptions->mCORSMode),
-      mIsLinkRelPreload(aRequest->GetScriptLoadContext()->IsPreload()),
-      mURI(aURI),
-      mLoaderPrincipal(aLoader->LoaderPrincipal()),
-      mPartitionPrincipal(aLoader->PartitionedPrincipal()),
+      mReferrerPolicy(aReferrerPolicy),
       mSRIMetadata(aRequest->mIntegrity),
       mNonce(aFetchOptions->mNonce) {
   if (mKind == JS::loader::ScriptKind::eClassic) {
@@ -45,17 +48,14 @@ ScriptHashKey::ScriptHashKey(
 ScriptHashKey::ScriptHashKey(ScriptLoader* aLoader,
                              const JS::loader::ScriptLoadRequest* aRequest,
                              const JS::loader::LoadedScript* aLoadedScript)
-    : ScriptHashKey(aLoader, aRequest, aLoadedScript->GetFetchOptions(),
-                    aLoadedScript->GetURI()) {}
+    : ScriptHashKey(aLoader, aRequest, aLoadedScript->ReferrerPolicy(),
+                    aLoadedScript->GetFetchOptions(), aLoadedScript->GetURI()) {
+}
 
 ScriptHashKey::ScriptHashKey(const ScriptLoadData& aLoadData)
     : ScriptHashKey(aLoadData.CacheKey()) {}
 
 bool ScriptHashKey::KeyEquals(const ScriptHashKey& aKey) const {
-  if (mKind != aKey.mKind) {
-    return false;
-  }
-
   {
     bool eq;
     if (NS_FAILED(mURI->Equals(aKey.mURI, &eq)) || !eq) {
@@ -67,7 +67,23 @@ bool ScriptHashKey::KeyEquals(const ScriptHashKey& aKey) const {
     return false;
   }
 
+  // NOTE: mLoaderPrincipal is only for the SharedSubResourceCache logic,
+  //       not for comparison here.
+
+  if (mKind != aKey.mKind) {
+    return false;
+  }
+
   if (mCORSMode != aKey.mCORSMode) {
+    return false;
+  }
+
+  if (mReferrerPolicy != aKey.mReferrerPolicy) {
+    return false;
+  }
+
+  if (!mSRIMetadata.CanTrustBeDelegatedTo(aKey.mSRIMetadata) ||
+      !aKey.mSRIMetadata.CanTrustBeDelegatedTo(mSRIMetadata)) {
     return false;
   }
 
@@ -80,11 +96,6 @@ bool ScriptHashKey::KeyEquals(const ScriptHashKey& aKey) const {
     if (mHintCharset != aKey.mHintCharset) {
       return false;
     }
-  }
-
-  if (!mSRIMetadata.CanTrustBeDelegatedTo(aKey.mSRIMetadata) ||
-      !aKey.mSRIMetadata.CanTrustBeDelegatedTo(mSRIMetadata)) {
-    return false;
   }
 
   return true;
@@ -137,6 +148,7 @@ SharedScriptCache::CollectReports(nsIHandleReportCallback* aHandleReport,
   return NS_OK;
 }
 
+/* static */
 void SharedScriptCache::Clear(const Maybe<bool>& aChrome,
                               const Maybe<nsCOMPtr<nsIPrincipal>>& aPrincipal,
                               const Maybe<nsCString>& aSchemelessSite,
@@ -154,6 +166,32 @@ void SharedScriptCache::Clear(const Maybe<bool>& aChrome,
   if (sSingleton) {
     sSingleton->ClearInProcess(aChrome, aPrincipal, aSchemelessSite, aPattern,
                                aURL);
+  }
+}
+
+/* static */
+void SharedScriptCache::Invalidate() {
+  using ContentParent = dom::ContentParent;
+
+  if (XRE_IsParentProcess()) {
+    for (auto* cp : ContentParent::AllProcesses(ContentParent::eLive)) {
+      (void)cp->SendInvalidateScriptCache();
+    }
+  }
+
+  if (sSingleton) {
+    sSingleton->InvalidateInProcess();
+  }
+  TRACE_FOR_TEST_0("memorycache:invalidate");
+}
+
+void SharedScriptCache::InvalidateInProcess() {
+  for (auto iter = mComplete.Iter(); !iter.Done(); iter.Next()) {
+    if (!iter.Data().mResource->HasCacheEntryId()) {
+      iter.Remove();
+    } else {
+      iter.Data().mResource->SetDirty();
+    }
   }
 }
 
@@ -221,13 +259,54 @@ bool SharedScriptCache::MaybeScheduleUpdateDiskCache() {
   return true;
 }
 
+class ScriptEncodeAndCompressionTask : public mozilla::Task {
+ public:
+  ScriptEncodeAndCompressionTask()
+      : Task(Kind::OffMainThreadOnly, EventQueuePriority::Idle) {}
+  virtual ~ScriptEncodeAndCompressionTask() = default;
+
+#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
+  bool GetName(nsACString& aName) override {
+    aName.AssignLiteral("ScriptEncodeAndCompressionTask");
+    return true;
+  }
+#endif
+
+  TaskResult Run() override {
+    SharedScriptCache::Get()->EncodeAndCompress();
+    return TaskResult::Complete;
+  }
+};
+
+class ScriptSaveTask : public mozilla::Task {
+ public:
+  ScriptSaveTask() : Task(Kind::MainThreadOnly, EventQueuePriority::Idle) {}
+  virtual ~ScriptSaveTask() = default;
+
+#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
+  bool GetName(nsACString& aName) override {
+    aName.AssignLiteral("ScriptSaveTask");
+    return true;
+  }
+#endif
+
+  TaskResult Run() override {
+    SharedScriptCache::Get()->SaveToDiskCache();
+    return TaskResult::Complete;
+  }
+};
+
 void SharedScriptCache::UpdateDiskCache() {
   auto strategy = ScriptLoader::GetDiskCacheStrategy();
   if (strategy.mIsDisabled) {
     return;
   }
 
-  JS::FrontendContext* fc = nullptr;
+  mozilla::MutexAutoLock lock(mEncodeMutex);
+
+  if (!mEncodeItems.empty()) {
+    return;
+  }
 
   for (auto iter = mComplete.Iter(); !iter.Done(); iter.Next()) {
     JS::loader::LoadedScript* loadedScript = iter.Data().mResource;
@@ -235,24 +314,69 @@ void SharedScriptCache::UpdateDiskCache() {
       continue;
     }
 
-    if (!fc) {
-      // Lazily create the context only when there's at least one script
-      // that needs to be saved.
-      fc = JS::NewFrontendContext();
-      if (!fc) {
-        return;
-      }
+    if (!mEncodeItems.emplaceBack(loadedScript->GetStencil(),
+                                  std::move(loadedScript->SRI()),
+                                  loadedScript)) {
+      continue;
+    }
+  }
+
+  if (mEncodeItems.empty()) {
+    return;
+  }
+
+  RefPtr<ScriptEncodeAndCompressionTask> encodeTask =
+      new ScriptEncodeAndCompressionTask();
+  RefPtr<ScriptSaveTask> saveTask = new ScriptSaveTask();
+  saveTask->AddDependency(encodeTask);
+
+  TaskController::Get()->AddTask(encodeTask.forget());
+  TaskController::Get()->AddTask(saveTask.forget());
+}
+
+void SharedScriptCache::EncodeAndCompress() {
+  JS::FrontendContext* fc = JS::NewFrontendContext();
+  if (!fc) {
+    return;
+  }
+
+  mozilla::MutexAutoLock lock(mEncodeMutex);
+
+  for (auto& item : mEncodeItems) {
+    if (!ScriptLoader::EncodeAndCompress(fc, item.mLoadedScript, item.mStencil,
+                                         item.mSRI, item.mCompressed)) {
+      item.mCompressed.clear();
+    }
+  }
+
+  JS::DestroyFrontendContext(fc);
+}
+
+void SharedScriptCache::SaveToDiskCache() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  mozilla::MutexAutoLock lock(mEncodeMutex);
+
+  for (const auto& item : mEncodeItems) {
+    if (item.mCompressed.empty()) {
+      item.mLoadedScript->DropDiskCacheReference();
+      item.mLoadedScript->DropSRIOrSRIAndSerializedStencil();
+      TRACE_FOR_TEST(item.mLoadedScript, "diskcache:failed");
+      continue;
     }
 
-    ScriptLoader::EncodeBytecodeAndSave(fc, loadedScript);
+    if (!ScriptLoader::SaveToDiskCache(item.mLoadedScript, item.mCompressed)) {
+      item.mLoadedScript->DropDiskCacheReference();
+      item.mLoadedScript->DropSRIOrSRIAndSerializedStencil();
+      TRACE_FOR_TEST(item.mLoadedScript, "diskcache:failed");
+    }
 
-    loadedScript->DropDiskCacheReference();
-    loadedScript->DropBytecode();
+    item.mLoadedScript->DropDiskCacheReference();
+    item.mLoadedScript->DropSRIOrSRIAndSerializedStencil();
+    TRACE_FOR_TEST(item.mLoadedScript, "diskcache:saved");
   }
 
-  if (fc) {
-    JS::DestroyFrontendContext(fc);
-  }
+  mEncodeItems.clear();
 }
 
 }  // namespace mozilla::dom

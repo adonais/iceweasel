@@ -820,22 +820,26 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
         Register scratch1 = WasmTableCallScratchReg0;
         Register scratch2 = WasmTableCallScratchReg1;
 
-        // Check if this function's type is exactly the expected function type
+        // Load the STV of this callee's function type
         masm.loadPtr(
             Address(InstanceReg,
                     Instance::offsetInData(
                         callIndirectId.instanceDataOffset() +
                         offsetof(wasm::TypeDefInstanceData, superTypeVector))),
             scratch1);
-        masm.branchPtr(Assembler::Condition::Equal, WasmTableCallSigReg,
-                       scratch1, &functionBody);
 
-        // Otherwise, we need to see if this function's type is a sub type of
-        // the expected function type. This requires us to check if the
-        // expected's type is in the super type vector of this function's type.
-        //
-        // We can skip this if our function type has no super types.
+        // Emit a longer check when the callee function type has a super type,
+        // as the caller may be using one of the super type's of this callee.
         if (callIndirectId.hasSuperType()) {
+          // Check if this function's type is exactly the expected function type
+          masm.branchPtr(Assembler::Condition::Equal, WasmTableCallSigReg,
+                         scratch1, &functionBody);
+
+          // Otherwise, we need to see if this function's type is a sub type of
+          // the expected function type. This requires us to check if the
+          // expected's type is in the super type vector of this function's
+          // type.
+
           // Check if the expected function type was an immediate, not a
           // type definition. Because we only allow the immediate form for
           // final types without super types, this implies that we have a
@@ -854,16 +858,34 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
           // Perform the check
           masm.branchWasmSTVIsSubtypeDynamicDepth(scratch1, WasmTableCallSigReg,
                                                   subTypingDepth, scratch2,
-                                                  &functionBody, true);
+                                                  &fail, false);
+        } else {
+          // This callee function type has no super types, there is only one
+          // possible type we should be called with. Check for it.
+          masm.branchPtr(Assembler::Condition::NotEqual, WasmTableCallSigReg,
+                         scratch1, &fail);
         }
+        masm.jump(&functionBody);
 
+        // Put the trap behind a jump so that we play nice with static code
+        // prediction. We can't move this out of the prologue or it will mess
+        // up wasm::StartUnwinding, which uses the PC to determine if the frame
+        // has been constructed or not.
         masm.bind(&fail);
         masm.wasmTrap(Trap::IndirectCallBadSig, TrapSiteDesc());
         break;
       }
       case CallIndirectIdKind::Immediate: {
-        masm.branch32(Assembler::Condition::Equal, WasmTableCallSigReg,
-                      Imm32(callIndirectId.immediate()), &functionBody);
+        Label fail;
+        masm.branch32(Assembler::Condition::NotEqual, WasmTableCallSigReg,
+                      Imm32(callIndirectId.immediate()), &fail);
+        masm.jump(&functionBody);
+
+        // Put the trap behind a jump so that we play nice with static code
+        // prediction. We can't move this out of the prologue or it will mess
+        // up wasm::StartUnwinding, which uses the PC to determine if the frame
+        // has been constructed or not.
+        masm.bind(&fail);
         masm.wasmTrap(Trap::IndirectCallBadSig, TrapSiteDesc());
         break;
       }
@@ -978,15 +1000,18 @@ void wasm::GenerateJitExitPrologue(MacroAssembler& masm,
   {
 #  if defined(JS_CODEGEN_ARM64)
     AutoForbidPoolsAndNops afp(&masm,
-                               /* number of instructions in scope = */ 2);
+                               /* number of instructions in scope = */ 3);
 #  endif
     offsets->begin = masm.currentOffset();
     Label fallback;
     masm.bind(&fallback, BufferOffset(fallbackOffset));
 
     const Register scratch = ABINonArgReg0;
-    masm.load32(Address(InstanceReg, Instance::offsetOfOnSuspendableStack()),
-                scratch);
+    masm.loadPtr(Address(InstanceReg, Instance::offsetOfCx()), scratch);
+    masm.load32(
+        Address(scratch, JSContext::offsetOfWasm() +
+                             wasm::Context::offsetOfOnSuspendableStack()),
+        scratch);
     masm.branchTest32(Assembler::NonZero, scratch, scratch, &fallback);
   }
 

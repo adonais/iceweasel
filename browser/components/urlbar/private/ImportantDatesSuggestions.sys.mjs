@@ -207,8 +207,6 @@ export class ImportantDatesSuggestions extends SuggestProvider {
     } else {
       descriptionL10n = {
         ...this.#formatDateCountdown(eventDateOrRange, payload.name),
-        cacheable: true,
-        excludeArgsFromCacheKey: true,
       };
     }
 

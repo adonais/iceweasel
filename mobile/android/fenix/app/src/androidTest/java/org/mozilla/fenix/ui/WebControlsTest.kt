@@ -59,14 +59,10 @@ class WebControlsTest : TestSetup() {
             clickPageObject(itemWithResId("submitDate"))
             verifyNoDateIsSelected()
             clickPageObject(itemWithResId("calendar"))
-            clickPageObject(itemWithDescription("$currentDay $currentMonth $currentYear"))
-            clickPageObject(itemContainingText("OK"))
+            clickPageObject(itemWithDescription("$currentMonth $currentDay"))
+            clickPageObject(itemContainingText("Set"))
             clickPageObject(itemWithResId("submitDate"))
             verifySelectedDate()
-            clickPageObject(itemWithResId("calendar"))
-            clickPageObject(itemContainingText("CLEAR"))
-            clickPageObject(itemWithResId("submitDate"))
-            verifyNoDateIsSelected()
         }
     }
 
@@ -78,7 +74,7 @@ class WebControlsTest : TestSetup() {
         navigationToolbar {
         }.enterURLAndEnterToBrowser(htmlControlsPage.url) {
             clickPageObject(itemWithResId("clock"))
-            clickPageObject(itemContainingText("CANCEL"))
+            clickPageObject(itemContainingText("Cancel"))
             clickPageObject(itemWithResId("submitTime"))
             verifyNoTimeIsSelected(hour, minute)
             clickPageObject(itemWithResId("clock"))
@@ -86,10 +82,6 @@ class WebControlsTest : TestSetup() {
             clickPageObject(itemContainingText("OK"))
             clickPageObject(itemWithResId("submitTime"))
             verifySelectedTime(hour, minute)
-            clickPageObject(itemWithResId("clock"))
-            clickPageObject(itemContainingText("CLEAR"))
-            clickPageObject(itemWithResId("submitTime"))
-            verifyNoTimeIsSelected(hour, minute)
         }
     }
 

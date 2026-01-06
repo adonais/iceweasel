@@ -18,15 +18,13 @@ import android.widget.TextView
 import androidx.annotation.LayoutRes
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.ItemTouchHelper.SimpleCallback
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.Dispatchers.Main
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.components.browser.domains.CustomDomains
@@ -40,17 +38,13 @@ import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.state.Screen
 import org.mozilla.focus.utils.ViewUtils
 import java.util.Collections
-import kotlin.coroutines.CoroutineContext
 
 typealias DomainFormatter = (String) -> String
 
 /**
  * Fragment showing settings UI listing all custom autocomplete domains entered by the user.
  */
-open class AutocompleteListFragment : BaseSettingsLikeFragment(), CoroutineScope {
-    private var job = Job()
-    override val coroutineContext: CoroutineContext
-        get() = job + Main
+open class AutocompleteListFragment : BaseSettingsLikeFragment() {
     private var _binding: FragmentAutocompleteCustomdomainsBinding? = null
     protected val binding get() = _binding!!
 
@@ -67,7 +61,9 @@ open class AutocompleteListFragment : BaseSettingsLikeFragment(), CoroutineScope
                 val from = viewHolder.bindingAdapterPosition
                 val to = target.bindingAdapterPosition
 
-                (recyclerView.adapter as DomainListAdapter).move(from, to)
+                viewLifecycleOwner.lifecycleScope.launch {
+                    (recyclerView.adapter as DomainListAdapter).move(requireContext(), from, to)
+                }
 
                 return true
             }
@@ -146,19 +142,16 @@ open class AutocompleteListFragment : BaseSettingsLikeFragment(), CoroutineScope
     override fun onResume() {
         super.onResume()
 
-        if (job.isCancelled) {
-            job = Job()
-        }
-
         showToolbar(getString(R.string.preference_autocomplete_subitem_manage_sites))
 
-        (binding.domainList.adapter as DomainListAdapter).refresh(requireActivity()) {
-            activity?.invalidateOptionsMenu()
+        viewLifecycleOwner.lifecycleScope.launch {
+            (binding.domainList.adapter as DomainListAdapter).refresh(requireActivity()) {
+                activity?.invalidateOptionsMenu()
+            }
         }
     }
 
     override fun onPause() {
-        job.cancel()
         super.onPause()
     }
 
@@ -200,20 +193,22 @@ open class AutocompleteListFragment : BaseSettingsLikeFragment(), CoroutineScope
         private val domains: MutableList<String> = mutableListOf()
         private val selectedDomains: MutableList<String> = mutableListOf()
 
-        fun refresh(context: Context, body: (() -> Unit)? = null) {
-            launch(Main) {
-                val updatedDomains =
-                    withContext(Dispatchers.Default) {
-                        CustomDomains.load(context)
-                    }
+        internal suspend fun refresh(
+            context: Context,
+            ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+            body: (() -> Unit)? = null,
+        ) {
+            val updatedDomains =
+                withContext(ioDispatcher) {
+                    CustomDomains.load(context)
+                }
 
-                domains.clear()
-                domains.addAll(updatedDomains)
+            domains.clear()
+            domains.addAll(updatedDomains)
 
-                notifyDataSetChanged()
+            notifyDataSetChanged()
 
-                body?.invoke()
-            }
+            body?.invoke()
         }
 
         override fun getItemViewType(position: Int) =
@@ -256,14 +251,19 @@ open class AutocompleteListFragment : BaseSettingsLikeFragment(), CoroutineScope
             }
         }
 
-        fun selection(): List<String> = selectedDomains
+        internal fun selection(): List<String> = selectedDomains
 
-        fun move(from: Int, to: Int) {
+        internal suspend fun move(
+            context: Context,
+            from: Int,
+            to: Int,
+            ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+        ) {
             Collections.swap(domains, from, to)
             notifyItemMoved(from, to)
 
-            launch(IO) {
-                CustomDomains.save(activity!!.applicationContext, domains)
+            withContext(ioDispatcher) {
+                CustomDomains.save(context, domains)
                 Autocomplete.listOrderChanged.add()
             }
         }

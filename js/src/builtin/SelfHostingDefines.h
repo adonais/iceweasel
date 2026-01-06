@@ -20,6 +20,17 @@
 #define FUN_APPLY(FUN, RECEIVER, ARGS) \
   callFunction(std_Function_apply, FUN, RECEIVER, ARGS)
 
+// A "Record" is an internal type used in the ECMAScript spec to define a struct
+// made up of key / values. It is never exposed to user script, but we use a
+// simple Object (with null prototype) as a convenient implementation.
+#define NEW_RECORD() std_Object_create(null)
+
+/* Spec: ECMAScript Language Specification, 5.1 edition, 9.2 and 11.4.9 */
+#define TO_BOOLEAN(v) !!v
+
+/* Spec: ECMAScript Language Specification, 5.1 edition, 9.3 and 11.4.6 */
+#define TO_NUMBER(v) +v
+
 // NB: keep this in sync with the copy in vm/ArgumentsObject.h.
 #define MAX_ARGS_LENGTH (500 * 1000)
 
@@ -75,6 +86,15 @@
 #define ARRAY_ITERATOR_SLOT_ITEM_KIND 2
 // Item kind for Map/Set iterators.
 #define MAP_SET_ITERATOR_SLOT_ITEM_KIND 1
+
+/* Spec: https://tc39.es/ecma262/#sec-createarrayiterator */
+#define RETURN_ARRAY_ITERATOR(obj, kind)                                 \
+  var iteratedObject = ToObject(obj);                                    \
+  var iterator = NewArrayIterator();                                     \
+  UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_TARGET, iteratedObject); \
+  UnsafeSetReservedSlot(iterator, ITERATOR_SLOT_NEXT_INDEX, 0);          \
+  UnsafeSetReservedSlot(iterator, ARRAY_ITERATOR_SLOT_ITEM_KIND, kind);  \
+  return iterator
 
 #define ITEM_KIND_KEY 0
 #define ITEM_KIND_VALUE 1

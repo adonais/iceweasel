@@ -79,7 +79,6 @@
 #include "nsTableWrapperFrame.h"
 #include "nsTextFrame.h"
 #include "nsThreadUtils.h"
-#include "nsViewManager.h"
 
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
@@ -1113,8 +1112,9 @@ static void UserSelectRangesToAdd(nsRange* aItem,
   // We cannot directly call IsEditorSelection() because we may be in an
   // inconsistent state during Collapse() (we're cleared already but we haven't
   // got a new focus node yet).
-  if (IsEditorNode(aItem->GetStartContainer()) &&
-      IsEditorNode(aItem->GetEndContainer())) {
+  if (!StaticPrefs::dom_selection_exclude_non_selectable_nodes() ||
+      (IsEditorNode(aItem->GetStartContainer()) &&
+       IsEditorNode(aItem->GetEndContainer()))) {
     // Don't mess with the selection ranges for editing, editor doesn't really
     // deal well with multi-range selections.
     aRangesToAdd.AppendElement(aItem);
@@ -1293,7 +1293,6 @@ nsresult Selection::StyledRanges::AddRangeAndIgnoreOverlaps(
   MOZ_ASSERT(mSelection.mSelectionType == SelectionType::eHighlight);
   if (aRange->IsStaticRange() && !aRange->AsStaticRange()->IsValid()) {
     mInvalidStaticRanges.AppendElement(StyledRange(aRange));
-    aRange->RegisterSelection(MOZ_KnownLive(mSelection));
     return NS_OK;
   }
 
@@ -1644,6 +1643,9 @@ void Selection::StyledRanges::ReorderRangesIfNecessary() {
       MOZ_ASSERT(iter->mRange->IsStaticRange());
       if (iter->mRange->AsStaticRange()->IsValid()) {
         mRanges.AppendElement(*iter);
+        if (!iter->mRange->IsInSelection(mSelection)) {
+          iter->mRange->RegisterSelection(mSelection);
+        }
         iter = mInvalidStaticRanges.RemoveElementAt(iter);
       } else {
         ++iter;
@@ -2114,8 +2116,7 @@ void Selection::SelectFramesOfFlattenedTreeOfContent(nsIContent* aContent,
 
 UniquePtr<SelectionDetails> Selection::LookUpSelection(
     nsIContent* aContent, uint32_t aContentOffset, uint32_t aContentLength,
-    UniquePtr<SelectionDetails> aDetailsHead, SelectionType aSelectionType,
-    bool aSlowCheck) {
+    UniquePtr<SelectionDetails> aDetailsHead, SelectionType aSelectionType) {
   if (!aContent) {
     return aDetailsHead;
   }

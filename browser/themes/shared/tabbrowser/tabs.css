@@ -131,10 +131,13 @@
     min-height: var(--tabstrip-min-height);
 
     --tab-min-width: 76px;
+    --tab-min-width-extra-icons: 0px;
+    --tab-min-width-uidensity: 0px;
     --tab-max-width: 225px;
-    :root[uidensity="touch"] & .tabbrowser-tab[fadein]:not([pinned]) {
-      /* Touch mode needs additional space for the close button. */
-      min-width: max(var(--tab-min-width-pref, var(--tab-min-width)), 86px);
+
+    /* Touch mode needs additional space for the close button. */
+    :root[uidensity="touch"] & {
+      --tab-min-width-uidensity: 10px;
     }
 
     /* Make it easier to drag tabs by expanding the drag area downwards. */
@@ -205,13 +208,28 @@
   /* Needed to avoid clipping the tab-background shadow, which has a 4px blur. */
   overflow-clip-margin: var(--tab-overflow-clip-margin);
 
-  &:not([pinned]) {
+  #tabbrowser-tabs[orient="horizontal"] &:not([pinned]) {
     flex: 100 100;
     max-width: var(--tab-max-width);
     transition: var(--tab-width-transition);
 
-    #tabbrowser-tabs[orient="horizontal"] &[fadein] {
-      min-width: var(--tab-min-width-pref, var(--tab-min-width));
+    &:not([fadein]) {
+      max-width: 0.1px;
+      min-width: 0.1px;
+      visibility: hidden;
+    }
+
+    &[fadein] {
+      min-width: calc(var(--tab-min-width-pref, var(--tab-min-width)) + var(--tab-min-width-extra-icons) + var(--tab-min-width-uidensity));
+      &:is([muted], [soundplaying], [activemedia-blocked]):not([tab-note]) {
+        --tab-min-width-extra-icons: 24px;
+      }
+      &[tab-note]:not([muted], [soundplaying], [activemedia-blocked]) {
+        --tab-min-width-extra-icons: 24px;
+      }
+      &[tab-note]:is([muted], [soundplaying], [activemedia-blocked]) {
+        --tab-min-width-extra-icons: 48px;
+      }
     }
   }
 
@@ -230,21 +248,15 @@
     }
   }
 
-  &:not([pinned], [fadein]) {
-    max-width: 0.1px;
-    min-width: 0.1px;
-    visibility: hidden;
-  }
-
   #tabbrowser-tabs[movingtab] & {
     position: relative;
-  }
 
-  @media (prefers-reduced-motion: no-preference) {
-    #tabbrowser-tabs[movingtab] :not(tab-group:active) > &[fadein]:not(:active, [multiselected]),
-    &[multiselected-move-together],
-    &[tabdrop-samewindow] {
-      transition: var(--tab-dragover-transition);
+    @media (prefers-reduced-motion: no-preference) {
+      :not(tab-group:active) > &[fadein]:not(:active, [multiselected]),
+      &[multiselected-move-together],
+      &[tabdrop-samewindow] {
+        transition: var(--tab-dragover-transition);
+      }
     }
   }
 
@@ -268,10 +280,6 @@
     removed from root such as when toggling the sidebar to expand with the toolbar button. */
     &:is([muted], [soundplaying], [activemedia-blocked]) {
       --tab-icon-end-margin: 2px;
-
-      #tabbrowser-tabs[orient="horizontal"] &[fadein]:not([pinned]) {
-        min-width: max(var(--tab-min-width-pref, var(--tab-min-width)), 100px);
-      }
     }
   }
 }
@@ -321,13 +329,9 @@
     }
 
     &[bursting]::before {
-      background-image: url("chrome://browser/skin/tabbrowser/loading-burst.svg");
-      background-position: center center;
-      background-size: 100% auto;
-      background-repeat: no-repeat;
+      background-color: var(--tab-loading-fill);
+      clip-path: circle(closest-side);
       animation: tab-burst-animation 375ms cubic-bezier(0, 0, 0.58, 1);
-      -moz-context-properties: fill;
-      fill: var(--tab-loading-fill);
     }
 
     &[bursting][notselectedsinceload]::before {
@@ -558,7 +562,8 @@
 }
 
 .tab-sharing-icon-overlay,
-.tab-icon-overlay {
+.tab-icon-overlay,
+.tab-note-icon-overlay {
   display: none;
 }
 
@@ -744,6 +749,72 @@
   }
 }
 
+/*
+ * Tab note icon that overlays the favicon for pinned tabs and the collapsed
+ * vertical tab strip. The horizontal tab strip and expanded vertical tab strip
+ * get a separate, more spacious treatment using the `.tab-notes-icon` image.
+ * Note: This is intended to display instead of the `.tab-icon-overlay`. This
+ * is defined separately from `.tab-icon-overlay` since the tab notes icon has
+ * fewer features (e.g. no icon interactivity) and
+ */
+.tab-note-icon-overlay {
+  position: relative;
+  padding: 2px;
+  top: -7px;
+  inset-inline-end: -7px;
+  z-index: 1; /* Overlay tab title */
+  list-style-image: url("chrome://global/skin/icons/tab-notes-12.svg");
+
+  background-color: var(--lwt-accent-color);
+  background-image: linear-gradient(transparent), linear-gradient(var(--toolbox-bgcolor));
+  -moz-context-properties: fill;
+  fill: var(--icon-color);
+  color-scheme: var(--tab-selected-color-scheme);
+  border-radius: var(--border-radius-circle);
+
+  .browser-toolbox-background:-moz-window-inactive .tabbrowser-tab:not([selected]) & {
+    background-image: linear-gradient(transparent), linear-gradient(var(--toolbox-bgcolor-inactive));
+  }
+  .tabbrowser-tab[selected] & {
+    background-image: linear-gradient(transparent), linear-gradient(var(--tab-selected-bgcolor)), linear-gradient(var(--toolbox-bgcolor));
+  }
+
+  .browser-toolbox-background:-moz-window-inactive .tabbrowser-tab[selected] & {
+    background-image: linear-gradient(transparent), linear-gradient(var(--tab-selected-bgcolor)), linear-gradient(var(--toolbox-bgcolor-inactive));
+  }
+
+  #tabbrowser-tabs[orient="vertical"] & {
+    top: 7px;
+  }
+
+  #tabbrowser-tabs[orient="vertical"]:not([expanded]) .tabbrowser-tab[tab-note]:not([crashed], [soundplaying], [muted], [activemedia-blocked]) &,
+  .tabbrowser-tab[pinned][tab-note]:not([crashed], [soundplaying], [muted], [activemedia-blocked]) & {
+    display: revert;
+  }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media -moz-pref("sidebar.visibility", "expand-on-hover") {
+    /* We need these rules to apply at all times when the sidebar.visibility
+    pref is set to "expand-on-hover" as opposed to when the "sidebar-expand-on-hover" attribute
+    has been added to root. There are certain scenarios when that attribute is temporarily
+    removed from root such as when toggling the sidebar to expand with the toolbar button. */
+    #tabbrowser-tabs[orient="vertical"] .tabbrowser-tab[tab-note]:not([crashed], [soundplaying], [muted], [activemedia-blocked]) & {
+      display: revert;
+    }
+  }
+
+  /* stylelint-disable-next-line media-query-no-invalid */
+  @media not -moz-pref("sidebar.visibility", "expand-on-hover") {
+    /* We need these rules to apply at all times when the sidebar.visibility
+    pref is not set to "expand-on-hover" as opposed to when the "sidebar-expand-on-hover" attribute
+    has not been added to root. There are certain scenarios when that attribute is temporarily
+    removed from root such as when toggling the sidebar to expand with the toolbar button. */
+    #tabbrowser-tabs[orient="vertical"]:not([expanded]) .tabbrowser-tab[tab-note]:not([crashed], [soundplaying], [muted], [activemedia-blocked]) & {
+      display: revert;
+    }
+  }
+}
+
 .tab-audio-button {
   display: none;
   margin-inline-end: var(--tab-icon-end-margin);
@@ -836,7 +907,7 @@
  * the button has a visible outline shown */
 @media not (forced-colors) {
   #tabbrowser-tabs[orient="horizontal"] {
-    .tabbrowser-tab:not([labelendaligned], :hover) > .tab-stack > .tab-content > .tab-close-button {
+    .tabbrowser-tab:not([labelendaligned], [tab-note], :hover) > .tab-stack > .tab-content > .tab-close-button {
       padding-inline-start: 0;
       width: 18px;
     }
@@ -1214,6 +1285,10 @@ tab-group > tab-split-view-wrapper {
 
   &[last-tab-or-split-view] .tabbrowser-tab:last-child .tab-group-line {
     inset-inline-end: calc(var(--tab-border-radius) / 2);
+  }
+
+  &:has(tab:is([muted], [soundplaying], [activemedia-blocked])) {
+    min-width: 200px;
   }
 
   tab-group[collapsed] &:not([hasactivetab]) {
@@ -1778,6 +1853,37 @@ tab-group {
 @media not (prefers-contrast) {
   #tabGroupEditor_deleteGroup {
     color: var(--text-color-error);
+  }
+}
+
+/* Tab Notes */
+.tab-note-editor-panel {
+  --panel-width: 300px;
+  --arrowpanel-header-min-height: auto;
+  padding-inline: var(--space-xsmall);
+  padding-block: 0;
+  font: menu;
+
+  .panel-header {
+    padding-block-start: 0;
+
+    & > h1 {
+      margin: var(--space-small);
+    }
+  }
+
+  toolbarseparator {
+    padding-inline: 0;
+  }
+
+  .panel-body {
+    padding-block: var(--space-medium);
+  }
+
+  #tab-note-text {
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--space-medium);
   }
 }
 
@@ -2441,6 +2547,49 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
   }
 }
 
+/*
+ * Tab note icon that displays inline on unpinned tabs in the horizontal tab
+ * strip and the expanded vertical tab strip. Pinned tabs and the collapsed
+ * vertical tab strip get a separate space-constrained treatment using the
+ * `.tab-notes-icon-overlay` image.
+ */
+.tab-note-icon {
+  display: none;
+  box-sizing: border-box;
+
+  width: calc(var(--icon-size) + 8px);
+  height: calc(var(--icon-size) + 8px);
+  padding: 4px;
+  margin-inline-end: calc(var(--tab-inline-padding) / -2);
+
+  list-style-image: url("chrome://global/skin/icons/tab-notes.svg");
+  -moz-context-properties: fill;
+  fill: var(--icon-color);
+
+  #tabbrowser-tabs[orient="vertical"][expanded] & {
+    /*
+     * Keep the tab note icon out of the way of the close button, even when
+     * the close button is not showing because the tab is not being hovered.
+     */
+    .tabbrowser-tab:not(:hover) & {
+      margin-inline-end: calc(var(--icon-size) + 8px - var(--tab-close-button-padding));
+    }
+    .tabbrowser-tab:is([visuallyselected], :hover) & {
+      margin-inline-end: calc(var(--tab-close-button-padding) / -2);
+    }
+  }
+}
+
+/* stylelint-disable-next-line media-query-no-invalid */
+@media -moz-pref("browser.tabs.notes.enabled") and (not -moz-pref("sidebar.visibility", "expand-on-hover")) {
+  .tabbrowser-tab[tab-note]:not([pinned]) .tab-note-icon {
+    #tabbrowser-tabs[orient="horizontal"] &,
+    #tabbrowser-tabs[orient="vertical"][expanded] & {
+      display: revert;
+    }
+  }
+}
+
 /* NOTE(emilio): The double class is an specificity hack to win over the
  * .subviewbutton-iconic rules */
 .tab-group-icon.tab-group-icon {
@@ -2506,12 +2655,12 @@ toolbar:not(#TabsToolbar) #firefox-view-button {
 }
 
 #tab-group-suggestion-button {
-  --button-border-color-ghost: var(--color-accent-primary);
+  --button-border-color-ghost: var(--border-color-selected);
   color: var(--color-accent-primary);
   width: 100%;
 
   &:hover {
-    --button-border-color-ghost-hover: var(--color-accent-primary);
+    --button-border-color-ghost-hover: var(--border-color-selected);
   }
 }
 

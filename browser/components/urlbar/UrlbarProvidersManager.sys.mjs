@@ -18,6 +18,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
   PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+  Region: "resource://gre/modules/Region.sys.mjs",
   SkippableTimer: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarMuxer: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
@@ -461,6 +462,15 @@ export class ProvidersManager {
     } catch {
       // We continue anyway, because we want the user to be able to search their
       // history and bookmarks even if search engines are not available.
+    }
+
+    // Some providers depend on Region/Locale info and must access Region.home
+    // synchronously, so we ensure Region is initialized.
+    try {
+      await lazy.Region.init();
+    } catch (ex) {
+      // We continue anyway, region will be null and providers should handle
+      // that gracefully.
     }
 
     if (query.canceled) {

@@ -7,6 +7,7 @@ package org.mozilla.fenix.components.toolbar
 import android.content.Intent
 import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import androidx.navigation.NavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.CoroutineScope
@@ -92,7 +93,7 @@ class DefaultBrowserToolbarMenuController(
     private val tabCollectionStorage: TabCollectionStorage,
     private val topSitesStorage: DefaultTopSitesStorage,
     private val pinnedSiteStorage: PinnedSiteStorage,
-    private val deleteAndQuit: (HomeActivity) -> Unit,
+    private val deleteAndQuit: (FragmentActivity) -> Unit,
 ) : BrowserToolbarMenuController {
 
     private val currentSession
@@ -104,7 +105,7 @@ class DefaultBrowserToolbarMenuController(
     @VisibleForTesting
     internal var ioScope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
-    @Suppress("ComplexMethod", "LongMethod")
+    @Suppress("CognitiveComplexMethod", "LongMethod", "CyclomaticComplexMethod")
     override fun handleToolbarItemInteraction(item: ToolbarMenu.Item) {
         val sessionUseCases = activity.components.useCases.sessionUseCases
         val customTabUseCases = activity.components.useCases.customTabsUseCases
@@ -452,7 +453,7 @@ class DefaultBrowserToolbarMenuController(
         }
     }
 
-    @Suppress("ComplexMethod", "LongMethod")
+    @Suppress("CognitiveComplexMethod", "LongMethod")
     private fun trackToolbarItemInteraction(item: ToolbarMenu.Item) {
         when (item) {
             is ToolbarMenu.Item.OpenInFenix ->

@@ -31,7 +31,6 @@ DevToolsModules(
     "blackboxing.js",
     "breakpoint-list.js",
     "breakpoint.js",
-    "changes.js",
     "common.js",
     "css-properties.js",
     "device.js",

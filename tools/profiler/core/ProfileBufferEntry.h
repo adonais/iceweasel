@@ -10,7 +10,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <functional>
-#include <utility>
 #include <type_traits>
 #include "gtest/MozGtestFriend.h"
 #include "js/ProfilingCategory.h"

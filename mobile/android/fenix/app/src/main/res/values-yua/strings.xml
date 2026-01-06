@@ -13,7 +13,17 @@
   <string name="open_in_app_cfr_negative_button_text">Ma’ ilbil</string>
   <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
 
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

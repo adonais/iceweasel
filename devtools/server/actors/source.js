@@ -524,6 +524,7 @@ class SourceActor extends Actor {
 
   /**
    * Handler for the "onSource" packet.
+   *
    * @return Object
    *         The return of this function contains a field `contentType`, and
    *         a field `source`. `source` can either be an ArrayBuffer or

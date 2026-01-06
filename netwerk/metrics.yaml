@@ -605,14 +605,12 @@ networking:
     notification_emails:
       - vgosu@mozilla.com
       - necko@mozilla.com
-    expires: 148
+    expires: never
     labels:
       - regular
       - private
       - https_regular
       - https_private
-
-
 
   http_onstart_suspend_total_time:
     type: timing_distribution
@@ -1747,7 +1745,8 @@ networking:
     type: labeled_counter
     description: >
       Count of permission prompts shown to users for local network access,
-      separated by localhost vs local network access types.
+      separated by localhost vs local network access types. Cross-site labels
+      are used when the requesting origin differs from the top-level origin.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1960582
     data_reviews:
@@ -1760,6 +1759,8 @@ networking:
     labels:
       - localhost
       - local_network
+      - localhost_cross_site
+      - local_network_cross_site
 
   local_network_blocked_tracker:
     type: counter
@@ -1774,6 +1775,52 @@ networking:
     notification_emails:
       - necko@mozilla.com
     expires: 160
+
+  local_network_access_connection:
+    type: event
+    description: >
+      Recorded when a site attempts to access local network resources.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989916
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1989916#c5
+    data_sensitivity:
+      - stored_content
+    notification_emails:
+      - smayya@mozilla.com
+      - vgosu@mozilla.com
+      - necko@mozilla.com
+    send_in_pings:
+      - local-network-access
+    expires: 150
+    extra_keys:
+      top_level_site:
+        description: The base domain (eTLD+1) of the top-level document/main window.
+        type: string
+      initiator:
+        description: The base domain (eTLD+1) of the site that triggered the LNA request (triggering principal).
+        type: string
+      target_host:
+        description: The base domain (eTLD+1) of the target host being accessed.
+        type: string
+      target_ip:
+        description: The IP address the target URL resolves to.
+        type: string
+      target_port:
+        description: The port being accessed.
+        type: quantity
+      protocol:
+        description: The protocol used for the connection (websocket/webtransport/http/https/fetch/xhr).
+        type: string
+      is_secure_context:
+        description: Whether the request is from a secure context.
+        type: boolean
+      prompt_action:
+        description: The user action on the permission prompt (allow/deny/dismissed/not_shown).
+        type: string
+      load_success:
+        description: Whether the load/connection was successful.
+        type: boolean
 
   http_channel_sub_open_to_first_sent_https_rr:
     type: timing_distribution
@@ -3058,3 +3105,27 @@ network:
       - kershaw@mozilla.com
     expires: never
     telemetry_mirror: h#REL_PRELOAD_MISS_RATIO
+
+  urlclassifier_addon_block:
+    type: event
+    description: >
+      A classified network request initiated by a WebExtension was blocked by the
+      addon-protection feature.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1986320
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1986320
+    notification_emails:
+      - amarchesini@mozilla.com
+      - addons-dev-internal@mozilla.com
+    expires: never
+    extra_keys:
+      addon_id:
+        description: The add-on ID
+        type: string
+      etld:
+        description: The eTLD+1 of the request URL
+        type: string
+      table:
+        description: Classifier table name(s) that matched
+        type: string

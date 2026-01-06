@@ -788,6 +788,10 @@ class AsyncFutexWaiter : public FutexWaiter {
   AsyncFutexWaiter(JSContext* cx, size_t offset)
       : FutexWaiter(cx, offset, FutexWaiterKind::Async) {}
 
+  // NOTE: AsyncFutexWaiter is deleted only by UniquePtr<AsyncFutexWaiter>,
+  //       and thus the destructor is not virtual.
+  ~AsyncFutexWaiter();
+
   WaitAsyncNotifyTask* notifyTask() { return notifyTask_; }
 
   void setNotifyTask(WaitAsyncNotifyTask* task) {
@@ -795,10 +799,14 @@ class AsyncFutexWaiter : public FutexWaiter {
     notifyTask_ = task;
   }
 
+  void resetNotifyTask() { notifyTask_ = nullptr; }
+
   void setTimeoutTask(WaitAsyncTimeoutTask* task) {
     MOZ_ASSERT(!timeoutTask_);
     timeoutTask_ = task;
   }
+
+  void resetTimeoutTask() { timeoutTask_ = nullptr; }
 
   bool hasTimeout() const { return !!timeoutTask_; }
   WaitAsyncTimeoutTask* timeoutTask() const { return timeoutTask_; }
@@ -809,7 +817,15 @@ class AsyncFutexWaiter : public FutexWaiter {
   // Both of these pointers are borrowed pointers. The notifyTask is owned by
   // the runtime's cancellable list, while the timeout task (if it exists) is
   // owned by the embedding's timeout manager.
+  //
+  // Set by setNotifyTask immediately after construction, and reset by
+  // resetNotifyTask when the notify task is getting deleted.
+  // WaitAsyncNotifyTask is responsible for calling resetNotifyTask
   WaitAsyncNotifyTask* notifyTask_ = nullptr;
+
+  // Set by setTimeoutTask immediately after construction, and reset by
+  // resetTimeoutTask when the timeout task is getting deleted.
+  // WaitAsyncTimeoutTask is responsible for calling resetTimeoutTask
   WaitAsyncTimeoutTask* timeoutTask_ = nullptr;
 };
 
@@ -833,16 +849,27 @@ class WaitAsyncNotifyTask : public OffThreadPromiseTask {
 
   // A back-edge to the waiter so that it can be cleaned up when the
   // Notify Task is dispatched and destroyed.
+  //
+  // Set by setWaiter immediately after construction, and reset by resetWaiter
+  // when the waiter is getting deleted.  AsyncFutexWaiter is responsible for
+  // calling resetWaiter.
   AsyncFutexWaiter* waiter_ = nullptr;
 
  public:
   WaitAsyncNotifyTask(JSContext* cx, Handle<PromiseObject*> promise)
       : OffThreadPromiseTask(cx, promise) {}
 
+  ~WaitAsyncNotifyTask() override {
+    if (waiter_) {
+      waiter_->resetNotifyTask();
+    }
+  }
+
   void setWaiter(AsyncFutexWaiter* waiter) {
     MOZ_ASSERT(!waiter_);
     waiter_ = waiter;
   }
+  void resetWaiter() { waiter_ = nullptr; }
 
   void setResult(Result result, AutoLockFutexAPI& lock) { result_ = result; }
 
@@ -875,19 +902,42 @@ class WaitAsyncNotifyTask : public OffThreadPromiseTask {
 //
 // See [SMDOC] Atomics.wait for more details.
 class WaitAsyncTimeoutTask : public JS::Dispatchable {
+  // Set by the constructor, and reset by resetWaiter when the waiter is getting
+  // deleted. AsyncFutexWaiter is responsible for calling resetWaiter.
   AsyncFutexWaiter* waiter_;
 
  public:
   explicit WaitAsyncTimeoutTask(AsyncFutexWaiter* waiter) : waiter_(waiter) {
     MOZ_ASSERT(waiter_);
   }
+  ~WaitAsyncTimeoutTask() {
+    if (waiter_) {
+      waiter_->resetTimeoutTask();
+    }
+  }
 
-  void clear(AutoLockFutexAPI&) { waiter_ = nullptr; }
+  void resetWaiter() { waiter_ = nullptr; }
+
+  void clear(AutoLockFutexAPI&) {
+    if (waiter_) {
+      waiter_->resetTimeoutTask();
+    }
+    waiter_ = nullptr;
+  }
   bool cleared(AutoLockFutexAPI&) { return !waiter_; }
 
   void run(JSContext*, MaybeShuttingDown maybeshuttingdown) final;
   void transferToRuntime() final;
 };
+
+AsyncFutexWaiter::~AsyncFutexWaiter() {
+  if (notifyTask_) {
+    notifyTask_->resetWaiter();
+  }
+  if (timeoutTask_) {
+    timeoutTask_->resetWaiter();
+  }
+}
 
 }  // namespace js
 
@@ -1021,6 +1071,7 @@ void WaitAsyncTimeoutTask::run(JSContext* cx,
   // Take ownership of the async waiter, so that it will be freed
   // when we return.
   UniquePtr<AsyncFutexWaiter> asyncWaiter(RemoveAsyncWaiter(waiter_, lock));
+  asyncWaiter->resetTimeoutTask();
 
   // Dispatch a task to resolve the promise with value "timed-out".
   WaitAsyncNotifyTask* task = asyncWaiter->notifyTask();

@@ -959,7 +959,8 @@ already_AddRefed<DataSourceSurface> Factory::CopyDataSourceSurface(
   MOZ_ASSERT(aSource->GetFormat() == SurfaceFormat::R8G8B8A8 ||
              aSource->GetFormat() == SurfaceFormat::R8G8B8X8 ||
              aSource->GetFormat() == SurfaceFormat::B8G8R8A8 ||
-             aSource->GetFormat() == SurfaceFormat::B8G8R8X8);
+             aSource->GetFormat() == SurfaceFormat::B8G8R8X8 ||
+             aSource->GetFormat() == SurfaceFormat::A8);
 
   DataSourceSurface::ScopedMap srcMap(aSource, DataSourceSurface::READ);
   if (NS_WARN_IF(!srcMap.IsMapped())) {
@@ -994,12 +995,14 @@ void Factory::CopyDataSourceSurface(DataSourceSurface* aSource,
   MOZ_ASSERT(aSource->GetFormat() == SurfaceFormat::R8G8B8A8 ||
              aSource->GetFormat() == SurfaceFormat::R8G8B8X8 ||
              aSource->GetFormat() == SurfaceFormat::B8G8R8A8 ||
-             aSource->GetFormat() == SurfaceFormat::B8G8R8X8);
+             aSource->GetFormat() == SurfaceFormat::B8G8R8X8 ||
+             aSource->GetFormat() == SurfaceFormat::A8);
   MOZ_ASSERT(aDest->GetFormat() == SurfaceFormat::R8G8B8A8 ||
              aDest->GetFormat() == SurfaceFormat::R8G8B8X8 ||
              aDest->GetFormat() == SurfaceFormat::B8G8R8A8 ||
              aDest->GetFormat() == SurfaceFormat::B8G8R8X8 ||
-             aDest->GetFormat() == SurfaceFormat::R5G6B5_UINT16);
+             aDest->GetFormat() == SurfaceFormat::R5G6B5_UINT16 ||
+             aDest->GetFormat() == SurfaceFormat::A8);
 
   DataSourceSurface::MappedSurface srcMap;
   DataSourceSurface::MappedSurface destMap;

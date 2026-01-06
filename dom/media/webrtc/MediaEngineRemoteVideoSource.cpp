@@ -203,6 +203,22 @@ MediaEngineRemoteVideoSource::MediaEngineRemoteVideoSource(
   }
 }
 
+/*static*/
+already_AddRefed<MediaEngineRemoteVideoSource>
+MediaEngineRemoteVideoSource::CreateFrom(
+    const MediaEngineRemoteVideoSource* aSource,
+    const MediaDevice* aMediaDevice) {
+  auto src = MakeRefPtr<MediaEngineRemoteVideoSource>(aMediaDevice);
+  *static_cast<MediaTrackSettings*>(src->mSettings) = *aSource->mSettings;
+  *static_cast<MediaTrackCapabilities*>(src->mTrackCapabilities) =
+      *aSource->mTrackCapabilities;
+  {
+    MutexAutoLock lock(aSource->mMutex);
+    src->mIncomingImageSize = aSource->mIncomingImageSize;
+  }
+  return src.forget();
+}
+
 MediaEngineRemoteVideoSource::~MediaEngineRemoteVideoSource() {
   mFirstFramePromiseHolder.RejectIfExists(NS_ERROR_ABORT, __func__);
 }
@@ -283,8 +299,8 @@ nsresult MediaEngineRemoteVideoSource::Allocate(
         .mCapabilityWidth = cw ? Some(cw) : Nothing(),
         .mCapabilityHeight = ch ? Some(ch) : Nothing(),
         .mCapEngine = mCapEngine,
-        .mInputWidth = cw,
-        .mInputHeight = ch,
+        .mInputWidth = cw ? cw : mIncomingImageSize.width,
+        .mInputHeight = ch ? ch : mIncomingImageSize.height,
         .mRotation = 0,
     };
     framerate = input.mCanCropAndScale.valueOr(false)
@@ -353,12 +369,22 @@ nsresult MediaEngineRemoteVideoSource::Deallocate() {
 
   LOG("Video device %d deallocated", mCaptureId);
 
-  if (camera::GetChildAndCall(&camera::CamerasChild::ReleaseCapture, mCapEngine,
-                              mCaptureId)) {
-    // Failure can occur when the parent process is shutting down.
-    return NS_ERROR_FAILURE;
+  int error = camera::GetChildAndCall(&camera::CamerasChild::ReleaseCapture,
+                                      mCapEngine, mCaptureId);
+
+  if (error == camera::kSuccess) {
+    return NS_OK;
   }
-  return NS_OK;
+
+  if (error == camera::kIpcError) {
+    // Failure can occur when the parent process is shutting down, and the IPC
+    // channel is down. We still consider the capturer deallocated in this
+    // case, since it cannot deliver frames without the IPC channel open.
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(error == camera::kError);
+  return NS_ERROR_FAILURE;
 }
 
 void MediaEngineRemoteVideoSource::SetTrack(const RefPtr<MediaTrack>& aTrack,
@@ -452,9 +478,11 @@ nsresult MediaEngineRemoteVideoSource::Stop() {
 
   MOZ_ASSERT(mState == kStarted);
 
-  if (camera::GetChildAndCall(&camera::CamerasChild::StopCapture, mCapEngine,
-                              mCaptureId)) {
-    // Failure can occur when the parent process is shutting down.
+  int error = camera::GetChildAndCall(&camera::CamerasChild::StopCapture,
+                                      mCapEngine, mCaptureId);
+
+  if (error == camera::kError) {
+    // CamerasParent replied with error. The capturer is still running.
     return NS_ERROR_FAILURE;
   }
 
@@ -463,7 +491,15 @@ nsresult MediaEngineRemoteVideoSource::Stop() {
     mState = kStopped;
   }
 
-  return NS_OK;
+  if (error == camera::kSuccess) {
+    return NS_OK;
+  }
+
+  MOZ_ASSERT(error == camera::kIpcError);
+  // Failure can occur when the parent process is shutting down, and the IPC
+  // channel is down. We still consider the capturer stopped in this case,
+  // since it cannot deliver frames without the IPC channel open.
+  return NS_ERROR_FAILURE;
 }
 
 nsresult MediaEngineRemoteVideoSource::Reconfigure(

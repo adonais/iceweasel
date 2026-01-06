@@ -28,6 +28,7 @@ RootContainer.prototype = {
 
   /**
    * If the node has children, return the list of containers for all these children.
+   *
    * @return {Array} An array of child containers or null.
    */
   getChildContainers() {
@@ -38,7 +39,8 @@ RootContainer.prototype = {
 
   /**
    * Set the expanded state of the container node.
-   * @param  {Boolean} value
+   *
+   * @param  {boolean} value
    */
   setExpanded() {},
 

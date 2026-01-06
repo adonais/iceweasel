@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Sự cố với trang web lừa đảo</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Trang web này tại %1$s đã được báo cáo là trang lừa đảo và đã bị chặn dựa trên tùy chọn bảo mật của bạn.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Trang web bị chặn để đảm bảo an toàn cho bạn</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Trang web này tại %1$s đã bị chặn vì một trong các tiện ích mở rộng của bạn đã cố gắng mở nó. Trang web này có thể được sử dụng để đánh cắp thông tin của bạn — chẳng hạn như mật khẩu hoặc số thẻ tín dụng.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Trang web an toàn không khả dụng</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

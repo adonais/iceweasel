@@ -557,12 +557,12 @@ nsresult CSSEditUtils::GetSpecifiedCSSInlinePropertyBase(nsIContent& aContent,
   }
 
   // FIXME: Same comments as above.
-  nsCSSPropertyID prop =
+  NonCustomCSSPropertyId prop =
       nsCSSProps::LookupProperty(nsAtomCString(&aCSSProperty));
   MOZ_ASSERT(prop != eCSSProperty_UNKNOWN);
 
   nsAutoCString value;
-  decl->GetPropertyValueByID(prop, value);
+  decl->GetPropertyValueById(prop, value);
   CopyUTF8toUTF16(value, aValue);
   return NS_OK;
 }

@@ -41,14 +41,12 @@ extern mozilla::LazyLogModule gWindowsLog;
 /* mingw currently doesn't support windows.ui.viewmanagement.h, so we disable it
  * until it's fixed. */
 
-// See
-// https://github.com/tpn/winsdk-10/blob/master/Include/10.0.14393.0/winrt/windows.ui.viewmanagement.h
-// for the source of some of these definitions for older SDKs.
 #ifndef __MINGW32__
 
 #  include <inspectable.h>
 #  include <roapi.h>
 #  include <windows.ui.viewmanagement.h>
+#  include <uiviewsettingsinterop.h>
 
 #  pragma comment(lib, "runtimeobject.lib")
 
@@ -59,139 +57,6 @@ using namespace Microsoft::WRL::Wrappers;
 using namespace ABI::Windows::Foundation;
 using namespace ABI::Windows::ApplicationModel::DataTransfer;
 
-#  ifndef RuntimeClass_Windows_UI_ViewManagement_UIViewSettings
-#    define RuntimeClass_Windows_UI_ViewManagement_UIViewSettings \
-      L"Windows.UI.ViewManagement.UIViewSettings"
-#  endif
-
-#  ifndef IUIViewSettingsInterop
-
-using IUIViewSettingsInterop = interface IUIViewSettingsInterop;
-
-MIDL_INTERFACE("3694dbf9-8f68-44be-8ff5-195c98ede8a6")
-IUIViewSettingsInterop : public IInspectable {
- public:
-  virtual HRESULT STDMETHODCALLTYPE GetForWindow(HWND hwnd, REFIID riid,
-                                                 void** ppv) = 0;
-};
-#  endif
-
-#  ifndef __IDataTransferManagerInterop_INTERFACE_DEFINED__
-#    define __IDataTransferManagerInterop_INTERFACE_DEFINED__
-
-using IDataTransferManagerInterop = interface IDataTransferManagerInterop;
-
-MIDL_INTERFACE("3A3DCD6C-3EAB-43DC-BCDE-45671CE800C8")
-IDataTransferManagerInterop : public IUnknown {
- public:
-  virtual HRESULT STDMETHODCALLTYPE GetForWindow(
-      HWND appWindow, REFIID riid, void** dataTransferManager) = 0;
-  virtual HRESULT STDMETHODCALLTYPE ShowShareUIForWindow(HWND appWindow) = 0;
-};
-
-#  endif
-
-#  if !defined( \
-      ____x_ABI_CWindows_CApplicationModel_CDataTransfer_CIDataPackage4_INTERFACE_DEFINED__)
-#    define ____x_ABI_CWindows_CApplicationModel_CDataTransfer_CIDataPackage4_INTERFACE_DEFINED__
-
-MIDL_INTERFACE("13a24ec8-9382-536f-852a-3045e1b29a3b")
-IDataPackage4 : public IInspectable {
- public:
-  virtual HRESULT STDMETHODCALLTYPE add_ShareCanceled(
-      __FITypedEventHandler_2_Windows__CApplicationModel__CDataTransfer__CDataPackage_IInspectable *
-          handler,
-      EventRegistrationToken * token) = 0;
-  virtual HRESULT STDMETHODCALLTYPE remove_ShareCanceled(
-      EventRegistrationToken token) = 0;
-};
-
-#  endif
-
-#  ifndef RuntimeClass_Windows_UI_ViewManagement_UISettings
-#    define RuntimeClass_Windows_UI_ViewManagement_UISettings \
-      L"Windows.UI.ViewManagement.UISettings"
-#  endif
-#  if WINDOWS_FOUNDATION_UNIVERSALAPICONTRACT_VERSION < 0x80000
-namespace ABI {
-namespace Windows {
-namespace UI {
-namespace ViewManagement {
-
-class UISettings;
-class UISettingsAutoHideScrollBarsChangedEventArgs;
-interface IUISettingsAutoHideScrollBarsChangedEventArgs;
-MIDL_INTERFACE("87afd4b2-9146-5f02-8f6b-06d454174c0f")
-IUISettingsAutoHideScrollBarsChangedEventArgs : public IInspectable{};
-
-}  // namespace ViewManagement
-}  // namespace UI
-}  // namespace Windows
-}  // namespace ABI
-
-namespace ABI {
-namespace Windows {
-namespace Foundation {
-
-template <>
-struct __declspec(uuid("808aef30-2660-51b0-9c11-f75dd42006b4"))
-ITypedEventHandler<ABI::Windows::UI::ViewManagement::UISettings*,
-                   ABI::Windows::UI::ViewManagement::
-                       UISettingsAutoHideScrollBarsChangedEventArgs*>
-    : ITypedEventHandler_impl<
-          ABI::Windows::Foundation::Internal::AggregateType<
-              ABI::Windows::UI::ViewManagement::UISettings*,
-              ABI::Windows::UI::ViewManagement::IUISettings*>,
-          ABI::Windows::Foundation::Internal::AggregateType<
-              ABI::Windows::UI::ViewManagement::
-                  UISettingsAutoHideScrollBarsChangedEventArgs*,
-              ABI::Windows::UI::ViewManagement::
-                  IUISettingsAutoHideScrollBarsChangedEventArgs*>> {
-  static const wchar_t* z_get_rc_name_impl() {
-    return L"Windows.Foundation.TypedEventHandler`2<Windows.UI.ViewManagement."
-           L"UISettings, "
-           L"Windows.UI.ViewManagement."
-           L"UISettingsAutoHideScrollBarsChangedEventArgs>";
-  }
-};
-// Define a typedef for the parameterized interface specialization's mangled
-// name. This allows code which uses the mangled name for the parameterized
-// interface to access the correct parameterized interface specialization.
-typedef ITypedEventHandler<ABI::Windows::UI::ViewManagement::UISettings*,
-                           ABI::Windows::UI::ViewManagement::
-                               UISettingsAutoHideScrollBarsChangedEventArgs*>
-    __FITypedEventHandler_2_Windows__CUI__CViewManagement__CUISettings_Windows__CUI__CViewManagement__CUISettingsAutoHideScrollBarsChangedEventArgs_t;
-#    define __FITypedEventHandler_2_Windows__CUI__CViewManagement__CUISettings_Windows__CUI__CViewManagement__CUISettingsAutoHideScrollBarsChangedEventArgs \
-      ABI::Windows::Foundation::                                                                                                                            \
-          __FITypedEventHandler_2_Windows__CUI__CViewManagement__CUISettings_Windows__CUI__CViewManagement__CUISettingsAutoHideScrollBarsChangedEventArgs_t
-
-}  // namespace Foundation
-}  // namespace Windows
-}  // namespace ABI
-
-namespace ABI {
-namespace Windows {
-namespace UI {
-namespace ViewManagement {
-class UISettings;
-class UISettingsAutoHideScrollBarsChangedEventArgs;
-interface IUISettings5;
-MIDL_INTERFACE("5349d588-0cb5-5f05-bd34-706b3231f0bd")
-IUISettings5 : public IInspectable {
- public:
-  virtual HRESULT STDMETHODCALLTYPE get_AutoHideScrollBars(boolean * value) = 0;
-  virtual HRESULT STDMETHODCALLTYPE add_AutoHideScrollBarsChanged(
-      __FITypedEventHandler_2_Windows__CUI__CViewManagement__CUISettings_Windows__CUI__CViewManagement__CUISettingsAutoHideScrollBarsChangedEventArgs *
-          handler,
-      EventRegistrationToken * token) = 0;
-  virtual HRESULT STDMETHODCALLTYPE remove_AutoHideScrollBarsChanged(
-      EventRegistrationToken token) = 0;
-};
-}  // namespace ViewManagement
-}  // namespace UI
-}  // namespace Windows
-}  // namespace ABI
-#  endif
 #endif
 
 using namespace mozilla;
@@ -1211,7 +1076,35 @@ using GetWindowIdFromWindowType = HRESULT(STDAPICALLTYPE*)(
 static GetWindowIdFromWindowType sGetWindowIdFromWindowProc = nullptr;
 
 // Returns whether initialization succeeded
-bool InitializeWindowsAppSDKStatics() {
+[[nodiscard]] static bool InitializeWindowsAppSDKStatics() {
+  MOZ_ASSERT(NS_IsMainThread());
+  // This function is needed to avoid drawing the titlebar buttons
+  // when the Windows mica backdrop is enabled. (bug 1934040)
+  // If it isn't possible for mica to be enabled, we don't need to do anything.
+  // The Windows App SDK that we use here doesn't support older versions of
+  // Windows 10 that Firefox does.
+  if (!widget::WinUtils::MicaAvailable()) {
+    MOZ_LOG(
+        gWindowsLog, LogLevel::Info,
+        ("Skipping SetIsTitlebarCollapsed() because mica is not available"));
+    return false;
+  }
+  // This pref is only false on certain test runs (most notably
+  // opt-talos-xperf), the Windows App SDK fails calling
+  // DCompositionCreateDevice3() with ERROR_ACCESS_DENIED, and the code assumes
+  // it is going to succeed so it proceeds to crash deferencing null.
+  //
+  // We're not exactly sure why this is happening right now, but I'm pretty sure
+  // it's specific to how we're running Firefox on those test runs, and
+  // I don't think any users will run into this. So those tests pass the
+  // --disable-windowsappsdk command line argument to avoid using
+  // the Windows App SDK.
+  if (!StaticPrefs::widget_windows_windowsappsdk_enabled()) {
+    MOZ_LOG(gWindowsLog, LogLevel::Info,
+            ("Skipping SetIsTitlebarCollapsed() because "
+             "widget.windows.windowsappsdk.enabled is false"));
+    return false;
+  }
   if (!sGetWindowIdFromWindowProc) {
     HMODULE frameworkUdkModule =
         ::LoadLibraryW(L"Microsoft.Internal.FrameworkUdk.dll");
@@ -1303,51 +1196,14 @@ bool InitializeWindowsAppSDKStatics() {
   }
   return true;
 }
-#endif
 
-void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
-#ifndef __MINGW32__
-  // Used to avoid synchronization for loading libraries below
-  MOZ_ASSERT(NS_IsMainThread());
-  // This function is needed to avoid drawing the titlebar buttons
-  // when the Windows mica backdrop is enabled. (bug 1934040)
-  // If it isn't possible for mica to be enabled, we don't need to do anything.
-  // This also helps prevent problems because the Windows App SDK that we use
-  // here doesn't support older versions of Windows 10 that Firefox does.
-  if (!widget::WinUtils::MicaAvailable()) {
-    MOZ_LOG(
-        gWindowsLog, LogLevel::Info,
-        ("Skipping SetIsTitlebarCollapsed() because mica is not available"));
-    return;
-  }
-  // This pref is only false on certain test runs (most notably
-  // opt-talos-xperf), the Windows App SDK fails calling
-  // DCompositionCreateDevice3() with ERROR_ACCESS_DENIED, and the code assumes
-  // it is going to succeed so it proceeds to crash deferencing null.
-  //
-  // We're not exactly sure why this is happening right now, but I'm pretty sure
-  // it's specific to how we're running Firefox on those test runs, and
-  // I don't think any users will run into this. So those tests pass the
-  // --disable-windowsappsdk command line argument to avoid using
-  // the Windows App SDK.
-  if (!StaticPrefs::widget_windows_windowsappsdk_enabled()) {
-    MOZ_LOG(gWindowsLog, LogLevel::Info,
-            ("Skipping SetIsTitlebarCollapsed() because "
-             "widget.windows.windowsappsdk.enabled is false"));
-    return;
-  }
+static RefPtr<winrt::Microsoft::UI::Windowing::IAppWindow>
+GetAppWindowForWindow(HWND aWnd) {
   if (!InitializeWindowsAppSDKStatics()) {
-    return;
+    return nullptr;
   }
-
-  // The Microsoft documentation says that we should be checking
-  // AppWindowTitleBar::IsCustomizationSupported() before calling methods
-  // on the title bar. However, it also says that customization is fully
-  // supported since Windows App SDK v1.2 on Windows 11, and Mica is only
-  // available on Windows 11, so it should be safe to skip this check.
-
   // Retrieve the WindowId that corresponds to hWnd.
-  struct winrt::Microsoft::UI::WindowId windowId;
+  struct winrt::Microsoft::UI::WindowId windowId{0};
   HRESULT hr = sGetWindowIdFromWindowProc(aWnd, &windowId);
   if (FAILED(hr) || windowId.value == 0) {
     MOZ_LOG(gWindowsLog, LogLevel::Error,
@@ -1355,25 +1211,40 @@ void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
              "GetWindowIdFromWindow failed, hr=0x%" PRIX32,
              static_cast<uint32_t>(hr)));
     MOZ_ASSERT_UNREACHABLE("GetWindowIdFromWindow failed");
-    return;
+    return nullptr;
   }
 
   RefPtr<winrt::Microsoft::UI::Windowing::IAppWindow> appWindow;
-  hr = (HRESULT)sAppWindowStatics->GetFromWindowId(windowId,
-                                                   getter_AddRefs(appWindow));
-  if (FAILED(hr) || !appWindow) {
-    // Hedge our bets here and don't assert because it's possible this
-    // is a weird sort of window or something.
+  sAppWindowStatics->GetFromWindowId(windowId, getter_AddRefs(appWindow));
+  return appWindow;
+}
+#endif
+
+void WindowsUIUtils::AssociateWithWinAppSDK(HWND aWnd) {
+#ifndef __MINGW32__
+  RefPtr win = GetAppWindowForWindow(aWnd);
+  (void)win;
+#endif
+}
+
+void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
+#ifndef __MINGW32__
+  // The Microsoft documentation says that we should be checking
+  // AppWindowTitleBar::IsCustomizationSupported() before calling methods
+  // on the title bar. However, it also says that customization is fully
+  // supported since Windows App SDK v1.2 on Windows 11, and Mica is only
+  // available on Windows 11, so it should be safe to skip this check.
+  RefPtr appWindow = GetAppWindowForWindow(aWnd);
+  if (!appWindow) {
     MOZ_LOG(gWindowsLog, LogLevel::Warning,
             ("Skipping SetIsTitlebarCollapsed() because "
-             "IAppWindow could not be acquired from window id, hr=%" PRIX32,
-             static_cast<uint32_t>(hr)));
+             "IAppWindow could not be acquired from window id"));
     return;
   }
 
-  RefPtr<IInspectable> inspectableTitleBar;
-  hr = appWindow->get_TitleBar(getter_AddRefs(inspectableTitleBar));
-  if (FAILED(hr) || !inspectableTitleBar) {
+  RefPtr<winrt::Microsoft::UI::Windowing::IAppWindowTitleBar> titleBar;
+  HRESULT hr = appWindow->get_TitleBar(getter_AddRefs(titleBar));
+  if (FAILED(hr) || !titleBar) {
     // Hedge our bets here and don't assert because it's possible this
     // is a weird sort of window or something.
     MOZ_LOG(gWindowsLog, LogLevel::Warning,
@@ -1382,19 +1253,11 @@ void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
              static_cast<uint32_t>(hr)));
     return;
   }
-  RefPtr<winrt::Microsoft::UI::Windowing::IAppWindowTitleBar> titleBar;
-  hr = inspectableTitleBar->QueryInterface(
-      __uuidof(winrt::Microsoft::UI::Windowing::IAppWindowTitleBar),
-      (void**)getter_AddRefs(titleBar));
-  if (FAILED(hr) || !titleBar) {
-    MOZ_LOG(gWindowsLog, LogLevel::Error,
-            ("Skipping SetIsTitlebarCollapsed() because "
-             "IAppWindowTitleBar could not be acquired, hr=%" PRIX32,
-             static_cast<uint32_t>(hr)));
-    MOZ_ASSERT_UNREACHABLE("IAppWindowTitleBar could not be acquired");
-    return;
+  if (aIsCollapsed) {
+    hr = titleBar->put_ExtendsContentIntoTitleBar(aIsCollapsed);
+  } else {
+    hr = titleBar->ResetToDefault();
   }
-  hr = titleBar->put_ExtendsContentIntoTitleBar(aIsCollapsed);
   if (FAILED(hr)) {
     MOZ_LOG(gWindowsLog, LogLevel::Error,
             ("Skipping SetIsTitlebarCollapsed() because "
@@ -1406,7 +1269,7 @@ void WindowsUIUtils::SetIsTitlebarCollapsed(HWND aWnd, bool aIsCollapsed) {
   if (aIsCollapsed) {
     // PreferredHeightOption is only valid if ExtendsContentIntoTitleBar is true
     RefPtr<winrt::Microsoft::UI::Windowing::IAppWindowTitleBar2> titleBar2;
-    hr = inspectableTitleBar->QueryInterface(
+    hr = titleBar->QueryInterface(
         __uuidof(winrt::Microsoft::UI::Windowing::IAppWindowTitleBar2),
         (void**)getter_AddRefs(titleBar2));
     if (FAILED(hr) || !titleBar2) {

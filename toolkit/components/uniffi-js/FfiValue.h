@@ -8,7 +8,6 @@
 #define mozilla_UniFFIFfiConverter_h
 
 #include <limits>
-#include <type_traits>
 #include "nsString.h"
 #include "mozilla/dom/PrimitiveConversions.h"
 #include "mozilla/dom/TypedArray.h"

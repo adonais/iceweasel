@@ -7,7 +7,6 @@ package org.mozilla.fenix.compose.snackbar
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -120,7 +120,13 @@ class Snackbar private constructor(
                 contentView.setContent {
                     FirefoxTheme {
                         Snackbar(
-                            snackbarData = snackbarState.copy(action = action).toSnackbarData(),
+                            snackbarData = snackbarState.copy(
+                                action = action,
+                                onDismiss = {
+                                    snackbar.dismiss()
+                                    snackbarState.onDismiss()
+                                },
+                            ).toSnackbarData(),
                         )
                     }
                 }
@@ -148,11 +154,9 @@ class Snackbar private constructor(
             var fallback: ViewGroup? = null
 
             do {
-                /**
-                 * A [ConstraintLayout] parent overcomes the issue with snackbars internally
-                 * positioning themselves above the OS navigation bar or IMEs when using edge-to-edge
-                 * https://github.com/material-components/material-components-android/issues/3446
-                 */
+                // A [ConstraintLayout] parent overcomes the issue with snackbars internally
+                // positioning themselves above the OS navigation bar or IMEs when using edge-to-edge
+                // https://github.com/material-components/material-components-android/issues/3446
                 if (currentView is ConstraintLayout && currentView.id == R.id.dynamicSnackbarContainer) {
                     return currentView
                 }
@@ -211,50 +215,51 @@ class Snackbar private constructor(
 
 @FlexibleWindowLightDarkPreview
 @Composable
-@Suppress("LongMethod")
 private fun SnackbarHostPreview() {
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarClicks by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
 
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(color = FirefoxTheme.colors.layer1)
-                .padding(all = 16.dp),
-        ) {
-            Column {
-                FilledButton(
-                    text = "Show snackbar",
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    scope.launch {
-                        snackbarHostState.displaySnackbar(
-                            visuals = SnackbarVisuals(
-                                message = "Snackbar",
-                                subMessage = "SubMessage",
-                                actionLabel = "click me",
-                            ),
-                            onActionPerformed = { snackbarClicks++ },
-                        )
+        Surface {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(all = 16.dp),
+            ) {
+                Column {
+                    FilledButton(
+                        text = "Show snackbar",
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        scope.launch {
+                            snackbarHostState.displaySnackbar(
+                                visuals = SnackbarVisuals(
+                                    message = "Snackbar",
+                                    subMessage = "SubMessage",
+                                    actionLabel = "click me",
+                                ),
+                                onActionPerformed = { snackbarClicks++ },
+                            )
+                        }
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
+                        text = "Snackbar action clicks: $snackbarClicks",
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = "Snackbar action clicks: $snackbarClicks",
-                    color = FirefoxTheme.colors.textPrimary,
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                ) {
+                    Snackbar(snackbarData = it)
+                }
             }
-
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
         }
     }
 }

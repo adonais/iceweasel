@@ -872,7 +872,7 @@ class OpenTabsContextMenu extends MozLitElement {
         ></panel-item>
         ${this.devices.length >= 1
           ? html`<panel-item
-              data-l10n-id="fxviewtabrow-send-tab"
+              data-l10n-id="fxviewtabrow-send-to-device"
               data-l10n-attrs="accesskey"
               submenu="send-tab-menu"
               >${this.sendTabTemplate()}</panel-item

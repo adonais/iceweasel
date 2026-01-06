@@ -853,10 +853,10 @@ function setVisibleMessages({
  * Returns the new current group id given the previous current group and the groupsById
  * state property.
  *
- * @param {String} currentGroup: id of the current group
+ * @param {string} currentGroup: id of the current group
  * @param {Map} groupsById
  * @param {Array} ignoredIds: An array of ids which can't be the new current group.
- * @returns {String|null} The new current group id, or null if there isn't one.
+ * @returns {string | null} The new current group id, or null if there isn't one.
  */
 function getNewCurrentGroup(currentGroup, groupsById, ignoredIds = new Set()) {
   if (!currentGroup) {
@@ -1110,8 +1110,9 @@ function getToplevelMessageCount(state) {
 /**
  * Check if a message should be visible in the console output, and if not, what
  * causes it to be hidden.
+ *
  * @param {Message} message: The message to check
- * @param {Object} option: An option object of the following shape:
+ * @param {object} option: An option object of the following shape:
  *                   - {MessageState} messagesState: The current messages state
  *                   - {FilterState} filtersState: The current filters state
  *                   - {PrefsState} prefsState: The current preferences state
@@ -1124,7 +1125,7 @@ function getToplevelMessageCount(state) {
  *                   - {Boolean} hasMatchedAncestor: Set to true if message is part of a
  *                                 group that has been set to visible
  *
- * @return {Object} An object of the following form:
+ * @return {object} An object of the following form:
  *         - visible {Boolean}: true if the message should be visible
  *         - cause {String}: if visible is false, what causes the message to be hidden.
  */
@@ -1336,9 +1337,9 @@ function isGroupClosed(groupId, messagesUI) {
 /**
  * Returns true if the message shouldn't be hidden because of the network filter state.
  *
- * @param {Object} message - The message to check the filter against.
+ * @param {object} message - The message to check the filter against.
  * @param {FilterState} filters - redux "filters" state.
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function passNetworkFilter(message, filters) {
   // The message passes the filter if it is not a network message,
@@ -1355,9 +1356,9 @@ function passNetworkFilter(message, filters) {
 /**
  * Returns true if the message shouldn't be hidden because of the xhr filter state.
  *
- * @param {Object} message - The message to check the filter against.
+ * @param {object} message - The message to check the filter against.
  * @param {FilterState} filters - redux "filters" state.
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function passXhrFilter(message, filters) {
   // The message passes the filter if it is not a network message,
@@ -1374,9 +1375,9 @@ function passXhrFilter(message, filters) {
 /**
  * Returns true if the message shouldn't be hidden because of levels filter state.
  *
- * @param {Object} message - The message to check the filter against.
+ * @param {object} message - The message to check the filter against.
  * @param {FilterState} filters - redux "filters" state.
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function passLevelFilters(message, filters) {
   // The message passes the filter if it is not a console call,
@@ -1392,9 +1393,9 @@ function passLevelFilters(message, filters) {
 /**
  * Returns true if the message shouldn't be hidden because of the CSS filter state.
  *
- * @param {Object} message - The message to check the filter against.
+ * @param {object} message - The message to check the filter against.
  * @param {FilterState} filters - redux "filters" state.
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function passCssFilters(message, filters) {
   // The message passes the filter if it is not a CSS message,
@@ -1405,9 +1406,9 @@ function passCssFilters(message, filters) {
 /**
  * Returns true if the message shouldn't be hidden because of search filter state.
  *
- * @param {Object} message - The message to check the filter against.
+ * @param {object} message - The message to check the filter against.
  * @param {FilterState} filters - redux "filters" state.
- * @returns {Boolean}
+ * @returns {boolean}
  */
 function passSearchFilters(message, filters) {
   const trimmed = (filters.text || "").trim();
@@ -1625,11 +1626,11 @@ function getDefaultFiltersCounter() {
  * Sort state.visibleMessages if needed.
  *
  * @param {MessageState} state
- * @param {Boolean} sortWarningGroupMessage: set to true to sort warningGroup
+ * @param {boolean} sortWarningGroupMessage: set to true to sort warningGroup
  *                                           messages. Default to false, as in some
  *                                           situations we already take care of putting
  *                                           the ids at the right position.
- * @param {Boolean} timeStampSort: set to true to sort messages by their timestamps.
+ * @param {boolean} timeStampSort: set to true to sort messages by their timestamps.
  */
 function maybeSortVisibleMessages(
   state,

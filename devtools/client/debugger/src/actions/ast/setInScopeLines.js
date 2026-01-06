@@ -12,7 +12,8 @@ import { isFulfilled } from "../../utils/async-value";
 
 /**
  * Get and store the in scope lines in the reducer
- * @param {Object} editor - The editor provides an API to retrieve the in scope location
+ *
+ * @param {object} editor - The editor provides an API to retrieve the in scope location
  *                          details based on lezer in CM6.
  * @returns
  */

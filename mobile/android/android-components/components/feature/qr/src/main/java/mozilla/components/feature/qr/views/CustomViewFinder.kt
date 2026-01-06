@@ -188,7 +188,9 @@ class CustomViewFinder @JvmOverloads constructor(
      * Creates a Static Layout used to show a message below the viewfinder
      */
     @Suppress("Deprecation")
-    private fun showMessage(@StringRes scanMessageId: Int?) {
+    private fun showMessage(
+        @StringRes scanMessageId: Int?,
+    ) {
         val scanMessage = if (scanMessageId != null) {
             HtmlCompat.fromHtml(
                 context.getString(scanMessageId),
@@ -227,7 +229,9 @@ class CustomViewFinder @JvmOverloads constructor(
     }
 
     /** Sets the color for the Overlay.  */
-    private fun setOverlayColor(@ColorInt color: Int) {
+    private fun setOverlayColor(
+        @ColorInt color: Int,
+    ) {
         overlayPaint.color = color
         if (isLaidOut) {
             invalidate()
@@ -235,7 +239,9 @@ class CustomViewFinder @JvmOverloads constructor(
     }
 
     /** Sets the stroke color for the ViewFinder. */
-    fun setViewFinderColor(@ColorInt color: Int) {
+    fun setViewFinderColor(
+        @ColorInt color: Int,
+    ) {
         viewFinderPaint.color = color
         if (isLaidOut) {
             invalidate()
@@ -243,7 +249,9 @@ class CustomViewFinder @JvmOverloads constructor(
     }
 
     /** Sets the stroke width for the ViewFinder.  */
-    private fun setViewFinderStroke(@Px stroke: Float) {
+    private fun setViewFinderStroke(
+        @Px stroke: Float,
+    ) {
         viewFinderPaint.strokeWidth = stroke
         if (isLaidOut) {
             invalidate()
@@ -251,7 +259,9 @@ class CustomViewFinder @JvmOverloads constructor(
     }
 
     /** Sets the corner size for the ViewFinder.  */
-    private fun setViewFinderCornerSize(@Px size: Float) {
+    private fun setViewFinderCornerSize(
+        @Px size: Float,
+    ) {
         viewFinderCornersSize = size
         if (isLaidOut) {
             invalidate()
@@ -259,7 +269,9 @@ class CustomViewFinder @JvmOverloads constructor(
     }
 
     /** Sets the corner radius for the ViewFinder. */
-    private fun setViewFinderCornerRadius(@Px radius: Float) {
+    private fun setViewFinderCornerRadius(
+        @Px radius: Float,
+    ) {
         viewFinderCornersRadius = radius
         if (isLaidOut) {
             invalidate()

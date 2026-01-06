@@ -1,63 +1,24 @@
-From: Jan Grulich <jgrulich@redhat.com>
-Date: Mon, 14 Apr 2025 16:37:00 +0000
-Subject: Bug 1954903 - Update libwebrtc GN configs r=webrtc-reviewers,mjf
+From: Michael Froman <mfroman@mozilla.com>
+Date: Tue, 13 May 2025 22:39:00 +0000
+Subject: Bug 1966238 - (fix-bf85c38fb3) fix build for our added 'pid' field in
+ DesktopCapturer::Source r?pehrsons!
 
-Update GN config files for the special handling in gn_processor.py for
-gbm, drm and PipeWire libraries.
-
-Also remove libwebrtc/third_party/[gbm,drm,pipewire] libs for which we
-now have a special handling in gn_processor.py.
-
-Differential Revision: https://phabricator.services.mozilla.com/D242101
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/506d4efaf2dc29472623beff64cc2bd0d5555afd
+Differential Revision: https://phabricator.services.mozilla.com/D249164
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b6b37905a574e7706d98eb683e6800c9525815e7
 ---
- modules/desktop_capture/BUILD.gn | 4 ++++
- modules/portal/BUILD.gn          | 4 +---
- modules/video_capture/BUILD.gn   | 2 +-
- 3 files changed, 6 insertions(+), 4 deletions(-)
+ modules/desktop_capture/mac/screen_capturer_sck.mm | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index 4b5acc5bdb..484a47894b 100644
---- a/modules/desktop_capture/BUILD.gn
-+++ b/modules/desktop_capture/BUILD.gn
-@@ -553,6 +553,10 @@ rtc_library("desktop_capture") {
-       "../../rtc_base:sanitizer",
-       "../portal",
-     ]
-+
-+    if (build_with_mozilla) {
-+      defines += [ "WEBRTC_USE_PIPEWIRE" ]
-+    }
+diff --git a/modules/desktop_capture/mac/screen_capturer_sck.mm b/modules/desktop_capture/mac/screen_capturer_sck.mm
+index 49c923e56b..0d0750f63e 100644
+--- a/modules/desktop_capture/mac/screen_capturer_sck.mm
++++ b/modules/desktop_capture/mac/screen_capturer_sck.mm
+@@ -444,7 +444,7 @@ bool ScreenCapturerSck::GetSourceList(SourceList* sources) {
+   sources->clear();
+   EnsurePickerHandle();
+   if (picker_handle_) {
+-    sources->push_back({picker_handle_->Source(), std::string()});
++    sources->push_back({picker_handle_->Source(), 0, std::string()});
    }
- 
-   if (rtc_enable_win_wgc) {
-diff --git a/modules/portal/BUILD.gn b/modules/portal/BUILD.gn
-index 72972d18e1..70b4739ad0 100644
---- a/modules/portal/BUILD.gn
-+++ b/modules/portal/BUILD.gn
-@@ -139,11 +139,9 @@ if (!build_with_mozilla) {
-       deps -= [ ":pipewire_stubs" ]
-       defines -= [ "WEBRTC_DLOPEN_PIPEWIRE" ]
-       public_deps = [
--        "../../third_party/pipewire",
--        "../../third_party/drm",
--        "../../third_party/gbm",
-         "../../third_party/libepoxy"
-       ]
-+      defines += [ "WEBRTC_USE_PIPEWIRE" ]
-     }
-   }
+   return true;
  }
-diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
-index 83c1b21260..e32e3ab37e 100644
---- a/modules/video_capture/BUILD.gn
-+++ b/modules/video_capture/BUILD.gn
-@@ -118,7 +118,7 @@ if (!build_with_chromium || is_linux || is_chromeos) {
-         ]
-         if (build_with_mozilla) {
-           configs -= [ "../portal:pipewire_base" ]
--          public_deps = [ "../../third_party/pipewire" ]
-+          defines = [ "WEBRTC_USE_PIPEWIRE" ]
-         }
-       }
-     }

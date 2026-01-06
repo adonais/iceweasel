@@ -36,8 +36,10 @@
 #include "cert_storage/src/cert_storage.h"
 #include "mozilla/Logging.h"
 #include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/glean/SecurityManagerSslMetrics.h"
 #include "mozilla/ipc/Endpoint.h"
+#include "mozilla/net/DocumentLoadListener.h"
 #include "mozilla/net/SocketProcessBackgroundChild.h"
 #include "mozilla/psm/SelectTLSClientAuthCertChild.h"
 #include "mozilla/psm/SelectTLSClientAuthCertParent.h"
@@ -727,15 +729,36 @@ SelectClientAuthCertificate::Run() {
     DispatchContinuation(std::move(selectedCertBytes));
     return NS_ERROR_FAILURE;
   }
-  nsCOMPtr<nsILoadContext> loadContext = nullptr;
-  if (mBrowserId != 0) {
-    loadContext =
+
+  RefPtr<mozilla::dom::BrowsingContext> browsingContext;
+  if (mBrowserId) {
+    browsingContext =
         mozilla::dom::BrowsingContext::GetCurrentTopByBrowserId(mBrowserId);
   }
+
+  // Prevent HTTPS-Only/-First from downgrading the load in the browsing context
+  // while the dialog is open by setting HTTPS_ONLY_TOP_LEVEL_LOAD_IN_PROGRESS
+  // early. Otherwise this would only get set once
+  // DocumentLoadListener::DoOnStartRequest is reached.
+  if (browsingContext) {
+    RefPtr<net::DocumentLoadListener> loadListener =
+        browsingContext->Canonical()->GetCurrentLoad();
+    if (loadListener) {
+      nsCOMPtr<nsIHttpChannel> channel =
+          do_QueryInterface(loadListener->GetChannel());
+      if (channel) {
+        nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+        uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
+        httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_TOP_LEVEL_LOAD_IN_PROGRESS;
+        loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
+      }
+    }
+  }
+
   RefPtr<nsIClientAuthDialogCallback> callback(
       new ClientAuthDialogCallback(this));
   nsresult rv = clientAuthDialogService->ChooseCertificate(
-      mInfo.HostName(), certArray, loadContext, mCANames, callback);
+      mInfo.HostName(), certArray, browsingContext, mCANames, callback);
   if (NS_FAILED(rv)) {
     DispatchContinuation(std::move(selectedCertBytes));
     return rv;

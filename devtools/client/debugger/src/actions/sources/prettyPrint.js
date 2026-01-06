@@ -125,10 +125,10 @@ export async function prettyPrintSourceTextContent(
 /**
  * Pretty print inline script inside an HTML file
  *
- * @param {Object} options
+ * @param {object} options
  * @param {PrettyPrintDispatcher} options.prettyPrintWorker: The prettyPrint worker
- * @param {Object} options.generatedSource: The HTML source we want to pretty print
- * @param {Object} options.content
+ * @param {object} options.generatedSource: The HTML source we want to pretty print
+ * @param {object} options.content
  * @param {Array} options.actors: An array of the HTML file inline script sources data
  *
  * @returns Promise<Object> A promise that resolves with an object of the following shape:

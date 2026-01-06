@@ -259,7 +259,7 @@ class App extends PureComponent {
    * Dispatches the rotateViewport action creator. This utilized by the RDM toolbar as
    * a prop.
    *
-   * @param {Number} id
+   * @param {number} id
    *        The viewport ID.
    */
   onRotateViewport(id) {

@@ -54,11 +54,10 @@
 #endif
 #include <ctype.h>
 #include <stdlib.h>
+#include <csi_platform.h>
 #include "registry.h"
 #include "registry_int.h"
-#include "registry_vtbl.h"
 #include "r_assoc.h"
-#include "nr_common.h"
 #include "r_log.h"
 #include "r_errors.h"
 #include "r_macros.h"
@@ -67,79 +66,10 @@ static int nr_reg_local_compare_string(const void *arg1, const void *arg2) {
    return strcasecmp(*(const char **)arg1, *(const char **)arg2);
 }
 
-/* if C were an object-oriented language, nr_scalar_registry_node and
- * nr_array_registry_node would subclass nr_registry_node, but it isn't
- * object-oriented language, so this is used in cases where the pointer
- * could be of either type */
-typedef struct nr_registry_node_ {
-    unsigned char  type;
-} nr_registry_node;
-
-typedef struct nr_scalar_registry_node_ {
-    unsigned char  type;
-    union {
-        char          _char;
-        UCHAR         _uchar;
-        INT2       _nr_int2;
-        UINT2      _nr_uint2;
-        INT4       _nr_int4;
-        UINT4      _nr_uint4;
-        INT8       _nr_int8;
-        UINT8      _nr_uint8;
-        double        _double;
-    } scalar;
-} nr_scalar_registry_node;
-
-/* string, bytes */
-typedef struct nr_array_registry_node_ {
-    unsigned char    type;
-    struct {
-        unsigned int     length;
-        unsigned char    data[1];
-    } array;
-} nr_array_registry_node;
-
-static int nr_reg_local_init(nr_registry_module *me);
-static int nr_reg_local_get_char(NR_registry name, char *data);
-static int nr_reg_local_get_uchar(NR_registry name, UCHAR *data);
-static int nr_reg_local_get_int2(NR_registry name, INT2 *data);
-static int nr_reg_local_get_uint2(NR_registry name, UINT2 *data);
-static int nr_reg_local_get_int4(NR_registry name, INT4 *data);
-static int nr_reg_local_get_uint4(NR_registry name, UINT4 *data);
-static int nr_reg_local_get_int8(NR_registry name, INT8 *data);
-static int nr_reg_local_get_uint8(NR_registry name, UINT8 *data);
-static int nr_reg_local_get_double(NR_registry name, double *data);
-static int nr_reg_local_get_registry(NR_registry name, NR_registry data);
-static int nr_reg_local_get_bytes(NR_registry name, UCHAR *data, size_t size, size_t *length);
-static int nr_reg_local_get_string(NR_registry name, char *data, size_t size);
-static int nr_reg_local_get_length(NR_registry name, size_t *len);
-static int nr_reg_local_get_type(NR_registry name, NR_registry_type type);
-static int nr_reg_local_set_char(NR_registry name, char data);
-static int nr_reg_local_set_uchar(NR_registry name, UCHAR data);
-static int nr_reg_local_set_int2(NR_registry name, INT2 data);
-static int nr_reg_local_set_uint2(NR_registry name, UINT2 data);
-static int nr_reg_local_set_int4(NR_registry name, INT4 data);
-static int nr_reg_local_set_uint4(NR_registry name, UINT4 data);
-static int nr_reg_local_set_int8(NR_registry name, INT8 data);
-static int nr_reg_local_set_uint8(NR_registry name, UINT8 data);
-static int nr_reg_local_set_double(NR_registry name, double data);
-static int nr_reg_local_set_registry(NR_registry name);
-static int nr_reg_local_set_bytes(NR_registry name, UCHAR *data, size_t length);
-static int nr_reg_local_set_string(NR_registry name, char *data);
-static int nr_reg_local_del(NR_registry name);
-static int nr_reg_local_get_child_count(NR_registry parent, size_t *count);
-static int nr_reg_local_get_children(NR_registry parent, NR_registry *data, size_t size, size_t *length);
-static int nr_reg_local_fin(NR_registry name);
-static int nr_reg_local_dump(int sorted);
 static int nr_reg_insert_node(char *name, void *node);
 static int nr_reg_change_node(char *name, void *node, void *old);
-static int nr_reg_get(char *name, int type, void *out);
 static int nr_reg_get_data(NR_registry name, nr_scalar_registry_node *node, void *out);
-static int nr_reg_get_array(char *name, unsigned char type, UCHAR *out, size_t size, size_t *length);
-static int nr_reg_set(char *name, int type, void *data);
-static int nr_reg_set_array(char *name, unsigned char type, UCHAR *data, size_t length);
 static int nr_reg_set_parent_registries(char *name);
-int nr_reg_fetch_node(char *name, unsigned char type, nr_registry_node **node, int *free_node);
 char *nr_reg_alloc_node_data(char *name, nr_registry_node *node, int *freeit);
 static int nr_reg_rfree(void *ptr);
 static int nr_reg_compute_length(char *name, nr_registry_node *node, size_t *length);
@@ -150,17 +80,10 @@ char *nr_reg_action_name(int action);
  * nr_array_registry_node */
 static r_assoc     *nr_registry = 0;
 
-typedef struct nr_reg_find_children_arg_ {
-    size_t         size;
-    NR_registry   *children;
-    size_t         length;
-} nr_reg_find_children_arg;
-
 static int nr_reg_local_iter(NR_registry prefix, int (*action)(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node), void *ptr);
 static int nr_reg_local_iter_delete(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node);
 static int nr_reg_local_find_children(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node);
 static int nr_reg_local_count_children(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node);
-static int nr_reg_local_dump_print(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node);
 
 
 
@@ -280,29 +203,6 @@ nr_reg_local_count_children(void *ptr, r_assoc_iterator *iter, char *prefix, cha
   }
 
   return 0;
-}
-
-int
-nr_reg_local_dump_print(void *ptr, r_assoc_iterator *iter, char *prefix, char *name, nr_registry_node *node)
-{
-    int _status;
-    int freeit = 0;
-    char *data = 0;
-
-    /* only print leaf nodes */
-    if (node->type != NR_REG_TYPE_REGISTRY) {
-      data = nr_reg_alloc_node_data(name, node, &freeit);
-      if (ptr)
-        fprintf((FILE*)ptr, "%s: %s\n", name, data);
-      else
-        r_log(NR_LOG_REGISTRY, LOG_INFO, "%s: %s", name, data);
-      if (freeit)
-        RFREE(data);
-    }
-
-    _status=0;
-  //abort:
-    return(_status);
 }
 
 
@@ -841,10 +741,8 @@ nr_reg_compute_length(char *name, nr_registry_node *in, size_t *length)
 }
 
 
-/* VTBL METHODS */
-
 int
-nr_reg_local_init(nr_registry_module *me)
+nr_reg_local_init(void)
 {
     int r, _status;
 
@@ -856,61 +754,13 @@ nr_reg_local_init(nr_registry_module *me)
             ABORT(r);
 
       /* make sure NR_TOP_LEVEL_REGISTRY always exists */
-      if ((r=nr_reg_local_set_registry(NR_TOP_LEVEL_REGISTRY)))
+      if ((r=NR_reg_set_registry(NR_TOP_LEVEL_REGISTRY)))
           ABORT(r);
     }
 
     _status=0;
   abort:
     return(_status);
-}
-
-#define NRREGLOCALGET(func, TYPE, type)                             \
-int                                                                 \
-func(NR_registry name, type *out)                                   \
-{                                                                   \
-    return nr_reg_get(name, TYPE, out);                             \
-}
-
-NRREGLOCALGET(nr_reg_local_get_char,     NR_REG_TYPE_CHAR,     char)
-NRREGLOCALGET(nr_reg_local_get_uchar,    NR_REG_TYPE_UCHAR,    UCHAR)
-NRREGLOCALGET(nr_reg_local_get_int2,     NR_REG_TYPE_INT2,     INT2)
-NRREGLOCALGET(nr_reg_local_get_uint2,    NR_REG_TYPE_UINT2,    UINT2)
-NRREGLOCALGET(nr_reg_local_get_int4,     NR_REG_TYPE_INT4,     INT4)
-NRREGLOCALGET(nr_reg_local_get_uint4,    NR_REG_TYPE_UINT4,    UINT4)
-NRREGLOCALGET(nr_reg_local_get_int8,     NR_REG_TYPE_INT8,     INT8)
-NRREGLOCALGET(nr_reg_local_get_uint8,    NR_REG_TYPE_UINT8,    UINT8)
-NRREGLOCALGET(nr_reg_local_get_double,   NR_REG_TYPE_DOUBLE,   double)
-
-int
-nr_reg_local_get_registry(NR_registry name, NR_registry out)
-{
-    int r, _status;
-    nr_scalar_registry_node *node = 0;
-    int free_node = 0;
-
-    if ((r=nr_reg_fetch_node(name, NR_REG_TYPE_REGISTRY, (void*)&node, &free_node)))
-      ABORT(r);
-
-    strncpy(out, name, sizeof(NR_registry));
-
-    _status=0;
-  abort:
-    if (free_node) RFREE(node);
-    return(_status);
-
-}
-
-int
-nr_reg_local_get_bytes(NR_registry name, UCHAR *out, size_t size, size_t *length)
-{
-    return nr_reg_get_array(name, NR_REG_TYPE_BYTES, out, size, length);
-}
-
-int
-nr_reg_local_get_string(NR_registry name, char *out, size_t size)
-{
-    return nr_reg_get_array(name, NR_REG_TYPE_STRING, (UCHAR*)out, size, 0);
 }
 
 int
@@ -933,65 +783,6 @@ nr_reg_local_get_length(NR_registry name, size_t *length)
     return(_status);
 }
 
-int
-nr_reg_local_get_type(NR_registry name, NR_registry_type type)
-{
-    int r, _status;
-    nr_registry_node *node = 0;
-    char *str = 0;
-
-    if ((r=nr_reg_is_valid(name)))
-      ABORT(r);
-
-    if ((r=r_assoc_fetch(nr_registry, name, strlen(name)+1, (void*)&node)))
-      ABORT(r);
-
-    str = nr_reg_type_name(node->type);
-    if (! str)
-        ABORT(R_BAD_ARGS);
-
-    strncpy(type, str, sizeof(NR_registry_type));
-
-    _status=0;
-  abort:
-    return(_status);
-}
-
-
-#define NRREGLOCALSET(func, TYPE, type)                         \
-int                                                             \
-func(NR_registry name, type data)                               \
-{                                                               \
-    return nr_reg_set(name, TYPE, &data);                       \
-}
-
-NRREGLOCALSET(nr_reg_local_set_char,     NR_REG_TYPE_CHAR,     char)
-NRREGLOCALSET(nr_reg_local_set_uchar,    NR_REG_TYPE_UCHAR,    UCHAR)
-NRREGLOCALSET(nr_reg_local_set_int2,     NR_REG_TYPE_INT2,     INT2)
-NRREGLOCALSET(nr_reg_local_set_uint2,    NR_REG_TYPE_UINT2,    UINT2)
-NRREGLOCALSET(nr_reg_local_set_int4,     NR_REG_TYPE_INT4,     INT4)
-NRREGLOCALSET(nr_reg_local_set_uint4,    NR_REG_TYPE_UINT4,    UINT4)
-NRREGLOCALSET(nr_reg_local_set_int8,     NR_REG_TYPE_INT8,     INT8)
-NRREGLOCALSET(nr_reg_local_set_uint8,    NR_REG_TYPE_UINT8,    UINT8)
-NRREGLOCALSET(nr_reg_local_set_double,   NR_REG_TYPE_DOUBLE,   double)
-
-int
-nr_reg_local_set_registry(NR_registry name)
-{
-    return nr_reg_set(name, NR_REG_TYPE_REGISTRY, 0);
-}
-
-int
-nr_reg_local_set_bytes(NR_registry name, unsigned char *data, size_t length)
-{
-    return nr_reg_set_array(name, NR_REG_TYPE_BYTES, data, length);
-}
-
-int
-nr_reg_local_set_string(NR_registry name, char *data)
-{
-    return nr_reg_set_array(name, NR_REG_TYPE_STRING, (UCHAR*)data, strlen(data)+1);
-}
 
 int
 nr_reg_local_del(NR_registry name)
@@ -1010,7 +801,7 @@ nr_reg_local_del(NR_registry name)
 
     /* if deleting from the root, re-insert the root */
     if (! strcasecmp(name, NR_TOP_LEVEL_REGISTRY)) {
-      if ((r=nr_reg_local_set_registry(NR_TOP_LEVEL_REGISTRY)))
+      if ((r=NR_reg_set_registry(NR_TOP_LEVEL_REGISTRY)))
           ABORT(r);
     }
 
@@ -1080,72 +871,3 @@ nr_reg_local_get_children(NR_registry parent, NR_registry *data, size_t size, si
   abort:
     return(_status);
 }
-
-int
-nr_reg_local_fin(NR_registry name)
-{
-    int r, _status;
-
-    if ((r=nr_reg_raise_event(name, NR_REG_CB_ACTION_FINAL)))
-      ABORT(r);
-
-    _status=0;
-  abort:
-    return(_status);
-}
-
-int
-nr_reg_local_dump(int sorted)
-{
-    int r, _status;
-
-    if ((r=nr_reg_local_iter(NR_TOP_LEVEL_REGISTRY, nr_reg_local_dump_print, 0)))
-      ABORT(r);
-
-    _status=0;
-  abort:
-    return(_status);
-}
-
-
-
-static nr_registry_module_vtbl nr_reg_local_vtbl = {
-    nr_reg_local_init,
-    nr_reg_local_get_char,
-    nr_reg_local_get_uchar,
-    nr_reg_local_get_int2,
-    nr_reg_local_get_uint2,
-    nr_reg_local_get_int4,
-    nr_reg_local_get_uint4,
-    nr_reg_local_get_int8,
-    nr_reg_local_get_uint8,
-    nr_reg_local_get_double,
-    nr_reg_local_get_registry,
-    nr_reg_local_get_bytes,
-    nr_reg_local_get_string,
-    nr_reg_local_get_length,
-    nr_reg_local_get_type,
-    nr_reg_local_set_char,
-    nr_reg_local_set_uchar,
-    nr_reg_local_set_int2,
-    nr_reg_local_set_uint2,
-    nr_reg_local_set_int4,
-    nr_reg_local_set_uint4,
-    nr_reg_local_set_int8,
-    nr_reg_local_set_uint8,
-    nr_reg_local_set_double,
-    nr_reg_local_set_registry,
-    nr_reg_local_set_bytes,
-    nr_reg_local_set_string,
-    nr_reg_local_del,
-    nr_reg_local_get_child_count,
-    nr_reg_local_get_children,
-    nr_reg_local_fin,
-    nr_reg_local_dump
-};
-
-static nr_registry_module nr_reg_local_module = { 0, &nr_reg_local_vtbl };
-
-void *NR_REG_MODE_LOCAL = &nr_reg_local_module;
-
-

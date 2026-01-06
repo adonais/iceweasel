@@ -436,7 +436,7 @@ class PromptFeature private constructor(
      * Starts observing the selected session to listen for prompt requests
      * and displays a dialog when needed.
      */
-    @Suppress("ComplexMethod", "LongMethod")
+    @Suppress("CognitiveComplexMethod", "LongMethod", "CyclomaticComplexMethod")
     override fun start() {
         promptAbuserDetector.resetJSAlertAbuseState()
 
@@ -632,7 +632,7 @@ class PromptFeature private constructor(
         }
     }
 
-    @Suppress("NestedBlockDepth", "CyclomaticComplexMethod")
+    @Suppress("NestedBlockDepth", "CyclomaticComplexMethod", "CognitiveComplexMethod")
     @VisibleForTesting(otherwise = PRIVATE)
     internal fun processPromptRequest(
         promptRequest: PromptRequest,
@@ -755,7 +755,7 @@ class PromptFeature private constructor(
      * @param promptRequestUID identifier of the [PromptRequest] for which this dialog was shown.
      * @param value an optional value provided by the dialog as a result of confirming the action.
      */
-    @Suppress("UNCHECKED_CAST", "ComplexMethod")
+    @Suppress("UNCHECKED_CAST", "CyclomaticComplexMethod")
     override fun onConfirm(sessionId: String, promptRequestUID: String, value: Any?) {
         store.consumePromptFrom(sessionId, promptRequestUID, activePrompt) {
             when (it) {
@@ -880,7 +880,7 @@ class PromptFeature private constructor(
     /**
      * Called from on [onPromptRequested] to handle requests for showing native dialogs.
      */
-    @Suppress("ComplexMethod", "LongMethod", "ReturnCount")
+    @Suppress("CognitiveComplexMethod", "LongMethod", "ReturnCount", "CyclomaticComplexMethod")
     @VisibleForTesting(otherwise = PRIVATE)
     internal fun handleDialogsRequest(
         promptRequest: PromptRequest,

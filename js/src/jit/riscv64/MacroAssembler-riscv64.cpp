@@ -6935,15 +6935,10 @@ CodeOffset MacroAssemblerRiscv64::BranchAndLinkShort(Label* L) {
 }
 
 CodeOffset MacroAssemblerRiscv64::BranchAndLink(Label* L) {
-  if (L->bound()) {
-    if (is_near(L)) {
-      return BranchAndLinkShort(L);
-    } else {
-      return BranchAndLinkLong(L);
-    }
-  } else {
-    return BranchAndLinkShort(L);
+  if (L->bound() && !is_near(L)) {
+    return BranchAndLinkLong(L);
   }
+  return BranchAndLinkShort(L);
 }
 
 void MacroAssemblerRiscv64::ma_fmv_d(FloatRegister src, ValueOperand dest) {

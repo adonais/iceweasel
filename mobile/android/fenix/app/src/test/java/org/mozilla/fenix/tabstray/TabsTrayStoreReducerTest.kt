@@ -9,6 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.mozilla.fenix.tabstray.navigation.TabManagerNavDestination
 import org.mozilla.fenix.tabstray.syncedtabs.getFakeSyncedTabList
 
 class TabsTrayStoreReducerTest {
@@ -89,5 +90,17 @@ class TabsTrayStoreReducerTest {
         )
 
         assertEquals(expectedState, resultState)
+    }
+
+    @Test
+    fun `WHEN the tab search button is pressed THEN the tab search destination is added to the back stack`() {
+        val initialState = TabsTrayState()
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabsTrayAction.TabSearchClicked,
+        )
+
+        assertTrue(initialState.backStack.none { it == TabManagerNavDestination.TabSearch })
+        assertTrue(resultState.backStack.last() == TabManagerNavDestination.TabSearch)
     }
 }

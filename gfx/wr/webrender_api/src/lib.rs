@@ -805,6 +805,7 @@ pub enum ScrollLocation {
 pub enum CrashAnnotation {
     CompileShader = 0,
     DrawShader = 1,
+    FontFile = 2,
 }
 
 /// Handler to expose support for annotating crash reports.

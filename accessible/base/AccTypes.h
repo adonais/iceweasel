@@ -19,6 +19,7 @@ enum AccType {
    * alphabetical order since they are used in switch statement.
    */
   eNoType,
+  eHTMLAbbrevType,
   eHTMLBRType,
   eHTMLButtonType,
   eHTMLCanvasType,

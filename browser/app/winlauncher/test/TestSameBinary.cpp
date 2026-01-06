@@ -9,8 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <utility>
-
 #include "SameBinary.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CmdLineAndEnvUtils.h"

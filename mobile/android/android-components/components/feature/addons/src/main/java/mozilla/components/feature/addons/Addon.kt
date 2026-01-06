@@ -724,7 +724,7 @@ data class Addon(
             return localizedSiteAccessPermissions
         }
 
-        @Suppress("MagicNumber", "ComplexMethod")
+        @Suppress("MagicNumber", "CognitiveComplexMethod", "CyclomaticComplexMethod")
         private fun formatURLAccessPermission(
             permissionsToTranslations: MutableMap<String, Int>,
             localizedSiteAccessPermissions: MutableList<String>,

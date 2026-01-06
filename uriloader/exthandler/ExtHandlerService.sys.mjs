@@ -561,6 +561,7 @@ HandlerService.prototype = {
   /**
    * Private method to inject stored handler information into an nsIHandlerInfo
    * instance.
+   *
    * @param handlerInfo           the nsIHandlerInfo instance to write to
    * @param storedHandlers        the stored handlers
    * @param keepPreferredApp      whether to keep the handlerInfo's

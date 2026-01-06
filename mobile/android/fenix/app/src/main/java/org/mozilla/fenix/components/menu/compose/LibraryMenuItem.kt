@@ -140,13 +140,17 @@ private fun LibraryMenuItemPreview(
     val outerRounding = 28.dp
 
     val leftShape = RoundedCornerShape(
-        topStart = outerRounding, topEnd = innerRounding,
-        bottomStart = outerRounding, bottomEnd = innerRounding,
+        topStart = outerRounding,
+        topEnd = innerRounding,
+        bottomStart = outerRounding,
+        bottomEnd = innerRounding,
     )
     val middleShape = RoundedCornerShape(innerRounding)
     val rightShape = RoundedCornerShape(
         topStart = innerRounding,
-        topEnd = outerRounding, bottomStart = innerRounding, bottomEnd = outerRounding,
+        topEnd = outerRounding,
+        bottomStart = innerRounding,
+        bottomEnd = outerRounding,
     )
 
     FirefoxTheme {

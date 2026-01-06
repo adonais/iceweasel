@@ -208,7 +208,7 @@ PeerConnectionTest.prototype.close = function () {
 /**
  * Close the specified data channels
  *
- * @param {Number} index
+ * @param {number} index
  *        Index of the data channels to close on both sides
  */
 PeerConnectionTest.prototype.closeDataChannels = function (index) {
@@ -263,9 +263,9 @@ PeerConnectionTest.prototype.closeDataChannels = function (index) {
 /**
  * Send data (message or blob) to the other peer
  *
- * @param {String|Blob} data
+ * @param {string | Blob} data
  *        Data to send to the other peer. For Blobs the MIME type will be lost.
- * @param {Object} [options={ }]
+ * @param {object} [options={ }]
  *        Options to specify the data channels to be used
  * @param {DataChannelWrapper} [options.sourceChannel=pcLocal.dataChannels[length - 1]]
  *        Data channel to use for sending the message
@@ -721,7 +721,7 @@ DataChannelWrapper.prototype = {
   /**
    * Returns the binary type of the channel
    *
-   * @returns {String} The binary type
+   * @returns {string} The binary type
    */
   get binaryType() {
     return this._channel.binaryType;
@@ -730,7 +730,7 @@ DataChannelWrapper.prototype = {
   /**
    * Sets the binary type of the channel
    *
-   * @param {String} type
+   * @param {string} type
    *        The new binary type of the channel
    */
   set binaryType(type) {
@@ -740,7 +740,7 @@ DataChannelWrapper.prototype = {
   /**
    * Returns the label of the underlying data channel
    *
-   * @returns {String} The label
+   * @returns {string} The label
    */
   get label() {
     return this._channel.label;
@@ -749,7 +749,7 @@ DataChannelWrapper.prototype = {
   /**
    * Returns the protocol of the underlying data channel
    *
-   * @returns {String} The protocol
+   * @returns {string} The protocol
    */
   get protocol() {
     return this._channel.protocol;
@@ -794,7 +794,7 @@ DataChannelWrapper.prototype = {
   /**
    * Returns the readyState bit of the data channel
    *
-   * @returns {String} The state of the channel
+   * @returns {string} The state of the channel
    */
   get readyState() {
     return this._channel.readyState;
@@ -825,7 +825,7 @@ DataChannelWrapper.prototype = {
   /**
    * Send data through the data channel
    *
-   * @param {String|Object} data
+   * @param {string | object} data
    *        Data which has to be sent through the data channel
    */
   send(data) {
@@ -836,7 +836,7 @@ DataChannelWrapper.prototype = {
   /**
    * Returns the string representation of the class
    *
-   * @returns {String} The string representation
+   * @returns {string} The string representation
    */
   toString() {
     return (
@@ -1190,7 +1190,7 @@ PeerConnectionWrapper.prototype = {
   /**
    * Requests all the media streams as specified in the constrains property.
    *
-   * @param {array} constraintsList
+   * @param {Array} constraintsList
    *        Array of constraints for GUM calls
    */
   getAllUserMedia(constraintsList) {
@@ -1244,7 +1244,7 @@ PeerConnectionWrapper.prototype = {
   /**
    * Create a new data channel instance
    *
-   * @param {Object} options
+   * @param {object} options
    *        Options which get forwarded to nsIPeerConnection.createDataChannel
    * @returns {DataChannelWrapper} The created data channel
    */
@@ -2360,7 +2360,7 @@ PeerConnectionWrapper.prototype = {
   /**
    * Returns the string representation of the class
    *
-   * @returns {String} The string representation
+   * @returns {string} The string representation
    */
   toString() {
     return "PeerConnectionWrapper (" + this.label + ")";

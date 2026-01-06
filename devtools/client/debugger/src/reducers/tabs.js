@@ -108,14 +108,14 @@ function removePrettyPrintedSource(state, source) {
  * Either when the user adds a tab (forceAdding will be true),
  * or when sources are registered (forceAdding will be false).
  *
- * @param {Object} state
+ * @param {object} state
  * @param {Array<Source>} sources
- * @param {Boolean} forceAdding
+ * @param {boolean} forceAdding
  *        If true, a tab should be opened for all the passed sources,
  *        even if the source has no url.
  *        If false, only sources matching a previously opened URL
  *        will be restored.
- * @return {Object} Modified state object
+ * @return {object} Modified state object
  */
 function updateTabsWithNewActiveSource(state, sources, forceAdding = false) {
   let { urls, openedSources, prettyPrintedURLs, prettyPrintedDisabledURLs } =

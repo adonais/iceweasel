@@ -6,7 +6,6 @@ package org.mozilla.fenix.home.middleware
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import mozilla.components.service.pocket.PocketStory
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -65,7 +64,7 @@ class HomeTelemetryMiddlewareTest {
                 recommendation = recommendation,
                 position = position,
             ),
-        ).joinBlocking()
+        )
 
         job.join()
         assertTrue(pingReceived)
@@ -114,7 +113,7 @@ class HomeTelemetryMiddlewareTest {
             ContentRecommendationsAction.PocketStoriesShown(
                 impressions = impressions,
             ),
-        ).joinBlocking()
+        )
 
         job.join()
         assertTrue(pingReceived)

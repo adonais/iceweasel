@@ -239,7 +239,9 @@ abstract class AppSearchWidgetProvider : AppWidgetProvider() {
         }
 
         @VisibleForTesting
-        internal fun getLayoutSize(@Dimension(unit = DP) dp: Int) = when {
+        internal fun getLayoutSize(
+            @Dimension(unit = DP) dp: Int,
+        ) = when {
             dp >= DP_LARGE -> SearchWidgetProviderSize.LARGE
             dp >= DP_MEDIUM -> SearchWidgetProviderSize.MEDIUM
             dp >= DP_SMALL -> SearchWidgetProviderSize.SMALL

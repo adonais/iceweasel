@@ -28,11 +28,11 @@ add_task(async function test_basic_invariants() {
     "Unvisited bookmark should have a non-zero frecency threshold."
   );
 
-  let visitedBookmark = PlacesUtils.history.pageFrecencyThreshold(1, 1, true);
-  Assert.greater(
+  let visitedBookmark = PlacesUtils.history.pageFrecencyThreshold(0, 1, true);
+  Assert.equal(
     visitedBookmark,
     unvisitedBookmark,
-    "Visited bookmark should have higher frecency threshold than unvisited bookmark."
+    "Visited bookmark on the same day should have an equal frecency threshold to an unvisited bookmark."
   );
 
   let visitedNonBookmark = PlacesUtils.history.pageFrecencyThreshold(

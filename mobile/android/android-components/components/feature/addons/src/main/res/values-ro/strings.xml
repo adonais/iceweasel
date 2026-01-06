@@ -33,7 +33,7 @@
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Să îți acceseze datele pe alte domenii</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
   <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">Să îți acceseze datele pentru site-uri din %1$d domenii</string>
-  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2" tools:ignore="MissingQuantity">
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
     <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
     <item quantity="one">Să îți acceseze datele pentru site-uri dintr-un domeniu</item>
     <item quantity="few">Să îți acceseze datele pentru site-uri din %1$d domenii</item>
@@ -356,7 +356,7 @@
   <!-- This is the caption for the extension installation progress overlay -->
   <string name="mozac_extension_install_progress_caption">Se descarcă și se verifică extensia…</string>
   <!-- Error shown when something unexpected happened while trying to get the extension list from the server -->
-  <string name="mozac_feature_addons_failed_to_query_extensions">Eșuează cererea către lista de extensii!</string>
+  <string name="mozac_feature_addons_failed_to_query_extensions">Eroare la interogarea extensiilor!</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">Traducerea nu a fost găsită, pentru localizarea %1$s nici pentru limba implicită %2$s</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->
@@ -396,7 +396,7 @@
   <!-- Label shown to indicate that the add-on was migrated from a previous version of the app. %1$s is the app name most of the case it will be Firefox. -->
   <string name="mozac_feature_addons_migrated_from_a_previous_version_label" tools:ignore="UnusedResources">Acest supliment a migrat de la o versiune anterioară %1$s</string>
   <!-- Text shown in not yet supported add-ons section. -->
-  <string name="mozac_feature_addons_unsupported_caption_2">extensie</string>
+  <string name="mozac_feature_addons_unsupported_caption_2">1 extensie</string>
   <!-- Text shown in not yet supported add-ons section - plural. %1$s is the number of unsupported extensions. -->
   <string name="mozac_feature_addons_unsupported_caption_plural_2">%1$s extensii</string>
   <!-- Text link to a sumo page for learning more about unsupported add-ons. -->

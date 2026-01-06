@@ -68,10 +68,10 @@ h6 {
 
   :is(legend, #description) ~ & {
     margin-top: var(--space-small);
-  }
 
-  :host([headinglevel]) :is(legend, #description) ~ & {
-    margin-top: var(--space-large);
+    :host([hasheading]) & {
+      margin-top: var(--space-large);
+    }
   }
 }
 

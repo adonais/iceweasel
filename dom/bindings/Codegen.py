@@ -8646,7 +8646,7 @@ def getRetvalDeclarationForType(returnType, descriptorProvider, isMember=False):
         if not isMember and typeNeedsRooting(returnType):
             rooter = CGGeneric(
                 "RecordRooter<%s> resultRooter(cx, &result);\n"
-                % ("nsString, " + result.define())
+                % (recordKeyType(returnType) + ", " + result.define())
             )
         else:
             rooter = None
@@ -17395,7 +17395,7 @@ class CGDescriptor(CGThing):
         if descriptor.needsMissingPropUseCounters:
             cgThings.append(CGCountMaybeMissingProperty(descriptor))
 
-        if descriptor.interface.identifier.name in ("HTMLDocument", "HTMLFormElement"):
+        if descriptor.interface.identifier.name == "HTMLDocument":
             cgThings.append(CGInterfaceHasProperty(descriptor))
 
         # CGDOMProxyJSClass/CGDOMJSClass need GetProtoObjectHandle, but we don't
@@ -19285,6 +19285,9 @@ class CGBindingRoot(CGThing):
             descriptorHasCrossOriginProperties(d)
             or descriptorHasObservableArrayTypes(d)
             for d in descriptors
+        )
+        bindingHeaders["mozilla/dom/ToJSValue.h"] = any(
+            descriptorHasObservableArrayTypes(d) for d in descriptors
         )
         bindingDeclareHeaders["js/TypeDecls.h"] = not bindingDeclareHeaders["jsapi.h"]
         bindingDeclareHeaders["js/RootingAPI.h"] = not bindingDeclareHeaders["jsapi.h"]

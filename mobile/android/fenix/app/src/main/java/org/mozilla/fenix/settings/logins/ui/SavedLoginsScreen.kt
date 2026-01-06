@@ -5,8 +5,6 @@
 package org.mozilla.fenix.settings.logins.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,10 +20,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -43,6 +41,7 @@ import androidx.compose.ui.semantics.CollectionInfo
 import androidx.compose.ui.semantics.collectionInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -53,7 +52,6 @@ import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.textfield.TextField
-import mozilla.components.compose.base.textfield.TextFieldColors
 import mozilla.components.lib.state.ext.observeAsState
 import mozilla.components.support.ktx.kotlin.trimmed
 import org.mozilla.fenix.R
@@ -61,8 +59,10 @@ import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.compose.list.IconListItem
 import org.mozilla.fenix.compose.list.SelectableFaviconListItem
+import org.mozilla.fenix.settings.biometric.ui.SecureScreen
 import org.mozilla.fenix.settings.logins.ui.LoginsSortOrder.Alphabetical.isGuidToDelete
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -70,17 +70,22 @@ import mozilla.components.ui.icons.R as iconsR
  *
  * @param buildStore A builder function to construct a [LoginsStore] using the NavController that's local
  * to the nav graph for the Logins view hierarchy.
+ * @param exitLogins A callback invoked when the user indicates to exit the secure screen.
  * @param startDestination the screen on which to initialize [SavedLoginsScreen] with.
  */
 @Composable
 internal fun SavedLoginsScreen(
     buildStore: (NavHostController) -> LoginsStore,
+    exitLogins: () -> Unit = {},
     startDestination: String = LoginsDestinations.LIST,
 ) {
     val navController = rememberNavController()
     val store = buildStore(navController)
 
-    RequireAuthorization(store) {
+    SecureScreen(
+        title = stringResource(R.string.logins_biometric_prompt_message_2),
+        onExit = exitLogins,
+    ) {
         NavHost(
             navController = navController,
             startDestination = startDestination,
@@ -127,7 +132,6 @@ private fun LoginsList(store: LoginsStore) {
                 text = state.searchText ?: "",
             )
         },
-        containerColor = FirefoxTheme.colors.layer1,
         contentWindowInsets = WindowInsets(0.dp),
     ) { paddingValues ->
         if (state.searchText.isNullOrEmpty() && state.loginItems.isEmpty()) {
@@ -139,31 +143,28 @@ private fun LoginsList(store: LoginsStore) {
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            if (state.biometricAuthenticationState == BiometricAuthenticationState.Authorized) {
-                LazyColumn(
-                    modifier = Modifier
-                        .padding(paddingValues)
-                        .width(FirefoxTheme.layout.size.containerMaxWidth)
-                        .weight(1f, false)
-                        .semantics {
-                            collectionInfo =
-                                CollectionInfo(rowCount = state.loginItems.size, columnCount = 1)
-                        },
-                ) {
-                    itemsIndexed(state.loginItems) { _, item ->
-
-                        if (state.isGuidToDelete(item.guid)) {
-                            return@itemsIndexed
-                        }
-
-                        SelectableFaviconListItem(
-                            label = item.url.trimmed(),
-                            url = item.url,
-                            isSelected = false,
-                            onClick = { store.dispatch(LoginClicked(item)) },
-                            description = item.username.trimmed(),
-                        )
+            LazyColumn(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .width(FirefoxTheme.layout.size.containerMaxWidth)
+                    .weight(1f, false)
+                    .semantics {
+                        collectionInfo =
+                            CollectionInfo(rowCount = state.loginItems.size, columnCount = 1)
+                    },
+            ) {
+                itemsIndexed(state.loginItems) { _, item ->
+                    if (state.isGuidToDelete(item.guid)) {
+                        return@itemsIndexed
                     }
+
+                    SelectableFaviconListItem(
+                        label = item.url.trimmed(),
+                        url = item.url,
+                        isSelected = false,
+                        onClick = { store.dispatch(LoginClicked(item)) },
+                        description = item.username.trimmed(),
+                    )
                 }
             }
 
@@ -213,8 +214,8 @@ private fun EmptyList(
                     stringResource(R.string.preferences_passwords_saved_logins_description_empty_text_2),
                     stringResource(R.string.app_name),
                 ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = FirefoxTheme.typography.body2,
-                color = FirefoxTheme.colors.textPrimary,
             )
 
             LinkText(
@@ -226,10 +227,6 @@ private fun EmptyList(
                         onClick = { dispatcher(LearnMoreAboutSync) },
                     ),
                 ),
-                style = FirefoxTheme.typography.body2.copy(
-                    color = FirefoxTheme.colors.textPrimary,
-                ),
-                linkTextColor = FirefoxTheme.colors.textPrimary,
                 linkTextDecoration = TextDecoration.Underline,
             )
 
@@ -242,7 +239,7 @@ private fun EmptyList(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Suppress("LongMethod")
+@Suppress("LongMethod", "CognitiveComplexMethod")
 private fun LoginsListTopBar(
     store: LoginsStore,
     text: String,
@@ -250,85 +247,74 @@ private fun LoginsListTopBar(
     var showMenu by remember { mutableStateOf(false) }
     var searchActive by remember { mutableStateOf(false) }
 
-    val iconColor = FirefoxTheme.colors.iconPrimary
+    TopAppBar(
+        windowInsets = WindowInsets(
+            top = 0.dp,
+            bottom = 0.dp,
+        ),
+        title = {
+            if (!searchActive) {
+                Text(
+                    text = stringResource(R.string.preferences_passwords_saved_logins_2),
+                    style = FirefoxTheme.typography.headline5,
+                )
+            } else {
+                SearchBar(text, store)
+            }
+        },
+        navigationIcon = {
+            IconButton(
+                onClick = {
+                    if (!searchActive) {
+                        store.dispatch(LoginsListBackClicked)
+                    } else {
+                        searchActive = false
+                    }
+                },
+                contentDescription = stringResource(R.string.logins_navigate_back_button_content_description),
+            ) {
+                Icon(
+                    painter = painterResource(iconsR.drawable.mozac_ic_back_24),
+                    contentDescription = null,
+                )
+            }
+        },
+        actions = {
+            if (searchActive) return@TopAppBar
 
-    Box {
-        TopAppBar(
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = FirefoxTheme.colors.layer1),
-            windowInsets = WindowInsets(
-                top = 0.dp,
-                bottom = 0.dp,
-            ),
-            title = {
-                if (!searchActive) {
-                    Text(
-                        color = FirefoxTheme.colors.textPrimary,
-                        style = FirefoxTheme.typography.headline6,
-                        text = stringResource(R.string.preferences_passwords_saved_logins_2),
-                    )
-                } else {
-                    SearchBar(text, store)
-                }
-            },
-            navigationIcon = {
+            Box {
                 IconButton(
                     onClick = {
-                        if (!searchActive) {
-                            store.dispatch(LoginsListBackClicked)
-                        } else {
-                            searchActive = false
-                        }
+                        showMenu = true
                     },
-                    contentDescription = null,
+                    contentDescription = stringResource(
+                        R.string.saved_logins_menu_dropdown_chevron_icon_content_description_2,
+                    ),
                 ) {
                     Icon(
-                        painter = painterResource(iconsR.drawable.mozac_ic_back_24),
-                        contentDescription = stringResource(R.string.logins_navigate_back_button_content_description),
-                        tint = iconColor,
+                        painter = painterResource(iconsR.drawable.mozac_ic_sort_24),
+                        contentDescription = null,
                     )
                 }
-            },
-            actions = {
-                if (!searchActive) {
-                    Box {
-                        Icon(
-                            modifier = Modifier
-                                .clickable {
-                                    showMenu = true
-                                },
-                            painter = if (showMenu) {
-                                painterResource(R.drawable.ic_chevron_up)
-                            } else {
-                                painterResource(R.drawable.ic_chevron_down)
-                            },
-                            contentDescription = stringResource(
-                                R.string.saved_logins_menu_dropdown_chevron_icon_content_description_2,
-                            ),
-                            tint = iconColor,
-                        )
 
-                        LoginListSortMenu(
-                            showMenu = showMenu,
-                            onDismissRequest = {
-                                showMenu = false
-                            },
-                            store = store,
-                        )
-                    }
-                    IconButton(onClick = { searchActive = true }, contentDescription = null) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_search),
-                            contentDescription = stringResource(R.string.preferences_passwords_saved_logins_search_2),
-                            tint = iconColor,
-                        )
-                    }
-                }
-            },
-        )
-    }
+                LoginListSortMenu(
+                    showMenu = showMenu,
+                    onDismissRequest = {
+                        showMenu = false
+                    },
+                    store = store,
+                )
+            }
+
+            IconButton(onClick = { searchActive = true }, contentDescription = null) {
+                Icon(
+                    painter = painterResource(iconsR.drawable.mozac_ic_search_24),
+                    contentDescription = stringResource(R.string.preferences_passwords_saved_logins_search_2),
+                )
+            }
+        },
+    )
 }
-
-private val IconButtonHeight = 48.dp
 
 @Composable
 private fun SearchBar(
@@ -342,7 +328,6 @@ private fun SearchBar(
         focusRequester.requestFocus()
     }
 
-    Box {
         TextField(
             value = text,
             placeholder = stringResource(R.string.preferences_passwords_saved_logins_search_2),
@@ -351,11 +336,9 @@ private fun SearchBar(
             },
             errorText = "",
             modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer1)
                 .fillMaxWidth()
                 .focusRequester(focusRequester),
-            minHeight = IconButtonHeight,
-            trailingIcons = {
+            trailingIcon = {
                 if (text.isNotBlank()) {
                     IconButton(
                         onClick = {
@@ -371,19 +354,13 @@ private fun SearchBar(
                         Icon(
                             painter = painterResource(iconsR.drawable.mozac_ic_cross_24),
                             contentDescription = null,
-                            tint = FirefoxTheme.colors.iconPrimary,
                         )
                     }
                 }
             },
-            colors = TextFieldColors.default(
-                placeholderColor = FirefoxTheme.colors.textPrimary,
-                cursorColor = FirefoxTheme.colors.layerAccent,
-            ),
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
         )
-    }
 }
 
 @Composable
@@ -416,50 +393,50 @@ private fun LoginListSortMenu(
 }
 
 private const val LOGINS_LIST_SIZE = 15
+private val loginItems = List(LOGINS_LIST_SIZE) {
+    LoginItem(
+        guid = "$it",
+        url = "https://www.justanothersite$it.com",
+        username = "username $it",
+        password = "password $it",
+    )
+}
+
+private fun createStore() = LoginsStore(
+    initialState = LoginsState.default.copy(
+        loginItems = loginItems,
+        searchText = "",
+    ),
+)
 
 @Composable
 @FlexibleWindowLightDarkPreview
 private fun LoginsListScreenPreview() {
-    val loginItems = List(LOGINS_LIST_SIZE) {
-        LoginItem(
-            guid = "$it",
-            url = "https://www.justanothersite$it.com",
-            username = "username $it",
-            password = "password $it",
-        )
-    }
-
-    val store = { _: NavHostController ->
-        LoginsStore(
-            initialState = LoginsState.default.copy(
-                loginItems = loginItems,
-                searchText = "",
-            ),
-        )
-    }
-
     FirefoxTheme {
-        Box(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
-            SavedLoginsScreen(store)
-        }
+        LoginsList(store = createStore())
+    }
+}
+
+@Composable
+@Preview
+private fun LoginsListScreenPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        LoginsList(store = createStore())
     }
 }
 
 @Composable
 @FlexibleWindowLightDarkPreview
 private fun EmptyLoginsListScreenPreview() {
-    val store = { _: NavHostController ->
-        LoginsStore(
-            initialState = LoginsState.default.copy(
-                loginItems = listOf(),
-                searchText = "",
-            ),
-        )
-    }
-
     FirefoxTheme {
-        Box(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
-            SavedLoginsScreen(store)
-        }
+        LoginsList(store = LoginsStore())
+    }
+}
+
+@Composable
+@Preview
+private fun EmptyLoginsListScreenPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        LoginsList(store = LoginsStore())
     }
 }

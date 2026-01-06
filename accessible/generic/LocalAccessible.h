@@ -155,7 +155,9 @@ class LocalAccessible : public nsISupports, public Accessible {
   /**
    * Get the name of this accessible.
    */
-  virtual ENameValueFlag Name(nsString& aName) const override;
+  virtual ENameValueFlag Name(nsString& aName) const override final;
+
+  virtual ENameValueFlag DirectName(nsString& aName) const;
 
   /**
    * Maps ARIA state attributes to state of accessible. Note the given state
@@ -449,11 +451,6 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   //////////////////////////////////////////////////////////////////////////////
   // Downcasting and types
-
-  inline bool IsAbbreviation() const {
-    return mContent &&
-           mContent->IsAnyOfHTMLElements(nsGkAtoms::abbr, nsGkAtoms::acronym);
-  }
 
   ApplicationAccessible* AsApplication();
 
@@ -876,6 +873,12 @@ class LocalAccessible : public nsISupports, public Accessible {
    * Returns the accessible description specified by ARIA.
    */
   bool ARIADescription(nsString& aDescription) const;
+
+  /**
+   * Returns the accessible "tooltip", usually derived from title attribute in
+   * HTML or tooltiptext in XUL.
+   */
+  bool Tooltip(nsString& aTooltip) const;
 
   /**
    * Returns the accessible name specified for this control using XUL

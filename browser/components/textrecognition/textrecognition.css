@@ -32,7 +32,7 @@
 }
 
 .textRecognitionHeader {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
   display: flex;
   flex-direction: row;
   align-items: center;

@@ -214,9 +214,21 @@ document.addEventListener(
             break;
           case "Tools:Addons":
             BrowserAddonUI.openAddonsMgr();
+            if (event.sourceEvent?.target.id == "key_openAddons") {
+              Services.prefs.setStringPref(
+                "browser.keys.openAddons.lastUsed",
+                new Date().toISOString()
+              );
+            }
             break;
           case "cmd_openUnifiedExtensionsPanel":
             gUnifiedExtensions.openPanel(event);
+            break;
+          case "Tools:ClassicWindow":
+            OpenBrowserWindow({ aiWindow: false });
+            break;
+          case "Tools:AIWindow":
+            OpenBrowserWindow({ aiWindow: true });
             break;
           case "Tools:Sanitize":
             Sanitizer.showUI(window);

@@ -2073,13 +2073,16 @@
 - name: ObjectKeys
   operands:
     object: Object
+  arguments:
+    resultShape: Shape*
   result_type: Object
-
-  # We can recover Object.keys on bailout as long as the object is not escaped
-  # or that the object is not mutated by any aliased calls in-between the
-  # instruction and the recovered location, as the recovered keys array might be
-  # different.
   can_recover: custom
+
+- name: ObjectKeysFromIterator
+  operands:
+    iterator: Object
+  result_type: Object
+  can_recover: true
 
 # Used to fold Object.keys(obj).length into a single operation.
 #
@@ -2203,6 +2206,9 @@
   alias_set: custom
   generate_lir: true
 
+# This is the equivalent of the GuardMultipleShapes CacheIR op. Because it
+# stores a pointer to the ShapeListObject, we don't need to recompile Ion code
+# when a new shape is added to the list.
 - name: GuardMultipleShapes
   operands:
     object: Object
@@ -2214,6 +2220,23 @@
   alias_set: custom
   generate_lir: true
   lir_temps: 4
+
+# Similar to GuardMultipleShapes but used when the list had a small number of
+# shapes. These shapes have been copied to the ShapeListSnapshot and are
+# available at compile-time. This lets us perform more MIR optimizations, but
+# we need to recompile when a new shape is added to the list.
+- name: GuardShapeList
+  operands:
+    object: Object
+  arguments:
+    shapeList: const ShapeListSnapshot*
+  result_type: Object
+  guard: true
+  movable: true
+  congruent_to: custom
+  alias_set: custom
+  generate_lir: true
+  lir_temps: 2
 
 - name: GuardProto
   gen_boilerplate: false
@@ -2777,6 +2800,20 @@
 - name: ObjectToIterator
   gen_boilerplate: false
 
+- name: IteratorLength
+  operands:
+    iter: Object
+  result_type: Int32
+  generate_lir: true
+
+- name: LoadIteratorElement
+  operands:
+    iter: Object
+    index: Int32
+  result_type: String
+  alias_set: none
+  generate_lir: true
+
 - name: ValueToIterator
   operands:
     value: Value
@@ -2786,6 +2823,14 @@
   operands:
     object: Object
     iterator: Object
+  result_type: Boolean
+  alias_set: custom
+
+- name: IteratorsMatchAndHaveIndices
+  operands:
+    object: Object
+    iterator: Object
+    otherIterator: Object
   result_type: Boolean
   alias_set: custom
 
@@ -2802,6 +2847,30 @@
   operands:
     object: Object
     iterator: Object
+    value: Value
+  alias_set: custom
+  generate_lir: true
+  lir_temps: 2
+
+# Okay this is a confusing name, but essentially, the above ops load/store a
+# slot of an object using the PropertyIndex associated with the *current* key
+# for the iterator. The below op uses the PropertyIndex associated with the
+# key indexed by `index`, rather than the current one.
+- name: LoadSlotByIteratorIndexIndexed
+  operands:
+    object: Object
+    iterator: Object
+    index: Int32
+  result_type: Value
+  alias_set: custom
+  generate_lir: true
+  lir_temps: 2
+
+- name: StoreSlotByIteratorIndexIndexed
+  operands:
+    object: Object
+    iterator: Object
+    index: Int32
     value: Value
   alias_set: custom
   generate_lir: true
@@ -3851,9 +3920,13 @@
   result_type: Value
   alias_set: custom
   movable: false
-  possibly_calls: true
   generate_lir: true
+#ifdef JS_CODEGEN_X86
+  possibly_calls: true
   lir_temps: 1
+#else
+  lir_temps: 7
+#endif
 
 - name: WeakMapHasObject
   operands:
@@ -3862,8 +3935,12 @@
   result_type: Boolean
   alias_set: custom
   movable: false
-  possibly_calls: true
   generate_lir: true
+#ifdef JS_CODEGEN_X86
+  possibly_calls: true
+#else
+  lir_temps: 7
+#endif
 
 - name: WeakSetHasObject
   operands:

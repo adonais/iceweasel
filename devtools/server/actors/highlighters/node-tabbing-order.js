@@ -35,7 +35,7 @@ loader.lazyRequireGetter(
  * h.hide();
  * h.destroy();
  *
- * @param {Number} options.index
+ * @param {number} options.index
  *        Tabbing index value to be displayed in the highlighter info bar.
  */
 class NodeTabbingOrderHighlighter extends AutoRefreshHighlighter {
@@ -128,7 +128,7 @@ class NodeTabbingOrderHighlighter extends AutoRefreshHighlighter {
   /**
    * Update focused styling for a node tabbing index highlight.
    *
-   * @param {Boolean} focused
+   * @param {boolean} focused
    *        Indicates if the highlighted node needs to be focused.
    */
   updateFocus(focused) {
@@ -229,7 +229,8 @@ class NodeTabbingOrderHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Calculate border bounds based on the quads returned by getAdjustedQuads.
-   * @return {Object} A bounds object {bottom,height,left,right,top,width,x,y}
+   *
+   * @return {object} A bounds object {bottom,height,left,right,top,width,x,y}
    */
   _getBorderBounds() {
     const quads = this.currentQuads.border;
@@ -290,7 +291,8 @@ class NodeTabbingOrderHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Can the current node be highlighted? Does it have quads.
-   * @return {Boolean}
+   *
+   * @return {boolean}
    */
   _nodeNeedsHighlighting() {
     return (
@@ -334,7 +336,7 @@ class NodeTabbingOrderHighlighter extends AutoRefreshHighlighter {
  *
  * @param  {DOMNode} container
  *         The container element which will be used to position the infobar.
- * @param  {Object} bounds
+ * @param  {object} bounds
  *         The content bounds of the container element.
  * @param  {Window} win
  *         The window object.

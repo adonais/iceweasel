@@ -372,8 +372,9 @@ export var UrlClassifierTestUtils = {
 
   /**
    * Handle the next "urlclassifier-before-block-channel" event.
-   * @param {Object} options
-   * @param {String} [options.filterOrigin] - Only handle event for channels
+   *
+   * @param {object} options
+   * @param {string} [options.filterOrigin] - Only handle event for channels
    * with matching origin.
    * @param {function} [options.onBeforeBlockChannel] - Optional callback for
    * the event. Called before acting on the channel.

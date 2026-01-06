@@ -6,7 +6,6 @@
 #define SANDBOX_PROFILER_H
 
 #include <thread>
-#include <utility>
 #include <linux/limits.h>
 #include <semaphore.h>
 

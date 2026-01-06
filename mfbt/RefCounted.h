@@ -9,7 +9,6 @@
 #ifndef mozilla_RefCounted_h
 #define mozilla_RefCounted_h
 
-#include <utility>
 #include <type_traits>
 
 #include "mozilla/Assertions.h"

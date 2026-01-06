@@ -75,8 +75,8 @@ class BridgedRecord extends RawCryptoWrapper {
   /**
    * Creates an outgoing record from a BSO returned by a bridged engine.
    *
-   * @param  {String} collection The collection name.
-   * @param  {Object} bso   The outgoing bso (ie, a sync15::bso::OutgoingBso) returned from
+   * @param  {string} collection The collection name.
+   * @param  {object} bso   The outgoing bso (ie, a sync15::bso::OutgoingBso) returned from
    *                        `mozIBridgedSyncEngine::apply`.
    * @return {BridgedRecord}     A Sync record ready to encrypt and upload.
    */
@@ -112,7 +112,7 @@ class BridgedRecord extends RawCryptoWrapper {
    * Converts this incoming record into an envelope to pass to a bridged engine.
    * This object must be kept in sync with `sync15::IncomingBso`.
    *
-   * @return {Object} The incoming envelope, to pass to
+   * @return {object} The incoming envelope, to pass to
    *                  `mozIBridgedSyncEngine::storeIncoming`.
    */
   toIncomingBso() {
@@ -205,7 +205,7 @@ BridgedEngine.prototype = {
    * Sync code always calls `resetSyncID()` and `ensureCurrentSyncID()`,
    * not this.
    *
-   * @returns {String?} The sync ID, or `null` if one isn't set.
+   * @returns {string?} The sync ID, or `null` if one isn't set.
    */
   async getSyncID() {
     // Note that all methods on an XPCOM class instance are automatically bound,

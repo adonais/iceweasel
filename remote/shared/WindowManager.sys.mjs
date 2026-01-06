@@ -14,7 +14,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   DebounceCallback: "chrome://remote/content/marionette/sync.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   EventPromise: "chrome://remote/content/shared/Sync.sys.mjs",
-  generateUUID: "chrome://remote/content/shared/UUID.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
   NavigableManager: "chrome://remote/content/shared/NavigableManager.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
@@ -40,9 +39,6 @@ class WindowManager {
   #contextListener;
 
   constructor() {
-    // Maps ChromeWindow to uuid: WeakMap.<Object, string>
-    this._chromeWindowHandles = new WeakMap();
-
     /**
      * Keep track of the client window for any registered contexts. When the
      * contextDestroyed event is fired, the context is already destroyed so
@@ -53,16 +49,6 @@ class WindowManager {
     this.#contextListener = new lazy.BrowsingContextListener();
     this.#contextListener.on("attached", this.#onContextAttached);
     this.#contextListener.startListening();
-  }
-
-  get chromeWindowHandles() {
-    const chromeWindowHandles = [];
-
-    for (const win of this.windows) {
-      chromeWindowHandles.push(this.getIdForWindow(win));
-    }
-
-    return chromeWindowHandles;
   }
 
   /**
@@ -82,45 +68,6 @@ class WindowManager {
     }
 
     return windows;
-  }
-
-  /**
-   * Find a specific window matching the provided window handle.
-   *
-   * @param {string} handle
-   *     The unique handle of either a chrome window or a content browser, as
-   *     returned by :js:func:`#getIdForBrowser` or :js:func:`#getIdForWindow`.
-   *
-   * @returns {object} A window properties object,
-   *     @see :js:func:`GeckoDriver#getWindowProperties`
-   */
-  findWindowByHandle(handle) {
-    for (const win of this.windows) {
-      // In case the wanted window is a chrome window, we are done.
-      const chromeWindowId = this.getIdForWindow(win);
-      if (chromeWindowId == handle) {
-        return this.getWindowProperties(win);
-      }
-
-      // Otherwise check if the chrome window has a tab browser, and that it
-      // contains a tab with the wanted window handle.
-      const tabBrowser = lazy.TabManager.getTabBrowser(win);
-      if (tabBrowser && tabBrowser.tabs) {
-        for (let i = 0; i < tabBrowser.tabs.length; ++i) {
-          let contentBrowser = lazy.TabManager.getBrowserForTab(
-            tabBrowser.tabs[i]
-          );
-          let contentWindowId =
-            lazy.NavigableManager.getIdForBrowser(contentBrowser);
-
-          if (contentWindowId == handle) {
-            return this.getWindowProperties(win, { tabIndex: i });
-          }
-        }
-      }
-    }
-
-    return null;
   }
 
   /**
@@ -180,17 +127,15 @@ class WindowManager {
 
   /**
    * Retrieves an id for the given chrome window. The id is a dynamically
-   * generated uuid associated with the window object.
+   * generated uuid by the NavigableManager and associated with the
+   * top-level browsing context of that chrome window.
    *
    * @param {window} win
-   *     The window object for which we want to retrieve the id.
+   *     The chrome window for which we want to retrieve the id.
    * @returns {string} The unique id for this chrome window.
    */
   getIdForWindow(win) {
-    if (!this._chromeWindowHandles.has(win)) {
-      this._chromeWindowHandles.set(win, lazy.generateUUID());
-    }
-    return this._chromeWindowHandles.get(win);
+    return lazy.NavigableManager.getIdForBrowsingContext(win.browsingContext);
   }
 
   /**

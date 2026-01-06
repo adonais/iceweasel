@@ -148,7 +148,7 @@ TooltipsOverlay.prototype = {
    * These tooltips are attached to the toolbox document if they require a popup panel.
    * Otherwise, it is attached to the inspector panel document if it is an inline editor.
    *
-   * @param {String} name
+   * @param {string} name
    *        Identifier name for the tooltip
    */
   getTooltip(name) {
@@ -232,8 +232,8 @@ TooltipsOverlay.prototype = {
    * Given a hovered node info, find out which type of tooltip should be shown,
    * if any
    *
-   * @param {Object} nodeInfo
-   * @return {String} The tooltip type to be shown, or null
+   * @param {object} nodeInfo
+   * @return {string} The tooltip type to be shown, or null
    */
   _getTooltipType({ type, value: prop }) {
     let tooltipType = null;
@@ -383,7 +383,7 @@ TooltipsOverlay.prototype = {
    *
    * @param  {DOMNode} target
    *         The currently hovered node
-   * @return {Boolean}
+   * @return {boolean}
    *         true if shown, false otherwise.
    */
   async onInteractiveTooltipTargetHover(target) {
@@ -463,7 +463,7 @@ TooltipsOverlay.prototype = {
   /**
    * Send a telemetry Scalar showing that a tooltip of `type` has been opened.
    *
-   * @param {String} type
+   * @param {string} type
    *        The node type from `devtools/client/inspector/shared/node-types` or the Tooltip type.
    */
   sendOpenScalarToTelemetry(type) {
@@ -475,7 +475,7 @@ TooltipsOverlay.prototype = {
    * be relative, a call will be made to the debuggee to retrieve the image content as an
    * imageData URI.
    *
-   * @param {String} imageUrl
+   * @param {string} imageUrl
    *        The image url value (may be relative or absolute).
    * @return {Promise} A promise that resolves when the preview tooltip content is ready
    */
@@ -510,7 +510,7 @@ TooltipsOverlay.prototype = {
   /**
    * Set the content of the preview tooltip to display a font family preview.
    *
-   * @param {String} font
+   * @param {string} font
    *        The font family value.
    * @param {object} nodeFront
    *        The NodeActor that will used to retrieve the dataURL for the font
@@ -558,7 +558,7 @@ TooltipsOverlay.prototype = {
   /**
    * Set the content of the preview tooltip to display a variable preview.
    *
-   * @param {Object} tooltipParams
+   * @param {object} tooltipParams
    *        See VariableTooltipHelper#setVariableTooltip `params`.
    * @return {Promise} A promise that resolves when the preview tooltip content is ready
    */

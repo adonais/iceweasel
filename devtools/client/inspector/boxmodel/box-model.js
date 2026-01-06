@@ -157,7 +157,7 @@ BoxModel.prototype = {
   /**
    * Updates the box model panel by dispatching the new layout data.
    *
-   * @param  {String} reason
+   * @param  {string} reason
    *         Optional string describing the reason why the boxmodel is updated.
    */
   updateBoxModel(reason) {
@@ -293,7 +293,7 @@ BoxModel.prototype = {
    *
    * @param  {Element} target
    *         The target element.
-   * @param  {String} property
+   * @param  {string} property
    *         The name of the property.
    */
   onShowRulePreviewTooltip(target, property) {
@@ -316,7 +316,7 @@ BoxModel.prototype = {
    *         The element that was clicked.
    * @param  {Event} event
    *         The event object.
-   * @param  {String} property
+   * @param  {string} property
    *         The name of the property.
    */
   onShowBoxModelEditor(element, event, property) {

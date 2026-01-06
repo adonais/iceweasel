@@ -11,8 +11,6 @@
 
 #include "VTuneProfiler.h"
 
-#include <memory>
-
 #include "BaseProfiler.h"
 
 namespace mozilla {

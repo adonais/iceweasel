@@ -40,6 +40,7 @@ export var SessionFile = {
   },
   /**
    * Write the contents of the session file, asynchronously.
+   *
    * @param aData - May get changed on shutdown.
    */
   write(aData) {

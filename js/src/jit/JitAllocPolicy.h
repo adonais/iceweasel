@@ -16,7 +16,6 @@
 #include <algorithm>
 #include <stddef.h>
 #include <string.h>
-#include <type_traits>
 #include <utility>
 
 #include "ds/LifoAlloc.h"

@@ -67,17 +67,21 @@ import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
 
 private val BANNER_ROUNDED_CORNER_SHAPE = RoundedCornerShape(
-    topStart = 28.dp, topEnd = 28.dp, bottomStart = 4.dp, bottomEnd = 4.dp,
+    topStart = 28.dp,
+    topEnd = 28.dp,
+    bottomStart = 4.dp,
+    bottomEnd = 4.dp,
 )
 
 private const val DROPDOWN_TEXT_WIDTH_FRACTION = 0.5f
 
-@Suppress("LongParameterList", "LongMethod")
+@Suppress("LongParameterList", "LongMethod", "CognitiveComplexMethod")
 @Composable
 internal fun ProtectionPanel(
     websiteInfoState: WebsiteInfoState,
     icon: Bitmap?,
     isTrackingProtectionEnabled: Boolean,
+    isGlobalTrackingProtectionEnabled: Boolean,
     isLocalPdf: Boolean,
     numberOfTrackersBlocked: Int,
     websitePermissions: List<WebsitePermission>,
@@ -88,6 +92,7 @@ internal fun ProtectionPanel(
     onAutoplayValueClick: (AutoplayValue) -> Unit,
     onToggleablePermissionClick: (WebsitePermission.Toggleable) -> Unit,
 ) {
+    val isSiteProtectionEnabled = isTrackingProtectionEnabled && isGlobalTrackingProtectionEnabled
     MenuScaffold(
         header = {
             ProtectionPanelHeader(
@@ -99,27 +104,29 @@ internal fun ProtectionPanel(
         MenuGroup {
             ProtectionPanelBanner(
                 isSecured = websiteInfoState.isSecured || isLocalPdf,
-                isTrackingProtectionEnabled = isTrackingProtectionEnabled || isLocalPdf,
+                isTrackingProtectionEnabled = isGlobalTrackingProtectionEnabled &&
+                        (isTrackingProtectionEnabled || isLocalPdf),
             )
 
             if (!isLocalPdf) {
                 MenuBadgeItem(
                     label = stringResource(id = R.string.protection_panel_etp_toggle_label),
-                    checked = isTrackingProtectionEnabled,
-                    description = if (isTrackingProtectionEnabled) {
+                    checked = isSiteProtectionEnabled,
+                    description = if (isSiteProtectionEnabled) {
                         stringResource(id = R.string.protection_panel_etp_toggle_enabled_description_2)
                     } else {
                         stringResource(id = R.string.protection_panel_etp_toggle_disabled_description_2)
                     },
-                    badgeText = if (isTrackingProtectionEnabled) {
+                    badgeText = if (isSiteProtectionEnabled) {
                         stringResource(id = R.string.protection_panel_etp_toggle_on)
                     } else {
                         stringResource(id = R.string.protection_panel_etp_toggle_off)
                     },
+                    enabled = isGlobalTrackingProtectionEnabled,
                     onClick = onTrackingProtectionToggleClick,
                 )
 
-                if (!isTrackingProtectionEnabled) {
+                if (!(isSiteProtectionEnabled)) {
                     MenuItem(
                         label = stringResource(id = R.string.protection_panel_etp_disabled_no_trackers_blocked),
                         beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_shield_slash_critical_24),
@@ -272,6 +279,7 @@ private fun ProtectionPanelBanner(
 }
 
 @Composable
+@Suppress("CognitiveComplexMethod")
 private fun WebsitePermissionsMenuGroup(
     websitePermissions: List<WebsitePermission>,
     onAutoplayValueClick: (AutoplayValue) -> Unit,
@@ -439,6 +447,7 @@ private fun ProtectionPanelPreview() {
                 ),
                 icon = null,
                 isTrackingProtectionEnabled = true,
+                isGlobalTrackingProtectionEnabled = true,
                 isLocalPdf = false,
                 numberOfTrackersBlocked = 5,
                 websitePermissions = listOf(

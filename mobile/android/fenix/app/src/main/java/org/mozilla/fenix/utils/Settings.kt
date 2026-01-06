@@ -34,6 +34,8 @@ import mozilla.components.support.ktx.android.content.stringPreference
 import mozilla.components.support.ktx.android.content.stringSetPreference
 import mozilla.components.support.locale.LocaleManager
 import mozilla.components.support.utils.BrowsersCache
+import mozilla.components.support.utils.ext.PackageManagerCompatHelper
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import org.mozilla.experiments.nimbus.NimbusEventStore
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.Config
@@ -51,7 +53,6 @@ import org.mozilla.fenix.debugsettings.addresses.SharedPrefsAddressesDebugRegion
 import org.mozilla.fenix.ext.TALL_SCREEN_HEIGHT_DP
 import org.mozilla.fenix.ext.WIDE_SCREEN_WIDTH_DP
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.getApplicationInstalledTime
 import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.home.pocket.ContentRecommendationsFeatureHelper
@@ -60,13 +61,8 @@ import org.mozilla.fenix.nimbus.CookieBannersSection
 import org.mozilla.fenix.nimbus.DefaultBrowserPrompt
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.HomeScreenSection
-import org.mozilla.fenix.nimbus.Mr2022Section
-import org.mozilla.fenix.nimbus.QueryParameterStrippingSection
-import org.mozilla.fenix.nimbus.QueryParameterStrippingSection.QUERY_PARAMETER_STRIPPING
-import org.mozilla.fenix.nimbus.QueryParameterStrippingSection.QUERY_PARAMETER_STRIPPING_ALLOW_LIST
-import org.mozilla.fenix.nimbus.QueryParameterStrippingSection.QUERY_PARAMETER_STRIPPING_PMB
-import org.mozilla.fenix.nimbus.QueryParameterStrippingSection.QUERY_PARAMETER_STRIPPING_STRIP_LIST
 import org.mozilla.fenix.settings.PhoneFeature
+import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
 import org.mozilla.fenix.settings.logins.SavedLoginsSortingStrategyMenu
 import org.mozilla.fenix.settings.logins.SortingStrategy
@@ -75,6 +71,7 @@ import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_ALL
 import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_AUDIBLE
 import org.mozilla.fenix.tabstray.DefaultTabManagementFeatureHelper
 import org.mozilla.fenix.termsofuse.TOU_VERSION
+import org.mozilla.fenix.termsofuse.getApplicationInstalledTime
 import org.mozilla.fenix.wallpapers.Wallpaper
 import java.security.InvalidParameterException
 import java.util.UUID
@@ -86,10 +83,17 @@ private const val AUTOPLAY_USER_SETTING = "AUTOPLAY_USER_SETTING"
  * A simple wrapper for SharedPreferences that makes reading preference a little bit easier.
  *
  * @param appContext Reference to application context.
+ * @param packageName Package name of the application.
+ * @param packageManagerCompatHelper Helper for accessing [android.content.pm.PackageManager] methods.
+ * @param isBenchmarkBuild Boolean that will be true only when the app is built for Baseline Profile or Macrobenchmark.
  */
 @Suppress("LargeClass", "TooManyFunctions")
-class Settings(private val appContext: Context) : PreferencesHolder {
-
+class Settings(
+    private val appContext: Context,
+    private val packageName: String = appContext.packageName,
+    private val packageManagerCompatHelper: PackageManagerCompatHelper = appContext.packageManagerCompatHelper,
+    private val isBenchmarkBuild: Boolean = BuildConfig.IS_BENCHMARK_BUILD,
+) : PreferencesHolder {
     companion object {
         const val FENIX_PREFERENCES = "fenix_preferences"
 
@@ -204,13 +208,34 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
-     * Indicates what toolbar shortcut key is currently selected.
+     * Indicates what simple toolbar shortcut key is currently selected.
      */
-    var toolbarShortcutKey: String by stringPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_toolbar_shortcut),
-        default = { "new_tab" },
+    var toolbarSimpleShortcutKey: String by stringPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_toolbar_simple_shortcut),
+        default = { ShortcutType.NEW_TAB.value },
         persistDefaultIfNotExists = true,
     )
+
+    val toolbarSimpleShortcut: String
+        get() = when (shouldShowToolbarCustomization) {
+            true -> toolbarSimpleShortcutKey
+            false -> ShortcutType.NEW_TAB.value
+        }
+
+    /**
+     * Indicates what expanded toolbar shortcut key is currently selected.
+     */
+    var toolbarExpandedShortcutKey: String by stringPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_toolbar_expanded_shortcut),
+        default = { ShortcutType.BOOKMARK.value },
+        persistDefaultIfNotExists = true,
+    )
+
+    val toolbarExpandedShortcut: String
+        get() = when (shouldShowToolbarCustomization) {
+            true -> toolbarExpandedShortcutKey
+            false -> ShortcutType.BOOKMARK.value
+        }
 
     /**
      * Indicates if the Pocket recommendations homescreen section should also show sponsored stories.
@@ -403,7 +428,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
 
     var contileContextId by stringPreference(
         appContext.getPreferenceKey(R.string.pref_key_contile_context_id),
-        default = TopSites.contextId.generateAndSet().toString(),
+        default = { TopSites.contextId.generateAndSet().toString() },
         persistDefaultIfNotExists = true,
     )
 
@@ -458,10 +483,9 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     /**
      * Indicates if the wallpaper onboarding dialog should be shown.
      */
-    var showWallpaperOnboarding by lazyFeatureFlagPreference(
+    var showWallpaperOnboarding by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_wallpapers_onboarding),
-        featureFlag = true,
-        default = { mr2022Sections[Mr2022Section.WALLPAPERS_SELECTION_TOOL] == true },
+        default = true,
     )
 
     var openLinksInAPrivateTab by booleanPreference(
@@ -483,7 +507,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
 
     val appIconSelection by lazyFeatureFlagPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_app_icon_selection_enabled),
-        featureFlag = FeatureFlags.APP_ICON_SELECTION,
+        featureFlag = true,
         default = { FxNimbus.features.appIconSelection.value().enabled },
     )
 
@@ -572,19 +596,18 @@ class Settings(private val appContext: Context) : PreferencesHolder {
      */
     var termsOfUseAcceptedTimeInMillis by longPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_terms_accepted_date),
-        default = { if (hasAcceptedTermsOfService) applicationInstalledTime else 0L },
+        default = {
+            if (hasAcceptedTermsOfService) {
+                getApplicationInstalledTime(
+                    packageManagerCompatHelper = packageManagerCompatHelper,
+                    packageName = packageName,
+                    logger = logger,
+                )
+            } else {
+                0L
+            }
+        },
     )
-
-    /**
-     * Temporary testing helper to set the date the user accepted the Terms of Use.
-     *
-     * Will be addressed in a more permanent refactor as part of
-     * https://bugzilla.mozilla.org/show_bug.cgi?id=1993949.
-     *
-     * ⚠️ Only mutate from tests.
-     */
-    @VisibleForTesting
-    internal var applicationInstalledTime = appContext.getApplicationInstalledTime(logger)
 
     /**
      * The version of the Terms of Use that the user has accepted.
@@ -836,13 +859,32 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
-     * Indicates if the LNA (Local Network Access / Local Device Access) blocking is enabled
-     *
-     * This refers to whether or not we are blocking or allowing requests that originate from
-     * remote origins targeting either localhost addresses or local network addresses.
+     * Indicates if the request blocking feature for Local Network / Local Device Access blocking is enabled.
      */
     var isLnaBlockingEnabled by lazyFeatureFlagPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_lna_blocking_enabled),
+        featureFlag = true,
+        default = { FxNimbus.features.lnaBlocking.value().blocking },
+    )
+
+    /**
+     * Indicates if the Local Network / Local Device Access tracker blocking feature is enabled.
+     */
+    var isLnaTrackerBlockingEnabled by lazyFeatureFlagPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_lna_tracker_blocking_enabled),
+        featureFlag = true,
+        default = { FxNimbus.features.lnaBlocking.value().blockTrackers },
+    )
+
+    /**
+     * Indicates if the overall Local Network / Local Device Access feature is enabled.
+     *
+     * Local Network / Local Device Access blocking refers to whether or not we are blocking or
+     * allowing requests that originate from remote origins targeting either localhost addresses or
+     * local network addresses.
+     */
+    var isLnaFeatureEnabled by lazyFeatureFlagPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_lna_feature_enabled),
         featureFlag = true,
         default = { FxNimbus.features.lnaBlocking.value().enabled },
     )
@@ -1050,18 +1092,6 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     val shouldEnableCookieBannerGlobalRulesSubFrame: Boolean
         get() = cookieBannersSection[CookieBannersSection.FEATURE_SETTING_GLOBAL_RULES_SUB_FRAMES] == 1
 
-    val shouldEnableQueryParameterStripping: Boolean
-        get() = queryParameterStrippingSection[QUERY_PARAMETER_STRIPPING] == "1"
-
-    val shouldEnableQueryParameterStrippingPrivateBrowsing: Boolean
-        get() = queryParameterStrippingSection[QUERY_PARAMETER_STRIPPING_PMB] == "1"
-
-    val queryParameterStrippingAllowList: String
-        get() = queryParameterStrippingSection[QUERY_PARAMETER_STRIPPING_ALLOW_LIST].orEmpty()
-
-    val queryParameterStrippingStripList: String
-        get() = queryParameterStrippingSection[QUERY_PARAMETER_STRIPPING_STRIP_LIST].orEmpty()
-
     /**
      * Declared as a function for performance purposes. This could be declared as a variable using
      * booleanPreference like other members of this class. However, doing so will make it so it will
@@ -1193,9 +1223,6 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         default = true,
     )
 
-    val enabledTotalCookieProtection: Boolean
-        get() = mr2022Sections[Mr2022Section.TCP_FEATURE] == true
-
     /**
      * Indicates if the cookie banners CRF should be shown.
      */
@@ -1217,11 +1244,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
 
     val blockCookiesSelectionInCustomTrackingProtection by stringPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_tracking_protection_custom_cookies_select),
-        default = if (enabledTotalCookieProtection) {
-            appContext.getString(R.string.total_protection)
-        } else {
-            appContext.getString(R.string.social)
-        },
+        default = appContext.getString(R.string.total_protection),
     )
 
     val blockTrackingContentInCustomTrackingProtection by booleanPreference(
@@ -1360,7 +1383,7 @@ class Settings(private val appContext: Context) : PreferencesHolder {
 
     var shouldShowToolbarCustomization by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_toolbar_customization),
-        default = { FxNimbus.features.toolbarRedesignOption.value().showExpandedCustomization },
+        default = { FxNimbus.features.toolbarRedesignOption.value().showCustomization },
     )
 
     val toolbarPosition: ToolbarPosition
@@ -1404,13 +1427,41 @@ class Settings(private val appContext: Context) : PreferencesHolder {
             return touchExplorationIsEnabled || switchServiceIsEnabled
         }
 
+    /**
+     * Checks if a specific type of browsing data is configured to be deleted on quit.
+     *
+     * @param type The [DeleteBrowsingDataOnQuitType] to check.
+     * @return `true` if the data type is set to be deleted on quit, `false` otherwise.
+     */
     fun getDeleteDataOnQuit(type: DeleteBrowsingDataOnQuitType): Boolean =
         preferences.getBoolean(type.getPreferenceKey(appContext), false)
 
+    /**
+     * Sets whether a specific type of browsing data should be deleted on quit.
+     *
+     * This function is used to configure the "Delete browsing data on quit" feature.
+     * It writes the user's choice to `SharedPreferences` for the given data type.
+     * The value is later retrieved by `getDeleteDataOnQuit`.
+     *
+     * @param type The [DeleteBrowsingDataOnQuitType] to configure.
+     * @param value `true` to enable deletion for this type on quit, `false` to disable it.
+     */
     fun setDeleteDataOnQuit(type: DeleteBrowsingDataOnQuitType, value: Boolean) {
         preferences.edit { putBoolean(type.getPreferenceKey(appContext), value) }
     }
 
+    /**
+     * Checks if any browsing data type is configured to be deleted on quit.
+     *
+     * This function provides a quick way to determine if the "Delete browsing data on quit"
+     * feature is active in any capacity. It iterates through all possible data types
+     * and returns `true` if at least one of them is set for deletion.
+     *
+     * This is useful for UI components that need to know whether to display a general
+     * indicator that the feature is enabled, without needing to know the specific details.
+     *
+     * @return `true` if one or more data types are set to be deleted on quit, `false` otherwise.
+     */
     fun shouldDeleteAnyDataOnQuit() =
         DeleteBrowsingDataOnQuitType.entries.any { getDeleteDataOnQuit(it) }
 
@@ -1923,6 +1974,10 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         default = true,
     )
 
+    var useNewDynamicToolbarBehaviour by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_use_scroll_data_for_dynamic_toolbar),
+        default = false,
+    )
     var isSwipeToolbarToSwitchTabsEnabled by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_swipe_toolbar_switch_tabs),
         default = true,
@@ -1970,17 +2025,9 @@ class Settings(private val appContext: Context) : PreferencesHolder {
         return featureGate.isAddressFeatureEnabled()
     }
 
-    private val mr2022Sections: Map<Mr2022Section, Boolean>
-        get() =
-            FxNimbus.features.mr2022.value().sectionsEnabled
-
     private val cookieBannersSection: Map<CookieBannersSection, Int>
         get() =
             FxNimbus.features.cookieBanners.value().sectionsEnabled
-
-    private val queryParameterStrippingSection: Map<QueryParameterStrippingSection, String>
-        get() =
-            FxNimbus.features.queryParameterStripping.value().sectionsEnabled
 
     var signedInFxaAccount by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_fxa_signed_in),
@@ -1999,6 +2046,16 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
+     * Stores the user choice from the "Autofill" settings for whether
+     * credit cards should be synced across devices or not, when the user is authenticated.
+     * If set to `true`, then the credit cards will be synced across devices.
+     */
+    var shouldSyncCreditCardsAcrossDevices by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_credit_cards_sync_cards_across_devices),
+        default = false,
+    )
+
+    /**
      * Stores the user choice from the "Autofill Addresses" settings for whether
      * save and autofill addresses should be enabled or not.
      * If set to `true` when the user focuses on address fields in a webpage an Android prompt is shown,
@@ -2010,11 +2067,21 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
+     * Stores the user choice from the "Autofill" settings for whether
+     * addresses should be synced across devices or not, when the user is authenticated.
+     * If set to `true`, then the addresses will be synced across devices.
+     */
+    var shouldSyncAddressesAcrossDevices by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_addresses_sync_cards_across_devices),
+        default = false,
+    )
+
+    /**
      * Get the profile id to use in the sponsored stories communications with the Pocket endpoint.
      */
     val pocketSponsoredStoriesProfileId by stringPreference(
         appContext.getPreferenceKey(R.string.pref_key_pocket_sponsored_stories_profile),
-        default = UUID.randomUUID().toString(),
+        default = { UUID.randomUUID().toString() },
         persistDefaultIfNotExists = true,
     )
 
@@ -2163,6 +2230,14 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
+     * Indicates if the toolbar CFR was displayed to the user.
+     */
+    var hasSeenBrowserToolbarCFR by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_toolbar_cfr),
+        default = isBenchmarkBuild,
+    )
+
+    /**
      * Get the current mode for how https-only is enabled.
      */
     fun getHttpsOnlyMode(): HttpsOnlyMode {
@@ -2249,6 +2324,14 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
+     * Indicates if the extensions status should be shown in the menu opened for custom tabs.
+     */
+    var shouldShowCustomTabExtensions by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_should_show_custom_tab_extensions),
+        default = false,
+    )
+
+    /**
      * Indicates if the Homepage as a New Tab is enabled.
      */
     var enableHomepageAsNewTab by lazyFeatureFlagPreference(
@@ -2275,11 +2358,11 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     )
 
     /**
-     * Indicates if the private browsing mode redesign is enabled.
+     * Indicates if the Mozilla Ads Client is enabled.
      */
-    var enablePrivateBrowsingModeRedesign by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_enable_private_browsing_mode_redesign),
-        default = FeatureFlags.PRIVATE_BROWSING_MODE_REDESIGN,
+    var enableMozillaAdsClient by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_mozilla_ads_client),
+        default = FeatureFlags.MOZILLA_ADS_CLIENT_ENABLED,
     )
 
     /**
@@ -2576,6 +2659,14 @@ class Settings(private val appContext: Context) : PreferencesHolder {
     var loginsListSortOrder by stringPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_logins_list_sort_order),
         default = "",
+    )
+
+    /**
+     * Indicates whether or not we should use the new compose autofill settings UI
+     */
+    var enableComposeAutofillSettings by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_enable_compose_autofill_settings),
+        default = false,
     )
 
     /**

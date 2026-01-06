@@ -52,7 +52,7 @@
   -->
   <string name="mozac_feature_sitepermissions_block">Bloquear</string>
   <!-- Message of a dialog offering more context about the app level notification permission request. %1$s will be replaced with the name of the app. -->
-  <string name="mozac_feature_sitepermissions_notification_permission_rationale_dialog_message">Precisa de permitir notificações no %1$s para as receber deste site.</string>
+  <string name="mozac_feature_sitepermissions_notification_permission_rationale_dialog_message">Precisa de permitir notificações em %1$s para as receber deste site.</string>
   <!-- Button label in a notification permission request dialog to dismiss the dialog. -->
   <string name="mozac_feature_sitepermissions_notification_permission_rationale_dialog_dismiss_label">Cancelar</string>
   <!-- Button label in a notification permission request dialog. It will let the user go to Android Settings to grant the permission. -->

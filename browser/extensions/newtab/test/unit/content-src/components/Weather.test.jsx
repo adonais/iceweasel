@@ -40,6 +40,7 @@ const mockState = {
       ...INITIAL_STATE.Prefs.values,
       [PREF_SYS_SHOW_WEATHER]: true,
       [PREF_SYS_SHOW_WEATHER_OPT_IN]: false,
+      "feeds.weatherfeed": true,
     },
   },
   Weather: { ...weatherInit },

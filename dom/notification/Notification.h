@@ -13,6 +13,7 @@
 #include "mozilla/dom/notification/NotificationChild.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
+#include "nsString.h"
 
 class nsIPrincipal;
 class nsIVariant;
@@ -98,8 +99,13 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
     aRetval = mIPCNotification.options().tag();
   }
 
-  void GetIcon(nsAString& aRetval) {
-    aRetval = mIPCNotification.options().icon();
+  void GetIcon(nsACString& aRetval) {
+    nsIURI* iconUri = mIPCNotification.options().icon();
+    if (!iconUri) {
+      aRetval.Truncate();
+      return;
+    }
+    iconUri->GetSpec(aRetval);
   }
 
   void MaybeNotifyClose();
@@ -109,7 +115,7 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   static already_AddRefed<Promise> RequestPermission(
       const GlobalObject& aGlobal,
-      const Optional<OwningNonNull<NotificationPermissionCallback> >& aCallback,
+      const Optional<OwningNonNull<NotificationPermissionCallback>>& aCallback,
       ErrorResult& aRv);
 
   static NotificationPermission GetPermission(const GlobalObject& aGlobal,
@@ -192,9 +198,8 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
   bool CreateActor();
   bool SendShow(Promise* aPromise);
 
-  static nsresult ResolveIconURL(nsIGlobalObject* aGlobal,
-                                 const nsAString& aIconURL,
-                                 nsString& aResolvedURL);
+  static already_AddRefed<nsIURI> ResolveIconURL(nsIGlobalObject* aGlobal,
+                                                 const nsACString& aIconUrl);
 };
 
 }  // namespace mozilla::dom

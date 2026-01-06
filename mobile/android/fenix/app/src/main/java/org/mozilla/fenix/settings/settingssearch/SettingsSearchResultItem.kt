@@ -14,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -49,40 +50,37 @@ fun SettingsSearchResultItem(
             highlight = defaultSpanStyle,
         )
     }
-    val displaySummary = remember(item.title, query) {
-        highlightQueryMatchingText(
-            text = item.summary,
-            query = query,
-            highlight = defaultSpanStyle,
-        )
+    val displaySubtitle = if (shouldShowSummary(item)) {
+        AnnotatedString(item.summary)
+    } else {
+        val breadcrumbString = buildString {
+            append(stringResource(item.preferenceFileInformation.topBreadcrumbResourceId))
+            if (item.preferenceFileInformation.secondaryBreadcrumbResourceId != 0) {
+                append(" > ")
+                append(stringResource(item.preferenceFileInformation.secondaryBreadcrumbResourceId))
+            }
+        }
+        AnnotatedString(breadcrumbString)
     }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .height(64.dp)
             .clickable(onClick = onClick)
-            .padding(16.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp),
     ) {
-        if (item.breadcrumbs.isNotEmpty()) {
-            Text(
-                text = item.breadcrumbs.joinToString(" > "),
-                style = FirefoxTheme.typography.caption,
-                color = FirefoxTheme.colors.textSecondary,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-        }
-
         Text(
             text = displayTitle,
             style = FirefoxTheme.typography.subtitle1,
+            maxLines = 1,
             color = FirefoxTheme.colors.textPrimary,
         )
-        if (displaySummary.isNotBlank()) {
+        if (displaySubtitle.isNotBlank()) {
             Text(
-                text = displaySummary,
+                text = displaySubtitle,
                 style = FirefoxTheme.typography.caption,
                 color = FirefoxTheme.colors.textSecondary,
-                modifier = Modifier.padding(top = 4.dp),
             )
         } else {
             Spacer(modifier = Modifier.height(8.dp))
@@ -91,7 +89,22 @@ fun SettingsSearchResultItem(
 }
 
 /**
- * Highlights the query matching text.
+ * Whether the summary should be shown.
+ *
+ * @param item [SettingsSearchItem] to check.
+ */
+internal fun shouldShowSummary(
+    item: SettingsSearchItem,
+): Boolean {
+    return (
+            item.preferenceFileInformation == PreferenceFileInformation.GeneralPreferences &&
+            item.summary.isNotBlank()
+            )
+}
+
+/**
+ * Highlights the query matching text.  Only the first instance of the matching text.
+ * Works with even with mismatched capitalization.
  *
  * @param text Text to highlight.
  * @param query Query to highlight.
@@ -102,36 +115,24 @@ internal fun highlightQueryMatchingText(
     query: String,
     highlight: SpanStyle,
 ): AnnotatedString {
-    val tokens = query.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
-    if (tokens.isEmpty()) return AnnotatedString(text)
+    val trimmedQuery = query.trim()
+    if (trimmedQuery.isBlank()) {
+        return AnnotatedString(text)
+    }
 
-    // Build one regex that matches *any* token — even inside words
-    // For example: "data privacy" → matches "metadata", "data-saving", "privacy-aware"
-    val pattern = tokens.joinToString("|") { Regex.escape(it) }
-    val regex = Regex(pattern, RegexOption.IGNORE_CASE)
+    var match = Regex.escape(trimmedQuery).toRegex(RegexOption.IGNORE_CASE).find(text)
 
-    // Find all match ranges
-    val matches = regex.findAll(text).map { it.range }.toList()
-    if (matches.isEmpty()) return AnnotatedString(text)
-
-    // Merge overlapping or adjacent ranges
-    val merged = matches.sortedBy { it.first }.fold(mutableListOf<IntRange>()) { acc, range ->
-        if (acc.isEmpty()) {
-            acc += range
-        } else {
-            val last = acc.last()
-            if (range.first <= last.last + 1) {
-                acc[acc.lastIndex] = (last.first..maxOf(last.last, range.last))
-            } else {
-                acc += range
-            }
+    if (match == null) {
+        val tokens = trimmedQuery.split(Regex("\\s+")).filter { it.isNotBlank() }
+        if (tokens.isNotEmpty()) {
+            val pattern = tokens.joinToString("|") { Regex.escape(it) }
+            match = Regex(pattern, RegexOption.IGNORE_CASE).find(text)
         }
-        acc
     }
 
     return buildAnnotatedString {
         append(text)
-        merged.forEach { range ->
+        match?.range?.let { range ->
             addStyle(highlight, range.first, range.last + 1)
         }
     }
@@ -144,14 +145,14 @@ private class SettingsSearchResultItemParameterProvider : PreviewParameterProvid
                 title = "Search Engine",
                 summary = "Set your preferred search engine for browsing.",
                 preferenceKey = "search_engine_main",
-                breadcrumbs = listOf("Search", "Default Search Engine"),
+                categoryHeader = "General",
                 preferenceFileInformation = PreferenceFileInformation.SearchSettingsPreferences,
             ),
             SettingsSearchItem(
                 title = "Advanced Settings",
                 summary = "", // Empty or blank summary
                 preferenceKey = "advanced_stuff",
-                breadcrumbs = listOf("Developer", "Experiments"),
+                categoryHeader = "Advanced",
                 preferenceFileInformation = PreferenceFileInformation.GeneralPreferences,
             ),
         )

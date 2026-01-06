@@ -1624,6 +1624,10 @@ nsresult WorkerPrivate::DispatchLockHeld(
            this, runnable.get()));
       RefPtr<WorkerThreadRunnable> workerThreadRunnable =
           static_cast<WorkerThreadRunnable*>(runnable.get());
+      PROFILER_MARKER("WorkerPrivate::DispatchLockHeld", OTHER,
+                      {MarkerStack::MaybeCapture(
+                          profiler_feature_active(ProfilerFeature::Flows))},
+                      FlowMarker, Flow::FromPointer(runnable.get()));
       mPreStartRunnables.AppendElement(workerThreadRunnable);
       return NS_OK;
     }
@@ -1653,6 +1657,10 @@ nsresult WorkerPrivate::DispatchLockHeld(
            this, runnable.get()));
       RefPtr<WorkerThreadRunnable> workerThreadRunnable =
           static_cast<WorkerThreadRunnable*>(runnable.get());
+      PROFILER_MARKER("WorkerPrivate::DispatchLockHeld", OTHER,
+                      {MarkerStack::MaybeCapture(
+                          profiler_feature_active(ProfilerFeature::Flows))},
+                      FlowMarker, Flow::FromPointer(runnable.get()));
       mPreStartRunnables.AppendElement(workerThreadRunnable);
     }
 
@@ -3671,6 +3679,9 @@ void WorkerPrivate::RunLoopNeverRan() {
     if (!mPreStartRunnables.IsEmpty()) {
       for (const RefPtr<WorkerThreadRunnable>& runnable : mPreStartRunnables) {
         runnable->mCleanPreStartDispatching = true;
+        PROFILER_MARKER("WorkerPrivate::RunLoopNeverRan", OTHER, {},
+                        TerminatingFlowMarker,
+                        Flow::FromPointer(runnable.get()));
       }
       mPreStartRunnables.Clear();
     }

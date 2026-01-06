@@ -7,6 +7,7 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  IPPProxyManager: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
     "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
 });
@@ -66,10 +67,10 @@ add_task(async function user_toggle_on_and_off() {
   Services.fog.testResetFOG();
   await Services.fog.testFlushAllChildren();
   let vpnOnPromise = BrowserTestUtils.waitForEvent(
-    lazy.IPProtectionService,
-    "IPProtectionService:StateChanged",
+    lazy.IPPProxyManager,
+    "IPPProxyManager:StateChanged",
     false,
-    () => !!IPProtectionService.activatedAt
+    () => !!IPPProxyManager.activatedAt
   );
   // Toggle the VPN on
   toggle.click();
@@ -82,10 +83,10 @@ add_task(async function user_toggle_on_and_off() {
   Assert.equal(toggledEvents[0].extra.userAction, "true");
 
   let vpnOffPromise = BrowserTestUtils.waitForEvent(
-    lazy.IPProtectionService,
-    "IPProtectionService:StateChanged",
+    lazy.IPPProxyManager,
+    "IPPProxyManager:StateChanged",
     false,
-    () => !IPProtectionService.activatedAt
+    () => !IPPProxyManager.activatedAt
   );
   // Toggle the VPN off
   toggle.click();
@@ -153,10 +154,10 @@ add_task(async function toggle_off_on_shutdown() {
   Services.fog.testResetFOG();
 
   let vpnOnPromise = BrowserTestUtils.waitForEvent(
-    lazy.IPProtectionService,
-    "IPProtectionService:StateChanged",
+    lazy.IPPProxyManager,
+    "IPPProxyManager:StateChanged",
     false,
-    () => !!IPProtectionService.activatedAt
+    () => !!IPPProxyManager.activatedAt
   );
   // Toggle the VPN on
   toggle.click();
@@ -266,7 +267,7 @@ add_task(async function test_error_state() {
   button.click();
   await Promise.all([panelShownPromise, panelInitPromise]);
 
-  lazy.IPProtectionService.setErrorState(ERRORS.GENERIC, ERRORS.GENERIC);
+  lazy.IPPProxyManager.setErrorState(ERRORS.GENERIC, ERRORS.GENERIC);
   let errorEvent = Glean.ipprotection.error.testGetValue();
   Assert.equal(errorEvent.length, 1, "should have recorded an error");
   Services.fog.testResetFOG();

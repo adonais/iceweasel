@@ -157,6 +157,80 @@
           "Select displays the icon of the newly selected option"
         );
       });
+
+      function openSelectAndGetMenuPopup(select) {
+        let topWindow = window.docShell.chromeEventHandler.ownerGlobal;
+        let pickerOpened = BrowserTestUtils.waitForSelectPopupShown(topWindow);
+        select.focus();
+        synthesizeKey(" ");
+        return pickerOpened;
+      }
+
+      /**
+       * Test that hidden and disabled moz-option are reflected in the popup menu.
+       */
+      add_task(async function testMozSelectHiddenAndDisabledOptions() {
+        let target = await testHelpers.renderTemplate();
+        let select = target.querySelector("moz-select");
+        await select.updateComplete;
+
+        let mozOptions = select.querySelectorAll("moz-option");
+
+        // Open select and verify all elements are visible and enabled.
+        let popup = await openSelectAndGetMenuPopup(select);
+        let popupItems = Array.from(popup.children);
+
+        // Items that are hidden are not included in the popup's children.
+        is(popupItems.length, mozOptions.length, "All options are shown");
+        for (let i = 0; i < popupItems.length; i++) {
+          ok(!popupItems[i].disabled, `Option ${i} is enabled`);
+        }
+
+        // Close popup.
+        let hiddenPromise = BrowserTestUtils.waitForPopupEvent(popup, "hidden");
+        popup.hidePopup();
+        await hiddenPromise;
+
+        await TestUtils.waitForTick();
+        await select.updateComplete;
+
+        // set first option to disabled and second option to hidden.
+        mozOptions[0].disabled = true;
+        mozOptions[1].hidden = true;
+
+        await TestUtils.waitForTick();
+        await select.updateComplete;
+
+        // open select and verify first option is disabled and second option is hidden.
+        popup = await openSelectAndGetMenuPopup(select);
+        popupItems = Array.from(popup.children);
+
+        is(
+          popupItems.length,
+          mozOptions.length - 1,
+          "All but one option shown"
+        );
+
+        ok(popupItems[0].disabled, "First option is disabled");
+        is(popupItems[0].label, mozOptions[0].label, "First option is visible");
+        ok(!popupItems[1].disabled, "Second option is enabled");
+        is(popupItems[1].label, mozOptions[2].label, "Third option is visible");
+        ok(!popupItems[2].disabled, "Third option is enabled");
+        is(
+          popupItems[2].label,
+          mozOptions[3].label,
+          "Fourth option is visible"
+        );
+
+        // Close popup.
+        hiddenPromise = BrowserTestUtils.waitForPopupEvent(popup, "hidden");
+        popup.hidePopup();
+        await hiddenPromise;
+
+        // Reset options
+        mozOptions[0].disabled = false;
+        mozOptions[1].hidden = false;
+      });
     </script>
   </head>
   <body></body>

@@ -383,10 +383,41 @@ mozilla::ipc::IPCResult FetchChild::RecvOnNotifyNetworkMonitorAlternateStack(
         });
 
     MOZ_ALWAYS_SUCCEEDS(SchedulerGroup::Dispatch(r.forget()));
+  } else {
+    // Handle main-thread fetch requests
+    if (!mOriginStack) {
+      return IPC_OK();
+    }
+
+    if (!mWorkerChannelInfo) {
+      // Get browsing context from the promise's global object
+      uint64_t browsingContextID = 0;
+      if (mPromise && mPromise->GetGlobalObject()) {
+        if (auto* innerWindow =
+                mPromise->GetGlobalObject()->GetAsInnerWindow()) {
+          if (auto* browsingContext = innerWindow->GetBrowsingContext()) {
+            browsingContextID = browsingContext->Id();
+          }
+        }
+      }
+      if (browsingContextID == 0) {
+        FETCH_LOG(
+            ("FetchChild::RecvOnNotifyNetworkMonitorAlternateStack: unable to "
+             "get browsingContextID for main-thread fetch, channelID=%" PRIu64,
+             aChannelID));
+      }
+      mWorkerChannelInfo =
+          MakeRefPtr<WorkerChannelInfo>(aChannelID, browsingContextID);
+    }
+
+    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
+        __func__, [channel = mWorkerChannelInfo,
+                   stack = std::move(mOriginStack)]() mutable {
+          NotifyNetworkMonitorAlternateStack(channel, std::move(stack));
+        });
+
+    MOZ_ALWAYS_SUCCEEDS(SchedulerGroup::Dispatch(r.forget()));
   }
-  // Currently we only support sending notifications for worker-thread initiated
-  // Fetch requests. We need to extend this to main-thread fetch requests as
-  // well. See Bug 1897424.
 
   return IPC_OK();
 }

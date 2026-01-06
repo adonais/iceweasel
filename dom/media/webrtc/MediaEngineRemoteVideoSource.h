@@ -88,6 +88,10 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
  public:
   explicit MediaEngineRemoteVideoSource(const MediaDevice* aMediaDevice);
 
+  static already_AddRefed<MediaEngineRemoteVideoSource> CreateFrom(
+      const MediaEngineRemoteVideoSource* aSource,
+      const MediaDevice* aMediaDevice);
+
   // ExternalRenderer
   /**
    * Signals that the capture stream has ended
@@ -161,7 +165,7 @@ class MediaEngineRemoteVideoSource : public MediaEngineSource,
 
   // mMutex protects certain members on 3 threads:
   // MediaManager, Cameras IPC and MediaTrackGraph.
-  Mutex mMutex MOZ_UNANNOTATED;
+  mutable Mutex mMutex MOZ_UNANNOTATED;
 
   // Current state of this source.
   // Set under mMutex on the owning thread. Accessed under one of the two.

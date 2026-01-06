@@ -59,7 +59,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=998893
     let field = document.getElementById("field1");
 
     let promiseFieldFocus = new Promise(resolve => {
-      field.addEventListener("focus", function onFocus() {
+      field.addEventListener("focusin", function onFocus() {
         info("field focused");
         field.value = "New value";
         sendKey("DOWN");

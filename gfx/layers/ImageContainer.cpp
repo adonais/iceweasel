@@ -508,7 +508,7 @@ void ImageContainer::GetCurrentImages(nsTArray<OwningImage>* aImages,
                                       uint32_t* aGenerationCounter) {
   RecursiveMutexAutoLock lock(mRecursiveMutex);
 
-  *aImages = mCurrentImages.Clone();
+  aImages->Assign(mCurrentImages);
   if (aGenerationCounter) {
     *aGenerationCounter = mGenerationCounter;
   }

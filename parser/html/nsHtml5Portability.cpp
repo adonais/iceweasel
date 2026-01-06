@@ -7,7 +7,6 @@
 #include "nsAtom.h"
 #include "nsHtml5TreeBuilder.h"
 #include "nsString.h"
-#include "mozilla/CheckedInt.h"
 
 nsAtom* nsHtml5Portability::newLocalNameFromBuffer(char16_t* buf,
                                                    int32_t length,

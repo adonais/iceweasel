@@ -12,7 +12,6 @@
 #endif
 #include "nsRemoteClient.h"
 #include "mozilla/DBusHelpers.h"
-#include "mozilla/RefPtr.h"
 #include "nsString.h"
 #include "nscore.h"
 

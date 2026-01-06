@@ -24,7 +24,7 @@ tasks:
             with-attributes:
                 dxc-crash-symbols: [true]
                 enable-full-crashsymbols: [true]
-        worker-type: b-linux-amd
+        worker-type: b-linux-docker-amd
         worker:
             docker-image: {in-tree: "lint"}
             max-run-time: 1800

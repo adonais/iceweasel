@@ -201,10 +201,9 @@ bool ContentCacheInChild::CacheSelection(nsIWidget* aWidget,
     return false;
   }
 
-  nsEventStatus status = nsEventStatus_eIgnore;
   WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
                                                  aWidget);
-  aWidget->DispatchEvent(&querySelectedTextEvent, status);
+  aWidget->DispatchEvent(&querySelectedTextEvent);
   if (NS_WARN_IF(querySelectedTextEvent.Failed())) {
     MOZ_LOG(
         sContentCacheLog, LogLevel::Error,
@@ -251,10 +250,9 @@ bool ContentCacheInChild::CacheCaret(nsIWidget* aWidget,
     // XXX Should be mSelection.mFocus?
     const uint32_t offset = mSelection->StartOffset();
 
-    nsEventStatus status = nsEventStatus_eIgnore;
     WidgetQueryContentEvent queryCaretRectEvent(true, eQueryCaretRect, aWidget);
     queryCaretRectEvent.InitForQueryCaretRect(offset);
-    aWidget->DispatchEvent(&queryCaretRectEvent, status);
+    aWidget->DispatchEvent(&queryCaretRectEvent);
     if (NS_WARN_IF(queryCaretRectEvent.Failed())) {
       MOZ_LOG(sContentCacheLog, LogLevel::Error,
               ("0x%p   CacheCaret(), FAILED, couldn't retrieve the caret rect "
@@ -277,9 +275,8 @@ bool ContentCacheInChild::CacheEditorRect(
           ("0x%p CacheEditorRect(aWidget=0x%p, aNotification=%s)", this,
            aWidget, GetNotificationName(aNotification)));
 
-  nsEventStatus status = nsEventStatus_eIgnore;
   WidgetQueryContentEvent queryEditorRectEvent(true, eQueryEditorRect, aWidget);
-  aWidget->DispatchEvent(&queryEditorRectEvent, status);
+  aWidget->DispatchEvent(&queryEditorRectEvent);
   if (NS_WARN_IF(queryEditorRectEvent.Failed())) {
     MOZ_LOG(
         sContentCacheLog, LogLevel::Error,
@@ -322,11 +319,10 @@ bool ContentCacheInChild::CacheText(nsIWidget* aWidget,
           ("0x%p CacheText(aWidget=0x%p, aNotification=%s)", this, aWidget,
            GetNotificationName(aNotification)));
 
-  nsEventStatus status = nsEventStatus_eIgnore;
   WidgetQueryContentEvent queryTextContentEvent(true, eQueryTextContent,
                                                 aWidget);
   queryTextContentEvent.InitForQueryTextContent(0, UINT32_MAX);
-  aWidget->DispatchEvent(&queryTextContentEvent, status);
+  aWidget->DispatchEvent(&queryTextContentEvent);
   if (NS_WARN_IF(queryTextContentEvent.Failed())) {
     MOZ_LOG(sContentCacheLog, LogLevel::Error,
             ("0x%p   CacheText(), FAILED, couldn't retrieve whole text", this));
@@ -385,10 +381,9 @@ bool ContentCacheInChild::QueryCharRect(nsIWidget* aWidget, uint32_t aOffset,
                                         LayoutDeviceIntRect& aCharRect) const {
   aCharRect.SetEmpty();
 
-  nsEventStatus status = nsEventStatus_eIgnore;
   WidgetQueryContentEvent queryTextRectEvent(true, eQueryTextRect, aWidget);
   queryTextRectEvent.InitForQueryTextRect(aOffset, 1);
-  aWidget->DispatchEvent(&queryTextRectEvent, status);
+  aWidget->DispatchEvent(&queryTextRectEvent);
   if (NS_WARN_IF(queryTextRectEvent.Failed())) {
     return false;
   }
@@ -407,11 +402,10 @@ bool ContentCacheInChild::QueryCharRect(nsIWidget* aWidget, uint32_t aOffset,
 bool ContentCacheInChild::QueryCharRectArray(nsIWidget* aWidget,
                                              uint32_t aOffset, uint32_t aLength,
                                              RectArray& aCharRectArray) const {
-  nsEventStatus status = nsEventStatus_eIgnore;
   WidgetQueryContentEvent queryTextRectsEvent(true, eQueryTextRectArray,
                                               aWidget);
   queryTextRectsEvent.InitForQueryTextRectArray(aOffset, aLength);
-  aWidget->DispatchEvent(&queryTextRectsEvent, status);
+  aWidget->DispatchEvent(&queryTextRectsEvent);
   if (NS_WARN_IF(queryTextRectsEvent.Failed())) {
     aCharRectArray.Clear();
     return false;
@@ -566,11 +560,10 @@ bool ContentCacheInChild::CacheTextRects(nsIWidget* aWidget,
   // middle of different line.
   if (mSelection.isSome() && mSelection->mHasRange &&
       !mSelection->IsCollapsed()) {
-    nsEventStatus status = nsEventStatus_eIgnore;
     WidgetQueryContentEvent queryTextRectEvent(true, eQueryTextRect, aWidget);
     queryTextRectEvent.InitForQueryTextRect(mSelection->StartOffset(),
                                             mSelection->Length());
-    aWidget->DispatchEvent(&queryTextRectEvent, status);
+    aWidget->DispatchEvent(&queryTextRectEvent);
     if (NS_WARN_IF(queryTextRectEvent.Failed())) {
       MOZ_LOG(sContentCacheLog, LogLevel::Error,
               ("0x%p   CacheTextRects(), FAILED, "

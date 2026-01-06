@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.customtabs.verify
 
-import android.content.pm.PackageManager
 import androidx.browser.customtabs.CustomTabsService.RELATION_HANDLE_ALL_URLS
 import androidx.browser.customtabs.CustomTabsService.RELATION_USE_AS_ORIGIN
 import androidx.core.net.toUri
@@ -14,6 +13,7 @@ import mozilla.components.concept.fetch.Response
 import mozilla.components.service.digitalassetlinks.AssetDescriptor
 import mozilla.components.service.digitalassetlinks.Relation
 import mozilla.components.service.digitalassetlinks.RelationChecker
+import mozilla.components.support.utils.ext.PackageManagerCompatHelper
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -32,7 +32,7 @@ class OriginVerifierTest {
         sha256CertFingerprint = "AA:BB:CC:10:20:30:01:02",
     )
 
-    @Mock private lateinit var packageManager: PackageManager
+    @Mock private lateinit var packageManager: PackageManagerCompatHelper
 
     @Mock private lateinit var response: Response
 

@@ -100,7 +100,7 @@ nsresult TaskQueue::DispatchLocked(nsCOMPtr<nsIRunnable>& aRunnable,
   // Continue to allow dispatches after shutdown until the last message has been
   // processed, at which point no more messages will be accepted.
   if (mIsShutdown && !mIsRunning) {
-    return NS_ERROR_UNEXPECTED;
+    return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
 
   AbstractThread* currentThread;

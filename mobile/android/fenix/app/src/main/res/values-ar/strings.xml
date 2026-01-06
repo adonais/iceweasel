@@ -412,6 +412,10 @@
   <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">كيف نستخدم البيانات</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">تأكيد وبدء التصفح</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding label for 'Save and continue' button, used by Nimbus experiments. -->
   <string name="onboarding_save_and_continue_button">حفظ ومتابعة</string>
   <!-- Onboarding toolbar selection card label for 'top' option, used by Nimbus experiments. -->
@@ -553,8 +557,6 @@
   <string name="preferences_gestures">الإيماءات</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">خصّص</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">لِج لمزامنة ألسنتك و علاماتك و كلمات السر والمزيد.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">حساب Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -782,12 +784,6 @@
   <string name="preference_experiments_2">الدراسات</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">تسمح لمؤسسة Mozilla بتثبيت الدراسات وتشغيلها</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">زامِن واحفظ بياناتك</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">لِج لإعادة الاتصال</string>
   <!-- Preference for removing FxA account -->
@@ -1292,8 +1288,6 @@
   <string name="toast_copy_link_to_clipboard">نُسخ إلى الحافظة</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">لِج إلى «المزامنة»</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">زامِن واحفظ البيانات</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">أرسله إلى كل الأجهزة</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2254,4 +2248,10 @@
   -->
   <string name="beta_feature">النسخة التجريبية</string>
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

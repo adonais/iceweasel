@@ -7,8 +7,6 @@
 #ifndef AudioEventTimeline_h_
 #define AudioEventTimeline_h_
 
-#include <algorithm>
-
 #include "MainThreadUtils.h"
 #include "WebAudioUtils.h"
 #include "math.h"

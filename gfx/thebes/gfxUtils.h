@@ -285,6 +285,13 @@ class gfxUtils {
   CopySurfaceToDataSourceSurfaceWithFormat(SourceSurface* aSurface,
                                            SurfaceFormat aFormat);
 
+  // Scales a SourceSurface to the new requested size.
+  //
+  // Asserts when the requested size is equal to the current size of the
+  // surface.
+  static already_AddRefed<SourceSurface> ScaleSourceSurface(
+      SourceSurface& aSurface, const mozilla::gfx::IntSize& aTargetSize);
+
   /**
    * Return a color that can be used to identify a frame with a given frame
    * number. The colors will cycle after sNumFrameColors.  You can query colors

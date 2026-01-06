@@ -18,6 +18,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -267,7 +268,7 @@ private fun TabPageBanner(
     val inactiveColor = FirefoxTheme.colors.iconPrimaryInactive
     var showMenu by remember { mutableStateOf(false) }
 
-    Column(modifier = Modifier.background(color = FirefoxTheme.colors.layer1)) {
+    Column(modifier = Modifier.background(color = MaterialTheme.colorScheme.surface)) {
         Spacer(modifier = Modifier.height(dimensionResource(id = R.dimen.bottom_sheet_handle_top_margin)))
 
         BottomSheetHandle(
@@ -305,8 +306,7 @@ private fun TabPageBanner(
                 ) {
                     TabCounter(
                         tabCount = counts.normalTabCount,
-                        textColor = LocalContentColor.current,
-                        iconColor = LocalContentColor.current,
+                        contentColor = LocalContentColor.current,
                     )
                 }
 
@@ -371,7 +371,7 @@ private fun TabPageBanner(
                 Icon(
                     painter = painterResource(R.drawable.ic_menu),
                     contentDescription = stringResource(id = R.string.open_tabs_menu),
-                    tint = FirefoxTheme.colors.iconPrimary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }

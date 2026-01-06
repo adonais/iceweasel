@@ -22,7 +22,9 @@
 # do ok(true, "Type not supported") and stop the test.
 
 [DEFAULT]
-skip-if = ["isolated_process"] # Bug 1709948
+skip-if = [
+  "isolated_process", # Bug 1709948
+]
 subsuite = "media"
 tags = "mtg capturestream"
 support-files = [
@@ -719,11 +721,19 @@ prefs = [
 ["test_streams_gc.html"]
 
 ["test_streams_individual_pause.html"]
-skip-if = ["os == 'mac' && debug"] # Bug 1756880 - temp due to low frequency shutdown hang
+skip-if = [
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1756880 - temp due to low frequency shutdown hang
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1756880 - temp due to low frequency shutdown hang
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 1756880 - temp due to low frequency shutdown hang
+]
 scheme = "https"
 tags = "mtg"
 
 ["test_streams_srcObject.html"]
-skip-if = ["os == 'mac' && debug"] # Bug 1756880 - temp due to high frequency shutdown hang
+skip-if = [
+  "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1756880 - temp due to high frequency shutdown hang
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1756880 - temp due to high frequency shutdown hang
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 1756880 - temp due to high frequency shutdown hang
+]
 
 ["test_streams_tracks.html"]

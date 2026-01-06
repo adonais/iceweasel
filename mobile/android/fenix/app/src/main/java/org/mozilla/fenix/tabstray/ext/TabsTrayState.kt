@@ -164,8 +164,8 @@ private fun generateTabPageBannerMenuItems(
         onClick = onAccountSettingsClick,
     )
     return when {
-        selectedPage == Page.NormalTabs && normalTabCount == 0 ||
-            selectedPage == Page.PrivateTabs && privateTabCount == 0 -> listOf(
+        (selectedPage == Page.NormalTabs && normalTabCount == 0) ||
+            (selectedPage == Page.PrivateTabs && privateTabCount == 0) -> listOf(
             tabSettingsItem,
             recentlyClosedTabsItem,
         )

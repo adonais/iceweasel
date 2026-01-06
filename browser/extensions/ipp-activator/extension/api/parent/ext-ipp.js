@@ -7,8 +7,8 @@
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
-  IPProtectionService:
-    "resource:///modules/ipprotection/IPProtectionService.sys.mjs",
+  IPPProxyManager: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
+  IPPProxyStates: "resource:///modules/ipprotection/IPPProxyManager.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "tabTracker", () => {
@@ -33,23 +33,18 @@ this.ippActivator = class extends ExtensionAPI {
           context,
           name: "ippActivator.onIPPActivated",
           register: fire => {
-            const topics = [
-              "IPProtectionService:StateChanged",
-              "IPProtectionService:Started",
-              "IPProtectionService:Stopped",
-              "IPProtectionService:SignedOut",
-            ];
+            const topics = ["IPPProxyManager:StateChanged"];
             const observer = _event => {
               fire.async();
             };
 
             topics.forEach(topic =>
-              lazy.IPProtectionService.addEventListener(topic, observer)
+              lazy.IPPProxyManager.addEventListener(topic, observer)
             );
 
             return () => {
               topics.forEach(topic =>
-                lazy.IPProtectionService.removeEventListener(topic, observer)
+                lazy.IPPProxyManager.removeEventListener(topic, observer)
               );
             };
           },
@@ -82,11 +77,7 @@ this.ippActivator = class extends ExtensionAPI {
           }
         },
         isIPPActive() {
-          if ("state" in lazy.IPProtectionService) {
-            return lazy.IPProtectionService.state === "active";
-          }
-
-          return !!lazy.IPProtectionService.isActive;
+          return lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE;
         },
         getDynamicTabBreakages() {
           try {

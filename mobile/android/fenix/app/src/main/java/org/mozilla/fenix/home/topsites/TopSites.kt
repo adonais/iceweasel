@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,13 +45,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.modifier.rightClickable
 import mozilla.components.feature.top.sites.TopSite
+import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.ContextualMenu
 import org.mozilla.fenix.compose.Favicon
@@ -59,7 +63,9 @@ import org.mozilla.fenix.home.fake.FakeHomepagePreview
 import org.mozilla.fenix.home.topsites.TopSitesTestTag.TOP_SITE_CARD_FAVICON
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.wallpapers.WallpaperState
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * The size of a top site item.
@@ -71,10 +77,6 @@ private const val TOP_SITES_PER_ROW = 4
 private const val TOP_SITES_ROW_WIDTH = TOP_SITES_PER_ROW * TOP_SITES_ITEM_SIZE
 private const val TOP_SITES_FAVICON_CARD_SIZE = 60
 private const val TOP_SITES_FAVICON_SIZE = 36
-
-// These intentionally do not reference the design system because they should always be the same colors
-private const val PIN_BACKGROUND_COLOR = 0xFFF0F0F4
-private const val PIN_COLOR = 0xFF15141A
 
 /**
  * A list of top sites.
@@ -234,9 +236,9 @@ data class TopSiteColors(
          */
         @Composable
         fun colors(
-            titleTextColor: Color = FirefoxTheme.colors.textPrimary,
-            sponsoredTextColor: Color = FirefoxTheme.colors.textSecondary,
-            faviconCardBackgroundColor: Color = FirefoxTheme.colors.layer2,
+            titleTextColor: Color = MaterialTheme.colorScheme.onSurface,
+            sponsoredTextColor: Color = MaterialTheme.colorScheme.onSurface,
+            faviconCardBackgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
         ) = TopSiteColors(
             titleTextColor = titleTextColor,
             sponsoredTextColor = sponsoredTextColor,
@@ -251,7 +253,7 @@ data class TopSiteColors(
         fun colors(wallpaperState: WallpaperState): TopSiteColors {
             val textColor: Long? = wallpaperState.currentWallpaper.textColor
             val (titleTextColor, sponsoredTextColor) = if (textColor == null) {
-                FirefoxTheme.colors.textPrimary to FirefoxTheme.colors.textSecondary
+                MaterialTheme.colorScheme.onSurface to MaterialTheme.colorScheme.onSurface
             } else {
                 Color(textColor) to Color(textColor)
             }
@@ -259,7 +261,7 @@ data class TopSiteColors(
             return TopSiteColors(
                 titleTextColor = titleTextColor,
                 sponsoredTextColor = sponsoredTextColor,
-                faviconCardBackgroundColor = FirefoxTheme.colors.layer2,
+                faviconCardBackgroundColor = MaterialTheme.colorScheme.surfaceContainerLowest,
             )
         }
     }
@@ -337,13 +339,13 @@ fun TopSiteItem(
                     Box(
                         modifier = Modifier
                             .size(16.dp)
-                            .background(color = Color(PIN_BACKGROUND_COLOR), shape = CircleShape),
+                            .background(color = PhotonColors.LightGrey20, shape = CircleShape),
                         contentAlignment = Alignment.Center,
                     ) {
                         Image(
-                            modifier = Modifier.size(10.dp),
-                            painter = painterResource(id = R.drawable.ic_new_pin),
-                            colorFilter = ColorFilter.tint(Color(PIN_COLOR)),
+                            modifier = Modifier.size(12.dp),
+                            painter = painterResource(id = iconsR.drawable.mozac_ic_pin_fill_24),
+                            colorFilter = ColorFilter.tint(PhotonColors.DarkGrey90),
                             contentDescription = null,
                         )
                     }
@@ -367,19 +369,19 @@ fun TopSiteItem(
                     color = topSiteColors.titleTextColor,
                     overflow = TextOverflow.Ellipsis,
                     maxLines = 1,
-                    style = FirefoxTheme.typography.caption,
+                    style = FirefoxTheme.typography.caption.copy(fontWeight = FontWeight.W700),
                 )
             }
 
             Text(
                 text = if (topSite is TopSite.Provided) stringResource(id = R.string.top_sites_sponsored_label) else "",
-                modifier = Modifier
-                    .width(TOP_SITES_ITEM_SIZE.dp),
+                modifier = Modifier.width(TOP_SITES_ITEM_SIZE.dp),
                 color = topSiteColors.sponsoredTextColor,
                 fontSize = 10.sp,
                 textAlign = TextAlign.Center,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
+                style = FirefoxTheme.typography.caption,
             )
         }
 
@@ -528,26 +530,51 @@ internal fun getMenuItems(
 }
 
 @Composable
-@PreviewLightDark
+@FlexibleWindowLightDarkPreview
 private fun TopSitesPreview() {
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .background(color = FirefoxTheme.colors.layer1)
-                .padding(16.dp),
-        ) {
-            TopSites(
-                topSites = FakeHomepagePreview.topSites(),
-                onTopSiteClick = {},
-                onTopSiteLongClick = {},
-                onTopSiteImpression = { _, _ -> },
-                onOpenInPrivateTabClicked = {},
-                onEditTopSiteClicked = {},
-                onRemoveTopSiteClicked = {},
-                onSettingsClicked = {},
-                onSponsorPrivacyClicked = {},
-                onTopSitesItemBound = {},
-            )
+        Surface {
+            Box(
+                modifier = Modifier.padding(all = FirefoxTheme.layout.space.static200),
+            ) {
+                TopSites(
+                    topSites = FakeHomepagePreview.topSites(),
+                    onTopSiteClick = {},
+                    onTopSiteLongClick = {},
+                    onTopSiteImpression = { _, _ -> },
+                    onOpenInPrivateTabClicked = {},
+                    onEditTopSiteClicked = {},
+                    onRemoveTopSiteClicked = {},
+                    onSettingsClicked = {},
+                    onSponsorPrivacyClicked = {},
+                    onTopSitesItemBound = {},
+                )
+            }
+        }
+    }
+}
+
+@Composable
+@Preview
+private fun TopSitesPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        Surface {
+            Box(
+                modifier = Modifier.padding(all = FirefoxTheme.layout.space.static200),
+            ) {
+                TopSites(
+                    topSites = FakeHomepagePreview.topSites(),
+                    onTopSiteClick = {},
+                    onTopSiteLongClick = {},
+                    onTopSiteImpression = { _, _ -> },
+                    onOpenInPrivateTabClicked = {},
+                    onEditTopSiteClicked = {},
+                    onRemoveTopSiteClicked = {},
+                    onSettingsClicked = {},
+                    onSponsorPrivacyClicked = {},
+                    onTopSitesItemBound = {},
+                )
+            }
         }
     }
 }

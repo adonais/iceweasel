@@ -7,8 +7,6 @@
 #ifndef jit_none_MacroAssembler_none_h
 #define jit_none_MacroAssembler_none_h
 
-#include <iterator>
-
 #include "jit/MoveResolver.h"
 #include "jit/none/Assembler-none.h"
 #include "jit/shared/IonAssemblerBuffer.h"

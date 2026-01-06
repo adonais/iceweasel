@@ -99,6 +99,7 @@ export class InferredPersonalizationFeed {
 
   /**
    * Get Inferrred model raw data
+   *
    * @returns JSON of inferred model
    */
   async getInferredModelData() {
@@ -305,6 +306,7 @@ export class InferredPersonalizationFeed {
 
   /**
    * Deletes older data from a table
+   *
    * @param {int} preserveAgeDays Number of days to preserve
    * @param {*} table Table to clear
    */
@@ -325,6 +327,7 @@ export class InferredPersonalizationFeed {
 
   /**
    * Deletes older data from impression and click tables
+   *
    * @param {int} preserveAgeDays Number of days to preserve (defaults to 6 months)
    */
   async clearOldData(preserveAgeDays) {

@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
@@ -30,6 +33,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.startupCrash.StartupCrashActivity
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import org.mozilla.fenix.utils.Settings
 
 private const val SECOND_IN_MILLISECOND = 1000L
@@ -49,54 +53,57 @@ internal fun CrashTools(
             delay(SECOND_IN_MILLISECOND)
         }
     }
-    Column(
-        modifier = Modifier
-            .padding(all = 16.dp)
-            .verticalScroll(state = rememberScrollState()),
-    ) {
-        Text(
-            text = stringResource(
-                R.string.crash_debug_deferral_timer,
-                convertMillisToDHMS(maxOf(genericDeferPeriod, 0)),
-            ),
-            style = FirefoxTheme.typography.body2,
-        )
-        FilledButton(
-            text = stringResource(R.string.crash_debug_deferral_button),
-            modifier = Modifier.fillMaxWidth(),
-            onClick = {
-                settings.crashReportDeferredUntil = 0L
-                genericDeferPeriod = 0L
-            },
-        )
-        Text(
-            text = stringResource(R.string.crash_debug_crash_app_warning),
-            color = FirefoxTheme.colors.actionCritical,
-            style = FirefoxTheme.typography.subtitle2,
-        )
-        FilledButton(
-            text = stringResource(R.string.crash_debug_generic_crash_trigger),
-            modifier = Modifier.fillMaxWidth(),
-            onClick = {
-                throw ArithmeticException("Debug drawer triggered exception.")
-            },
-        )
-        Text(
-            text = stringResource(R.string.crash_debug_startup_crash_warning),
-            color = FirefoxTheme.colors.actionCritical,
-            style = FirefoxTheme.typography.subtitle2,
-        )
-        FilledButton(
-            text = stringResource(R.string.crash_debug_show_startup_crash_screen),
-            modifier = Modifier.fillMaxWidth(),
-            onClick = {
-                val intent = Intent(appContext, StartupCrashActivity::class.java)
 
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                appContext.startActivity(intent)
-                Process.killProcess(Process.myPid())
-            },
-        )
+    Surface {
+        Column(
+            modifier = Modifier
+                .padding(all = 16.dp)
+                .verticalScroll(state = rememberScrollState()),
+        ) {
+            Text(
+                text = stringResource(
+                    R.string.crash_debug_deferral_timer,
+                    convertMillisToDHMS(maxOf(genericDeferPeriod, 0)),
+                ),
+                style = FirefoxTheme.typography.body2,
+            )
+            FilledButton(
+                text = stringResource(R.string.crash_debug_deferral_button),
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    settings.crashReportDeferredUntil = 0L
+                    genericDeferPeriod = 0L
+                },
+            )
+            Text(
+                text = stringResource(R.string.crash_debug_crash_app_warning),
+                color = MaterialTheme.colorScheme.error,
+                style = FirefoxTheme.typography.subtitle2,
+            )
+            FilledButton(
+                text = stringResource(R.string.crash_debug_generic_crash_trigger),
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    throw ArithmeticException("Debug drawer triggered exception.")
+                },
+            )
+            Text(
+                text = stringResource(R.string.crash_debug_startup_crash_warning),
+                color = MaterialTheme.colorScheme.error,
+                style = FirefoxTheme.typography.subtitle2,
+            )
+            FilledButton(
+                text = stringResource(R.string.crash_debug_show_startup_crash_screen),
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    val intent = Intent(appContext, StartupCrashActivity::class.java)
+
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    appContext.startActivity(intent)
+                    Process.killProcess(Process.myPid())
+                },
+            )
+        }
     }
 }
 
@@ -108,6 +115,14 @@ internal fun convertMillisToDHMS(milliseconds: Long): String {
 @Composable
 private fun CrashToolsPreview() {
     FirefoxTheme {
+        CrashTools(Settings(LocalContext.current))
+    }
+}
+
+@Preview
+@Composable
+private fun CrashToolsPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
         CrashTools(Settings(LocalContext.current))
     }
 }

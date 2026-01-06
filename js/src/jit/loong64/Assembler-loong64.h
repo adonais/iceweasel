@@ -8,7 +8,6 @@
 #define jit_loong64_Assembler_loong64_h
 
 #include "mozilla/Sprintf.h"
-#include <iterator>
 
 #include "jit/CompactBuffer.h"
 #include "jit/JitCode.h"

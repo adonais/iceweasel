@@ -7,7 +7,6 @@
 
 #include "MediaInfo.h"
 #include "MediaResult.h"
-#include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
 #include "mp4parse.h"
 #include "nsString.h"

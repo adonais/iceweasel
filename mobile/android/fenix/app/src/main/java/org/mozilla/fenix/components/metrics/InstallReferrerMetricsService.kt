@@ -35,6 +35,7 @@ class InstallReferrerMetricsService(private val context: Context) : MetricsServi
 
     private var referrerClient: InstallReferrerClient? = null
 
+    @Suppress("CognitiveComplexMethod")
     override fun start() {
         if (context.settings().utmParamsKnown) {
             return

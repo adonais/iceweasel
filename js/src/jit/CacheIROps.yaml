@@ -1188,6 +1188,7 @@
   cost_estimate: 6
   args:
     obj: ObjId
+    resultShape: ShapeField
 
 - name: PackedArrayPopResult
   shared: true

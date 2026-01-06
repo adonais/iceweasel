@@ -5,8 +5,6 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "sdp/HybridSdpParser.h"
 
-#include <unordered_map>
-
 #include "mozilla/Logging.h"
 #include "mozilla/Preferences.h"
 #include "sdp/ParsingResultComparer.h"

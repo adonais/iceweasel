@@ -7172,7 +7172,7 @@
   "MS_MESSAGE_REQUEST_TIME_MS": {
     "record_in_processes": ["main"],
     "products": ["firefox"],
-    "alert_emails": ["user-journey@mozilla.com", "aoprea@mozilla.com"],
+    "alert_emails": ["omc-core@mozilla.com"],
     "expires_in_version": "never",
     "releaseChannelCollection": "opt-out",
     "kind": "exponential",
@@ -8669,7 +8669,7 @@
     "description": "Count for the number of errors encountered trying to determine attribution data: on Windows, from the installers (stub and full); on macOS, from an extended attributed on the .app bundle.",
     "releaseChannelCollection": "opt-out",
     "bug_numbers": [1621402, 1525076, 1874944],
-    "alert_emails": ["aoprea@mozilla.com"]
+    "alert_emails": ["omc-core@mozilla.com"]
   },
   "MIXED_CONTENT_PAGE_LOAD": {
     "record_in_processes": ["main", "content"],

@@ -499,6 +499,10 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Rannit penaos ho peus graet anaoudegezh gant Firefox ha penaos ec\'h implijit anezhañ gant kevelerien marketing Mozilla. Ne vo morse gwerzhet ar roadennoù-mañ.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Asantiñ ha kregiñ da verdeiñ</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Dibab ul lec’h barrenn-ostilhoù</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -685,8 +689,6 @@
   <string name="preferences_gestures">Jestroù</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Personelaat</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Kennaskit evit goubredañ an ivinelloù, sinedoù, gerioù-tremen ha muioc’h c’hoazh.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Kont Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -1005,12 +1007,6 @@
   <string name="preference_experiments_2">Studioù</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">Aotren Mozilla da staliañ ha da luskañ studioù</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Goubredañ hag enrollañ ho roadennoù</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Kennaskit en-dro</string>
   <!-- Preference for removing FxA account -->
@@ -1722,8 +1718,6 @@
   <string name="toast_copy_link_to_clipboard">Eilet er golver</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Kennaskañ ouzh Sync</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Goubredañ hag enrollañ ar roadennoù</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Kas dʼan holl drevnadoù</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1840,7 +1834,7 @@
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">Ment an nodrezh</string>
   <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
-  <string name="a11y_preference_accessibility_font_size_percentage">%d %%.</string>
+  <string name="a11y_preference_accessibility_font_size_percentage" tools:ignore="UnusedResources" moz:removedIn="148">%d %%.</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">Ment emgefreek an nodrezh</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
@@ -3119,11 +3113,9 @@
   <string name="review_prompt_positive_button">Dispar eo!</string>
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">Reiñ hoc’h ali</string>
-  <!--
-    Terms of use pop up prompt
+  <!-- ==== Terms of use pop up prompt ==== -->
 
-    Title for the pop up prompt
-  -->
+  <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">Un hizivadur zo da gaout</string>
   <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
   <string name="terms_of_use_prompt_link_terms_of_use">Termenoù implij</string>
@@ -3135,4 +3127,7 @@
   <string name="terms_of_use_prompt_accept">Asantiñ</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Degas soñj din diwezhatoc’h</string>
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

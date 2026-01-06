@@ -193,6 +193,7 @@ class AccessibleFront extends FrontClassWithSpec(accessibleSpec) {
    * accessibility tree starting at the level of current accessible front. It
    * accumulates subtrees from possible out of process frames that are children
    * of the current accessible front.
+   *
    * @param  {JSON} snapshot
    *         Snapshot of the current accessible front or one of its in process
    *         children when recursing.
@@ -292,7 +293,8 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
   /**
    * Get the accessible object ancestry starting from the given accessible to
    * the top level document. The top level document is in the top level content process.
-   * @param  {Object} accessible
+   *
+   * @param  {object} accessible
    *         Accessible front to determine the ancestry for.
    *
    * @return {Array}  ancestry
@@ -345,7 +347,8 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
    * cases when the document is in the OOP frame), this method also updates
    * relative ancestries of audited accessible objects all the way up to the top
    * level document for the toolbox.
-   * @param {Object} options
+   *
+   * @param {object} options
    *                 - {Array}    types
    *                   types of the accessibility issues to audit for
    *                 - {Function} onProgress
@@ -422,10 +425,10 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
    * The only additional work done is resolving domnode front from a
    * ContentDOMReference received from a remote target.
    *
-   * @param  {Object} startElm
+   * @param  {object} startElm
    *         domnode front to be used as the starting point for generating the
    *         tabbing order.
-   * @param  {Number} startIndex
+   * @param  {number} startIndex
    *         Starting index for the tabbing order.
    */
   async _showTabbingOrder(startElm, startIndex) {
@@ -448,10 +451,10 @@ class AccessibleWalkerFront extends FrontClassWithSpec(accessibleWalkerSpec) {
   /**
    * Show tabbing order overlay for a given target.
    *
-   * @param  {Object} startElm
+   * @param  {object} startElm
    *         domnode front to be used as the starting point for generating the
    *         tabbing order.
-   * @param  {Number} startIndex
+   * @param  {number} startIndex
    *         Starting index for the tabbing order.
    *
    * @return {JSON}
@@ -566,13 +569,8 @@ class ParentAccessibilityFront extends FrontClassWithSpec(
 
 const SimulatorFront = FrontClassWithSpec(simulatorSpec);
 
-exports.AccessibleFront = AccessibleFront;
 registerFront(AccessibleFront);
-exports.AccessibleWalkerFront = AccessibleWalkerFront;
 registerFront(AccessibleWalkerFront);
-exports.AccessibilityFront = AccessibilityFront;
 registerFront(AccessibilityFront);
-exports.ParentAccessibilityFront = ParentAccessibilityFront;
 registerFront(ParentAccessibilityFront);
-exports.SimulatorFront = SimulatorFront;
 registerFront(SimulatorFront);

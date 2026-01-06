@@ -1,40 +1,23 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Wed, 8 Oct 2025 17:49:00 +0000
-Subject: Bug 1980501 - enable c++20 builds in libwebrtc. r?ng!
+Date: Wed, 8 Oct 2025 16:39:00 -0500
+Subject: Bug 1993083 - (fix-032f8c223e) add missing stub implementation for
+ SSLStreamAdapter static method.
 
-Differential Revision: https://phabricator.services.mozilla.com/D267994
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/43de54a6e52daf0a06956ae01951ef1e29d46e82
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/293f1877fead30723696b8f5cb354bdf819af5d3
 ---
- BUILD.gn | 12 +++++++++++-
- 1 file changed, 11 insertions(+), 1 deletion(-)
+ rtc_base/ssl_stream_adapter.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/BUILD.gn b/BUILD.gn
-index 600993950b..3ba008076e 100644
---- a/BUILD.gn
-+++ b/BUILD.gn
-@@ -315,6 +315,16 @@ config("common_config") {
-   cflags_objc = []
-   defines = []
+diff --git a/rtc_base/ssl_stream_adapter.h b/rtc_base/ssl_stream_adapter.h
+index 24fc299b82..ec16887eac 100644
+--- a/rtc_base/ssl_stream_adapter.h
++++ b/rtc_base/ssl_stream_adapter.h
+@@ -247,7 +247,7 @@ class SSLStreamAdapter : public StreamInterface {
+   static std::set<uint16_t> GetSupportedEphemeralKeyExchangeCipherGroups()
+       { return {}; }
+   static std::optional<std::string> GetEphemeralKeyExchangeCipherGroupName(
+-      uint16_t group_id);
++      uint16_t group_id) { return std::nullopt; }
+   static std::vector<uint16_t> GetDefaultEphemeralKeyExchangeCipherGroups(
+       const FieldTrialsView* field_trials) { return {}; }
  
-+  # We should be able to remove this after c++20 is enabled
-+  # across the Mozilla tree.
-+  if (build_with_mozilla) {
-+    if (is_win) {
-+      cflags_cc += [ "-std:c++20" ]
-+    } else {
-+      cflags_cc += [ "-std=gnu++20" ]
-+    }
-+  }
-+
-   if (rtc_enable_protobuf) {
-     defines += [ "WEBRTC_ENABLE_PROTOBUF=1" ]
-   } else {
-@@ -416,7 +426,7 @@ config("common_config") {
-         # "-Wnested-externs",  (C/Obj-C only)
-       ]
-       cflags_objc += [ "-Wstrict-prototypes" ]
--      cflags_cc = [
-+      cflags_cc += [
-         "-Wnon-virtual-dtor",
- 
-         # This is enabled for clang; enable for gcc as well.

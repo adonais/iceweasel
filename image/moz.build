@@ -4,7 +4,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-DIRS += ["build", "decoders", "encoders"]
+DIRS += ["build", "decoders", "encoders", "remote"]
 TEST_DIRS += ["test/gtest"]
 
 if CONFIG["FUZZING_INTERFACES"]:

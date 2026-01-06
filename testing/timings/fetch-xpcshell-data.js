@@ -29,6 +29,7 @@ const PROFILE_CACHE_DIR = "./profile-cache";
 
 let previousRunData = null;
 let allJobsCache = null;
+let componentsData = null;
 
 if (!fs.existsSync(OUTPUT_DIR)) {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
@@ -271,6 +272,67 @@ async function processJobsWithWorkers(jobs, targetDate = null) {
   });
 }
 
+// Fetch Bugzilla component mapping data
+async function fetchComponentsData() {
+  if (componentsData) {
+    return componentsData;
+  }
+
+  console.log("Fetching Bugzilla component mapping...");
+  const url = `${TASKCLUSTER_BASE_URL}/api/index/v1/task/gecko.v2.mozilla-central.latest.source.source-bugzilla-info/artifacts/public/components-normalized.json`;
+
+  try {
+    componentsData = await fetchJson(url);
+    console.log("Component mapping loaded successfully");
+    return componentsData;
+  } catch (error) {
+    console.error("Failed to fetch component mapping:", error);
+    return null;
+  }
+}
+
+// Look up component for a test path
+function findComponentForPath(testPath) {
+  if (!componentsData || !componentsData.paths) {
+    return null;
+  }
+
+  const parts = testPath.split("/");
+  let current = componentsData.paths;
+
+  for (const part of parts) {
+    if (typeof current === "number") {
+      return current;
+    }
+    if (typeof current === "object" && current !== null && part in current) {
+      current = current[part];
+    } else {
+      return null;
+    }
+  }
+
+  return typeof current === "number" ? current : null;
+}
+
+// Get component string from component ID
+function getComponentString(componentId) {
+  if (!componentsData || !componentsData.components || componentId == null) {
+    return null;
+  }
+
+  const component = componentsData.components[String(componentId)];
+  if (!component || !Array.isArray(component) || component.length !== 2) {
+    return null;
+  }
+
+  return `${component[0]} :: ${component[1]}`;
+}
+
+// Helper function to determine if a status should include message data
+function shouldIncludeMessage(status) {
+  return status === "SKIP" || status.startsWith("FAIL");
+}
+
 // Create string tables and store raw data efficiently
 function createDataTables(jobResults) {
   const tables = {
@@ -282,6 +344,7 @@ function createDataTables(jobResults) {
     taskIds: [],
     messages: [],
     crashSignatures: [],
+    components: [],
   };
 
   // Maps for O(1) string lookups
@@ -294,6 +357,7 @@ function createDataTables(jobResults) {
     taskIds: new Map(),
     messages: new Map(),
     crashSignatures: new Map(),
+    components: new Map(),
   };
 
   // Task info maps task ID index to repository and job name indexes
@@ -306,6 +370,7 @@ function createDataTables(jobResults) {
   const testInfo = {
     testPathIds: [],
     testNameIds: [],
+    componentIds: [],
   };
 
   // Map for fast testId lookup: fullPath -> testId
@@ -358,9 +423,17 @@ function createDataTables(jobResults) {
         const testPathId = findStringIndex("testPaths", testPath);
         const testNameId = findStringIndex("testNames", testName);
 
+        // Look up the component for this test
+        const componentIdRaw = findComponentForPath(fullPath);
+        const componentString = getComponentString(componentIdRaw);
+        const componentId = componentString
+          ? findStringIndex("components", componentString)
+          : null;
+
         testId = testInfo.testPathIds.length;
         testInfo.testPathIds.push(testPathId);
         testInfo.testNameIds.push(testNameId);
+        testInfo.componentIds.push(componentId);
         testIdMap.set(fullPath, testId);
       }
 
@@ -387,8 +460,8 @@ function createDataTables(jobResults) {
           durations: [],
           timestamps: [],
         };
-        // Only include messageIds array for SKIP status
-        if (timing.status === "SKIP") {
+        // Include messageIds array for statuses that should have messages
+        if (shouldIncludeMessage(timing.status)) {
           statusGroup.messageIds = [];
         }
         // Only include crash data arrays for CRASH status
@@ -404,8 +477,8 @@ function createDataTables(jobResults) {
       statusGroup.durations.push(Math.round(timing.duration));
       statusGroup.timestamps.push(timing.timestamp);
 
-      // Store message ID for SKIP status (or null if no message)
-      if (timing.status === "SKIP") {
+      // Store message ID for statuses that should include messages (or null if no message)
+      if (shouldIncludeMessage(timing.status)) {
         const messageId = timing.message
           ? findStringIndex("messages", timing.message)
           : null;
@@ -445,6 +518,7 @@ function sortStringTablesByFrequency(dataStructure) {
     taskIds: new Array(tables.taskIds.length).fill(0),
     messages: new Array(tables.messages.length).fill(0),
     crashSignatures: new Array(tables.crashSignatures.length).fill(0),
+    components: new Array(tables.components.length).fill(0),
   };
 
   // Count taskInfo references
@@ -465,6 +539,11 @@ function sortStringTablesByFrequency(dataStructure) {
   }
   for (const testNameId of testInfo.testNameIds) {
     frequencyCounts.testNames[testNameId]++;
+  }
+  for (const componentId of testInfo.componentIds) {
+    if (componentId !== null) {
+      frequencyCounts.components[componentId]++;
+    }
   }
 
   // Count testRuns references
@@ -561,6 +640,9 @@ function sortStringTablesByFrequency(dataStructure) {
     testNameIds: testInfo.testNameIds.map(oldId =>
       indexMaps.testNames.get(oldId)
     ),
+    componentIds: testInfo.componentIds.map(oldId =>
+      oldId === null ? null : indexMaps.components.get(oldId)
+    ),
   };
 
   // Remap testRuns indices
@@ -582,7 +664,7 @@ function sortStringTablesByFrequency(dataStructure) {
         timestamps: statusGroup.timestamps,
       };
 
-      // Remap message IDs for SKIP status
+      // Remap message IDs for status groups that have messages
       if (statusGroup.messageIds) {
         remapped.messageIds = statusGroup.messageIds.map(oldId =>
           oldId === null ? null : indexMaps.messages.get(oldId)
@@ -852,7 +934,7 @@ async function processJobsAndCreateData(
         if (statusGroup.minidumps) {
           run.minidump = statusGroup.minidumps[i];
         }
-        // Include message data if this is a SKIP status group
+        // Include message data if this status group has messages
         if (statusGroup.messageIds) {
           run.messageId = statusGroup.messageIds[i];
         }
@@ -1135,6 +1217,9 @@ async function main() {
   if (process.env.TASK_ID) {
     await fetchPreviousRunData();
   }
+
+  // Fetch component mapping data
+  await fetchComponentsData();
 
   // Check for --revision parameter (format: project:revision)
   const revisionIndex = process.argv.findIndex(arg => arg === "--revision");

@@ -291,18 +291,23 @@ add_task(async function test_migration_is_idempotent() {
 add_task(async function test_migration_partial_failure() {
   // ensure mirror is off
   await SpecialPowers.pushPrefEnv({
-    set: [["signon.rustMirror.enabled", false]],
+    set: [
+      ["signon.rustMirror.enabled", false],
+      ["signon.rustMirror.poisoned", false],
+    ],
   });
 
   const rustStorage = new LoginManagerRustStorage();
   // Save the first (valid) login into Rust for real, then simulate results
-  sinon.stub(rustStorage, "addLoginsAsync").callsFake(async (logins, _cont) => {
-    await rustStorage.addWithMeta(logins[0]);
-    return [
-      { login: {}, error: null }, // row 0 success
-      { login: null, error: { message: "row failed" } }, // row 1 failure
-    ];
-  });
+  sinon
+    .stub(LoginManagerRustStorage.prototype, "addLoginsAsync")
+    .callsFake(async (logins, _cont) => {
+      await rustStorage.addWithMeta(logins[0]);
+      return [
+        { login: {}, error: null }, // row 0 success
+        { login: null, error: { message: "row failed" } }, // row 1 failure
+      ];
+    });
 
   const login_ok = LoginTestUtils.testData.formLogin({
     username: "test-user-ok",
@@ -327,6 +332,12 @@ add_task(async function test_migration_partial_failure() {
   const rustLogins = await rustStorage.getAllLogins();
   Assert.equal(rustLogins.length, 1, "only valid login migrated");
 
+  Assert.equal(
+    Services.prefs.getBoolPref("signon.rustMirror.poisoned", false),
+    true,
+    "poisoned pref is set to true on partial migration failure"
+  );
+
   sinon.restore();
   LoginTestUtils.clearData();
   rustStorage.removeAllLogins();
@@ -340,7 +351,10 @@ add_task(async function test_migration_partial_failure() {
 add_task(async function test_migration_rejects_when_bulk_add_rejects() {
   // turn mirror off
   await SpecialPowers.pushPrefEnv({
-    set: [["signon.rustMirror.enabled", false]],
+    set: [
+      ["signon.rustMirror.enabled", false],
+      ["signon.rustMirror.poisoned", false],
+    ],
   });
 
   const rustStorage = new LoginManagerRustStorage();
@@ -370,6 +384,12 @@ add_task(async function test_migration_rejects_when_bulk_add_rejects() {
     false
   );
   Assert.equal(newPrefValue, true, "pref has not been reset");
+
+  Assert.equal(
+    Services.prefs.getBoolPref("signon.rustMirror.poisoned", false),
+    true,
+    "poisoned pref is set to true on hard migration failure"
+  );
 
   sinon.restore();
   LoginTestUtils.clearData();
@@ -414,24 +434,25 @@ add_task(async function test_rust_migration_failure_event() {
   });
   await Services.logins.addLoginAsync(login_bad);
 
+  const waitForGleanEvent = BrowserTestUtils.waitForCondition(
+    () => Glean.pwmgr.rustWriteFailure.testGetValue()?.length == 1,
+    "event has been emitted"
+  );
+
   // Trigger migration
   await SpecialPowers.pushPrefEnv({
     set: [["signon.rustMirror.enabled", true]],
   });
 
-  await BrowserTestUtils.waitForCondition(
-    () => Glean.pwmgr.rustMigrationFailure.testGetValue()?.length == 1,
-    "event has been emitted"
-  );
+  await waitForGleanEvent;
 
-  const [evt] = Glean.pwmgr.rustMigrationFailure.testGetValue();
+  const [evt] = Glean.pwmgr.rustWriteFailure.testGetValue();
   Assert.ok(evt.extra?.run_id, "event has a run_id");
   Assert.equal(
     evt.extra?.error_message,
     "simulated migration failure",
     "event has the expected error message"
   );
-  Assert.equal(evt.name, "rust_migration_failure", "event has correct name");
 
   sinon.restore();
   LoginTestUtils.clearData();
@@ -495,6 +516,11 @@ add_task(async function test_rust_mirror_addLogin_failure() {
     ],
   });
   Services.fog.testResetFOG();
+  const waitForGleanEvent = BrowserTestUtils.waitForCondition(
+    () => Glean.pwmgr.rustMirrorStatus.testGetValue()?.length == 1,
+    "rust_mirror_status event has been emitted"
+  );
+
   // This login will be accepted by JSON but rejected by Rust
   const badLogin = LoginTestUtils.testData.formLogin({
     origin: ".",
@@ -509,13 +535,9 @@ add_task(async function test_rust_mirror_addLogin_failure() {
     "single dot origin login saved to JSON"
   );
 
-  await BrowserTestUtils.waitForCondition(
-    () => Glean.pwmgr.rustMirrorStatus.testGetValue()?.length == 1,
-    "event has been emitted"
-  );
+  await waitForGleanEvent;
 
   const rustStorage = new LoginManagerRustStorage();
-
   const allLogins = await rustStorage.getAllLogins();
   Assert.equal(
     allLogins.length,
@@ -524,18 +546,34 @@ add_task(async function test_rust_mirror_addLogin_failure() {
   );
 
   const [evt] = Glean.pwmgr.rustMirrorStatus.testGetValue();
-  Assert.ok(evt, "event has been emitted");
-  Assert.equal(evt.extra?.operation, "add", "event has operation");
-  Assert.equal(evt.extra?.status, "failure", "event has status=failure");
   Assert.equal(
-    evt.extra?.error_message,
-    "Invalid login: Login has illegal origin",
+    evt.extra?.operation,
+    "add",
+    "rust_mirror_status event has operation"
+  );
+  Assert.equal(
+    evt.extra?.status,
+    "failure",
+    "rust_mirror_status event has status=failure"
+  );
+
+  const [evt1] = Glean.pwmgr.rustWriteFailure.testGetValue();
+  Assert.equal(
+    evt1.extra?.error_message,
+    "Login has illegal origin",
     "event has error_message"
   );
-  Assert.equal(evt.extra?.poisoned, "false", "event is not poisoned");
-  Assert.equal(evt.name, "rust_mirror_status", "event has name");
+  Assert.equal(
+    evt1.extra?.poisoned,
+    "false",
+    "rust_write_failure event is not poisoned"
+  );
 
   // produce another failure
+  const waitForSecondGleanEvent = BrowserTestUtils.waitForCondition(
+    () => Glean.pwmgr.rustMirrorStatus.testGetValue()?.length == 2,
+    "two events have been emitted"
+  );
   const badLogin2 = LoginTestUtils.testData.formLogin({
     username: "another-bad-login",
     origin: ".",
@@ -543,21 +581,22 @@ add_task(async function test_rust_mirror_addLogin_failure() {
   });
   await Services.logins.addLoginAsync(badLogin2);
 
-  await BrowserTestUtils.waitForCondition(
-    () => Glean.pwmgr.rustMirrorStatus.testGetValue()?.length == 2,
-    "two events have been emitted"
-  );
+  await waitForSecondGleanEvent;
 
   // eslint-disable-next-line no-unused-vars
-  const [_, evt2] = Glean.pwmgr.rustMirrorStatus.testGetValue();
-  Assert.equal(evt2.extra?.poisoned, "true", "event is poisoned now");
+  const [_, evt3] = Glean.pwmgr.rustWriteFailure.testGetValue();
+  Assert.equal(
+    evt3.extra?.poisoned,
+    "true",
+    "rust_write_failure event is poisoned now"
+  );
 
   LoginTestUtils.clearData();
   await SpecialPowers.flushPrefEnv();
 });
 
 /*
- * Tests that we collect telemetry if non-ASCII origins get punycoded.
+ * Tests that we store non-ASCII origins get punycoded.
  */
 add_task(async function test_punycode_origin_metric() {
   // ensure mirror is on
@@ -575,12 +614,14 @@ add_task(async function test_punycode_origin_metric() {
     password: "pass1",
   });
 
-  await Services.logins.addLoginAsync(login);
-
-  await BrowserTestUtils.waitForCondition(
-    () => Glean.pwmgr.rustIncompatibleLoginFormat.testGetValue()?.length == 1,
+  const waitForGleanEvent = BrowserTestUtils.waitForCondition(
+    () => Glean.pwmgr.rustMirrorStatus.testGetValue()?.length == 1,
     "event has been emitted"
   );
+
+  await Services.logins.addLoginAsync(login);
+
+  await waitForGleanEvent;
 
   const rustStorage = new LoginManagerRustStorage();
 
@@ -593,18 +634,13 @@ add_task(async function test_punycode_origin_metric() {
     "origin has been punicoded on the Rust side"
   );
 
-  const [evt] = Glean.pwmgr.rustIncompatibleLoginFormat.testGetValue();
-  Assert.equal(evt.extra?.issue, "nonAsciiOrigin");
-  Assert.equal(evt.extra?.operation, "add");
-  Assert.ok("run_id" in evt.extra);
-
   LoginTestUtils.clearData();
   rustStorage.removeAllLogins();
   await SpecialPowers.flushPrefEnv();
 });
 
 /*
- * Tests that we collect telemetry if non-ASCII formorigins get punycoded.
+ * Tests that we store non-ASCII formorigins get punycoded.
  */
 add_task(async function test_punycode_formActionOrigin_metric() {
   // ensure mirror is on
@@ -622,15 +658,16 @@ add_task(async function test_punycode_formActionOrigin_metric() {
     password: "pass1",
   });
 
-  await Services.logins.addLoginAsync(login);
-
-  await BrowserTestUtils.waitForCondition(
-    () => Glean.pwmgr.rustIncompatibleLoginFormat.testGetValue()?.length == 1,
+  const waitForGleanEvent = BrowserTestUtils.waitForCondition(
+    () => Glean.pwmgr.rustMirrorStatus.testGetValue()?.length == 1,
     "event has been emitted"
   );
 
-  const rustStorage = new LoginManagerRustStorage();
+  await Services.logins.addLoginAsync(login);
 
+  await waitForGleanEvent;
+
+  const rustStorage = new LoginManagerRustStorage();
   const allLogins = await rustStorage.getAllLogins();
   Assert.equal(allLogins.length, 1, "punicode origin login saved to Rust");
   const [rustLogin] = allLogins;
@@ -640,50 +677,65 @@ add_task(async function test_punycode_formActionOrigin_metric() {
     "origin has been punicoded on the Rust side"
   );
 
-  const [evt] = Glean.pwmgr.rustIncompatibleLoginFormat.testGetValue();
-  Assert.equal(evt.extra?.issue, "nonAsciiFormAction");
-  Assert.equal(evt.extra?.operation, "add");
-  Assert.ok("run_id" in evt.extra);
-
   LoginTestUtils.clearData();
   rustStorage.removeAllLogins();
   await SpecialPowers.flushPrefEnv();
 });
 
 /*
- * Tests that we collect telemetry for single dot in origin
+ * Tests that we collect telemetry about several origin errors
  */
-add_task(async function test_single_dot_in_origin() {
-  // ensure mirror is on
-  await SpecialPowers.pushPrefEnv({
-    set: [["signon.rustMirror.enabled", true]],
+const originsToTest = {
+  "//example.com": "MissingProtocol",
+  "//example.com/path": "MissingProtocol",
+  "example.com": "MissingProtocol",
+  "example.com/path": "MissingProtocol",
+  "hptts//example.com": "ProtocolTypo",
+  "htp//example.com": "ProtocolTypo",
+  "htpps//example.com": "ProtocolTypo",
+  "http//example.com": "ProtocolTypo",
+  "http//example.com/path": "ProtocolTypo",
+  https: "ProtocolNameOnly",
+  "https//example.com": "ProtocolTypo",
+  "https//example.com:abc": "MissingProtocol",
+  "https:": "ProtocolFragmentOnly",
+  "https:// example.com": "UnknownError",
+  "https://": "ProtocolOnly",
+  "https:///": "UnknownError",
+  "https://exa mple.com": "UnknownError",
+  "htttp//example.com": "ProtocolTypo",
+  "www.example.com": "MissingProtocol",
+};
+for (const origin in originsToTest) {
+  add_task(async function () {
+    // ensure mirror is on
+    await SpecialPowers.pushPrefEnv({
+      set: [["signon.rustMirror.enabled", true]],
+    });
+
+    Services.fog.testResetFOG();
+
+    const login = LoginTestUtils.testData.formLogin({
+      origin,
+      formActionOrigin: "https://example.com",
+      username: "user1",
+      password: "pass1",
+    });
+
+    const waitForGleanEvent = BrowserTestUtils.waitForCondition(
+      () => Glean.pwmgr.rustMirrorStatus.testGetValue()?.length == 1,
+      "event has been emitted"
+    );
+    await Services.logins.addLoginAsync(login);
+    await waitForGleanEvent;
+
+    const [evt] = Glean.pwmgr.rustWriteFailure.testGetValue();
+    Assert.equal(evt.extra?.origin_error, originsToTest[origin]);
+
+    LoginTestUtils.clearData();
+    await SpecialPowers.flushPrefEnv();
   });
-
-  Services.fog.testResetFOG();
-
-  const badOrigin = ".";
-  const login = LoginTestUtils.testData.formLogin({
-    origin: badOrigin,
-    formActionOrigin: "https://example.com",
-    username: "user1",
-    password: "pass1",
-  });
-
-  await Services.logins.addLoginAsync(login);
-
-  await BrowserTestUtils.waitForCondition(
-    () => Glean.pwmgr.rustIncompatibleLoginFormat.testGetValue()?.length == 1,
-    "event has been emitted"
-  );
-
-  const [evt] = Glean.pwmgr.rustIncompatibleLoginFormat.testGetValue();
-  Assert.equal(evt.extra?.issue, "dotOrigin");
-  Assert.equal(evt.extra?.operation, "add");
-  Assert.ok("run_id" in evt.extra);
-
-  LoginTestUtils.clearData();
-  await SpecialPowers.flushPrefEnv();
-});
+}
 
 /*
  * Tests that we collect telemetry if the username contains line breaks.
@@ -703,20 +755,21 @@ add_task(async function test_username_linebreak_metric() {
     password: "pass1",
   });
 
-  await Services.logins.addLoginAsync(login);
-
-  await BrowserTestUtils.waitForCondition(
-    () => Glean.pwmgr.rustIncompatibleLoginFormat.testGetValue()?.length == 1,
+  const waitForGleanEvent = BrowserTestUtils.waitForCondition(
+    () => Glean.pwmgr.rustMirrorStatus.testGetValue()?.length == 1,
     "event has been emitted"
   );
-
-  const [evt] = Glean.pwmgr.rustIncompatibleLoginFormat.testGetValue();
-  Assert.equal(evt.extra?.issue, "usernameLineBreak");
-  Assert.equal(evt.extra?.operation, "add");
-  Assert.ok("run_id" in evt.extra);
+  await Services.logins.addLoginAsync(login);
+  await waitForGleanEvent;
+  const rustStorage = new LoginManagerRustStorage();
+  const allLogins = await rustStorage.getAllLogins();
+  Assert.equal(
+    allLogins.length,
+    1,
+    "line break username origin login saved to Rust"
+  );
 
   LoginTestUtils.clearData();
-  const rustStorage = new LoginManagerRustStorage();
   rustStorage.removeAllLogins();
   await SpecialPowers.flushPrefEnv();
 });

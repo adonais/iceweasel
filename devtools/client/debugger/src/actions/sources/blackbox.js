@@ -4,6 +4,7 @@
 
 /**
  * Redux actions for the sources state
+ *
  * @module actions/sources
  */
 
@@ -55,8 +56,8 @@ export async function blackboxSourceActorsForSource(
 /**
  * Toggle blackboxing for the whole source or for specific lines in a source
  *
- * @param {Object} source - The source to be blackboxed/unblackboxed.
- * @param {Boolean} [shouldBlackBox] - Specifies if the source should be blackboxed (true
+ * @param {object} source - The source to be blackboxed/unblackboxed.
+ * @param {boolean} [shouldBlackBox] - Specifies if the source should be blackboxed (true
  *                                     or unblackboxed (false). When this is not provided
  *                                     option is decided based on the blackboxed state
  *                                     of the source.
@@ -172,7 +173,7 @@ async function toggleBreakpointsInBlackboxedSources({
  * Blackboxes a group of sources together
  *
  * @param {Array} sourcesToBlackBox - The list of sources to blackbox
- * @param {Boolean} shouldBlackbox - Specifies if the sources should blackboxed (true)
+ * @param {boolean} shouldBlackbox - Specifies if the sources should blackboxed (true)
  *                                   or unblackboxed (false).
  */
 export function blackBoxSources(sourcesToBlackBox, shouldBlackBox) {

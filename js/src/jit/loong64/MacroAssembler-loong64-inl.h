@@ -331,6 +331,13 @@ void MacroAssembler::add32(Imm32 imm, const Address& dest) {
   store32(scratch, dest);
 }
 
+void MacroAssembler::add32(const Address& src, Register dest) {
+  UseScratchRegisterScope temps(asMasm());
+  Register scratch = temps.Acquire();
+  load32(src, scratch);
+  as_add_w(dest, dest, scratch);
+}
+
 void MacroAssembler::addPtr(Imm32 imm, const Address& dest) {
   UseScratchRegisterScope temps(asMasm());
   Register scratch = temps.Acquire();

@@ -31,7 +31,7 @@ static already_AddRefed<nsIDocumentEncoder> SetUpEncoder(
   bool entireDocument = (doc == &aRoot);
 
   // This method will fail if no document
-  nsresult rv = encoder->NativeInit(
+  nsresult rv = encoder->Init(
       doc, u"application/xhtml+xml"_ns,
       nsIDocumentEncoder::OutputRaw |
           nsIDocumentEncoder::OutputDontRewriteEncodingDeclaration);

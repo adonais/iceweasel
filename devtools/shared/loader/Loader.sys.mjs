@@ -25,6 +25,7 @@ var gNextLoaderID = 0;
  *
  * The two following boolean flags are used to control the sandboxes into
  * which the modules are loaded.
+ *
  * @param freshCompartment boolean
  *        If true, the modules will be forced to be loaded in a distinct
  *        compartment. It is typically used to load the modules in a distinct

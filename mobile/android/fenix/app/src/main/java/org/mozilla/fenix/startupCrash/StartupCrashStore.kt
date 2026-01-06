@@ -6,13 +6,13 @@ package org.mozilla.fenix.startupCrash
 
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Reducer
-import mozilla.components.lib.state.UiStore
+import mozilla.components.lib.state.Store
 
 internal class StartupCrashStore(
     initialState: StartupCrashState,
     reducer: Reducer<StartupCrashState, StartupCrashAction> = ::startupCrashReducer,
     middleware: List<Middleware<StartupCrashState, StartupCrashAction>> = listOf(),
-) : UiStore<StartupCrashState, StartupCrashAction>(
+) : Store<StartupCrashState, StartupCrashAction>(
     initialState = initialState,
     reducer = reducer,
     middleware = middleware,

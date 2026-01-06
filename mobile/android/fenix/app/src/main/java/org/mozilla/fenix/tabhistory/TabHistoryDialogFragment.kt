@@ -48,7 +48,7 @@ class TabHistoryDialogFragment : BottomSheetDialogFragment() {
 
         val binding = FragmentTabHistoryDialogBinding.bind(view)
 
-        view.setBackgroundColor(view.context.getColorFromAttr(R.attr.layer1))
+        view.setBackgroundColor(view.context.getColorFromAttr(materialR.attr.colorSurface))
 
         customTabSessionId = requireArguments().getString(EXTRA_SESSION_ID)
 

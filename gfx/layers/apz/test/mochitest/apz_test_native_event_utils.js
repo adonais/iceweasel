@@ -880,6 +880,7 @@ async function promiseNativePointerInput(
 
 /**
  * Function to generate native pointer events as a sequence.
+ *
  * @param aTarget is the element or window whose bounding rect the coordinates are
  *   relative to.
  * @param aPointerType "touch" or "pen".

@@ -28,8 +28,6 @@
 #include "mediasink/DecodedStream.h"
 #include "mediasink/VideoSink.h"
 #include "mozilla/Logging.h"
-#include "mozilla/MathAlgorithms.h"
-#include "mozilla/Preferences.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/ProfilerMarkerTypes.h"
 #include "mozilla/ProfilerMarkers.h"
@@ -135,29 +133,6 @@ static constexpr auto EXHAUSTED_DATA_MARGIN =
     TimeUnit::FromMicroseconds(100000);
 
 static const uint32_t MIN_VIDEO_QUEUE_SIZE = 3;
-static const uint32_t MAX_VIDEO_QUEUE_SIZE = 10;
-static const uint32_t HW_VIDEO_QUEUE_SIZE = 3;
-static const uint32_t VIDEO_QUEUE_SEND_TO_COMPOSITOR_SIZE = 9999;
-
-static uint32_t sVideoQueueDefaultSize = MAX_VIDEO_QUEUE_SIZE;
-static uint32_t sVideoQueueHWAccelSize = HW_VIDEO_QUEUE_SIZE;
-static uint32_t sVideoQueueSendToCompositorSize =
-    VIDEO_QUEUE_SEND_TO_COMPOSITOR_SIZE;
-
-static void InitVideoQueuePrefs() {
-  MOZ_ASSERT(NS_IsMainThread());
-  static bool sPrefInit = false;
-  if (!sPrefInit) {
-    sPrefInit = true;
-    sVideoQueueDefaultSize = Preferences::GetUint(
-        "media.video-queue.default-size", MAX_VIDEO_QUEUE_SIZE);
-    sVideoQueueHWAccelSize = Preferences::GetUint(
-        "media.video-queue.hw-accel-size", HW_VIDEO_QUEUE_SIZE);
-    sVideoQueueSendToCompositorSize =
-        Preferences::GetUint("media.video-queue.send-to-compositor-size",
-                             VIDEO_QUEUE_SEND_TO_COMPOSITOR_SIZE);
-  }
-}
 
 template <typename Type, typename Function>
 static void DiscardFramesFromTail(MediaQueue<Type>& aQueue,
@@ -3444,8 +3419,6 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   MOZ_COUNT_CTOR(MediaDecoderStateMachine);
   NS_ASSERTION(NS_IsMainThread(), "Should be on main thread.");
 
-  InitVideoQueuePrefs();
-
   DDLINKCHILD("reader", aReader);
 }
 
@@ -3493,12 +3466,12 @@ void MediaDecoderStateMachine::AudioAudibleChanged(bool aAudible) {
 MediaSink* MediaDecoderStateMachine::CreateAudioSink() {
   if (mOutputCaptureState != MediaDecoder::OutputCaptureState::None) {
     DecodedStream* stream = new DecodedStream(
-        this,
+        OwnerThread(),
         mOutputCaptureState == MediaDecoder::OutputCaptureState::Capture
             ? mOutputDummyTrack.Ref()
             : nullptr,
-        mOutputTracks, mVolume, mPlaybackRate, mPreservesPitch, mAudioQueue,
-        mVideoQueue, mSinkDevice.Ref());
+        mOutputTracks, CanonicalOutputPrincipal(), mVolume, mPlaybackRate,
+        mPreservesPitch, mAudioQueue, mVideoQueue);
     mAudibleListener.DisconnectIfExists();
     mAudibleListener = stream->AudibleEvent().Connect(
         OwnerThread(), this, &MediaDecoderStateMachine::AudioAudibleChanged);
@@ -3522,9 +3495,9 @@ MediaSink* MediaDecoderStateMachine::CreateAudioSink() {
 already_AddRefed<MediaSink> MediaDecoderStateMachine::CreateMediaSink() {
   MOZ_ASSERT(OnTaskQueue());
   RefPtr<MediaSink> audioSink = CreateAudioSink();
-  RefPtr<MediaSink> mediaSink =
-      new VideoSink(mTaskQueue, audioSink, mVideoQueue, mVideoFrameContainer,
-                    *mFrameStats, sVideoQueueSendToCompositorSize);
+  RefPtr<MediaSink> mediaSink = new VideoSink(
+      mTaskQueue, audioSink, mVideoQueue, mVideoFrameContainer, *mFrameStats,
+      StaticPrefs::media_video_queue_send_to_compositor_size());
   if (mSecondaryVideoContainer.Ref()) {
     mediaSink->SetSecondaryVideoContainer(mSecondaryVideoContainer.Ref());
   }
@@ -4660,16 +4633,16 @@ uint32_t MediaDecoderStateMachine::GetAmpleVideoFrames() const {
   if (mReader->VideoIsHardwareAccelerated()) {
     // HW decoding should be fast so queue size can be as small as possible
     // to lower frame latency.
-    uint32_t hw =
-        std::max<uint32_t>(sVideoQueueHWAccelSize, MIN_VIDEO_QUEUE_SIZE);
+    uint32_t hw = std::max<uint32_t>(
+        StaticPrefs::media_video_queue_hw_accel_size(), MIN_VIDEO_QUEUE_SIZE);
     mReader->GetMinVideoQueueSize().apply(
         [&hw](const uint32_t& x) { hw = std::max(hw, x); });
     return hw;
   } else {
     // SW decoding is slower and queuing more frames in advance reduces the
     // chances of dropping late frames.
-    uint32_t sw =
-        std::max<uint32_t>(sVideoQueueDefaultSize, MIN_VIDEO_QUEUE_SIZE);
+    uint32_t sw = std::max<uint32_t>(
+        StaticPrefs::media_video_queue_default_size(), MIN_VIDEO_QUEUE_SIZE);
     mReader->GetMaxVideoQueueSize().apply(
         [&sw](const uint32_t& x) { sw = std::min(sw, x); });
     return sw;

@@ -1204,6 +1204,17 @@ struct ParamTraits<gfxSparseBitSet> {
 };
 
 template <>
+struct ParamTraits<gfxSparseBitSet::BlockIndex> {
+  typedef gfxSparseBitSet::BlockIndex paramType;
+  static void Write(MessageWriter* aWriter, const paramType& aParam) {
+    WriteParam(aWriter, aParam.mIndex);
+  }
+  static bool Read(MessageReader* aReader, paramType* aResult) {
+    return ReadParam(aReader, &aResult->mIndex);
+  }
+};
+
+template <>
 struct ParamTraits<gfxSparseBitSet::Block> {
   typedef gfxSparseBitSet::Block paramType;
   static void Write(MessageWriter* aWriter, const paramType& aParam) {

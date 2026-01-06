@@ -75,6 +75,7 @@ js_source_path = [
     "../browser/components/mozcachedohttp/actors",
     "../browser/components/uitour",
     "../browser/components/urlbar",
+    "../browser/components/urlbar/content",
     "../js/xpconnect/loader",
     "../remote/marionette",
     "../testing/mochitest/BrowserTestUtils",

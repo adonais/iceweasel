@@ -1,9 +1,11 @@
 [DEFAULT]
-run-if = ["os != 'android'"]
+run-if = [
+  "os != 'android'",
+]
 firefox-appdir = "browser"
 skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # build with MOZ_UPDATE_AGENT_BOOL=false
   "os == 'win' && msix", # Our updater is disabled in MSIX builds
-  "os == 'linux'", # build with MOZ_UPDATE_AGENT_BOOL=false
 ]
 head = "head.js"
 support-files = [

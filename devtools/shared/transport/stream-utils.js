@@ -206,7 +206,8 @@ StreamCopier.prototype = {
  * stream.  In that case, we only read as many bytes as the stream currently has
  * to offer.
  * TODO: This implementation could be removed if bug 984651 is fixed, which
- *       provides a native version of the same idea.
+ * provides a native version of the same idea.
+ *
  * @param stream nsIInputStream
  *        The input stream to read from.
  * @param delimiter string
@@ -274,12 +275,14 @@ class AsyncStreamToArrayBufferCopier {
   /**
    * This is a wrapper on top of #originalStream, to be able to read buffers
    * easily.
+   *
    * @typedef {nsIBinaryInputStream}
    */
   #binaryStream;
 
   /**
    * This is the output buffer, accessed as an UInt8Array.
+   *
    * @typedef {Uint8Array}
    */
   #outputArray;
@@ -287,6 +290,7 @@ class AsyncStreamToArrayBufferCopier {
   /**
    * How many bytes have been read already. This is also the next index to write
    * in #outputArray.
+   *
    * @typedef {number}
    */
   #pointer = 0;
@@ -294,12 +298,14 @@ class AsyncStreamToArrayBufferCopier {
   /**
    * The count of bytes to be transfered. It is infered from the byteLength of
    * of the output buffer.
+   *
    * @typedef {number}
    */
   #count;
 
   /**
    * This temporary buffer is used when reading from #binaryStream.
+   *
    * @typedef {ArrayBuffer}
    */
   #tempBuffer;
@@ -416,12 +422,14 @@ class ArrayBufferToAsyncStreamCopier {
   /**
    * This is a wrapper on top of #originalStream, to be able to write buffers
    * easily.
+   *
    * @typedef {nsIBinaryOutputStream}
    */
   #binaryStream;
 
   /**
    * This is the input buffer, accessed as an UInt8Array.
+   *
    * @typedef {Uint8Array}
    */
   #inputArray;
@@ -429,6 +437,7 @@ class ArrayBufferToAsyncStreamCopier {
   /**
    * How many bytes have been read already. This is also the next index to read
    * in #outputArray.
+   *
    * @typedef {number}
    */
   #pointer = 0;
@@ -436,6 +445,7 @@ class ArrayBufferToAsyncStreamCopier {
   /**
    * The count of bytes to be transfered. It is infered from the byteLength of
    * of the input buffer.
+   *
    * @typedef {number}
    */
   #count;

@@ -8,9 +8,13 @@ import androidx.navigation.NavController
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.session.SessionUseCases
+import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 class TabHistoryControllerTest {
@@ -20,9 +24,16 @@ class TabHistoryControllerTest {
     private lateinit var currentItem: TabHistoryItem
     private lateinit var store: BrowserStore
 
+    @get:Rule
+    val coroutinesTestRule = MainCoroutineRule()
+
     @Before
     fun setUp() {
-        store = BrowserStore()
+        val engineMiddleware = EngineMiddleware.create(
+            mockk<Engine>(),
+            coroutinesTestRule.scope,
+        )
+        store = BrowserStore(middleware = engineMiddleware)
         navController = mockk(relaxed = true)
         goToHistoryIndexUseCase = spyk(SessionUseCases(store).goToHistoryIndex)
         currentItem = TabHistoryItem(

@@ -47,7 +47,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "stun_reg.h"
 #include "registry.h"
 #include "addrs.h"
-#include "transport_addr_reg.h"
 #include "nr_crypto.h"
 #include "hex.h"
 
@@ -110,63 +109,6 @@ nr_stun_xor_mapped_address(UINT4 magicCookie, UINT12 transactionId, nr_transport
     _status = 0;
   abort:
     return _status;
-}
-
-int
-nr_stun_find_local_addresses(nr_local_addr addrs[], int maxaddrs, int *count)
-{
-    int r,_status;
-    //NR_registry *children = 0;
-
-    *count = 0;
-
-#if 0
-    // this really goes with the code commented out below. (mjf)
-    if ((r=NR_reg_get_child_count(NR_STUN_REG_PREF_ADDRESS_PRFX, (unsigned int*)count)))
-        if (r != R_NOT_FOUND)
-            ABORT(r);
-#endif
-
-    if (*count == 0) {
-        if ((r=nr_stun_get_addrs(addrs, maxaddrs, count)))
-            ABORT(r);
-
-        goto done;
-    }
-
-    if (*count >= maxaddrs) {
-        r_log(NR_LOG_STUN, LOG_INFO, "Address list truncated from %d to %d", *count, maxaddrs);
-       *count = maxaddrs;
-    }
-
-#if 0
-    if (*count > 0) {
-      /* TODO(ekr@rtfm.com): Commented out 2012-07-26.
-
-         This code is currently not used in Firefox and needs to be
-         ported to 64-bit */
-        children = RCALLOC((*count + 10) * sizeof(*children));
-        if (!children)
-            ABORT(R_NO_MEMORY);
-
-        assert(sizeof(size_t) == sizeof(*count));
-
-        if ((r=NR_reg_get_children(NR_STUN_REG_PREF_ADDRESS_PRFX, children, (size_t)(*count + 10), (size_t*)count)))
-            ABORT(r);
-
-        for (i = 0; i < *count; ++i) {
-            if ((r=nr_reg_get_transport_addr(children[i], 0, &addrs[i].addr)))
-                ABORT(r);
-        }
-    }
-#endif
-
-  done:
-
-     _status=0;
- abort:
-     //RFREE(children);
-     return _status;
 }
 
 int

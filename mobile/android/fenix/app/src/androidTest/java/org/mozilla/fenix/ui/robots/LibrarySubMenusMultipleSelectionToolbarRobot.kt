@@ -60,7 +60,6 @@ class LibrarySubMenusMultipleSelectionToolbarRobot {
                         ),
                     ),
                 ),
-
                 // This is used as part of the `multiSelectionToolbarItemsTest` test. Somehow, in the view hierarchy,
                 // the match above is finding two checkmark views - one visible, one hidden, which is throwing off
                 // the matcher. This 'isDisplayed' check is a hacky workaround for this, we're explicitly ignoring

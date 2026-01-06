@@ -1,8 +1,8 @@
 [DEFAULT]
 subsuite = "a11y"
 skip-if = [
-  "os != 'linux'",
   "headless",
+  "os != 'linux'",
 ]
 support-files = ["head.js"]
 prefs = [
@@ -23,7 +23,7 @@ prefs = [
 
 ["browser_role.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && opt", # Bug 1984205
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1984205
 ]
 
 ["browser_table.js"]

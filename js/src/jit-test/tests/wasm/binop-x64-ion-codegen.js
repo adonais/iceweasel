@@ -383,7 +383,7 @@ for ( [pAnyCmp, pAnySel, cmpArgL, cmovArgL ] of
     )`,
     'f',
     // On Linux we have an extra move
-    (getBuildConfiguration("windows") ? '' : '48 89 ..       mov %r.+, %r.+\n') +
+    (getBuildConfiguration("windows") ? '' : 'mov %r.+, %r.+\n') +
     // 'q*' because the disassembler shows 'q' only for the memory cases
     `mov %r.+, %r.+
      cmpq*    ${cmpArgL}, %r.+

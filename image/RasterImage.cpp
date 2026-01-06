@@ -27,7 +27,6 @@
 #include "gfxContext.h"
 #include "gfxPlatform.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/Likely.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/SizeOfState.h"
 #include "mozilla/StaticPrefs_image.h"

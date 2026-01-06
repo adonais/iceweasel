@@ -81,6 +81,8 @@ pub enum WebDriverCommand<T: WebDriverExtensionCommand> {
     SetPermission(SetPermissionParameters),
     Status,
     Extension(T),
+    GPCSetGlobalPrivacyControl(GlobalPrivacyControlParameters),
+    GPCGetGlobalPrivacyControl,
     WebAuthnAddVirtualAuthenticator(AuthenticatorParameters),
     WebAuthnRemoveVirtualAuthenticator,
     WebAuthnAddCredential(CredentialParameters),
@@ -88,8 +90,6 @@ pub enum WebDriverCommand<T: WebDriverExtensionCommand> {
     WebAuthnRemoveCredential,
     WebAuthnRemoveAllCredentials,
     WebAuthnSetUserVerified(UserVerificationParameters),
-    SetGlobalPrivacyControl(GlobalPrivacyControlParameters),
-    GetGlobalPrivacyControl,
 }
 
 pub trait WebDriverExtensionCommand: Clone + Send {
@@ -415,6 +415,10 @@ impl<U: WebDriverExtensionRoute> WebDriverMessage<U> {
             }
             Route::Status => WebDriverCommand::Status,
             Route::Extension(ref extension) => extension.command(params, &body_data)?,
+            Route::GPCGetGlobalPrivacyControl => WebDriverCommand::GPCGetGlobalPrivacyControl,
+            Route::GPCSetGlobalPrivacyControl => {
+                WebDriverCommand::GPCSetGlobalPrivacyControl(serde_json::from_str(raw_body)?)
+            }
             Route::WebAuthnAddVirtualAuthenticator => {
                 WebDriverCommand::WebAuthnAddVirtualAuthenticator(serde_json::from_str(raw_body)?)
             }
@@ -429,10 +433,6 @@ impl<U: WebDriverExtensionRoute> WebDriverMessage<U> {
             Route::WebAuthnRemoveAllCredentials => WebDriverCommand::WebAuthnRemoveAllCredentials,
             Route::WebAuthnSetUserVerified => {
                 WebDriverCommand::WebAuthnSetUserVerified(serde_json::from_str(raw_body)?)
-            }
-            Route::GetGlobalPrivacyControl => WebDriverCommand::GetGlobalPrivacyControl,
-            Route::SetGlobalPrivacyControl => {
-                WebDriverCommand::SetGlobalPrivacyControl(serde_json::from_str(raw_body)?)
             }
         };
         Ok(WebDriverMessage::new(session_id, command))

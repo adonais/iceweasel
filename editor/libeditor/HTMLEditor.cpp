@@ -714,10 +714,9 @@ nsresult HTMLEditor::FocusedElementOrDocumentBecomesEditable(
     }
     // Although editor is already initialized due to re-used, ISM may not
     // create IME content observer yet. So we have to create it.
-    IMEState newState;
-    nsresult rv = GetPreferredIMEState(&newState);
-    if (NS_FAILED(rv)) {
-      NS_WARNING("EditorBase::GetPreferredIMEState() failed");
+    Result<IMEState, nsresult> newStateOrError = GetPreferredIMEState();
+    if (MOZ_UNLIKELY(newStateOrError.isErr())) {
+      NS_WARNING("HTMLEditor::GetPreferredIMEState() failed");
       mIsInDesignMode = false;
       return NS_OK;
     }
@@ -736,7 +735,8 @@ nsresult HTMLEditor::FocusedElementOrDocumentBecomesEditable(
         mHasFocus = false;
         mIsInDesignMode = false;
       }
-      IMEStateManager::UpdateIMEState(newState, focusedElement, *this);
+      IMEStateManager::UpdateIMEState(newStateOrError.unwrap(), focusedElement,
+                                      *this);
       // XXX Do we need to notify focused TextEditor of focus?  In theory,
       // the TextEditor should get focus event in this case.
     }
@@ -7134,9 +7134,9 @@ Element* HTMLEditor::ComputeEditingHostInternal(
       if (!selectionCommonAncestor) {
         selectionCommonAncestor = commonAncestor;
       } else {
-        selectionCommonAncestor =
+        selectionCommonAncestor = nsIContent::FromNodeOrNull(
             nsContentUtils::GetCommonFlattenedTreeAncestorForSelection(
-                commonAncestor, selectionCommonAncestor);
+                commonAncestor, selectionCommonAncestor));
       }
     }
     if (selectionCommonAncestor) {
@@ -7417,15 +7417,10 @@ bool HTMLEditor::IsAcceptableInputEvent(WidgetGUIEvent* aGUIEvent) const {
   return IsActiveInDOMWindow();
 }
 
-nsresult HTMLEditor::GetPreferredIMEState(IMEState* aState) {
+Result<widget::IMEState, nsresult> HTMLEditor::GetPreferredIMEState() const {
   // HTML editor don't prefer the CSS ime-mode because IE didn't do so too.
-  aState->mOpen = IMEState::DONT_CHANGE_OPEN_STATE;
-  if (IsReadonly()) {
-    aState->mEnabled = IMEEnabled::Disabled;
-  } else {
-    aState->mEnabled = IMEEnabled::Enabled;
-  }
-  return NS_OK;
+  return IMEState{IsReadonly() ? IMEEnabled::Disabled : IMEEnabled::Enabled,
+                  IMEState::DONT_CHANGE_OPEN_STATE};
 }
 
 already_AddRefed<Element> HTMLEditor::GetInputEventTargetElement() const {

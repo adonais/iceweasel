@@ -744,11 +744,8 @@ Maybe<IntRect> CompositorOGL::BeginFrame(const nsIntRegion& aInvalidRegion,
     mWidgetSize = LayoutDeviceIntSize::FromUnknownSize(rect.Size());
 #ifdef MOZ_WAYLAND
     if (mWidget && mWidget->AsGTK()) {
-      // Wayland only check we have correct window size to avoid
-      // rendering artifacts.
-      if (!mWidget->AsGTK()->SetEGLNativeWindowSize(mWidgetSize)) {
-        return Nothing();
-      }
+      // Set correct window size to avoid rendering artifacts.
+      mWidget->AsGTK()->SetEGLNativeWindowSize(mWidgetSize);
     }
 #endif
   } else {

@@ -214,7 +214,7 @@ function TypedArrayEntries() {
   PossiblyWrappedTypedArrayLength(O);
 
   // Step 7.
-  return CreateArrayIterator(O, ITEM_KIND_KEY_AND_VALUE);
+  RETURN_ARRAY_ITERATOR(O, ITEM_KIND_KEY_AND_VALUE);
 }
 
 // ES2021 draft rev 190d474c3d8728653fbf8a5a37db1de34b9c1472
@@ -456,7 +456,7 @@ function TypedArrayKeys() {
   PossiblyWrappedTypedArrayLength(O);
 
   // Step 3.
-  return CreateArrayIterator(O, ITEM_KIND_KEY);
+  RETURN_ARRAY_ITERATOR(O, ITEM_KIND_KEY);
 }
 
 // ES2017 draft rev 6859bb9ccaea9c6ede81d71e5320e3833b92cb3e
@@ -879,7 +879,7 @@ function $TypedArrayValues() {
   PossiblyWrappedTypedArrayLength(O);
 
   // Step 7.
-  return CreateArrayIterator(O, ITEM_KIND_VALUE);
+  RETURN_ARRAY_ITERATOR(O, ITEM_KIND_VALUE);
 }
 SetCanonicalName($TypedArrayValues, "values");
 

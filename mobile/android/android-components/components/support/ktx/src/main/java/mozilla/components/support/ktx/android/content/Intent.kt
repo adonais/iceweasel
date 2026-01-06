@@ -7,7 +7,7 @@ package mozilla.components.support.ktx.android.content
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import mozilla.components.support.utils.ext.queryIntentActivitiesCompat
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 
 /**
  * Modify the current intent to be used in an intent chooser excluding the current app.
@@ -22,7 +22,8 @@ fun Intent.createChooserExcludingCurrentApp(
     title: CharSequence,
 ): Intent {
     val chooserIntent: Intent
-    val resolveInfos = context.packageManager.queryIntentActivitiesCompat(this, 0).toHashSet()
+    val resolveInfos =
+        context.packageManagerCompatHelper.queryIntentActivitiesCompat(this, 0).toHashSet()
 
     val excludedComponentNames = resolveInfos
         .map { it.activityInfo }

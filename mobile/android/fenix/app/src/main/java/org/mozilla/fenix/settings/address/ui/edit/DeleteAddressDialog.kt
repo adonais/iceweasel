@@ -5,13 +5,15 @@
 package org.mozilla.fenix.settings.address.ui.edit
 
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.lib.state.ext.observeAsState
 import org.mozilla.fenix.R
@@ -21,6 +23,7 @@ import org.mozilla.fenix.settings.address.store.DeleteDialogAction
 import org.mozilla.fenix.settings.address.store.DialogState
 import org.mozilla.fenix.settings.address.store.ViewAppeared
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 
 /**
  * Dialog that is presented when deleting an address.
@@ -33,14 +36,12 @@ internal fun DeleteAddressDialog(store: AddressStore) {
 
     if (dialogState is DialogState.Presenting) {
         AlertDialog(
-            title = {
+            text = {
                 Text(
                     text = stringResource(R.string.addressess_confirm_dialog_message_2),
-                    color = FirefoxTheme.colors.textPrimary,
-                    style = FirefoxTheme.typography.headline5,
+                    style = FirefoxTheme.typography.body2,
                 )
             },
-            text = null,
             onDismissRequest = { store.dispatch(DeleteDialogAction.CancelTapped) },
             confirmButton = {
                 TextButton(
@@ -60,14 +61,32 @@ internal fun DeleteAddressDialog(store: AddressStore) {
     }
 }
 
-@FlexibleWindowLightDarkPreview
+@PreviewLightDark
 @Composable
 private fun DeleteAddressDialogPreview() {
     val store = AddressStore(
         AddressState.initial().copy(deleteDialog = DialogState.Presenting),
         listOf(),
     ).also { it.dispatch(ViewAppeared) }
+
     FirefoxTheme {
-        DeleteAddressDialog(store)
+        Surface {
+            DeleteAddressDialog(store)
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun DeleteAddressDialogPrivatePreview() {
+    val store = AddressStore(
+        AddressState.initial().copy(deleteDialog = DialogState.Presenting),
+        listOf(),
+    ).also { it.dispatch(ViewAppeared) }
+
+    FirefoxTheme(theme = Theme.Private) {
+        Surface {
+            DeleteAddressDialog(store)
+        }
     }
 }

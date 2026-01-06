@@ -1321,6 +1321,7 @@ add_task(async function test_restorePrefs_experimentAndRollout() {
     const { sandbox, manager, initExperimentAPI, cleanup } = await setupTest({
       init: false,
       storePath,
+      migrationState: NimbusTestUtils.migrationState.LATEST,
     });
     const setPrefSpy = sandbox.spy(PrefUtils, "setPref");
 
@@ -1749,8 +1750,7 @@ add_task(async function test_prefChange() {
 
     PrefUtils.setPref(pref, OVERWRITE_VALUE, { branch: setBranch });
 
-    await NimbusTestUtils.flushStore();
-    await NimbusTestUtils.waitForActiveEnrollments(
+    await NimbusTestUtils.assert.activeEnrollments(
       expectedEnrollments.map(kind => slugs[kind])
     );
 
@@ -1795,8 +1795,7 @@ add_task(async function test_prefChange() {
       if (!expectedEnrollments.includes(enrollmentKind)) {
         const slug = slugs[enrollmentKind];
 
-        await NimbusTestUtils.flushStore();
-        await NimbusTestUtils.waitForInactiveEnrollment(slug);
+        await NimbusTestUtils.assert.enrollmentExists(slug, { active: false });
 
         const enrollment = manager.store.get(slug);
 
@@ -2423,7 +2422,7 @@ add_task(async function test_clearUserPref() {
 
       if (!expectedEnrolled) {
         await NimbusTestUtils.flushStore();
-        await NimbusTestUtils.waitForInactiveEnrollment(slug);
+        await NimbusTestUtils.assert.enrollmentExists(slug, { active: false });
       }
 
       const enrollment = manager.store.get(slug);
@@ -2912,8 +2911,7 @@ async function test_restorePrefs_manifestChanged() {
 
     const { manager, cleanup } = await setupTest({
       storePath,
-      migrationState:
-        NimbusTestUtils.migrationState.IMPORTED_ENROLLMENTS_TO_SQL,
+      migrationState: NimbusTestUtils.migrationState.LATEST,
     });
 
     for (const enrollmentKind of expectedEnrollments) {
@@ -3615,7 +3613,7 @@ async function test_setPref_types_restore() {
 
   const { manager, cleanup } = await setupTest({
     storePath,
-    migrationState: NimbusTestUtils.migrationState.IMPORTED_ENROLLMENTS_TO_SQL,
+    migrationState: NimbusTestUtils.migrationState.LATEST,
   });
 
   const defaultBranch = Services.prefs.getDefaultBranch(null);

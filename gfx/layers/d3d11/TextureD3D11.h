@@ -64,9 +64,6 @@ class D3D11TextureData final : public TextureData {
                                   gfx::SurfaceFormat aFormat,
                                   TextureAllocationFlags aAllocFlags,
                                   ID3D11Device* aDevice = nullptr);
-  static D3D11TextureData* Create(gfx::SourceSurface* aSurface,
-                                  TextureAllocationFlags aAllocFlags,
-                                  ID3D11Device* aDevice = nullptr);
 
   static already_AddRefed<TextureClient> CreateTextureClient(
       ID3D11Texture2D* aTexture, uint32_t aIndex, gfx::IntSize aSize,

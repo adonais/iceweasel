@@ -2860,10 +2860,10 @@ nsPrefBranch::DeleteBranch(const char* aStartingAt) {
   // Collect the list of prefs to remove
   AutoTArray<const char*, 32> prefNames;
   for (auto& pref : PrefsIter(HashTable(), gSharedMap)) {
-    // The first disjunct matches branches: e.g. a branch name "foo.bar."
-    // matches a name "foo.bar.baz" (but it won't match "foo.barrel.baz").
-    // The second disjunct matches leaf nodes: e.g. a branch name "foo.bar."
-    // matches a name "foo.bar" (by ignoring the trailing '.').
+    // Match preferences that start with branchName or equal branchNameNoDot.
+    // For inputs ending with "..", this matches the node without the trailing
+    // dot and all children with the double dot prefix.
+    // For other inputs, this matches both the node itself and all children.
     if (StringBeginsWith(pref->NameString(), branchName) ||
         pref->NameString() == branchNameNoDot) {
       prefNames.AppendElement(pref->Name());

@@ -225,6 +225,9 @@ class TextControlState final : public SupportsWeakPtr {
   nsFrameSelection* GetIndependentFrameSelection() const;
   nsresult BindToFrame(nsTextControlFrame* aFrame);
   MOZ_CAN_RUN_SCRIPT void UnbindFromFrame(nsTextControlFrame* aFrame);
+  [[nodiscard]] nsTextControlFrame* GetBoundFrame() const {
+    return mBoundFrame;
+  }
   MOZ_CAN_RUN_SCRIPT nsresult PrepareEditor(const nsAString* aValue = nullptr);
   void InitializeKeyboardEventListeners();
 

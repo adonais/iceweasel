@@ -164,7 +164,7 @@ void AnimationEventInfo::MaybeAddMarker() const {
     }
     nsAutoCString properties;
     nsAutoCString oncompositor;
-    for (const AnimatedPropertyID& property : propertySet) {
+    for (const CSSPropertyId& property : propertySet) {
       if (!properties.IsEmpty()) {
         properties.AppendLiteral(", ");
         oncompositor.AppendLiteral(", ");
@@ -174,7 +174,7 @@ void AnimationEventInfo::MaybeAddMarker() const {
       properties.Append(prop);
       oncompositor.Append(
           !property.IsCustom() &&
-                  nsCSSProps::PropHasFlags(property.mID,
+                  nsCSSProps::PropHasFlags(property.mId,
                                            CSSPropFlags::CanAnimateOnCompositor)
               ? "true"
               : "false");
@@ -218,7 +218,7 @@ void AnimationEventInfo::MaybeAddMarker() const {
   // probably.
   const bool onCompositor =
       !data.mProperty.IsCustom() &&
-      nsCSSProps::PropHasFlags(data.mProperty.mID,
+      nsCSSProps::PropHasFlags(data.mProperty.mId,
                                CSSPropFlags::CanAnimateOnCompositor);
   PROFILER_MARKER(
       "CSS transition", DOM,

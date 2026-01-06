@@ -30,12 +30,12 @@ const PREVIEW_IMAGE_RULES = [
  *
  * @param {Array} aRules
  *          The list of rules for a given type of meta tag
- * @param {String} aTag
+ * @param {string} aTag
  *          The name or property of the incoming meta tag
- * @param {String} aEntry
+ * @param {string} aEntry
  *          The current best entry for the given meta tag
  *
- * @returns {Boolean} true if the incoming meta tag is better than the current
+ * @returns {boolean} true if the incoming meta tag is better than the current
  *                    best meta tag of that same kind, false otherwise
  */
 function shouldExtractMetadata(aRules, aTag, aEntry) {
@@ -48,7 +48,7 @@ function shouldExtractMetadata(aRules, aTag, aEntry) {
  * @param {URL} aURL
  *          A URL object that needs to be checked for valid principal and protocol
  *
- * @returns {Boolean} true if the preview URL is safe and can be stored, false otherwise
+ * @returns {boolean} true if the preview URL is safe and can be stored, false otherwise
  */
 function checkLoadURIStr(aURL) {
   if (!ACCEPTED_PROTOCOLS.has(aURL.protocol)) {

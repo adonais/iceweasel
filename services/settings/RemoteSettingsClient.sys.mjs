@@ -47,7 +47,7 @@ class EventEmitter {
    * sequentially.
    *
    * @param {string} event    the event name
-   * @param {Object} payload  the event payload to call the listeners with
+   * @param {object} payload  the event payload to call the listeners with
    */
   async emit(event, payload) {
     const callbacks = this._listeners.get(event);
@@ -418,11 +418,11 @@ export class RemoteSettingsClient extends EventEmitter {
   /**
    * Lists settings.
    *
-   * @param  {Object} [options]
+   * @param  {object} [options]
    *   The options object.
-   * @param  {Object} [options.filters]
+   * @param  {object} [options.filters]
    *   Filter the results (default: `{}`).
-   * @param  {String} [options.order]
+   * @param  {string} [options.order]
    *   The order to apply (eg. `"-last_modified"`).
    * @param  {boolean} [options.dumpFallback]
    *   Fallback to dump data if read of local DB fails (default: `true`).
@@ -645,7 +645,7 @@ export class RemoteSettingsClient extends EventEmitter {
   /**
    * Synchronize the local database with the remote server.
    *
-   * @param {Object} options See #maybeSync() options.
+   * @param {object} options See #maybeSync() options.
    */
   async sync(options) {
     if (lazy.Utils.shouldSkipRemoteActivityDueToTests) {
@@ -978,6 +978,7 @@ export class RemoteSettingsClient extends EventEmitter {
   /**
    * Return a more precise error instance, based on the specified
    * error and its message.
+   *
    * @param {Error} e the original error
    * @returns {Error}
    */
@@ -1063,7 +1064,7 @@ export class RemoteSettingsClient extends EventEmitter {
    *   The list of records to validate.
    * @param {number} timestamp
    *   The timestamp associated with the list of remote records.
-   * @param {Object} metadata
+   * @param {object} metadata
    *   The collection metadata, that contains the signature payload.
    */
   async validateCollectionSignature(records, timestamp, metadata) {
@@ -1353,9 +1354,9 @@ export class RemoteSettingsClient extends EventEmitter {
    * If the filtered lists of changes are all empty, we return null (and thus don't
    * bother listing local DB).
    *
-   * @param {Object}     syncResult       Synchronization result without filtering.
+   * @param {object}     syncResult       Synchronization result without filtering.
    *
-   * @returns {Promise<Object>} the filtered list of local records, plus the filtered
+   * @returns {Promise<object>} the filtered list of local records, plus the filtered
    *                            list of created, updated and deleted records.
    */
   async _filterSyncResult(syncResult) {
@@ -1415,7 +1416,7 @@ export class RemoteSettingsClient extends EventEmitter {
    * Remove the fields from the specified record
    * that are not present on server.
    *
-   * @param {Object} record
+   * @param {object} record
    */
   _cleanLocalFields(record) {
     const keys = ["_status"].concat(this.localFields);

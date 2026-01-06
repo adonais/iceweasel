@@ -132,6 +132,25 @@ browser.ui.interaction:
     expires: never
     telemetry_mirror: BROWSER_UI_INTERACTION_ALL_TABS_PANEL_ENTRYPOINT
 
+  list_all_tabs_action:
+    type: labeled_counter
+    description: >
+      Records how often users interact with any top-level menu option in the
+      "List All Tabs" menu.
+    bugs:
+      - https://bugzil.la/2001752
+    data_reviews:
+      - https://bugzil.la/2001752
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - sthompson@mozilla.com
+    expires: never
+    labels:
+      - close_all_duplicates # "Close all duplicate tabs" menu item
+      - tabs_from_devices # "Tabs from other devices" menu item
+      - search_tabs # "Search tabs" menu item
+
   tab_movement:
     type: labeled_counter
     description: >

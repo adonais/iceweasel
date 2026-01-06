@@ -28,6 +28,9 @@ ScheduledBackupsDisabled.args = {
       fileName: "Documents",
     },
     scheduledBackupsEnabled: false,
+    backupErrorCode: 0,
+    archiveEnabledStatus: true,
+    restoreEnabledStatus: true,
   },
 };
 
@@ -40,6 +43,9 @@ ScheduledBackupsEnabled.args = {
       fileName: "Documents",
     },
     scheduledBackupsEnabled: true,
+    backupErrorCode: 0,
+    archiveEnabledStatus: true,
+    restoreEnabledStatus: true,
   },
 };
 
@@ -54,6 +60,9 @@ ExistingBackup.args = {
     scheduledBackupsEnabled: true,
     lastBackupDate: 1719625747,
     lastBackupFileName: "FirefoxBackup_default_123123123.html",
+    backupErrorCode: 0,
+    archiveEnabledStatus: true,
+    restoreEnabledStatus: true,
   },
 };
 
@@ -69,5 +78,8 @@ EncryptionEnabled.args = {
     encryptionEnabled: true,
     lastBackupDate: 1719625747,
     lastBackupFileName: "FirefoxBackup_default_123123123.html",
+    backupErrorCode: 0,
+    archiveEnabledStatus: true,
+    restoreEnabledStatus: true,
   },
 };

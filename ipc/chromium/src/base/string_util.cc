@@ -17,7 +17,6 @@
 #include <wchar.h>
 #include <wctype.h>
 
-#include <algorithm>
 #include <vector>
 
 #include "base/basictypes.h"

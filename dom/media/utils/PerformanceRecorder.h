@@ -7,7 +7,6 @@
 #ifndef mozilla_PerformanceRecorder_h
 #define mozilla_PerformanceRecorder_h
 
-#include <type_traits>
 #include <utility>
 
 #include "mozilla/BaseProfilerMarkersPrerequisites.h"

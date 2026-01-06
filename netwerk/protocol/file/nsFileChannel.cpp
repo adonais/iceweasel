@@ -21,6 +21,7 @@
 #include "nsIContentPolicy.h"
 #include "nsContentUtils.h"
 #include "mozilla/dom/ContentParent.h"
+#include "mozilla/net/NeckoChild.h"
 #include "../protocol/http/nsHttpHandler.h"
 
 #include "nsIFileURL.h"
@@ -467,7 +468,7 @@ nsresult nsFileChannel::FixupContentLength(bool async) {
 // nsFileChannel::nsISupports
 
 NS_IMPL_ISUPPORTS_INHERITED(nsFileChannel, nsBaseChannel, nsIUploadChannel,
-                            nsIFileChannel, nsIIdentChannel)
+                            nsIFileChannel, nsIIdentChannel, nsIChildChannel)
 
 //-----------------------------------------------------------------------------
 // nsFileChannel::nsIFileChannel
@@ -482,28 +483,59 @@ nsFileChannel::GetFile(nsIFile** file) {
 }
 
 nsresult nsFileChannel::MaybeSendFileOpenNotification() {
+  // We never send the notification unless we're in a content process.
+  if (!IsNeckoChild()) {
+    return NS_OK;
+  }
+
+  // Ignore system-principal triggered file channel loads unless they're for a
+  // toplevel document load.
+  if (mLoadInfo->TriggeringPrincipal()->IsSystemPrincipal() &&
+      mLoadInfo->GetExternalContentPolicyType() !=
+          ExtContentPolicyType::TYPE_DOCUMENT) {
+    return NS_OK;
+  }
+
+  uint32_t loadFlags = 0;
+  MOZ_ALWAYS_SUCCEEDS(GetLoadFlags(&loadFlags));
+
+  LoadInfoArgs loadInfoArgs;
+  MOZ_ALWAYS_SUCCEEDS(
+      mozilla::ipc::LoadInfoToLoadInfoArgs(mLoadInfo, &loadInfoArgs));
+
+  FileChannelInfo fileChannelInfo(mURI, nsBaseChannel::OriginalURI(), loadFlags,
+                                  loadInfoArgs, mContentType, mChannelId);
+  gNeckoChild->SendNotifyFileChannelOpened(fileChannelInfo);
+  return NS_OK;
+}
+
+/* static */
+nsresult nsFileChannel::DoNotifyFileChannelOpened(
+    const nsACString& aRemoteType,
+    const mozilla::net::FileChannelInfo& aFileChannelInfo) {
+  nsCOMPtr<nsIObserverService> obsService = components::Observer::Service();
+  if (!obsService) {
+    return NS_OK;
+  }
+
   nsCOMPtr<nsILoadInfo> loadInfo;
-  nsresult rv = GetLoadInfo(getter_AddRefs(loadInfo));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  nsresult rv = mozilla::ipc::LoadInfoArgsToLoadInfo(
+      aFileChannelInfo.loadInfo(), aRemoteType, getter_AddRefs(loadInfo));
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  bool isTopLevel;
-  rv = loadInfo->GetIsTopLevelLoad(&isTopLevel);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
+  // Re-create a file channel in the parent process to notify
+  // file-channel-opened observers.
+  RefPtr<nsFileChannel> channel;
+  channel = new nsFileChannel(aFileChannelInfo.uri());
+  channel->SetURI(aFileChannelInfo.uri());
+  channel->SetOriginalURI(aFileChannelInfo.originalURI());
+  channel->SetLoadFlags(aFileChannelInfo.loadFlags());
+  channel->SetLoadInfo(loadInfo);
+  channel->SetContentType(aFileChannelInfo.contentType());
+  MOZ_ALWAYS_SUCCEEDS(channel->SetChannelId(aFileChannelInfo.channelId()));
 
-  uint64_t browsingContextID;
-  rv = loadInfo->GetBrowsingContextID(&browsingContextID);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
-  if ((browsingContextID != 0 && isTopLevel) ||
-      !loadInfo->TriggeringPrincipal()->IsSystemPrincipal()) {
-    NotifyListeners();
-  }
+  obsService->NotifyObservers(static_cast<nsIIdentChannel*>(channel),
+                              "file-channel-opened", nullptr);
   return NS_OK;
 }
 
@@ -554,8 +586,20 @@ nsFileChannel::SetChannelId(uint64_t aChannelId) {
   return NS_OK;
 }
 
-nsresult nsFileChannel::NotifyListeners() {
-  // Nothing to do here, this will be handled in
-  // FileChannelChild::NotifyListeners.
+//-----------------------------------------------------------------------------
+// nsFileChannel::nsIChildChannel
+
+NS_IMETHODIMP
+nsFileChannel::ConnectParent(uint32_t aId) {
+  if (!IsNeckoChild()) {
+    return NS_ERROR_NOT_IMPLEMENTED;
+  }
+
+  gNeckoChild->SendConnectBaseChannel(aId);
   return NS_OK;
+}
+
+NS_IMETHODIMP
+nsFileChannel::CompleteRedirectSetup(nsIStreamListener* aListener) {
+  return AsyncOpen(aListener);
 }

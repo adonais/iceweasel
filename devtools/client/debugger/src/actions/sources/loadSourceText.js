@@ -115,10 +115,10 @@ async function loadOriginalSourceTextPromise(source, thunkArgs) {
  * Function called everytime a new original or generated source gets its text content
  * fetched from the server and registered in the reducer.
  *
- * @param {Object} source
- * @param {Object} sourceActor (optional)
+ * @param {object} source
+ * @param {object} sourceActor (optional)
  *        If this is a generated source, we expect a precise source actor.
- * @param {Object} thunkArgs
+ * @param {object} thunkArgs
  */
 async function onSourceTextContentAvailable(
   source,
@@ -161,7 +161,8 @@ async function onSourceTextContentAvailable(
 
 /**
  * Loads the source text for the generated source based of the source actor
- * @param {Object} sourceActor
+ *
+ * @param {object} sourceActor
  *                 There can be more than one source actor per source
  *                 so the source actor needs to be specified. This is
  *                 required for generated sources but will be null for
@@ -201,7 +202,8 @@ export const loadGeneratedSourceText = memoizeableAction(
 
 /**
  * Loads the source text for an original source and source actor
- * @param {Object} source
+ *
+ * @param {object} source
  *                 The original source to load the source text
  */
 export const loadOriginalSourceText = memoizeableAction(

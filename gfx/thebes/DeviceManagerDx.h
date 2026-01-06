@@ -7,7 +7,6 @@
 #define mozilla_gfx_thebes_DeviceManagerDx_h
 
 #include <set>
-#include <vector>
 
 #include "gfxPlatform.h"
 #include "gfxTelemetry.h"

@@ -196,6 +196,7 @@ async function dropAfter(rowToDrag, rowToDropAfter, win) {
 
 /**
  * Virtually drag and drop one tabs list row before another.
+ *
  * @param {XulToolbarItem} rowToDrag
  * @param {XulToolbarItem} rowToDropBefore
  * @param {Window} win

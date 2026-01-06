@@ -25,7 +25,8 @@ namespace mozilla::hal_impl {
  * 2. background processes
  * 3. background processes playing video (but no audio)
  * 4. foreground processes or processes playing or recording audio
- * 5. the parent process
+ * 5. gpu process or anything else high priority
+ * 6. the parent process
  *
  * At the time of writing (2022) the base score for a process consuming very
  * little memory seems to be around ~667. Our adjustments are thus designed
@@ -33,9 +34,10 @@ namespace mozilla::hal_impl {
  * close to the 1000 limit where they would be clamped. */
 
 const uint32_t kParentOomScoreAdjust = 0;
-const uint32_t kForegroundOomScoreAdjust = 100;
-const uint32_t kBackgroundPerceivableOomScoreAdjust = 133;
-const uint32_t kBackgroundOomScoreAdjust = 167;
+const uint32_t kForegroundHighOomScoreAdjust = 100;
+const uint32_t kForegroundOomScoreAdjust = 133;
+const uint32_t kBackgroundPerceivableOomScoreAdjust = 167;
+const uint32_t kBackgroundOomScoreAdjust = 200;
 const uint32_t kPreallocOomScoreAdjust = 233;
 
 static uint32_t OomScoreAdjForPriority(ProcessPriority aPriority) {
@@ -48,6 +50,8 @@ static uint32_t OomScoreAdjForPriority(ProcessPriority aPriority) {
       return kPreallocOomScoreAdjust;
     case PROCESS_PRIORITY_FOREGROUND:
       return kForegroundOomScoreAdjust;
+    case PROCESS_PRIORITY_FOREGROUND_HIGH:
+      return kForegroundHighOomScoreAdjust;
     default:
       return kParentOomScoreAdjust;
   }

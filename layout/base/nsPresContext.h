@@ -1087,6 +1087,16 @@ class nsPresContext : public nsISupports,
     }
   }
 
+  // Return the cached value of the about:config pref
+  // 'layout.abspos.fragmentainer-aware-positioning.enabled'.
+  //
+  // Note: Layout code should use this helper rather than the actual "live" pref
+  // value. This ensures a given frame tree handles abspos fragmentation
+  // consistently even if the actual pref value changes.
+  bool FragmentainerAwarePositioningEnabled() const {
+    return mFragmentainerAwarePositioningEnabled;
+  }
+
  protected:
   void DoUpdateHiddenByContentVisibilityForAnimations();
   friend class nsRunnableMethod<nsPresContext>;
@@ -1397,6 +1407,12 @@ class nsPresContext : public nsISupports,
   unsigned mNeedsToUpdateHiddenByContentVisibilityForAnimations : 1;
 
   unsigned mUserInputEventsAllowed : 1;
+
+  // Cached value of the about:config pref
+  // 'layout.abspos.fragmentainer-aware-positioning.enabled'
+  // from when this nsPresContext was initialized.
+  bool mFragmentainerAwarePositioningEnabled : 1 = false;
+
 #ifdef DEBUG
   unsigned mInitialized : 1;
 #endif

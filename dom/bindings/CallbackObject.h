@@ -19,7 +19,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <utility>
 
 #include "js/Exception.h"
 #include "js/RootingAPI.h"

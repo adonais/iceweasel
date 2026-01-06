@@ -4,10 +4,8 @@
 
 package org.mozilla.fenix.compose
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,13 +14,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -102,7 +102,8 @@ fun MessageCard(
                     Modifier
                 },
             ),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         colors = CardDefaults.cardColors(containerColor = messageColors.backgroundColor),
     ) {
         Column(
@@ -217,14 +218,13 @@ data class MessageCardColors(
          * Builder function used to construct an instance of [MessageCardColors].
          */
         @Composable
-        @ReadOnlyComposable
         fun buildMessageCardColors(
-            backgroundColor: Color = FirefoxTheme.colors.layer2,
-            titleTextColor: Color = FirefoxTheme.colors.textPrimary,
-            messageTextColor: Color = FirefoxTheme.colors.textSecondary,
-            iconColor: Color = FirefoxTheme.colors.iconPrimary,
-            buttonColor: Color = FirefoxTheme.colors.actionPrimary,
-            buttonTextColor: Color = FirefoxTheme.colors.textActionPrimary,
+            backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
+            titleTextColor: Color = MaterialTheme.colorScheme.onSurface,
+            messageTextColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+            iconColor: Color = MaterialTheme.colorScheme.onSurface,
+            buttonColor: Color = ButtonDefaults.buttonColors().containerColor,
+            buttonTextColor: Color = ButtonDefaults.buttonColors().contentColor,
         ): MessageCardColors {
             return MessageCardColors(
                 backgroundColor = backgroundColor,
@@ -242,13 +242,10 @@ data class MessageCardColors(
 @PreviewLightDark
 private fun MessageCardPreview() {
     FirefoxTheme {
-        Box(
-            Modifier
-                .background(FirefoxTheme.colors.layer1)
-                .padding(all = 16.dp),
-        ) {
+        Surface {
             MessageCard(
                 messageCardState = FakeHomepagePreview.messageCardState(),
+                modifier = Modifier.padding(all = 16.dp),
                 onClick = {},
                 onCloseButtonClick = {},
             )
@@ -260,13 +257,10 @@ private fun MessageCardPreview() {
 @PreviewLightDark
 private fun MessageCardWithoutTitlePreview() {
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .background(FirefoxTheme.colors.layer1)
-                .padding(all = 16.dp),
-        ) {
+        Surface {
             MessageCard(
                 messageText = stringResource(id = R.string.default_browser_experiment_card_text),
+                modifier = Modifier.padding(all = 16.dp),
                 onClick = {},
                 onCloseButtonClick = {},
             )
@@ -278,13 +272,10 @@ private fun MessageCardWithoutTitlePreview() {
 @PreviewLightDark
 private fun MessageCardWithButtonLabelPreview() {
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .background(FirefoxTheme.colors.layer1)
-                .padding(all = 16.dp),
-        ) {
+        Surface {
             MessageCard(
                 messageText = stringResource(id = R.string.default_browser_experiment_card_text),
+                modifier = Modifier.padding(all = 16.dp),
                 titleText = stringResource(id = R.string.default_browser_experiment_card_title),
                 buttonText = stringResource(id = R.string.preferences_set_as_default_browser),
                 onClick = {},
@@ -323,7 +314,6 @@ data class MessageCardState(
          * @param wallpaperState [WallpaperState] specifying the colors to be used.
          */
         @Composable
-        @ReadOnlyComposable
         fun build(message: Message, wallpaperState: WallpaperState): MessageCardState {
             val isWallpaperNotDefault =
                 !Wallpaper.nameIsDefault(wallpaperState.currentWallpaper.name)
@@ -331,11 +321,8 @@ data class MessageCardState(
             var (_, _, _, _, buttonColor, buttonTextColor) = MessageCardColors.buildMessageCardColors()
 
             if (isWallpaperNotDefault) {
-                buttonColor = FirefoxTheme.colors.layer1
-
-                if (!isSystemInDarkTheme()) {
-                    buttonTextColor = FirefoxTheme.colors.textActionSecondary
-                }
+                buttonColor = MaterialTheme.colorScheme.surface
+                buttonTextColor = MaterialTheme.colorScheme.onSurface
             }
 
             val messageCardColors = MessageCardColors.buildMessageCardColors(

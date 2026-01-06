@@ -50,18 +50,6 @@ toolchain_run_schema = Schema(
                 """
             ),
         ): [str],
-        Required(
-            "sparse-profile",
-            description=dedent(
-                """
-                Sparse profile to give to checkout using `run-task`. If given,
-                a filename in `build/sparse-profiles`. Defaults to
-                "toolchain-build", i.e., to
-                `build/sparse-profiles/toolchain-build`. If `None`, instructs
-                `run-task` to not use a sparse profile at all.
-                """
-            ),
-        ): Any(str, None),
         Optional(
             "resources",
             description=dedent(
@@ -205,9 +193,7 @@ def common_toolchain(config, task, taskdesc, is_docker):
     configure_taskdesc_for_run(config, task, taskdesc, worker["implementation"])
 
 
-toolchain_defaults = {
-    "sparse-profile": "toolchain-build",
-}
+toolchain_defaults = {}
 
 
 @run_task_using(

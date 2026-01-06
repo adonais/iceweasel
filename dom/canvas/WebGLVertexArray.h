@@ -8,7 +8,6 @@
 
 #include <array>
 #include <bitset>
-#include <vector>
 
 #include "CacheInvalidator.h"
 #include "WebGLObjectModel.h"

@@ -4,6 +4,7 @@
 
 /**
  * Threads reducer
+ *
  * @module reducers/threads
  */
 

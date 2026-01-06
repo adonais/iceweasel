@@ -227,8 +227,6 @@ export class FlightStatusSuggestions extends RealtimeSuggestProvider {
             city: item.origin.city,
             code: item.origin.code,
           },
-          cacheable: true,
-          excludeArgsFromCacheKey: true,
         },
       },
       [`destination_airport_${index}`]: {
@@ -238,8 +236,6 @@ export class FlightStatusSuggestions extends RealtimeSuggestProvider {
             city: item.destination.city,
             code: item.destination.code,
           },
-          cacheable: true,
-          excludeArgsFromCacheKey: true,
         },
       },
       [`flight_number_${index}`]: item.airline.name
@@ -250,8 +246,6 @@ export class FlightStatusSuggestions extends RealtimeSuggestProvider {
                 flightNumber: item.flight_number,
                 airlineName: item.airline.name,
               },
-              cacheable: true,
-              excludeArgsFromCacheKey: !!statusL10nArgs,
             },
           }
         : {
@@ -261,8 +255,6 @@ export class FlightStatusSuggestions extends RealtimeSuggestProvider {
         l10n: {
           id: statusL10nId,
           args: statusL10nArgs,
-          cacheable: true,
-          excludeArgsFromCacheKey: !!statusL10nArgs,
         },
       },
       [`time_left_${index}`]: timeLeft
@@ -272,8 +264,6 @@ export class FlightStatusSuggestions extends RealtimeSuggestProvider {
               args: {
                 timeLeft,
               },
-              cacheable: true,
-              excludeArgsFromCacheKey: !!statusL10nArgs,
             },
           }
         : null,

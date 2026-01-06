@@ -35,6 +35,7 @@ export const ToastNotification = {
 
   /**
    * Show a toast notification.
+   *
    * @param message             Message containing content to show.
    * @param dispatch            A function to dispatch resulting actions.
    * @return                    boolean value capturing if toast notification was displayed.

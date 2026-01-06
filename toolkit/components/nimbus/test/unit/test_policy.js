@@ -54,26 +54,19 @@ async function doTest({
     "Policy engine is active"
   );
 
-  let storePath = undefined;
-  if (existingEnrollments) {
-    const store = NimbusTestUtils.stubs.store();
-    await store.init();
-
-    for (const slug of existingEnrollments) {
-      NimbusTestUtils.addEnrollmentForRecipe(
-        RECIPES.find(e => e.slug === slug),
-        { store }
-      );
-    }
-
-    storePath = await NimbusTestUtils.saveStore(store);
-  }
-
   const { initExperimentAPI, cleanup, loader } =
     await NimbusTestUtils.setupTest({
       init: false,
+      storePath: await NimbusTestUtils.createStoreWith(store => {
+        for (const slug of existingEnrollments) {
+          NimbusTestUtils.addEnrollmentForRecipe(
+            RECIPES.find(e => e.slug === slug),
+            { store }
+          );
+        }
+      }),
       experiments: RECIPES,
-      storePath,
+      migrationState: NimbusTestUtils.migrationState.UNMIGRATED,
     });
 
   sinon.spy(loader, "updateRecipes");

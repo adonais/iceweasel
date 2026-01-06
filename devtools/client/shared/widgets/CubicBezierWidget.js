@@ -39,6 +39,7 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 /**
  * CubicBezier data structure helper
  * Accepts an array of coordinates and exposes a few useful getters
+ *
  * @param {Array} coordinates i.e. [.42, 0, .58, 1]
  */
 function CubicBezier(coordinates) {
@@ -87,6 +88,7 @@ CubicBezier.prototype = {
 
 /**
  * Bezier curve canvas plotting class
+ *
  * @param {DOMNode} canvas
  * @param {CubicBezier} bezier
  * @param {Array} padding Amount of horizontal,vertical padding around the graph
@@ -112,6 +114,7 @@ exports.BezierCanvas = BezierCanvas;
 BezierCanvas.prototype = {
   /**
    * Get P1 and P2 current top/left offsets so they can be positioned
+   *
    * @return {Array} Returns an array of 2 {top:String,left:String} objects
    */
   get offsets() {
@@ -225,6 +228,7 @@ BezierCanvas.prototype = {
 /**
  * Cubic-bezier widget. Uses the BezierCanvas class to draw the curve and
  * adds the control points and user interaction
+ *
  * @param {DOMNode} parent The container where the graph should be created
  * @param {Array} coordinates Coordinates of the curve to be drawn
  *
@@ -497,6 +501,7 @@ CubicBezierWidget.prototype = {
 
   /**
    * Redraw the curve
+   *
    * @param {Array} coordinates The array of control point coordinates
    */
   _redraw(coordinates) {
@@ -512,6 +517,7 @@ CubicBezierWidget.prototype = {
 
   /**
    * Set new coordinates for the control points and redraw the curve
+   *
    * @param {Array} coordinates
    */
   set coordinates(coordinates) {
@@ -527,7 +533,8 @@ CubicBezierWidget.prototype = {
 
   /**
    * Set new coordinates for the control point and redraw the curve
-   * @param {String} value A string value. E.g. "linear",
+   *
+   * @param {string} value A string value. E.g. "linear",
    * "cubic-bezier(0,0,1,1)"
    */
   set cssCubicBezierValue(value) {
@@ -568,6 +575,7 @@ CubicBezierWidget.prototype = {
 /**
  * CubicBezierPreset widget.
  * Builds a menu of presets from CubicBezierPresets
+ *
  * @param {DOMNode} parent The container where the preset panel should be
  * created
  *
@@ -777,6 +785,7 @@ CubicBezierPresetWidget.prototype = {
    * the curve is modified via the canvas.
    * Attempts to match the new user setting with an
    * existing preset.
+   *
    * @param {Array} coordinates new coords [i, j, k, l]
    */
   refreshMenu(coordinates) {
@@ -818,6 +827,7 @@ CubicBezierPresetWidget.prototype = {
 /**
  * The TimingFunctionPreviewWidget animates a dot on a scale with a given
  * timing-function
+ *
  * @param {DOMNode} parent The container where this widget should go
  */
 function TimingFunctionPreviewWidget(parent) {
@@ -857,7 +867,8 @@ TimingFunctionPreviewWidget.prototype = {
    * Preview a new timing function. The current preview will only be stopped if
    * the supplied function value is different from the previous one. If the
    * supplied function is invalid, the preview will stop.
-   * @param {String} value
+   *
+   * @param {string} value
    */
   preview(value) {
     // Don't restart the preview animation if the value is the same
@@ -874,7 +885,8 @@ TimingFunctionPreviewWidget.prototype = {
 
   /**
    * Re-start the preview animation from the beginning.
-   * @param {String} timingFunction The value for the timing-function.
+   *
+   * @param {string} timingFunction The value for the timing-function.
    */
   restartAnimation(timingFunction) {
     // Cancel the previous animation if there was any.
@@ -953,7 +965,8 @@ function distance(x1, y1, x2, y2) {
  * Parse a string to see whether it is a valid timing function.
  * If it is, return the coordinates as an array.
  * Otherwise, return undefined.
- * @param {String} value
+ *
+ * @param {string} value
  * @return {Array} of coordinates, or undefined
  */
 function parseTimingFunction(value) {
@@ -1000,7 +1013,8 @@ exports.parseTimingFunction = parseTimingFunction;
 
 /**
  * Removes a class from a node and adds it to another.
- * @param {String} className the class to swap
+ *
+ * @param {string} className the class to swap
  * @param {DOMNode} from the node to remove the class from
  * @param {DOMNode} to the node to add the class to
  */
@@ -1016,9 +1030,10 @@ function swapClassName(className, from, to) {
 
 /**
  * Compares two arrays of coordinates [i, j, k, l]
+ *
  * @param {Array} c1 first coordinate array to compare
  * @param {Array} c2 second coordinate array to compare
- * @return {Boolean}
+ * @return {boolean}
  */
 function coordsAreEqual(c1, c2) {
   return c1.reduce((prev, curr, index) => prev && curr === c2[index], true);

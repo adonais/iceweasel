@@ -1070,6 +1070,8 @@ void Grouper::PaintContainerItem(DIGroup* aGroup, nsDisplayItem* aItem,
 class WebRenderGroupData : public WebRenderUserData {
  public:
   WebRenderGroupData(RenderRootStateManager* aWRManager, nsDisplayItem* aItem);
+  WebRenderGroupData(RenderRootStateManager* aWRManager,
+                     uint32_t aDisplayItemKey, nsIFrame* aFrame);
   virtual ~WebRenderGroupData();
 
   WebRenderGroupData* AsGroupData() override { return this; }
@@ -1699,7 +1701,7 @@ void WebRenderCommandBuilder::DoGroupingForDisplayList(
 
   ScrollableLayerGuid::ViewID scrollId = ScrollableLayerGuid::NULL_SCROLL_ID;
   if (const ActiveScrolledRoot* asr = aWrappingItem->GetActiveScrolledRoot()) {
-    scrollId = asr->GetViewId();
+    scrollId = asr->GetNearestScrollASRViewId();
   }
 
   g.mAppUnitsPerDevPixel = appUnitsPerDevPixel;
@@ -1916,7 +1918,7 @@ struct NewLayerData {
     }
     if (mDeferredItem) {
       if (const auto* asr = mDeferredItem->GetActiveScrolledRoot()) {
-        mDeferredId = asr->GetViewId();
+        mDeferredId = asr->GetNearestScrollASRViewId();
       }
       if (mDeferredItem->GetActiveScrolledRoot() !=
           aItem->GetActiveScrolledRoot()) {
@@ -2136,13 +2138,16 @@ void WebRenderCommandBuilder::CreateWebRenderCommandsFromDisplayList(
         newLayerData->mLayerCountBeforeRecursing = mLayerScrollData.size();
         newLayerData->mStopAtAsr =
             mAsrStack.empty() ? nullptr : mAsrStack.back();
+        newLayerData->mStopAtAsr = ActiveScrolledRoot::LowestCommonAncestor(
+            asr, newLayerData->mStopAtAsr);
         newLayerData->ComputeDeferredTransformInfo(aSc, item);
 
-        // Ensure our children's |stopAtAsr| is not be an ancestor of our
+        // Our children's |stopAtAsr| must not be an ancestor of our
         // |stopAtAsr|, otherwise we could get cyclic scroll metadata
         // annotations.
-        const ActiveScrolledRoot* stopAtAsrForChildren =
-            ActiveScrolledRoot::PickDescendant(asr, newLayerData->mStopAtAsr);
+        MOZ_ASSERT(
+            ActiveScrolledRoot::IsAncestor(newLayerData->mStopAtAsr, asr));
+        const ActiveScrolledRoot* stopAtAsrForChildren = asr;
         // Additionally, while unusual and probably indicative of a poorly
         // behaved display list, it's possible to have a deferred transform item
         // which we will emit as its own layer on the way out of the recursion,
@@ -3021,7 +3026,13 @@ void WebRenderCommandBuilder::ClearCachedResources() {
 
 WebRenderGroupData::WebRenderGroupData(
     RenderRootStateManager* aRenderRootStateManager, nsDisplayItem* aItem)
-    : WebRenderUserData(aRenderRootStateManager, aItem) {
+    : WebRenderGroupData(aRenderRootStateManager, aItem->GetPerFrameKey(),
+                         aItem->Frame()) {}
+
+WebRenderGroupData::WebRenderGroupData(
+    RenderRootStateManager* aRenderRootStateManager, uint32_t aDisplayItemKey,
+    nsIFrame* aFrame)
+    : WebRenderUserData(aRenderRootStateManager, aDisplayItemKey, aFrame) {
   MOZ_COUNT_CTOR(WebRenderGroupData);
 }
 

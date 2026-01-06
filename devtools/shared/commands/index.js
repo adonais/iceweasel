@@ -34,7 +34,7 @@ const Commands = {
  * This dictionary is lazy and commands will be loaded and instanciated on-demand.
  *
  * @param {DescriptorFront} descriptorFront
- * @param {Boolean} enableWindowGlobalThreadActors: Used by one test.
+ * @param {boolean} enableWindowGlobalThreadActors: Used by one test.
  */
 async function createCommandsDictionary(
   descriptorFront,

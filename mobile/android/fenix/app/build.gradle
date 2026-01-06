@@ -69,11 +69,12 @@ android {
         testBuildType project.property("testBuildType")
     }
 
+    compileSdk { version = release(config.compileSdkMajorVersion) { minorApiLevel = config.compileSdkMinorVersion } }
+
     defaultConfig {
         applicationId "org.mozilla"
-        minSdkVersion config.minSdkVersion
-        compileSdk = config.compileSdkVersion
-        targetSdkVersion config.targetSdkVersion
+        minSdk config.minSdkVersion
+        targetSdk config.targetSdkVersion
         versionCode 1
         versionName Config.generateDebugVersionName()
         vectorDrawables.useSupportLibrary = true
@@ -99,6 +100,7 @@ android {
         ]
 
         buildConfigField "String[]", "SUPPORTED_LOCALE_ARRAY", getSupportedLocales()
+        buildConfigField "boolean", "IS_BENCHMARK_BUILD", "false"
     }
 
     def releaseTemplate = {
@@ -183,6 +185,7 @@ android {
             applicationIdSuffix ".fenix"
             signingConfig = signingConfigs.debug
             debuggable false
+            buildConfigField "boolean", "IS_BENCHMARK_BUILD", "true"
         }
     }
 
@@ -679,6 +682,8 @@ dependencies {
     implementation libs.androidx.navigation.compose
     implementation libs.androidx.navigation.fragment
     implementation libs.androidx.navigation.ui
+    implementation libs.androidx.navigation3.ui
+    implementation libs.androidx.navigation3.runtime
     implementation libs.androidx.paging
     implementation libs.androidx.preferences
     implementation libs.androidx.profileinstaller
@@ -707,6 +712,8 @@ dependencies {
     testImplementation testFixtures(project(':components:feature-downloads'))
 
     testImplementation ComponentsDependencies.mozilla_appservices_full_megazord_libsForTests
+
+    testImplementation libs.androidx.compose.ui.test
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit
     testImplementation libs.androidx.work.testing

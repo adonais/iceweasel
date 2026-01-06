@@ -11,6 +11,8 @@ const { IPPExceptionsManager } = ChromeUtils.importESModule(
 const MODE_PREF = "browser.ipProtection.exceptionsMode";
 const ALL_MODE = "all";
 const SELECT_MODE = "select";
+const ONBOARDING_MESSAGE_MASK_PREF =
+  "browser.ipProtection.onboardingMessageMask";
 
 const PERM_NAME = "ipp-vpn";
 
@@ -182,6 +184,8 @@ add_task(async function test_filter_dialog_exclusions_only() {
   await testExceptionsInDialog(exclusions, capabilityFilter);
 
   cleanupExceptions();
+  await SpecialPowers.popPrefEnv();
+  Services.prefs.clearUserPref(ONBOARDING_MESSAGE_MASK_PREF);
 });
 
 /**
@@ -200,4 +204,6 @@ add_task(async function test_filter_dialog_inclusions_only() {
   await testExceptionsInDialog(inclusions, capabilityFilter);
 
   cleanupExceptions();
+  await SpecialPowers.popPrefEnv();
+  Services.prefs.clearUserPref(ONBOARDING_MESSAGE_MASK_PREF);
 });

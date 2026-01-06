@@ -1439,12 +1439,12 @@ bool BytecodeEmitter::emitThisEnvironmentCallee() {
   size_t numHops = countThisEnvironmentHops();
 
   static_assert(
-      ENVCOORD_HOPS_LIMIT - 1 <= UINT8_MAX,
+      ENVCOORD_HOPS_LIMIT - 1 <= UINT16_MAX,
       "JSOp::EnvCallee operand size should match ENVCOORD_HOPS_LIMIT");
 
   MOZ_ASSERT(numHops < ENVCOORD_HOPS_LIMIT - 1);
 
-  return emit2(JSOp::EnvCallee, numHops);
+  return emitUint16Operand(JSOp::EnvCallee, numHops);
 }
 
 bool BytecodeEmitter::emitSuperBase() {
@@ -2210,7 +2210,7 @@ bool BytecodeEmitter::emitSetThis(BinaryNode* setThisNode) {
     lexicalLoc = NameLocation::FrameSlot(BindingKind::Let, loc.frameSlot());
   } else if (loc.kind() == NameLocation::Kind::EnvironmentCoordinate) {
     EnvironmentCoordinate coord = loc.environmentCoordinate();
-    uint8_t hops = AssertedCast<uint8_t>(coord.hops());
+    uint16_t hops = AssertedCast<uint16_t>(coord.hops());
     lexicalLoc = NameLocation::EnvironmentCoordinate(BindingKind::Let, hops,
                                                      coord.slot());
   } else {

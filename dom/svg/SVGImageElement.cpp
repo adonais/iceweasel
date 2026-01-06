@@ -16,7 +16,7 @@
 #include "mozilla/gfx/2D.h"
 #include "nsCOMPtr.h"
 #include "nsContentUtils.h"
-#include "nsIURI.h"
+#include "nsISizeOf.h"
 #include "nsNetUtil.h"
 
 NS_IMPL_NS_NEW_SVG_ELEMENT(Image)
@@ -65,7 +65,7 @@ SVGImageElement::SVGImageElement(
 
 SVGImageElement::~SVGImageElement() { nsImageLoadingContent::Destroy(); }
 
-nsCSSPropertyID SVGImageElement::GetCSSPropertyIdForAttrEnum(
+NonCustomCSSPropertyId SVGImageElement::GetCSSPropertyIdForAttrEnum(
     uint8_t aAttrEnum) {
   switch (aAttrEnum) {
     case ATTR_X:
@@ -334,6 +334,14 @@ void SVGImageElement::DidAnimateAttribute(int32_t aNameSpaceID,
     QueueImageTask(mSrcURI, /* aAlwaysLoad = */ true, /* aNotify = */ true);
   }
   SVGImageElementBase::DidAnimateAttribute(aNameSpaceID, aAttribute);
+}
+
+void SVGImageElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
+                                             size_t* aNodeSize) const {
+  SVGElement::AddSizeOfExcludingThis(aSizes, aNodeSize);
+  if (nsCOMPtr<nsISizeOf> iface = do_QueryInterface(mSrcURI)) {
+    *aNodeSize += iface->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
+  }
 }
 
 }  // namespace mozilla::dom

@@ -505,6 +505,19 @@ function showOnboarding(length) {
               link.setAttribute("value", name);
             }
             document.l10n.setAttributes(links, config.linksId);
+
+            const handleLink = ev => {
+              const { href } = ev.target;
+              if (href) {
+                ev.preventDefault();
+                openLink(href);
+              }
+            };
+
+            if (!links._listenerAdded) {
+              links?.addEventListener("click", handleLink);
+              links._listenerAdded = true;
+            }
           }
 
           break;

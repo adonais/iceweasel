@@ -6,7 +6,6 @@
 #include <functional>
 #include "unicode/udat.h"
 
-#include "mozilla/Assertions.h"
 #include "mozilla/intl/ICU4CGlue.h"
 #include "mozilla/intl/ICUError.h"
 
@@ -16,7 +15,6 @@
 #include "mozilla/Span.h"
 #include "mozilla/Try.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Utf8.h"
 #include "mozilla/Vector.h"
 
 /*

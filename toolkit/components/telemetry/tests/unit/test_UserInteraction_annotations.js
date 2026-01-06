@@ -81,15 +81,15 @@ function startProfiler() {
  * the UserInteraction backend added. This function only checks
  * markers on thread 0.
  *
- * @param {Object} profile
+ * @param {object} profile
  *   A profile returned from Services.profiler.getProfileData();
- * @param {String} value
+ * @param {string} value
  *   The value that the marker is expected to have.
- * @param {String} additionalText
+ * @param {string} additionalText
  *   (Optional) If additionalText was provided when finishing the
  *   UserInteraction, then markerCount will check for a marker with
  *   text in the form of "value,additionalText".
- * @returns {Number}
+ * @returns {number}
  *   A count of how many markers appear that match the criteria.
  */
 function markerCount(profile, value, additionalText) {
@@ -117,7 +117,7 @@ function markerCount(profile, value, additionalText) {
  *
  * @param {nsIHangReport} report
  *   The hang report to check the annotations of.
- * @param {String} value
+ * @param {string} value
  *   The value that the annotation should have.
  * @returns {boolean}
  *   True if the annotation was found.
@@ -137,7 +137,7 @@ function hasHangAnnotation(report, value) {
  *
  * @param {nsIHangReport} report
  *   The hang report to check the annotations of.
- * @param {String} value
+ * @param {string} value
  *   The value that the annotation should have.
  * @returns {boolean}
  *   True if the annotation was found.

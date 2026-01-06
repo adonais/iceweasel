@@ -157,30 +157,6 @@ int nr_stun_client_start(nr_stun_client_ctx *ctx, int mode, NR_async_cb finished
     return(_status);
   }
 
-  int nr_stun_client_restart(nr_stun_client_ctx* ctx,
-                             const nr_transport_addr* peer_addr) {
-    int r,_status;
-    int mode;
-    NR_async_cb finished_cb;
-    void *cb_arg;
-    if (ctx->state != NR_STUN_CLIENT_STATE_RUNNING)
-        ABORT(R_NOT_PERMITTED);
-
-    mode = ctx->mode;
-    finished_cb = ctx->finished_cb;
-    cb_arg = ctx->cb_arg;
-
-    nr_stun_client_reset(ctx);
-    nr_transport_addr_copy(&ctx->peer_addr, peer_addr);
-
-    if (r=nr_stun_client_start(ctx, mode, finished_cb, cb_arg))
-      ABORT(r);
-
-    _status=0;
-  abort:
-    return(_status);
-  }
-
 int
 nr_stun_client_reset(nr_stun_client_ctx *ctx)
 {

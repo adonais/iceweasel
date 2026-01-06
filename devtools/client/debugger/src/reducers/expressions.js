@@ -4,6 +4,7 @@
 
 /**
  * Expressions reducer
+ *
  * @module reducers/expressions
  */
 

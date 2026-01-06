@@ -16,7 +16,8 @@ namespace mozilla::dom {
 
 CSSKeywordValue::CSSKeywordValue(nsCOMPtr<nsISupports> aParent,
                                  const nsACString& aValue)
-    : CSSStyleValue(std::move(aParent), ValueType::Keyword), mValue(aValue) {}
+    : CSSStyleValue(std::move(aParent), ValueType::KeywordValue),
+      mValue(aValue) {}
 
 JSObject* CSSKeywordValue::WrapObject(JSContext* aCx,
                                       JS::Handle<JSObject*> aGivenProto) {
@@ -25,6 +26,8 @@ JSObject* CSSKeywordValue::WrapObject(JSContext* aCx,
 
 // start of CSSKeywordValue Web IDL implementation
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-csskeywordvalue-csskeywordvalue
+//
 // static
 already_AddRefed<CSSKeywordValue> CSSKeywordValue::Constructor(
     const GlobalObject& aGlobal, const nsACString& aValue, ErrorResult& aRv) {
@@ -42,6 +45,7 @@ already_AddRefed<CSSKeywordValue> CSSKeywordValue::Constructor(
 
 void CSSKeywordValue::GetValue(nsCString& aRetVal) const { aRetVal = mValue; }
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-csskeywordvalue-value
 void CSSKeywordValue::SetValue(const nsACString& aArg, ErrorResult& aRv) {
   // Step 1.
 
@@ -57,8 +61,13 @@ void CSSKeywordValue::SetValue(const nsACString& aArg, ErrorResult& aRv) {
 
 // end of CSSKeywordValue Web IDL implementation
 
+void CSSKeywordValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                            nsACString& aDest) const {
+  aDest.Append(mValue);
+}
+
 CSSKeywordValue& CSSStyleValue::GetAsCSSKeywordValue() {
-  MOZ_DIAGNOSTIC_ASSERT(mValueType == ValueType::Keyword);
+  MOZ_DIAGNOSTIC_ASSERT(mValueType == ValueType::KeywordValue);
 
   return *static_cast<CSSKeywordValue*>(this);
 }

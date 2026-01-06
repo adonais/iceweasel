@@ -13,6 +13,8 @@ const { TestUtils } = ChromeUtils.importESModule(
 const MODE_PREF = "browser.ipProtection.exceptionsMode";
 const ALL_MODE = "all";
 const SELECT_MODE = "select";
+const ONBOARDING_MESSAGE_MASK_PREF =
+  "browser.ipProtection.onboardingMessageMask";
 
 const PERM_NAME = "ipp-vpn";
 
@@ -68,6 +70,7 @@ add_task(async function test_IPPExceptionsManager_exclusions() {
   Assert.ok(!permissionObj2, `Permission object for ${site2} no longer exists`);
 
   Services.prefs.clearUserPref(MODE_PREF);
+  Services.prefs.clearUserPref(ONBOARDING_MESSAGE_MASK_PREF);
   IPPExceptionsManager.uninit();
 });
 
@@ -123,6 +126,7 @@ add_task(async function test_IPPExceptionsManager_inclusions() {
   Assert.ok(!permissionObj2, `Permission object for ${site2} no longer exists`);
 
   Services.prefs.clearUserPref(MODE_PREF);
+  Services.prefs.clearUserPref(ONBOARDING_MESSAGE_MASK_PREF);
   IPPExceptionsManager.uninit();
 });
 
@@ -207,5 +211,6 @@ add_task(async function test_IPPExceptionsManager_switch_mode() {
   );
 
   Services.prefs.clearUserPref(MODE_PREF);
+  Services.prefs.clearUserPref(ONBOARDING_MESSAGE_MASK_PREF);
   IPPExceptionsManager.uninit();
 });

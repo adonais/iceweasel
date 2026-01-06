@@ -144,7 +144,7 @@ class CssCompatibilityTooltipHelper {
   /**
    * Fill the tooltip with inactive CSS information.
    *
-   * @param {Object} data
+   * @param {object} data
    *        An object in the following format: {
    *          // Type of compatibility issue
    *          type: <string>,
@@ -192,7 +192,7 @@ class CssCompatibilityTooltipHelper {
    *   </p>
    * </div>
    *
-   * @param {Object} data
+   * @param {object} data
    *        An object in the following format: {
    *          // Type of compatibility issue
    *          type: <string>,
@@ -251,7 +251,6 @@ class CssCompatibilityTooltipHelper {
    *
    * @param {DOMEvent} event
    *        The click event originating from the tooltip.
-   *
    */
   addTab(event) {
     // The XUL panel swallows click events so handlers can't be added directly

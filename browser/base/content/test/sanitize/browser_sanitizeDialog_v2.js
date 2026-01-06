@@ -47,11 +47,11 @@ async function promiseHistoryClearedState(aURIs, aShouldBeCleared) {
 /**
  * Ensures that the given pref is the expected value.
  *
- * @param {String} aPrefName
+ * @param {string} aPrefName
  *        The pref's sub-branch under the privacy branch
- * @param {Boolean} aExpectedVal
+ * @param {boolean} aExpectedVal
  *        The pref's expected value
- * @param {String} aMsg
+ * @param {string} aMsg
  *        Passed to is()
  */
 function boolPrefIs(aPrefName, aExpectedVal, aMsg) {
@@ -188,7 +188,7 @@ function visitTimeForMinutesAgo(aMinutesAgo) {
  * Opens dialog in the provided context and selects the checkboxes
  * as sent in the parameters
  *
- * @param {Object} context the dialog is opened in, timespan to select,
+ * @param {object} context the dialog is opened in, timespan to select,
  *  if browsingHistoryAndDownloads, cookiesAndStorage, cache or siteSettings
  *  are checked
  */

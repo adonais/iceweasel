@@ -10,8 +10,6 @@
 #include "mozilla/Array.h"
 #include "mozilla/Maybe.h"
 
-#include <initializer_list>
-
 namespace js {
 
 /*

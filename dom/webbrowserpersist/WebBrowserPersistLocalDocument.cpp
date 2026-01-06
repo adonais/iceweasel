@@ -1259,9 +1259,8 @@ nsresult WebBrowserPersistLocalDocument::GetDocEncoder(
       do_createDocumentEncoder(PromiseFlatCString(aContentType).get());
   NS_ENSURE_TRUE(encoder, NS_ERROR_FAILURE);
 
-  nsresult rv =
-      encoder->NativeInit(mDocument, NS_ConvertASCIItoUTF16(aContentType),
-                          ConvertEncoderFlags(aEncoderFlags));
+  nsresult rv = encoder->Init(mDocument, NS_ConvertASCIItoUTF16(aContentType),
+                              ConvertEncoderFlags(aEncoderFlags));
   NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
   nsAutoCString charSet;

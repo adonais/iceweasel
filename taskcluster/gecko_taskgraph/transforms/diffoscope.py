@@ -122,7 +122,7 @@ def fill_template(config, tasks):
                 "kind": "other",
                 "tier": task["tier"],
             },
-            "worker-type": "b-linux-gcp",
+            "worker-type": "b-linux",
             "worker": {
                 "docker-image": {"in-tree": "diffoscope"},
                 "artifacts": [

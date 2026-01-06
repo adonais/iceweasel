@@ -8,7 +8,6 @@
 #define mozilla_dom_serviceworkerprivate_h
 
 #include <functional>
-#include <type_traits>
 
 #include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"

@@ -80,7 +80,7 @@ class FT2FontEntry final : public gfxFT2FontEntryBase {
   void CheckForBrokenFont(const nsACString& aFamilyKey);
 
   already_AddRefed<mozilla::gfx::SharedFTFace> GetFTFace(bool aCommit = false);
-  FTUserFontData* GetUserFontData();
+  FTUserFontData* GetUserFontData() override;
 
   FT_MM_Var* GetMMVar() override;
 

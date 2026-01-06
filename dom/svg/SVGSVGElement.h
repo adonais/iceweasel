@@ -104,6 +104,7 @@ class SVGSVGElement final : public SVGSVGElementBase {
   void UnsuspendRedrawAll();
   void ForceRedraw();
   void PauseAnimations();
+  void PauseAnimationsAt(float seconds);
   void UnpauseAnimations();
   bool AnimationsPaused();
   float GetCurrentTimeAsFloat();

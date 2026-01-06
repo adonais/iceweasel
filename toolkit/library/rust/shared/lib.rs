@@ -107,6 +107,8 @@ extern crate uniffi_bindgen_gecko_js_test_fixtures;
 
 #[cfg(not(target_os = "android"))]
 extern crate viaduct;
+#[cfg(not(target_os = "android"))]
+extern crate viaduct_necko;
 
 extern crate gecko_logger;
 extern crate gecko_tracing;
@@ -162,6 +164,10 @@ pub extern "C" fn GkRust_Init() {
     let _ = GeckoLogger::init();
     // Initialize tracing.
     gecko_tracing::initialize_tracing();
+    #[cfg(not(target_os = "android"))]
+    if let Err(e) = viaduct_necko::init_necko_backend() {
+        log::warn!("Failed to initialize viaduct-necko backend: {:?}", e);
+    }
 }
 
 #[no_mangle]

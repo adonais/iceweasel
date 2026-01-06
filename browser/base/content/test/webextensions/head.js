@@ -125,7 +125,7 @@ function promiseInstallEvent(addon, event) {
  *
  * @param {string} url
  *        URL of the .xpi file to install
- * @param {Object?} installTelemetryInfo
+ * @param {object?} installTelemetryInfo
  *        an optional object that contains additional details used by the telemetry events.
  *
  * @returns {Promise}
@@ -212,7 +212,7 @@ function isDefaultIcon(icon) {
  *        regular expression it is tested against the icon url, and if
  *        it is a function, it is called with the icon url and returns
  *        true if the url is correct.
- * @param {array} permissions
+ * @param {Array} permissions
  *        The expected entries in the permissions list.  Each element
  *        in this array is itself a 2-element array with the string key
  *        for the item (e.g., "webext-perms-description-foo") and an

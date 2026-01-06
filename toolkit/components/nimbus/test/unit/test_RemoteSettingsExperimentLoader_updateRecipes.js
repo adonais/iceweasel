@@ -472,31 +472,23 @@ add_task(async function test_updateRecipes_simpleFeatureInvalidAfterUpdate() {
 async function test_updateRecipes_invalidFeatureAfterUpdate() {
   const featureConfig = { featureId: "bogus", value: {} };
 
-  let storePath;
-  {
-    const store = NimbusTestUtils.stubs.store();
-    await store.init();
-
-    await NimbusTestUtils.addEnrollmentForRecipe(
-      NimbusTestUtils.factories.recipe.withFeatureConfig(
-        "recipe",
-        featureConfig
-      ),
-      { store }
-    );
-
-    storePath = await NimbusTestUtils.saveStore(store);
-  }
-
   const { manager, cleanup } = await setupTest({
-    storePath,
+    storePath: await NimbusTestUtils.createStoreWith(store => {
+      NimbusTestUtils.addEnrollmentForRecipe(
+        NimbusTestUtils.factories.recipe.withFeatureConfig(
+          "recipe",
+          featureConfig
+        ),
+        { store }
+      );
+    }),
     experiments: [
       NimbusTestUtils.factories.recipe.withFeatureConfig(
         "recipe",
         featureConfig
       ),
     ],
-    migrationState: NimbusTestUtils.migrationState.IMPORTED_ENROLLMENTS_TO_SQL,
+    migrationState: NimbusTestUtils.migrationState.LATEST,
   });
 
   const enrollment = manager.store.get("recipe");

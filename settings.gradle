@@ -38,6 +38,10 @@ ext.topsrcdir = rootProject.projectDir.absolutePath
 apply from: "${topsrcdir}/mobile/android/shared-settings.gradle"
 apply from: "${topsrcdir}/mobile/android/autopublish-settings.gradle"
 
+if (gradle.ext.mozconfig.substs.MOZ_APPSERVICES_IN_TREE) {
+    apply from: "${topsrcdir}/services/app-services/settings.gradle"
+}
+
 // Set the Android SDK location.  This is the *least specific* mechanism, which
 // is unfortunate: we'd prefer to use the *most specific* mechanism.  That is,
 // local.properties (first 'sdk.dir', then 'android.dir') and then the

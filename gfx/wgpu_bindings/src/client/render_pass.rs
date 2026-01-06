@@ -73,7 +73,9 @@ pub struct RenderPassDepthStencilAttachment {
 }
 
 impl RenderPassDepthStencilAttachment {
-    pub(crate) fn to_wgpu(self) -> wgc::command::RenderPassDepthStencilAttachment {
+    pub(crate) fn to_wgpu(
+        self,
+    ) -> wgc::command::RenderPassDepthStencilAttachment<id::TextureViewId> {
         let Self {
             view,
             depth,

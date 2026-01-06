@@ -107,6 +107,7 @@ PromiseSet.prototype = {
    *
    * Note that calling `wait()` causes Promise to be removed from the
    * Set once they are resolved.
+   *
    * @param {function} onDoneCb invoked synchronously once all the entries
    * have been handled and no new entries will be accepted.
    * @return {Promise} Resolved once all Promise have been resolved or removed,

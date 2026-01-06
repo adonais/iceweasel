@@ -30,7 +30,9 @@ support-files = [
 ["include:xpcshell-shared.toml"]
 
 ["make_URLSearchParams.js"]
-run-if = ["false"] # Only used for recreating URLSearchParams_profile.zip
+run-if = [
+  "false", # Only used for recreating URLSearchParams_profile.zip
+]
 
 ["test_URLSearchParams.js"]
 
@@ -49,8 +51,7 @@ run-sequentially = [
   "os == 'linux'", # frequent parallel fail on Linux
 ]
 skip-if = [
-  "os == 'linux' && os_version == '18.04' && processor == 'x86_64' && tsan", # Bug 1959284
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan", # Bug 1959284
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1959284
 ]
 
 ["test_connection_idle_maintenance.js"]
@@ -77,7 +78,9 @@ skip-if = [
 
 ["test_invalidate.js"]
 # disabled for the moment.
-skip-if = ["true"]
+skip-if = [
+  "true",
+]
 
 ["test_marker_file.js"]
 

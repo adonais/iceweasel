@@ -48,7 +48,7 @@ async function mouseMoveAndWait(elem) {
 
 add_task(async function testToolbarVisibility() {
   // move the mouse to a known position
-  await mouseMoveAndWait(gURLBar.textbox);
+  await mouseMoveAndWait(gURLBar);
 
   await PrintHelper.withTestPage(async helper => {
     await helper.startPrint();
@@ -86,7 +86,7 @@ add_task(async function testToolbarVisibility() {
     is(getComputedStyle(helper.paginationElem).opacity, "1", "Opaque toolbar");
 
     // put the mouse back where it won't interfere with later tests
-    await mouseMoveAndWait(gURLBar.textbox);
+    await mouseMoveAndWait(gURLBar);
     await helper.closeDialog();
   });
 });

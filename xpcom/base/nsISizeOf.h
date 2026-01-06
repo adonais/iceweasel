@@ -18,13 +18,10 @@ class nsISizeOf : public nsISupports {
   NS_INLINE_DECL_STATIC_IID(NS_ISIZEOF_IID)
 
   /**
-   * Measures the size of the things pointed to by the object.
-   */
-  virtual size_t SizeOfExcludingThis(
-      mozilla::MallocSizeOf aMallocSizeOf) const = 0;
-
-  /**
-   * Like SizeOfExcludingThis, but also includes the size of the object itself.
+   * Measures the size of the object and the things that it points to.
+   * Be careful to not call this more than once on a particular object!
+   * SizeOfExcludingThis does not make sense here because this is a refcounted
+   * object.
    */
   virtual size_t SizeOfIncludingThis(
       mozilla::MallocSizeOf aMallocSizeOf) const = 0;

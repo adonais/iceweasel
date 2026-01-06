@@ -5,6 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "RemoteMediaManagerChild.h"
 
+#include "EMEDecoderModule.h"
 #include "ErrorList.h"
 #include "MP4Decoder.h"
 #include "PDMFactory.h"
@@ -358,7 +359,7 @@ RemoteMediaManagerChild::CreateAudioDecoder(const CreateDecoderParams& aParams,
 
   return launchPromise->Then(
       managerThread, __func__,
-      [params = CreateDecoderParamsForAsync(aParams), aLocation](bool) {
+      [params = CreateDecoderParamsForAsync(aParams), aLocation](bool) mutable {
         auto child = MakeRefPtr<RemoteAudioDecoderChild>(aLocation);
         MediaResult result =
             child->InitIPDL(params.AudioConfig(), params.mOptions,
@@ -367,7 +368,7 @@ RemoteMediaManagerChild::CreateAudioDecoder(const CreateDecoderParams& aParams,
           return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
               result, __func__);
         }
-        return Construct(std::move(child), aLocation);
+        return Construct(std::move(child), std::move(params), aLocation);
       },
       [aLocation](nsresult aResult) {
         return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
@@ -432,7 +433,7 @@ RemoteMediaManagerChild::CreateVideoDecoder(const CreateDecoderParams& aParams,
 
   return p->Then(
       managerThread, __func__,
-      [aLocation, params = CreateDecoderParamsForAsync(aParams)](bool) {
+      [aLocation, params = CreateDecoderParamsForAsync(aParams)](bool) mutable {
         auto child = MakeRefPtr<RemoteVideoDecoderChild>(aLocation);
         MediaResult result = child->InitIPDL(
             params.VideoConfig(), params.mRate.mValue, params.mOptions,
@@ -444,7 +445,7 @@ RemoteMediaManagerChild::CreateVideoDecoder(const CreateDecoderParams& aParams,
           return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
               result, __func__);
         }
-        return Construct(std::move(child), aLocation);
+        return Construct(std::move(child), std::move(params), aLocation);
       },
       [](nsresult aResult) {
         return PlatformDecoderModule::CreateDecoderPromise::CreateAndReject(
@@ -488,6 +489,7 @@ RefPtr<RemoteCDMChild> RemoteMediaManagerChild::CreateCDM(
 /* static */
 RefPtr<PlatformDecoderModule::CreateDecoderPromise>
 RemoteMediaManagerChild::Construct(RefPtr<RemoteDecoderChild>&& aChild,
+                                   CreateDecoderParamsForAsync&& aParams,
                                    RemoteMediaIn aLocation) {
   nsCOMPtr<nsISerialEventTarget> managerThread = GetManagerThread();
   if (!managerThread) {
@@ -500,12 +502,27 @@ RemoteMediaManagerChild::Construct(RefPtr<RemoteDecoderChild>&& aChild,
   RefPtr<PlatformDecoderModule::CreateDecoderPromise> p =
       aChild->SendConstruct()->Then(
           managerThread, __func__,
-          [child = std::move(aChild)](MediaResult aResult) {
+          [child = std::move(aChild),
+           params = std::move(aParams)](MediaResult aResult) {
             if (NS_FAILED(aResult)) {
               // We will never get to use this remote decoder, tear it down.
               child->DestroyIPDL();
               return PlatformDecoderModule::CreateDecoderPromise::
                   CreateAndReject(aResult, __func__);
+            }
+            if (params.mCDM) {
+              if (auto* cdmChild = params.mCDM->AsPRemoteCDMChild()) {
+                return PlatformDecoderModule::CreateDecoderPromise::
+                    CreateAndResolve(
+                        MakeRefPtr<EMEMediaDataDecoderProxy>(
+                            params,
+                            MakeAndAddRef<RemoteMediaDataDecoder>(child),
+                            static_cast<RemoteCDMChild*>(cdmChild)),
+                        __func__);
+              }
+              return PlatformDecoderModule::CreateDecoderPromise::
+                  CreateAndReject(
+                      NS_ERROR_DOM_MEDIA_CDM_PROXY_NOT_SUPPORTED_ERR, __func__);
             }
             return PlatformDecoderModule::CreateDecoderPromise::
                 CreateAndResolve(MakeRefPtr<RemoteMediaDataDecoder>(child),

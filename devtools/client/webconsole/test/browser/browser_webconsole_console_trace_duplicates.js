@@ -96,9 +96,9 @@ add_task(async function testTraceMessagesNoRepeat() {
 /**
  * Check stack info returned by getStackInfo().
  *
- * @param {Object} stackInfo
+ * @param {object} stackInfo
  *        A stackInfo object returned by getStackInfo().
- * @param {Object} expected
+ * @param {object} expected
  *        An object in the same format as the expected stackInfo object.
  */
 function checkStacktraceFrames(frames, expectedFrames) {

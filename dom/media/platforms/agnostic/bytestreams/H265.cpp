@@ -7,7 +7,6 @@
 #include <stdint.h>
 
 #include <cmath>
-#include <limits>
 
 #include "AnnexB.h"
 #include "BitReader.h"
@@ -17,7 +16,6 @@
 #include "ByteWriter.h"
 #include "MediaData.h"
 #include "MediaInfo.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/Span.h"
 #include "nsFmtString.h"
 

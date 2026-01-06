@@ -14,7 +14,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/ScrollOrigin.h"
 #include "mozilla/ScrollTypes.h"
-#include "mozilla/TypedEnumBits.h"
 #include "mozilla/dom/WindowBinding.h"  // for mozilla::dom::ScrollBehavior
 #include "mozilla/layout/ScrollAnchorContainer.h"
 #include "nsContainerFrame.h"
@@ -739,6 +738,16 @@ class ScrollContainerFrame : public nsContainerFrame,
   }
 
   /**
+   * Like DecideScrollableLayer but skips computing dirty/visible rects and
+   * setting the base rect. In addition, this always ensures a display port is
+   * set if this scroll frame could async scroll. DecideScrollableLayer only
+   * sets a display port in that situation if ShouldActivateAllScrollFrames
+   * returns true. However you should only call this function is
+   * ShouldActivateAllScrollFrames returns true anyways.
+   * */
+  bool DecideScrollableLayerEnsureDisplayport(nsDisplayListBuilder* aBuilder);
+
+  /**
    * Notify the scrollframe that the current scroll offset and origin have been
    * sent over in a layers transaction.
    *
@@ -844,13 +853,22 @@ class ScrollContainerFrame : public nsContainerFrame,
 
   bool SmoothScrollVisual(
       const nsPoint& aVisualViewportOffset,
-      layers::FrameMetrics::ScrollOffsetUpdateType aUpdateType);
+      layers::FrameMetrics::ScrollOffsetUpdateType aUpdateType,
+      ScrollMode aMode);
 
   /**
    * Returns true if this scroll frame should perform smooth scroll with the
    * given |aBehavior|.
    */
   bool IsSmoothScroll(
+      dom::ScrollBehavior aBehavior = dom::ScrollBehavior::Auto) const;
+
+  /**
+   * Returns the ScrollMode that this scroll frame should use for a
+   * programmatic scroll governed by CSSOM-View `scroll-behavior`.
+   * This includes most programmatic scrolls but not scroll snapping.
+   */
+  ScrollMode ScrollModeForScrollBehavior(
       dom::ScrollBehavior aBehavior = dom::ScrollBehavior::Auto) const;
 
   static nscoord GetNonOverlayScrollbarSize(const nsPresContext*,
@@ -984,7 +1002,11 @@ class ScrollContainerFrame : public nsContainerFrame,
   bool UsesOverlayScrollbars() const;
   bool IsLastSnappedTarget(const nsIFrame* aFrame) const;
 
-  static bool ShouldActivateAllScrollFrames();
+  // If aBuilder is non-null, returns the value cached on aBuilder. Pass null
+  // for aBuilder to get the correct value to cache on a new builder or new
+  // frame of painting, or if you need the correct value outside of paint time.
+  static bool ShouldActivateAllScrollFrames(nsDisplayListBuilder* aBuilder,
+                                            nsIFrame* aFrame);
   nsRect RestrictToRootDisplayPort(const nsRect& aDisplayportBase);
   bool DecideScrollableLayer(nsDisplayListBuilder* aBuilder,
                              nsRect* aVisibleRect, nsRect* aDirtyRect,

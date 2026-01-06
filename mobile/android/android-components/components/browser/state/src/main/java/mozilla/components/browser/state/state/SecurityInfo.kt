@@ -4,6 +4,8 @@
 
 package mozilla.components.browser.state.state
 
+import java.security.cert.X509Certificate
+
 /**
  * Security status of the connection for a `Session`.
  */
@@ -19,6 +21,11 @@ sealed class SecurityInfo {
     open val issuer: String = ""
 
     /**
+     * SSL certificate used for the connection.
+     */
+    open val certificate: X509Certificate? = null
+
+    /**
      * Whether the connection is secure or not.
      */
     val isSecure: Boolean = this is Secure
@@ -29,6 +36,7 @@ sealed class SecurityInfo {
     data class Secure(
         override val host: String = "",
         override val issuer: String = "",
+        override val certificate: X509Certificate? = null,
     ) : SecurityInfo()
 
     /**
@@ -37,6 +45,7 @@ sealed class SecurityInfo {
     data class Insecure(
         override val host: String = "",
         override val issuer: String = "",
+        override val certificate: X509Certificate? = null,
     ) : SecurityInfo()
 
     /**
@@ -53,6 +62,7 @@ sealed class SecurityInfo {
          * a valid SSL certificate, otherwise false.
          * @param host domain for which the certificate was issued.
          * @param issuer name of the certificate authority who issued the SSL certificate.
+         * @param certificate the certificate in question.
          *
          * @return an instance of `SecurityInfo`
          */
@@ -60,9 +70,10 @@ sealed class SecurityInfo {
             isSecure: Boolean = false,
             host: String = "",
             issuer: String = "",
+            certificate: X509Certificate? = null,
         ) = when (isSecure) {
-            true -> Secure(host, issuer)
-            false -> Insecure(host, issuer)
+            true -> Secure(host, issuer, certificate)
+            false -> Insecure(host, issuer, certificate)
         }
     }
 }

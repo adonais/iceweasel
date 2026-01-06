@@ -254,7 +254,8 @@ bool SVGRectElement::IsLengthChangedViaCSS(const ComputedStyle& aNewStyle,
          newSVGReset.mRy != oldSVGReset.mRy;
 }
 
-nsCSSPropertyID SVGRectElement::GetCSSPropertyIdForAttrEnum(uint8_t aAttrEnum) {
+NonCustomCSSPropertyId SVGRectElement::GetCSSPropertyIdForAttrEnum(
+    uint8_t aAttrEnum) {
   switch (aAttrEnum) {
     case ATTR_X:
       return eCSSProperty_x;

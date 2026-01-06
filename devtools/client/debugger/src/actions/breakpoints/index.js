@@ -4,6 +4,7 @@
 
 /**
  * Redux actions for breakpoints
+ *
  * @module actions/breakpoints
  */
 
@@ -169,7 +170,7 @@ export function removeBreakpointsInSource(source) {
  * non-pretty-printed (generated) source to the related pretty-printed
  * (original) source by querying the SourceMap service.
  *
- * @param {String} source - the generated source
+ * @param {string} source - the generated source
  */
 export function updateBreakpointsForNewPrettyPrintedSource(source) {
   return async thunkArgs => {

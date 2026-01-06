@@ -653,7 +653,7 @@ def test_perfherder_metrics_filtering():
             with metrics as m, silence():
                 m(metadata)
 
-            assert not pathlib.Path(output, "perfherder-data.json").exists()
+            assert not any(pathlib.Path(output).glob("perfherder-data*.json"))
 
 
 def test_perfherder_exlude_stats():

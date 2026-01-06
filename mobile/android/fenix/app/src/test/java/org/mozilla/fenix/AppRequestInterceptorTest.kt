@@ -186,6 +186,7 @@ class AppRequestInterceptorTest {
             ErrorType.ERROR_SAFEBROWSING_MALWARE_URI,
             ErrorType.ERROR_SAFEBROWSING_PHISHING_URI,
             ErrorType.ERROR_SAFEBROWSING_UNWANTED_URI,
+            ErrorType.ERROR_HARMFULADDON_URI,
         ).forEach { error ->
             val actualPage = createActualErrorPage(error)
             val expectedPage = createExpectedErrorPage(

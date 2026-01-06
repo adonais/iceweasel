@@ -996,7 +996,7 @@ browser:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1525076
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1874944
     notification_emails:
-      - aoprea@mozilla.com
+      - omc-core@mozilla.com
     expires: never
     telemetry_mirror: h#BROWSER_ATTRIBUTION_ERRORS
 

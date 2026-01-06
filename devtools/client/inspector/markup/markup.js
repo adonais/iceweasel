@@ -379,6 +379,7 @@ class MarkupView extends EventEmitter {
     this._initShortcuts();
 
     this._walkerEventListener = new WalkerEventListener(this.inspector, {
+      "anchor-name-change": this._onWalkerNodeStatesChanged,
       "container-type-change": this._onWalkerNodeStatesChanged,
       "display-change": this._onWalkerNodeStatesChanged,
       "scrollable-change": this._onWalkerNodeStatesChanged,
@@ -386,7 +387,7 @@ class MarkupView extends EventEmitter {
       mutations: this._onWalkerMutations,
     });
 
-    this.resourceCommand = this.inspector.toolbox.resourceCommand;
+    this.resourceCommand = this.inspector.commands.resourceCommand;
     this.resourceCommand.watchResources(
       [this.resourceCommand.TYPES.ROOT_NODE],
       {
@@ -806,7 +807,7 @@ class MarkupView extends EventEmitter {
    *
    * @param  {NodeFront} nodeFront
    *         The node for which to show the highlighter.
-   * @param  {Object} options
+   * @param  {object} options
    *         Configuration object with options for the Box Model Highlighter.
    * @return {Promise} Resolves after the highlighter for this nodeFront is shown.
    */
@@ -835,9 +836,9 @@ class MarkupView extends EventEmitter {
    * This is the place to observe for highlighter events, check the highlighter type and
    * event name, then react for example by modifying the DOM.
    *
-   * @param {String} eventName
+   * @param {string} eventName
    *        Highlighter event name. One of: "highlighter-hidden", "highlighter-shown"
-   * @param {Object} data
+   * @param {object} data
    *        Object with data associated with the highlighter event.
    *        {String} data.type
    *        Highlighter type
@@ -847,7 +848,6 @@ class MarkupView extends EventEmitter {
    *        Optional configuration passed to the highlighter when shown
    *        {CustomHighlighterFront} data.highlighter
    *        Highlighter instance
-   *
    */
   handleHighlighterEvent(eventName, data) {
     switch (data.type) {
@@ -899,7 +899,7 @@ class MarkupView extends EventEmitter {
    *
    * @param  {NodeFront} nodeFront
    *         The node to get the container for.
-   * @param  {Boolean} slotted
+   * @param  {boolean} slotted
    *         true to get the slotted version of the container.
    * @return {MarkupContainer} The container for the provided node.
    */
@@ -913,7 +913,7 @@ class MarkupView extends EventEmitter {
    *
    * @param  {NodeFront} nodeFront
    *         The node to set the container for.
-   * @param  {Boolean} slotted
+   * @param  {boolean} slotted
    *         true if the container represents the slotted version of the node.
    */
   setContainer(node, container, slotted) {
@@ -926,9 +926,9 @@ class MarkupView extends EventEmitter {
    *
    * @param  {NodeFront} nodeFront
    *         The node to check.
-   * @param  {Boolean} slotted
+   * @param  {boolean} slotted
    *         true to check for a container matching the slotted version of the node.
-   * @return {Boolean} True if a container exists, false otherwise.
+   * @return {boolean} True if a container exists, false otherwise.
    */
   hasContainer(node, slotted) {
     const key = this._getContainerKey(node, slotted);
@@ -1051,13 +1051,17 @@ class MarkupView extends EventEmitter {
    * all the listeners.
    *
    * @param {NodeFront|undefined} nodeFront
-   * @param {String|undefined} reason
+   * @param {string | undefined} reason
    */
   _onNewSelection(nodeFront, reason) {
     const selection = this.inspector.selection;
     // this will probably leak.
     // TODO: use resource api listeners?
     if (nodeFront) {
+      nodeFront.walkerFront.on(
+        "anchor-name-change",
+        this._onWalkerNodeStatesChanged
+      );
       nodeFront.walkerFront.on(
         "container-type-change",
         this._onWalkerNodeStatesChanged
@@ -1164,7 +1168,7 @@ class MarkupView extends EventEmitter {
   /**
    * Highlight search results in the markup view.
    *
-   * @param {String|null} searchQuery: The search string we want to highlight. Pass null
+   * @param {string | null} searchQuery: The search string we want to highlight. Pass null
    *                                   to clear existing highlighting.
    */
   _updateSearchResultsHighlightingInSelectedNode(searchQuery) {
@@ -1175,6 +1179,7 @@ class MarkupView extends EventEmitter {
     // If there's no selected container, or if the search is empty, we don't have anything
     // to highlight.
     if (!this._selectedContainer || !searchQuery) {
+      this.emitForTests("search-results-highlighting-updated");
       return;
     }
 
@@ -1245,6 +1250,7 @@ class MarkupView extends EventEmitter {
         false
       );
     }
+    this.emitForTests("search-results-highlighting-updated");
   }
 
   /**
@@ -1305,7 +1311,7 @@ class MarkupView extends EventEmitter {
 
   _onCopy(evt) {
     // Ignore copy events from editors
-    if (this._isInputOrTextarea(evt.target)) {
+    if (this.isInputOrTextareaOrInCodeMirrorEditor(evt.target)) {
       return;
     }
 
@@ -1447,7 +1453,7 @@ class MarkupView extends EventEmitter {
    * Key shortcut listener.
    */
   _onShortcut(name, event) {
-    if (this._isInputOrTextarea(event.target)) {
+    if (this.isInputOrTextareaOrInCodeMirrorEditor(event.target)) {
       return;
     }
 
@@ -1471,18 +1477,26 @@ class MarkupView extends EventEmitter {
   }
 
   /**
-   * Check if a node is an input or textarea
+   * Check if a node is used to type text (i.e. an input or textarea, or in a CodeMirror editor)
    */
-  _isInputOrTextarea(element) {
+  isInputOrTextareaOrInCodeMirrorEditor(element) {
     const name = element.tagName.toLowerCase();
-    return name === "input" || name === "textarea";
+    if (name === "input" || name === "textarea") {
+      return true;
+    }
+
+    if (element.closest(".cm-editor")) {
+      return true;
+    }
+
+    return false;
   }
 
   /**
    * If there's an attribute on the current node that's currently focused, then
    * delete this attribute, otherwise delete the node itself.
    *
-   * @param  {Boolean} moveBackward
+   * @param  {boolean} moveBackward
    *         If set to true and if we're deleting the node, focus the previous
    *         sibling after deletion, otherwise the next one.
    */
@@ -1511,7 +1525,7 @@ class MarkupView extends EventEmitter {
       nodeFront.nodeType == nodeConstants.DOCUMENT_NODE ||
       nodeFront.nodeType == nodeConstants.DOCUMENT_TYPE_NODE ||
       nodeFront.nodeType == nodeConstants.DOCUMENT_FRAGMENT_NODE ||
-      nodeFront.isAnonymous
+      nodeFront.isNativeAnonymous
     );
   }
 
@@ -1521,7 +1535,7 @@ class MarkupView extends EventEmitter {
    *
    * @param  {NodeFront} node
    *         The node to remove.
-   * @param  {Boolean} moveBackward
+   * @param  {boolean} moveBackward
    *         If set to true, focus the previous sibling, otherwise the next one.
    */
   deleteNode(node, moveBackward) {
@@ -1643,9 +1657,9 @@ class MarkupView extends EventEmitter {
    *
    * @param  {NodeFront} node
    *         The node in the content document.
-   * @param  {Boolean} flashNode
+   * @param  {boolean} flashNode
    *         Whether the newly imported node should be flashed
-   * @param  {Boolean} slotted
+   * @param  {boolean} slotted
    *         Whether we are importing the slotted version of the node.
    * @return {MarkupContainer} The MarkupContainer object for this element.
    */
@@ -1865,11 +1879,11 @@ class MarkupView extends EventEmitter {
    * node is scrolled on to screen.
    *
    * @param {NodeFront} nodeFront
-   * @param {Object} options
-   * @param {Boolean} options.centered
-   * @param {Boolean} options.scroll
-   * @param {Boolean} options.slotted
-   * @param {Boolean} options.smoothScroll
+   * @param {object} options
+   * @param {boolean} options.centered
+   * @param {boolean} options.scroll
+   * @param {boolean} options.slotted
+   * @param {boolean} options.smoothScroll
    * @returns
    */
   showNode(
@@ -1997,7 +2011,7 @@ class MarkupView extends EventEmitter {
    *
    * @param  {NodeFront} node
    *         The NodeFront to get the outerHTML / innerHTML for.
-   * @param  {Boolean} isOuter
+   * @param  {boolean} isOuter
    *         If true, makes the function return the outerHTML,
    *         otherwise the innerHTML.
    * @return {Promise} that will be resolved with the outerHTML / innerHTML.
@@ -2119,9 +2133,9 @@ class MarkupView extends EventEmitter {
    *
    * @param  {NodeFront} node
    *         Node which outerHTML will be replaced.
-   * @param  {String} newValue
+   * @param  {string} newValue
    *         The new outerHTML to set on the node.
-   * @param  {String} oldValue
+   * @param  {string} oldValue
    *         The old outerHTML that will be used if the user undoes the update.
    * @return {Promise} that will resolve when the outer HTML has been updated.
    */
@@ -2142,11 +2156,12 @@ class MarkupView extends EventEmitter {
   /**
    * Replace the innerHTML of any node displayed in the inspector with
    * some other HTML code
+   *
    * @param  {Node} node
    *         node which innerHTML will be replaced.
-   * @param  {String} newValue
+   * @param  {string} newValue
    *         The new innerHTML to set on the node.
-   * @param  {String} oldValue
+   * @param  {string} oldValue
    *         The old innerHTML that will be used if the user undoes the update.
    * @return {Promise} that will resolve when the inner HTML has been updated.
    */
@@ -2173,10 +2188,10 @@ class MarkupView extends EventEmitter {
    *
    * @param  {NodeFront} node
    *         The reference node.
-   * @param  {String} position
+   * @param  {string} position
    *         The position as specified for Element.insertAdjacentHTML
    *         (i.e. "beforeBegin", "afterBegin", "beforeEnd", "afterEnd").
-   * @param  {String} newValue
+   * @param  {string} newValue
    *         The adjacent HTML.
    * @return {Promise} that will resolve when the adjacent HTML has
    *         been inserted.
@@ -2261,9 +2276,9 @@ class MarkupView extends EventEmitter {
    *
    * @param  {NodeFront} node
    *         The NodeFront to update.
-   * @param  {Boolean} expanded
+   * @param  {boolean} expanded
    *         Whether the node should be expanded/collapsed.
-   * @param  {Boolean} applyToDescendants
+   * @param  {boolean} applyToDescendants
    *         Whether all descendants should also be expanded/collapsed
    */
   setNodeExpanded(node, expanded, applyToDescendants) {
@@ -2286,7 +2301,7 @@ class MarkupView extends EventEmitter {
    *
    * @param  {NodeFront} node
    *         The NodeFront to mark as selected.
-   * @return {Boolean} False if the node is already marked as selected, true
+   * @return {boolean} False if the node is already marked as selected, true
    *         otherwise.
    */
   markNodeAsSelected(node) {
@@ -2410,7 +2425,7 @@ class MarkupView extends EventEmitter {
    *
    * @param  {MarkupContainer} container
    *         The markup container whose children need updating
-   * @param  {Object} options
+   * @param  {object} options
    *         Options are {expand:boolean,flash:boolean}
    * @return {Promise} that will be resolved when the children are ready
    *         (which may be immediately).
@@ -2834,13 +2849,13 @@ class MarkupView extends EventEmitter {
 
     if (nextSibling) {
       while (
-        nextSibling.isMarkerPseudoElement ||
-        nextSibling.isBeforePseudoElement
+        nextSibling.displayName === "::marker" ||
+        nextSibling.displayName === "::before"
       ) {
         nextSibling =
           this.getContainer(nextSibling).elt.nextSibling.container.node;
       }
-      if (nextSibling.isAfterPseudoElement) {
+      if (nextSibling.displayName === "::after") {
         parent = target.parentNode.container.node.parentNode();
         nextSibling = null;
       }

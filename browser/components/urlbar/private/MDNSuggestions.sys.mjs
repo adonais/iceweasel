@@ -64,7 +64,6 @@ export class MDNSuggestions extends SuggestProvider {
       shouldShowUrl: true,
       bottomTextL10n: {
         id: "firefox-suggest-mdn-bottom-text",
-        cacheable: true,
       },
     };
 

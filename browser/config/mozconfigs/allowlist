@@ -14,9 +14,6 @@ for platform in all_platforms:
 
 allowlist['nightly']['macosx64'] += [
     'ac_add_options --enable-instruments',
-    'ac_add_options --enable-dtrace',
-    'if test `uname -s` != Linux; then',
-    'fi',
 ]
 
 allowlist['nightly']['win64'] += [

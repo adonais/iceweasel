@@ -247,20 +247,6 @@ struct OptimizeRegExpPrototypeFuse final : public InvalidatingRealmFuse {
   virtual bool checkInvariant(JSContext* cx) override;
 };
 
-// Fuse used to optimize lookups of certain symbols on String.prototype.
-// If this fuse is intact, the following invariants must hold:
-//
-// - The builtin String.prototype object has the builtin Object.prototype object
-//   as prototype.
-// - Both String.prototype and Object.prototype don't have any of the following
-//   properties: Symbol.match, Symbol.replace, Symbol.search, Symbol.split.
-struct OptimizeStringPrototypeSymbolsFuse final : public InvalidatingRealmFuse {
-  virtual const char* name() override {
-    return "OptimizeStringPrototypeSymbolsFuse";
-  }
-  virtual bool checkInvariant(JSContext* cx) override;
-};
-
 // Guard used to optimize iterating over Map objects. If this fuse is intact,
 // the following invariants must hold:
 //
@@ -345,7 +331,6 @@ struct OptimizeWeakSetPrototypeAddFuse final : public RealmFuse {
   FUSE(OptimizeTypedArraySpeciesFuse, optimizeTypedArraySpeciesFuse)           \
   FUSE(OptimizePromiseLookupFuse, optimizePromiseLookupFuse)                   \
   FUSE(OptimizeRegExpPrototypeFuse, optimizeRegExpPrototypeFuse)               \
-  FUSE(OptimizeStringPrototypeSymbolsFuse, optimizeStringPrototypeSymbolsFuse) \
   FUSE(OptimizeMapObjectIteratorFuse, optimizeMapObjectIteratorFuse)           \
   FUSE(OptimizeSetObjectIteratorFuse, optimizeSetObjectIteratorFuse)           \
   FUSE(OptimizeMapPrototypeSetFuse, optimizeMapPrototypeSetFuse)               \

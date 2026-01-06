@@ -39,7 +39,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=1037519
       font-variant: small-caps;
     }
 
-    ::view-transition-group(root), #bar {
+    ::view-transition-group(root), #bar, ::view-transition-group(*) {
        animation-duration: 3600s;
     }
   </style>
@@ -123,7 +123,7 @@ add_task(async () => {
     "::view-transition-group(root)"
   ).find(rule => {
     try {
-      return rule.selectorText === "::view-transition-group(root), #bar";
+      return rule.selectorText === "::view-transition-group(root), #bar, ::view-transition-group(*)";
     } catch {}
     return false;
   });
@@ -143,6 +143,14 @@ add_task(async () => {
   ok(
     !viewTransitionGroupRule.selectorMatchesElement(1, document.documentElement),
     "Doesn't match #bar"
+  );
+  ok(
+    viewTransitionGroupRule.selectorMatchesElement(
+      2,
+      document.documentElement,
+      "::view-transition-group(root)"
+    ),
+    "Matches ::view-transition-group(*)"
   );
 });
 

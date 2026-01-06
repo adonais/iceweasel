@@ -42,11 +42,9 @@ internal fun View.openLearnMoreLink(
 ) {
     val url = resolveLearnMoreUrl(link, addon) ?: return
     findNavController().openToBrowser()
-    val isPrivate = context.components.appStore.state.mode.isPrivate
     context.components.useCases.fenixBrowserUseCases.loadUrlOrSearch(
         searchTermOrURL = url,
         newTab = true,
-        private = isPrivate,
     )
 }
 

@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.webcompat.middleware
 
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -29,7 +28,7 @@ class WebCompatReporterTelemetryMiddlewareTest {
         val store = createStore()
         assertNull(Webcompatreporting.reasonDropdown.testGetValue())
 
-        store.dispatch(WebCompatReporterAction.ReasonChanged(WebCompatReporterState.BrokenSiteReason.Media)).joinBlocking()
+        store.dispatch(WebCompatReporterAction.ReasonChanged(WebCompatReporterState.BrokenSiteReason.Media))
 
         assertNotNull(Webcompatreporting.reasonDropdown.testGetValue())
         val snapshot = Webcompatreporting.reasonDropdown.testGetValue()!!
@@ -39,13 +38,13 @@ class WebCompatReporterTelemetryMiddlewareTest {
     @Test
     fun `WHEN send more info button is clicked THEN record send more info button telemetry`() {
         val store = createStore()
-        assertNull(Webcompatreporting.sendMoreInfo.testGetValue())
+        assertNull(Webcompatreporting.addMoreInfo.testGetValue())
 
-        store.dispatch(WebCompatReporterAction.SendMoreInfoClicked).joinBlocking()
+        store.dispatch(WebCompatReporterAction.AddMoreInfoClicked)
 
-        val snapshot = Webcompatreporting.sendMoreInfo.testGetValue()!!
+        val snapshot = Webcompatreporting.addMoreInfo.testGetValue()!!
         assertEquals(1, snapshot.size)
-        assertEquals("send_more_info", snapshot.single().name)
+        assertEquals("add_more_info", snapshot.single().name)
     }
 
     @Test
@@ -53,7 +52,7 @@ class WebCompatReporterTelemetryMiddlewareTest {
         val store = createStore()
         assertNull(Webcompatreporting.send.testGetValue())
 
-        store.dispatch(WebCompatReporterAction.SendReportClicked).joinBlocking()
+        store.dispatch(WebCompatReporterAction.SendReportClicked)
 
         val snapshot = Webcompatreporting.send.testGetValue()!!
         assertEquals(1, snapshot.size)
@@ -65,7 +64,7 @@ class WebCompatReporterTelemetryMiddlewareTest {
         val store = createStore()
         assertNull(Webcompatreporting.send.testGetValue())
 
-        store.dispatch(WebCompatReporterAction.SendReportClicked).joinBlocking()
+        store.dispatch(WebCompatReporterAction.SendReportClicked)
 
         val snapshot = Webcompatreporting.send.testGetValue()!!
         assertEquals(1, snapshot.size)
@@ -78,7 +77,7 @@ class WebCompatReporterTelemetryMiddlewareTest {
         val store = createStore()
         store.dispatch(WebCompatReporterAction.IncludeEtpBlockedUrlsChanged(true))
 
-        store.dispatch(WebCompatReporterAction.SendReportClicked).joinBlocking()
+        store.dispatch(WebCompatReporterAction.SendReportClicked)
 
         val snapshot = Webcompatreporting.send.testGetValue()!!.single()
         assertEquals("true", snapshot.extra?.get("sent_with_blocked_trackers"))

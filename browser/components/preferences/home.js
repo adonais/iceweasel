@@ -38,6 +38,226 @@ const NEW_TAB_KEY = "newTabURL";
 
 const BLANK_HOMEPAGE_URL = "chrome://browser/content/blanktab.html";
 
+// New Prefs UI: we need to check for this setting before registering prefs
+// so that old-style prefs continue working
+if (Services.prefs.getBoolPref("browser.settings-redesign.enabled")) {
+  Preferences.addAll([
+    { id: "browser.newtabpage.activity-stream.showSearch", type: "bool" },
+    {
+      id: "browser.newtabpage.activity-stream.system.showWeather",
+      type: "bool",
+    },
+    { id: "browser.newtabpage.activity-stream.showWeather", type: "bool" },
+    {
+      id: "browser.newtabpage.activity-stream.widgets.system.enabled",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.widgets.enabled",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.widgets.system.lists.enabled",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.widgets.lists.enabled",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.widgets.system.focusTimer.enabled",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.widgets.focusTimer.enabled",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.feeds.topsites",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.topSitesRows",
+      type: "int",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.feeds.system.topstories",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.feeds.section.topstories",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.showSponsoredCheckboxes",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.showSponsoredTopSites",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.showSponsored",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.feeds.section.highlights",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.section.highlights.rows",
+      type: "int",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.section.highlights.includeVisited",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.section.highlights.includeBookmarks",
+      type: "bool",
+    },
+    {
+      id: "browser.newtabpage.activity-stream.section.highlights.includeDownloads",
+      type: "bool",
+    },
+  ]);
+
+  // Search
+  Preferences.addSetting({
+    id: "webSearch",
+    pref: "browser.newtabpage.activity-stream.showSearch",
+  });
+
+  // Weather
+  Preferences.addSetting({
+    id: "showWeather",
+    pref: "browser.newtabpage.activity-stream.system.showWeather",
+  });
+  Preferences.addSetting({
+    id: "weather",
+    pref: "browser.newtabpage.activity-stream.showWeather",
+    deps: ["showWeather"],
+    visible: ({ showWeather }) => showWeather.value,
+  });
+
+  // Widgets: general
+  Preferences.addSetting({
+    id: "widgetsEnabled",
+    pref: "browser.newtabpage.activity-stream.widgets.system.enabled",
+  });
+  Preferences.addSetting({
+    id: "widgets",
+    pref: "browser.newtabpage.activity-stream.widgets.enabled",
+    deps: ["widgetsEnabled"],
+    visible: ({ widgetsEnabled }) => widgetsEnabled.value,
+  });
+
+  // Widgets: lists
+  Preferences.addSetting({
+    id: "listsEnabled",
+    pref: "browser.newtabpage.activity-stream.widgets.system.lists.enabled",
+  });
+  Preferences.addSetting({
+    id: "lists",
+    pref: "browser.newtabpage.activity-stream.widgets.lists.enabled",
+    deps: ["listsEnabled"],
+    visible: ({ listsEnabled }) => listsEnabled.value,
+  });
+
+  // Widgets: timer
+  Preferences.addSetting({
+    id: "timerEnabled",
+    pref: "browser.newtabpage.activity-stream.widgets.system.focusTimer.enabled",
+  });
+  Preferences.addSetting({
+    id: "timer",
+    pref: "browser.newtabpage.activity-stream.widgets.focusTimer.enabled",
+    deps: ["timerEnabled"],
+    visible: ({ timerEnabled }) => timerEnabled.value,
+  });
+
+  // Shortcuts
+  Preferences.addSetting({
+    id: "shortcuts",
+    pref: "browser.newtabpage.activity-stream.feeds.topsites",
+  });
+  Preferences.addSetting({
+    id: "shortcutsRows",
+    pref: "browser.newtabpage.activity-stream.topSitesRows",
+  });
+
+  // Stories
+  Preferences.addSetting({
+    id: "stories",
+    pref: "browser.newtabpage.activity-stream.feeds.section.topstories",
+  });
+
+  // Dependency prefs for sponsored stories visibility
+  Preferences.addSetting({
+    id: "systemTopstories",
+    pref: "browser.newtabpage.activity-stream.feeds.system.topstories",
+  });
+  Preferences.addSetting({
+    id: "sectionTopstories",
+    pref: "browser.newtabpage.activity-stream.feeds.section.topstories",
+  });
+
+  // Support Firefox: sponsored content
+  Preferences.addSetting({
+    id: "supportFirefox",
+    pref: "browser.newtabpage.activity-stream.showSponsoredCheckboxes",
+    deps: ["sponsoredShortcuts", "sponsoredStories"],
+    onUserChange(value, { sponsoredShortcuts, sponsoredStories }) {
+      // When supportFirefox changes, automatically update child preferences to match
+      sponsoredShortcuts.value = !!value;
+      sponsoredStories.value = !!value;
+    },
+  });
+  Preferences.addSetting({
+    id: "topsitesEnabled",
+    pref: "browser.newtabpage.activity-stream.feeds.topsites",
+  });
+  Preferences.addSetting({
+    id: "sponsoredShortcuts",
+    pref: "browser.newtabpage.activity-stream.showSponsoredTopSites",
+    deps: ["topsitesEnabled"],
+    disabled: ({ topsitesEnabled }) => !topsitesEnabled.value,
+  });
+  Preferences.addSetting({
+    id: "sponsoredStories",
+    pref: "browser.newtabpage.activity-stream.showSponsored",
+    deps: ["systemTopstories", "sectionTopstories"],
+    visible: ({ systemTopstories }) => !!systemTopstories.value,
+    disabled: ({ sectionTopstories }) => !sectionTopstories.value,
+  });
+  Preferences.addSetting({
+    id: "supportFirefoxPromo",
+    deps: ["supportFirefox"],
+  });
+
+  // Recent activity
+  Preferences.addSetting({
+    id: "recentActivity",
+    pref: "browser.newtabpage.activity-stream.feeds.section.highlights",
+  });
+  Preferences.addSetting({
+    id: "recentActivityRows",
+    pref: "browser.newtabpage.activity-stream.section.highlights.rows",
+  });
+  Preferences.addSetting({
+    id: "recentActivityVisited",
+    pref: "browser.newtabpage.activity-stream.section.highlights.includeVisited",
+  });
+  Preferences.addSetting({
+    id: "recentActivityBookmarks",
+    pref: "browser.newtabpage.activity-stream.section.highlights.includeBookmarks",
+  });
+  Preferences.addSetting({
+    id: "recentActivityDownloads",
+    pref: "browser.newtabpage.activity-stream.section.highlights.includeDownloads",
+  });
+}
+
 var gHomePane = {
   HOME_MODE_FIREFOX_HOME: "0",
   HOME_MODE_BLANK: "1",
@@ -135,6 +355,7 @@ var gHomePane = {
 
   /**
    *  _updateMenuInterface: adds items to or removes them from the menulists
+   *
    * @param {string} selectId Optional Id of the menulist to add or remove items from.
    *                          If not included this will update both home and newtab menus.
    */
@@ -285,6 +506,7 @@ var gHomePane = {
   /**
    * _renderCustomSettings: Hides or shows the UI for setting a custom
    * homepage URL
+   *
    * @param {obj} options
    * @param {bool} options.shouldShow Should the custom UI be shown?
    * @param {bool} options.isControlled Is an extension controlling the home page?
@@ -325,6 +547,7 @@ var gHomePane = {
 
   /**
    * _isHomePageDefaultValue
+   *
    * @returns {bool} Is the homepage set to the default pref value?
    */
   _isHomePageDefaultValue() {
@@ -336,6 +559,7 @@ var gHomePane = {
 
   /**
    * isHomePageBlank
+   *
    * @returns {bool} Is the homepage set to about:blank?
    */
   isHomePageBlank() {
@@ -348,6 +572,7 @@ var gHomePane = {
 
   /**
    * _isTabAboutPreferencesOrSettings: Is a given tab set to about:preferences or about:settings?
+   *
    * @param {Element} aTab A tab element
    * @returns {bool} Is the linkedBrowser of aElement set to about:preferences or about:settings?
    */
@@ -360,6 +585,7 @@ var gHomePane = {
 
   /**
    * _getTabsForHomePage
+   *
    * @returns {Array} An array of current tabs
    */
   _getTabsForHomePage() {
@@ -660,6 +886,8 @@ var gHomePane = {
   },
 
   init() {
+    initSettingGroup("home");
+
     // Event Listeners
     document
       .getElementById("homePageUrl")

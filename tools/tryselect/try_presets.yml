@@ -107,7 +107,7 @@ desktop-newtab-trainhop:
     selector: fuzzy
     full: true
     query:
-        - "'mochitest-browser-newtab-trainhop !cf !tsan !ccov !asan !shippable !debug !devedition"
+        - "'mochitest trainhop !cf !tsan !ccov !asan !shippable !debug !devedition !wayland !-32"
 
 devtools:
     selector: fuzzy

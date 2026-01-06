@@ -13,7 +13,7 @@ class DebuggerFSMContext {
    * Creates an instance of DebuggerFSMContext.
    *
    * @param {Array} allTrackers - A non-empty list of all trackers to be managed by the FSM context.
-   * @param {Object} callbacks - An object containing optional callback functions.
+   * @param {object} callbacks - An object containing optional callback functions.
    * @param {Function} [callbacks.onPromptTextUpdate] - Callback invoked when the prompt text is updated.
    * @param {Function} [callbacks.onButtonStateUpdate] - Callback invoked when the button state is updated.
    * @param {Function} [callbacks.onTrackersBlockedStateUpdate] - Callback invoked when the trackers blocked state is updated.
@@ -36,6 +36,7 @@ class DebuggerFSMContext {
 
   /**
    * Transition to a new FSM state.
+   *
    * @param {object} state - The new state instance.
    */
   changeState(state) {
@@ -71,6 +72,7 @@ class DebuggerFSMContext {
 class FSMState {
   /**
    * Base class for FSM states.
+   *
    * @param {DebuggerFSMContext} debuggerFSMContext - The FSM context.
    */
   constructor(debuggerFSMContext) {
@@ -164,6 +166,7 @@ class DomainStageState extends FSMState {
 
   /**
    * Group trackers by their top-level domain.
+   *
    * @param {string[]} trackers - List of tracker hostnames.
    */
   groupByDomain(trackers) {

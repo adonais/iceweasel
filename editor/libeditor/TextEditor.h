@@ -149,6 +149,9 @@ class TextEditor final : public EditorBase,
 
   nsresult OnBlur(const dom::EventTarget* aEventTarget) final;
 
+  [[nodiscard]] Result<widget::IMEState, nsresult> GetPreferredIMEState()
+      const final;
+
   /**
    * The maximum number of characters allowed.
    *   default: -1 (unlimited).

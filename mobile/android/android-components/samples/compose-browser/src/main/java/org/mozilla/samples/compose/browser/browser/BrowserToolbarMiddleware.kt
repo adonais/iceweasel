@@ -68,7 +68,7 @@ internal class BrowserToolbarMiddleware(
             }
 
             is PageOriginClicked -> {
-                next(EnterEditMode)
+                next(EnterEditMode(false))
             }
 
             is TabCounterClicked -> {
@@ -117,7 +117,6 @@ internal class BrowserToolbarMiddleware(
             showPrivacyMask = false,
             onClick = TabCounterClicked,
         ),
-
         ActionButtonRes(
             drawableResId = iconsR.drawable.mozac_ic_ellipsis_vertical_24,
             contentDescription = R.string.menu_button_description,

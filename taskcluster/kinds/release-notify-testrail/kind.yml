@@ -19,7 +19,7 @@ task-defaults:
         kind: other
         tier: 2
         symbol: testrail
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     worker:
         docker-image: {in-tree: android-ui-tests}
         max-run-time: 1800

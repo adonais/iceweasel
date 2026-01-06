@@ -331,6 +331,13 @@ add_task(async () => {
   await simpleRFPTest(uri, testNavigator, expectedResults);
 });
 
+add_task(async () => {
+  expectedResults = structuredClone(allSpoofed);
+  await simpleRFPTest(uri, testNavigator, expectedResults, {}, [
+    ["pdfjs.disabled", true],
+  ]);
+});
+
 // In the below tests, we use the cross-origin domain as the base URI of a resource we fetch (on both the framer and framee)
 // so we can check that the HTTP header is as expected.
 

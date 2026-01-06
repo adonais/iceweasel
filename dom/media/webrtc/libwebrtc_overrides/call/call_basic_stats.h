@@ -7,6 +7,7 @@
 #ifndef DOM_MEDIA_WEBRTC_LIBWEBRTCOVERRIDES_CALL_CALL_BASIC_STATS_H_
 #define DOM_MEDIA_WEBRTC_LIBWEBRTCOVERRIDES_CALL_CALL_BASIC_STATS_H_
 
+#include <optional>
 #include <string>
 
 namespace webrtc {
@@ -20,6 +21,7 @@ struct CallBasicStats {
   int recv_bandwidth_bps = 0;       // Estimated available receive bandwidth.
   int64_t pacer_delay_ms = 0;
   int64_t rtt_ms = -1;
+  std::optional<int64_t> ccfb_messages_received = std::nullopt;
 };
 
 }  // namespace webrtc

@@ -6,134 +6,17 @@ import { AsyncSetting } from "chrome://global/content/preferences/AsyncSetting.m
 import { Preference } from "chrome://global/content/preferences/Preference.mjs";
 import { Setting } from "chrome://global/content/preferences/Setting.mjs";
 
-/** @import {PreferenceConfigInfo} from "chrome://global/content/preferences/Preference.mjs" */
-/** @import {PreferenceSettingDepsMap} from "chrome://global/content/preferences/Setting.mjs" */
+/** @import {PreferenceConfig} from "chrome://global/content/preferences/Preference.mjs" */
+/** @import {SettingConfig} from "chrome://global/content/preferences/Setting.mjs" */
+/** @import {DeferredTask} from "resource://gre/modules/DeferredTask.sys.mjs" */
 
 /**
- * @callback PreferenceSettingVisibleFunction
- * @param {PreferenceSettingDepsMap} deps
- * @param {Setting} setting
- * @returns {boolean | string | undefined} If truthy shows the setting in the UI, or hides it if not
+ * @typedef {{ _deferredValueUpdateTask: DeferredTask }} DeferredValueObject
+ * @typedef {DeferredValueObject & HTMLElement} DeferredValueHTMLElement
  */
 
-/**
- * Gets the value of a {@link PreferencesSettingsConfig}.
- *
- * @callback PreferenceSettingGetter
- * @param {string | number} val - The value that was retrieved from the preferences backend
- * @param {PreferenceSettingDepsMap} deps
- * @param {Setting} setting
- * @returns {any} - The value to set onto the setting
- */
-
-/**
- * Sets the value of a {@link PreferencesSettingsConfig}.
- *
- * @callback PreferenceSettingSetter
- * @param {string | undefined} val - The value/pressed/checked from the input (control) associated with the setting
- * @param {PreferenceSettingDepsMap} deps
- * @param {Setting} setting
- * @returns {void}
- */
-
-/**
- * @callback PreferencesSettingOnUserChangeFunction
- * @param {string} val - The value/pressed/checked from the input of the control associated with the setting
- * @param {PreferenceSettingDepsMap} deps
- * @param {Setting} setting
- * @returns {void}
- */
-
-/**
- * @callback PreferencesSettingConfigDisabledFunction
- * @param {PreferenceSettingDepsMap} deps
- * @param {Setting} setting
- * @returns {boolean}
- */
-
-/**
- * @callback PreferencesSettingGetControlConfigFunction
- * @param {PreferencesSettingsConfig} config
- * @param {PreferenceSettingDepsMap} deps
- * @param {Setting} setting
- * @returns {PreferencesSettingsConfig | undefined}
- */
-
-/**
- * @callback PreferencesSettingConfigTeardownFunction
- * @returns {void}
- */
-
-/**
- * @callback PreferencesSettingConfigSetupFunction
- * @param {Function} emitChange
- * @param {PreferenceSettingDepsMap} deps
- * @param {Setting} setting
- * @returns {PreferencesSettingConfigTeardownFunction | void}
- */
-
-/**
- * @callback PreferencesSettingConfigOnUserClickFunction
- * @param {Event} event
- * @param {PreferenceSettingDepsMap} deps
- * @param {Setting} setting
- * @returns {void}
- */
-
-/**
- * @typedef {Record<string, any>} PreferencesSettingConfigControlAttributes
- */
-
-/**
- * @typedef {Omit<PreferencesSettingConfigNestedControlOption, 'id | value'>} PreferencesSettingConfigNestedElementOption
- */
-
-/**
- * A set of properties that represent a nested control or element.
- *
- * @typedef {object} PreferencesSettingConfigNestedControlOption
- * @property {string} [control] - The {@link HTMLElement#localName} of any HTML element that will be nested as a direct descendant of the control element. A moz-checkbox will be rendered by default.
- * @property {PreferencesSettingConfigControlAttributes} [controlAttrs] - A map of any attributes to add to the control
- * @property {string} [l10nId] - The fluent ID of the control
- * @property {Array<PreferencesSettingConfigNestedElementOption>} [options] - Options for additional nested HTML elements. This will be overridden if items property is used.
- * @property {string} [id]
- * @property {string} [value] - An optional initial value used for the control element if it's an input element that supports a value property
- * @property {Array<PreferencesSettingsConfig>} [items] - A list of setting control items that will get rendered as direct descendants of the setting control. This overrides the options property.
- */
-
-/**
- * @typedef {object} PreferencesSettingsConfig
- * @property {string} id - The ID for the Setting, this should match the layout id
- * @property {string} [l10nId] - The Fluent l10n ID for the setting
- * @property {Record<string, string>} [l10nArgs] - An object containing l10n IDs and their values that will be translated with Fluent
- * @property {string} [pref] - A {@link Services.prefs} id that will be used as the backend if it is provided
- * @property {PreferenceSettingVisibleFunction} [visible] - Function to determine if a setting is visible in the UI
- * @property {PreferenceSettingGetter} [get] - Function to get the value of the setting. Optional if {@link PreferencesSettingsConfig#pref} is set.
- * @property {PreferenceSettingSetter} [set] - Function to set the value of the setting. Optional if {@link PreferencesSettingsConfig#pref} is set.
- * @property {PreferencesSettingGetControlConfigFunction} [getControlConfig] -  Function that allows the setting to modify its layout, this is intended to be used to provide the options, {@link PreferencesSettingsConfig#l10nId} or {@link PreferencesSettingsConfig#l10nArgs} data if necessary, but technically it can change anything (that doesn't mean it will have any effect though).
- * @property {PreferencesSettingOnUserChangeFunction} [onUserChange] - A function that will be called when the setting
- *    has been modified by the user, it is passed the value/pressed/checked from its input. NOTE: This should be used for
- *    additional work that needs to happen, such as recording telemetry.
- *    If you want to set the value of the Setting then use the {@link PreferencesSettingsConfig.set} function.
- * @property {Array<PreferencesSettingsConfig> | undefined} [items]
- * @property {PreferencesSettingConfigNestedControlOption['control']} [control] - The {@link HTMLElement#localName} of any HTML element that will be rendered as a control in the UI for the setting.
- * @property {PreferencesSettingConfigSetupFunction} [setup] -  A function to be called to register listeners for
- *    the setting. It should return a {@link PreferencesSettingConfigTeardownFunction} function to
- *    remove the listeners if necessary. This should emit change events when the setting has changed to
- *    ensure the UI stays in sync if possible.
- * @property {PreferencesSettingConfigDisabledFunction} [disabled] - A function to determine if a setting should be disabled
- * @property {PreferencesSettingConfigOnUserClickFunction} [onUserClick] - A function that will be called when a setting has been
- *    clicked, the element name must be included in the CLICK_HANDLERS array
- *    in {@link file://./../../browser/components/preferences/widgets/setting-group/setting-group.mjs}. This should be
- *    used for controls that aren’t regular form controls but instead perform an action when clicked, like a button or link.
- * @property {Array<string> | void} [deps] - An array of setting IDs that this setting depends on, when these settings change this setting will emit a change event to update the UI
- * @property {PreferencesSettingConfigControlAttributes} [controlAttrs] - An object of additional attributes to be set on the control. These can be used to further customize the control for example a message bar of the warning type, or what dialog a button should open
- * @property {Array<PreferencesSettingConfigNestedControlOption>} [options] - An optional list of nested controls for this setting (select options, radio group radios, etc)
- * @property {string} [iconSrc] - A path to the icon for the control (if the control supports one)
- * @property {string} [supportPage] - The SUMO support page slug for the setting
- * @property {string} [subcategory] - The sub-category slug used for direct linking to a setting from SUMO
- */
-
+/** @type {{ DeferredTask: typeof DeferredTask }} */
+// @ts-expect-error bug 1996860
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   DeferredTask: "resource://gre/modules/DeferredTask.sys.mjs",
@@ -158,7 +41,7 @@ export const Preferences = {
   _settings: new Map(),
 
   /**
-   * @param {PreferenceConfigInfo} prefInfo
+   * @param {PreferenceConfig} prefInfo
    */
   _add(prefInfo) {
     if (this._all[prefInfo.id]) {
@@ -175,7 +58,7 @@ export const Preferences = {
   },
 
   /**
-   * @param {PreferenceConfigInfo} prefInfo
+   * @param {PreferenceConfig} prefInfo
    * @returns {Preference}
    */
   add(prefInfo) {
@@ -184,7 +67,7 @@ export const Preferences = {
   },
 
   /**
-   * @param {Array<PreferenceConfigInfo>} prefInfos
+   * @param {Array<PreferenceConfig>} prefInfos
    */
   addAll(prefInfos) {
     prefInfos.map(prefInfo => this._add(prefInfo));
@@ -199,7 +82,7 @@ export const Preferences = {
   },
 
   /**
-   * @returns {Array<PreferenceConfigInfo>}
+   * @returns {Array<Preference>}
    */
   getAll() {
     return Object.values(this._all);
@@ -210,7 +93,7 @@ export const Preferences = {
    * that includes all of the configuration for the control
    * such as its Fluent strings, support page, subcategory etc.
    *
-   * @param {PreferencesSettingsConfig} settingConfig
+   * @param {SettingConfig} settingConfig
    */
   addSetting(settingConfig) {
     this._settings.set(
@@ -252,7 +135,12 @@ export const Preferences = {
     this._instantApplyForceEnabled = true;
   },
 
-  observe(subject, topic, data) {
+  /**
+   * @param {nsISupports} _
+   * @param {string} __
+   * @param {string} data
+   */
+  observe(_, __, data) {
     const pref = this._all[data];
     if (pref) {
       pref.value = pref.valueFromPreferences;
@@ -293,15 +181,21 @@ export const Preferences = {
     });
   },
 
-  onUnload() {
+  /**
+   * @param {Event} _
+   */
+  onUnload(_) {
     this._settings.forEach(setting => setting?.destroy?.());
-    Services.prefs.removeObserver("", this);
+    Services.prefs.removeObserver("", /** @type {nsIObserver} */ (this));
   },
 
   QueryInterface: ChromeUtils.generateQI(["nsITimerCallback", "nsIObserver"]),
 
   _deferredValueUpdateElements: new Set(),
 
+  /**
+   * @param {boolean} aFlushToDisk
+   */
   writePreferences(aFlushToDisk) {
     // Write all values to preferences.
     if (this._deferredValueUpdateElements.size) {
@@ -319,6 +213,9 @@ export const Preferences = {
     }
   },
 
+  /**
+   * @param {HTMLElement} aStartElement
+   */
   getPreferenceElement(aStartElement) {
     let temp = aStartElement;
     while (
@@ -326,11 +223,15 @@ export const Preferences = {
       temp.nodeType == Node.ELEMENT_NODE &&
       !temp.hasAttribute("preference")
     ) {
+      // @ts-expect-error
       temp = temp.parentNode;
     }
     return temp && temp.nodeType == Node.ELEMENT_NODE ? temp : aStartElement;
   },
 
+  /**
+   * @param {DeferredValueHTMLElement} aElement
+   */
   _deferredValueUpdate(aElement) {
     delete aElement._deferredValueUpdateTask;
     const prefID = aElement.getAttribute("preference");
@@ -348,8 +249,13 @@ export const Preferences = {
     }
   },
 
+  /**
+   * @param {HTMLElement} aElement
+   */
   userChangedValue(aElement) {
-    const element = this.getPreferenceElement(aElement);
+    const element = /** @type {DeferredValueHTMLElement} */ (
+      this.getPreferenceElement(aElement)
+    );
     if (element.hasAttribute("preference")) {
       if (element.getAttribute("delayprefsave") != "true") {
         const preference = Preferences.get(element.getAttribute("preference"));
@@ -371,27 +277,37 @@ export const Preferences = {
     }
   },
 
+  /**
+   * @typedef {{ sourceEvent: CommandEventWithSource } & CommandEvent} CommandEventWithSource
+   * @param {CommandEventWithSource} event
+   */
   onCommand(event) {
     // This "command" event handler tracks changes made to preferences by
     // the user in this window.
     if (event.sourceEvent) {
       event = event.sourceEvent;
     }
-    this.userChangedValue(event.target);
+    this.userChangedValue(/** @type {HTMLElement} */ (event.target));
   },
 
+  /** @param {Event} event */
   onChange(event) {
     // This "change" event handler tracks changes made to preferences by
     // the user in this window.
-    this.userChangedValue(event.target);
+    this.userChangedValue(/** @type {HTMLElement} */ (event.target));
   },
 
+  /** @param {Event} event */
   onInput(event) {
     // This "input" event handler tracks changes made to preferences by
     // the user in this window.
-    this.userChangedValue(event.target);
+    this.userChangedValue(/** @type {HTMLElement} */ (event.target));
   },
 
+  /**
+   * @param {string} aEventName
+   * @param {HTMLElement} aTarget
+   */
   _fireEvent(aEventName, aTarget) {
     try {
       const event = new CustomEvent(aEventName, {
@@ -405,6 +321,9 @@ export const Preferences = {
     return false;
   },
 
+  /**
+   * @param {Event} event
+   */
   onDialogAccept(event) {
     let dialog = document.querySelector("dialog");
     if (!this._fireEvent("beforeaccept", dialog)) {
@@ -415,6 +334,9 @@ export const Preferences = {
     return true;
   },
 
+  /**
+   * @param {Event} event
+   */
   close(event) {
     if (Preferences.instantApply) {
       window.close();
@@ -423,13 +345,16 @@ export const Preferences = {
     event.preventDefault();
   },
 
+  /**
+   * @param {Event} event
+   */
   handleEvent(event) {
     switch (event.type) {
       case "toggle":
       case "change":
         return this.onChange(event);
       case "command":
-        return this.onCommand(event);
+        return this.onCommand(/** @type {CommandEventWithSource} */ (event));
       case "dialogaccept":
         return this.onDialogAccept(event);
       case "input":
@@ -484,10 +409,16 @@ export const Preferences = {
     }
   },
 
+  /**
+   * @param {Element} aElement
+   */
   removeSyncFromPrefListener(aElement) {
     this._syncFromPrefListeners.delete(aElement);
   },
 
+  /**
+   * @param {Element} aElement
+   */
   removeSyncToPrefListener(aElement) {
     this._syncToPrefListeners.delete(aElement);
   },
@@ -497,7 +428,7 @@ export const Preferences = {
   Setting,
 };
 
-Services.prefs.addObserver("", Preferences);
+Services.prefs.addObserver("", /** @type {nsIObserver} */ (Preferences));
 window.addEventListener("toggle", Preferences);
 window.addEventListener("change", Preferences);
 window.addEventListener("command", Preferences);

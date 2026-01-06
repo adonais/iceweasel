@@ -301,14 +301,14 @@ let lastElementSelector = null;
  * Right-clicks on the element that matches `selector` and checks the
  * context menu that appears against the `menuItems` array.
  *
- * @param {String} selector
+ * @param {string} selector
  *        A selector passed to querySelector to find
  *        the element that will be referenced.
  * @param {Array} menuItems
  *        An array of menuitem ids and their associated enabled state. A state
  *        of null means that it will be ignored. Ids of '---' are used for
  *        menuseparators.
- * @param {Object} options, optional
+ * @param {object} options, optional
  *        skipFocusChange: don't move focus to the element before test, useful
  *                         if you want to delay spell-check initialization
  *        offsetX: horizontal mouse offset from the top-left corner of

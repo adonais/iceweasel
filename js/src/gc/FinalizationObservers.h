@@ -8,7 +8,7 @@
 #define gc_FinalizationObservers_h
 
 #include "gc/Barrier.h"
-#include "gc/WeakMap.h"  // For WeakTargetHasher
+#include "gc/WeakMap.h"  // For GetSymbolHash.
 #include "gc/ZoneAllocator.h"
 #include "js/GCHashTable.h"
 #include "js/GCVector.h"
@@ -147,6 +147,41 @@ class ObserverList {
   void insertFront(ObserverListObject* obj);
 };
 
+// A hasher for GC things used as WeakRef and FinalizationRegistry targets. Uses
+// stable cell hashing, except for symbols where it uses the symbol's stored
+// hash.
+struct WeakTargetHasher {
+  using Key = HeapPtr<Value>;
+  using Lookup = Value;
+
+  static bool maybeGetHash(const Lookup& l, HashNumber* hashOut) {
+    if (l.isSymbol()) {
+      *hashOut = GetSymbolHash(l.toSymbol());
+      return true;
+    }
+    return StableCellHasher<Cell*>::maybeGetHash(l.toGCThing(), hashOut);
+  }
+  static bool ensureHash(const Lookup& l, HashNumber* hashOut) {
+    if (l.isSymbol()) {
+      *hashOut = GetSymbolHash(l.toSymbol());
+      return true;
+    }
+    return StableCellHasher<Cell*>::ensureHash(l.toGCThing(), hashOut);
+  }
+  static HashNumber hash(const Lookup& l) {
+    if (l.isSymbol()) {
+      return GetSymbolHash(l.toSymbol());
+    }
+    return StableCellHasher<Cell*>::hash(l.toGCThing());
+  }
+  static bool match(const Key& k, const Lookup& l) {
+    if (l.isSymbol()) {
+      return k.toSymbol() == l.toSymbol();
+    }
+    return StableCellHasher<Cell*>::match(k.toGCThing(), l.toGCThing());
+  }
+};
+
 // Per-zone data structures to support FinalizationRegistry and WeakRef.
 class FinalizationObservers {
   // The set of all finalization registries in the associated zone.
@@ -194,5 +229,11 @@ class FinalizationObservers {
 
 }  // namespace gc
 }  // namespace js
+
+namespace mozilla {
+template <>
+struct FallibleHashMethods<js::gc::WeakTargetHasher>
+    : public js::gc::WeakTargetHasher {};
+}  // namespace mozilla
 
 #endif  // gc_FinalizationObservers_h

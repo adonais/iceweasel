@@ -21,8 +21,6 @@
 
 #include "mozilla/Maybe.h"
 
-#include <type_traits>
-
 #include "jit/IonTypes.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmSerialize.h"

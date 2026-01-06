@@ -12,7 +12,6 @@ import mozilla.components.browser.state.reducer.BrowserStateReducer
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.lib.state.Middleware
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -74,8 +73,7 @@ class BrowserStoreTest {
             next(action)
         }
 
-        val store = BrowserStore(middleware = listOf(testMiddleware))
-        store.waitUntilIdle()
+        BrowserStore(middleware = listOf(testMiddleware))
         assertTrue(initActionObserved)
     }
 

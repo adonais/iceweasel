@@ -84,7 +84,7 @@ const STYLE_SHEET_UPDATE_CAUSED_BY_STYLE_EDITOR = "styleeditor";
  *         The STYLESHEET resource which is received from resource command.
  * @param {DOMWindow}  win
  *        panel window for style editor
- * @param {Number} styleSheetFriendlyIndex
+ * @param {number} styleSheetFriendlyIndex
  *        Optional Integer representing the index of the current stylesheet
  *        among all stylesheets of its type (inline, constructed or user-created)
  */
@@ -310,7 +310,7 @@ StyleSheetEditor.prototype = {
    *
    * This will set |this._state.text| to the prettified text if needed.
    *
-   * @param {Boolean} force: Set to true to prettify the stylesheet, no matter if it's
+   * @param {boolean} force: Set to true to prettify the stylesheet, no matter if it's
    *                         minified or not.
    */
   _prettifySourceTextIfNeeded(force = false) {
@@ -364,8 +364,8 @@ StyleSheetEditor.prototype = {
   /**
    * Set the cursor at the given line and column location within the code editor.
    *
-   * @param {Number} line
-   * @param {Number} column
+   * @param {number} line
+   * @param {number} column
    */
   setCursor(line, column) {
     line = line || 0;
@@ -381,10 +381,10 @@ StyleSheetEditor.prototype = {
    * to translate the cursor position to the correct location in the prettified source.
    * If no mappings exist, return the original cursor position unchanged.
    *
-   * @param  {Number} line
+   * @param  {number} line
    * @param  {Numer} column
    *
-   * @return {Object}
+   * @return {object}
    */
   translateCursorPosition(line, column) {
     if (Array.isArray(this._mappings)) {
@@ -417,7 +417,8 @@ StyleSheetEditor.prototype = {
 
   /**
    * Called when the stylesheet text changes.
-   * @param {Object} update: The stylesheet resource update packet.
+   *
+   * @param {object} update: The stylesheet resource update packet.
    */
   async onStyleApplied(update) {
     const updateIsFromSyleSheetEditor =
@@ -460,7 +461,7 @@ StyleSheetEditor.prototype = {
    * Handles changes to the list of at-rules (@media, @layer, @container, …) in the stylesheet.
    * Emits 'at-rules-changed' if the list has changed.
    *
-   * @param  {array} rules
+   * @param  {Array} rules
    *         Array of MediaRuleFronts for new media rules of sheet.
    */
   onAtRulesChanged(rules) {
@@ -481,6 +482,7 @@ StyleSheetEditor.prototype = {
 
   /**
    * Create source editor and load state into it.
+   *
    * @param  {DOMElement} inputElement
    *         Element to load source editor in
    * @param  {CssProperties} cssProperties
@@ -588,8 +590,8 @@ StyleSheetEditor.prototype = {
   /**
    * Event handler for when the editor is shown.
    *
-   * @param {Object} options
-   * @param {String} options.reason: Indicates why the editor is shown
+   * @param {object} options
+   * @param {string} options.reason: Indicates why the editor is shown
    */
   onShow(options = {}) {
     if (this.sourceEditor) {
@@ -694,8 +696,8 @@ StyleSheetEditor.prototype = {
    * Highlight nodes matching the selector found at coordinates x,y in the
    * editor, if any.
    *
-   * @param {Number} x
-   * @param {Number} y
+   * @param {number} x
+   * @param {number} y
    */
   async _highlightSelectorAt(x, y) {
     const pos = this.sourceEditor.getPositionFromCoords({ left: x, top: y });
@@ -928,7 +930,7 @@ StyleSheetEditor.prototype = {
    * Retrieve custom key bindings objects as expected by Editor.
    * Editor action names are not displayed to the user.
    *
-   * @return {array} key binding objects for the source editor
+   * @return {Array} key binding objects for the source editor
    */
   _getKeyBindings() {
     const saveStyleSheetKeybind = Editor.accel(
@@ -1011,9 +1013,9 @@ function findLinkedFilePath(uri, origUri, file) {
  *
  * @param {nsIFile} file
  *        file for that resource on disk
- * @param {array} branch
+ * @param {Array} branch
  *        path parts for branch to chop off file path.
- * @return {array}
+ * @return {Array}
  *        array of path parts
  */
 function findProjectPath(file, branch) {

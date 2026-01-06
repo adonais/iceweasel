@@ -875,6 +875,52 @@ export class NodeWebSocketServer extends BaseNodeServer {
   }
 }
 
+// unencrypted websocket server
+
+class NodeWebSocketPlainServerCode extends BaseNodeHTTPServerCode {
+  static async startServer(port) {
+    const http = require("http");
+    global.server = http.createServer(BaseNodeHTTPServerCode.globalHandler);
+
+    let node_ws_root = `${__dirname}/../node-ws`;
+    const WS = require(`${node_ws_root}/lib/websocket`);
+    WS.Server = require(`${node_ws_root}/lib/websocket-server`);
+    global.webSocketServer = new WS.Server({ server: global.server });
+    global.webSocketServer.on("connection", function connection(ws) {
+      ws.on("message", data =>
+        NodeWebSocketServerCode.messageHandler(data, ws)
+      );
+    });
+
+    let serverPort = await ADB.listenAndForwardPort(global.server, port);
+    return serverPort;
+  }
+}
+
+export class NodeWebSocketPlainServer extends BaseNodeServer {
+  _protocol = "ws";
+  /// Starts the server
+  /// @port - default 0
+  ///    when provided, will attempt to listen on that port.
+  async start(port = 0) {
+    this.processId = await NodeServer.fork();
+
+    await this.execute(BaseNodeHTTPServerCode);
+    await this.execute(NodeWebSocketServerCode);
+    await this.execute(NodeWebSocketPlainServerCode);
+    await this.execute(ADB);
+    this._port = await this.execute(
+      `NodeWebSocketPlainServerCode.startServer(${port})`
+    );
+    await this.execute(`global.path_handlers = {};`);
+    await this.execute(`global.wsInputHandler = null;`);
+  }
+
+  async registerMessageHandler(handler) {
+    return this.execute(`global.wsInputHandler = ${handler.toString()}`);
+  }
+}
+
 // websocket http2 server
 // This code is inspired by
 // https://github.com/szmarczak/http2-wrapper/blob/master/examples/ws/server.js
@@ -941,7 +987,7 @@ class NodeWebSocketHttp2ServerCode extends BaseNodeHTTPServerCode {
 }
 
 export class NodeWebSocketHttp2Server extends BaseNodeServer {
-  _protocol = "h2ws";
+  _protocol = "wss";
   /// Starts the server
   /// @port - default 0
   ///    when provided, will attempt to listen on that port.
@@ -1029,10 +1075,11 @@ export class WebSocketConnection {
     }
   }
 
-  static makeWebSocketChan() {
-    let chan = Cc["@mozilla.org/network/protocol;1?name=wss"].createInstance(
-      Ci.nsIWebSocketChannel
-    );
+  static makeWebSocketChan(url) {
+    let protocol = url.startsWith("wss:") ? "wss" : "ws";
+    let chan = Cc[
+      `@mozilla.org/network/protocol;1?name=${protocol}`
+    ].createInstance(Ci.nsIWebSocketChannel);
     chan.initLoadInfo(
       null, // aLoadingNode
       Services.scriptSecurityManager.getSystemPrincipal(),
@@ -1044,7 +1091,7 @@ export class WebSocketConnection {
   }
   // Returns a promise that resolves when the websocket channel is opened.
   open(url) {
-    this._ws = WebSocketConnection.makeWebSocketChan();
+    this._ws = WebSocketConnection.makeWebSocketChan(url);
     let uri = Services.io.newURI(url);
     this._ws.asyncOpen(uri, url, {}, 0, this, null);
     return this._openPromise;

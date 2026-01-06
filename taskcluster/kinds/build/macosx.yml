@@ -5,7 +5,7 @@
 task-defaults:
     index:
         product: firefox
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         artifacts:
             - name: public/build/security/{browser_entitlement}.xml

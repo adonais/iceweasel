@@ -37,19 +37,19 @@ loader.lazyRequireGetter(
  * h.hide();
  * h.destroy();
  *
- * @param {Number} options.x
+ * @param {number} options.x
  *        X coordinate of the top left corner of the accessible object
- * @param {Number} options.y
+ * @param {number} options.y
  *        Y coordinate of the top left corner of the accessible object
- * @param {Number} options.w
+ * @param {number} options.w
  *        Width of the the accessible object
- * @param {Number} options.h
+ * @param {number} options.h
  *        Height of the the accessible object
- * @param {Number} options.duration
+ * @param {number} options.duration
  *        Duration of time that the highlighter should be shown.
- * @param {String|null} options.name
+ * @param {string | null} options.name
  *        Name of the the accessible object
- * @param {String} options.role
+ * @param {string} options.role
  *        Role of the the accessible object
  *
  * Structure:
@@ -107,7 +107,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
   /**
    * Build highlighter markup.
    *
-   * @return {Object} Container element for the highlighter markup.
+   * @return {object} Container element for the highlighter markup.
    */
   _buildMarkup() {
     const container = this.markup.createNode({
@@ -180,7 +180,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
   /**
    * Find an element in highlighter markup.
    *
-   * @param  {String} id
+   * @param  {string} id
    *         Highlighter markup elemet id attribute.
    * @return {DOMNode} Element in the highlighter markup.
    */
@@ -191,10 +191,10 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
   /**
    * Check if node is a valid element, document or text node.
    *
-   * @override  AutoRefreshHighlighter.prototype._isNodeValid
+   * @override
    * @param  {DOMNode} node
    *         The node to highlight.
-   * @return {Boolean} whether or not node is valid.
+   * @return {boolean} whether or not node is valid.
    */
   _isNodeValid(node) {
     return (
@@ -207,7 +207,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
   /**
    * Show the highlighter on a given accessible.
    *
-   * @return {Boolean} True if accessible is highlighted, false otherwise.
+   * @return {boolean} True if accessible is highlighted, false otherwise.
    */
   _show() {
     if (this._highlightTimer) {
@@ -232,7 +232,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
   /**
    * Update and show accessible bounds for a current accessible.
    *
-   * @return {Boolean} True if accessible is highlighted, false otherwise.
+   * @return {boolean} True if accessible is highlighted, false otherwise.
    */
   _update() {
     let shown = false;
@@ -326,7 +326,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
   /**
    * Get current accessible bounds.
    *
-   * @return {Object|null} Returns, if available, positioning and bounds
+   * @return {object | null} Returns, if available, positioning and bounds
    *                       information for the accessible object.
    */
   get _bounds() {
@@ -350,7 +350,7 @@ class AccessibleHighlighter extends AutoRefreshHighlighter {
    * Update accessible bounds for a current accessible. Re-draw highlighter
    * markup.
    *
-   * @return {Boolean} True if accessible is highlighted, false otherwise.
+   * @return {boolean} True if accessible is highlighted, false otherwise.
    */
   _updateAccessibleBounds() {
     const bounds = this._bounds;

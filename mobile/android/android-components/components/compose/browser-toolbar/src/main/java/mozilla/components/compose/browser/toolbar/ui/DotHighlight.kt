@@ -5,26 +5,27 @@
 package mozilla.components.compose.browser.toolbar.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.compose.base.theme.information
 import mozilla.components.ui.icons.R as iconsR
 
 @Composable
 internal fun DotHighlight(
     modifier: Modifier = Modifier,
-    color: Color = AcornTheme.colors.iconNotice,
+    color: Color = MaterialTheme.colorScheme.information,
 ) {
     Canvas(modifier = modifier.size(10.dp)) {
         val canvasWidth = size.width
@@ -42,15 +43,15 @@ internal fun DotHighlight(
 @Composable
 private fun HighlightedActionButtonPreview() {
     AcornTheme {
-        Box(modifier = Modifier.background(AcornTheme.colors.layer1)) {
-            Image(
-                painter = painterResource(id = iconsR.drawable.mozac_ic_web_extension_default_icon),
+        Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+            Icon(
+                painter = painterResource(id = iconsR.drawable.mozac_ic_ellipsis_vertical_24),
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
-                colorFilter = ColorFilter.tint(AcornTheme.colors.iconPrimary),
+                tint = MaterialTheme.colorScheme.onSurface,
             )
             DotHighlight(
-                modifier = Modifier.align(Alignment.BottomEnd),
+                modifier = Modifier.align(Alignment.TopEnd),
             )
         }
     }

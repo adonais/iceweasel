@@ -4544,6 +4544,7 @@
     rgb(251 251 254 / 0.1)
   );
   --sidebar-box-shadow:0 0.25px 0.75px light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)), 0 2px 6px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --sidebar-backdrop-filter:none;
   --sidebar-border-radius:8px;
   --sidebar-padding:5px;
   --sidebar-min-width:180px;
@@ -4568,6 +4569,7 @@
   width:var(--sidebar-width);
   min-width:var(--sidebar-min-width);
   max-width:var(--sidebar-max-width);
+  backdrop-filter:var(--sidebar-backdrop-filter);
 
   .sidebarResizer{
     width:var(--resizer-width);
@@ -4585,6 +4587,10 @@
 
     &:hover{
       background-color:var(--resizer-hover-bg-color);
+    }
+    &:focus-visible{
+      background-color:var(--resizer-hover-bg-color);
+      outline:none;
     }
   }
 

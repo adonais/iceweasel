@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import androidx.annotation.VisibleForTesting
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
+import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.nimbus.FxNimbus
 
@@ -27,6 +28,8 @@ private val logger = Logger("ChangeAppLauncherIcon")
  * @param appAlias The 'default' app alias defined in AndroidManifest.xml.
  * @param alternativeAppAlias The 'alternative' app alias defined in AndroidManifest.xml.
  * @param resetToDefault True to reset the icon to default, otherwise false to use the alternative icon.
+ * @param crashReporter An instance of [CrashReporting] to record expected caught exceptions during
+ * shortcuts update.
  */
 fun changeAppLauncherIcon(
     context: Context,
@@ -35,17 +38,25 @@ fun changeAppLauncherIcon(
     appAlias: ComponentName,
     alternativeAppAlias: ComponentName,
     resetToDefault: Boolean,
+    crashReporter: CrashReporting,
 ) {
     val userHasAlternativeAppIconSet =
         userHasAlternativeAppIconSet(context.packageManager, appAlias, alternativeAppAlias)
 
     if (resetToDefault && userHasAlternativeAppIconSet) {
-        resetAppIconsToDefault(context, shortcutManager, shortcutInfo, appAlias, alternativeAppAlias)
+        resetAppIconsToDefault(context, shortcutManager, shortcutInfo, appAlias, alternativeAppAlias, crashReporter)
         return
     }
 
     if (!resetToDefault && !userHasAlternativeAppIconSet) {
-        changeAppLauncherIcon(context.packageManager, shortcutManager, shortcutInfo, appAlias, alternativeAppAlias)
+        changeAppLauncherIcon(
+            context.packageManager,
+            shortcutManager,
+            shortcutInfo,
+            appAlias,
+            alternativeAppAlias,
+            crashReporter,
+        )
     }
 }
 
@@ -72,7 +83,11 @@ private fun userHasAlternativeAppIconSet(
  * @param shortcutInfo A helper class for updating [ShortcutInfoCompat].
  * @param appAlias The currently used app alias.
  * @param newAppAlias The app alias we are updating to.
+ * @param crashReporter An instance of [CrashReporting] to record expected caught exceptions during
+ * shortcuts update.
  * @param updateShortcuts A function that attempts to update the pinned shortcuts to use the [newAppAlias].
+ *
+ * @returns `true` if the app icon was successfully updated, otherwise `false`
  */
 fun changeAppLauncherIcon(
     packageManager: PackageManager,
@@ -80,12 +95,14 @@ fun changeAppLauncherIcon(
     shortcutInfo: ShortcutsUpdater,
     appAlias: ComponentName,
     newAppAlias: ComponentName,
-    updateShortcuts: (ShortcutManagerWrapper, ShortcutsUpdater, ComponentName) -> Boolean =
+    crashReporter: CrashReporting,
+    updateShortcuts: (ShortcutManagerWrapper, ShortcutsUpdater, ComponentName, CrashReporting) -> Boolean =
             ::updateShortcutsComponentName,
-) {
+): Boolean {
     newAppAlias.setEnabledStateTo(packageManager, true)
 
-    if (updateShortcuts(shortcutManager, shortcutInfo, newAppAlias)) {
+    val updated = updateShortcuts(shortcutManager, shortcutInfo, newAppAlias, crashReporter)
+    if (updated) {
         logger.info("Successfully attempted to update the app icon to the alternative.")
         appAlias.setEnabledStateTo(packageManager, false)
     } else {
@@ -93,6 +110,7 @@ fun changeAppLauncherIcon(
         // If we can't successfully update the user shortcuts, then re-disable the app alias component.
         newAppAlias.setEnabledStateTo(packageManager, false)
     }
+    return updated
 }
 
 private fun resetAppIconsToDefault(
@@ -101,11 +119,12 @@ private fun resetAppIconsToDefault(
     shortcutInfo: ShortcutsUpdater,
     appAlias: ComponentName,
     alternativeAppAlias: ComponentName,
+    crashReporter: CrashReporting,
 ) {
     val packageManager = context.packageManager
     appAlias.setEnabledStateToDefault(packageManager)
 
-    if (updateShortcutsComponentName(shortcutManager, shortcutInfo, appAlias)) {
+    if (updateShortcutsComponentName(shortcutManager, shortcutInfo, appAlias, crashReporter)) {
         logger.info("Successfully attempted to reset the app icon to default.")
         alternativeAppAlias.setEnabledStateToDefault(packageManager)
     } else {
@@ -147,10 +166,12 @@ internal fun updateShortcutsComponentName(
     shortcutManager: ShortcutManagerWrapper,
     shortcutInfo: ShortcutsUpdater,
     targetAlias: ComponentName,
+    crashReporter: CrashReporting,
 ): Boolean {
     val currentPinnedShortcuts = try {
         shortcutManager.getPinnedShortcuts()
     } catch (e: IllegalStateException) {
+        crashReporter.submitCaughtException(e)
         logger.warn("Failed to retrieve the current Firefox pinned shortcuts", e)
         return false
     }
@@ -161,6 +182,7 @@ internal fun updateShortcutsComponentName(
         shortcutManager.updateShortcuts(updatedPinnedShortcuts)
         true
     } catch (e: IllegalArgumentException) {
+        crashReporter.submitCaughtException(e)
         logger.warn("Failed to update the given Firefox shortcuts: $updatedPinnedShortcuts", e)
         false
     }

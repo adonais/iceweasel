@@ -220,6 +220,29 @@ profiles.existing:
     expires: never
     send_in_pings: ['events', 'profiles']
     telemetry_mirror: Profiles_Existing_Name
+  shortcut:
+    type: event
+    description: Recorded when the user clicks the desktop shortcut toggle.
+    extra_keys:
+      value:
+        description: >
+          The `value` of the event. Mirrors to the Legacy Telemetry
+          event's `value` parameter. If the user changed the toggle to the
+          "on" position, the `value` will be `create`. If the user changed
+          the toggle to the "off" position, the `value` will be `delete`.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1997471
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1997471
+    notification_emails:
+      - cmkm@mozilla.com
+      - dtownsend@mozilla.com
+      - jhirsch@mozilla.com
+      - nbaumgardner@mozilla.com
+    expires: never
+    send_in_pings: ['events', 'profiles']
+    telemetry_mirror: Profiles_Existing_Shortcut
   theme:
     type: event
     description: Recorded when the user selects a different theme.

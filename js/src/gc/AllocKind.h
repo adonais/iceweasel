@@ -15,7 +15,6 @@
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/EnumeratedRange.h"
 
-#include <iterator>
 #include <stdint.h>
 
 #include "js/TraceKind.h"

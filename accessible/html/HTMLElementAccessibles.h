@@ -170,6 +170,31 @@ class HTMLSectionAccessible : public HyperTextAccessible {
   virtual ~HTMLSectionAccessible() = default;
 };
 
+/**
+ * Used for abbr and the deprecated acronym elements.
+ */
+class HTMLAbbreviationAccessible : public HyperTextAccessible {
+ public:
+  HTMLAbbreviationAccessible(nsIContent* aContent, DocAccessible* aDoc)
+      : HyperTextAccessible(aContent, aDoc) {
+    mType = eHTMLAbbrevType;
+  }
+
+  NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLAbbreviationAccessible,
+                                       HyperTextAccessible)
+
+ protected:
+  // LocalAccessible
+  virtual ENameValueFlag NativeName(nsString& aName) const override;
+
+  virtual void DOMAttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
+                                   AttrModType aModType,
+                                   const nsAttrValue* aOldValue,
+                                   uint64_t aOldState) override;
+
+  virtual ~HTMLAbbreviationAccessible() = default;
+};
+
 }  // namespace a11y
 }  // namespace mozilla
 

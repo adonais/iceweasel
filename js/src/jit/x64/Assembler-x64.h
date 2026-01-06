@@ -7,8 +7,6 @@
 #ifndef jit_x64_Assembler_x64_h
 #define jit_x64_Assembler_x64_h
 
-#include <iterator>
-
 #include "jit/JitCode.h"
 #include "jit/shared/Assembler-shared.h"
 
@@ -962,6 +960,12 @@ class Assembler : public AssemblerX86Shared {
     masm.popcntq_rr(src.encoding(), dest.encoding());
   }
 
+  void imulq(Register multiplier) {
+    // Consumes rax as the other argument and clobbers rdx, as the result is in
+    // rdx:rax.
+    masm.imulq_r(multiplier.encoding());
+  }
+  void umulq(Register multiplier) { masm.mulq_r(multiplier.encoding()); }
   void imulq(Imm32 imm, Register src, Register dest) {
     masm.imulq_ir(imm.value, src.encoding(), dest.encoding());
   }

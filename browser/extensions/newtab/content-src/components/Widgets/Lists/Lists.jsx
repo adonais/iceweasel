@@ -34,7 +34,7 @@ const PREF_WIDGETS_LISTS_MAX_LISTITEMS = "widgets.lists.maxListItems";
 const PREF_WIDGETS_LISTS_BADGE_ENABLED = "widgets.lists.badge.enabled";
 const PREF_WIDGETS_LISTS_BADGE_LABEL = "widgets.lists.badge.label";
 
-function Lists({ dispatch, handleUserInteraction }) {
+function Lists({ dispatch, handleUserInteraction, isMaximized }) {
   const prefs = useSelector(state => state.Prefs.values);
   const { selected, lists } = useSelector(state => state.ListsWidget);
   const [newTask, setNewTask] = useState("");
@@ -591,7 +591,7 @@ function Lists({ dispatch, handleUserInteraction }) {
 
   return (
     <article
-      className="lists"
+      className={`lists ${isMaximized ? "is-maximized" : ""}`}
       ref={el => {
         listsRef.current = [el];
       }}

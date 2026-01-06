@@ -17,7 +17,6 @@
 #include <cstdint>
 #include <cstdlib>
 #include <new>
-#include <type_traits>
 #include <utility>
 
 #include "ErrorList.h"

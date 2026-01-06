@@ -817,7 +817,7 @@ fn extra_initial_hs() {
     // Feed that undecryptable packet into the client a few times.
     // Do that MAX_SAVED_DATAGRAMS times and each time the client will emit
     // another Initial packet.
-    for _ in 0..crate::saved::MAX_SAVED_DATAGRAMS {
+    for _ in 0..crate::saved::SavedDatagrams::CAPACITY {
         let c_init = match client.process(Some(undecryptable.clone()), now) {
             Output::None => unreachable!(),
             Output::Datagram(c_init) => Some(c_init),
@@ -948,9 +948,11 @@ fn anti_amplification() {
     assert!(!maybe_authenticate(&mut client)); // No need yet.
 
     // The client sends a padded datagram, with just ACKs for Initial and Handshake.
+    // Per RFC 9000 Section 14.1, datagrams containing Initial packets must be
+    // at least 1200 bytes, even when coalesced with Handshake packets.
     assert_eq!(client.stats().frame_tx.ack, ack_count + 2);
     assert_eq!(client.stats().frame_tx.all(), frame_count + 2);
-    assert_ne!(ack.len(), client.plpmtu()); // Not padded (it includes Handshake).
+    assert_eq!(ack.len(), client.plpmtu()); // Must be padded (contains Initial).
 
     now += DEFAULT_RTT / 2;
     let remainder = server.process(Some(ack), now).dgram();

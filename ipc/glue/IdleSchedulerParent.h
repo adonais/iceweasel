@@ -7,7 +7,6 @@
 #ifndef mozilla_ipc_IdleSchedulerParent_h__
 #define mozilla_ipc_IdleSchedulerParent_h__
 
-#include "mozilla/Assertions.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/ipc/PIdleSchedulerParent.h"
 #include "mozilla/ipc/SharedMemoryMapping.h"

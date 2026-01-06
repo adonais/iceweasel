@@ -10,17 +10,17 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.concept.storage.Address
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.address.store.AddressState
@@ -30,6 +30,7 @@ import org.mozilla.fenix.settings.address.store.DeleteTapped
 import org.mozilla.fenix.settings.address.store.SaveTapped
 import org.mozilla.fenix.settings.address.store.isEditing
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -40,22 +41,20 @@ import mozilla.components.ui.icons.R as iconsR
 @Composable
 internal fun EditAddressTopBar(store: AddressStore) {
     TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = FirefoxTheme.colors.layer1,
-            titleContentColor = FirefoxTheme.colors.textPrimary,
-            actionIconContentColor = FirefoxTheme.colors.iconPrimary,
-        ),
         title = {
             Text(
-                style = FirefoxTheme.typography.headline6,
                 text = stringResource(store.state.titleId),
+                style = FirefoxTheme.typography.headline5,
             )
         },
         navigationIcon = {
-            IconButton(onClick = { store.dispatch(BackTapped) }) {
+            IconButton(
+                onClick = { store.dispatch(BackTapped) },
+                contentDescription = stringResource(R.string.bookmark_navigate_back_button_content_description),
+            ) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_back_24),
-                    contentDescription = stringResource(R.string.bookmark_navigate_back_button_content_description),
+                    contentDescription = null,
                 )
             }
         },
@@ -63,23 +62,27 @@ internal fun EditAddressTopBar(store: AddressStore) {
             if (store.state.isEditing) {
                 IconButton(
                     onClick = { store.dispatch(DeleteTapped) },
+                    contentDescription = stringResource(
+                        R.string.address_menu_delete_address,
+                    ),
                     modifier = Modifier.testTag(EditAddressTestTag.TOPBAR_DELETE_BUTTON),
                 ) {
                     Icon(
                         painter = painterResource(iconsR.drawable.mozac_ic_delete_24),
-                        contentDescription = stringResource(
-                            R.string.address_menu_delete_address,
-                        ),
+                        contentDescription = null,
                     )
                 }
             }
 
-            IconButton(onClick = { store.dispatch(SaveTapped) }) {
+            IconButton(
+                onClick = { store.dispatch(SaveTapped) },
+                contentDescription = stringResource(
+                    R.string.address_menu_save_address,
+                ),
+            ) {
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_checkmark_24),
-                    contentDescription = stringResource(
-                        R.string.address_menu_save_address,
-                    ),
+                    contentDescription = null,
                 )
             }
         },
@@ -98,7 +101,7 @@ private val AddressState.titleId: Int
         R.string.addresses_add_address
     }
 
-@FlexibleWindowLightDarkPreview
+@PreviewLightDark
 @Composable
 private fun AddTopBarPreview() {
     val store = AddressStore(AddressState.initial(), listOf())
@@ -108,13 +111,34 @@ private fun AddTopBarPreview() {
     }
 }
 
-@FlexibleWindowLightDarkPreview
+@Preview
+@Composable
+private fun AddTopBarPrivatePreview() {
+    val store = AddressStore(AddressState.initial(), listOf())
+
+    FirefoxTheme(theme = Theme.Private) {
+        EditAddressTopBar(store)
+    }
+}
+
+@PreviewLightDark
 @Composable
 private fun EditTopBarPreview() {
     val address = Address("BEEF", "Work", "Mozilla", "", "", "", "", "", "", "", "")
     val store = AddressStore(AddressState.initial(address = address), listOf())
 
     FirefoxTheme {
+        EditAddressTopBar(store)
+    }
+}
+
+@Preview
+@Composable
+private fun EditTopBarPrivatePreview() {
+    val address = Address("BEEF", "Work", "Mozilla", "", "", "", "", "", "", "", "")
+    val store = AddressStore(AddressState.initial(address = address), listOf())
+
+    FirefoxTheme(theme = Theme.Private) {
         EditAddressTopBar(store)
     }
 }

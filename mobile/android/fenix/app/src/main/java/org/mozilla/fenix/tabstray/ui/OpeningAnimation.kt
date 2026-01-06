@@ -46,10 +46,10 @@ import mozilla.components.browser.state.state.TabSessionState
 import org.mozilla.fenix.compose.TabThumbnail
 import kotlin.math.min
 
-private const val SHARED_ELEMENT_DURATION = 300
+private const val SHARED_ELEMENT_DURATION = 200
 private const val SHARED_ELEMENT_DELAY = 25
-private const val DURATION_ENTER = 400
-private const val DURATION_EXIT = 200
+private const val DURATION_ENTER = 200
+private const val DURATION_EXIT = 50
 
 // These were largely inspired by the M3 animation docs
 // https://m3.material.io/styles/motion/easing-and-duration/tokens-specs#cbea5c6e-7b0d-47a0-98c3-767080a38d95
@@ -104,7 +104,7 @@ private val TabManagerTransitionSpec: TabManagerAnimationTransitionScope.() -> C
             tween(
                 durationMillis = DURATION_ENTER,
                 easing = EmphasizedDecelerateEasing,
-                delayMillis = SHARED_ELEMENT_DELAY + 50,
+                delayMillis = SHARED_ELEMENT_DELAY,
             ),
         ) togetherWith scaleOut( // Thumbnail exit spec
             tween(

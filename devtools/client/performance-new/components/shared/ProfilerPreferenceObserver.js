@@ -13,14 +13,14 @@
  */
 
 /**
- * @typedef {Object} StateProps
+ * @typedef {object} StateProps
  * @property {import("../../@types/perf").RecordingSettings} recordingSettingsFromRedux
  * @property {import("../../@types/perf").PageContext} pageContext
  * @property {string[]} supportedFeatures
  */
 
 /**
- * @typedef {Object} ThunkDispatchProps
+ * @typedef {object} ThunkDispatchProps
  * @property {typeof actions.updateSettingsFromPreferences} updateSettingsFromPreferences
  */
 

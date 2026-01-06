@@ -799,11 +799,16 @@ if mozinfo.isWin:
         :param pid: PID of the process to terminate.
         """
         PROCESS_TERMINATE = 0x0001
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
         SYNCHRONIZE = 0x00100000
         WAIT_OBJECT_0 = 0x0
         WAIT_FAILED = -1
+        ERROR_ACCESS_DENIED = 5
+        STILL_ACTIVE = 259
         logger = get_logger()
-        handle = OpenProcess(PROCESS_TERMINATE | SYNCHRONIZE, 0, pid)
+        handle = OpenProcess(
+            PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, 0, pid
+        )
         if handle:
             if kernel32.TerminateProcess(handle, 1):
                 # TerminateProcess is async; wait up to 30 seconds for process to
@@ -813,25 +818,30 @@ if mozinfo.isWin:
                 if status == WAIT_FAILED:
                     err = kernel32.GetLastError()
                     logger.warning(
-                        "kill_pid(): wait failed (%d) terminating pid %d: error %d"
-                        % (status, pid, err)
+                        f"kill_pid(): wait failed ({status}) terminating pid {pid}: error {err}"
                     )
                 elif status != WAIT_OBJECT_0:
                     logger.warning(
-                        "kill_pid(): wait failed (%d) terminating pid %d"
-                        % (status, pid)
+                        f"kill_pid(): wait failed ({status}) terminating pid {pid}"
                     )
             else:
                 err = kernel32.GetLastError()
-                logger.warning(
-                    "kill_pid(): unable to terminate pid %d: %d" % (pid, err)
-                )
+                status = ctypes.c_uint()
+                result = kernel32.GetExitCodeProcess(handle, ctypes.byref(status))
+                if (err == ERROR_ACCESS_DENIED) and result and (status != STILL_ACTIVE):
+                    pass  # Process had already terminated when we called `TerminateProcess()`
+                else:
+                    logger.warning(
+                        f"kill_pid(): unable to terminate pid {pid}: error {err}"
+                    )
+                    if not result:
+                        logger.warning(
+                            f"kill_pid(): process {pid} status is unknown: error {kernel32.GetLastError()}"
+                        )
             CloseHandle(handle)
         else:
             err = kernel32.GetLastError()
-            logger.warning(
-                "kill_pid(): unable to get handle for pid %d: %d" % (pid, err)
-            )
+            logger.warning(f"kill_pid(): unable to get handle for pid {pid}: {err}")
 
 else:
 

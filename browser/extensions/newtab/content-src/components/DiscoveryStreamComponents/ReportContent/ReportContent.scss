@@ -4,6 +4,8 @@
   box-shadow: var(--box-shadow-level-4);
   border-radius: var(--border-radius-medium);
   border: 1px solid var(--newtab-border-color);
+  /* stylelint-disable-next-line stylelint-plugin-mozilla/use-background-color-tokens */
+  background-color: var(--newtab-background-color-secondary);
 
   form {
     height: 100%;

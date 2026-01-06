@@ -106,7 +106,6 @@ export class _CustomizeMenu extends React.PureComponent {
                   this.props.mayHaveInferredPersonalization
                 }
                 mayHaveWeather={this.props.mayHaveWeather}
-                mayHaveTrendingSearch={this.props.mayHaveTrendingSearch}
                 mayHaveWidgets={this.props.mayHaveWidgets}
                 mayHaveTimerWidget={this.props.mayHaveTimerWidget}
                 mayHaveListsWidget={this.props.mayHaveListsWidget}

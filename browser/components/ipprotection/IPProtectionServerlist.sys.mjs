@@ -19,9 +19,58 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 /**
+ *
+ */
+export class IProtocol {
+  name = "";
+  static construct(data) {
+    switch (data.name) {
+      case "masque":
+        return new MasqueProtocol(data);
+      case "connect":
+        return new ConnectProtocol(data);
+      default:
+        throw new Error("Unknown protocol: " + data.name);
+    }
+  }
+}
+
+/**
+ *
+ */
+export class MasqueProtocol extends IProtocol {
+  name = "masque";
+  host = "";
+  port = 0;
+  templateString = "";
+  constructor(data) {
+    super();
+    this.host = data.host || "";
+    this.port = data.port || 0;
+    this.templateString = data.templateString || "";
+  }
+}
+
+/**
+ *
+ */
+export class ConnectProtocol extends IProtocol {
+  name = "connect";
+  host = "";
+  port = 0;
+  scheme = "https";
+  constructor(data) {
+    super();
+    this.host = data.host || "";
+    this.port = data.port || 0;
+    this.scheme = data.scheme || "https";
+  }
+}
+
+/**
  * Class representing a server.
  */
-class Server {
+export class Server {
   /**
    * Port of the server
    *
@@ -42,10 +91,29 @@ class Server {
    */
   quarantined = false;
 
+  /**
+   * List of supported protocols
+   *
+   * @type {Array<MasqueProtocol|ConnectProtocol>}
+   */
+  protocols = [];
+
   constructor(data) {
     this.port = data.port || 443;
     this.hostname = data.hostname || "";
     this.quarantined = !!data.quarantined;
+    this.protocols = (data.protocols || []).map(p => IProtocol.construct(p));
+
+    // Default to connect if no protocols are specified
+    if (this.protocols.length === 0) {
+      this.protocols = [
+        new ConnectProtocol({
+          name: "connect",
+          host: this.hostname,
+          port: this.port,
+        }),
+      ];
+    }
   }
 }
 
@@ -118,6 +186,7 @@ class Country {
 class IPProtectionServerlistSingleton {
   #list = null;
   #runningPromise = null;
+  #bucket = null;
 
   constructor() {
     this.handleEvent = this.#handleEvent.bind(this);
@@ -133,7 +202,11 @@ class IPProtectionServerlistSingleton {
     );
   }
 
-  async initOnStartupCompleted() {}
+  async initOnStartupCompleted() {
+    this.bucket.on("sync", async () => {
+      await this.maybeFetchList(true);
+    });
+  }
 
   uninit() {
     lazy.IPProtectionService.removeEventListener(
@@ -148,8 +221,8 @@ class IPProtectionServerlistSingleton {
     }
   }
 
-  maybeFetchList() {
-    if (this.#list.length !== 0) {
+  maybeFetchList(forceUpdate = false) {
+    if (this.#list.length !== 0 && !forceUpdate) {
       return Promise.resolve();
     }
 
@@ -158,9 +231,8 @@ class IPProtectionServerlistSingleton {
     }
 
     const fetchList = async () => {
-      const bucket = lazy.RemoteSettings("vpn-serverlist");
       this.#list = IPProtectionServerlistSingleton.#dataToList(
-        await bucket.get()
+        await this.bucket.get()
       );
 
       lazy.IPPStartupCache.storeLocationList(this.#list);
@@ -217,6 +289,13 @@ class IPProtectionServerlistSingleton {
 
   get hasList() {
     return this.#list.length !== 0;
+  }
+
+  get bucket() {
+    if (!this.#bucket) {
+      this.#bucket = lazy.RemoteSettings("vpn-serverlist");
+    }
+    return this.#bucket;
   }
 
   static #dataToList(list) {

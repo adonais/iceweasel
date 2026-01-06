@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -21,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
@@ -28,6 +31,8 @@ import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
 import mozilla.components.compose.base.progressbar.AnimatedProgressBar
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.compose.base.theme.acornPrivateColorScheme
+import mozilla.components.compose.base.theme.privateColorPalette
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction
@@ -74,7 +79,7 @@ private const val LARGE_TOOLBAR_PADDING_DP = 24
  * @param onInteraction Callback for handling [BrowserToolbarEvent]s on user interactions.
  */
 @Composable
-@Suppress("LongMethod", "CyclomaticComplexMethod")
+@Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
 fun BrowserDisplayToolbar(
     pageOrigin: PageOrigin,
     gravity: ToolbarGravity,
@@ -90,117 +95,104 @@ fun BrowserDisplayToolbar(
         windowSizeClass.minWidthDp < WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND
     }
 
-    Box(
-        modifier = Modifier
-            .background(color = AcornTheme.colors.layer1)
-            .fillMaxWidth()
-            .padding(
-                horizontal = when (isSmallWidthScreen) {
-                    true -> NO_TOOLBAR_PADDING_DP.dp
-                    else -> LARGE_TOOLBAR_PADDING_DP.dp
-                },
-            )
-            .semantics { testTagsAsResourceId = true },
-        ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (browserActionsStart.isNotEmpty()) {
-                ActionContainer(
-                    actions = browserActionsStart,
-                    onInteraction = onInteraction,
+    Surface {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = when (isSmallWidthScreen) {
+                        true -> NO_TOOLBAR_PADDING_DP.dp
+                        else -> LARGE_TOOLBAR_PADDING_DP.dp
+                    },
                 )
-            }
-
+                .semantics { testTagsAsResourceId = true },
+        ) {
             Row(
-                modifier = Modifier
-                    .padding(
-                        start = when (browserActionsStart.isEmpty()) {
-                            true -> TOOLBAR_PADDING_DP.dp
-                            false -> NO_TOOLBAR_PADDING_DP.dp
-                        },
-                        top = TOOLBAR_PADDING_DP.dp,
-                        end = when (browserActionsEnd.isEmpty()) {
-                            true -> TOOLBAR_PADDING_DP.dp
-                            false -> NO_TOOLBAR_PADDING_DP.dp
-                        },
-                        bottom = when (gravity) {
-                            Top -> TOOLBAR_PADDING_DP
-                            Bottom -> if (browserActionsEnd.isEmpty()) NO_TOOLBAR_PADDING_DP else TOOLBAR_PADDING_DP
-                        }.dp,
-                    )
-                    .height(48.dp)
-                    .background(
-                        color = AcornTheme.colors.layer3,
-                        shape = RoundedCornerShape(90.dp),
-                    )
-                    .padding(
-                        start = when (pageActionsStart.isEmpty()) {
-                            true -> TOOLBAR_PADDING_DP.dp
-                            false -> NO_TOOLBAR_PADDING_DP.dp
-                        },
-                        top = NO_TOOLBAR_PADDING_DP.dp,
-                        end = when (pageActionsEnd.isEmpty()) {
-                            true -> TOOLBAR_PADDING_DP.dp
-                            false -> NO_TOOLBAR_PADDING_DP.dp
-                        },
-                        bottom = NO_TOOLBAR_PADDING_DP.dp,
-                    )
-                    .weight(1f),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (pageActionsStart.isNotEmpty()) {
+                if (browserActionsStart.isNotEmpty()) {
                     ActionContainer(
-                        actions = pageActionsStart,
+                        actions = browserActionsStart,
                         onInteraction = onInteraction,
                     )
                 }
 
-                Origin(
-                    hint = pageOrigin.hint,
+                Row(
                     modifier = Modifier
-                        .height(56.dp)
-                        .weight(1f)
-                        .testTag(ADDRESSBAR_URL_BOX),
-                    url = pageOrigin.url,
-                    title = pageOrigin.title,
-                    textGravity = pageOrigin.textGravity,
-                    contextualMenuOptions = pageOrigin.contextualMenuOptions,
-                    onClick = pageOrigin.onClick,
-                    onLongClick = pageOrigin.onLongClick,
-                    onInteraction = onInteraction,
-                )
+                        .padding(
+                            start = when (browserActionsStart.isEmpty()) {
+                                true -> TOOLBAR_PADDING_DP.dp
+                                false -> NO_TOOLBAR_PADDING_DP.dp
+                            },
+                            top = TOOLBAR_PADDING_DP.dp,
+                            end = when (browserActionsEnd.isEmpty()) {
+                                true -> TOOLBAR_PADDING_DP.dp
+                                false -> NO_TOOLBAR_PADDING_DP.dp
+                            },
+                            bottom = when (gravity) {
+                                Top -> TOOLBAR_PADDING_DP
+                                Bottom -> if (browserActionsEnd.isEmpty()) NO_TOOLBAR_PADDING_DP else TOOLBAR_PADDING_DP
+                            }.dp,
+                        )
+                        .height(48.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceDim,
+                            shape = RoundedCornerShape(90.dp),
+                        )
+                        .padding(
+                            start = when (pageActionsStart.isEmpty()) {
+                                true -> TOOLBAR_PADDING_DP.dp
+                                false -> NO_TOOLBAR_PADDING_DP.dp
+                            },
+                            top = NO_TOOLBAR_PADDING_DP.dp,
+                            end = when (pageActionsEnd.isEmpty()) {
+                                true -> TOOLBAR_PADDING_DP.dp
+                                false -> NO_TOOLBAR_PADDING_DP.dp
+                            },
+                            bottom = NO_TOOLBAR_PADDING_DP.dp,
+                        )
+                        .weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (pageActionsStart.isNotEmpty()) {
+                        ActionContainer(
+                            actions = pageActionsStart,
+                            onInteraction = onInteraction,
+                        )
+                    }
 
-                if (pageActionsEnd.isNotEmpty()) {
+                    Origin(
+                        hint = pageOrigin.hint,
+                        modifier = Modifier
+                            .height(56.dp)
+                            .weight(1f)
+                            .testTag(ADDRESSBAR_URL_BOX),
+                        url = pageOrigin.url,
+                        title = pageOrigin.title,
+                        textGravity = pageOrigin.textGravity,
+                        contextualMenuOptions = pageOrigin.contextualMenuOptions,
+                        onClick = pageOrigin.onClick,
+                        onLongClick = pageOrigin.onLongClick,
+                        onInteraction = onInteraction,
+                    )
+
+                    if (pageActionsEnd.isNotEmpty()) {
+                        ActionContainer(
+                            actions = pageActionsEnd,
+                            onInteraction = onInteraction,
+                        )
+                    }
+                }
+
+                if (browserActionsEnd.isNotEmpty()) {
                     ActionContainer(
-                        actions = pageActionsEnd,
+                        actions = browserActionsEnd,
                         onInteraction = onInteraction,
                     )
                 }
             }
 
-            if (browserActionsEnd.isNotEmpty()) {
-                ActionContainer(
-                    actions = browserActionsEnd,
-                    onInteraction = onInteraction,
-                )
-            }
-        }
-
-        HorizontalDivider(
-            modifier = Modifier.align(
-                when (gravity) {
-                    Top -> Alignment.BottomCenter
-                    Bottom -> Alignment.TopCenter
-                },
-            ),
-        )
-
-        if (progressBarConfig != null) {
-            AnimatedProgressBar(
-                progress = progressBarConfig.progress,
-                color = progressBarConfig.color,
-                trackColor = Color.Transparent,
+            HorizontalDivider(
                 modifier = Modifier.align(
                     when (gravity) {
                         Top -> Alignment.BottomCenter
@@ -208,6 +200,20 @@ fun BrowserDisplayToolbar(
                     },
                 ),
             )
+
+            if (progressBarConfig != null) {
+                AnimatedProgressBar(
+                    progress = progressBarConfig.progress,
+                    color = progressBarConfig.color,
+                    trackColor = Color.Transparent,
+                    modifier = Modifier.align(
+                        when (gravity) {
+                            Top -> Alignment.BottomCenter
+                            Bottom -> Alignment.TopCenter
+                        },
+                    ),
+                )
+            }
         }
     }
 }
@@ -218,6 +224,33 @@ private fun BrowserDisplayToolbarPreview(
     @PreviewParameter(DisplayToolbarDataProvider::class) config: DisplayToolbarPreviewModel,
 ) {
     AcornTheme {
+        BrowserDisplayToolbar(
+            gravity = config.gravity,
+            progressBarConfig = ProgressBarConfig(progress = 66),
+            browserActionsStart = config.browserStartActions,
+            pageActionsStart = config.pageActionsStart,
+            pageOrigin = PageOrigin(
+                hint = R.string.mozac_browser_toolbar_search_hint,
+                title = config.title,
+                url = config.url,
+                onClick = object : BrowserToolbarEvent {},
+            ),
+            pageActionsEnd = config.pageActionsEnd,
+            browserActionsEnd = config.browserEndActions,
+            onInteraction = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun BrowserDisplayToolbarPrivatePreview(
+    @PreviewParameter(DisplayToolbarDataProvider::class) config: DisplayToolbarPreviewModel,
+) {
+    AcornTheme(
+        colors = privateColorPalette,
+        colorScheme = acornPrivateColorScheme(),
+    ) {
         BrowserDisplayToolbar(
             gravity = config.gravity,
             progressBarConfig = ProgressBarConfig(progress = 66),

@@ -54,7 +54,10 @@ add_setup(async function () {
 add_task(async function test_urlbar_new_URL() {
   await withTestPage(async aBrowser => {
     gURLBar.value = "";
-    let focusPromise = BrowserTestUtils.waitForEvent(gURLBar, "focus");
+    let focusPromise = BrowserTestUtils.waitForEvent(
+      gURLBar.inputField,
+      "focus"
+    );
     gURLBar.focus();
     await focusPromise;
     info("focused");

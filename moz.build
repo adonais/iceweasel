@@ -51,6 +51,9 @@ with Files("*gradle*"):
     BUG_COMPONENT = ("GeckoView", "General")
     SCHEDULES.exclusive = ["android"]
 
+with Files(".mcp.json"):
+    BUG_COMPONENT = ("Developer Infrastructure", "AI for Development")
+
 with Files("*.json"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 
@@ -66,6 +69,12 @@ with Files("CODE_OF_CONDUCT.md"):
 
 with Files("SECURITY.md"):
     BUG_COMPONENT = ("Core", "DOM: Security")
+
+with Files("AGENTS.md"):
+    BUG_COMPONENT = ("Developer Infrastructure", "AI for Development")
+
+with Files("CLAUDE.md"):
+    BUG_COMPONENT = ("Developer Infrastructure", "AI for Development")
 
 with Files("nsprpub/**"):
     BUG_COMPONENT = ("NSPR", "NSPR")

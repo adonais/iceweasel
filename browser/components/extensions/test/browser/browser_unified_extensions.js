@@ -881,7 +881,7 @@ add_task(async function test_messages_origin_controls() {
           await closeExtensionsPanel();
 
           // Move cursor elsewhere to avoid issues with previous "hovering".
-          EventUtils.synthesizeMouseAtCenter(gURLBar.textbox, {});
+          EventUtils.synthesizeMouseAtCenter(gURLBar, {});
 
           await extension.unload();
         }

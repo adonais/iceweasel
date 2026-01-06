@@ -443,13 +443,12 @@ test-manifest:
     treeherder:
         symbol: misc(tm)
     run:
-        mach: lint -v -l test-manifest-alpha -l test-manifest-disable -l test-manifest-skip-if -l test-manifest-toml -f treeherder -f json:/builds/worker/mozlint.json .
+        mach: lint -v -l test-manifest-toml -f treeherder -f json:/builds/worker/mozlint.json .
     when:
         files-changed:
             - '**/*.toml'
             - 'python/mozlint/**'
             - 'tools/lint/**'
-            - 'tools/lint/test-disable.yml'
 
 wptlint-gecko:
     description: web-platform-tests linter
@@ -795,6 +794,27 @@ ignorefile-test:
         files-changed:
             - '.gitignore'
             - '.hgignore'
+
+
+c-includes:
+    description: Remove unused mfbt includes from the codebase
+    treeherder:
+        symbol: cpp(includes)
+    run:
+        mach: lint -l includes -f treeherder -f json:/builds/worker/mozlint.json .
+    when:
+        files-changed:
+            - '**/*.c'
+            - '**/*.cc'
+            - '**/*.cpp'
+            - '**/*.cxx'
+            - '**/*.h'
+            - '**/*.hpp'
+            - '**/*.m'
+            - '**/*.mm'
+            - 'tools/lint/includes.yml'
+            - 'tools/lint/includes/**'
+            - 'mfbt/api.yml'
 
 gecko-trace:
     description: Check that all `gecko-trace.yaml` files are correct

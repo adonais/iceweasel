@@ -585,6 +585,7 @@ export async function fetchHourlyVisitsAll(table) {
 
 /**
  * Build weights object only for the requested features.
+ *
  * @param {object} prefValues - contains trainhopConfig.smartShortcuts
  * @param {string[]} features - e.g. ["thom","frec"] (bias optional)
  */

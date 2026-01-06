@@ -242,7 +242,7 @@ function BestAvailableLocaleIgnoringDefault(availableLocales, locale) {
  */
 function LookupMatcher(availableLocales, requestedLocales) {
   // Step 1.
-  var result = new_Record();
+  var result = NEW_RECORD();
 
   // Step 2.
   for (var i = 0; i < requestedLocales.length; i++) {
@@ -397,7 +397,7 @@ function ResolveLocale(
   var extension = r.extension;
 
   // Step 5.
-  var result = new_Record();
+  var result = NEW_RECORD();
 
   // Step 6.
   result.dataLocale = foundLocale;
@@ -654,7 +654,7 @@ function GetOption(options, property, type, values, fallback) {
   if (value !== undefined) {
     // Steps 2.a-c.
     if (type === "boolean") {
-      value = ToBoolean(value);
+      value = TO_BOOLEAN(value);
     } else if (type === "string") {
       value = ToString(value);
     } else {
@@ -752,7 +752,7 @@ function DefaultNumberOption(value, minimum, maximum, fallback) {
   }
 
   // Step 2.
-  value = ToNumber(value);
+  value = TO_NUMBER(value);
 
   // Step 3.
   if (Number_isNaN(value) || value < minimum || value > maximum) {

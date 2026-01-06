@@ -886,6 +886,11 @@ class DataSourceSurface : public SourceSurface {
    */
   virtual void Invalidate(const IntRect& aDirtyRect) {}
 
+  /**
+   * Attempt to cache internal data into the supplied memory buffer.
+   */
+  virtual bool ReadDataInto(uint8_t* aData, int32_t aStride) { return false; }
+
  protected:
   Atomic<int32_t> mMapCount;
 };

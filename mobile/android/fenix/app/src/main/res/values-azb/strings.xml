@@ -379,6 +379,10 @@
   <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">فایرفاکس ویجتینی آرتیر</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">ایندی یوخ</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!--
     Search Widget
 
@@ -520,8 +524,6 @@
   <string name="preferences_gestures">ایشاره‌لر</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">اؤزللشدیرمک</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">تاغلاریْ، بوکمارک‌لاریْ، رمزلری و داها چوْخوُنو دؤنگل ائتمک اوچون گیریش ائله‌یین.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">موْزیلا حسابی</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -771,12 +773,6 @@
   <string name="preference_experiments_2">آراشدیرمالار</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">موزیلایا آراشدیرمالار قوْشماغینا و ایجرا ائتمه‌سینه ایجازه وئریر.</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">دیتالارینیزیْ دؤنگل ائدین و ساخلایین</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">یئنی‌دن باغلانماق اوچون گیریش ائدین</string>
   <!-- Preference for removing FxA account -->
@@ -1274,8 +1270,6 @@
   <string name="toast_copy_link_to_clipboard">کلیپ‌بوْردا کوْپی اوْلوندو</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">دؤنگله گیریش</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">دیتا دؤنگلی و ساخلاماسی</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">بوتون جهازلارا گؤندر</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2130,4 +2124,10 @@
   <!-- Text shown in the survey title for printing microsurvey. Note: The word "Firefox" should NOT be translated. -->
   <string name="microsurvey_survey_printing_title" tools:ignore="BrandUsage,UnusedResources">فایرفاکس‌دا پرینت‌دن نه قدر راضیسینیز؟</string>
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

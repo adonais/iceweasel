@@ -60,7 +60,7 @@
     <!-- Bottom Sheet Fragment card -->
     <dimen name="bottom_sheet_corner_radius">8dp</dimen>
     <dimen name="bottom_sheet_corner_radius_28dp">28dp</dimen>
-    <dimen name="bottom_sheet_handle_height">3dp</dimen>
+    <dimen name="bottom_sheet_handle_height">4dp</dimen>
     <dimen name="bottom_sheet_handle_top_margin">8dp</dimen>
 
     <!-- Browser Toolbar -->

@@ -5,9 +5,7 @@
     "env": {
         "MIPS_UNALIGNED": "1"
     },
-    "__comment1": "WPT disabled because JSPI isn't yet implemented",
     "extra-args": {
-        "jstests": ["--wpt=disabled"],
         "jit-test": ["--jitflags=debug"]
     },
     "bits": 64

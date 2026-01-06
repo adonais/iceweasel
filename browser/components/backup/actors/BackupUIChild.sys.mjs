@@ -142,6 +142,8 @@ export class BackupUIChild extends JSWindowActorChild {
       this.sendAsyncMessage("SetEmbeddedComponentPersistentData", event.detail);
     } else if (event.type == "BackupUI:FlushEmbeddedComponentPersistentData") {
       this.sendAsyncMessage("FlushEmbeddedComponentPersistentData");
+    } else if (event.type == "BackupUI:ErrorBarDismissed") {
+      this.sendAsyncMessage("ErrorBarDismissed");
     }
   }
 

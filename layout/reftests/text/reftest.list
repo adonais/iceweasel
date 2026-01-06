@@ -182,12 +182,12 @@ pref(gfx.font_rendering.graphite.enabled,false) != graphite-02.html graphite-02-
 pref(gfx.font_rendering.graphite.enabled,false) != graphite-03a.html graphite-03-notref.html
 pref(gfx.font_rendering.graphite.enabled,false) == graphite-03b.html graphite-03-notref.html
 
-# tests for graphite rendering with valid and invalid lang tags
+# tests for graphite rendering with canonical and non-canonical lang tags
 pref(gfx.font_rendering.graphite.enabled,true) == graphite-04-fa.html graphite-04-ref.html
 pref(gfx.font_rendering.graphite.enabled,true) != graphite-04-sd.html graphite-04-ref.html
-pref(gfx.font_rendering.graphite.enabled,true) == graphite-04-snd.html graphite-04-ref.html
+pref(gfx.font_rendering.graphite.enabled,true) == graphite-04-snd.html graphite-04-sd.html
 pref(gfx.font_rendering.graphite.enabled,true) != graphite-04-ur.html graphite-04-ref.html
-pref(gfx.font_rendering.graphite.enabled,true) == graphite-04-urd.html graphite-04-ref.html
+pref(gfx.font_rendering.graphite.enabled,true) == graphite-04-urd.html graphite-04-ur.html
 pref(gfx.font_rendering.graphite.enabled,true) != graphite-04-sd.html graphite-04-ur.html
 
 # tests to compare graphite to opentype (will trivially pass when graphite not enabled)

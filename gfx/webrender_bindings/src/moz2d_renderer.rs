@@ -35,6 +35,19 @@ use core_graphics::font::CGFont;
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 use foreign_types::ForeignType;
 
+#[cfg(target_os = "windows")]
+use std::ffi::CStr;
+#[cfg(target_os = "windows")]
+use std::ffi::OsStr;
+#[cfg(target_os = "windows")]
+use std::iter::FromIterator;
+#[cfg(target_os = "windows")]
+use std::os::raw::c_char;
+#[cfg(target_os = "windows")]
+use std::path::PathBuf;
+#[cfg(target_os = "windows")]
+use winapi::um::errhandlingapi::GetLastError;
+
 #[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "windows")))]
 use std::ffi::CString;
 #[cfg(not(any(target_os = "macos", target_os = "ios", target_os = "windows")))]
@@ -742,7 +755,8 @@ extern "C" {
     );
     fn DeleteBlobFont(key: WrFontInstanceKey);
     fn ClearBlobImageResources(namespace: WrIdNamespace);
-
+    #[cfg(target_os = "windows")]
+    fn gfx_wr_set_crash_annotation(annotation: CrashAnnotation, value: *const c_char);
 }
 
 impl Moz2dBlobImageHandler {
@@ -761,11 +775,67 @@ impl Moz2dBlobImageHandler {
     /// Currently just sets up fonts found in the blob.
     fn prepare_request(&self, blob: &[u8], resources: &dyn BlobImageResources) {
         #[cfg(target_os = "windows")]
+        fn maybe_crash_on_no_font_file(font_path: &PathBuf) {
+            if !mozbuild::config::NIGHTLY_BUILD {
+                return;
+            }
+
+            // On Nightly add annotation of the error and font file path then crash. We strip
+            // the user's dir if necessary to try to prevent capturing personal information.
+            let end_of_path = PathBuf::from_iter(
+                font_path
+                    .components()
+                    .skip_while(|c| !c.as_os_str().eq_ignore_ascii_case(OsStr::new("users")))
+                    .skip(2),
+            );
+            // end_of_path will be empty if we don't find the Users dir.
+            let annotation_path = if end_of_path.as_os_str().is_empty() {
+                font_path.as_os_str()
+            } else {
+                end_of_path.as_os_str()
+            };
+            let annotation_string = format!(
+                "Error: {:x} loading: {}",
+                unsafe { GetLastError() },
+                annotation_path.to_string_lossy()
+            );
+            unsafe {
+                gfx_wr_set_crash_annotation(
+                    CrashAnnotation::FontFile,
+                    CStr::from_bytes_with_nul(annotation_string.as_bytes())
+                        .unwrap()
+                        .as_ptr(),
+                );
+            }
+            panic!("Moz2D font file not found");
+        }
+
+        #[cfg(target_os = "windows")]
         fn process_native_font_handle(key: FontKey, handle: &NativeFontHandle) {
-            let file = dwrote::FontFile::new_from_path(&handle.path).unwrap();
-            let face = file
-                .create_face(handle.index, dwrote::DWRITE_FONT_SIMULATIONS_NONE)
+            if let Some(file) = dwrote::FontFile::new_from_path(&handle.path) {
+                if let Ok(face) = file.create_face(handle.index, dwrote::DWRITE_FONT_SIMULATIONS_NONE) {
+                    unsafe { AddNativeFontHandle(key, face.as_ptr() as *mut c_void, 0) };
+                    return;
+                }
+            }
+
+            maybe_crash_on_no_font_file(&handle.path);
+
+            // Failed to open the font file? Try to set up a fallback font so that
+            // we don't simply crash, although text will be garbage.
+            let desc = dwrote::FontDescriptor {
+                family_name: "Arial".to_string(),
+                weight: dwrote::FontWeight::Regular,
+                stretch: dwrote::FontStretch::Normal,
+                style: dwrote::FontStyle::Normal,
+            };
+            // If the returned font is None, give up.
+            // (TODO: try other font names? get an arbitrary font by index?)
+            let font = dwrote::FontCollection::system()
+                .font_from_descriptor(&desc)
+                .unwrap()
                 .unwrap();
+            let face = font.create_font_face();
             unsafe { AddNativeFontHandle(key, face.as_ptr() as *mut c_void, 0) };
         }
 

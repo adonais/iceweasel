@@ -1195,5 +1195,17 @@ class BrowserFragment :
             }
             return fragment
         }
+
+        /**
+         * Creates a [Bundle] containing the arguments needed for this fragment.
+         *
+         * @param tabId The ID of the tab to create the fragment for.
+         * @return A [Bundle] with the tab ID set.
+         */
+        fun bundleForTab(tabId: String): Bundle {
+            return Bundle().apply {
+                putString(ARGUMENT_SESSION_UUID, tabId)
+            }
+        }
     }
 }

@@ -504,6 +504,7 @@ export class AutoCompleteParent extends JSWindowActorParent {
    * The real controller's handleEnter is called directly in the content process
    * for other methods of completing a selection (e.g. using the tab or enter
    * keys) since the field with focus is in that process.
+   *
    * @param {boolean} aIsPopupSelection
    */
   handleEnter(aIsPopupSelection) {
@@ -525,11 +526,11 @@ export class AutoCompleteParent extends JSWindowActorParent {
    * @param {string} searchString
    *                 The input string used to query autocomplete entries across different
    *                 autocomplete providers.
-   * @param {Array<Object>} providers
+   * @param {Array<object>} providers
    *                        An array of objects where each object has a `name` used to identify the actor
    *                        name of the provider and `options` that are passed to the `searchAutoCompleteEntries`
    *                        method of the actor.
-   * @returns {Array<Object>} An array of results objects with `name` of the provider and `entries`
+   * @returns {Array<object>} An array of results objects with `name` of the provider and `entries`
    *          that are returned from the provider module's `searchAutoCompleteEntries` method.
    */
   async #startSearch(searchString, providers) {

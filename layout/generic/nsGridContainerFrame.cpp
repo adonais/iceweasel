@@ -315,11 +315,7 @@ class nsGridContainerFrame::CachedBAxisMeasurement final {
           aFrame->GetProperty(nsIFrame::BBaselinePadProperty());
     }
 
-    bool operator==(const Key& aOther) const {
-      return mCBSizeInItemInlineAxis == aOther.mCBSizeInItemInlineAxis &&
-             mBaselinePaddingInItemBlockAxis ==
-                 aOther.mBaselinePaddingInItemBlockAxis;
-    }
+    bool operator==(const Key& aOther) const = default;
   };
 
   Key mKey;
@@ -1137,9 +1133,7 @@ struct nsGridContainerFrame::GridItemInfo {
         mArea.LineRangeForAxis(aContainerAxis).Extent() == 1,
         "Should not be called with grid items that span multiple tracks.");
     const LogicalAxis itemAxis =
-        aContainerWM.IsOrthogonalTo(mFrame->GetWritingMode())
-            ? GetOrthogonalAxis(aContainerAxis)
-            : aContainerAxis;
+        aContainerWM.ConvertAxisTo(aContainerAxis, mFrame->GetWritingMode());
     const auto* styleFrame = mFrame->IsTableWrapperFrame()
                                  ? mFrame->PrincipalChildList().FirstChild()
                                  : mFrame;
@@ -1321,16 +1315,14 @@ void GridItemInfo::InhibitSubgrid(nsGridContainerFrame* aParent,
 
 void GridItemInfo::MaybeInhibitSubgridInMasonry(nsGridContainerFrame* aParent,
                                                 uint32_t aGridAxisTrackCount) {
-  if (IsSubgrid(LogicalAxis::Inline) &&
-      aParent->IsMasonry(LogicalAxis::Block) && mArea.mRows.mStart != 0 &&
-      mArea.mCols.Extent() != aGridAxisTrackCount &&
+  if (IsSubgrid(LogicalAxis::Inline) && aParent->IsRowMasonry() &&
+      mArea.mRows.mStart != 0 && mArea.mCols.Extent() != aGridAxisTrackCount &&
       (mState[LogicalAxis::Inline] & eAutoPlacement)) {
     InhibitSubgrid(aParent, LogicalAxis::Inline);
     return;
   }
-  if (IsSubgrid(LogicalAxis::Block) &&
-      aParent->IsMasonry(LogicalAxis::Inline) && mArea.mCols.mStart != 0 &&
-      mArea.mRows.Extent() != aGridAxisTrackCount &&
+  if (IsSubgrid(LogicalAxis::Block) && aParent->IsColMasonry() &&
+      mArea.mCols.mStart != 0 && mArea.mRows.Extent() != aGridAxisTrackCount &&
       (mState[LogicalAxis::Block] & eAutoPlacement)) {
     InhibitSubgrid(aParent, LogicalAxis::Block);
   }
@@ -3224,8 +3216,7 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
         }
       }
     }
-    if (mStartRow == numRows ||
-        aGridContainerFrame->IsMasonry(LogicalAxis::Block)) {
+    if (mStartRow == numRows || aGridContainerFrame->IsRowMasonry()) {
       // All of the grid's rows fit inside of previous grid-container fragments,
       // or it's a masonry axis.
       mFragBStart = aConsumedBSize;
@@ -3281,6 +3272,10 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
       MOZ_ASSERT(mGridItems.Length() == len + 1, "can't find GridItemInfo");
     }
 
+    if (auto* absCB = aGridContainerFrame->GetAbsoluteContainingBlock()) {
+      // Prepare absolute frames before constructing GridItemInfo.
+      absCB->PrepareAbsoluteFrames(aGridContainerFrame);
+    }
     // XXX NOTE: This is O(n^2) in the number of abs.pos. items. (bug 1252186)
     const nsFrameList& absPosChildren = aGridContainerFrame->GetChildList(
         aGridContainerFrame->GetAbsoluteListID());
@@ -3638,8 +3633,8 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput {
       mSkipSides = aFrame->PreReflowBlockLevelLogicalSkipSides();
       mBorderPadding.ApplySkipSides(mSkipSides);
     }
-    mCols.mIsMasonry = aFrame->IsMasonry(LogicalAxis::Inline);
-    mRows.mIsMasonry = aFrame->IsMasonry(LogicalAxis::Block);
+    mCols.mIsMasonry = aFrame->IsColMasonry();
+    mRows.mIsMasonry = aFrame->IsRowMasonry();
     MOZ_ASSERT(!(mCols.mIsMasonry && mRows.mIsMasonry),
                "can't have masonry layout in both axes");
   }
@@ -4395,10 +4390,9 @@ static void AlignSelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
                                            &baselineAdjust);
   }
 
-  bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
-  LogicalAxis axis = isOrthogonal ? LogicalAxis::Inline : LogicalAxis::Block;
-  AlignJustifySelf(aAlignSelf, axis, flags, baselineAdjust, aCBSize, aRI, aSize,
-                   aPos);
+  const auto bAxisInChildWM = aCBWM.ConvertAxisTo(LogicalAxis::Block, childWM);
+  AlignJustifySelf(aAlignSelf, bAxisInChildWM, flags, baselineAdjust, aCBSize,
+                   aRI, aSize, aPos);
 }
 
 static void JustifySelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
@@ -4441,10 +4435,9 @@ static void JustifySelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
                                              &baselineAdjust);
   }
 
-  bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
-  LogicalAxis axis = isOrthogonal ? LogicalAxis::Block : LogicalAxis::Inline;
-  AlignJustifySelf(aJustifySelf, axis, flags, baselineAdjust, aCBSize, aRI,
-                   aSize, aPos);
+  const auto iAxisInChildWM = aCBWM.ConvertAxisTo(LogicalAxis::Inline, childWM);
+  AlignJustifySelf(aJustifySelf, iAxisInChildWM, flags, baselineAdjust, aCBSize,
+                   aRI, aSize, aPos);
 }
 
 static StyleAlignFlags GetAlignJustifyValue(StyleAlignFlags aAlignment,
@@ -5328,8 +5321,8 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
   aGridRI.mRowFunctions.mExplicitGridOffset = mExplicitGridOffsetRow;
   const int32_t offsetToColZero = int32_t(mExplicitGridOffsetCol) - 1;
   const int32_t offsetToRowZero = int32_t(mExplicitGridOffsetRow) - 1;
-  const bool isRowMasonry = aGridRI.mFrame->IsMasonry(LogicalAxis::Block);
-  const bool isColMasonry = aGridRI.mFrame->IsMasonry(LogicalAxis::Inline);
+  const bool isRowMasonry = aGridRI.mFrame->IsRowMasonry();
+  const bool isColMasonry = aGridRI.mFrame->IsColMasonry();
   const bool isMasonry = isColMasonry || isRowMasonry;
   mGridColEnd += offsetToColZero;
   mGridRowEnd += offsetToRowZero;
@@ -5735,7 +5728,6 @@ static nscoord MeasuringReflow(nsIFrame* aChild,
   nsReflowStatus childStatus;
   const nsIFrame::ReflowChildFlags flags =
       nsIFrame::ReflowChildFlags::NoMoveFrame |
-      nsIFrame::ReflowChildFlags::NoSizeView |
       nsIFrame::ReflowChildFlags::NoDeleteNextInFlowChild;
 
   // Reflowing the child might invalidate the cache, so we declare the variable
@@ -5874,9 +5866,8 @@ static nscoord ContentContribution(const GridItemInfo& aGridItem,
     // subtracted by the non-subgrid ancestor grid container's gap.
     // Note that this can also be negative since it's considered a margin.
     if (itemEdgeBits != ItemState::eEdgeBits) {
-      auto subgridAxis = gridWM.IsOrthogonalTo(subgridFrame->GetWritingMode())
-                             ? GetOrthogonalAxis(aAxis)
-                             : aAxis;
+      const auto subgridAxis =
+          gridWM.ConvertAxisTo(aAxis, subgridFrame->GetWritingMode());
       auto& gapStyle = subgridAxis == LogicalAxis::Block
                            ? subgridFrame->StylePosition()->mRowGap
                            : subgridFrame->StylePosition()->mColumnGap;
@@ -5940,10 +5931,8 @@ static nscoord ContentContribution(const GridItemInfo& aGridItem,
           subgridFrame->SetProperty(UsedTrackSizes::Prop(), uts);
         }
         // The grid-item's inline-axis as expressed in the subgrid's WM.
-        auto subgridAxis =
-            childWM.IsOrthogonalTo(subgridFrame->GetWritingMode())
-                ? LogicalAxis::Block
-                : LogicalAxis::Inline;
+        const auto subgridAxis = childWM.ConvertAxisTo(
+            LogicalAxis::Inline, subgridFrame->GetWritingMode());
         uts->ResolveTrackSizesForAxis(subgridFrame, subgridAxis, *rc);
         if (uts->mCanResolveLineRangeSize[subgridAxis]) {
           auto* subgrid =
@@ -6058,9 +6047,7 @@ struct CachedIntrinsicSizes {
       const WritingMode cbwm = aGridRI.mWM;
       auto styleSize = stylePos->Size(aAxis, cbwm, anchorResolutionParams);
       const LogicalAxis axisInItemWM =
-          cbwm.IsOrthogonalTo(child->GetWritingMode())
-              ? GetOrthogonalAxis(aAxis)
-              : aAxis;
+          cbwm.ConvertAxisTo(aAxis, child->GetWritingMode());
       // FIXME: Bug 567039: moz-fit-content and -moz-available are not
       // supported for block size dimension on sizing properties (e.g. height),
       // so we treat it as `auto`.
@@ -6116,9 +6103,7 @@ struct CachedIntrinsicSizes {
         const auto anchorResolutionParams =
             AnchorPosResolutionParams::From(child);
         const LogicalAxis axisInItemWM =
-            containerWM.IsOrthogonalTo(child->GetWritingMode())
-                ? GetOrthogonalAxis(aAxis)
-                : aAxis;
+            containerWM.ConvertAxisTo(aAxis, child->GetWritingMode());
 #ifdef DEBUG
         // The caller must handle this case separately.
         // See EnsureContributions.
@@ -6514,9 +6499,7 @@ void nsGridContainerFrame::Tracks::InitializeItemBaselines(
 
     // [align|justify]-self:[last ]baseline.
     auto selfAlignment =
-        isInlineAxis
-            ? child->StylePosition()->UsedJustifySelf(containerStyle)._0
-            : child->StylePosition()->UsedAlignSelf(containerStyle)._0;
+        child->StylePosition()->UsedSelfAlignment(mAxis, containerStyle);
     selfAlignment &= ~StyleAlignFlags::FLAG_BITS;
     if (selfAlignment == StyleAlignFlags::BASELINE) {
       state |= ItemState::eFirstBaseline | ItemState::eSelfBaseline;
@@ -7852,17 +7835,19 @@ LogicalSize nsGridContainerFrame::GridReflowInput::PercentageBasisFor(
         // and thus may have been transposed.  The range values in a non-
         // subgridded axis still has its original values in subgridFrame's
         // coordinates though.
-        auto rangeAxis = subgridWM.IsOrthogonalTo(mWM) ? LogicalAxis::Block
-                                                       : LogicalAxis::Inline;
-        const auto& range = aGridItem.mArea.LineRangeForAxis(rangeAxis);
+        const auto subgridIAxisInGridWM =
+            subgridWM.ConvertAxisTo(LogicalAxis::Inline, mWM);
+        const auto& range =
+            aGridItem.mArea.LineRangeForAxis(subgridIAxisInGridWM);
         cbSize.ISize(subgridWM) =
             range.ToLength(uts->mTrackPlans[LogicalAxis::Inline]);
       }
       if (!subgridFrame->IsRowSubgrid() &&
           uts->mCanResolveLineRangeSize[LogicalAxis::Block]) {
-        auto rangeAxis = subgridWM.IsOrthogonalTo(mWM) ? LogicalAxis::Inline
-                                                       : LogicalAxis::Block;
-        const auto& range = aGridItem.mArea.LineRangeForAxis(rangeAxis);
+        const auto subgridBAxisInGridWM =
+            subgridWM.ConvertAxisTo(LogicalAxis::Block, mWM);
+        const auto& range =
+            aGridItem.mArea.LineRangeForAxis(subgridBAxisInGridWM);
         cbSize.BSize(subgridWM) =
             range.ToLength(uts->mTrackPlans[LogicalAxis::Block]);
       }
@@ -7872,27 +7857,13 @@ LogicalSize nsGridContainerFrame::GridReflowInput::PercentageBasisFor(
     return LogicalSize(wm, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
   }
 
-  if (StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled()) {
-    // Get row size and column size for the grid area occupied by aGridItem.
-    const nscoord colSize = mCols.mCanResolveLineRangeSize
-                                ? mCols.ResolveSize(aGridItem.mArea.mCols)
-                                : NS_UNCONSTRAINEDSIZE;
-    const nscoord rowSize = mRows.mCanResolveLineRangeSize
-                                ? mRows.ResolveSize(aGridItem.mArea.mRows)
-                                : NS_UNCONSTRAINEDSIZE;
-    return !wm.IsOrthogonalTo(mWM) ? LogicalSize(wm, colSize, rowSize)
-                                   : LogicalSize(wm, rowSize, colSize);
-  }
-
-  MOZ_ASSERT(!StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled(),
-             "Unexpected execution of the legacy track sizing path while "
-             "multi-pass preference is enabled");
-  if (aAxis == LogicalAxis::Inline || !mCols.mCanResolveLineRangeSize) {
-    return LogicalSize(wm, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
-  }
-  MOZ_ASSERT(!mRows.mCanResolveLineRangeSize);
-  nscoord colSize = mCols.ResolveSize(aGridItem.mArea.mCols);
-  nscoord rowSize = NS_UNCONSTRAINEDSIZE;
+  // Get row size and column size for the grid area occupied by aGridItem.
+  const nscoord colSize = mCols.mCanResolveLineRangeSize
+                              ? mCols.ResolveSize(aGridItem.mArea.mCols)
+                              : NS_UNCONSTRAINEDSIZE;
+  const nscoord rowSize = mRows.mCanResolveLineRangeSize
+                              ? mRows.ResolveSize(aGridItem.mArea.mRows)
+                              : NS_UNCONSTRAINEDSIZE;
   return !wm.IsOrthogonalTo(mWM) ? LogicalSize(wm, colSize, rowSize)
                                  : LogicalSize(wm, rowSize, colSize);
 }
@@ -8072,7 +8043,6 @@ void nsGridContainerFrame::ReflowInFlowChild(
   nscoord toFragmentainerEnd;
   // The part of the child's grid area that's in previous container fragments.
   nscoord consumedGridAreaBSize = 0;
-  const bool isOrthogonal = wm.IsOrthogonalTo(childWM);
   if (MOZ_LIKELY(isGridItem)) {
     MOZ_ASSERT(aGridItemInfo->mFrame == aChild);
     const GridArea& area = aGridItemInfo->mArea;
@@ -8125,6 +8095,7 @@ void nsGridContainerFrame::ReflowInFlowChild(
         aChild->RemoveProperty(aProp);
       }
     };
+    const bool isOrthogonal = wm.IsOrthogonalTo(childWM);
     SetProp(LogicalAxis::Block,
             isOrthogonal ? IBaselinePadProperty() : BBaselinePadProperty());
     SetProp(LogicalAxis::Inline,
@@ -8152,8 +8123,7 @@ void nsGridContainerFrame::ReflowInFlowChild(
   // Setup the ClampMarginBoxMinSize reflow flags and property, if needed.
   ComputeSizeFlags csFlags;
   if (aGridItemInfo) {
-    const auto childIAxisInWM =
-        isOrthogonal ? LogicalAxis::Block : LogicalAxis::Inline;
+    const auto childIAxisInWM = childWM.ConvertAxisTo(LogicalAxis::Inline, wm);
     // Clamp during reflow if we're stretching in that axis.
     if (GridItemShouldStretch(aChild, LogicalAxis::Inline)) {
       if (aGridItemInfo->mState[childIAxisInWM] &
@@ -8513,7 +8483,7 @@ nscoord nsGridContainerFrame::ReflowRowsInFragmentainer(
   const auto rowCount = aGridRI.mRows.mSizes.Length();
   nscoord masonryAxisGap = 0;
   const auto wm = aGridRI.mWM;
-  const bool isColMasonry = IsMasonry(LogicalAxis::Inline);
+  const bool isColMasonry = IsColMasonry();
   if (isColMasonry) {
     for (auto& sz : aGridRI.mCols.mSizes) {
       sz.mPosition = 0;
@@ -8682,8 +8652,7 @@ nscoord nsGridContainerFrame::ReflowRowsInFragmentainer(
     }
     if (isColMasonry) {
       auto childWM = child->GetWritingMode();
-      auto childAxis = !childWM.IsOrthogonalTo(wm) ? LogicalAxis::Inline
-                                                   : LogicalAxis::Block;
+      const auto childAxis = wm.ConvertAxisTo(LogicalAxis::Inline, childWM);
       auto normalPos = child->GetLogicalNormalPosition(wm, aContainerSize);
       auto sz =
           childAxis == LogicalAxis::Block ? child->BSize() : child->ISize();
@@ -9288,20 +9257,19 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aGridRI,
   // MasonryLayout() can only handle fragmentation in the masonry-axis,
   // so we let ReflowInFragmentainer() deal with grid-axis fragmentation
   // in the else-clause below.
-  if (IsMasonry() &&
-      !(IsMasonry(LogicalAxis::Inline) && fragmentainer.isSome())) {
+  if (IsMasonry() && !(IsColMasonry() && fragmentainer.isSome())) {
     aGridRI.mInFragmentainer = fragmentainer.isSome();
     nscoord sz = MasonryLayout(
         aGridRI, aContentArea, SizingConstraint::NoConstraint, aDesiredSize,
         aStatus, fragmentainer.ptrOr(nullptr), aContainerSize);
-    if (IsMasonry(LogicalAxis::Block)) {
+    if (IsRowMasonry()) {
       bSize = aGridRI.mReflowInput->ComputedBSize();
       if (bSize == NS_UNCONSTRAINEDSIZE) {
         bSize = aGridRI.mReflowInput->ApplyMinMaxBSize(sz);
       }
     }
   } else if (MOZ_UNLIKELY(fragmentainer.isSome())) {
-    if (IsMasonry(LogicalAxis::Inline) && !GetPrevInFlow()) {
+    if (IsColMasonry() && !GetPrevInFlow()) {
       // First we do an unconstrained reflow to resolve the item placement
       // which is then kept as-is in the constrained reflow below.
       MasonryLayout(aGridRI, aContentArea, SizingConstraint::NoConstraint,
@@ -9331,47 +9299,44 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aGridRI,
   aDesiredSize.mOverflowAreas.UnionWith(ocBounds);
   aStatus.MergeCompletionStatusFrom(ocStatus);
 
-  if (IsAbsoluteContainer()) {
-    const nsFrameList& children = GetChildList(GetAbsoluteListID());
-    if (!children.IsEmpty()) {
-      // 'gridOrigin' is the origin of the grid (the start of the first track),
-      // with respect to the grid container's padding-box (CB).
-      LogicalMargin pad(aGridRI.mReflowInput->ComputedLogicalPadding(wm));
-      const LogicalPoint gridOrigin(wm, pad.IStart(wm), pad.BStart(wm));
-      const LogicalRect gridCB(wm, 0, 0,
-                               aContentArea.ISize(wm) + pad.IStartEnd(wm),
-                               bSize + pad.BStartEnd(wm));
-      const nsSize gridCBPhysicalSize = gridCB.Size(wm).GetPhysicalSize(wm);
-      size_t i = 0;
-      for (nsIFrame* child : children) {
-        MOZ_ASSERT(i < aGridRI.mAbsPosItems.Length());
-        MOZ_ASSERT(aGridRI.mAbsPosItems[i].mFrame == child);
-        GridArea& area = aGridRI.mAbsPosItems[i].mArea;
-        LogicalRect itemCB =
-            aGridRI.ContainingBlockForAbsPos(area, gridOrigin, gridCB);
-        // AbsoluteContainingBlock::Reflow uses physical coordinates.
-        nsRect* cb = child->GetProperty(GridItemContainingBlockRect());
-        if (!cb) {
-          cb = new nsRect;
-          child->SetProperty(GridItemContainingBlockRect(), cb);
-        }
-        *cb = itemCB.GetPhysicalRect(wm, gridCBPhysicalSize);
-        ++i;
+  auto* absoluteContainer = GetAbsoluteContainingBlock();
+  // We have prepared the absolute frames when initializing GridReflowInput.
+  if (absoluteContainer && absoluteContainer->HasAbsoluteFrames()) {
+    // 'gridOrigin' is the origin of the grid (the start of the first track),
+    // with respect to the grid container's padding-box (CB).
+    LogicalMargin pad(aGridRI.mReflowInput->ComputedLogicalPadding(wm));
+    const LogicalPoint gridOrigin(wm, pad.IStart(wm), pad.BStart(wm));
+    const LogicalRect gridCB(wm, 0, 0,
+                             aContentArea.ISize(wm) + pad.IStartEnd(wm),
+                             bSize + pad.BStartEnd(wm));
+    const nsSize gridCBPhysicalSize = gridCB.Size(wm).GetPhysicalSize(wm);
+    size_t i = 0;
+    for (nsIFrame* child : absoluteContainer->GetChildList()) {
+      MOZ_ASSERT(i < aGridRI.mAbsPosItems.Length());
+      MOZ_ASSERT(aGridRI.mAbsPosItems[i].mFrame == child);
+      GridArea& area = aGridRI.mAbsPosItems[i].mArea;
+      LogicalRect itemCB =
+          aGridRI.ContainingBlockForAbsPos(area, gridOrigin, gridCB);
+      // AbsoluteContainingBlock::Reflow uses physical coordinates.
+      nsRect* cb = child->GetProperty(GridItemContainingBlockRect());
+      if (!cb) {
+        cb = new nsRect;
+        child->SetProperty(GridItemContainingBlockRect(), cb);
       }
-      // We pass a dummy rect as CB because each child has its own CB rect.
-      // The IsGridContainerCB flag tells AbsoluteContainingBlock::Reflow to
-      // use those instead.
-      nsRect dummyRect;
-      // XXX: To optimize the performance, set the flags only when the CB width
-      // or height actually changes.
-      AbsPosReflowFlags flags{AbsPosReflowFlag::AllowFragmentation,
-                              AbsPosReflowFlag::CBWidthChanged,
-                              AbsPosReflowFlag::CBHeightChanged,
-                              AbsPosReflowFlag::IsGridContainerCB};
-      GetAbsoluteContainingBlock()->Reflow(
-          this, PresContext(), *aGridRI.mReflowInput, aStatus, dummyRect, flags,
-          &aDesiredSize.mOverflowAreas);
+      *cb = itemCB.GetPhysicalRect(wm, gridCBPhysicalSize);
+      ++i;
     }
+    const auto border = aGridRI.mReflowInput->ComputedPhysicalBorder();
+    const nsPoint borderShift{border.left, border.top};
+    const nsRect paddingRect(borderShift, gridCBPhysicalSize);
+    // XXX: To optimize the performance, set the flags only when the CB width
+    // or height actually changes.
+    AbsPosReflowFlags flags{
+        AbsPosReflowFlag::AllowFragmentation, AbsPosReflowFlag::CBWidthChanged,
+        AbsPosReflowFlag::CBHeightChanged, AbsPosReflowFlag::IsGridContainerCB};
+    absoluteContainer->Reflow(this, PresContext(), *aGridRI.mReflowInput,
+                              aStatus, paddingRect, flags,
+                              &aDesiredSize.mOverflowAreas);
   }
   return bSize;
 }
@@ -9405,8 +9370,7 @@ nscoord nsGridContainerFrame::ComputeIntrinsicContentBSize(
           aGridRI.mReflowInput->ShouldApplyAutomaticMinimumOnBlockAxis(),
       "Why call this method when intrinsic content block-size is not needed?");
 
-  if (StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled() &&
-      aComputedBSize == NS_UNCONSTRAINEDSIZE) {
+  if (aComputedBSize == NS_UNCONSTRAINEDSIZE) {
     // When we have an unconstrained block-size, the intrinsic content
     // block-size would have been determined after we resolved the row sizes the
     // first time. Just return that value.
@@ -9419,7 +9383,7 @@ nscoord nsGridContainerFrame::ComputeIntrinsicContentBSize(
     return *aContainIntrinsicBSize;
   }
 
-  if (IsMasonry(LogicalAxis::Block)) {
+  if (IsRowMasonry()) {
     // There aren't any tracks to derive a block-size from, if we're doing
     // masonry rather than forming rows in the block direction.
     return aBSizeForResolvingRowSizes;
@@ -9529,39 +9493,35 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
                                       bSizeForResolvingRowSizes,
                                       SizingConstraint::NoConstraint);
 
-    if (StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled()) {
-      // Invalidate the column sizes before re-resolving them.
-      gridRI.InvalidateTrackSizesForAxis(LogicalAxis::Inline);
+    // Invalidate the column sizes before re-resolving them.
+    gridRI.InvalidateTrackSizesForAxis(LogicalAxis::Inline);
 
-      // Re-resolve the column sizes.
-      // 12.1.3: https://drafts.csswg.org/css-grid-2/#algo-grid-sizing
-      gridRI.CalculateTrackSizesForAxis(LogicalAxis::Inline, grid,
-                                        computedISize,
+    // Re-resolve the column sizes.
+    // 12.1.3: https://drafts.csswg.org/css-grid-2/#algo-grid-sizing
+    gridRI.CalculateTrackSizesForAxis(LogicalAxis::Inline, grid, computedISize,
+                                      SizingConstraint::NoConstraint);
+
+    // If our bSizeForResolvingRowSizes is still indefinite, replace it with
+    // the sum of the row sizes we just resolved, then re-resolve the row
+    // sizes against that value. We skip this for masonry, which doesn't need
+    // two-pass row sizes resolution.
+    if (bSizeForResolvingRowSizes == NS_UNCONSTRAINEDSIZE && !IsRowMasonry()) {
+      bSizeForResolvingRowSizes =
+          std::max(gridRI.mRows.TotalTrackSizeWithoutAlignment(this),
+                   gridRI.mReflowInput->ComputedMinBSize());
+
+      NS_ASSERTION(bSizeForResolvingRowSizes != NS_UNCONSTRAINEDSIZE,
+                   "The block-size for re-resolving the row sizes should be "
+                   "definite in non-masonry layout!");
+
+      // Invalidate the row sizes before re-resolving them.
+      gridRI.InvalidateTrackSizesForAxis(LogicalAxis::Block);
+
+      // Re-resolve the row sizes.
+      // 12.1.4: https://drafts.csswg.org/css-grid-2/#algo-grid-sizing
+      gridRI.CalculateTrackSizesForAxis(LogicalAxis::Block, grid,
+                                        bSizeForResolvingRowSizes,
                                         SizingConstraint::NoConstraint);
-
-      // If our bSizeForResolvingRowSizes is still indefinite, replace it with
-      // the sum of the row sizes we just resolved, then re-resolve the row
-      // sizes against that value. We skip this for masonry, which doesn't need
-      // two-pass row sizes resolution."
-      if (bSizeForResolvingRowSizes == NS_UNCONSTRAINEDSIZE &&
-          !IsMasonry(LogicalAxis::Block)) {
-        bSizeForResolvingRowSizes =
-            std::max(gridRI.mRows.TotalTrackSizeWithoutAlignment(this),
-                     gridRI.mReflowInput->ComputedMinBSize());
-
-        NS_ASSERTION(bSizeForResolvingRowSizes != NS_UNCONSTRAINEDSIZE,
-                     "The block-size for re-resolving the row sizes should be "
-                     "definite in non-masonry layout!");
-
-        // Invalidate the row sizes before re-resolving them.
-        gridRI.InvalidateTrackSizesForAxis(LogicalAxis::Block);
-
-        // Re-resolve the row sizes.
-        // 12.1.4: https://drafts.csswg.org/css-grid-2/#algo-grid-sizing
-        gridRI.CalculateTrackSizesForAxis(LogicalAxis::Block, grid,
-                                          bSizeForResolvingRowSizes,
-                                          SizingConstraint::NoConstraint);
-      }
     }
 
     if (computedBSize == NS_UNCONSTRAINEDSIZE ||
@@ -9604,18 +9564,6 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
   if (!prevInFlow) {
     const auto& rowSizes = gridRI.mRows.mSizes;
     if (!IsRowSubgrid()) {
-      if (!StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled() &&
-          computedBSize == NS_UNCONSTRAINEDSIZE &&
-          stylePos->mRowGap.IsLengthPercentage() &&
-          stylePos->mRowGap.AsLengthPercentage().HasPercent()) {
-        // Re-resolve the row-gap now that we know our intrinsic block-size.
-        //
-        // Note: if the pref is enabled for the the new multi-pass behavior, the
-        // row gaps will have already been re-resolved in the second pass of
-        // CalculateTrackSizesForAxis().
-        gridRI.mRows.mGridGap =
-            nsLayoutUtils::ResolveGapToLength(stylePos->mRowGap, contentBSize);
-      }
       if (!gridRI.mRows.mIsMasonry) {
         // Apply 'align-content' to the grid.
         auto alignment = stylePos->mAlignContent;
@@ -9726,8 +9674,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
   }
 
   // TODO: fix align-tracks alignment in fragments
-  if ((IsMasonry(LogicalAxis::Block) && !prevInFlow) ||
-      IsMasonry(LogicalAxis::Inline)) {
+  if ((IsRowMasonry() && !prevInFlow) || IsColMasonry()) {
     gridRI.AlignJustifyTracksInMasonryAxis(contentArea.Size(wm),
                                            aDesiredSize.PhysicalSize());
   }
@@ -9858,7 +9805,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
         std::move(colTrackStates), std::move(colRemovedRepeatTracks),
         gridRI.mColFunctions.mRepeatAutoStart,
         colLineNameMap.GetResolvedLineNamesForComputedGridTrackInfo(),
-        IsColSubgrid(), IsMasonry(LogicalAxis::Inline));
+        IsColSubgrid(), IsColMasonry());
     SetProperty(GridColTrackInfo(), colInfo);
 
     const auto* subgridRowRange =
@@ -9901,7 +9848,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
         std::move(rowRemovedRepeatTracks),
         gridRI.mRowFunctions.mRepeatAutoStart,
         rowLineNameMap.GetResolvedLineNamesForComputedGridTrackInfo(),
-        IsRowSubgrid(), IsMasonry(LogicalAxis::Block));
+        IsRowSubgrid(), IsRowMasonry());
     SetProperty(GridRowTrackInfo(), rowInfo);
 
     if (prevInFlow) {
@@ -10220,7 +10167,7 @@ nscoord nsGridContainerFrame::ComputeIntrinsicISize(
   }
   if ((!IsRowSubgrid() && gridRI.mRowFunctions.mHasRepeatAuto &&
        !(gridRI.mGridStyle->mGridAutoFlow & StyleGridAutoFlow::ROW)) ||
-      IsMasonry(LogicalAxis::Inline)) {
+      IsColMasonry()) {
     // Only 'grid-auto-flow:column' can create new implicit columns, so that's
     // the only case where our block-size can affect the number of columns.
     // Masonry layout always depends on how many rows we have though.
@@ -10243,7 +10190,7 @@ nscoord nsGridContainerFrame::ComputeIntrinsicISize(
   auto constraint = aType == IntrinsicISizeType::MinISize
                         ? SizingConstraint::MinContent
                         : SizingConstraint::MaxContent;
-  if (IsMasonry(LogicalAxis::Inline)) {
+  if (IsColMasonry()) {
     ReflowOutput desiredSize(gridRI.mWM);
     nsSize containerSize;
     LogicalRect contentArea(gridRI.mWM);
@@ -10262,30 +10209,28 @@ nscoord nsGridContainerFrame::ComputeIntrinsicISize(
   gridRI.CalculateTrackSizesForAxis(LogicalAxis::Inline, grid,
                                     NS_UNCONSTRAINEDSIZE, constraint);
 
-  if (StaticPrefs::layout_css_grid_multi_pass_track_sizing_enabled()) {
-    const nscoord contentBoxBSize =
-        aInput.mPercentageBasisForChildren
-            ? aInput.mPercentageBasisForChildren->BSize(gridRI.mWM)
-            : NS_UNCONSTRAINEDSIZE;
+  const nscoord contentBoxBSize =
+      aInput.mPercentageBasisForChildren
+          ? aInput.mPercentageBasisForChildren->BSize(gridRI.mWM)
+          : NS_UNCONSTRAINEDSIZE;
 
-    // Resolve row sizes so that when we re-resolve the column sizes, grid items
-    // with percent-valued block-sizes (and aspect ratios) have definite row
-    // sizes as the percentage basis. Their resolved block-size can then
-    // transfer to the inline-axis, contributing correctly to the grid
-    // container's intrinsic inline-size.
-    gridRI.CalculateTrackSizesForAxis(LogicalAxis::Block, grid, contentBoxBSize,
-                                      SizingConstraint::NoConstraint);
+  // Resolve row sizes so that when we re-resolve the column sizes, grid items
+  // with percent-valued block-sizes (and aspect ratios) have definite row
+  // sizes as the percentage basis. Their resolved block-size can then
+  // transfer to the inline-axis, contributing correctly to the grid
+  // container's intrinsic inline-size.
+  gridRI.CalculateTrackSizesForAxis(LogicalAxis::Block, grid, contentBoxBSize,
+                                    SizingConstraint::NoConstraint);
 
-    // Invalidate the column sizes before re-resolving them.
-    gridRI.InvalidateTrackSizesForAxis(LogicalAxis::Inline);
+  // Invalidate the column sizes before re-resolving them.
+  gridRI.InvalidateTrackSizesForAxis(LogicalAxis::Inline);
 
-    // Re-resolve the column sizes, using the resolved row sizes establish
-    // above. See 12.1.3 of the Grid Sizing Algorithm for more scenarios where
-    // re-resolving the column sizes is necessary:
-    // https://drafts.csswg.org/css-grid-2/#algo-grid-sizing
-    gridRI.CalculateTrackSizesForAxis(LogicalAxis::Inline, grid,
-                                      NS_UNCONSTRAINEDSIZE, constraint);
-  }
+  // Re-resolve the column sizes, using the resolved row sizes established
+  // above. See 12.1.3 of the Grid Sizing Algorithm for more scenarios where
+  // re-resolving the column sizes is necessary:
+  // https://drafts.csswg.org/css-grid-2/#algo-grid-sizing
+  gridRI.CalculateTrackSizesForAxis(LogicalAxis::Inline, grid,
+                                    NS_UNCONSTRAINEDSIZE, constraint);
 
   return gridRI.mCols.TotalTrackSizeWithoutAlignment(this);
 }
@@ -10320,6 +10265,7 @@ void nsGridContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
+    DisplayAbsoluteContinuations(aBuilder, aLists);
   }
 
   // Our children are all grid-level boxes, which behave the same as
@@ -10383,7 +10329,7 @@ nscoord nsGridContainerFrame::SynthesizeBaseline(
   nsGridContainerFrame* grid = do_QueryFrame(child);
   auto childWM = child->GetWritingMode();
   bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
-  const LogicalAxis childAxis = isOrthogonal ? GetOrthogonalAxis(aAxis) : aAxis;
+  const LogicalAxis childAxis = aCBWM.ConvertAxisTo(aAxis, childWM);
   nscoord baseline;
   nscoord start;
   nscoord size;
@@ -10659,6 +10605,12 @@ void nsGridContainerFrame::TrackSize::Dump() const {
 
 #endif  // DEBUG
 
+bool nsGridContainerFrame::IsMasonry(LogicalAxis aAxis) const {
+  return HasAnyStateBits(aAxis == mozilla::LogicalAxis::Block
+                             ? NS_STATE_GRID_IS_ROW_MASONRY
+                             : NS_STATE_GRID_IS_COL_MASONRY);
+}
+
 bool nsGridContainerFrame::GridItemShouldStretch(const nsIFrame* aChild,
                                                  LogicalAxis aAxis) const {
   MOZ_ASSERT(aChild->IsGridItem());
@@ -10682,18 +10634,15 @@ bool nsGridContainerFrame::GridItemShouldStretch(const nsIFrame* aChild,
   }
 
   const auto cbwm = GetWritingMode();
-  const bool isOrthogonal = wm.IsOrthogonalTo(cbwm);
-  if (IsMasonry(isOrthogonal ? GetOrthogonalAxis(aAxis) : aAxis)) {
+  if (IsMasonry(wm, aAxis)) {
     // The child is in the container's masonry-axis.
     // AlignJustifyTracksInMasonryAxis will stretch it, so we don't report that
     // here.
     return false;
   }
 
-  const auto* pos = aChild->StylePosition();
-  const auto alignment = (aAxis == LogicalAxis::Inline) == !isOrthogonal
-                             ? pos->UsedJustifySelf(Style())._0
-                             : pos->UsedAlignSelf(Style())._0;
+  const auto alignment =
+      aChild->StylePosition()->UsedSelfAlignment(wm, aAxis, cbwm, Style());
   // An item with 'normal' alignment that is a replaced frame should use its
   // natural size, and not fill the grid area.
   // https://drafts.csswg.org/css-grid-2/#grid-item-sizing
@@ -10711,8 +10660,10 @@ bool nsGridContainerFrame::ShouldInhibitSubgridDueToIFC(
   // NS_FRAME_OUT_OF_FLOW bit potentially isn't set yet, so we check our style.
   // * contain:layout and contain:paint each make us establish an IFC.
   const auto* display = aFrame->StyleDisplay();
-  return display->IsAbsolutelyPositionedStyle() || display->IsContainLayout() ||
-         display->IsContainPaint();
+  return display->IsContainLayout() || display->IsContainPaint() ||
+         display->mContainerType &
+             (StyleContainerType::SIZE | StyleContainerType::INLINE_SIZE) ||
+         display->IsAbsolutelyPositionedStyle();
 }
 
 nsGridContainerFrame* nsGridContainerFrame::GetGridContainerFrame(

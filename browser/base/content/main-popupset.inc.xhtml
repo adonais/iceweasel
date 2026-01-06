@@ -11,9 +11,11 @@
       data-lazy-l10n-id="tab-context-move-tab-to-new-group"
       data-l10n-args='{"tabCount": 1}'
       hidden="true"/>
+    <menuitem id="context_moveSplitViewToNewGroup"
+      data-lazy-l10n-id="tab-context-move-split-view-to-new-group"
+      data-l10n-args='{"splitViewCount": 1}'
+      hidden="true"/>
     <menu id="context_moveTabToGroup"
-      data-lazy-l10n-id="tab-context-move-tab-to-group"
-      data-l10n-args='{"tabCount": 1}'
       hidden="true">
       <menupopup id="context_moveTabToGroupPopupMenu">
         <menuitem id="context_moveTabToGroupNewGroup"
@@ -29,6 +31,10 @@
       </menupopup>
     </menu>
     <menuitem id="context_ungroupTab"
+      data-lazy-l10n-id="tab-context-ungroup-tab"
+      data-l10n-args='{"groupCount": 1}'
+      hidden="true"/>
+     <menuitem id="context_ungroupSplitView"
       data-lazy-l10n-id="tab-context-ungroup-tab"
       data-l10n-args='{"groupCount": 1}'
       hidden="true"/>
@@ -63,6 +69,8 @@
               data-lazy-l10n-id="bookmark-selected-tabs"/>
     <menuitem id="context_bookmarkTab"
               data-lazy-l10n-id="tab-context-bookmark-tab"/>
+    <menuitem id="context_addNote" hidden="true" data-lazy-l10n-id="tab-context-add-note" />
+    <menuitem id="context_editNote" hidden="true" data-lazy-l10n-id="tab-context-edit-note" />
     <menu id="context_moveTabOptions"
           data-lazy-l10n-id="tab-context-move-tabs"
           data-l10n-args='{"tabCount": 1}'>
@@ -78,12 +86,6 @@
         <menuseparator id="moveTabSeparator" hidden="true"/>
       </menupopup>
     </menu>
-    <menu id="context_sendTabToDevice"
-          class="sync-ui-item"
-          data-lazy-l10n-id="tab-context-send-tabs-to-device"
-          data-l10n-args='{"tabCount": 1}'>
-      <menupopup id="context_sendTabToDevicePopupMenu"/>
-    </menu>
     <menu id="context_reopenInContainer"
           data-lazy-l10n-id="tab-context-open-in-new-container-tab"
           hidden="true">
@@ -91,6 +93,13 @@
     </menu>
     <menuitem id="context_selectAllTabs" data-lazy-l10n-id="select-all-tabs"/>
     <menuseparator/>
+    <menu id="context_sendTabToDevice"
+          class="sync-ui-item"
+          data-lazy-l10n-id="tab-context-send-to-device"
+          data-l10n-args='{"tabCount": 1}'>
+      <menupopup id="context_sendTabToDevicePopupMenu" class="sync-ui-item"/>
+    </menu>
+    <menuseparator id="context_sendTabToDeviceSeparator" class="sync-ui-item"/>
     <menuitem id="context_closeTab"
               data-lazy-l10n-id="tab-context-close-n-tabs"
               data-l10n-args='{"tabCount": 1}'/>
@@ -141,6 +150,7 @@
   <!-- for search and content formfill/pw manager -->
 
   <tabgroup-menu id="tab-group-editor"></tabgroup-menu>
+  <tabnote-menu id="tab-note-menu"></tabnote-menu>
 
   <!-- Starting point for sidebar tools overflow -->
   <panel id="sidebar-tools-overflow"
@@ -404,6 +414,16 @@
               id="sidebar-synced-tabs-context-bookmark-tab"/>
     <menuitem data-l10n-id="sidebar-context-menu-copy-link"
               id="sidebar-synced-tabs-context-copy-link"/>
+  </menupopup>
+
+  <menupopup id="split-view-menu">
+    <menuitem command="splitViewCmd_separateTabs"
+              data-l10n-id="split-view-menuitem-separate-tabs"/>
+    <menuitem command="splitViewCmd_reverseTabs"
+              data-l10n-id="split-view-menuitem-reverse-tabs"/>
+    <menuseparator/>
+    <menuitem command="splitViewCmd_closeTabs"
+              data-l10n-id="split-view-menuitem-close-both-tabs"/>
   </menupopup>
 
   <menupopup id="toolbar-context-menu">

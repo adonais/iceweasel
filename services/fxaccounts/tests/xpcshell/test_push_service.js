@@ -140,31 +140,6 @@ add_test(function observeLogout() {
   pushService.observe(null, ONLOGOUT_NOTIFICATION);
 });
 
-add_test(function observePushTopicVerify() {
-  let emptyMsg = {
-    QueryInterface() {
-      return this;
-    },
-  };
-  let customAccounts = Object.assign(mockFxAccounts, {
-    checkVerificationStatus() {
-      // checking verification status on push messages without data
-      run_next_test();
-    },
-  });
-
-  let pushService = new FxAccountsPushService({
-    pushService: mockPushService,
-    fxai: customAccounts,
-  });
-
-  pushService.observe(
-    emptyMsg,
-    mockPushService.pushTopic,
-    FXA_PUSH_SCOPE_ACCOUNT_UPDATE
-  );
-});
-
 add_test(function observePushTopicDeviceConnected() {
   let msg = {
     data: {

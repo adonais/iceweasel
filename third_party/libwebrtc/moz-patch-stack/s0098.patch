@@ -11,9 +11,9 @@ Differential Revision: https://phabricator.services.mozilla.com/D219218
 Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/60eb5ef11c8df7eb6e0d616cb76885d9109f114d
 ---
  .../linux/device_info_pipewire.cc             | 10 +++-
- .../video_capture/linux/pipewire_session.cc   | 47 ++++++++++++++++++-
- .../video_capture/linux/pipewire_session.h    | 26 +++++++++-
- 3 files changed, 79 insertions(+), 4 deletions(-)
+ .../video_capture/linux/pipewire_session.cc   | 55 ++++++++++++++++++-
+ .../video_capture/linux/pipewire_session.h    | 26 ++++++++-
+ 3 files changed, 85 insertions(+), 6 deletions(-)
 
 diff --git a/modules/video_capture/linux/device_info_pipewire.cc b/modules/video_capture/linux/device_info_pipewire.cc
 index 009e1408b9..a737f9bdb3 100644
@@ -42,25 +42,46 @@ index 009e1408b9..a737f9bdb3 100644
  uint32_t DeviceInfoPipeWire::NumberOfDevices() {
    RTC_CHECK(pipewire_session_);
 diff --git a/modules/video_capture/linux/pipewire_session.cc b/modules/video_capture/linux/pipewire_session.cc
-index 2c533a0edb..86368f6aa1 100644
+index 1582f85577..957590c92b 100644
 --- a/modules/video_capture/linux/pipewire_session.cc
 +++ b/modules/video_capture/linux/pipewire_session.cc
-@@ -9,6 +9,7 @@
-  */
- 
- #include "modules/video_capture/linux/pipewire_session.h"
+@@ -35,6 +35,7 @@
+ #include "modules/portal/pipewire_utils.h"
+ #include "modules/portal/portal_request_response.h"
+ #include "modules/video_capture/linux/camera_portal.h"
 +#include "modules/video_capture/linux/device_info_pipewire.h"
+ #include "modules/video_capture/video_capture_defines.h"
+ #include "modules/video_capture/video_capture_options.h"
+ #include "rtc_base/logging.h"
+@@ -104,7 +105,8 @@ PipeWireNode::PipeWireNode(PipeWireSession* session,
+       .param = OnNodeParam,
+   };
  
- #include <spa/monitor/device.h>
- #include <spa/param/format-utils.h>
-@@ -296,6 +297,28 @@ void PipeWireSession::InitPipeWire(int fd) {
+-  pw_node_add_listener(reinterpret_cast<pw_node*>(proxy_), &node_listener_, &node_events, this);
++  pw_node_add_listener(reinterpret_cast<pw_node*>(proxy_), &node_listener_,
++                       &node_events, this);
+ }
+ 
+ // static
+@@ -136,7 +138,8 @@ void PipeWireNode::OnNodeInfo(void* data, const pw_node_info* info) {
+       uint32_t id = info->params[i].id;
+       if (id == SPA_PARAM_EnumFormat &&
+           info->params[i].flags & SPA_PARAM_INFO_READ) {
+-        pw_node_enum_params(reinterpret_cast<pw_node*>(that->proxy_), 0, id, 0, UINT32_MAX, nullptr);
++        pw_node_enum_params(reinterpret_cast<pw_node*>(that->proxy_), 0, id, 0,
++                            UINT32_MAX, nullptr);
+         break;
+       }
+     }
+@@ -304,6 +307,30 @@ void PipeWireSession::InitPipeWire(int fd) {
      Finish(VideoCaptureOptions::Status::ERROR);
  }
  
 +bool PipeWireSession::RegisterDeviceInfo(DeviceInfoPipeWire* device_info) {
 +  RTC_CHECK(device_info);
 +  MutexLock lock(&device_info_lock_);
-+  auto it = std::find(device_info_list_.begin(), device_info_list_.end(), device_info);
++  auto it = std::find(device_info_list_.begin(), device_info_list_.end(),
++                      device_info);
 +  if (it == device_info_list_.end()) {
 +    device_info_list_.push_back(device_info);
 +    return true;
@@ -71,7 +92,8 @@ index 2c533a0edb..86368f6aa1 100644
 +bool PipeWireSession::DeRegisterDeviceInfo(DeviceInfoPipeWire* device_info) {
 +  RTC_CHECK(device_info);
 +  MutexLock lock(&device_info_lock_);
-+  auto it = std::find(device_info_list_.begin(), device_info_list_.end(), device_info);
++  auto it = std::find(device_info_list_.begin(), device_info_list_.end(),
++                      device_info);
 +  if (it != device_info_list_.end()) {
 +    device_info_list_.erase(it);
 +    return true;
@@ -82,7 +104,7 @@ index 2c533a0edb..86368f6aa1 100644
  RTC_NO_SANITIZE("cfi-icall")
  bool PipeWireSession::StartPipeWire(int fd) {
    pw_init(/*argc=*/nullptr, /*argv=*/nullptr);
-@@ -368,6 +391,21 @@ void PipeWireSession::PipeWireSync() {
+@@ -376,6 +403,21 @@ void PipeWireSession::PipeWireSync() {
    sync_seq_ = pw_core_sync(pw_core_, PW_ID_CORE, sync_seq_);
  }
  
@@ -104,7 +126,7 @@ index 2c533a0edb..86368f6aa1 100644
  // static
  void PipeWireSession::OnCoreError(void* data,
                                    uint32_t id,
-@@ -426,6 +464,8 @@ void PipeWireSession::OnRegistryGlobal(void* data,
+@@ -433,6 +475,8 @@ void PipeWireSession::OnRegistryGlobal(void* data,
  
    that->nodes_.push_back(PipeWireNode::Create(that, id, props));
    that->PipeWireSync();
@@ -113,10 +135,10 @@ index 2c533a0edb..86368f6aa1 100644
  }
  
  // static
-@@ -437,10 +477,15 @@ void PipeWireSession::OnRegistryGlobalRemove(void* data, uint32_t id) {
-                              return node->id() == id;
-                            });
-   that->nodes_.erase(it, that->nodes_.end());
+@@ -442,10 +486,15 @@ void PipeWireSession::OnRegistryGlobalRemove(void* data, uint32_t id) {
+   std::erase_if(that->nodes_, [id](const PipeWireNode::PipeWireNodePtr& node) {
+     return node->id() == id;
+   });
 +
 +  that->NotifyDeviceChange();
  }
@@ -131,10 +153,10 @@ index 2c533a0edb..86368f6aa1 100644
    webrtc::MutexLock lock(&callback_lock_);
  
 diff --git a/modules/video_capture/linux/pipewire_session.h b/modules/video_capture/linux/pipewire_session.h
-index b2a2023585..ecf419a026 100644
+index 84848d76ef..a9e162a2ff 100644
 --- a/modules/video_capture/linux/pipewire_session.h
 +++ b/modules/video_capture/linux/pipewire_session.h
-@@ -31,6 +31,7 @@
+@@ -34,6 +34,7 @@
  namespace webrtc {
  namespace videocapturemodule {
  
@@ -142,7 +164,7 @@ index b2a2023585..ecf419a026 100644
  class PipeWireSession;
  class VideoCaptureModulePipeWire;
  
-@@ -99,6 +100,21 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
+@@ -102,6 +103,21 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
  
    void Init(VideoCaptureOptions::Callback* callback,
              int fd = kInvalidPipeWireFd);
@@ -164,7 +186,7 @@ index b2a2023585..ecf419a026 100644
    const std::deque<PipeWireNode::PipeWireNodePtr>& nodes() const {
      return nodes_;
    }
-@@ -113,6 +129,8 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
+@@ -116,6 +132,8 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
    void StopPipeWire();
    void PipeWireSync();
  
@@ -173,7 +195,7 @@ index b2a2023585..ecf419a026 100644
    static void OnCoreError(void* data,
                            uint32_t id,
                            int seq,
-@@ -135,7 +153,13 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
+@@ -138,7 +156,13 @@ class PipeWireSession : public webrtc::RefCountedNonVirtual<PipeWireSession> {
    VideoCaptureOptions::Callback* callback_ RTC_GUARDED_BY(&callback_lock_) =
        nullptr;
  

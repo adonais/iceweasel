@@ -3,7 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ---
 task-defaults:
-    worker-type: b-linux-amd
+    worker-type: b-linux-docker-amd
     worker:
         max-run-time: 1800
     use-python: default
@@ -217,7 +217,7 @@ macosx64-xz:
         toolchain-artifact: public/build/xz.tar.zst
     fetches:
         fetch:
-            - xz-5.4.4
+            - xz-5.8.1
         toolchain:
             - macosx64-clang-toolchain
             - macosx64-sdk-toolchain
@@ -309,7 +309,6 @@ android-custom-car:
         script: build-custom-car.sh
         arguments: [
             car_android.tar.zst,
-            blink_symbol_level=0,
             chrome_pgo_phase=2,
             dcheck_always_on=false,
             enable_nacl=false,
@@ -319,12 +318,11 @@ android-custom-car:
             is_component_build=false,
             is_debug=false,
             is_official_build=true,
-            symbol_level=0,
+            symbol_level=2,
             target_cpu="arm64",
             target_os="android",
             is_android=true,
-            is_high_end_android=true,
-            v8_symbol_level=0
+            is_high_end_android=true
         ]
         toolchain-artifact: public/build/car_android.tar.zst
 
@@ -366,9 +364,9 @@ win64-custom-car:
         cached_task: false
     treeherder:
         symbol: TW64(custom-car)
-    worker-type: b-win2022
+    worker-type: b-win2022-xxlarge
     worker:
-        max-run-time: 18000
+        max-run-time: 10000
         env:
             MSYSTEM: "MINGW64"
     use-python: "3.11"
@@ -388,7 +386,7 @@ win64-custom-car:
             is_official_build=true,
             symbol_level=2,
             target_cpu=\"x64\",
-            use_v8_context_snapshot=false,
+            use_v8_context_snapshot=false
         ]
         toolchain-artifact: public/build/car_win64.tar.zst
     fetches:
@@ -596,7 +594,7 @@ linux64-makecab:
             - sysroot-x86_64-linux-gnu
 
 linux64-samply:
-    description: "samply toolchain build"
+    description: "samply toolchain build for x86_64 Linux"
     treeherder:
         symbol: TL(samply)
     worker:
@@ -614,6 +612,66 @@ linux64-samply:
             - linux64-clang-toolchain
             - linux64-rust-toolchain
             - sysroot-x86_64-linux-gnu
+
+macosx64-samply:
+    description: "samply toolchain build for x86_64 macOS"
+    treeherder:
+        symbol: TM(samply)
+    worker:
+        env:
+            FETCH: samply/samply
+    run:
+        script: build-rust-based-toolchain.sh
+        arguments: ['x86_64-apple-darwin']
+        toolchain-artifact: public/build/samply.tar.zst
+    run-on-projects: []
+    fetches:
+        fetch:
+            - samply
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-macos-toolchain
+            - macosx64-sdk-toolchain
+
+macosx64-aarch64-samply:
+    description: "samply toolchain build for aarch64 macOS"
+    treeherder:
+        symbol: TMA64(samply)
+    worker:
+        env:
+            FETCH: samply/samply
+    run:
+        script: build-rust-based-toolchain.sh
+        arguments: ['aarch64-apple-darwin']
+        toolchain-artifact: public/build/samply.tar.zst
+    run-on-projects: []
+    fetches:
+        fetch:
+            - samply
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-macos-toolchain
+            - macosx64-sdk-toolchain
+
+win64-samply:
+    description: "samply toolchain build for Windows"
+    treeherder:
+        symbol: TW64(samply)
+    worker:
+        env:
+            FETCH: samply/samply
+    run:
+        script: build-rust-based-toolchain.sh
+        arguments: ['x86_64-pc-windows-msvc']
+        toolchain-artifact: public/build/samply.tar.zst
+    run-on-projects: []
+    fetches:
+        fetch:
+            - samply
+        toolchain:
+            - linux64-clang-toolchain
+            - linux64-rust-windows-toolchain
+            - vs-toolchain
 
 win64-mozmake:
     description: "mozmake for Windows"
@@ -703,6 +761,23 @@ win64-vs2022:
             - vs
             - vs-toolchain
 
+win64-vs2026:
+    description: "VS 2026"
+    attributes:
+        local-toolchain: true
+    treeherder:
+        symbol: TW64(msvc2026)
+    worker:
+        env:
+            MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
+    run:
+        script: get_vs.py
+        arguments:
+            - build/vs/vs2026.yaml
+        resources:
+            - build/vs/vs2026.yaml
+        toolchain-artifact: project/gecko/vs/vs.tar.zst
+
 win64-WindowsAppSDK:
     description: "WindowsAppSDK headers and libraries (x86_64)"
     attributes:
@@ -767,6 +842,23 @@ win64-aarch64-vs2022:
             - build/vs/vs2022-aarch64.yaml
         toolchain-artifact: project/gecko/vs/vs.tar.zst
         toolchain-alias: win64-aarch64-vs
+
+win64-aarch64-vs2026:
+    description: "VS 2026 (AArch64)"
+    attributes:
+        local-toolchain: true
+    treeherder:
+        symbol: TWA64(msvc2026)
+    worker:
+        env:
+            MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system
+    run:
+        script: get_vs.py
+        arguments:
+            - build/vs/vs2026-aarch64.yaml
+        resources:
+            - build/vs/vs2026-aarch64.yaml
+        toolchain-artifact: project/gecko/vs/vs.tar.zst
 
 linux64-afl-instrumentation-4.0:
     description: "AFL++ instrumentation toolchain build"

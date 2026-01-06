@@ -121,6 +121,7 @@ firefox_desktop_metrics = [
     "browser/components/attribution/metrics.yaml",
     "browser/components/backup/metrics.yaml",
     "browser/components/contextualidentity/metrics.yaml",
+    "browser/components/customkeys/metrics.yaml",
     "browser/components/downloads/metrics.yaml",
     "browser/components/extensions/metrics.yaml",
     "browser/components/firefoxview/metrics.yaml",
@@ -205,12 +206,14 @@ metrics_yamls = sorted(
 # Order is lexicographical, enforced by t/c/glean/tests/pytest/test_yaml_indices.py
 gecko_pings = [
     "dom/pings.yaml",
+    "netwerk/pings.yaml",
     "toolkit/components/antitracking/bouncetrackingprotection/pings.yaml",
     "toolkit/components/backgroundhangmonitor/pings.yaml",
     "toolkit/components/captchadetection/pings.yaml",
     "toolkit/components/gecko-trace/pings.yaml",
     "toolkit/components/glean/pings.yaml",
     "toolkit/components/resistfingerprinting/pings.yaml",
+    "toolkit/mozapps/extensions/pings.yaml",
 ]
 
 # Pings that are sent by Firefox Desktop.

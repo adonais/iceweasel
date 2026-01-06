@@ -9,8 +9,6 @@
 #include <CoreAudioTypes/CoreAudioBaseTypes.h>
 #include <mozilla/Result.h>
 
-#include <array>
-
 #include "ADTSDemuxer.h"
 #include "Adts.h"
 #include "ByteWriter.h"

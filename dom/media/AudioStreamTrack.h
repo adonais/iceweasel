@@ -24,6 +24,8 @@ class AudioStreamTrack : public MediaStreamTrack {
       : MediaStreamTrack(aWindow, aInputTrack, aSource, aReadyState, aMuted,
                          aConstraints) {}
 
+  already_AddRefed<MediaStreamTrack> Clone() override;
+
   AudioStreamTrack* AsAudioStreamTrack() override { return this; }
   const AudioStreamTrack* AsAudioStreamTrack() const override { return this; }
 
@@ -38,9 +40,6 @@ class AudioStreamTrack : public MediaStreamTrack {
   void GetKind(nsAString& aKind) override { aKind.AssignLiteral("audio"); }
 
   void GetLabel(nsAString& aLabel, CallerType aCallerType) override;
-
- protected:
-  already_AddRefed<MediaStreamTrack> CloneInternal() override;
 };
 
 }  // namespace mozilla::dom

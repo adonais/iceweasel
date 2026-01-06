@@ -63,7 +63,7 @@ category-sync3 =
 settings-pane-labs-title = { -firefoxlabs-brand-name }
 settings-category-labs =
     .tooltiptext = { -firefoxlabs-brand-name }
-pane-experimental-description3 = Give our experimental features a try! They’re in development and evolving, which could impact how { -brand-short-name } works.
+pane-experimental-description4 = Give our experimental features a try! They’re in development and evolving, which could impact how { -brand-short-name } works. We only receive data about your use of these features if you have <a data-l10n-name="data-collection">technical and interaction data</a> turned on.
 
 pane-experimental-reset =
   .label = Restore Defaults
@@ -171,19 +171,53 @@ windows-launch-on-login-disabled = This preference has been disabled in Windows.
 disable-extension =
     .label = Disable Extension
 
-preferences-data-migration-header = Import Browser Data
-preferences-data-migration-description = Import bookmarks, passwords, history, and autofill data into { -brand-short-name }.
+preferences-data-migration-group =
+    .label = Import browser data
+    .description = Bring your bookmarks, passwords, history, extensions, and autofill data from another browser.
 preferences-data-migration-button =
-    .label = Import Data
+    .label = Import data
     .accesskey = m
 
-preferences-profiles-header = Profiles
-preferences-manage-profiles-description = Each profile has separate browsing data and settings, including history, passwords, and more.
-preferences-manage-profiles-learn-more = Learn more
+preferences-profiles-group-header =
+    .heading = Profiles
+preferences-profiles-subpane-description =
+    .description = Each profile has separate browsing data and settings, including history, passwords, and more.
+preferences-profiles-section-header =
+    .label = Profiles
+    .description = Each profile has separate browsing data and settings, including history, passwords, and more.
 preferences-manage-profiles-button =
   .label = Manage Profiles
+preferences-profiles-settings-button =
+  .label = Settings
+# This string labels the entire copy profile section in the profiles sub-pane.
+preferences-copy-profile-header =
+    .label = Copy an existing profile
+    .description = The new profile will copy your settings, add-ons, history, and saved data like bookmarks and passwords — but not your account or sync info.
+# This string sits next to the copy controls, both the copy-profile-select
+# drop-down and the copy-profile-button, so that the user understands they
+# need to first pick a profile to copy, and then click the copy button.
+preferences-profile-to-copy =
+  .label = Profile to copy
+# This string is a placeholder that will be shown in a drop-down list of
+# profiles. The user will select a profile, then click the copy button
+# to make a copy of that profile.
+preferences-copy-profile-select = Select profile
+preferences-copy-profile-button = Copy
 
-tabs-group-header = Tabs
+tabs-group-header2 =
+  .label = Tabs
+
+tabs-opening-heading =
+  .label = Opening
+
+tabs-interaction-heading =
+  .label = Interaction
+
+tabs-containers-heading =
+  .label = Containers
+
+tabs-closing-heading =
+  .label = Closing
 
 ctrl-tab-recently-used-order =
     .label = Ctrl+Tab cycles through tabs in recently used order
@@ -637,6 +671,10 @@ browsing-picture-in-picture-toggle-enabled =
     .label = Enable Picture-in-Picture video controls
     .accesskey = E
 
+browsing-picture-in-picture-enable-when-switching-tabs =
+    .label = Keep playing videos in Picture-in-Picture when switching tabs
+    .accesskey = s
+
 browsing-media-control =
     .label = Control media via keyboard, headset, or virtual interface
     .accesskey = v
@@ -744,8 +782,9 @@ choose-bookmark =
 
 ## Home Section - Firefox Home Content Customization
 
+home-prefs-content-header =
+    .label = { -firefox-home-brand-name }
 home-prefs-content-header2 = { -firefox-home-brand-name } Content
-home-prefs-content-header3 = { -firefox-home-brand-name }
 home-prefs-content-description2 = Choose what content you want on your { -firefox-home-brand-name } screen.
 
 home-prefs-search-header =
@@ -765,6 +804,10 @@ home-prefs-recommended-by-description-generic = Exceptional content curated by t
 home-prefs-stories-header =
     .label = Stories
 home-prefs-stories-description = Personalized stories based on your activity
+
+home-prefs-stories-header2 =
+    .label = Stories
+    .description = Exceptional content curated by the { -brand-product-name } family
 
 ##
 
@@ -787,9 +830,16 @@ home-prefs-weather-header =
 home-prefs-weather-description = Today’s forecast at a glance
 home-prefs-weather-learn-more-link = Learn more
 
-home-prefs-trending-search-header =
-    .label = Trending searches
-home-prefs-trending-search-description = Popular and frequently searched topics
+home-prefs-widgets-header =
+    .label = Widgets
+
+# Lists is a widget on New Tab, similar to a to-do widget
+home-prefs-lists-header =
+    .label = Lists
+
+# Timer is a widget on New Tab, similar to the Pomodoro timer.
+home-prefs-timer-header =
+    .label = Timer
 
 # "Support" here means to help sustain or contribute to something, especially through funding or sponsorship.
 home-prefs-support-firefox-header =
@@ -797,6 +847,9 @@ home-prefs-support-firefox-header =
 
 home-prefs-mission-message = Our sponsors support our mission to build a better web
 home-prefs-mission-message-learn-more-link = Find out how
+
+home-prefs-mission-message2 =
+    .message = Our sponsors support our mission to build a better web.
 
 home-prefs-manage-topics-link = Manage topics
 home-prefs-choose-wallpaper-link = Choose a wallpaper
@@ -812,12 +865,22 @@ home-prefs-sections-rows-option =
 
 ## Search Section
 
-search-engine-default-header = Default Search Engine
-search-engine-default-desc-2 = This is your default search engine in the address bar and search bar. You can switch it at any time.
-search-engine-default-private-desc-2 = Choose a different default search engine for Private Windows only
-search-separate-default-engine =
-    .label = Use this search engine in Private Windows
+search-engine-group =
+    .label = Default search engine
+search-default-engine =
+    .aria-label = Default search engine
+
+# With this option enabled, while on a SERP, the URL normally displayed in the
+# address bar will be replaced with the search term used to generate that SERP.
+search-show-search-term-option-2 =
+    .label = Show search terms in the address bar on results pages
+
+search-separate-default-engine-2 =
+    .label = Use a different default search engine in private windows
     .accesskey = U
+
+search-separate-default-engine-dropdown =
+    .aria-label = Default search engine in private windows
 
 search-suggestions-header = Search Suggestions
 search-suggestions-desc = Choose how suggestions from search engines appear.
@@ -829,13 +892,6 @@ search-show-suggestions-option =
 search-show-suggestions-url-bar-option =
     .label = Show search suggestions in address bar results
     .accesskey = l
-
-
-# With this option enabled, on the search results page
-# the URL will be replaced by the search terms in the address bar.
-search-show-search-term-option-2 =
-    .label = Show search terms in the address bar on results pages
-
 
 # This string describes what the user will observe when the system
 # prioritizes search suggestions over browsing history in the results
@@ -994,6 +1050,12 @@ prefs-syncing-button =
 
 sync-syncing-across-devices-heading = You are syncing these items across all your connected devices:
 
+sync-syncing-across-devices-heading-2 = Data synced across devices
+
+sync-syncing-across-devices-empty-state =
+    .label = You aren’t syncing anything… yet.
+    .description = Start syncing to get all of your data on all your devices.
+
 sync-currently-syncing-bookmarks = Bookmarks
 sync-currently-syncing-history = History
 sync-currently-syncing-tabs = Open tabs
@@ -1094,10 +1156,17 @@ privacy-header = Browser Privacy
 pane-privacy-passwords-header = Passwords
     .searchkeywords = logins
 
+forms-passwords-header =
+    .label = Passwords
+    .aria-label = Passwords
+
 # Checkbox to control whether UI is shown to users to save or fill logins/passwords.
 forms-ask-to-save-passwords =
     .label = Ask to save passwords
     .accesskey = A
+forms-manage-password-exceptions =
+    .label = Manage password exceptions
+    .accesskey = M
 forms-exceptions =
     .label = Exceptions…
     .accesskey = x
@@ -1117,12 +1186,32 @@ relay-integration-learn-more-link = Learn more
 forms-fill-usernames-and-passwords =
     .label = Fill usernames and passwords automatically
     .accesskey = F
+forms-fill-usernames-and-passwords-2 =
+    .label = Save and autofill usernames and passwords
+    .accesskey = f
 forms-saved-passwords =
     .label = Saved passwords
     .accesskey = d
+forms-saved-passwords-2 =
+    .label = Manage saved passwords
+    .accesskey = d
+forms-saved-passwords-searchkeywords = Logins for the following sites are stored on your computer
+
+# Header for additional protections when managing password settings.
+forms-additional-protections-header =
+    .label = Additional protections
 forms-primary-pw-use =
-    .label = Use a Primary Password
+    .label = Use a primary password
     .accesskey = U
+forms-primary-pw-set =
+    .label = Set primary password
+forms-primary-pw-on =
+    .label = Primary password is ON
+forms-primary-pw-change-2 =
+    .label = Change primary password
+# Label for button to disable primary password.
+forms-primary-pw-turn-off =
+    .label = Turn it off
 # This operation requires the user to authenticate with the operating system (device sign-in)
 forms-os-reauth =
     .label = Require device sign in to fill and manage passwords
@@ -1177,6 +1266,8 @@ autofill-payment-methods-header =
 autofill-payment-methods-checkbox-message-2 =
     .label = Save and autofill payment info
     .accesskey = p
+autofill-payment-methods-manage-payments-title =
+    .heading = Manage payment methods
 autofill-payment-methods-manage-payments-button =
     .label = Manage payment methods
     .accesskey = m
@@ -1185,6 +1276,13 @@ autofill-reauth-payment-methods-checkbox-2 =
     .label = Require device sign in to autofill and manage payments methods
     .accesskey = o
 
+autofill-payment-methods-add-button = Add new payment method
+payments-list-header =
+  .label = Payment methods
+payments-list-item-label = <strong>Payment methods</strong>
+payments-remove-payment-prompt-title = Remove this payment method?
+payments-remove-payment-prompt-confirm-button = Remove
+payments-remove-payment-prompt-cancel-button = Cancel
 autofill-addresses-title = Addresses and more
 autofill-addresses-header =
     .aria-label = Addresses and more
@@ -1194,6 +1292,15 @@ autofill-addresses-checkbox-message =
 autofill-addresses-manage-addresses-button =
     .label = Manage addresses and more
     .accesskey = M
+
+# These values are displayed for each credit card record listed on the Manage Payment methods
+# settings page.
+# Variables:
+#   $cardNumber (string) - The obscured credit card number (for example: 2423 *********)
+#   $expDate (string) - The obscured expiry date of the credit card (for example: XX/2027)
+payment-moz-box-item =
+  .label = { $cardNumber }
+  .description = { $expDate }
 
 ## Privacy Section - History
 
@@ -1208,8 +1315,7 @@ history-header = History
 #   - Simply as "Firefox", moving the verb into each option.
 #     This will result in "Firefox" + "Will remember history", etc.
 #   - As a stand-alone message, for example "Firefox history settings:".
-history-remember-label = { -brand-short-name } will
-    .accesskey = w
+history-remember-label2 = { -brand-short-name } will
 
 history-remember-option-all =
     .label = Remember history
@@ -1218,8 +1324,17 @@ history-remember-option-never =
 history-remember-option-custom =
     .label = Use custom settings for history
 
-history-remember-description = { -brand-short-name } will remember your browsing, download, form, and search history.
-history-dontremember-description = { -brand-short-name } will use the same settings as private browsing, and will not remember any history as you browse the Web.
+history-remember-description3 =
+    .aria-label = { history-remember-label2 }
+    .description = { -brand-short-name } will remember your browsing, download, form, and search history.
+
+history-dontremember-description3 =
+    .aria-label = { history-remember-label2 }
+    .description = { -brand-short-name } will use the same settings as private browsing, and will not remember any history as you browse the Web.
+
+history-custom-description3 =
+    .aria-label = { history-remember-label2 }
+    .description = { -brand-short-name } will use custom settings for your browsing, download, form and search history.
 
 history-private-browsing-permanent =
     .label = Always use private browsing mode
@@ -1509,59 +1624,41 @@ tracking-manage-exceptions =
 
 ## Privacy Section - Permissions
 
-permissions-header = Permissions
+permissions-header2 =
+    .label = Permissions
+    .description = Permissions you give to websites you browse.
 
-permissions-location = Location
-permissions-location-settings =
-    .label = Settings…
-    .accesskey = t
+permissions-location2 =
+    .label = Location
 
-permissions-localhost = Device apps and services
-permissions-localhost-settings =
-    .label = Settings…
-    .accesskey = t
+permissions-localhost2 =
+    .label = Device apps and services
 
-permissions-local-network = Local Network Devices
-permissions-local-network-settings =
-    .label = Settings…
-    .accesskey = t
+permissions-local-network2 =
+    .label = Local network devices
 
-permissions-xr = Virtual Reality
-permissions-xr-settings =
-    .label = Settings…
-    .accesskey = t
+permissions-xr2 =
+    .label = Virtual reality
 
-permissions-camera = Camera
-permissions-camera-settings =
-    .label = Settings…
-    .accesskey = t
+permissions-camera2 =
+    .label = Camera
 
-permissions-microphone = Microphone
-permissions-microphone-settings =
-    .label = Settings…
-    .accesskey = t
+permissions-microphone2 =
+    .label = Microphone
 
-# Short form for "the act of choosing sound output devices and redirecting audio to the chosen devices".
-permissions-speaker = Speaker Selection
-permissions-speaker-settings =
-    .label = Settings…
-    .accesskey = t
+# Privacy permission for sound output devices.
+permissions-speaker2 =
+    .label = Speaker
 
-permissions-notification = Notifications
-permissions-notification-settings =
-    .label = Settings…
-    .accesskey = t
-permissions-notification-link = Learn more
+permissions-notification2 =
+    .label = Notifications
 
 permissions-notification-pause =
     .label = Pause notifications until { -brand-short-name } restarts
     .accesskey = n
 
-permissions-autoplay = Autoplay
-
-permissions-autoplay-settings =
-    .label = Settings…
-    .accesskey = t
+permissions-autoplay2 =
+    .label = Autoplay
 
 permissions-block-popups2 =
     .label = Block pop-ups and third-party redirects
@@ -1569,17 +1666,17 @@ permissions-block-popups2 =
 
 # "popup" is a misspelling that is more popular than the correct spelling of
 # "pop-up" so it's included as a search keyword, not displayed in the UI.
-permissions-block-popups-exceptions-button =
-    .label = Exceptions…
+permissions-block-popups-exceptions-button2 =
+    .label = Manage pop-up and third-party redirect exceptions
     .accesskey = E
     .searchkeywords = popups
 
-permissions-addon-install-warning =
-    .label = Warn you when websites try to install add-ons
+permissions-addon-install-warning2 =
+    .label = Warn when websites try to install extensions
     .accesskey = W
 
-permissions-addon-exceptions =
-    .label = Exceptions…
+permissions-addon-exceptions2 =
+    .label = Choose which websites can install extensions
     .accesskey = E
 
 ## Privacy Section - Data Collection

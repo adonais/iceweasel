@@ -14,7 +14,7 @@ kind-dependencies:
 
 task-defaults:
     run-on-repo-type: [hg]
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     fetches:
         toolchain:
             - linux64-node

@@ -8,6 +8,7 @@ import android.Manifest
 import android.content.Context
 import android.hardware.camera2.CameraManager
 import android.media.AudioManager
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.core.net.toUri
 import androidx.test.rule.GrantPermissionRule
 import mozilla.components.support.ktx.util.PromptAbuserDetector
@@ -16,13 +17,16 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
+import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MockLocationUpdatesRule
 import org.mozilla.fenix.helpers.RetryTestRule
+import org.mozilla.fenix.helpers.TestAssetHelper.getGenericAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestSetup
 import org.mozilla.fenix.helpers.perf.DetectMemoryLeaksRule
 import org.mozilla.fenix.ui.robots.browserScreen
+import org.mozilla.fenix.ui.robots.homeScreen
 import org.mozilla.fenix.ui.robots.navigationToolbar
 
 /**
@@ -36,13 +40,15 @@ class SitePermissionsTest : TestSetup() {
     private val cameraManager = appContext.getSystemService(Context.CAMERA_SERVICE) as CameraManager
     private val micManager = appContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
-    @get:Rule
-    val activityTestRule = HomeActivityIntentTestRule(
-        isPWAsPromptEnabled = false,
-        isDeleteSitePermissionsEnabled = true,
-    )
+    @get:Rule(order = 0)
+    val composeTestRule = AndroidComposeTestRule(
+        HomeActivityIntentTestRule(
+            isPWAsPromptEnabled = false,
+            isDeleteSitePermissionsEnabled = true,
+        ),
+    ) { it.activity }
 
-    @get:Rule
+    @get:Rule(order = 1)
     val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
         Manifest.permission.RECORD_AUDIO,
         Manifest.permission.CAMERA,
@@ -50,13 +56,13 @@ class SitePermissionsTest : TestSetup() {
         Manifest.permission.ACCESS_FINE_LOCATION,
     )
 
-    @get:Rule
+    @get:Rule(order = 2)
     val mockLocationUpdatesRule = MockLocationUpdatesRule()
 
-    @get:Rule
+    @get:Rule(order = 3)
     val memoryLeaksRule = DetectMemoryLeaksRule()
 
-    @get:Rule
+    @get:Rule(order = 4)
     val retryTestRule = RetryTestRule(3)
 
     override fun setUp() {
@@ -313,6 +319,39 @@ class SitePermissionsTest : TestSetup() {
             verifyLocationPermissionPrompt(testPageHost)
         }.clickPagePermissionButton(false) {
             verifyPageContent("User denied geolocation prompt")
+        }
+    }
+
+    @Test
+    fun doNotAskAgainIsHiddenForLocationPermissionInPrivateMode() {
+        homeScreen {
+        }.togglePrivateBrowsingMode()
+
+        navigationToolbar {
+        }.enterURLAndEnterToBrowser(testPage.toUri()) {
+        }.clickGetLocationButton {
+            verifyLocationPermissionPrompt(testPageHost)
+            verifyDoNotAskAgainIsHidden()
+        }
+    }
+
+    @Test
+    fun crossOriginStoragePermissionLearnMoreLinkTest() {
+        val genericWebPage = mockWebServer.getGenericAsset(1)
+        val testPage = mockWebServer.url("pages/cross-site-cookies.html").toString().toUri()
+        val originHost = "mozilla-mobile.github.io"
+        val currentHost = "localhost"
+
+        navigationToolbar {
+        }.enterURLAndEnterToBrowser(genericWebPage.url) {
+            waitForPageToLoad()
+        }.openNavigationToolbar {
+        }.enterURLAndEnterToBrowser(testPage) {
+            waitForPageToLoad()
+        }.clickRequestStorageAccessButton {
+            verifyCrossOriginCookiesPermissionPrompt(originHost, currentHost)
+        }.clickLearnMore {
+            verifyCrossOriginStorageLearnMoreURL()
         }
     }
 }

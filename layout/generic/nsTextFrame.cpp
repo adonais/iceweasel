@@ -10,7 +10,6 @@
 
 #include <algorithm>
 #include <limits>
-#include <type_traits>
 
 #include "MathMLTextRunFactory.h"
 #include "PresShellInlines.h"
@@ -4898,7 +4897,7 @@ nsTextFrame::~nsTextFrame() = default;
 nsIFrame::Cursor nsTextFrame::GetCursor(const nsPoint& aPoint) {
   StyleCursorKind kind = StyleUI()->Cursor().keyword;
   if (kind == StyleCursorKind::Auto) {
-    if (!IsSelectable(nullptr)) {
+    if (!IsSelectable()) {
       kind = StyleCursorKind::Default;
     } else {
       kind = GetWritingMode().IsVertical() ? StyleCursorKind::VerticalText
@@ -5232,7 +5231,15 @@ UniquePtr<SelectionDetails> nsTextFrame::GetSelectionDetails() {
     return nullptr;
   }
   UniquePtr<SelectionDetails> details = frameSelection->LookUpSelection(
-      mContent, GetContentOffset(), GetContentLength(), false);
+      mContent, GetContentOffset(), GetContentLength(),
+      // We don't want to paint text as selected if this is not selectable.
+      // Note if this is editable, this is always treated as selectable, i.e.,
+      // if `user-select` is specified to `none` so that we never stop painting
+      // selections when there is IME composition which may need normal
+      // selection as a part of it.
+      ShouldPaintNormalSelection()
+          ? nsFrameSelection::IgnoreNormalSelection::No
+          : nsFrameSelection::IgnoreNormalSelection::Yes);
   for (SelectionDetails* sd = details.get(); sd; sd = sd->mNext.get()) {
     sd->mStart += mContentOffset;
     sd->mEnd += mContentOffset;
@@ -8054,19 +8061,15 @@ nsRect nsTextFrame::WebRenderBounds() {
 }
 
 int16_t nsTextFrame::GetSelectionStatus(int16_t* aSelectionFlags) {
-  // get the selection controller
-  nsCOMPtr<nsISelectionController> selectionController;
-  nsresult rv = GetSelectionController(PresContext(),
-                                       getter_AddRefs(selectionController));
-  if (NS_FAILED(rv) || !selectionController) {
+  nsISelectionController* const selCon = GetSelectionController();
+  if (MOZ_UNLIKELY(!selCon)) {
     return nsISelectionController::SELECTION_OFF;
   }
 
-  selectionController->GetSelectionFlags(aSelectionFlags);
+  selCon->GetSelectionFlags(aSelectionFlags);
 
-  int16_t selectionValue;
-  selectionController->GetDisplaySelection(&selectionValue);
-
+  int16_t selectionValue = nsISelectionController::SELECTION_OFF;
+  selCon->GetDisplaySelection(&selectionValue);
   return selectionValue;
 }
 
@@ -8832,8 +8835,9 @@ static bool IsAcceptableCaretPosition(const gfxSkipCharsIterator& aIter,
 
 nsIFrame::FrameSearchResult nsTextFrame::PeekOffsetCharacter(
     bool aForward, int32_t* aOffset, PeekOffsetCharacterOptions aOptions) {
-  int32_t contentLength = GetContentLength();
-  NS_ASSERTION(aOffset && *aOffset <= contentLength, "aOffset out of range");
+  const int32_t contentLengthInFrame = GetContentLength();
+  NS_ASSERTION(aOffset && *aOffset <= contentLengthInFrame,
+               "aOffset out of range");
 
   if (!aOptions.mIgnoreUserStyleAll) {
     StyleUserSelect selectStyle;
@@ -8847,19 +8851,46 @@ nsIFrame::FrameSearchResult nsTextFrame::PeekOffsetCharacter(
   if (!mTextRun) {
     return CONTINUE_EMPTY;
   }
-
-  TrimmedOffsets trimmed =
+  const TrimmedOffsets trimmed =
       GetTrimmedOffsets(CharacterDataBuffer(), TrimmedOffsetFlags::NoTrimAfter);
 
   // A negative offset means "end of frame".
-  int32_t startOffset =
-      GetContentOffset() + (*aOffset < 0 ? contentLength : *aOffset);
+  const int32_t offset =
+      GetContentOffset() + (*aOffset < 0 ? contentLengthInFrame : *aOffset);
 
   if (!aForward) {
+    const int32_t endOffset = [&]() -> int32_t {
+      const int32_t minEndOffset = std::min(trimmed.GetEnd(), offset);
+      if (minEndOffset <= trimmed.mStart ||
+          minEndOffset + 1 >= trimmed.GetEnd()) {
+        return minEndOffset;
+      }
+      // If the end offset points a character in this frame and it's skipped
+      // character, we want to scan previous character of the prceding first
+      // non-skipped character.
+      for (const int32_t i :
+           Reversed(IntegerRange(trimmed.mStart, minEndOffset + 1))) {
+        iter.SetOriginalOffset(i);
+        if (!iter.IsOriginalCharSkipped()) {
+          return i;
+        }
+      }
+      return trimmed.mStart;
+    }();
+    // If we're at the start of a line, look at the next continuation
+    if (endOffset <= trimmed.mStart) {
+      *aOffset = 0;
+      return CONTINUE;
+    }
     // If at the beginning of the line, look at the previous continuation
-    for (int32_t i = std::min(trimmed.GetEnd(), startOffset) - 1;
-         i >= trimmed.mStart; --i) {
+    for (const int32_t i : Reversed(IntegerRange(trimmed.mStart, endOffset))) {
       iter.SetOriginalOffset(i);
+      // If we entered into a skipped char range again, we should skip all
+      // of them.  However, we cannot know the number of preceding skipped
+      // chars.  Therefore, we cannot skip all of them once.
+      if (iter.IsOriginalCharSkipped()) {
+        continue;
+      }
       if (IsAcceptableCaretPosition(iter, aOptions.mRespectClusters, mTextRun,
                                     this)) {
         *aOffset = i - mContentOffset;
@@ -8867,28 +8898,59 @@ nsIFrame::FrameSearchResult nsTextFrame::PeekOffsetCharacter(
       }
     }
     *aOffset = 0;
-  } else {
-    // If we're at the end of a line, look at the next continuation
-    iter.SetOriginalOffset(startOffset);
-    if (startOffset <= trimmed.GetEnd() &&
-        !(startOffset < trimmed.GetEnd() &&
-          StyleText()->NewlineIsSignificant(this) &&
-          iter.GetSkippedOffset() < mTextRun->GetLength() &&
-          mTextRun->CharIsNewline(iter.GetSkippedOffset()))) {
-      for (int32_t i = startOffset + 1; i <= trimmed.GetEnd(); ++i) {
-        iter.SetOriginalOffset(i);
-        if (i == trimmed.GetEnd() ||
-            IsAcceptableCaretPosition(iter, aOptions.mRespectClusters, mTextRun,
-                                      this)) {
-          *aOffset = i - mContentOffset;
-          return FOUND;
-        }
-      }
-    }
-    *aOffset = contentLength;
+    return CONTINUE;
   }
 
-  return CONTINUE;
+  // If we're at the end of a line, look at the next continuation
+  if (offset + 1 > trimmed.GetEnd()) {
+    *aOffset = contentLengthInFrame;
+    return CONTINUE;
+  }
+
+  iter.SetOriginalOffset(offset);
+
+  // If we're at a preformatted linefeed, look at the next continutation
+  if (offset < trimmed.GetEnd() && StyleText()->NewlineIsSignificant(this) &&
+      iter.GetSkippedOffset() < mTextRun->GetLength() &&
+      mTextRun->CharIsNewline(iter.GetSkippedOffset())) {
+    *aOffset = contentLengthInFrame;
+    return CONTINUE;
+  }
+
+  const int32_t scanStartOffset = [&]() -> int32_t {
+    // If current char is skipped, scan starting from the following
+    // non-skipped char.
+    int32_t skippedLength = 0;
+    if (iter.IsOriginalCharSkipped(&skippedLength)) {
+      const int32_t skippedLengthInFrame =
+          std::min(skippedLength, trimmed.GetEnd() - iter.GetOriginalOffset());
+      return iter.GetOriginalOffset() + skippedLengthInFrame + 1;
+    }
+    return iter.GetOriginalOffset() + 1;
+  }();
+
+  for (int32_t i = scanStartOffset; i < trimmed.GetEnd(); i++) {
+    iter.SetOriginalOffset(i);
+    // If we entered into a skipped char range again, we should skip all
+    // of them.
+    int32_t skippedLength = 0;
+    if (iter.IsOriginalCharSkipped(&skippedLength)) {
+      const int32_t skippedLengthInFrame =
+          std::min(skippedLength, trimmed.GetEnd() - iter.GetOriginalOffset());
+      if (skippedLengthInFrame) {
+        i += skippedLengthInFrame - 1;
+      }
+      continue;
+    }
+    if (IsAcceptableCaretPosition(iter, aOptions.mRespectClusters, mTextRun,
+                                  this)) {
+      *aOffset = i - mContentOffset;
+      return FOUND;
+    }
+  }
+
+  *aOffset = trimmed.GetEnd() - mContentOffset;
+  return FOUND;
 }
 
 bool ClusterIterator::IsInlineWhitespace() const {
@@ -10050,10 +10112,10 @@ void nsTextFrame::AddInlinePrefISize(const IntrinsicSizeInput& aInput,
 
 /* virtual */
 nsIFrame::SizeComputationResult nsTextFrame::ComputeSize(
-    gfxContext* aRenderingContext, WritingMode aWM, const LogicalSize& aCBSize,
-    nscoord aAvailableISize, const LogicalSize& aMargin,
-    const LogicalSize& aBorderPadding, const StyleSizeOverrides& aSizeOverrides,
-    ComputeSizeFlags aFlags) {
+    const SizeComputationInput& aSizingInput, WritingMode aWM,
+    const LogicalSize& aCBSize, nscoord aAvailableISize,
+    const LogicalSize& aMargin, const LogicalSize& aBorderPadding,
+    const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) {
   // Inlines and text don't compute size before reflow.
   return {LogicalSize(aWM, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE),
           AspectRatioUsage::None};

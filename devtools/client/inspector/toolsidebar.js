@@ -85,11 +85,11 @@ class ToolSidebar extends EventEmitter {
   /**
    * Register a side-panel tab.
    *
-   * @param {String} tab uniq id
-   * @param {String} title tab title
+   * @param {string} tab uniq id
+   * @param {string} title tab title
    * @param {React.Component} panel component. See `InspectorPanelTab` as an example.
-   * @param {Boolean} selected true if the panel should be selected
-   * @param {Number} index the position where the tab should be inserted
+   * @param {boolean} selected true if the panel should be selected
+   * @param {number} index the position where the tab should be inserted
    */
   addTab(id, title, panel, selected, index) {
     this.#tabbar.addTab(id, title, selected, panel, null, index);
@@ -100,10 +100,10 @@ class ToolSidebar extends EventEmitter {
    * Helper API for adding side-panels that use existing DOM nodes
    * (defined within inspector.xhtml) as the content.
    *
-   * @param {String} tab uniq id
-   * @param {String} title tab title
-   * @param {Boolean} selected true if the panel should be selected
-   * @param {Number} index the position where the tab should be inserted
+   * @param {string} tab uniq id
+   * @param {string} title tab title
+   * @param {boolean} selected true if the panel should be selected
+   * @param {number} index the position where the tab should be inserted
    */
   addExistingTab(id, title, selected, index) {
     const panel = this.InspectorTabPanel({
@@ -119,11 +119,11 @@ class ToolSidebar extends EventEmitter {
   /**
    * Queues a side-panel tab to be added..
    *
-   * @param {String} tab uniq id
-   * @param {String} title tab title
+   * @param {string} tab uniq id
+   * @param {string} title tab title
    * @param {React.Component} panel component. See `InspectorPanelTab` as an example.
-   * @param {Boolean} selected true if the panel should be selected
-   * @param {Number} index the position where the tab should be inserted
+   * @param {boolean} selected true if the panel should be selected
+   * @param {number} index the position where the tab should be inserted
    */
   queueTab(id, title, panel, selected, index) {
     this.#tabbar.queueTab(id, title, selected, panel, null, index);
@@ -134,10 +134,10 @@ class ToolSidebar extends EventEmitter {
    * Helper API for queuing side-panels that use existing DOM nodes
    * (defined within inspector.xhtml) as the content.
    *
-   * @param {String} tab uniq id
-   * @param {String} title tab title
-   * @param {Boolean} selected true if the panel should be selected
-   * @param {Number} index the position where the tab should be inserted
+   * @param {string} tab uniq id
+   * @param {string} title tab title
+   * @param {boolean} selected true if the panel should be selected
+   * @param {number} index the position where the tab should be inserted
    */
   queueExistingTab(id, title, selected, index) {
     const panel = this.InspectorTabPanel({
@@ -152,7 +152,8 @@ class ToolSidebar extends EventEmitter {
 
   /**
    * Remove an existing tab.
-   * @param {String} tabId The ID of the tab that was used to register it, or
+   *
+   * @param {string} tabId The ID of the tab that was used to register it, or
    * the tab id attribute value if the tab existed before the sidebar
    * got created.
    */
@@ -164,8 +165,9 @@ class ToolSidebar extends EventEmitter {
 
   /**
    * Show or hide a specific tab.
-   * @param {Boolean} isVisible True to show the tab/tabpanel, False to hide it.
-   * @param {String} id The ID of the tab to be hidden.
+   *
+   * @param {boolean} isVisible True to show the tab/tabpanel, False to hide it.
+   * @param {string} id The ID of the tab to be hidden.
    */
   toggleTab(isVisible, id) {
     this.#tabbar.toggleTab(id, isVisible);
@@ -187,7 +189,8 @@ class ToolSidebar extends EventEmitter {
 
   /**
    * Returns the requested tab panel based on the id.
-   * @param {String} id
+   *
+   * @param {string} id
    * @return {DOMNode}
    */
   getTabPanel(id) {
@@ -221,9 +224,9 @@ class ToolSidebar extends EventEmitter {
   /**
    * Log toolClosed and toolOpened events on telemetry.
    *
-   * @param  {String} currentToolId
+   * @param  {string} currentToolId
    *         id of the tool being selected.
-   * @param  {String} previousToolId
+   * @param  {string} previousToolId
    *         id of the previously selected tool.
    */
   updateTelemetryOnChange(currentToolId, previousToolId) {
@@ -253,7 +256,7 @@ class ToolSidebar extends EventEmitter {
    * the permitted length of event telemetry property values and what we actually
    * want to see in our telemetry.
    *
-   * @param {String} id
+   * @param {string} id
    *        The panel id we would like to process.
    */
   getTelemetryPanelNameOrOther(id) {
@@ -277,7 +280,7 @@ class ToolSidebar extends EventEmitter {
   /**
    * Show the sidebar.
    *
-   * @param  {String} id
+   * @param  {string} id
    *         The sidebar tab id to select.
    */
   show(id) {

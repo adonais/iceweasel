@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="chrome://global/skin/global.css" />
     <script src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js"></script>
     <script src="../../../../../toolkit/content/tests/widgets/lit-test-helpers.js"></script>
+    <script src="./head.js"></script>
     <script
       type="module"
       src="chrome://browser/content/preferences/widgets/setting-group.mjs"
@@ -55,15 +56,6 @@
           );
         }
         return result.querySelector("setting-control");
-      }
-
-      function waitForSettingChange(setting) {
-        return new Promise(resolve => {
-          setting.on("change", function handler() {
-            setting.off("change", handler);
-            resolve();
-          });
-        });
       }
 
       add_setup(async function setup() {
@@ -406,6 +398,60 @@
           firstNestedControlItem.controlEl.localName,
           "moz-box-button",
           "Rendered moz-box-button as the first nested control item"
+        );
+      });
+
+      add_task(async function testMozSupportLink() {
+        await SpecialPowers.pushPrefEnv({
+          set: [["app.support.baseURL", "https://support.example.com/"]],
+        });
+        Preferences.addSetting({
+          id: "testMozSupportLink",
+          get: () => true,
+        });
+        let itemConfig = {
+          id: "testMozSupportLink",
+          options: [
+            {
+              control: "a",
+              slot: "support-link",
+              controlAttrs: {
+                href: "https://example.com/",
+                ".textContent": "Link text",
+              },
+            },
+            {
+              control: "a",
+              slot: "support-link",
+              controlAttrs: {
+                is: "moz-support-link",
+                "support-page": "get-help",
+              },
+            },
+          ],
+        };
+        let control = await renderTemplate(itemConfig);
+        let [anchor, mozSupportLink] = control.controlEl.shadowRoot
+          .querySelector('slot[name="support-link"]')
+          .assignedNodes();
+
+        function assertLinkProperties(el, { href, text }) {
+          ok(el, "Got a link element");
+          is(el.href, href, "href is correct");
+          is(el.innerText, text, "text is correct");
+        }
+
+        assertLinkProperties(anchor, {
+          href: "https://example.com/",
+          text: "Link text",
+        });
+        assertLinkProperties(mozSupportLink, {
+          href: "https://support.example.com/get-help",
+          text: "Learn more",
+        });
+        ok(
+          mozSupportLink instanceof customElements.get("moz-support-link"),
+          "moz-support-link is a MozSupportLink"
         );
       });
     </script>

@@ -12,7 +12,6 @@
 #include "imgRequestProxy.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/FontPropertyTypes.h"
-#include "mozilla/Likely.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/ServoTypes.h"

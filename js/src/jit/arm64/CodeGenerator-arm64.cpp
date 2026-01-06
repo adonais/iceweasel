@@ -506,6 +506,61 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
   }
 }
 
+void CodeGenerator::visitDivPowTwoI64(LDivPowTwoI64* ins) {
+  ARMRegister numerator64 = toXRegister(ins->numerator());
+  ARMRegister output64 = toXRegister(ins->output());
+
+  int32_t shift = ins->shift();
+  bool negativeDivisor = ins->negativeDivisor();
+  MDiv* mir = ins->mir();
+
+  if (shift) {
+    if (mir->isUnsigned()) {
+      // shift right
+      masm.Lsr(output64, numerator64, shift);
+    } else {
+      ARMRegister temp64 = numerator64;
+      // Adjust the value so that shifting produces a correctly
+      // rounded result when the numerator is negative. See 10-1
+      // "Signed Division by a Known Power of 2" in Henry
+      // S. Warren, Jr.'s Hacker's Delight.
+      if (mir->canBeNegativeDividend()) {
+        if (shift > 1) {
+          // Copy the sign bit of the numerator. (= (2^64 - 1) or 0)
+          masm.Asr(output64, numerator64, 63);
+          temp64 = output64;
+        }
+        // Divide by 2^(64 - shift)
+        // i.e. (= (2^64 - 1) / 2^(64 - shift) or 0)
+        // i.e. (= (2^shift - 1) or 0)
+        masm.Lsr(output64, temp64, 64 - shift);
+        // If signed, make any 1 bit below the shifted bits to bubble up, such
+        // that once shifted the value would be rounded towards 0.
+        masm.Add(output64, output64, numerator64);
+        temp64 = output64;
+      }
+      masm.Asr(output64, temp64, shift);
+
+      if (negativeDivisor) {
+        masm.Neg(output64, output64);
+      }
+    }
+    return;
+  }
+
+  if (negativeDivisor) {
+    // INT64_MIN / -1 overflows.
+    Label ok;
+    masm.Negs(output64, numerator64);
+    masm.branch(Assembler::NoOverflow, &ok);
+    masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->trapSiteDesc());
+    masm.bind(&ok);
+  } else {
+    // Copy the result.
+    masm.Mov(output64, numerator64);
+  }
+}
+
 template <class LDivOrMod>
 static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins) {
   ARMRegister lhs32 = toWRegister(ins->numerator());
@@ -553,8 +608,7 @@ static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins) {
   // We'll subtract -1 instead of adding 1, because (n < 0 ? -1 : 0) can be
   // computed with just a sign-extending shift of 31 bits.
   if (mir->canBeNegativeDividend()) {
-    masm.Asr(const32, lhs32, 31);
-    masm.Sub(output32, output32, const32);
+    masm.Sub(output32, output32, Operand(lhs32, vixl::ASR, 31));
   }
 
   // After this, output32 contains the correct truncated division result.
@@ -700,6 +754,119 @@ void CodeGenerator::visitUDivConstant(LUDivConstant* ins) {
   }
 }
 
+template <class LDivOrMod>
+static void Divide64WithConstant(MacroAssembler& masm, LDivOrMod* ins) {
+  ARMRegister lhs64 = toXRegister(ins->numerator());
+  ARMRegister output64 = toXRegister(ins->output());
+  int64_t d = ins->denominator();
+
+  vixl::UseScratchRegisterScope temps(&masm.asVIXL());
+  ARMRegister const64 = temps.AcquireX();
+
+  // The absolute value of the denominator isn't a power of 2.
+  MOZ_ASSERT(!mozilla::IsPowerOfTwo(mozilla::Abs(d)));
+
+  auto* mir = ins->mir();
+
+  // We will first divide by Abs(d), and negate the answer if d is negative.
+  // If desired, this can be avoided by generalizing computeDivisionConstants.
+  auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(d);
+
+  // We first compute (M * n) >> 64, where M = rmc.multiplier.
+  masm.Mov(const64, uint64_t(rmc.multiplier));
+  masm.Smulh(output64, lhs64, const64);
+  if (rmc.multiplier > Int128(INT64_MAX)) {
+    MOZ_ASSERT(rmc.multiplier < (Int128(1) << 64));
+
+    // We actually computed output = ((int64_t(M) * n) >> 64) instead. Since
+    // (M * n) >> 64 is the same as (output + n), we can correct for the
+    // overflow. (output + n) can't overflow, as n and output have opposite
+    // signs because int64_t(M) is negative.
+    masm.Add(output64, output64, lhs64);
+  }
+
+  // (M * n) >> (64 + shift) is the truncated division answer if n is
+  // non-negative, as proved in the comments of computeDivisionConstants. We
+  // must add 1 later if n is negative to get the right answer in all cases.
+  masm.Asr(output64, output64, rmc.shiftAmount);
+
+  // We'll subtract -1 instead of adding 1, because (n < 0 ? -1 : 0) can be
+  // computed with just a sign-extending shift of 63 bits.
+  if (mir->canBeNegativeDividend()) {
+    masm.Sub(output64, output64, Operand(lhs64, vixl::ASR, 63));
+  }
+
+  // After this, output64 contains the correct truncated division result.
+  if (d < 0) {
+    masm.Neg(output64, output64);
+  }
+}
+
+void CodeGenerator::visitDivConstantI64(LDivConstantI64* ins) {
+  int64_t d = ins->denominator();
+
+  if (d == 0) {
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
+    return;
+  }
+
+  // Compute the truncated division result.
+  Divide64WithConstant(masm, ins);
+}
+
+template <class LUDivOrUMod>
+static void UnsignedDivide64WithConstant(MacroAssembler& masm,
+                                         LUDivOrUMod* ins) {
+  ARMRegister lhs64 = toXRegister(ins->numerator());
+  ARMRegister output64 = toXRegister(ins->output());
+  uint64_t d = ins->denominator();
+
+  vixl::UseScratchRegisterScope temps(&masm.asVIXL());
+  ARMRegister const64 = temps.AcquireX();
+
+  // The denominator isn't a power of 2 (see LDivPowTwoI).
+  MOZ_ASSERT(!mozilla::IsPowerOfTwo(d));
+
+  auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
+
+  // We first compute (M * n) >> 64, where M = rmc.multiplier.
+  masm.Mov(const64, uint64_t(rmc.multiplier));
+  masm.Umulh(output64, lhs64, const64);
+  if (rmc.multiplier > Int128(UINT64_MAX)) {
+    // M >= 2^64 and shift == 0 is impossible, as d >= 2 implies that
+    // ((M * n) >> (64 + shift)) >= n > floor(n/d) whenever n >= d,
+    // contradicting the proof of correctness in computeDivisionConstants.
+    MOZ_ASSERT(rmc.shiftAmount > 0);
+    MOZ_ASSERT(rmc.multiplier < (Int128(1) << 65));
+
+    // We actually computed output = ((uint64_t(M) * n) >> 64) instead. Since
+    // (M * n) >> (64 + shift) is the same as (output + n) >> shift, we can
+    // correct for the overflow. This case is a bit trickier than the signed
+    // case, though, as the (output + n) addition itself can overflow; however,
+    // note that
+    // (output + n) >> shift == (((n - output) >> 1) + output) >> (shift - 1),
+    // which is overflow-free. See Hacker's Delight, section 10-8 for details.
+
+    masm.Sub(const64, lhs64, output64);
+    masm.Add(output64, output64, Operand(const64, vixl::LSR, 1));
+    masm.Lsr(output64, output64, rmc.shiftAmount - 1);
+  } else {
+    masm.Lsr(output64, output64, rmc.shiftAmount);
+  }
+}
+
+void CodeGenerator::visitUDivConstantI64(LUDivConstantI64* ins) {
+  uint64_t d = ins->denominator();
+
+  if (d == 0) {
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
+    return;
+  }
+
+  // Compute the truncated division result.
+  UnsignedDivide64WithConstant(masm, ins);
+}
+
 void CodeGenerator::visitModI(LModI* ins) {
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
@@ -756,6 +923,14 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
   bool canBeNegative =
       !ins->mir()->isUnsigned() && ins->mir()->canBeNegativeDividend();
 
+  if (shift == 0) {
+    if (canBeNegative && !ins->mir()->isTruncated()) {
+      bailoutTest32(Assembler::Signed, lhs, lhs, ins->snapshot());
+    }
+    masm.Mov(outw, wzr);
+    return;
+  }
+
   Label negative;
   if (canBeNegative) {
     // Switch based on sign of the lhs.
@@ -782,6 +957,54 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
     } else {
       masm.Neg(outw, Operand(outw));
     }
+
+    masm.bind(&done);
+  }
+}
+
+void CodeGenerator::visitModPowTwoI64(LModPowTwoI64* ins) {
+  Register lhs = ToRegister(ins->input());
+  ARMRegister lhs64 = toXRegister(ins->input());
+  ARMRegister out64 = toXRegister(ins->output());
+
+  int32_t shift = ins->shift();
+  bool canBeNegative =
+      !ins->mir()->isUnsigned() && ins->mir()->canBeNegativeDividend();
+
+  if (shift == 0) {
+    masm.Mov(out64, xzr);
+    return;
+  }
+
+  auto clearHighBits = [&](ARMRegister reg) {
+    switch (shift) {
+      case 32:
+        masm.Mov(out64.W(), reg.W());
+        break;
+      default:
+        masm.And(out64, reg, Operand((uint64_t(1) << shift) - 1));
+        break;
+    }
+  };
+
+  Label negative;
+  if (canBeNegative) {
+    // Switch based on sign of the lhs.
+    // Positive numbers are just a bitmask.
+    masm.branchTestPtr(Assembler::Signed, lhs, lhs, &negative);
+  }
+
+  clearHighBits(lhs64);
+
+  if (canBeNegative) {
+    Label done;
+    masm.jump(&done);
+
+    // Negative numbers need a negate, bitmask, negate.
+    masm.bind(&negative);
+    masm.Neg(out64, Operand(lhs64));
+    clearHighBits(out64);
+    masm.Neg(out64, Operand(out64));
 
     masm.bind(&done);
   }
@@ -863,6 +1086,54 @@ void CodeGenerator::visitUModConstant(LUModConstant* ins) {
   // Bail if not truncated and the remainder is in the range [2^31, 2^32).
   if (!ins->mir()->isTruncated()) {
     bailoutTest32(Assembler::Signed, output, output, ins->snapshot());
+  }
+}
+
+void CodeGenerator::visitModConstantI64(LModConstantI64* ins) {
+  ARMRegister lhs64 = toXRegister(ins->numerator());
+  ARMRegister output64 = toXRegister(ins->output());
+
+  int64_t d = ins->denominator();
+
+  if (d == 0) {
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
+    return;
+  }
+
+  // Compute the truncated division result in output64.
+  Divide64WithConstant(masm, ins);
+
+  // Compute the remainder: output = lhs - (output * rhs).
+  {
+    vixl::UseScratchRegisterScope temps(&masm.asVIXL());
+    ARMRegister rhs64 = temps.AcquireX();
+
+    masm.Mov(rhs64, d);
+    masm.Msub(output64, output64, rhs64, lhs64);
+  }
+}
+
+void CodeGenerator::visitUModConstantI64(LUModConstantI64* ins) {
+  ARMRegister lhs64 = toXRegister(ins->numerator());
+  ARMRegister output64 = toXRegister(ins->output());
+
+  uint64_t d = ins->denominator();
+
+  if (d == 0) {
+    masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->mir()->trapSiteDesc());
+    return;
+  }
+
+  // Compute the truncated division result in output64.
+  UnsignedDivide64WithConstant(masm, ins);
+
+  // Compute the remainder: output = lhs - (output * rhs).
+  {
+    vixl::UseScratchRegisterScope temps(&masm.asVIXL());
+    ARMRegister rhs64 = temps.AcquireX();
+
+    masm.Mov(rhs64, d);
+    masm.Msub(output64, output64, rhs64, lhs64);
   }
 }
 

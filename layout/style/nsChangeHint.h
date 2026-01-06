@@ -136,18 +136,10 @@ enum nsChangeHint : uint32_t {
   nsChangeHint_UpdateContainingBlock = 1 << 16,
 
   /**
-   * This change hint has *no* change handling behavior.  However, it
-   * exists to be a non-inherited hint, because when the border-style
-   * changes, and it's inherited by a child, that might require a reflow
-   * due to the border-width change on the child.
-   */
-  nsChangeHint_BorderStyleNoneChange = 1 << 17,
-
-  /**
    * This will schedule an invalidating paint. This is useful if something
    * has changed which will be invalidated by DLBI.
    */
-  nsChangeHint_SchedulePaint = 1 << 18,
+  nsChangeHint_SchedulePaint = 1 << 17,
 
   /**
    * A hint reflecting that style data changed with no change handling
@@ -163,12 +155,12 @@ enum nsChangeHint : uint32_t {
    * different data would be cached information that would be re-calculated
    * to the same values, such as nsStyleBorder::mSubImages.)
    */
-  nsChangeHint_NeutralChange = 1 << 19,
+  nsChangeHint_NeutralChange = 1 << 18,
 
   /**
    * This will cause rendering observers to be invalidated.
    */
-  nsChangeHint_InvalidateRenderingObservers = 1 << 20,
+  nsChangeHint_InvalidateRenderingObservers = 1 << 19,
 
   /**
    * Indicates that the reflow changes the size or position of the
@@ -176,13 +168,13 @@ enum nsChangeHint : uint32_t {
    * parent.  Must be not be set without also setting nsChangeHint_NeedReflow.
    * And consider adding nsChangeHint_ClearAncestorIntrinsics if needed.
    */
-  nsChangeHint_ReflowChangesSizeOrPosition = 1 << 21,
+  nsChangeHint_ReflowChangesSizeOrPosition = 1 << 20,
 
   /**
    * Indicates that the style changes the computed BSize --- e.g. 'height'.
    * Must not be set without also setting nsChangeHint_NeedReflow.
    */
-  nsChangeHint_UpdateComputedBSize = 1 << 22,
+  nsChangeHint_UpdateComputedBSize = 1 << 21,
 
   /**
    * Indicates that the 'opacity' property changed between 1 and non-1.
@@ -192,7 +184,7 @@ enum nsChangeHint : uint32_t {
    * Note that we do not send this hint if the non-1 value was 0.99 or
    * greater, since in that case we send a RepaintFrame hint instead.
    */
-  nsChangeHint_UpdateUsesOpacity = 1 << 23,
+  nsChangeHint_UpdateUsesOpacity = 1 << 22,
 
   /**
    * Indicates that the 'background-position' property changed.
@@ -201,13 +193,13 @@ enum nsChangeHint : uint32_t {
    * the frame does not build individual background image display items
    * for each background layer.
    */
-  nsChangeHint_UpdateBackgroundPosition = 1 << 24,
+  nsChangeHint_UpdateBackgroundPosition = 1 << 23,
 
   /**
    * Indicates that a frame has changed to or from having the CSS
    * transform property set.
    */
-  nsChangeHint_AddOrRemoveTransform = 1 << 25,
+  nsChangeHint_AddOrRemoveTransform = 1 << 24,
 
   /**
    * Indicates that the presence of scrollbars might have changed.
@@ -219,13 +211,13 @@ enum nsChangeHint : uint32_t {
    * scrollframe, this is instead equivalent to nsChangeHint_AllReflowHints
    * (because the viewport always has an associated scrollframe).
    */
-  nsChangeHint_ScrollbarChange = 1 << 26,
+  nsChangeHint_ScrollbarChange = 1 << 25,
 
   /**
    *  Indicates that there has been a colspan or rowspan attribute change
    *  on the cells of a table.
    */
-  nsChangeHint_UpdateTableCellSpans = 1 << 27,
+  nsChangeHint_UpdateTableCellSpans = 1 << 26,
 
   /**
    * Indicates that the visiblity property changed.
@@ -233,7 +225,7 @@ enum nsChangeHint : uint32_t {
    * visibility:hidden elements in the case where the elements have no visible
    * descendants.
    */
-  nsChangeHint_VisibilityChange = 1u << 28,
+  nsChangeHint_VisibilityChange = 1u << 27,
 
   // IMPORTANT NOTE: When adding a new hint, you will need to add it to
   // one of:
@@ -250,7 +242,7 @@ enum nsChangeHint : uint32_t {
   /**
    * Dummy hint value for all hints. It exists for compile time check.
    */
-  nsChangeHint_AllHints = uint32_t((1ull << 29) - 1),
+  nsChangeHint_AllHints = uint32_t((1ull << 28) - 1),
 };
 
 // Redefine these operators to return nothing. This will catch any use
@@ -322,15 +314,15 @@ inline nsChangeHint operator^=(nsChangeHint& aLeft, nsChangeHint aRight) {
    nsChangeHint_VisibilityChange)
 
 // The change hints that are never handled for descendants.
-#define nsChangeHint_Hints_NeverHandledForDescendants                         \
-  (nsChangeHint_BorderStyleNoneChange | nsChangeHint_ChildrenOnlyTransform |  \
-   nsChangeHint_ScrollbarChange | nsChangeHint_InvalidateRenderingObservers | \
-   nsChangeHint_RecomputePosition | nsChangeHint_UpdateBackgroundPosition |   \
-   nsChangeHint_UpdateComputedBSize | nsChangeHint_UpdateContainingBlock |    \
-   nsChangeHint_UpdateEffects | nsChangeHint_UpdateOpacityLayer |             \
-   nsChangeHint_UpdateOverflow | nsChangeHint_UpdateParentOverflow |          \
-   nsChangeHint_UpdatePostTransformOverflow |                                 \
-   nsChangeHint_UpdateTableCellSpans | nsChangeHint_UpdateTransformLayer |    \
+#define nsChangeHint_Hints_NeverHandledForDescendants                       \
+  (nsChangeHint_ChildrenOnlyTransform | nsChangeHint_ScrollbarChange |      \
+   nsChangeHint_InvalidateRenderingObservers |                              \
+   nsChangeHint_RecomputePosition | nsChangeHint_UpdateBackgroundPosition | \
+   nsChangeHint_UpdateComputedBSize | nsChangeHint_UpdateContainingBlock |  \
+   nsChangeHint_UpdateEffects | nsChangeHint_UpdateOpacityLayer |           \
+   nsChangeHint_UpdateOverflow | nsChangeHint_UpdateParentOverflow |        \
+   nsChangeHint_UpdatePostTransformOverflow |                               \
+   nsChangeHint_UpdateTableCellSpans | nsChangeHint_UpdateTransformLayer |  \
    nsChangeHint_UpdateUsesOpacity | nsChangeHint_AddOrRemoveTransform)
 
 // The change hints that are sometimes considered to be handled for descendants.

@@ -53,9 +53,7 @@
 #include <registry.h>
 #include <time.h>
 
-
-#include "nr_common.h"
-#include "nr_reg_keys.h"
+#include <csi_platform.h>
 
 
 #define LOGGING_DEFAULT_LEVEL  5
@@ -227,15 +225,6 @@ int r_log_register(char *facility_name,int *log_facility)
     return(_status);
   }
 
-int r_log_facility(int facility,char **typename)
-  {
-    if(facility >= 0 && facility < log_type_ct){
-      *typename=log_types[facility].facility_name;
-      return(0);
-    }
-    return(R_NOT_FOUND);
-  }
-
 static int r_log_get_reg_level(NR_registry name, int *out)
   {
     char level[32];
@@ -390,72 +379,6 @@ int syslog_vlog(int facility,int level,const char *format,va_list ap)
 
 int noop_vlog(int facility,int level,const char *format,va_list ap)
   {
-    return(0);
-  }
-
-int r_log_e(int facility,int level,const char *format,...)
-  {
-    va_list ap;
-
-    va_start(ap,format);
-    r_vlog_e(facility,level,format,ap);
-    va_end(ap);
-
-    return(0);
-  }
-
-int r_vlog_e(int facility,int level,const char *format,va_list ap)
-  {
-    char log_fmt_buf[MAX_ERROR_STRING_SIZE];
-    if(r_logging(facility,level)) {
-      int formatlen = strlen(format);
-
-      if(formatlen+2 > MAX_ERROR_STRING_SIZE)
-        return(1);
-
-      strncpy(log_fmt_buf, format, formatlen);
-      strcpy(&log_fmt_buf[formatlen], ": ");
-      snprintf(&log_fmt_buf[formatlen+2], MAX_ERROR_STRING_SIZE - formatlen - 2, "%s",
-#ifdef WIN32
-               strerror(WSAGetLastError()));
-#else
-               strerror(errno));
-#endif
-      log_fmt_buf[MAX_ERROR_STRING_SIZE-1]=0;
-
-      r_vlog(facility,level,log_fmt_buf,ap);
-    }
-    return(0);
-  }
-
-int r_log_nr(int facility,int level,int r,const char *format,...)
-  {
-    va_list ap;
-
-    va_start(ap,format);
-    r_vlog_nr(facility,level,r,format,ap);
-    va_end(ap);
-
-    return(0);
-  }
-
-int r_vlog_nr(int facility,int level,int r,const char *format,va_list ap)
-  {
-    char log_fmt_buf[MAX_ERROR_STRING_SIZE];
-    if(r_logging(facility,level)) {
-      int formatlen = strlen(format);
-
-      if(formatlen+2 > MAX_ERROR_STRING_SIZE)
-        return(1);
-      strncpy(log_fmt_buf, format, formatlen);
-      strcpy(&log_fmt_buf[formatlen], ": ");
-      snprintf(&log_fmt_buf[formatlen+2], MAX_ERROR_STRING_SIZE - formatlen - 2, "%s",
-               nr_strerror(r));
-
-      log_fmt_buf[MAX_ERROR_STRING_SIZE-1]=0;
-
-      r_vlog(facility,level,log_fmt_buf,ap);
-    }
     return(0);
   }
 

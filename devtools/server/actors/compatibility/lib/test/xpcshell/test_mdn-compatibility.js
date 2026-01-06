@@ -58,7 +58,7 @@ const TEST_DATA = [
       {
         type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
         property: "grid-column",
-        url: "https://developer.mozilla.org/docs/Web/CSS/grid-column",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/grid-column",
         specUrl: "https://drafts.csswg.org/css-grid/#placement-shorthands",
         deprecated: false,
         experimental: false,
@@ -80,7 +80,7 @@ const TEST_DATA = [
       {
         type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
         property: "clip",
-        url: "https://developer.mozilla.org/docs/Web/CSS/clip",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/clip",
         specUrl: "https://drafts.fxtf.org/css-masking/#clip-property",
         deprecated: true,
         experimental: false,
@@ -96,7 +96,7 @@ const TEST_DATA = [
       {
         type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
         property: "ruby-align",
-        url: "https://developer.mozilla.org/docs/Web/CSS/ruby-align",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/ruby-align",
         specUrl: "https://drafts.csswg.org/css-ruby/#ruby-align-property",
         deprecated: false,
         experimental: false,
@@ -114,7 +114,7 @@ const TEST_DATA = [
         type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY_ALIASES,
         property: "user-select",
         aliases: ["-moz-user-select"],
-        url: "https://developer.mozilla.org/docs/Web/CSS/user-select",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/user-select",
         specUrl: "https://drafts.csswg.org/css-ui/#content-selection",
         deprecated: false,
         experimental: false,
@@ -136,7 +136,7 @@ const TEST_DATA = [
         type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY_ALIASES,
         property: "user-select",
         aliases: ["-moz-user-select", "-webkit-user-select"],
-        url: "https://developer.mozilla.org/docs/Web/CSS/user-select",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/user-select",
         specUrl: "https://drafts.csswg.org/css-ui/#content-selection",
         deprecated: false,
         experimental: false,
@@ -162,7 +162,7 @@ const TEST_DATA = [
       {
         type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
         property: "-moz-user-focus",
-        url: "https://developer.mozilla.org/docs/Web/CSS/-moz-user-focus",
+        url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/-moz-user-focus",
         specUrl: undefined,
         deprecated: true,
         experimental: false,

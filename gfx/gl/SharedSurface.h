@@ -16,7 +16,6 @@
 #define SHARED_SURFACE_H_
 
 #include <queue>
-#include <set>
 #include <stdint.h>
 
 #include "GLContext.h"  // Bug 1635644

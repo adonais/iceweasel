@@ -55,7 +55,7 @@ function Intl_getCalendarInfo(locales) {
   var localeData = DateTimeFormat.localeData;
 
   // 3. Let localeOpt be a new Record.
-  var localeOpt = new_Record();
+  var localeOpt = NEW_RECORD();
 
   // 4. Set localeOpt.[[localeMatcher]] to "best fit".
   localeOpt.localeMatcher = "best fit";

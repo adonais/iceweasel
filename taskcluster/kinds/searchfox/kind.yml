@@ -32,7 +32,7 @@ task-defaults:
     run:
         extra-config:
             max_build_output_timeout: 3600
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     worker:
         env:
             MACH_BUILD_PYTHON_NATIVE_PACKAGE_SOURCE: system

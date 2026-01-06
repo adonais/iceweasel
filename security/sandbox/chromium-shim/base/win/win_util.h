@@ -10,6 +10,7 @@
 #ifndef BASE_WIN_WIN_UTIL_H_
 #define BASE_WIN_WIN_UTIL_H_
 
+#include <minwindef.h>
 #include <string>
 
 #include "base/base_export.h"

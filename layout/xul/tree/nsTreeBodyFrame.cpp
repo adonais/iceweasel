@@ -58,8 +58,6 @@
 #include "nsTreeImageListener.h"
 #include "nsTreeSelection.h"
 #include "nsTreeUtils.h"
-#include "nsView.h"
-#include "nsViewManager.h"
 #include "nsWidgetsCID.h"
 
 #ifdef ACCESSIBILITY

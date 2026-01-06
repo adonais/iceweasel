@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">თაღლითური საიტი</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>ვებგვერდი %1$s მიჩნეულია თაღლითურ საიტად და შეზღუდულია უსაფრთხოების მიზნით.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">საიტი შეიზღუდა თქვენი უსაფრთხოებისთვის</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>ვებგვერდი მისამართით %1$s შეიზღუდა, ვინაიდან ერთ-ერთი თქვენი დამატება ცდილობდა მის გახსნას. ეს საიტი შესაძლოა გამოიყენებოდეს თქვენი მონაცემების ხელყოფისთვის — პაროლებისა თუ საკრედიტო ბარათის ნომრების.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">უსაფრთხო საიტი მიუწვდომელია</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

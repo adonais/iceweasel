@@ -40,7 +40,7 @@ class TrackingProtectionBlockingFragment : Fragment(R.layout.fragment_tracking_p
 
         binding = FragmentTrackingProtectionBlockingBinding.bind(view)
 
-        setTotalCookieProtectionText(settings.enabledTotalCookieProtection)
+        setTotalCookieProtectionText()
 
         updateCategoryVisibility(args.protectionMode, settings)
     }
@@ -48,18 +48,12 @@ class TrackingProtectionBlockingFragment : Fragment(R.layout.fragment_tracking_p
     /**
      * Sets the title and description for the "Cookies" category based on whether the
      * "Total Cookie Protection" feature is enabled.
-     *
-     * @param totalCookieProtectionEnabled A flag indicating if the
-     *        `enabledTotalCookieProtection` feature flag is active.
      */
     @VisibleForTesting
-    internal fun setTotalCookieProtectionText(totalCookieProtectionEnabled: Boolean) {
-        // Text for the updated "Total cookie protection" option should be updated as part of a staged rollout
-        if (totalCookieProtectionEnabled) {
-            binding.categoryCookies.apply {
-                trackingProtectionCategoryTitle.text = getText(R.string.etp_cookies_title_2)
-                trackingProtectionCategoryItemDescription.text = getText(R.string.etp_cookies_description_2)
-            }
+    internal fun setTotalCookieProtectionText() {
+        binding.categoryCookies.apply {
+            trackingProtectionCategoryTitle.text = getText(R.string.etp_cookies_title_2)
+            trackingProtectionCategoryItemDescription.text = getText(R.string.etp_cookies_description_2)
         }
     }
 

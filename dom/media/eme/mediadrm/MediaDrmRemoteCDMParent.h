@@ -131,7 +131,7 @@ class MediaDrmRemoteCDMParent final : public RemoteCDMParent {
   void HandleEvent(nsString&& aSessionId, AMediaDrmEventType aEventType,
                    int aExtra, nsTArray<uint8_t>&& aData);
 
-  void HandleExpirationUpdate(nsString&& aSessionId, int aExpiryTimeInMS);
+  void HandleExpirationUpdate(nsString&& aSessionId, int64_t aExpiryTimeInMS);
 
   void HandleKeysChange(nsString&& aSessionId, bool aHasNewUsableKey,
                         nsTArray<CDMKeyInfo>&& aKeyInfo);

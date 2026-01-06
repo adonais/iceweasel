@@ -160,7 +160,7 @@ export var DateTimePickerPanel = class {
   }
 
   /**
-   * @param {Boolean} passAllValues: Pass spinner values regardless if they've been set/changed or not
+   * @param {boolean} passAllValues: Pass spinner values regardless if they've been set/changed or not
    */
   setInputBoxValue(passAllValues) {
     const value = {

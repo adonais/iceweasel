@@ -791,7 +791,7 @@ nsSHistory::AddToRootSessionHistory(bool aCloneChildren, nsISHEntry* aOSHE,
     // Replace current entry in session history; If the requested index is
     // valid, it indicates the loading was triggered by a history load, and
     // we should replace the entry at requested index instead.
-    int32_t index = GetIndexForReplace();
+    int32_t index = GetTargetIndexForHistoryOperation();
 
     // Replace the current entry with the new entry
     if (index >= 0) {
@@ -1682,10 +1682,11 @@ nsresult nsSHistory::Reload(uint32_t aReloadFlags,
     return NS_OK;
   }
 
-  nsresult rv = LoadEntry(
-      mIndex, loadType, HIST_CMD_RELOAD, aLoadResults, /* aSameEpoch */ false,
-      /* aLoadCurrentEntry */ true,
-      aReloadFlags & nsIWebNavigation::LOAD_FLAGS_USER_ACTIVATION);
+  nsresult rv =
+      LoadEntry(/* aSourceBrowsingContext */ nullptr, mIndex, loadType,
+                HIST_CMD_RELOAD, aLoadResults, /* aSameEpoch */ false,
+                /* aLoadCurrentEntry */ true,
+                aReloadFlags & nsIWebNavigation::LOAD_FLAGS_USER_ACTIVATION);
   if (NS_FAILED(rv)) {
     aLoadResults.Clear();
     return rv;
@@ -1709,7 +1710,8 @@ nsresult nsSHistory::ReloadCurrentEntry(
   // Notify listeners
   NotifyListeners(mListeners, [](auto l) { l->OnHistoryGotoIndex(); });
 
-  return LoadEntry(mIndex, LOAD_HISTORY, HIST_CMD_RELOAD, aLoadResults,
+  return LoadEntry(/* aSourceBrowsingContext */ nullptr, mIndex, LOAD_HISTORY,
+                   HIST_CMD_RELOAD, aLoadResults,
                    /* aSameEpoch */ false, /* aLoadCurrentEntry */ true,
                    /* aUserActivation */ false);
 }
@@ -2247,8 +2249,9 @@ nsSHistory::UpdateIndex() {
 NS_IMETHODIMP
 nsSHistory::GotoIndex(int32_t aIndex, bool aUserActivation) {
   nsTArray<LoadEntryResult> loadResults;
-  nsresult rv = GotoIndex(aIndex, loadResults, /*aSameEpoch*/ false,
-                          aIndex == mIndex, aUserActivation);
+  nsresult rv =
+      GotoIndex(/* aSourceBrowsingContext */ nullptr, aIndex, loadResults,
+                /*aSameEpoch*/ false, aIndex == mIndex, aUserActivation);
   NS_ENSURE_SUCCESS(rv, rv);
 
   LoadURIs(loadResults, /* aCheckForCancelation */ true);
@@ -2263,12 +2266,14 @@ nsSHistory::EnsureCorrectEntryAtCurrIndex(nsISHEntry* aEntry) {
   }
 }
 
-nsresult nsSHistory::GotoIndex(int32_t aIndex,
+nsresult nsSHistory::GotoIndex(BrowsingContext* aSourceBrowsingContext,
+                               int32_t aIndex,
                                nsTArray<LoadEntryResult>& aLoadResults,
                                bool aSameEpoch, bool aLoadCurrentEntry,
                                bool aUserActivation) {
-  return LoadEntry(aIndex, LOAD_HISTORY, HIST_CMD_GOTOINDEX, aLoadResults,
-                   aSameEpoch, aLoadCurrentEntry, aUserActivation);
+  return LoadEntry(aSourceBrowsingContext, aIndex, LOAD_HISTORY,
+                   HIST_CMD_GOTOINDEX, aLoadResults, aSameEpoch,
+                   aLoadCurrentEntry, aUserActivation);
 }
 
 NS_IMETHODIMP_(bool)
@@ -2300,22 +2305,25 @@ nsSHistory::CanGoBackFromEntryAtIndex(int32_t aIndex, bool* aCanGoBack) {
 }
 
 nsresult nsSHistory::LoadNextPossibleEntry(
-    int32_t aNewIndex, long aLoadType, uint32_t aHistCmd,
-    nsTArray<LoadEntryResult>& aLoadResults, bool aLoadCurrentEntry,
-    bool aUserActivation) {
+    BrowsingContext* aSourceBrowsingContext, int32_t aNewIndex, long aLoadType,
+    uint32_t aHistCmd, nsTArray<LoadEntryResult>& aLoadResults,
+    bool aLoadCurrentEntry, bool aUserActivation) {
   mRequestedIndex = -1;
   if (aNewIndex < mIndex) {
-    return LoadEntry(aNewIndex - 1, aLoadType, aHistCmd, aLoadResults,
+    return LoadEntry(aSourceBrowsingContext, aNewIndex - 1, aLoadType, aHistCmd,
+                     aLoadResults,
                      /*aSameEpoch*/ false, aLoadCurrentEntry, aUserActivation);
   }
   if (aNewIndex > mIndex) {
-    return LoadEntry(aNewIndex + 1, aLoadType, aHistCmd, aLoadResults,
+    return LoadEntry(aSourceBrowsingContext, aNewIndex + 1, aLoadType, aHistCmd,
+                     aLoadResults,
                      /*aSameEpoch*/ false, aLoadCurrentEntry, aUserActivation);
   }
   return NS_ERROR_FAILURE;
 }
 
-nsresult nsSHistory::LoadEntry(int32_t aIndex, long aLoadType,
+nsresult nsSHistory::LoadEntry(BrowsingContext* aSourceBrowsingContext,
+                               int32_t aIndex, long aLoadType,
                                uint32_t aHistCmd,
                                nsTArray<LoadEntryResult>& aLoadResults,
                                bool aSameEpoch, bool aLoadCurrentEntry,
@@ -2398,21 +2406,24 @@ nsresult nsSHistory::LoadEntry(int32_t aIndex, long aLoadType,
 
   if (mRequestedIndex == mIndex) {
     // Possibly a reload case
-    InitiateLoad(nextEntry, rootBC, aLoadType, aLoadResults, aLoadCurrentEntry,
-                 aUserActivation, requestedOffset);
+    InitiateLoad(aSourceBrowsingContext, nextEntry, rootBC, aLoadType,
+                 aLoadResults, aLoadCurrentEntry, aUserActivation,
+                 requestedOffset);
     return NS_OK;
   }
 
   // Going back or forward.
   bool differenceFound = ForEachDifferingEntry(
       prevEntry, nextEntry, rootBC,
-      [self = RefPtr{this}, aLoadType, &aLoadResults, aLoadCurrentEntry,
-       aUserActivation,
+      [self = RefPtr{this},
+       sourceBrowsingContext = RefPtr{aSourceBrowsingContext}, aLoadType,
+       &aLoadResults, aLoadCurrentEntry, aUserActivation,
        requestedOffset](nsISHEntry* aEntry, BrowsingContext* aParent) {
         // Set the Subframe flag if not navigating the root docshell.
         aEntry->SetIsSubFrame(aParent->Id() != self->mRootBC);
-        self->InitiateLoad(aEntry, aParent, aLoadType, aLoadResults,
-                           aLoadCurrentEntry, aUserActivation, requestedOffset);
+        self->InitiateLoad(sourceBrowsingContext, aEntry, aParent, aLoadType,
+                           aLoadResults, aLoadCurrentEntry, aUserActivation,
+                           requestedOffset);
       });
   if (!differenceFound) {
     // LoadNextPossibleEntry will change the offset by one, and in order
@@ -2420,8 +2431,9 @@ nsresult nsSHistory::LoadEntry(int32_t aIndex, long aLoadType,
     // the value it had initially.
     mRequestedIndex = originalRequestedIndex;
     // We did not find any differences. Go further in the history.
-    return LoadNextPossibleEntry(aIndex, aLoadType, aHistCmd, aLoadResults,
-                                 aLoadCurrentEntry, aUserActivation);
+    return LoadNextPossibleEntry(aSourceBrowsingContext, aIndex, aLoadType,
+                                 aHistCmd, aLoadResults, aLoadCurrentEntry,
+                                 aUserActivation);
   }
 
   return NS_OK;
@@ -2608,7 +2620,8 @@ bool nsSHistory::ForEachDifferingEntry(
   return differenceFound;
 }
 
-void nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
+void nsSHistory::InitiateLoad(BrowsingContext* aSourceBrowsingContext,
+                              nsISHEntry* aFrameEntry,
                               BrowsingContext* aFrameBC, long aLoadType,
                               nsTArray<LoadEntryResult>& aLoadResults,
                               bool aLoadCurrentEntry, bool aUserActivation,
@@ -2620,6 +2633,8 @@ void nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
 
   nsCOMPtr<nsIURI> newURI = aFrameEntry->GetURI();
   RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(newURI);
+
+  loadState->SetSourceBrowsingContext(aSourceBrowsingContext);
 
   loadState->SetHasValidUserGestureActivation(aUserActivation);
 

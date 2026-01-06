@@ -25,7 +25,7 @@ internal object ContentRecommendationsReducer {
     /**
      * Reduces the given [ContentRecommendationsAction] into a new [AppState].
      */
-    @Suppress("LongMethod")
+    @Suppress("LongMethod", "CognitiveComplexMethod")
     fun reduce(state: AppState, action: ContentRecommendationsAction): AppState {
         return when (action) {
             is ContentRecommendationsAction.ContentRecommendationsFetched -> {

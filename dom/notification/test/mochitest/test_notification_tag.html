@@ -84,18 +84,6 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=782211
         }
       },
 
-      showAlertNotification(
-        imageUrl,
-        title,
-        text,
-        textClickable,
-        cookie,
-        alertListener,
-        name
-      ) {
-        this.showAlert({ name });
-      },
-
       QueryInterface(aIID) {
         if (aIID.equals(Ci.nsISupports) || aIID.equals(Ci.nsIAlertsService)) {
           return this;

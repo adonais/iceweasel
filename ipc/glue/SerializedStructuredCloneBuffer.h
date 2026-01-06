@@ -7,17 +7,12 @@
 #ifndef __IPC_GLUE_SERIALIZEDSTRUCTUREDCLONEBUFFER_H__
 #define __IPC_GLUE_SERIALIZEDSTRUCTUREDCLONEBUFFER_H__
 
-#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
-#include <string>
-#include <utility>
 #include "chrome/common/ipc_message.h"
 #include "chrome/common/ipc_message_utils.h"
 #include "js/AllocPolicy.h"
 #include "js/StructuredClone.h"
-#include "mozilla/Assertions.h"
-#include "mozilla/BufferList.h"
 #include "mozilla/mozalloc.h"
 class PickleIterator;
 

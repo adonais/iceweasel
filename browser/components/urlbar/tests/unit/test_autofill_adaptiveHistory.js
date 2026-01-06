@@ -1054,7 +1054,6 @@ const TEST_DATA = [
     ],
     userInput: "example.com/test",
     expected: {
-      autofilled: "example.com/test",
       completed: "http://example.com/test",
       results: [
         context =>
@@ -1080,13 +1079,10 @@ const TEST_DATA = [
     frecency: 0,
     userInput: "exa",
     expected: {
-      autofilled: "example.com/",
-      completed: "http://example.com/",
       results: [
         context =>
-          makeVisitResult(context, {
-            uri: "http://example.com/",
-            fallbackTitle: UrlbarTestUtils.trimURL("http://example.com/"),
+          makeSearchResult(context, {
+            engineName: "Suggestions",
             heuristic: true,
           }),
         context =>
@@ -1123,7 +1119,7 @@ const TEST_DATA = [
     visitHistory: ["http://example.com/test"],
     inputHistory: [{ uri: "http://example.com/test", input: "exa" }],
     bookmarks: [{ uri: "http://example.com/test", title: "test bookmark" }],
-    frecency: 0,
+    frecency: 5,
     userInput: "exa",
     expected: {
       autofilled: "example.com/",
@@ -1135,6 +1131,11 @@ const TEST_DATA = [
             fallbackTitle: UrlbarTestUtils.trimURL("http://example.com/"),
             heuristic: true,
           }),
+        context =>
+          makeVisitResult(context, {
+            uri: "http://example.com/test",
+            title: "test bookmark",
+          }),
       ],
     },
   },
@@ -1145,7 +1146,7 @@ const TEST_DATA = [
     source: UrlbarUtils.RESULT_SOURCE.HISTORY,
     visitHistory: ["http://example.com/test"],
     inputHistory: [{ uri: "http://example.com/test", input: "exa" }],
-    frecency: 0,
+    frecency: 5,
     userInput: "exa",
     expected: {
       autofilled: "example.com/",

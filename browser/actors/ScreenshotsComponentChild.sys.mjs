@@ -176,7 +176,8 @@ export class ScreenshotsComponentChild extends JSWindowActorChild {
 
   /**
    * Send a request to copy the screenshots
-   * @param {Object} region The region dimensions of the screenshot to be copied
+   *
+   * @param {object} region The region dimensions of the screenshot to be copied
    */
   requestCopyScreenshot(region) {
     region.devicePixelRatio = this.contentWindow.devicePixelRatio;
@@ -186,7 +187,8 @@ export class ScreenshotsComponentChild extends JSWindowActorChild {
 
   /**
    * Send a request to download the screenshots
-   * @param {Object} region The region dimensions of the screenshot to be downloaded
+   *
+   * @param {object} region The region dimensions of the screenshot to be downloaded
    */
   requestDownloadScreenshot(region) {
     region.devicePixelRatio = this.contentWindow.devicePixelRatio;
@@ -220,7 +222,7 @@ export class ScreenshotsComponentChild extends JSWindowActorChild {
    * Resolves when the document is ready to have an overlay injected into it.
    *
    * @returns {Promise}
-   * @resolves {Boolean} true when document is ready or rejects
+   * @resolves {boolean} true when document is ready or rejects
    */
   documentIsReady() {
     const document = this.document;
@@ -279,7 +281,7 @@ export class ScreenshotsComponentChild extends JSWindowActorChild {
   /**
    * Wait until the document is ready and then show the screenshots overlay
    *
-   * @returns {Boolean} true when document is ready and the overlay is shown
+   * @returns {boolean} true when document is ready and the overlay is shown
    * otherwise false
    */
   async startScreenshotsOverlay() {

@@ -1,7 +1,5 @@
-commit f23af97cf467a3ae761e5943a6caf793415ac857
-Author: Markus Scherer <markus.icu@gmail.com>
-Date:   Wed Mar 12 16:40:58 2025 +0000
+commit b33869b304cff387d544eaa5e820b93a39e737bf
+Author: Fredrik Roubert <roubert@google.com>
+Date:   Fri Nov 7 11:53:21 2025 -0800
 
-    ICU-22923 ICU 77 release page updates
-    
-    See #3432
+    ICU-23261 Bugfix: Correctly propagate errors to the caller.

@@ -7,8 +7,6 @@
 #ifndef DOM_WEBTRANSPORT_API_WEBTRANSPORTDATAGRAMDUPLEXSTREAM__H_
 #define DOM_WEBTRANSPORT_API_WEBTRANSPORTDATAGRAMDUPLEXSTREAM__H_
 
-#include <utility>
-
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/TypedArray.h"

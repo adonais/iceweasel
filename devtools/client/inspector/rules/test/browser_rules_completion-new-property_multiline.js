@@ -126,7 +126,7 @@ add_task(async function () {
  * Wait for the editor to emit "after-suggest" to make sure the autocompletion
  * process is finished.
  *
- * @param {String} key
+ * @param {string} key
  *        The key to send to the input.
  * @param {InplaceEditor} editor
  *        The inplace editor which owns the focused input.

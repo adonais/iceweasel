@@ -19,6 +19,7 @@ include protocol PWebIdentity;
 
 include DOMTypes;
 include ClientIPCTypes;
+include JSIPCValue;
 include NeckoChannelParams;
 include SessionStoreTypes;
 
@@ -98,7 +99,7 @@ child:
   async RestoreTabContent(nullable SessionStoreRestoreData aData) returns (bool success);
 
 both:
-  async RawMessage(JSActorMessageMeta aMetadata, UniquePtr<ClonedMessageData> aData,
+  async RawMessage(JSActorMessageMeta aMetadata, JSIPCValue aData,
                    UniquePtr<ClonedMessageData> aStack);
 
 parent:

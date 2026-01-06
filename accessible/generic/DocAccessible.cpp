@@ -33,7 +33,6 @@
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsImageFrame.h"
 #include "nsIMutationObserver.h"
-#include "nsViewManager.h"
 #include "nsIURI.h"
 #include "nsIWebNavigation.h"
 #include "nsFocusManager.h"
@@ -166,7 +165,7 @@ NS_IMPL_RELEASE_INHERITED(DocAccessible, HyperTextAccessible)
 ////////////////////////////////////////////////////////////////////////////////
 // nsIAccessible
 
-ENameValueFlag DocAccessible::Name(nsString& aName) const {
+ENameValueFlag DocAccessible::DirectName(nsString& aName) const {
   aName.Truncate();
 
   if (mParent) {
@@ -174,13 +173,17 @@ ENameValueFlag DocAccessible::Name(nsString& aName) const {
   }
   if (aName.IsEmpty()) {
     // Allow name via aria-labelledby or title attribute
-    LocalAccessible::Name(aName);
+    LocalAccessible::DirectName(aName);
   }
   if (aName.IsEmpty()) {
     Title(aName);  // Try title element
   }
   if (aName.IsEmpty()) {  // Last resort: use URL
     URL(aName);
+  }
+
+  if (aName.IsEmpty()) {
+    aName.SetIsVoid(true);
   }
 
   return eNameOK;
@@ -249,8 +252,7 @@ uint64_t DocAccessible::NativeState() const {
   // exposed on the root frame. Therefore, we explicitly use the body frame
   // here (if any).
   nsIFrame* bodyFrame = mContent ? mContent->GetPrimaryFrame() : nullptr;
-  if ((state & states::EDITABLE) ||
-      (bodyFrame && bodyFrame->IsSelectable(nullptr))) {
+  if ((state & states::EDITABLE) || (bodyFrame && bodyFrame->IsSelectable())) {
     // If the accessible is editable the layout selectable state only disables
     // mouse selection, but keyboard (shift+arrow) selection is still possible.
     state |= states::SELECTABLE_TEXT;

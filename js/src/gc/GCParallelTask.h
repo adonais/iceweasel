@@ -11,8 +11,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/TimeStamp.h"
 
-#include <utility>
-
 #include "gc/GCContext.h"
 #include "js/Utility.h"
 #include "threading/ProtectedData.h"

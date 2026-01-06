@@ -68,7 +68,7 @@
   <!-- The error message shown when the browser prevents loading a website on a restricted port. -->
   <string name="mozac_browser_errorpages_port_blocked_message"><![CDATA[<p>V požadované adrese (URL) byl zadán port (např. <q>mozilla.org:80</q> pro port 80 na serveru mozilla.org), který se obvykle používá pro <em>jiné</em> internetové služby než je prohlížení webových stránek. Prohlížeč zrušil požadavek z důvodů vaší ochrany.</p>]]></string>
   <!-- The document title and heading of the error page shown when the Internet connection is disrupted while loading a website. -->
-  <string name="mozac_browser_errorpages_net_reset_title">Spojení přerušeno</string>
+  <string name="mozac_browser_errorpages_net_reset_title">Spojení bylo ukončeno</string>
   <!-- The error message shown when the Internet connection is disrupted while loading a website. -->
   <string name="mozac_browser_errorpages_net_reset_message"><![CDATA[<p>Spojení bylo v průběhu otevírání komunikačního kanálu se serverem neočekávaně přerušeno. Opakujte akci.</p>\n<ul>\n<li>Server je dočasně nedostupný. Zkuste to prosím znovu za chvíli.</li>\n<li>Pokud nemůžete načíst žádnou stránku, zkontrolujte svá mobilní data nebo Wi-Fi připojení.</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when the browser refuses to load a type of file that is considered unsafe. -->
@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Problém s klamavou stránkou</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Tato webová stránka na serveru %1$s byla nahlášena jako klamavá a byla zablokována na základě vašeho bezpečnostního nastavení.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Stránka byla z důvodu vaší bezpečnosti zablokována</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Tato webová stránka na adrese %1$s byla zablokována, protože se ji pokusil otevřít jeden z vašich doplňků. Tato stránka by mohla být zneužita ke krádeži vašich údajů — například hesel nebo čísel platebních karet.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Nelze navázat zabezpečené spojení</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

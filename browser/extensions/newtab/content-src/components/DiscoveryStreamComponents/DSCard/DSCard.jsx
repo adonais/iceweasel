@@ -26,6 +26,7 @@ const PREF_FAVICONS_ENABLED = "discoverystream.publisherFavicon.enabled";
 
 /**
  * READ TIME FROM WORD COUNT
+ *
  * @param {int} wordCount number of words in an article
  * @returns {int} number of words per minute in minutes
  */

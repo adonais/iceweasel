@@ -15,7 +15,7 @@ class NetworkCommand {
    *        The context to inspect identified by this descriptor.
    * @param {WatcherFront} watcherFront
    *        If available, a reference to the related Watcher Front.
-   * @param {Object} commands
+   * @param {object} commands
    *        The commands object with all interfaces defined from devtools/shared/commands/
    */
   constructor({ descriptorFront, watcherFront, commands }) {
@@ -76,7 +76,7 @@ class NetworkCommand {
   /**
    * Block only one additional URL filter
    *
-   * @param {String} url
+   * @param {string} url
    *        URL filter to block.
    *        See getBlockedUrls for definition of URL filters.
    */
@@ -88,7 +88,7 @@ class NetworkCommand {
   /**
    * Stop blocking only one specific URL filter
    *
-   * @param {String} url
+   * @param {string} url
    *        URL filter to unblock.
    *        See getBlockedUrls for definition of URL filters.
    */

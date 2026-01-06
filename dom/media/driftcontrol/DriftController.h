@@ -6,7 +6,6 @@
 #ifndef DOM_MEDIA_DRIFTCONTROL_DRIFTCONTROLLER_H_
 #define DOM_MEDIA_DRIFTCONTROL_DRIFTCONTROLLER_H_
 
-#include <algorithm>
 #include <cstdint>
 
 #include "MediaSegment.h"

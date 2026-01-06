@@ -146,7 +146,7 @@ ObjectStoreMetadata.prototype = {
  *        The host associated with this indexed db.
  * @param {IDBDatabase} db
  *        The particular indexed db.
- * @param {String} storage
+ * @param {string} storage
  *        Storage type, either "temporary", "default" or "persistent".
  */
 function DatabaseMetadata(origin, db, storage) {
@@ -878,9 +878,9 @@ class IndexedDBStorageActor extends BaseStorageActor {
    *        The principal of the given document.
    * @param {string} dbName
    *        The name of the indexed db from the above host.
-   * @param {String} storage
+   * @param {string} storage
    *        Storage type, either "temporary", "default" or "persistent".
-   * @param {Object} requestOptions
+   * @param {object} requestOptions
    *        An object in the following format:
    *        {
    *          objectStore: The name of the object store from the above db,

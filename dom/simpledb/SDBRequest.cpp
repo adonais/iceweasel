@@ -10,7 +10,6 @@
 #include "SDBConnection.h"
 
 // Global includes
-#include <utility>
 
 #include "mozilla/ErrorNames.h"
 #include "nsError.h"

@@ -91,7 +91,7 @@ class ServiceWorkerInfo final : public nsIServiceWorkerInfo {
   const nsCString& ScriptSpec() const { return mDescriptor.ScriptURL(); }
 
   const nsCString& Scope() const { return mDescriptor.Scope(); }
-
+  WorkerType Type() const { return mDescriptor.Type(); }
   Maybe<ClientInfo> GetClientInfo();
 
   // Pass-through of ServiceWorkerPrivate::GetLifetimeDeadline(); note that
@@ -114,7 +114,8 @@ class ServiceWorkerInfo final : public nsIServiceWorkerInfo {
   }
 
   ServiceWorkerInfo(nsIPrincipal* aPrincipal, const nsACString& aScope,
-                    uint64_t aRegistrationId, uint64_t aRegistrationVersion,
+                    const WorkerType& aType, uint64_t aRegistrationId,
+                    uint64_t aRegistrationVersion,
                     const nsACString& aScriptSpec, const nsAString& aCacheName,
                     nsLoadFlags aImportsLoadFlags);
 

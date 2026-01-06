@@ -53,12 +53,12 @@ static nsresult SanitizeWith(const nsAString& aInput, nsAString& aOutput,
   aDoSanitize(document.get());
 
   nsCOMPtr<nsIDocumentEncoder> encoder = do_createDocumentEncoder("text/html");
-  encoder->NativeInit(document, u"text/html"_ns,
-                      nsIDocumentEncoder::OutputDontRewriteEncodingDeclaration |
-                          nsIDocumentEncoder::OutputNoScriptContent |
-                          nsIDocumentEncoder::OutputEncodeBasicEntities |
-                          nsIDocumentEncoder::OutputLFLineBreak |
-                          nsIDocumentEncoder::OutputRaw);
+  encoder->Init(document, u"text/html"_ns,
+                nsIDocumentEncoder::OutputDontRewriteEncodingDeclaration |
+                    nsIDocumentEncoder::OutputNoScriptContent |
+                    nsIDocumentEncoder::OutputEncodeBasicEntities |
+                    nsIDocumentEncoder::OutputLFLineBreak |
+                    nsIDocumentEncoder::OutputRaw);
   return encoder->EncodeToString(aOutput);
 }
 

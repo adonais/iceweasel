@@ -300,12 +300,11 @@ bool RetainedDisplayListBuilder::PreProcessDisplayList(
     // so we have to work around it. Bug 1730749 and bug 1730826 should resolve
     // this.
     nsIFrame* agrFrame = nullptr;
-    if (aAsyncAncestorASR == item->GetActiveScrolledRoot() ||
-        !item->GetActiveScrolledRoot()) {
+    const ActiveScrolledRoot* asr = item->GetNearestScrollASR();
+    if (aAsyncAncestorASR == asr || !asr) {
       agrFrame = aAsyncAncestor;
     } else {
-      auto* scrollContainerFrame =
-          item->GetActiveScrolledRoot()->mScrollContainerFrame;
+      auto* scrollContainerFrame = asr->ScrollFrame();
       if (MOZ_UNLIKELY(!scrollContainerFrame)) {
         MOZ_DIAGNOSTIC_ASSERT(false);
         gfxCriticalNoteOnce << "Found null mScrollContainerFrame in asr";
@@ -368,7 +367,7 @@ static Maybe<const ActiveScrolledRoot*> SelectContainerASR(
       aClipChain ? aClipChain->mASR : nullptr;
 
   MOZ_DIAGNOSTIC_ASSERT(!aClipChain || aClipChain->mOnStack || !itemClipASR ||
-                        itemClipASR->mScrollContainerFrame);
+                        itemClipASR->mFrame);
 
   const ActiveScrolledRoot* finiteBoundsASR =
       ActiveScrolledRoot::PickDescendant(itemClipASR, aItemASR);
@@ -1281,6 +1280,15 @@ bool RetainedDisplayListBuilder::ComputeRebuildRegion(
 
 bool RetainedDisplayListBuilder::ShouldBuildPartial(
     nsTArray<nsIFrame*>& aModifiedFrames) {
+  // We don't support retaining with overlay scrollbars, since they require
+  // us to look at the display list and pick the highest z-index, which
+  // we can't do during partial building.
+  if (mBuilder.DisablePartialUpdates()) {
+    mBuilder.SetDisablePartialUpdates(false);
+    Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::Disabled;
+    return false;
+  }
+
   if (mList.IsEmpty()) {
     // Partial builds without a previous display list do not make sense.
     Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::EmptyList;
@@ -1291,15 +1299,6 @@ bool RetainedDisplayListBuilder::ShouldBuildPartial(
       StaticPrefs::layout_display_list_rebuild_frame_limit()) {
     // Computing a dirty rect with too many modified frames can be slow.
     Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::RebuildLimit;
-    return false;
-  }
-
-  // We don't support retaining with overlay scrollbars, since they require
-  // us to look at the display list and pick the highest z-index, which
-  // we can't do during partial building.
-  if (mBuilder.DisablePartialUpdates()) {
-    mBuilder.SetDisablePartialUpdates(false);
-    Metrics()->mPartialUpdateFailReason = PartialUpdateFailReason::Disabled;
     return false;
   }
 

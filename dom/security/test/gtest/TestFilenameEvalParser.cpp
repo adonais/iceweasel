@@ -17,6 +17,7 @@
 
 static constexpr auto kChromeURI = "chromeuri"_ns;
 static constexpr auto kResourceURI = "resourceuri"_ns;
+static constexpr auto kMozSrcURI = "mozsrcuri"_ns;
 static constexpr auto kBlobUri = "bloburi"_ns;
 static constexpr auto kDataUri = "dataurl"_ns;
 static constexpr auto kAboutUri = "abouturi"_ns;
@@ -77,6 +78,22 @@ TEST(FilenameEvalParser, ResourceChrome)
         nsContentSecurityUtils::FilenameToFilenameType(str, false);
     ASSERT_EQ(ret.first, kChromeURI);
     ASSERT_EQ(ret.second.value(), "chrome://foo/bar.js"_ns);
+  }
+  {
+    constexpr auto str =
+        "moz-src:///toolkit/components/search/SearchUtils.sys.mjs"_ns;
+    FilenameTypeAndDetails ret =
+        nsContentSecurityUtils::FilenameToFilenameType(str, false);
+    ASSERT_EQ(ret.first, kMozSrcURI);
+    ASSERT_EQ(ret.second.value(), str);
+  }
+  {
+    constexpr auto str =
+        "moz-src:///browser/components/genai/LinkPreview.sys.mjs"_ns;
+    FilenameTypeAndDetails ret =
+        nsContentSecurityUtils::FilenameToFilenameType(str, false);
+    ASSERT_EQ(ret.first, kMozSrcURI);
+    ASSERT_EQ(ret.second.value(), str);
   }
 }
 

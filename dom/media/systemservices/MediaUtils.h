@@ -7,8 +7,6 @@
 #ifndef mozilla_MediaUtils_h
 #define mozilla_MediaUtils_h
 
-#include <map>
-
 #include "MediaEventSource.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Monitor.h"

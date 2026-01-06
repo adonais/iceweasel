@@ -57,6 +57,9 @@ fx-view-discoverability-secondary-button-label = Dismiss
 sidebar-button-callout-title = Show tab titles in the sidebar
 sidebar-button-callout-subtitle = Use the sidebar button to expand the sidebar, so you can see tab titles.
 sidebar-button-callout-vertical-tabs = To show your tabs, select the sidebar button in the toolbar.
+sidebar-deprecation-callout-title = Updated sidebar coming soon
+sidebar-deprecation-callout-subtitle = We’re phasing out the sidebar version you’re currently using. Try the updated sidebar. It’s faster and you get access to more tools.
+sidebar-deprecation-cta-button = Try it now
 
 ## Sidebar Vertical Tabs Strings
 

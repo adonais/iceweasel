@@ -192,6 +192,7 @@ DebuggerTransport.prototype = {
 
   /**
    * Close the transport.
+   *
    * @param reason nsresult / object (optional)
    *        The status code or error message that corresponds to the reason for
    *        closing the transport (likely because a stream closed or failed).
@@ -370,6 +371,7 @@ DebuggerTransport.prototype = {
    * reading may not complete.  The Packet signals that its data is ready for
    * delivery by calling one of this transport's _on*Ready methods (see
    * ./packets.js and the _on*Ready methods below).
+   *
    * @return boolean
    *         Whether incoming stream processing should continue for any
    *         remaining data.
@@ -431,6 +433,7 @@ DebuggerTransport.prototype = {
    * Read as far as we can into the incoming data, attempting to build up a
    * complete packet header (which terminates with ":").  We'll only read up to
    * PACKET_HEADER_MAX characters.
+   *
    * @return boolean
    *         True if we now have a complete header.
    */

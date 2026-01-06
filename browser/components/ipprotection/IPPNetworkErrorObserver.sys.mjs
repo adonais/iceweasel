@@ -5,7 +5,7 @@
 /**
  * Service Class to observe and record proxy-errors related to IP-Protection
  *
- * @fires event:"proxy-http-error"
+ * @fires IPPNetworkErrorObserver#"proxy-http-error"
  * Fired when the Proxy has recieved the Connect Request and responded with
  * a non-2xx HTTP status code
  */

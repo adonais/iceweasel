@@ -6,9 +6,6 @@
 
 #include <stdint.h>
 
-#include <limits>
-#include <vector>
-
 #include "ByteStream.h"
 #include "MoofParser.h"
 #include "VideoUtils.h"

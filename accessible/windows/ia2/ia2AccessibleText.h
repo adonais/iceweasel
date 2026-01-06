@@ -8,7 +8,6 @@
 #ifndef _ACCESSIBLE_TEXT_H
 #define _ACCESSIBLE_TEXT_H
 
-#include <utility>
 #include "AccessibleText.h"
 #include "nsIAccessibleText.h"
 

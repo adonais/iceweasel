@@ -460,6 +460,7 @@ add_task(async function test_open_close_restore_from_popup() {
 
 /**
  * Test if closing can be denied on Mac.
+ *
  * @note: Mac only
  */
 add_task(async function test_mac_notifications() {

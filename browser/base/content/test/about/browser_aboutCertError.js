@@ -863,16 +863,25 @@ async function assertNetErrorPage({
         advancedButton.scrollIntoView(true);
         EventUtils.synthesizeMouseAtCenter(advancedButton, {}, content);
         await ContentTaskUtils.waitForCondition(
-          () =>
-            netErrorCard.exceptionButton &&
-            !netErrorCard.exceptionButton.disabled,
-          "Wait for the exception button to be created."
+          () => netErrorCard.advancedContainer,
+          "Wait for the advanced container."
         );
 
-        Assert.ok(
-          !netErrorCard.exceptionButton.disabled,
-          "The exception button is now enabled."
-        );
+        const hideExceptionButton = netErrorCard.shouldHideExceptionButton();
+        if (!hideExceptionButton) {
+          await ContentTaskUtils.waitForCondition(
+            () =>
+              netErrorCard.exceptionButton &&
+              !netErrorCard.exceptionButton.disabled,
+            "Wait for the exception button to be created."
+          );
+
+          Assert.ok(
+            !netErrorCard.exceptionButton.disabled,
+            "The exception button is now enabled."
+          );
+        }
+
         Assert.equal(
           advancedButton.dataset.l10nId,
           "fp-certerror-hide-advanced-button",
@@ -1223,10 +1232,19 @@ add_task(async function checkSandboxedIframe_feltPrivacyToTrue() {
     advancedButton.scrollIntoView(true);
     EventUtils.synthesizeMouseAtCenter(advancedButton, {}, content);
     await ContentTaskUtils.waitForCondition(
-      () =>
-        netErrorCard.exceptionButton && !netErrorCard.exceptionButton.disabled,
-      "Wait for the exception button to be created."
+      () => netErrorCard.advancedContainer,
+      "Wait for the advanced container."
     );
+
+    const hideExceptionButton = netErrorCard.shouldHideExceptionButton();
+    if (!hideExceptionButton) {
+      await ContentTaskUtils.waitForCondition(
+        () =>
+          netErrorCard.exceptionButton &&
+          !netErrorCard.exceptionButton.disabled,
+        "Wait for the exception button to be created."
+      );
+    }
 
     // Assert Error Code
     const certErrorCodeLink = netErrorCard.errorCode;

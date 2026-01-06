@@ -10,19 +10,17 @@ import android.content.pm.Signature
 import android.content.pm.SigningInfo
 import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import mozilla.components.support.test.any
 import mozilla.components.support.test.mock
+import mozilla.components.support.utils.ext.PackageManagerCompatHelper
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyString
 import org.mockito.Mock
 import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.spy
-import org.mockito.Mockito.times
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 import org.robolectric.annotation.Config
@@ -33,7 +31,7 @@ class AndroidAssetFinderTest {
     private lateinit var assetFinder: AndroidAssetFinder
     private lateinit var packageInfo: PackageInfo
 
-    @Mock lateinit var packageManager: PackageManager
+    @Mock lateinit var packageManager: PackageManagerCompatHelper
 
     @Mock lateinit var signingInfo: SigningInfo
 
@@ -44,14 +42,14 @@ class AndroidAssetFinderTest {
         MockitoAnnotations.openMocks(this)
         packageInfo = PackageInfo()
         @Suppress("DEPRECATION")
-        `when`(packageManager.getPackageInfo(anyString(), anyInt())).thenReturn(packageInfo)
+        `when`(packageManager.getPackageInfoCompat(anyString(), anyInt())).thenReturn(packageInfo)
     }
 
     @Test
     @Config(sdk = [28])
     fun `test getAndroidAppAsset returns empty list if name not found on SDK 28 or less`() {
         @Suppress("DEPRECATION")
-        `when`(packageManager.getPackageInfo(anyString(), anyInt()))
+        `when`(packageManager.getPackageInfoCompat(anyString(), anyInt()))
             .thenThrow(PackageManager.NameNotFoundException::class.java)
 
         assertEquals(
@@ -63,9 +61,9 @@ class AndroidAssetFinderTest {
     @Test
     fun `test getAndroidAppAsset returns empty list if name not found`() {
         `when`(
-            packageManager.getPackageInfo(
+            packageManager.getPackageInfoCompat(
                 anyString(),
-                ArgumentMatchers.any(PackageManager.PackageInfoFlags::class.java),
+                anyInt(),
             ),
         )
             .thenThrow(PackageManager.NameNotFoundException::class.java)

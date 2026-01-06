@@ -4,12 +4,12 @@
 
 package org.mozilla.fenix.debugsettings.creditcards
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -31,6 +32,8 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.debugsettings.addresses.FakeCreditCardsAddressesStorage
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
+import mozilla.components.ui.icons.R as iconsR
 
 /**
  * CreditCards UI for the debug drawer that displays various creditCards related tools.
@@ -65,12 +68,14 @@ fun CreditCardsTools(
         }
     }
 
-    CreditCardsContent(
-        creditCards = creditCards,
-        onAddCreditCardClick = onAddCreditCard,
-        onDeleteCreditCardClick = onDeleteCreditCard,
-        onDeleteAllCreditCardsClick = onDeleteAllCreditCards,
-    )
+    Surface {
+        CreditCardsContent(
+            creditCards = creditCards,
+            onAddCreditCardClick = onAddCreditCard,
+            onDeleteCreditCardClick = onDeleteCreditCard,
+            onDeleteAllCreditCardsClick = onDeleteAllCreditCards,
+        )
+    }
 }
 
 @Composable
@@ -83,7 +88,7 @@ private fun CreditCardsContent(
     Column {
         Text(
             text = stringResource(R.string.debug_drawer_credit_cards_title),
-            color = FirefoxTheme.colors.textSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = FirefoxTheme.typography.headline7,
         )
 
@@ -110,7 +115,7 @@ private fun CreditCardsContent(
                 TextListItem(
                     label = creditCard.cardNumberLast4,
                     description = creditCard.billingName,
-                    iconPainter = painterResource(R.drawable.ic_delete),
+                    iconPainter = painterResource(iconsR.drawable.mozac_ic_delete_24),
                     onIconClick = { onDeleteCreditCardClick(creditCard) },
                 )
             }
@@ -122,12 +127,18 @@ private fun CreditCardsContent(
 @PreviewLightDark
 private fun CreditCardsScreenPreview() {
     FirefoxTheme {
-        Box(
-            modifier = Modifier.background(color = FirefoxTheme.colors.layer1),
-        ) {
-            CreditCardsTools(
-                creditCardsAddressesStorage = FakeCreditCardsAddressesStorage(),
-            )
-        }
+        CreditCardsTools(
+            creditCardsAddressesStorage = FakeCreditCardsAddressesStorage(),
+        )
+    }
+}
+
+@Composable
+@Preview
+private fun CreditCardsScreenPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        CreditCardsTools(
+            creditCardsAddressesStorage = FakeCreditCardsAddressesStorage(),
+        )
     }
 }

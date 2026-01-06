@@ -6,8 +6,6 @@
 #ifndef mozilla_layers_SurfacePool_h
 #define mozilla_layers_SurfacePool_h
 
-#include "mozilla/Maybe.h"
-
 #include "GLTypes.h"
 #include "nsISupportsImpl.h"
 #include "nsRegion.h"

@@ -541,7 +541,7 @@ export class SpecialPowersParent extends JSWindowActorParent {
     });
   }
 
-  async popPrefEnv() {
+  popPrefEnv() {
     return doPrefEnvOp(() => {
       let env = prefUndoStack.pop();
       if (env) {
@@ -555,8 +555,12 @@ export class SpecialPowersParent extends JSWindowActorParent {
   flushPrefEnv() {
     let requiresRefresh = false;
     while (prefUndoStack.length) {
+      // bitwise |= (and not logical ||=) so that we always call popPrefEnv and
+      // don't lazily evaluate.
       requiresRefresh |= this.popPrefEnv().requiresRefresh;
     }
+    // Make requiresRefresh a boolean from number.
+    requiresRefresh = !!requiresRefresh;
     return { requiresRefresh };
   }
 

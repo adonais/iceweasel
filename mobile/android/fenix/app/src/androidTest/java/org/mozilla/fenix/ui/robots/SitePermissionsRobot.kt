@@ -16,6 +16,7 @@ import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.MatcherHelper.assertItemTextEquals
 import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectExists
+import org.mozilla.fenix.helpers.MatcherHelper.assertUIObjectIsGone
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -82,6 +83,12 @@ class SitePermissionsRobot {
                 assertItemTextEquals(allowPagePermissionButton(), expectedText = "Allow")
             }
         }
+    }
+
+    fun verifyDoNotAskAgainIsHidden() {
+        Log.i(TAG, "verifyDoNotAskAgainIsHidden: asserting that the \"Remember decision for this site\" check box does not exist")
+        assertUIObjectIsGone(doNotAskAgainCheckBox())
+        Log.i(TAG, "verifyDoNotAskAgainIsHidden: asserted that the \"Remember decision for this site\" check box does not exist")
     }
 
     fun verifyNotificationsPermissionPrompt(host: String, blocked: Boolean = false) {
@@ -179,6 +186,18 @@ class SitePermissionsRobot {
     }
 
     class Transition {
+
+        fun clickLearnMore(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+            Log.i(TAG, "clickLearnMore: Waiting for $waitingTime ms for the Learn more link to exist")
+            learnMoreText().waitForExists(waitingTime)
+            Log.i(TAG, "clickLearnMore: Waited for $waitingTime ms for the Learn more link to exist")
+            Log.i(TAG, "clickLearnMore: Trying to click the Learn more link")
+            learnMoreText().click()
+            Log.i(TAG, "clickLearnMore: Clicked the Learn more link")
+            BrowserRobot().interact()
+            return BrowserRobot.Transition()
+        }
+
         fun clickPagePermissionButton(allow: Boolean, interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             if (allow) {
                 Log.i(TAG, "clickPagePermissionButton: Waiting for $waitingTime ms for the \"Allow\" prompt button to exist")
@@ -226,3 +245,9 @@ private fun allowPagePermissionButton() =
 
 private fun denyPagePermissionButton() =
     mDevice.findObject(UiSelector().resourceId("$packageName:id/deny_button"))
+
+private fun learnMoreText() =
+    mDevice.findObject(UiSelector().resourceId("$packageName:id/learn_more"))
+
+private fun doNotAskAgainCheckBox() =
+    mDevice.findObject(UiSelector().resourceId("$packageName:id/do_not_ask_again"))

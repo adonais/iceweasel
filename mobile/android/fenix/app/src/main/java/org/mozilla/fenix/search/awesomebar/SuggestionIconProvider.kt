@@ -94,7 +94,10 @@ interface SuggestionIconProvider {
      * @param tintWithPrimaryColor If true, the icon will be tinted with the primary text color.
      * @return A [Bitmap] of the icon, or null if it cannot be loaded/created.
      */
-    fun getGenericIconBitmap(@DrawableRes drawableRes: Int, tintWithPrimaryColor: Boolean = false): Bitmap?
+    fun getGenericIconBitmap(
+        @DrawableRes drawableRes: Int,
+        tintWithPrimaryColor: Boolean = false,
+    ): Bitmap?
 
     /**
      * Provides a standard settings icon.
@@ -166,7 +169,10 @@ class DefaultSuggestionIconProvider(private val context: Context) : SuggestionIc
         return AppCompatResources.getDrawable(context, R.drawable.ic_search_results_device_tablet)
     }
 
-    override fun getGenericIconBitmap(@DrawableRes drawableRes: Int, tintWithPrimaryColor: Boolean): Bitmap? {
+    override fun getGenericIconBitmap(
+        @DrawableRes drawableRes: Int,
+        tintWithPrimaryColor: Boolean,
+    ): Bitmap? {
         return AppCompatResources.getDrawable(context, drawableRes)?.apply {
             if (tintWithPrimaryColor) {
                 colorFilter = createBlendModeColorFilterCompat(

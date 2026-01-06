@@ -19,7 +19,8 @@ function DatePicker(context) {
   DatePicker.prototype = {
     /**
      * Initializes the date picker. Set the default states and properties.
-     * @param  {Object} props
+     *
+     * @param  {object} props
      *         {
      *           {Number} year [optional]
      *           {Number} month [optional]
@@ -395,7 +396,7 @@ function DatePicker(context) {
     /**
      * Set the date state and update the components with the new state.
      *
-     * @param {Object} dateState
+     * @param {object} dateState
      *        {
      *          {Number} year [optional]
      *          {Number} month [optional]
@@ -425,7 +426,7 @@ function DatePicker(context) {
   /**
    * MonthYear is a component that handles the month & year spinners
    *
-   * @param {Object} options
+   * @param {object} options
    *        {
    *          {String} locale
    *          {Function} setYear
@@ -493,7 +494,7 @@ function DatePicker(context) {
     /**
      * Set new properties and pass them to components
      *
-     * @param {Object} props
+     * @param {object} props
      *        {
      *          {Boolean} isVisible
      *          {Date} dateObj
@@ -551,6 +552,7 @@ function DatePicker(context) {
 
     /**
      * Handle events
+     *
      * @param  {DOMEvent} event
      */
     handleEvent(event) {

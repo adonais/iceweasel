@@ -233,6 +233,10 @@ profiler-popup-presets-debug-description = Preset for debugging in { -brand-shor
 profiler-popup-presets-debug-label =
   .label = Debug
 
+profiler-popup-presets-web-compat-description = Recommended preset for debugging web compatibility issues in websites, rather than tracking performance.
+profiler-popup-presets-web-compat-label =
+  .label = Web Compat
+
 profiler-popup-presets-custom-label =
   .label = Custom
 

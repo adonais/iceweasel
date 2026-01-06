@@ -55,6 +55,7 @@ class OutOfLineCallPostWriteElementBarrier;
 class CodeGenerator final : public CodeGeneratorSpecific {
   // Warp snapshot. This is nullptr for Wasm compilations.
   const WarpSnapshot* snapshot_ = nullptr;
+  IonScriptCounts* counts_ = nullptr;
 
   [[nodiscard]] bool generateBody();
 
@@ -99,7 +100,10 @@ class CodeGenerator final : public CodeGeneratorSpecific {
                                   wasm::FuncOffsets* offsets,
                                   wasm::StackMaps* stackMaps,
                                   wasm::Decoder* decoder);
+  [[nodiscard]] bool generateBlock(LBlock* current, size_t blockNumber,
+                                   IonScriptCounts* counts, bool compilingWasm);
 
+  [[nodiscard]] bool generateOutOfLineBlocks();
   [[nodiscard]] bool link(JSContext* cx);
 
   void emitOOLTestObject(Register objreg, Label* ifTruthy, Label* ifFalsy,
@@ -168,6 +172,14 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   void visitPostWriteBarrierCommon(LPostBarrierType* lir, OutOfLineCode* ool);
   template <class LPostBarrierType>
   void visitPostWriteBarrierCommonV(LPostBarrierType* lir, OutOfLineCode* ool);
+  void visitLoadSlotByIteratorIndexCommon(Register object,
+                                          Register indexScratch,
+                                          Register kindScratch,
+                                          ValueOperand result);
+  void visitStoreSlotByIteratorIndexCommon(Register object,
+                                           Register indexScratch,
+                                           Register kindScratch,
+                                           ValueOperand value);
 
   void emitCallInvokeFunction(LInstruction* call, Register callereg,
                               bool isConstructing, bool ignoresReturnValue,
@@ -227,6 +239,12 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   void emitMaybeAtomizeSlot(LInstruction* ins, Register stringReg,
                             Address slotAddr, TypedOrValueRegister dest);
 
+  void emitWeakMapLookupObject(Register weakMap, Register obj,
+                               Register hashTable, Register hashCode,
+                               Register scratch, Register scratch2,
+                               Register scratch3, Register scratch4,
+                               Register scratch5, Label* found, Label* missing);
+
   using RegisterOrInt32 = mozilla::Variant<Register, int32_t>;
 
   static RegisterOrInt32 ToRegisterOrInt32(const LAllocation* allocation);
@@ -260,6 +278,10 @@ class CodeGenerator final : public CodeGeneratorSpecific {
                   Register output);
 
   void emitInstanceOf(LInstruction* ins, Register protoReg);
+
+  void emitIteratorHasIndicesAndBranch(Register iterator, Register object,
+                                       Register temp, Register temp2,
+                                       Label* ifFalse);
 
 #ifdef DEBUG
   void emitAssertResultV(const ValueOperand output, const MDefinition* mir);

@@ -49,16 +49,24 @@
         return result.querySelector("setting-control");
       }
 
-      function waitForSettingChange(setting) {
-        return new Promise(resolve => {
-          setting.on("change", function handler() {
-            setting.off("change", handler);
-            resolve();
-          });
-        });
-      }
-
       add_setup(async function setup() {
+        const mockL10nSource = L10nFileSource.createMock(
+          "test",
+          "app",
+          ["en-US"],
+          "/localization/{locale}/",
+          [
+            {
+              path: "/localization/en-US/mock.ftl",
+              source: "l10n-test-id =\n .label = Test label",
+            },
+          ]
+        );
+        L10nRegistry.getInstance().registerSources([mockL10nSource]);
+        MozXULElement.insertFTLIfNeeded("mock.ftl");
+        SimpleTest.registerCleanupFunction(() => {
+          L10nRegistry.getInstance().removeSources([mockL10nSource.name]);
+        });
         testHelpers = new InputTestHelpers();
         ({ html } = await testHelpers.setupLit());
         testHelpers.setupTests({
@@ -554,6 +562,59 @@
           document.activeElement,
           control.controlEl,
           "The control element no longer receives focus via keyboard interaction."
+        );
+      });
+
+      add_task(async function testSettingControlSlot() {
+        const SETTING_PARENT = "setting-control-slot-parent";
+        const SETTING_CHILD_ACTION = "setting-control-slot-child-action";
+
+        Preferences.addSetting({ id: SETTING_PARENT });
+        Preferences.addSetting({ id: SETTING_CHILD_ACTION });
+
+        const itemConfig = {
+          id: SETTING_PARENT,
+          l10nId: LABEL_L10N_ID,
+          control: "moz-box-item",
+          items: [
+            {
+              id: SETTING_CHILD_ACTION,
+              l10nId: LABEL_L10N_ID,
+              slot: "actions",
+            },
+          ],
+        };
+
+        const parentSetting = Preferences.getSetting(SETTING_PARENT);
+        const parentControl = await renderTemplate(itemConfig, parentSetting);
+
+        is(
+          parentControl.setting.id,
+          SETTING_PARENT,
+          "Parent control id is set"
+        );
+        ok(parentControl.controlEl, "Parent controlEl exists");
+
+        const nestedControl =
+          parentControl.controlEl.querySelector("setting-control");
+
+        is(
+          nestedControl.setting.id,
+          SETTING_CHILD_ACTION,
+          "Nested control id is set"
+        );
+        ok(nestedControl.controlEl, "Nested controlEl exists");
+        is(
+          nestedControl.getAttribute("slot"),
+          "actions",
+          "Nested setting-control has expected slot name"
+        );
+        is(
+          parentControl.controlEl.shadowRoot
+            .querySelector("slot[name='actions']")
+            .assignedElements()[0],
+          nestedControl,
+          "Nested setting-control is slotted in the parent control."
         );
       });
     </script>

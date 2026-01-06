@@ -299,7 +299,7 @@ void PerformanceMainThread::DispatchPendingEventTimingEntries() {
        it != mPendingEventTimingEntries.end(); ++it) {
     // Set its duration if it's not set already.
     PerformanceEventTiming* entry = *it;
-    if (entry->RawDuration() == 0) {
+    if (entry->RawDuration().isNothing()) {
       entry->SetDuration(renderingTime - entry->RawStartTime());
     }
 
@@ -314,7 +314,7 @@ void PerformanceMainThread::DispatchPendingEventTimingEntries() {
     while (mPendingEventTimingEntries.begin() != entriesToBeQueuedEnd) {
       RefPtr<PerformanceEventTiming> entry =
           mPendingEventTimingEntries.popFirst();
-      if (entry->RawDuration() >= kDefaultEventTimingMinDuration) {
+      if (entry->RawDuration().valueOr(0) >= kDefaultEventTimingMinDuration) {
         QueueEntry(entry);
       }
 

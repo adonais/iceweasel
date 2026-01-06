@@ -9,13 +9,19 @@
  */
 
 #include "modules/video_capture/linux/pipewire_session.h"
-#include "modules/video_capture/linux/device_info_pipewire.h"
 
+#include <pipewire/pipewire.h>
 #include <spa/monitor/device.h>
 #include <spa/param/format-utils.h>
 #include <spa/param/format.h>
+#include <spa/param/param.h>
 #include <spa/param/video/raw.h>
-#include <spa/pod/parser.h>
+#include <spa/pod/iter.h>
+#include <spa/pod/pod.h>
+#include <spa/utils/defs.h>
+#include <spa/utils/dict.h>
+#include <spa/utils/hook.h>
+#include <spa/utils/type.h>
 
 #include <algorithm>
 #include <cstdint>
@@ -29,6 +35,7 @@
 #include "modules/portal/pipewire_utils.h"
 #include "modules/portal/portal_request_response.h"
 #include "modules/video_capture/linux/camera_portal.h"
+#include "modules/video_capture/linux/device_info_pipewire.h"
 #include "modules/video_capture/video_capture_defines.h"
 #include "modules/video_capture/video_capture_options.h"
 #include "rtc_base/logging.h"
@@ -98,7 +105,8 @@ PipeWireNode::PipeWireNode(PipeWireSession* session,
       .param = OnNodeParam,
   };
 
-  pw_node_add_listener(reinterpret_cast<pw_node*>(proxy_), &node_listener_, &node_events, this);
+  pw_node_add_listener(reinterpret_cast<pw_node*>(proxy_), &node_listener_,
+                       &node_events, this);
 }
 
 // static
@@ -130,7 +138,8 @@ void PipeWireNode::OnNodeInfo(void* data, const pw_node_info* info) {
       uint32_t id = info->params[i].id;
       if (id == SPA_PARAM_EnumFormat &&
           info->params[i].flags & SPA_PARAM_INFO_READ) {
-        pw_node_enum_params(reinterpret_cast<pw_node*>(that->proxy_), 0, id, 0, UINT32_MAX, nullptr);
+        pw_node_enum_params(reinterpret_cast<pw_node*>(that->proxy_), 0, id, 0,
+                            UINT32_MAX, nullptr);
         break;
       }
     }
@@ -172,8 +181,9 @@ void PipeWireNode::OnNodeParam(void* data,
               static_cast<int32_t>(1.0 * fract[i].num / fract[i].denom),
               cap.maxFPS);
         }
-      } else if (choice == SPA_CHOICE_Range && fract[1].num > 0)
+      } else if (choice == SPA_CHOICE_Range && fract[1].num > 0) {
         cap.maxFPS = 1.0 * fract[1].num / fract[1].denom;
+      }
     }
   }
 
@@ -300,7 +310,8 @@ void PipeWireSession::InitPipeWire(int fd) {
 bool PipeWireSession::RegisterDeviceInfo(DeviceInfoPipeWire* device_info) {
   RTC_CHECK(device_info);
   MutexLock lock(&device_info_lock_);
-  auto it = std::find(device_info_list_.begin(), device_info_list_.end(), device_info);
+  auto it = std::find(device_info_list_.begin(), device_info_list_.end(),
+                      device_info);
   if (it == device_info_list_.end()) {
     device_info_list_.push_back(device_info);
     return true;
@@ -311,7 +322,8 @@ bool PipeWireSession::RegisterDeviceInfo(DeviceInfoPipeWire* device_info) {
 bool PipeWireSession::DeRegisterDeviceInfo(DeviceInfoPipeWire* device_info) {
   RTC_CHECK(device_info);
   MutexLock lock(&device_info_lock_);
-  auto it = std::find(device_info_list_.begin(), device_info_list_.end(), device_info);
+  auto it = std::find(device_info_list_.begin(), device_info_list_.end(),
+                      device_info);
   if (it != device_info_list_.end()) {
     device_info_list_.erase(it);
     return true;
@@ -424,11 +436,10 @@ void PipeWireSession::OnCoreDone(void* data, uint32_t id, int seq) {
       RTC_LOG(LS_VERBOSE) << "Enumerating PipeWire camera devices complete.";
 
       // Remove camera devices with no capabilities
-      auto it = std::remove_if(that->nodes_.begin(), that->nodes_.end(),
-                               [](const PipeWireNode::PipeWireNodePtr& node) {
-                                 return node->capabilities().empty();
-                               });
-      that->nodes_.erase(it, that->nodes_.end());
+      std::erase_if(that->nodes_,
+                    [](const PipeWireNode::PipeWireNodePtr& node) {
+                      return node->capabilities().empty();
+                    });
 
       that->Finish(VideoCaptureOptions::Status::SUCCESS);
     }
@@ -472,11 +483,9 @@ void PipeWireSession::OnRegistryGlobal(void* data,
 void PipeWireSession::OnRegistryGlobalRemove(void* data, uint32_t id) {
   PipeWireSession* that = static_cast<PipeWireSession*>(data);
 
-  auto it = std::remove_if(that->nodes_.begin(), that->nodes_.end(),
-                           [id](const PipeWireNode::PipeWireNodePtr& node) {
-                             return node->id() == id;
-                           });
-  that->nodes_.erase(it, that->nodes_.end());
+  std::erase_if(that->nodes_, [id](const PipeWireNode::PipeWireNodePtr& node) {
+    return node->id() == id;
+  });
 
   that->NotifyDeviceChange();
 }

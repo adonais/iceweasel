@@ -65,7 +65,6 @@
 
 #include <ostream>
 #include <sstream>
-#include <vector>
 
 #include "sdp/SdpAttributeList.h"
 #include "sdp/SdpEnum.h"

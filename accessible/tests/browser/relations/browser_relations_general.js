@@ -44,19 +44,31 @@ addAccessibleTask(
  */
 addAccessibleTask(
   `
-  <input type="checkbox" id="dependant1">
-  <input type="checkbox" id="dependant2">
+  <input type="checkbox" id="dependant">
   <label id="host">label</label>`,
   async function (browser, accDoc) {
-    await testRelated(
-      browser,
-      accDoc,
-      "for",
-      RELATION_LABEL_FOR,
-      RELATION_LABELLED_BY
-    );
+    const host = findAccessibleChildByID(accDoc, "host");
+    const dependant = findAccessibleChildByID(accDoc, "dependant");
+    async function testLabel(hasLabel) {
+      await testCachedRelation(
+        host,
+        RELATION_LABEL_FOR,
+        hasLabel ? dependant : []
+      );
+      await testCachedRelation(
+        dependant,
+        RELATION_LABELLED_BY,
+        hasLabel ? host : []
+      );
+    }
+
+    await testLabel(false);
+    await invokeSetAttribute(browser, "host", "for", "dependant");
+    await testLabel(true);
+    await invokeSetAttribute(browser, "dependant", "id", "invalid");
+    await testLabel(false);
   },
-  { iframe: true, remoteIframe: true }
+  { chrome: true, iframe: true, remoteIframe: true }
 );
 
 /**

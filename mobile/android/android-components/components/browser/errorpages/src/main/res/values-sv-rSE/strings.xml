@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Problem med vilseledande webbplats</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Denna webbsida på %1$s har rapporterats som en vilseledande webbplats och har blockerats baserat på dina säkerhetsinställningar.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Webbplatsen är blockerad för din säkerhet</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Den här webbsidan på %1$s har blockerats eftersom ett av dina tillägg försökte öppna den. Webbplatsen kan användas för att stjäla din information — som lösenord eller kreditkortsnummer.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Säker webbplats finns inte tillgänglig</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

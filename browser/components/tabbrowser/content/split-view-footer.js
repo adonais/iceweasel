@@ -61,6 +61,8 @@
       </hbox>
       <html:img class="split-view-icon" hidden="" role="presentation"/>
       <html:span class="split-view-uri"></html:span>
+      <toolbarbutton image="chrome://global/skin/icons/more.svg"
+                     data-l10n-id="urlbar-split-view-button" />
     `;
 
     connectedCallback() {
@@ -72,12 +74,15 @@
       this.securityElement = this.querySelector(".split-view-security-warning");
       this.iconElement = this.querySelector(".split-view-icon");
       this.uriElement = this.querySelector(".split-view-uri");
+      this.menuButtonElement = this.querySelector("toolbarbutton");
 
       // Ensure these elements are up-to-date, as this info may have been set
       // prior to inserting this element into the DOM.
       this.#updateSecurityElement();
       this.#updateIconElement();
       this.#updateUriElement();
+
+      this.menuButtonElement.addEventListener("command", this);
 
       this.#initialized = true;
     }
@@ -88,6 +93,9 @@
 
     handleEvent(e) {
       switch (e.type) {
+        case "command":
+          gBrowser.openSplitViewMenu(this.menuButtonElement);
+          break;
         case "TabAttrModified":
           for (const attribute of e.detail.changed) {
             this.#handleTabAttrModified(attribute);
@@ -114,6 +122,9 @@
       if (this.securityElement) {
         this.#updateSecurityElement();
       }
+      if (this.iconElement) {
+        this.#updateIconElement();
+      }
     }
 
     #updateSecurityElement() {
@@ -135,12 +146,13 @@
     }
 
     #updateIconElement() {
-      if (this.#iconSrc) {
+      let canShowIcon = !this.#isInsecure && this.#iconSrc;
+      if (canShowIcon) {
         this.iconElement.setAttribute("src", this.#iconSrc);
       } else {
         this.iconElement.removeAttribute("src");
       }
-      this.iconElement.hidden = !this.#iconSrc;
+      this.iconElement.hidden = !canShowIcon;
     }
 
     /**

@@ -19,15 +19,12 @@ import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
-import mozilla.components.lib.state.UiStore
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.automotive.isAndroidAutomotiveAvailable
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.search.SearchFragmentAction.Init
-import org.mozilla.fenix.search.SearchFragmentStore.Environment
 import org.mozilla.fenix.utils.Settings
 
 /**
@@ -39,7 +36,7 @@ import org.mozilla.fenix.utils.Settings
 class SearchFragmentStore(
     initialState: SearchFragmentState,
     middleware: List<Middleware<SearchFragmentState, SearchFragmentAction>> = emptyList(),
-) : UiStore<SearchFragmentState, SearchFragmentAction>(
+) : Store<SearchFragmentState, SearchFragmentAction>(
     initialState = initialState,
     reducer = ::searchStateReducer,
     middleware = middleware,
@@ -54,7 +51,7 @@ class SearchFragmentStore(
      *
      * This is Activity/Fragment lifecycle dependent and should be handled carefully to avoid memory leaks.
      *
-     * @property context Activity [Context] used for various system interactions.
+     * @property context [Context] used for various system interactions.
      * @property viewLifecycleOwner [LifecycleOwner] depending on which lifecycle related operations will be scheduled.
      * @property browsingModeManager [BrowsingModeManager] for querying the current browsing mode.
      * @property navController [NavController] used to navigate to other destinations.
@@ -240,15 +237,16 @@ data class SearchFragmentState(
  * Creates the initial state for the search fragment.
  */
 fun createInitialSearchFragmentState(
-    activity: HomeActivity,
+    context: Context,
     components: Components,
     tabId: String?,
     pastedText: String?,
     searchAccessPoint: MetricsUtils.Source,
     searchEngine: SearchEngine? = null,
-    isAndroidAutomotiveAvailable: Boolean = activity.isAndroidAutomotiveAvailable(),
+    isAndroidAutomotiveAvailable: Boolean = context.isAndroidAutomotiveAvailable(),
 ): SearchFragmentState {
     val settings = components.settings
+    val browsingMode = components.appStore.state.mode
     val tab = tabId?.let { components.core.store.state.findTab(it) }
     val url = tab?.content?.url.orEmpty()
 
@@ -269,7 +267,7 @@ fun createInitialSearchFragmentState(
         shouldShowSearchSuggestions = false,
         defaultEngine = null,
         showSearchSuggestionsFromCurrentEngine = shouldShowSearchSuggestions(
-            browsingMode = activity.browsingModeManager.mode,
+            browsingMode = browsingMode,
             settings = settings,
         ),
         showSearchSuggestionsHint = false,
@@ -286,12 +284,12 @@ fun createInitialSearchFragmentState(
         showAllSyncedTabsSuggestions = settings.shouldShowSyncedTabsSuggestions,
         showSessionSuggestionsForCurrentEngine = false,
         showAllSessionSuggestions = true,
-        showSponsoredSuggestions = activity.browsingModeManager.mode == BrowsingMode.Normal &&
+        showSponsoredSuggestions = browsingMode == BrowsingMode.Normal &&
             settings.enableFxSuggest && settings.showSponsoredSuggestions,
-        showNonSponsoredSuggestions = activity.browsingModeManager.mode == BrowsingMode.Normal &&
+        showNonSponsoredSuggestions = browsingMode == BrowsingMode.Normal &&
             settings.enableFxSuggest && settings.showNonSponsoredSuggestions,
         showTrendingSearches = shouldShowTrendingSearchSuggestions(
-            browsingMode = activity.browsingModeManager.mode,
+            browsingMode = browsingMode,
             settings = settings,
             isTrendingSuggestionSupported =
             components.core.store.state.search.selectedOrDefaultSearchEngine?.trendingUrl != null,
@@ -426,16 +424,6 @@ sealed class SearchFragmentAction : Action {
     ) : SearchFragmentAction()
 
     /**
-     * Signals a new valid [Environment] has been set.
-     */
-    data class EnvironmentRehydrated(val environment: Environment) : SearchFragmentAction()
-
-    /**
-     * Signals the current [Environment] is not valid anymore.
-     */
-    data object EnvironmentCleared : SearchFragmentAction()
-
-    /**
      * Action indicating the user allowed to show suggestions in private mode.
      */
     data object PrivateSuggestionsCardAccepted : SearchFragmentAction()
@@ -444,7 +432,7 @@ sealed class SearchFragmentAction : Action {
 /**
  * The SearchState Reducer.
  */
-@Suppress("LongMethod")
+@Suppress("LongMethod", "CognitiveComplexMethod")
 private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmentAction): SearchFragmentState {
     return when (action) {
         is Init -> {
@@ -631,8 +619,6 @@ private fun searchStateReducer(state: SearchFragmentState, action: SearchFragmen
             state.copy(searchStartedForCurrentUrl = action.searchStartedForCurrentUrl)
         }
 
-        is SearchFragmentAction.EnvironmentRehydrated,
-        is SearchFragmentAction.EnvironmentCleared,
         is SearchFragmentAction.SuggestionClicked,
         is SearchFragmentAction.PrivateSuggestionsCardAccepted,
         is SearchFragmentAction.SuggestionSelected,

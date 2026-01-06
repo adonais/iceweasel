@@ -104,7 +104,7 @@
 
 .fxview-tab-row-url,
 .fxview-tab-row-time {
-  font-weight: 400;
+  font-weight: normal;
 }
 
 .fxview-tab-row-button::part(button) {
@@ -121,7 +121,7 @@
 
 .fxview-tab-row-button.undo-button::part(button) {
   font-size: var(--font-size-small);
-  font-weight: 400;
+  font-weight: normal;
 }
 
 .fxview-tab-row-button.dismiss-button,

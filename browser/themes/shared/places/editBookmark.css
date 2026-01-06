@@ -53,7 +53,7 @@ menulist.folder-icon {
 }
 
 #bookmarkpropertiesdialog #editBMPanel_tagsSelector {
-  border-color: var(--in-content-border-color);
+  border-color: var(--border-color);
   padding: 12px;
 }
 

@@ -426,10 +426,19 @@ nsresult nsHtml5TreeOperation::AddAttributes(nsIContent* aNode,
     int32_t nsuri = aAttributes->getURINoBoundsCheck(i);
     if (!node->HasAttr(nsuri, localName) &&
         !(nsuri == kNameSpaceID_None && localName == nsGkAtoms::nonce)) {
-      nsString value;  // Not Auto, because using it to hold nsStringBuffer*
-      aAttributes->getValueNoBoundsCheck(i).ToString(value);
-      node->SetAttr(nsuri, localName, aAttributes->getPrefixNoBoundsCheck(i),
-                    value, true);
+      nsHtml5String val = aAttributes->getValueNoBoundsCheck(i);
+      nsAtom* prefix = aAttributes->getPrefixNoBoundsCheck(i);
+
+      // If value is already an atom, use it directly to avoid string
+      // allocation.
+      nsAtom* valAtom = val.MaybeAsAtom();
+      if (valAtom) {
+        node->SetAttr(nsuri, localName, prefix, valAtom, nullptr, true);
+      } else {
+        nsString value;  // Not Auto, because using it to hold nsStringBuffer*
+        val.ToString(value);
+        node->SetAttr(nsuri, localName, prefix, value, true);
+      }
       // XXX what to do with nsresult?
     }
   }
@@ -445,13 +454,23 @@ void nsHtml5TreeOperation::SetHTMLElementAttributes(
   }
   for (int32_t i = 0; i < len; i++) {
     nsHtml5String val = aAttributes->getValueNoBoundsCheck(i);
-    nsAtom* klass = val.MaybeAsAtom();
-    if (klass) {
-      aElement->SetClassAttrFromParser(klass);
+    nsAtom* localName = aAttributes->getLocalNameNoBoundsCheck(i);
+    if (localName == nsGkAtoms::_class) {
+      nsAtom* klass = val.MaybeAsAtom();
+      if (klass) {
+        aElement->SetClassAttrFromParser(klass);
+        continue;
+      }
+    }
+
+    nsAtom* prefix = aAttributes->getPrefixNoBoundsCheck(i);
+    int32_t nsuri = aAttributes->getURINoBoundsCheck(i);
+
+    // If value is already an atom, use it directly to avoid string allocation.
+    nsAtom* valAtom = val.MaybeAsAtom();
+    if (valAtom) {
+      aElement->SetAttr(nsuri, localName, prefix, valAtom, nullptr, false);
     } else {
-      nsAtom* localName = aAttributes->getLocalNameNoBoundsCheck(i);
-      nsAtom* prefix = aAttributes->getPrefixNoBoundsCheck(i);
-      int32_t nsuri = aAttributes->getURINoBoundsCheck(i);
       nsString value;  // Not Auto, because using it to hold nsStringBuffer*
       val.ToString(value);
       aElement->SetAttr(nsuri, localName, prefix, value, false);
@@ -577,14 +596,23 @@ nsIContent* nsHtml5TreeOperation::CreateSVGElement(
   int32_t len = aAttributes->getLength();
   for (int32_t i = 0; i < len; i++) {
     nsHtml5String val = aAttributes->getValueNoBoundsCheck(i);
-    nsAtom* klass = val.MaybeAsAtom();
-    if (klass) {
-      newContent->SetClassAttrFromParser(klass);
-    } else {
-      nsAtom* localName = aAttributes->getLocalNameNoBoundsCheck(i);
-      nsAtom* prefix = aAttributes->getPrefixNoBoundsCheck(i);
-      int32_t nsuri = aAttributes->getURINoBoundsCheck(i);
+    nsAtom* localName = aAttributes->getLocalNameNoBoundsCheck(i);
+    if (localName == nsGkAtoms::_class) {
+      nsAtom* klass = val.MaybeAsAtom();
+      if (klass) {
+        newContent->SetClassAttrFromParser(klass);
+        continue;
+      }
+    }
 
+    nsAtom* prefix = aAttributes->getPrefixNoBoundsCheck(i);
+    int32_t nsuri = aAttributes->getURINoBoundsCheck(i);
+
+    // If value is already an atom, use it directly to avoid string allocation.
+    nsAtom* valAtom = val.MaybeAsAtom();
+    if (valAtom) {
+      newContent->SetAttr(nsuri, localName, prefix, valAtom, nullptr, false);
+    } else {
       nsString value;  // Not Auto, because using it to hold nsStringBuffer*
       val.ToString(value);
       newContent->SetAttr(nsuri, localName, prefix, value, false);
@@ -629,14 +657,23 @@ nsIContent* nsHtml5TreeOperation::CreateMathMLElement(
   int32_t len = aAttributes->getLength();
   for (int32_t i = 0; i < len; i++) {
     nsHtml5String val = aAttributes->getValueNoBoundsCheck(i);
-    nsAtom* klass = val.MaybeAsAtom();
-    if (klass) {
-      newContent->SetClassAttrFromParser(klass);
-    } else {
-      nsAtom* localName = aAttributes->getLocalNameNoBoundsCheck(i);
-      nsAtom* prefix = aAttributes->getPrefixNoBoundsCheck(i);
-      int32_t nsuri = aAttributes->getURINoBoundsCheck(i);
+    nsAtom* localName = aAttributes->getLocalNameNoBoundsCheck(i);
+    if (localName == nsGkAtoms::_class) {
+      nsAtom* klass = val.MaybeAsAtom();
+      if (klass) {
+        newContent->SetClassAttrFromParser(klass);
+        continue;
+      }
+    }
 
+    nsAtom* prefix = aAttributes->getPrefixNoBoundsCheck(i);
+    int32_t nsuri = aAttributes->getURINoBoundsCheck(i);
+
+    // If value is already an atom, use it directly to avoid string allocation.
+    nsAtom* valAtom = val.MaybeAsAtom();
+    if (valAtom) {
+      newContent->SetAttr(nsuri, localName, prefix, valAtom, nullptr, false);
+    } else {
       nsString value;  // Not Auto, because using it to hold nsStringBuffer*
       val.ToString(value);
       newContent->SetAttr(nsuri, localName, prefix, value, false);

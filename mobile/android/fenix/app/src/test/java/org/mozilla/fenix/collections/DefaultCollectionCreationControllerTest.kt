@@ -17,7 +17,6 @@ import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.tab.collections.TabCollection
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import mozilla.components.support.test.rule.runTestOnMain
@@ -86,7 +85,7 @@ class DefaultCollectionCreationControllerTest {
 
         browserStore.dispatch(
             TabListAction.AddMultipleTabsAction(listOf(tab1, tab2)),
-        ).joinBlocking()
+        )
 
         coEvery { tabCollectionStorage.addTabsToCollection(any(), any()) } returns 1L
         coEvery { tabCollectionStorage.createCollection(any(), any()) } returns 1L
@@ -194,7 +193,7 @@ class DefaultCollectionCreationControllerTest {
         val tab2 = createTab("https://www.mozilla.org", id = "session-2")
         browserStore.dispatch(
             TabListAction.AddMultipleTabsAction(listOf(tab1, tab2)),
-        ).joinBlocking()
+        )
 
         val tabs = listOf(
             Tab("session-1", "", "", ""),

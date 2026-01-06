@@ -60,6 +60,7 @@ function ChannelListener(closure, ctx, flags) {
   this._closurectx = ctx;
   this._flags = flags;
   this._isFromCache = false;
+  this._hasCacheEntry = false;
   this._cacheEntryId = undefined;
 }
 ChannelListener.prototype = {
@@ -90,6 +91,12 @@ ChannelListener.prototype = {
           .isFromCache();
       } catch (e) {}
 
+      try {
+        this._hasCacheEntry = request
+          .QueryInterface(Ci.nsICacheInfoChannel)
+          .hasCacheEntry();
+      } catch (e) {}
+
       var thrown = false;
       try {
         this._cacheEntryId = request
@@ -98,9 +105,9 @@ ChannelListener.prototype = {
       } catch (e) {
         thrown = true;
       }
-      if (this._isFromCache && thrown) {
+      if (this._hasCacheEntry && thrown) {
         do_throw("Should get a CacheEntryId");
-      } else if (!this._isFromCache && !thrown) {
+      } else if (!this._hasCacheEntry && !thrown) {
         do_throw("Shouldn't get a CacheEntryId");
       }
 

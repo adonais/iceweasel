@@ -8,7 +8,7 @@ import { features, prefs } from "../prefs";
 /**
  * Create a SourceEditor
  *
- * @param {Object} config: SourceEditor config object
+ * @param {object} config: SourceEditor config object
  * @returns
  */
 export function createEditor(config = { cm6: false }) {

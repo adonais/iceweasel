@@ -390,6 +390,7 @@ export class LoginAutoCompleteResult {
 
   /**
    * Accessed via .wrappedJSObject
+   *
    * @private
    */
   get logins() {

@@ -17,7 +17,7 @@ import java.util.UUID
 /**
  * Some randomly generated fake addresses that match the expected locale.
  */
-internal fun String.generateFakeAddressForLangTag(): UpdatableAddressFields = when (this) {
+fun String.generateFakeAddressForLangTag(): UpdatableAddressFields = when (this) {
     "en-CA" -> UpdatableAddressFields(
         name = "Tim Horton",
         organization = "",
@@ -150,31 +150,6 @@ internal class FakeCreditCardsAddressesStorage : CreditCardsAddressesStorage {
         throw UnsupportedOperationException()
     }
 
-    private fun UpdatableAddressFields.toAddress() =
-        Address(
-            guid = UUID.randomUUID().toString(),
-            organization = organization,
-            name = name,
-            streetAddress = streetAddress,
-            addressLevel1 = addressLevel1,
-            addressLevel2 = addressLevel2,
-            addressLevel3 = addressLevel3,
-            postalCode = postalCode,
-            country = country,
-            tel = tel,
-            email = email,
-        )
-
-    private fun NewCreditCardFields.toCreditCard() = CreditCard(
-        guid = UUID.randomUUID().toString(),
-        billingName = billingName,
-        cardNumberLast4 = cardNumberLast4,
-        expiryMonth = expiryMonth,
-        expiryYear = expiryYear,
-        cardType = cardType,
-        encryptedCardNumber = CreditCardNumber.Encrypted(plaintextCardNumber.number),
-    )
-
     companion object {
         fun getAllPossibleLocaleLangTags(): List<String> = listOf(
             "US",
@@ -200,5 +175,30 @@ internal class FakeCreditCardsAddressesStorage : CreditCardsAddressesStorage {
                 cardType = randomCardTypes.random(),
             )
         }
+
+        fun NewCreditCardFields.toCreditCard() = CreditCard(
+            guid = UUID.randomUUID().toString(),
+            billingName = billingName,
+            cardNumberLast4 = cardNumberLast4,
+            expiryMonth = expiryMonth,
+            expiryYear = expiryYear,
+            cardType = cardType,
+            encryptedCardNumber = CreditCardNumber.Encrypted(plaintextCardNumber.number),
+        )
+
+        fun UpdatableAddressFields.toAddress() =
+            Address(
+                guid = UUID.randomUUID().toString(),
+                organization = organization,
+                name = name,
+                streetAddress = streetAddress,
+                addressLevel1 = addressLevel1,
+                addressLevel2 = addressLevel2,
+                addressLevel3 = addressLevel3,
+                postalCode = postalCode,
+                country = country,
+                tel = tel,
+                email = email,
+            )
     }
 }

@@ -64,7 +64,7 @@
   <!-- The error message shown when a website cannot be loaded because the browser is in offline mode. -->
   <string name="mozac_browser_errorpages_offline_message"><![CDATA[<p>Przeglądarka pracuje w\u00a0trybie offline i\u00a0nie może pobrać żądanego elementu.</p>\n<ul>\n<li>Czy urządzenie podłączone jest do działającej sieci?</li>\n<li>Naciśnij „Spróbuj ponownie”, aby przejść do trybu online i\u00a0ponownie wczytać stronę.</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when the browser prevents loading a website on a restricted port. -->
-  <string name="mozac_browser_errorpages_port_blocked_title">Zastrzeżony adres</string>
+  <string name="mozac_browser_errorpages_port_blocked_title">Zastrzeżony port ze względów bezpieczeństwa</string>
   <!-- The error message shown when the browser prevents loading a website on a restricted port. -->
   <string name="mozac_browser_errorpages_port_blocked_message"><![CDATA[<p>Żądany adres zawiera numer portu (np. w\u00a0adresie <q>mozilla.org:80</q> liczba 80 to port na serwerze mozilla.org), który zazwyczaj <em>nie jest</em> wykorzystywany do przeglądania witryn WWW. Przeglądarka anulowała to żądanie ze względów bezpieczeństwa.</p>]]></string>
   <!-- The document title and heading of the error page shown when the Internet connection is disrupted while loading a website. -->
@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Podejrzana witryna</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Witryna „%1$s” została zgłoszona jako przypadek oszustwa i\u00a0została zablokowana zgodnie z\u00a0ustawieniami bezpieczeństwa.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Zablokowano witrynę ze względów bezpieczeństwa</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Strona „%1$s” została zablokowana, ponieważ jeden z\u00a0zainstalowanych dodatków próbował ją otworzyć. Może ona zostać wykorzystana do kradzieży Twoich danych, takich jak hasła lub numery kart płatniczych.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Zabezpieczona witryna jest niedostępna</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

@@ -542,6 +542,57 @@
         await SpecialPowers.popPrefEnv();
       });
 
+      add_task(async function testMozBoxGroupKeydownOnWhitespace() {
+        // Test bug 2001746 - ignore keypresses that fire on the ul if whitespace
+        // was clicked in moz-box-group
+        let listTemplate = html`<moz-box-group type="list">
+          <moz-box-item label="item 1"></moz-box-item>
+          <moz-box-item label="item 2"></moz-box-item>
+          <moz-box-item label="item 3"></moz-box-item>
+        </moz-box-group>`;
+        let {
+          children: [boxGroup],
+        } = await testHelpers.renderTemplate(listTemplate);
+
+        let list = boxGroup.shadowRoot.querySelector("ul");
+        ok(list, "Box group has a list element.");
+
+        // Simulate clicking on the list container (whitespace) by focusing it
+        list.focus();
+        is(
+          boxGroup.shadowRoot.activeElement,
+          list,
+          "The list container can be focused."
+        );
+        is(
+          document.activeElement,
+          boxGroup,
+          "The moz-box-group is the activeElement."
+        );
+
+        // Press arrow keys - this should not throw an error
+        let errorThrown = false;
+        try {
+          synthesizeKey("KEY_ArrowDown");
+          await boxGroup.updateComplete;
+          synthesizeKey("KEY_ArrowUp");
+          await boxGroup.updateComplete;
+        } catch (e) {
+          errorThrown = true;
+          ok(false, `Unexpected error: ${e.message}`);
+        }
+
+        ok(
+          !errorThrown,
+          "No error thrown when pressing keys on whitespace in moz-box-group."
+        );
+        is(
+          document.activeElement,
+          boxGroup,
+          "Focus did not move after arrow key press."
+        );
+      });
+
       add_task(async function testMozBoxGroupReorderable() {
         let reorderableTemplate = html`<moz-box-group type="reorderable-list">
           <moz-box-item label="item 1"></moz-box-item>

@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Problem med vildledende websted</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Webstedet %1$s er blevet anmeldt som et vildledende websted og er blevet blokeret som følge af dine sikkerhedsindstillinger .</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Websted blokeret af hensyn til din sikkerhed</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Denne webside på %1$s er blevet blokeret, fordi en af dine tilføjelser forsøgte at åbne den. Dette websted kan blive brugt til at stjæle dine oplysninger – såsom adgangskoder eller betalingskortnumre.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Sikkert websted er ikke tilgængeligt</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

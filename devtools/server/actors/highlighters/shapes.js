@@ -77,9 +77,9 @@ const _dragging = Symbol("shapes/dragging");
  * A refresher for coordinates and change of basis that may be helpful:
  * https://www.math.ubc.ca/~behrend/math221/Coords.pdf
  *
- * @param {String} options.hoverPoint
+ * @param {string} options.hoverPoint
  *        The point to highlight.
- * @param {Boolean} options.transformMode
+ * @param {boolean} options.transformMode
  *        Whether to show the highlighter in transforms mode.
  * @param {} options.mode
  */
@@ -442,7 +442,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
    * mouse position, resulting in an undesirable visual effect where the cursor
    * rapidly flickers between "grab" and "auto".
    *
-   * @param {String} cursorType the name of the cursor to display
+   * @param {string} cursorType the name of the cursor to display
    */
   setCursor(cursorType) {
     const container = this.getElement("shapes-root");
@@ -465,7 +465,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
    * a virtual viewport which ensures some element remains visible even when at the edges
    * of the actual viewport.
    *
-   * @param {Number} padding
+   * @param {number} padding
    *        Optional. Amount by which to inset the viewport in all directions.
    */
   setViewport(padding = 0) {
@@ -608,8 +608,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Handle a mouse click in transform mode.
-   * @param {Number} pageX the x coordinate of the mouse
-   * @param {Number} pageY the y coordinate of the mouse
+   *
+   * @param {number} pageX the x coordinate of the mouse
+   * @param {number} pageY the y coordinate of the mouse
    */
   _handleTransformClick(pageX, pageY) {
     const { percentX, percentY } = this.convertPageCoordsToPercent(
@@ -634,9 +635,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Handle a click in transform mode while highlighting a polygon.
-   * @param {Number} pageX the x coordinate of the mouse.
-   * @param {Number} pageY the y coordinate of the mouse.
-   * @param {String} type the type of transform handle that was clicked.
+   *
+   * @param {number} pageX the x coordinate of the mouse.
+   * @param {number} pageY the y coordinate of the mouse.
+   * @param {string} type the type of transform handle that was clicked.
    */
   _handlePolygonTransformClick(pageX, pageY, type) {
     const { width, height } = this.currentDimensions;
@@ -666,9 +668,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Handle a click in transform mode while highlighting a circle.
-   * @param {Number} pageX the x coordinate of the mouse.
-   * @param {Number} pageY the y coordinate of the mouse.
-   * @param {String} type the type of transform handle that was clicked.
+   *
+   * @param {number} pageX the x coordinate of the mouse.
+   * @param {number} pageY the y coordinate of the mouse.
+   * @param {string} type the type of transform handle that was clicked.
    */
   _handleCircleTransformClick(pageX, pageY, type) {
     const { width, height } = this.currentDimensions;
@@ -711,9 +714,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Handle a click in transform mode while highlighting an ellipse.
-   * @param {Number} pageX the x coordinate of the mouse.
-   * @param {Number} pageY the y coordinate of the mouse.
-   * @param {String} type the type of transform handle that was clicked.
+   *
+   * @param {number} pageX the x coordinate of the mouse.
+   * @param {number} pageY the y coordinate of the mouse.
+   * @param {string} type the type of transform handle that was clicked.
    */
   _handleEllipseTransformClick(pageX, pageY, type) {
     const { width, height } = this.currentDimensions;
@@ -762,9 +766,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Handle a click in transform mode while highlighting an inset.
-   * @param {Number} pageX the x coordinate of the mouse.
-   * @param {Number} pageY the y coordinate of the mouse.
-   * @param {String} type the type of transform handle that was clicked.
+   *
+   * @param {number} pageX the x coordinate of the mouse.
+   * @param {number} pageY the y coordinate of the mouse.
+   * @param {string} type the type of transform handle that was clicked.
    */
   _handleInsetTransformClick(pageX, pageY, type) {
     const { width, height } = this.currentDimensions;
@@ -792,8 +797,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Handle mouse movement after a click on a handle in transform mode.
-   * @param {Number} pageX the x coordinate of the mouse
-   * @param {Number} pageY the y coordinate of the mouse
+   *
+   * @param {number} pageX the x coordinate of the mouse
+   * @param {number} pageY the y coordinate of the mouse
    */
   _handleTransformMove(pageX, pageY) {
     const { type } = this[_dragging];
@@ -810,8 +816,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Translates a shape based on the current mouse position.
-   * @param {Number} pageX the x coordinate of the mouse.
-   * @param {Number} pageY the y coordinate of the mouse.
+   *
+   * @param {number} pageX the x coordinate of the mouse.
+   * @param {number} pageY the y coordinate of the mouse.
    */
   _translateShape(pageX, pageY) {
     const { x, y, matrix } = this[_dragging];
@@ -832,8 +839,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Scales a shape according to the current mouse position.
-   * @param {Number} pageX the x coordinate of the mouse.
-   * @param {Number} pageY the y coordinate of the mouse.
+   *
+   * @param {number} pageX the x coordinate of the mouse.
+   * @param {number} pageY the y coordinate of the mouse.
    */
   _scaleShape(pageX, pageY) {
     /**
@@ -928,8 +936,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Rotates a polygon based on the current mouse position.
-   * @param {Number} pageX the x coordinate of the mouse.
-   * @param {Number} pageY the y coordinate of the mouse.
+   *
+   * @param {number} pageX the x coordinate of the mouse.
+   * @param {number} pageY the y coordinate of the mouse.
    */
   _rotateShape(pageX, pageY) {
     const { matrix } = this[_dragging];
@@ -993,7 +1002,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Transform a circle depending on the current transformation matrix.
-   * @param {Number} transX the number of pixels the shape is translated on the x axis
+   *
+   * @param {number} transX the number of pixels the shape is translated on the x axis
    *                 before scaling
    */
   _transformCircle(transX = null) {
@@ -1023,9 +1033,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Transform an ellipse depending on the current transformation matrix.
-   * @param {Number} transX the number of pixels the shape is translated on the x axis
+   *
+   * @param {number} transX the number of pixels the shape is translated on the x axis
    *                 before scaling
-   * @param {Number} transY the number of pixels the shape is translated on the y axis
+   * @param {number} transY the number of pixels the shape is translated on the y axis
    *                 before scaling
    */
   _transformEllipse(transX = null, transY = null) {
@@ -1103,8 +1114,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Handle a click when highlighting a polygon.
-   * @param {Number} pageX the x coordinate of the click
-   * @param {Number} pageY the y coordinate of the click
+   *
+   * @param {number} pageX the x coordinate of the click
+   * @param {number} pageY the y coordinate of the click
    */
   _handlePolygonClick(pageX, pageY) {
     const { width, height } = this.currentDimensions;
@@ -1145,8 +1157,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Update the dragged polygon point with the given x/y coords and update
    * the element style.
-   * @param {Number} pageX the new x coordinate of the point
-   * @param {Number} pageY the new y coordinate of the point
+   *
+   * @param {number} pageX the new x coordinate of the point
+   * @param {number} pageY the new y coordinate of the point
    */
   _handlePolygonMove(pageX, pageY) {
     const { point, unitX, unitY, valueX, valueY, ratioX, ratioY, x, y } =
@@ -1174,9 +1187,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
    * TODO: Bug 1436054 - Do not default to percentage unit when inserting new point.
    * https://bugzilla.mozilla.org/show_bug.cgi?id=1436054
    *
-   * @param {Number} after the index of the point that the new point should be added after
-   * @param {Number} x the x coordinate of the new point
-   * @param {Number} y the y coordinate of the new point
+   * @param {number} after the index of the point that the new point should be added after
+   * @param {number} x the x coordinate of the new point
+   * @param {number} y the y coordinate of the new point
    */
   _addPolygonPoint(after, x, y) {
     let polygonDef = this.fillRule ? `${this.fillRule}, ` : "";
@@ -1196,7 +1209,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Remove point from polygon defintion and update the element style.
-   * @param {Number} point the index of the point to delete
+   *
+   * @param {number} point the index of the point to delete
    */
   _deletePolygonPoint(point) {
     const coordinates = this.coordUnits.slice();
@@ -1215,8 +1229,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   }
   /**
    * Handle a click when highlighting a circle.
-   * @param {Number} pageX the x coordinate of the click
-   * @param {Number} pageY the y coordinate of the click
+   *
+   * @param {number} pageX the x coordinate of the click
+   * @param {number} pageY the y coordinate of the click
    */
   _handleCircleClick(pageX, pageY) {
     const { width, height } = this.currentDimensions;
@@ -1269,10 +1284,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Set the center/radius of the circle according to the mouse position and
    * update the element style.
-   * @param {String} point either "center" or "radius"
-   * @param {Number} pageX the x coordinate of the mouse position, in terms of %
+   *
+   * @param {string} point either "center" or "radius"
+   * @param {number} pageX the x coordinate of the mouse position, in terms of %
    *        relative to the element
-   * @param {Number} pageY the y coordinate of the mouse position, in terms of %
+   * @param {number} pageY the y coordinate of the mouse position, in terms of %
    *        relative to the element
    */
   _handleCircleMove(point, pageX, pageY) {
@@ -1318,8 +1334,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Handle a click when highlighting an ellipse.
-   * @param {Number} pageX the x coordinate of the click
-   * @param {Number} pageY the y coordinate of the click
+   *
+   * @param {number} pageX the x coordinate of the click
+   * @param {number} pageY the y coordinate of the click
    */
   _handleEllipseClick(pageX, pageY) {
     const { width, height } = this.currentDimensions;
@@ -1380,10 +1397,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Set center/rx/ry of the ellispe according to the mouse position and update the
    * element style.
-   * @param {String} point "center", "rx", or "ry"
-   * @param {Number} pageX the x coordinate of the mouse position, in terms of %
+   *
+   * @param {string} point "center", "rx", or "ry"
+   * @param {number} pageX the x coordinate of the mouse position, in terms of %
    *        relative to the element
-   * @param {Number} pageY the y coordinate of the mouse position, in terms of %
+   * @param {number} pageY the y coordinate of the mouse position, in terms of %
    *        relative to the element
    */
   _handleEllipseMove(point, pageX, pageY) {
@@ -1441,8 +1459,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Handle a click when highlighting an inset.
-   * @param {Number} pageX the x coordinate of the click
-   * @param {Number} pageY the y coordinate of the click
+   *
+   * @param {number} pageX the x coordinate of the click
+   * @param {number} pageY the y coordinate of the click
    */
   _handleInsetClick(pageX, pageY) {
     const { width, height } = this.currentDimensions;
@@ -1470,10 +1489,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Set the top/left/right/bottom of the inset shape according to the mouse position
    * and update the element style.
-   * @param {String} point "top", "left", "right", or "bottom"
-   * @param {Number} pageX the x coordinate of the mouse position, in terms of %
+   *
+   * @param {string} point "top", "left", "right", or "bottom"
+   * @param {number} pageX the x coordinate of the mouse position, in terms of %
    *        relative to the element
-   * @param {Number} pageY the y coordinate of the mouse position, in terms of %
+   * @param {number} pageY the y coordinate of the mouse position, in terms of %
    *        relative to the element
    * @memberof ShapesHighlighter
    */
@@ -1550,7 +1570,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Change the appearance of the given marker when the mouse hovers over it.
-   * @param {String|Number} point if the shape is a polygon, the integer index of the
+   *
+   * @param {string | number} point if the shape is a polygon, the integer index of the
    *        point being hovered. Otherwise, a string identifying the point being hovered.
    *        Integers < 0 and falsey values excluding 0 indicate no point is being hovered.
    */
@@ -1693,9 +1714,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Convert the given coordinates on the page to percentages relative to the current
    * element.
-   * @param {Number} pageX the x coordinate on the page
-   * @param {Number} pageY the y coordinate on the page
-   * @returns {Object} object of form {percentX, percentY}, which are the x/y coords
+   *
+   * @param {number} pageX the x coordinate on the page
+   * @param {number} pageY the y coordinate on the page
+   * @returns {object} object of form {percentX, percentY}, which are the x/y coords
    *          in percentages relative to the element.
    */
   convertPageCoordsToPercent(pageX, pageY) {
@@ -1712,9 +1734,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Convert the given x/y coordinates, in percentages relative to the current element,
    * to pixel coordinates relative to the page
-   * @param {Number} x the x coordinate
-   * @param {Number} y the y coordinate
-   * @returns {Object} object of form {x, y}, which are the x/y coords in pixels
+   *
+   * @param {number} x the x coordinate
+   * @param {number} y the y coordinate
+   * @returns {object} object of form {x, y}, which are the x/y coords in pixels
    *          relative to the page
    *
    * @memberof ShapesHighlighter
@@ -1731,9 +1754,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Get which transformation should be applied based on the mouse position.
-   * @param {Number} pageX the x coordinate of the mouse.
-   * @param {Number} pageY the y coordinate of the mouse.
-   * @returns {String} a string describing the transformation that should be applied
+   *
+   * @param {number} pageX the x coordinate of the mouse.
+   * @param {number} pageY the y coordinate of the mouse.
+   * @returns {string} a string describing the transformation that should be applied
    *          to the shape.
    */
   getTransformPointAt(pageX, pageY) {
@@ -1790,9 +1814,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Get the id of the point on the polygon highlighter at the given coordinate.
-   * @param {Number} pageX the x coordinate on the page, in % relative to the element
-   * @param {Number} pageY the y coordinate on the page, in % relative to the element
-   * @returns {Number} the index of the point that was clicked on in this.coordinates,
+   *
+   * @param {number} pageX the x coordinate on the page, in % relative to the element
+   * @param {number} pageY the y coordinate on the page, in % relative to the element
+   * @returns {number} the index of the point that was clicked on in this.coordinates,
    *          or -1 if none of the points were clicked on.
    */
   getPolygonPointAt(pageX, pageY) {
@@ -1820,8 +1845,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Check if the mouse clicked on a line of the polygon, and if so, add a point near
    * the click.
-   * @param {Number} pageX the x coordinate on the page, in % relative to the element
-   * @param {Number} pageY the y coordinate on the page, in % relative to the element
+   *
+   * @param {number} pageX the x coordinate on the page, in % relative to the element
+   * @param {number} pageY the y coordinate on the page, in % relative to the element
    */
   getPolygonClickedLine(pageX, pageY) {
     const { coordinates } = this;
@@ -1853,9 +1879,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Check if the center point or radius of the circle highlighter is at given coords
-   * @param {Number} pageX the x coordinate on the page, in % relative to the element
-   * @param {Number} pageY the y coordinate on the page, in % relative to the element
-   * @returns {String} "center" if the center point was clicked, "radius" if the radius
+   *
+   * @param {number} pageX the x coordinate on the page, in % relative to the element
+   * @param {number} pageY the y coordinate on the page, in % relative to the element
+   * @returns {string} "center" if the center point was clicked, "radius" if the radius
    *          was clicked, "" if neither was clicked.
    */
   getCirclePointAt(pageX, pageY) {
@@ -1892,9 +1919,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Check if the center or rx/ry points of the ellipse highlighter is at given point
-   * @param {Number} pageX the x coordinate on the page, in % relative to the element
-   * @param {Number} pageY the y coordinate on the page, in % relative to the element
-   * @returns {String} "center" if the center point was clicked, "rx" if the x-radius
+   *
+   * @param {number} pageX the x coordinate on the page, in % relative to the element
+   * @param {number} pageY the y coordinate on the page, in % relative to the element
+   * @returns {string} "center" if the center point was clicked, "rx" if the x-radius
    *          point was clicked, "ry" if the y-radius point was clicked,
    *          "" if none was clicked.
    */
@@ -1922,9 +1950,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Check if the edges of the inset highlighter is at given coords
-   * @param {Number} pageX the x coordinate on the page, in % relative to the element
-   * @param {Number} pageY the y coordinate on the page, in % relative to the element
-   * @returns {String} "top", "left", "right", or "bottom" if any of those edges were
+   *
+   * @param {number} pageX the x coordinate on the page, in % relative to the element
+   * @param {number} pageY the y coordinate on the page, in % relative to the element
+   * @returns {string} "top", "left", "right", or "bottom" if any of those edges were
    *          clicked. "" if none were clicked.
    */
   // eslint-disable-next-line complexity
@@ -1999,8 +2028,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Parses the CSS definition given and returns the shape type associated
    * with the definition and the coordinates necessary to draw the shape.
-   * @param {String} definition the input CSS definition
-   * @returns {Object} null if the definition is not of a known shape type,
+   *
+   * @param {string} definition the input CSS definition
+   * @returns {object} null if the definition is not of a known shape type,
    *          or an object of the type { shapeType, coordinates }, where
    *          shapeType is the name of the shape and coordinates are an array
    *          or object of the coordinates needed to draw the shape.
@@ -2069,7 +2099,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Parses the definition of the CSS polygon() function and returns its points,
    * converted to percentages.
-   * @param {String} definition the arguments of the polygon() function
+   *
+   * @param {string} definition the arguments of the polygon() function
    * @returns {Array} an array of the points of the polygon, with all values
    *          evaluated and converted to percentages
    */
@@ -2113,6 +2144,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Parse the raw (non-computed) definition of the CSS polygon.
+   *
    * @returns {Array} an array of the points of the polygon, with units preserved.
    */
   polygonRawPoints() {
@@ -2140,8 +2172,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Parses the definition of the CSS circle() function and returns the x/y radiuses and
    * center coordinates, converted to percentages.
-   * @param {String} definition the arguments of the circle() function
-   * @returns {Object} an object of the form { rx, ry, cx, cy }, where rx and ry are the
+   *
+   * @param {string} definition the arguments of the circle() function
+   * @returns {object} an object of the form { rx, ry, cx, cy }, where rx and ry are the
    *          radiuses for the x and y axes, and cx and cy are the x/y coordinates for the
    *          center of the circle. All values are evaluated and converted to percentages.
    */
@@ -2206,7 +2239,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Parse the raw (non-computed) definition of the CSS circle.
-   * @returns {Object} an object of the points of the circle (cx, cy, radius),
+   *
+   * @returns {object} an object of the points of the circle (cx, cy, radius),
    *          with units preserved.
    */
   circleRawPoints() {
@@ -2231,8 +2265,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Parses the computed style definition of the CSS ellipse() function and returns the
    * x/y radii and center coordinates, converted to percentages.
-   * @param {String} definition the arguments of the ellipse() function
-   * @returns {Object} an object of the form { rx, ry, cx, cy }, where rx and ry are the
+   *
+   * @param {string} definition the arguments of the ellipse() function
+   * @returns {object} an object of the form { rx, ry, cx, cy }, where rx and ry are the
    *          radiuses for the x and y axes, and cx and cy are the x/y coordinates for the
    *          center of the ellipse. All values are evaluated and converted to percentages
    */
@@ -2279,7 +2314,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Parse the raw (non-computed) definition of the CSS ellipse.
-   * @returns {Object} an object of the points of the ellipse (cx, cy, rx, ry),
+   *
+   * @returns {object} an object of the points of the ellipse (cx, cy, rx, ry),
    *          with units preserved.
    */
   ellipseRawPoints() {
@@ -2309,8 +2345,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
    * Parses the definition of the CSS inset() function and returns the x/y offsets and
    * width/height of the shape, converted to percentages. Border radiuses (given after
    * "round" in the definition) are currently ignored.
-   * @param {String} definition the arguments of the inset() function
-   * @returns {Object} an object of the form { x, y, width, height }, which are the top/
+   *
+   * @param {string} definition the arguments of the inset() function
+   * @returns {object} an object of the form { x, y, width, height }, which are the top/
    *          left positions and width/height of the shape.
    */
   insetPoints(definition) {
@@ -2360,7 +2397,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Parse the raw (non-computed) definition of the CSS inset.
-   * @returns {Object} an object of the points of the inset (top, right, bottom, left),
+   *
+   * @returns {object} an object of the points of the inset (top, right, bottom, left),
    *          with units preserved.
    */
   insetRawPoints() {
@@ -2406,9 +2444,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
    * This uses the index to decide whether to use width or height for the
    * computation. See `convertCoordsToPercentFromCurrentDimension()` if you
    * need to specify width or height.
-   * @param {Number} coord a single coordinate
-   * @param {Number} i the index of its position in the function
-   * @returns {Number} the coordinate as a percentage value
+   *
+   * @param {number} coord a single coordinate
+   * @param {number} i the index of its position in the function
+   * @returns {number} the coordinate as a percentage value
    */
   convertCoordsToPercent(coord, i) {
     const { width, height } = this.currentDimensions;
@@ -2421,10 +2460,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Converts a value to percent based on the specified dimension.
-   * @param {Number} coord a single coordinate
-   * @param {Number} currentDimensionProperty the dimension ("width" or
+   *
+   * @param {number} coord a single coordinate
+   * @param {number} currentDimensionProperty the dimension ("width" or
    *        "height") to base the calculation off of
-   * @returns {Number} the coordinate as a percentage value
+   * @returns {number} the coordinate as a percentage value
    */
   convertCoordsToPercentFromCurrentDimension(coord, currentDimensionProperty) {
     const size = this.currentDimensions[currentDimensionProperty];
@@ -2451,8 +2491,9 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Get the element in the highlighter markup with the given id
-   * @param {String} id
-   * @returns {Object} the element with the given id
+   *
+   * @param {string} id
+   * @returns {object} the element with the given id
    */
   getElement(id) {
     return this.markup.getElement(id);
@@ -2460,7 +2501,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Return whether all the elements used to draw shapes are hidden.
-   * @returns {Boolean}
+   *
+   * @returns {boolean}
    */
   areShapesHidden() {
     return (
@@ -2565,7 +2607,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Update the highlighter for the current node. Called whenever the element's quads
    * or CSS shape has changed.
-   * @returns {Boolean} whether the highlighter was successfully updated
+   *
+   * @returns {boolean} whether the highlighter was successfully updated
    */
   _update() {
     setIgnoreLayoutChanges(true);
@@ -2624,9 +2667,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Update the SVGs to render the current CSS shape and add markers depending on shape
    * type and transform mode.
-   * @param {Number} width the width of the element quads
-   * @param {Number} height the height of the element quads
-   * @param {Number} zoom the zoom level of the window
+   *
+   * @param {number} width the width of the element quads
+   * @param {number} height the height of the element quads
+   * @param {number} zoom the zoom level of the window
    */
   _updateShapes(width, height, zoom) {
     if (this.transformMode && this.shapeType !== "none") {
@@ -2681,9 +2725,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Update the SVGs for transform mode to fit the new shape.
-   * @param {Number} width the width of the element quads
-   * @param {Number} height the height of the element quads
-   * @param {Number} zoom the zoom level of the window
+   *
+   * @param {number} width the width of the element quads
+   * @param {number} height the height of the element quads
+   * @param {number} zoom the zoom level of the window
    */
   _updateTransformMode(width, height, zoom) {
     const { nw, ne, sw, se, n, w, s, e, rotatePoint, center } =
@@ -2791,10 +2836,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
   /**
    * Draw markers for the given coordinates.
+   *
    * @param {Array} coords an array of coordinate arrays, of form [[x, y] ...]
-   * @param {Number} width the width of the element markers are being drawn for
-   * @param {Number} height the height of the element markers are being drawn for
-   * @param {Number} zoom the zoom level of the window
+   * @param {number} width the width of the element markers are being drawn for
+   * @param {number} height the height of the element markers are being drawn for
+   * @param {number} zoom the zoom level of the window
    */
   _drawMarkers(coords, width, height, zoom) {
     const markers = coords
@@ -2815,7 +2861,8 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
   /**
    * Calculate the bounding box of the shape after it is transformed according to
    * the transformation matrix.
-   * @returns {Object} of form { nw, ne, sw, se, n, s, w, e, rotatePoint, center }.
+   *
+   * @returns {object} of form { nw, ne, sw, se, n, s, w, e, rotatePoint, center }.
    *          Each element in the object is an array of form [x,y], denoting the x/y
    *          coordinates of the given point.
    */
@@ -2889,9 +2936,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
    * If the handle is roughly vertical relative to the anchor, return "ns"
    * If the handle is roughly above/right or below/left, return "nesw"
    * If the handle is roughly above/left or below/right, return "nwse"
-   * @param {String} pointName the name of the point being hovered
-   * @param {String} anchor the name of the anchor point
-   * @returns {String} The rough direction of the point relative to the anchor
+   *
+   * @param {string} pointName the name of the point being hovered
+   * @param {string} anchor the name of the anchor point
+   * @returns {string} The rough direction of the point relative to the anchor
    */
   getRoughDirection(pointName, anchor) {
     const scalePoint = pointName.split("-")[1];
@@ -2919,11 +2967,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
    * Percentage units (%) are relative to a size. This must be provided when requesting
    * a ratio for converting from pixels to percentages.
    *
-   * @param {String} unit
+   * @param {string} unit
    *        One of: %, em, rem, vw, vh
-   * @param {Number} size
+   * @param {number} size
    *        Size to which percentage values are relative to.
-   * @return {Number}
+   * @return {number}
    */
   getUnitToPixelRatio(unit, size) {
     let ratio;
@@ -2964,9 +3012,10 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
 
 /**
  * Get the "raw" (i.e. non-computed) shape definition on the given node.
+ *
  * @param {Node} node the node to analyze
- * @param {String} property the CSS property for which a value should be retrieved.
- * @returns {String} the value of the given CSS property on the given node.
+ * @param {string} property the CSS property for which a value should be retrieved.
+ * @returns {string} the value of the given CSS property on the given node.
  */
 function getDefinedShapeProperties(node, property) {
   let prop = "";
@@ -2995,7 +3044,8 @@ function getDefinedShapeProperties(node, property) {
 
 /**
  * Split coordinate pairs separated by a space and return an array.
- * @param {String} coords the coordinate pair, where each coord is separated by a space.
+ *
+ * @param {string} coords the coordinate pair, where each coord is separated by a space.
  * @returns {Array} a 2 element array containing the coordinates.
  */
 function splitCoords(coords) {
@@ -3014,10 +3064,11 @@ exports.splitCoords = splitCoords;
 
 /**
  * Convert a coordinate to a percentage value.
- * @param {String} coord a single coordinate
- * @param {Number} size the size of the element (width or height) that the percentages
+ *
+ * @param {string} coord a single coordinate
+ * @param {number} size the size of the element (width or height) that the percentages
  *        are relative to
- * @returns {Number} the coordinate as a percentage value
+ * @returns {number} the coordinate as a percentage value
  */
 function coordToPercent(coord, size) {
   if (coord.includes("%")) {
@@ -3037,10 +3088,11 @@ exports.coordToPercent = coordToPercent;
 
 /**
  * Evaluates a CSS calc() expression (only handles addition)
- * @param {String} expression the arguments to the calc() function
- * @param {Number} size the size of the element (width or height) that percentage values
+ *
+ * @param {string} expression the arguments to the calc() function
+ * @param {number} size the size of the element (width or height) that percentage values
  *        are relative to
- * @returns {Number} the result of the expression as a percentage value
+ * @returns {number} the result of the expression as a percentage value
  */
 function evalCalcExpression(expression, size) {
   // the calc() values returned by getComputedStyle only have addition, as it
@@ -3056,7 +3108,8 @@ exports.evalCalcExpression = evalCalcExpression;
 
 /**
  * Converts a shape mode to the proper CSS property name.
- * @param {String} mode the mode of the CSS shape
+ *
+ * @param {string} mode the mode of the CSS shape
  * @returns the equivalent CSS property name
  */
 const shapeModeToCssPropertyName = mode => {
@@ -3067,13 +3120,14 @@ exports.shapeModeToCssPropertyName = shapeModeToCssPropertyName;
 
 /**
  * Get the SVG path definition for a circle with given attributes.
- * @param {Number} size the radius of the circle in pixels
- * @param {Number} cx the x coordinate of the centre of the circle
- * @param {Number} cy the y coordinate of the centre of the circle
- * @param {Number} width the width of the element the circle is being drawn for
- * @param {Number} height the height of the element the circle is being drawn for
- * @param {Number} zoom the zoom level of the window the circle is drawn in
- * @returns {String} the definition of the circle in SVG path description format.
+ *
+ * @param {number} size the radius of the circle in pixels
+ * @param {number} cx the x coordinate of the centre of the circle
+ * @param {number} cy the y coordinate of the centre of the circle
+ * @param {number} width the width of the element the circle is being drawn for
+ * @param {number} height the height of the element the circle is being drawn for
+ * @param {number} zoom the zoom level of the window the circle is drawn in
+ * @returns {string} the definition of the circle in SVG path description format.
  */
 const getCirclePath = (size, cx, cy, width, height, zoom) => {
   // We use a viewBox of 100x100 for shape-container so it's easy to position things
@@ -3096,12 +3150,13 @@ exports.getCirclePath = getCirclePath;
 
 /**
  * Calculates the object bounding box for a node given its stroke bounding box.
- * @param {Number} top the y coord of the top edge of the stroke bounding box
- * @param {Number} left the x coord of the left edge of the stroke bounding box
- * @param {Number} width the width of the stroke bounding box
- * @param {Number} height the height of the stroke bounding box
- * @param {Object} node the node object
- * @returns {Object} an object of the form { top, left, width, height }, which
+ *
+ * @param {number} top the y coord of the top edge of the stroke bounding box
+ * @param {number} left the x coord of the left edge of the stroke bounding box
+ * @param {number} width the width of the stroke bounding box
+ * @param {number} height the height of the stroke bounding box
+ * @param {object} node the node object
+ * @returns {object} an object of the form { top, left, width, height }, which
  *          are the top/left/width/height of the object bounding box for the node.
  */
 const getObjectBoundingBox = (top, left, width, height, node) => {
@@ -3139,8 +3194,9 @@ const getObjectBoundingBox = (top, left, width, height, node) => {
 
 /**
  * Get the unit (e.g. px, %, em) for the given point value.
+ *
  * @param {any} point a point value for which a unit should be retrieved.
- * @returns {String} the unit.
+ * @returns {string} the unit.
  */
 const getUnit = point => {
   // If the point has no unit, default to px.
@@ -3154,8 +3210,9 @@ exports.getUnit = getUnit;
 
 /**
  * Check if the given point value has a unit.
+ *
  * @param {any} point a point value.
- * @returns {Boolean} whether the given value has a unit.
+ * @returns {boolean} whether the given value has a unit.
  */
 const isUnitless = point => {
   return (
@@ -3172,8 +3229,9 @@ const isUnitless = point => {
 
 /**
  * Return the anchor corresponding to the given scale type.
- * @param {String} type a scale type, of form "scale-[direction]"
- * @returns {String} a string describing the anchor, one of the 8 cardinal directions.
+ *
+ * @param {string} type a scale type, of form "scale-[direction]"
+ * @returns {string} a string describing the anchor, one of the 8 cardinal directions.
  */
 const getAnchorPoint = type => {
   let anchor = type.split("-")[1];
@@ -3202,8 +3260,8 @@ const getAnchorPoint = type => {
  * Only handle pixels and falsy values for now. Round them to the nearest integer value.
  * All other unit types round to two decimal points.
  *
- * @param {String|undefined} unitType any one of the accepted CSS unit types for position.
- * @return {Number} decimal precision when rounding a value
+ * @param {string | undefined} unitType any one of the accepted CSS unit types for position.
+ * @return {number} decimal precision when rounding a value
  */
 function getDecimalPrecision(unitType) {
   switch (unitType) {
@@ -3223,11 +3281,11 @@ exports.getDecimalPrecision = getDecimalPrecision;
  * - transforming shapes
  * - inserting new points on a polygon.
  *
- * @param {Number} number
+ * @param {number} number
  *        Value to round up.
- * @param {String} unitType
+ * @param {string} unitType
  *        CSS unit type, like "px", "%", "em", "vh", etc.
- * @return {Number}
+ * @return {number}
  *         Rounded value
  */
 function round(number, unitType) {

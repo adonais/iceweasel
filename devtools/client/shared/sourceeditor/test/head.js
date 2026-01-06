@@ -80,7 +80,8 @@ function teardown(ed, win) {
  * is either not common-enough to be in head.js, or that is located in a
  * separate directory.
  * The script will be loaded synchronously and in the test's scope.
- * @param {String} filePath The file path, relative to the current directory.
+ *
+ * @param {string} filePath The file path, relative to the current directory.
  *                 Examples:
  *                 - "helper_attributes_test_runner.js"
  */
@@ -130,6 +131,7 @@ function read(url) {
 /**
  * This function is called by the CodeMirror test runner to report status
  * messages from the CM tests.
+ *
  * @see codemirror.html
  */
 function codemirrorSetStatus(statusMsg, type, customMsg) {

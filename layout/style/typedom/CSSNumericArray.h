@@ -14,6 +14,7 @@
 #include "nsCOMPtr.h"
 #include "nsISupports.h"
 #include "nsISupportsImpl.h"
+#include "nsTArray.h"
 #include "nsWrapperCache.h"
 
 namespace mozilla {
@@ -22,7 +23,8 @@ namespace dom {
 
 class CSSNumericArray final : public nsISupports, public nsWrapperCache {
  public:
-  explicit CSSNumericArray(nsCOMPtr<nsISupports> aParent);
+  CSSNumericArray(nsCOMPtr<nsISupports> aParent,
+                  nsTArray<RefPtr<CSSNumericValue>> aValues);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(CSSNumericArray)
@@ -34,8 +36,10 @@ class CSSNumericArray final : public nsISupports, public nsWrapperCache {
 
   // start of CSSNumericArray Web IDL declarations
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericarray-length
   uint32_t Length() const;
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#cssnumericarray-indexed-property-getter
   CSSNumericValue* IndexedGetter(uint32_t aIndex, bool& aFound);
 
   // end of CSSNumericArray Web IDL declarations
@@ -44,6 +48,7 @@ class CSSNumericArray final : public nsISupports, public nsWrapperCache {
   virtual ~CSSNumericArray() = default;
 
   nsCOMPtr<nsISupports> mParent;
+  nsTArray<RefPtr<CSSNumericValue>> mValues;
 };
 
 }  // namespace dom

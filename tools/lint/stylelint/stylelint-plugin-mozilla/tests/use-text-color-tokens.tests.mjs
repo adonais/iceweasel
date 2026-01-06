@@ -31,6 +31,10 @@ testRule({
       description: "Using text color token for color is valid.",
     },
     {
+      code: ".a { color: var(--link-color); }",
+      description: "Using link text color token for color is valid.",
+    },
+    {
       code: ".a { color: var(--text-color, #000); }",
       description:
         "Using text color token with fallback value for color is valid.",
@@ -103,6 +107,51 @@ testRule({
       `,
       message: messages.rejected("var(--custom-token)"),
       description: "var(--custom-token) should use a text-color design token.",
+    },
+  ],
+});
+
+testRule({
+  plugins: [plugin],
+  ruleName,
+  config: true,
+  fix: true,
+  reject: [
+    {
+      code: ".a { color: #fff; }",
+      fixed: ".a { color: white; }",
+      message: messages.rejected("#fff"),
+      description: "#fff should be fixed to white.",
+    },
+    {
+      code: ".a { color: #ffffff; }",
+      fixed: ".a { color: white; }",
+      message: messages.rejected("#ffffff"),
+      description: "#ffffff should be fixed to white.",
+    },
+    {
+      code: ".a { color: #FFF; }",
+      fixed: ".a { color: white; }",
+      message: messages.rejected("#FFF"),
+      description: "#FFF should be fixed to white.",
+    },
+    {
+      code: ".a { color: #FFFFFF; }",
+      fixed: ".a { color: white; }",
+      message: messages.rejected("#FFFFFF"),
+      description: "#FFFFFF should be fixed to white.",
+    },
+    {
+      code: ".a { color: #000; }",
+      fixed: ".a { color: black; }",
+      message: messages.rejected("#000"),
+      description: "#000 should be fixed to black.",
+    },
+    {
+      code: ".a { color: #000000; }",
+      fixed: ".a { color: black; }",
+      message: messages.rejected("#000000"),
+      description: "#000000 should be fixed to black.",
     },
   ],
 });

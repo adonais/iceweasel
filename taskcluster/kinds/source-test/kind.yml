@@ -21,7 +21,7 @@ kind-dependencies:
     - build-fat-aar
 
 tasks-from:
-    - android-compare-locales.yml
+    - android-l10n-lint.yml
     - android-detekt.yml
     - android-lint.yml
     - buildconfig.yml

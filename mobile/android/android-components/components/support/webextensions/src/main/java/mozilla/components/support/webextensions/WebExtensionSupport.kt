@@ -169,6 +169,7 @@ object WebExtensionSupport {
      * engine. Note that the UI (browser/page actions etc.) may not be initialized at this point.
      * System add-ons (built-in extensions) will not be passed along.
      */
+    @Suppress("CognitiveComplexMethod")
     fun initialize(
         runtime: WebExtensionRuntime,
         store: BrowserStore,

@@ -1,0 +1,23 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+with Files("**"):
+    BUG_COMPONENT = ("Core", "Machine Learning: General")
+
+DIRS += [
+    "prompts",
+]
+
+MOZ_SRC_FILES += [
+    "ChatUtils.sys.mjs",
+    "InsightsHistorySource.sys.mjs",
+    "IntentClassifier.sys.mjs",
+    "SearchBrowsingHistory.sys.mjs",
+    "Tools.sys.mjs",
+    "Utils.sys.mjs",
+]
+
+XPCSHELL_TESTS_MANIFESTS += [
+    "tests/xpcshell/xpcshell.toml",
+]

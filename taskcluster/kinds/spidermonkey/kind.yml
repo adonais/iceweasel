@@ -24,7 +24,7 @@ task-defaults:
         tier: 1
     index:
         product: firefox
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     run:
         using: spidermonkey
     when:

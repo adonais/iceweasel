@@ -2553,11 +2553,10 @@ bool IMContextWrapper::DispatchCompositionCommitEvent(
   if (!dispatcher) {
     MOZ_ASSERT(aCommitString);
     MOZ_ASSERT(!aCommitString->IsEmpty());
-    nsEventStatus status = nsEventStatus_eIgnore;
     WidgetContentCommandEvent insertTextEvent(true, eContentCommandInsertText,
                                               lastFocusedWindow);
     insertTextEvent.mString.emplace(*aCommitString);
-    lastFocusedWindow->DispatchEvent(&insertTextEvent, status);
+    lastFocusedWindow->DispatchEvent(&insertTextEvent);
 
     if (!insertTextEvent.mSucceeded) {
       MOZ_LOG(gIMELog, LogLevel::Error,
@@ -2986,8 +2985,7 @@ void IMContextWrapper::SetCursorPosition(GtkIMContext* aContext) {
           mCompositionTargetRange.mOffset, 1);
     }
   }
-  nsEventStatus status;
-  mLastFocusedWindow->DispatchEvent(&queryCaretOrTextRectEvent, status);
+  mLastFocusedWindow->DispatchEvent(&queryCaretOrTextRectEvent);
   if (queryCaretOrTextRectEvent.Failed()) {
     MOZ_LOG(gIMELog, LogLevel::Error,
             ("0x%p   SetCursorPosition(), FAILED, %s was failed", this,
@@ -3026,8 +3024,6 @@ nsresult IMContextWrapper::GetCurrentParagraph(nsAString& aText,
              this));
     return NS_ERROR_NULL_POINTER;
   }
-
-  nsEventStatus status;
 
   uint32_t selOffset = mCompositionStart;
   uint32_t selLength = mSelectedStringRemovedByComposition.Length();
@@ -3074,7 +3070,7 @@ nsresult IMContextWrapper::GetCurrentParagraph(nsAString& aText,
   WidgetQueryContentEvent queryTextContentEvent(true, eQueryTextContent,
                                                 mLastFocusedWindow);
   queryTextContentEvent.InitForQueryTextContent(0, UINT32_MAX);
-  mLastFocusedWindow->DispatchEvent(&queryTextContentEvent, status);
+  mLastFocusedWindow->DispatchEvent(&queryTextContentEvent);
   if (NS_WARN_IF(queryTextContentEvent.Failed())) {
     return NS_ERROR_FAILURE;
   }
@@ -3141,8 +3137,6 @@ nsresult IMContextWrapper::DeleteText(GtkIMContext* aContext, int32_t aOffset,
   }
 
   RefPtr<nsWindow> lastFocusedWindow(mLastFocusedWindow);
-  nsEventStatus status;
-
   // First, we should cancel current composition because editor cannot
   // handle changing selection and deleting text.
   uint32_t selOffset;
@@ -3177,7 +3171,7 @@ nsresult IMContextWrapper::DeleteText(GtkIMContext* aContext, int32_t aOffset,
   WidgetQueryContentEvent queryTextContentEvent(true, eQueryTextContent,
                                                 mLastFocusedWindow);
   queryTextContentEvent.InitForQueryTextContent(0, UINT32_MAX);
-  mLastFocusedWindow->DispatchEvent(&queryTextContentEvent, status);
+  mLastFocusedWindow->DispatchEvent(&queryTextContentEvent);
   if (NS_WARN_IF(queryTextContentEvent.Failed())) {
     return NS_ERROR_FAILURE;
   }
@@ -3231,7 +3225,7 @@ nsresult IMContextWrapper::DeleteText(GtkIMContext* aContext, int32_t aOffset,
 
   selectionEvent.mReversed = false;
   selectionEvent.mExpandToClusterBoundary = false;
-  lastFocusedWindow->DispatchEvent(&selectionEvent, status);
+  lastFocusedWindow->DispatchEvent(&selectionEvent);
 
   if (!selectionEvent.mSucceeded || lastFocusedWindow != mLastFocusedWindow ||
       lastFocusedWindow->Destroyed()) {
@@ -3255,7 +3249,7 @@ nsresult IMContextWrapper::DeleteText(GtkIMContext* aContext, int32_t aOffset,
   // Delete the selection
   WidgetContentCommandEvent contentCommandEvent(true, eContentCommandDelete,
                                                 mLastFocusedWindow);
-  mLastFocusedWindow->DispatchEvent(&contentCommandEvent, status);
+  mLastFocusedWindow->DispatchEvent(&contentCommandEvent);
 
   if (!contentCommandEvent.mSucceeded ||
       lastFocusedWindow != mLastFocusedWindow ||
@@ -3318,10 +3312,9 @@ bool IMContextWrapper::EnsureToCacheContentSelection(
     return false;
   }
 
-  nsEventStatus status;
   WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
                                                  dispatcherWindow);
-  dispatcherWindow->DispatchEvent(&querySelectedTextEvent, status);
+  dispatcherWindow->DispatchEvent(&querySelectedTextEvent);
   if (NS_WARN_IF(querySelectedTextEvent.Failed())) {
     MOZ_LOG(gIMELog, LogLevel::Error,
             ("0x%p EnsureToCacheContentSelection(), FAILED, due to "

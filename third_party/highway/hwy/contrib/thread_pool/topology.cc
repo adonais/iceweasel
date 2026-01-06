@@ -15,6 +15,7 @@
 
 #include "hwy/contrib/thread_pool/topology.h"
 
+#include <ctype.h>  // isspace
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -113,7 +114,9 @@ bool ForEachSLPI(LOGICAL_PROCESSOR_RELATIONSHIP rel, Func&& func) {
   }
   HWY_ASSERT(GetLastError() == ERROR_INSUFFICIENT_BUFFER);
   // Note: `buf_bytes` may be less than `sizeof(SLPI)`, which has padding.
-  uint8_t* buf = static_cast<uint8_t*>(malloc(buf_bytes));
+  // `calloc` zero-initializes the `Reserved` field, part of which has been
+  // repurposed into `GroupCount` in SDKs, 10.0.22000.0 or possibly earlier.
+  uint8_t* buf = static_cast<uint8_t*>(calloc(1, buf_bytes));
   HWY_ASSERT(buf);
 
   // Fill the buffer.
@@ -560,6 +563,9 @@ std::vector<size_t> ExpandList(const char* list, size_t list_end,
   constexpr size_t kNotFound = ~size_t{0};
   size_t pos = 0;
 
+  // Gracefully handle empty lists, happens on GH200 systems (#2668).
+  if (isspace(list[0]) && list_end <= 2) return expanded;
+
   // Returns first `found_pos >= pos` where `list[found_pos] == c`, or
   // `kNotFound`.
   const auto find = [list, list_end, &pos](char c) -> size_t {
@@ -654,6 +660,27 @@ void SetClusterCacheSizes(std::vector<Topology::Package>& packages) {
 
 #elif HWY_OS_WIN
 
+// See #2734. GroupCount was added around Windows 10, but SDK docs do not
+// mention the actual version required. It is known to be absent in 8.1 and
+// MinGW 5.0.1, and present in the 10.0.22000.0 SDK. However, the OS must also
+// know about the field. Thus we zero-initialize the reserved field, assume it
+// remains zero, and return 1 if zero (old style single GroupMask), otherwise
+// the number of groups. There are two such structures, but note that
+// `PROCESSOR_RELATIONSHIP` already had this field.
+static size_t GroupCount(const CACHE_RELATIONSHIP& cr) {
+  // Added as the last u16 in the reserved area before GroupMask. We only read
+  // one byte because 256*64 processor bits are plenty.
+  const uint8_t* pcount =
+      reinterpret_cast<const uint8_t*>(&cr.GroupMask) - sizeof(uint16_t);
+  return HWY_MAX(pcount[HWY_IS_BIG_ENDIAN], 1);
+}
+
+static size_t GroupCount(const NUMA_NODE_RELATIONSHIP& nn) {
+  const uint8_t* pcount =
+      reinterpret_cast<const uint8_t*>(&nn.GroupMask) - sizeof(uint16_t);
+  return HWY_MAX(pcount[HWY_IS_BIG_ENDIAN], 1);
+}
+
 // Also sets LP.core and LP.smt.
 size_t MaxLpsPerCore(std::vector<Topology::LP>& lps) {
   size_t max_lps_per_core = 0;
@@ -707,7 +734,7 @@ size_t MaxCoresPerCluster(const size_t max_lps_per_core,
     const CACHE_RELATIONSHIP& cr = info.Cache;
     if (cr.Type != CacheUnified && cr.Type != CacheData) return;
     if (cr.Level != 3) return;
-    foreach_cluster(cr.GroupCount, cr.GroupMasks);
+    foreach_cluster(GroupCount(cr), cr.GroupMasks);
   };
 
   if (!ForEachSLPI(RelationProcessorDie, foreach_die)) {
@@ -764,7 +791,7 @@ void SetNodes(std::vector<Topology::LP>& lps) {
     if (info.Relationship != RelationNumaNode) return;
     const NUMA_NODE_RELATIONSHIP& nn = info.NumaNode;
     // This field was previously reserved/zero. There is at least one group.
-    const size_t num_groups = HWY_MAX(1, nn.GroupCount);
+    const size_t num_groups = HWY_MAX(1, GroupCount(nn));
     const uint8_t node = static_cast<uint8_t>(nn.NodeNumber);
     ForeachBit(num_groups, nn.GroupMasks, lps, __LINE__,
                [node](size_t lp, std::vector<Topology::LP>& lps) {
@@ -991,7 +1018,7 @@ bool InitCachesSysfs(Caches& caches) {
 // and their properties. It's OK to return false; callers are responsible for
 // assuming reasonable defaults.
 #ifndef __ANDROID__
-    HWY_WARN("sysfs detected L1=%u L2=%u, err %x\n", caches[1].size_kib,
+    HWY_WARN("sysfs detected L1=%u L2=%u, err %d\n", caches[1].size_kib,
              caches[2].size_kib, errno);
 #endif
     return false;
@@ -1023,7 +1050,7 @@ bool InitCachesWin(Caches& caches) {
                             : cr.Associativity;
 
       // How many cores share this cache?
-      size_t shared_with = NumBits(cr.GroupCount, cr.GroupMasks);
+      size_t shared_with = NumBits(GroupCount(cr), cr.GroupMasks);
       // Divide out hyperthreads. This core may have fewer than
       // `max_lps_per_core`, hence round up.
       shared_with = DivCeil(shared_with, max_lps_per_core);

@@ -32,7 +32,6 @@
 
 #include <algorithm>
 #include <utility>
-#include <vector>
 
 #include "PlatformMacros.h"
 #include "Sandbox.h"  // for ContentProcessSandboxParams
@@ -128,6 +127,13 @@ static_assert(MADV_GUARD_REMOVE == 103);
 #else
 static_assert(MFD_HUGE_MASK == MAP_HUGE_MASK);
 static_assert(MFD_HUGE_SHIFT == MAP_HUGE_SHIFT);
+#endif
+
+// Added in 6.10
+#ifndef F_DUPFD_QUERY
+#  define F_DUPFD_QUERY (F_LINUX_SPECIFIC_BASE + 3)
+#else
+static_assert(F_DUPFD_QUERY == (F_LINUX_SPECIFIC_BASE + 3));
 #endif
 
 // To avoid visual confusion between "ifdef ANDROID" and "ifndef ANDROID":
@@ -1112,6 +1118,9 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
 #endif
             // Not much different from other forms of dup(), and commonly used.
             .Case(F_DUPFD_CLOEXEC, Allow())
+            // Used by Mesa, generally useful, and harmless: tests if
+            // two file descriptors refer to the same file description.
+            .Case(F_DUPFD_QUERY, Allow())
             .Default(SandboxPolicyBase::EvaluateSyscall(sysno));
       }
 
@@ -1399,6 +1408,13 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
         // in backtraces.
       case __NR_getcwd:
         return Error(ENOENT);
+
+        // Basically every process type ends up using this for some
+        // reason (nsSystemInfo in content, Mesa in RDD, bug 1992904 for
+        // utility, etc.).  Other than GMP, which overrides this (see
+        // below), it's relatively safe to expose this information.
+      case __NR_uname:
+        return Allow();
 
       default:
         return SandboxPolicyBase::EvaluateSyscall(sysno);
@@ -1782,9 +1798,6 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
 
 #endif  // DESKTOP
 
-        // nsSystemInfo uses uname (and we cache an instance, so
-        // the info remains present even if we block the syscall)
-      case __NR_uname:
 #ifdef DESKTOP
       case __NR_sysinfo:
 #endif
@@ -2119,10 +2132,6 @@ class RDDSandboxPolicy final : public SandboxPolicyCommon {
       case __NR_sched_get_priority_max:
         return Allow();
 
-        // Mesa sometimes wants to know the OS version.
-      case __NR_uname:
-        return Allow();
-
         // nvidia tries to mknod(!) its devices; that won't work anyway,
         // so quietly reject it.
 #ifdef __NR_mknod
@@ -2313,10 +2322,6 @@ class SocketProcessSandboxPolicy final : public SandboxPolicyCommon {
             .Else(InvalidSyscall());
       }
 #endif  // DESKTOP
-
-      // Bug 1640612
-      case __NR_uname:
-        return Allow();
 
       default:
         return SandboxPolicyCommon::EvaluateSyscall(sysno);

@@ -708,8 +708,8 @@ void Performance::MaybeEmitExternalProfilerMarker(
   uint64_t rawStart = startTimeStamp.RawClockMonotonicNanosecondsSinceBoot();
   uint64_t rawEnd = endTimeStamp.RawClockMonotonicNanosecondsSinceBoot();
 #elif XP_WIN
-  uint64_t rawStart = startTimeStamp.RawQueryPerformanceCounterValue().value();
-  uint64_t rawEnd = endTimeStamp.RawQueryPerformanceCounterValue().value();
+  uint64_t rawStart = startTimeStamp.RawQueryPerformanceCounterValue();
+  uint64_t rawEnd = endTimeStamp.RawQueryPerformanceCounterValue();
 #elif XP_MACOSX
   uint64_t rawStart = startTimeStamp.RawMachAbsoluteTimeNanoseconds();
   uint64_t rawEnd = endTimeStamp.RawMachAbsoluteTimeNanoseconds();

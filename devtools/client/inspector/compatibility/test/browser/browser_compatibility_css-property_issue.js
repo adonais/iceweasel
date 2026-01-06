@@ -30,14 +30,14 @@ const TEST_DATA_SELECTED = [
   {
     type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
     property: "scrollbar-color",
-    url: "https://developer.mozilla.org/docs/Web/CSS/scrollbar-color",
+    url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/scrollbar-color",
     deprecated: false,
     experimental: false,
   },
   {
     type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY_ALIASES,
     property: "user-modify",
-    url: "https://developer.mozilla.org/docs/Web/CSS/user-modify",
+    url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/user-modify",
     aliases: ["user-modify"],
     deprecated: true,
     experimental: false,
@@ -59,7 +59,7 @@ const TEST_DATA_ALL = [
   {
     type: COMPATIBILITY_ISSUE_TYPE.CSS_PROPERTY,
     property: "overflow-anchor",
-    url: "https://developer.mozilla.org/docs/Web/CSS/overflow-anchor",
+    url: "https://developer.mozilla.org/docs/Web/CSS/Reference/Properties/overflow-anchor",
     deprecated: false,
     experimental: false,
   },

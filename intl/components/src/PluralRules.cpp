@@ -7,7 +7,6 @@
 #include "mozilla/intl/ICU4CGlue.h"
 #include "mozilla/intl/NumberFormat.h"
 #include "mozilla/intl/NumberRangeFormat.h"
-#include "mozilla/PodOperations.h"
 #include "mozilla/Span.h"
 #include "ScopedICUObject.h"
 

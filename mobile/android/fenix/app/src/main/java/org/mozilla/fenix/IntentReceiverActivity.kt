@@ -18,7 +18,7 @@ import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.EXTRA_ACTIVITY_REFERRER_CATEGORY
 import mozilla.components.support.utils.EXTRA_ACTIVITY_REFERRER_PACKAGE
 import mozilla.components.support.utils.INTENT_TYPE_PDF
-import mozilla.components.support.utils.ext.getApplicationInfoCompat
+import mozilla.components.support.utils.ext.packageManagerCompatHelper
 import mozilla.components.support.utils.toSafeIntent
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.HomeActivity.Companion.PRIVATE_BROWSING_MODE
@@ -165,7 +165,7 @@ class IntentReceiverActivity : Activity() {
         intent.putExtra(EXTRA_ACTIVITY_REFERRER_PACKAGE, r.host)
         r.host?.let { host ->
             try {
-                val category = packageManager.getApplicationInfoCompat(host, 0).category
+                val category = packageManagerCompatHelper.getApplicationInfoCompat(host, 0).category
                 intent.putExtra(EXTRA_ACTIVITY_REFERRER_CATEGORY, category)
             } catch (_: PackageManager.NameNotFoundException) {
                 // At least we tried.

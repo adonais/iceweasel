@@ -52,13 +52,13 @@ class TelemetryHelpers {
   /**
    * Check the value of a given telemetry histogram.
    *
-   * @param  {String} histId
+   * @param  {string} histId
    *         Histogram id
-   * @param  {String} key
+   * @param  {string} key
    *         Keyed histogram key
-   * @param  {Array|Number} expected
+   * @param  {Array | number} expected
    *         Expected value
-   * @param  {String} checkType
+   * @param  {string} checkType
    *         "array" (default) - Check that an array matches the histogram data.
    *         "hasentries"  - For non-enumerated linear and exponential
    *                             histograms. This checks for at least one entry.
@@ -129,7 +129,7 @@ class TelemetryHelpers {
    * from your result checking code in telemetry tests. It logs checkTelemetry
    * calls for all changed telemetry values.
    *
-   * @param  {String} prefix
+   * @param  {string} prefix
    *         Optionally limits results to histogram ids starting with prefix.
    */
   generateTelemetryTests(prefix = "") {
@@ -211,12 +211,12 @@ class TelemetryHelpers {
    * @param {HistogramSnapshot} snapshot
    *        A snapshot of a telemetry chart obtained via getSnapshotForHistograms or
    *        similar.
-   * @param {String} key
+   * @param {string} key
    *        Only used for keyed histograms. This is the key we are interested in
    *        checking.
-   * @param {String} histId
+   * @param {string} histId
    *        The histogram ID.
-   * @param {Array|String|Boolean} actual
+   * @param {Array | string | boolean} actual
    *        The value of the histogram data.
    */
   displayDataFromHistogramSnapshot(snapshot, key, histId, actual) {

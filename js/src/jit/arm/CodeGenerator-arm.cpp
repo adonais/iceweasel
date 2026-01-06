@@ -10,8 +10,6 @@
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Maybe.h"
 
-#include <iterator>
-
 #include "jsnum.h"
 
 #include "jit/CodeGenerator.h"

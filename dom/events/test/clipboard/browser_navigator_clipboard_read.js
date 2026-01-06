@@ -6,19 +6,8 @@
 
 "use strict";
 
-const kBaseUrlForContent = getRootDirectory(gTestPath).replace(
-  "chrome://mochitests/content",
-  "https://example.com"
-);
-
-const kContentFileName = "simple_navigator_clipboard_read.html";
-
-const kContentFileUrl = kBaseUrlForContent + kContentFileName;
-
-const kApzTestNativeEventUtilsUrl =
-  "chrome://mochitests/content/browser/gfx/layers/apz/test/mochitest/apz_test_native_event_utils.js";
-
-Services.scriptloader.loadSubScript(kApzTestNativeEventUtilsUrl, this);
+const kContentFileUrl =
+  kBaseUrlForContent + "simple_navigator_clipboard_read.html";
 
 // @param aBrowser browser object of the content tab.
 // @param aMultipleReadTextCalls if false, exactly one call is made, two
@@ -40,10 +29,7 @@ function promiseMutatedReadResultFromContentElement(aBrowser) {
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["dom.events.asyncClipboard.clipboardItem", true],
-      ["test.events.async.enabled", true],
-    ],
+    set: [["test.events.async.enabled", true]],
   });
 });
 

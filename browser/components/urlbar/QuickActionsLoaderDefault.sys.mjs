@@ -7,13 +7,19 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  ActionsProviderQuickActions:
+    "moz-src:///browser/components/urlbar/ActionsProviderQuickActions.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.sys.mjs",
   ResetProfile: "resource://gre/modules/ResetProfile.sys.mjs",
   ScreenshotsUtils: "resource:///modules/ScreenshotsUtils.sys.mjs",
-  ActionsProviderQuickActions:
-    "moz-src:///browser/components/urlbar/ActionsProviderQuickActions.sys.mjs",
+  TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
+  UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
 });
+
+ChromeUtils.defineLazyGetter(lazy, "logger", () =>
+  lazy.UrlbarUtils.getLogger({ prefix: "QuickActions" })
+);
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
@@ -263,6 +269,38 @@ const DEFAULT_ACTIONS = {
     icon: "chrome://mozapps/skin/extensions/category-extensions.svg",
     label: "quickactions-themes",
     onPick: openAddonsUrl("addons://list/theme"),
+  },
+  translate: {
+    l10nCommands: ["quickactions-cmd-translate"],
+    icon: "chrome://browser/skin/translations.svg",
+    label: "quickactions-translate",
+    isVisible: () => {
+      return Services.prefs.getBoolPref(
+        "browser.translations.quickAction.enabled",
+        false
+      );
+    },
+    onPick: async () => {
+      let url = "about:translations";
+      let targetLanguage;
+
+      try {
+        targetLanguage =
+          await lazy.TranslationsParent.getTopPreferredSupportedToLang();
+      } catch (error) {
+        lazy.logger.error(error);
+      }
+
+      if (targetLanguage) {
+        const urlObj = new URL(url);
+        const params = new URLSearchParams();
+        params.set("trg", targetLanguage);
+        urlObj.hash = params.toString();
+        url = urlObj.href;
+      }
+
+      return openUrl(url);
+    },
   },
   update: {
     l10nCommands: ["quickactions-cmd-update"],

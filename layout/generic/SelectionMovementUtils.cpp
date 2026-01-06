@@ -262,7 +262,7 @@ nsIFrame* SelectionMovementUtils::GetFrameForNodeOffset(
 
   nsIFrame *returnFrame = nullptr, *lastFrame = aNode->GetPrimaryFrame();
   nsCOMPtr<nsIContent> theNode;
-  uint32_t offsetInFrameContent, offsetInLastFrameContent = 0;
+  uint32_t offsetInFrameContent, offsetInLastFrameContent = aOffset;
 
   while (true) {
     if (returnFrame) {

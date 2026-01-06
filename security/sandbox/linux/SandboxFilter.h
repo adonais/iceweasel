@@ -7,7 +7,6 @@
 #ifndef mozilla_SandboxFilter_h
 #define mozilla_SandboxFilter_h
 
-#include <vector>
 #include "mozilla/UniquePtr.h"
 
 namespace sandbox {

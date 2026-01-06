@@ -4,7 +4,10 @@
 
 package org.mozilla.fenix.tabstray.binding
 
+import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.Fragment
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import mozilla.components.lib.state.helpers.AbstractBinding
@@ -24,7 +27,8 @@ class SecureTabManagerBinding(
     store: TabsTrayStore,
     private val settings: Settings,
     private val fragment: Fragment,
-) : AbstractBinding<TabsTrayState>(store) {
+    mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+) : AbstractBinding<TabsTrayState>(store, mainDispatcher) {
 
     override suspend fun onState(flow: Flow<TabsTrayState>) {
         flow.map { it }
@@ -38,9 +42,9 @@ class SecureTabManagerBinding(
                     state.selectedPage == Page.PrivateTabs &&
                     !settings.shouldSecureModeBeOverridden
                 ) {
-                    fragment.secure()
+                    setSecureMode(true)
                 } else if (!settings.lastKnownMode.isPrivate) {
-                    fragment.removeSecure()
+                    setSecureMode(false)
                 }
             }
     }
@@ -48,6 +52,15 @@ class SecureTabManagerBinding(
     override fun stop() {
         super.stop()
         if (!settings.lastKnownMode.isPrivate) {
+            setSecureMode(false)
+        }
+    }
+
+    @VisibleForTesting
+    internal fun setSecureMode(isSecure: Boolean) {
+        if (isSecure) {
+            fragment.secure()
+        } else {
             fragment.removeSecure()
         }
     }

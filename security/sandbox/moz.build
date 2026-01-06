@@ -10,7 +10,9 @@ BROWSER_CHROME_MANIFESTS += [
     "test/browser_bug1717599_XDG-CONFIG-HOME.toml",
     "test/browser_profiler.toml",
     "test/browser_snap.toml",
-    "test/browser_xdg.toml",
+    "test/browser_xdg_default.toml",
+    "test/browser_xdg_mozLegacyHome.toml",
+    "test/browser_xdg_xdgConfigHome.toml",
 ]
 
 with Files("**"):

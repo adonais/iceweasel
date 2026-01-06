@@ -4,12 +4,11 @@
 
 package org.mozilla.fenix.home.topsites.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -22,7 +21,6 @@ import org.mozilla.fenix.home.topsites.TopSiteItem
 import org.mozilla.fenix.home.topsites.getMenuItems
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.theme.FirefoxTheme
-import kotlin.collections.forEachIndexed
 
 @Composable
 internal fun Shortcuts(
@@ -69,7 +67,7 @@ internal fun Shortcuts(
 @FlexibleWindowLightDarkPreview
 private fun ShortcutsPreview() {
     FirefoxTheme {
-        Box(modifier = Modifier.background(color = FirefoxTheme.colors.layer1).padding(16.dp)) {
+        Surface {
             Shortcuts(
                 topSites = FakeHomepagePreview.topSites(),
                 interactor = FakeHomepagePreview.topSitesInteractor,

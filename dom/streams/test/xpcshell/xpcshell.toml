@@ -26,4 +26,6 @@ run-sequentially = ["os == 'mac'"] # almost perma timeout on Mac
 ["subclassing.js"]
 
 ["too-big-array-buffer.js"]
-skip-if = ["bits == 32"] # autoAllocateChunkSize limit is different on 32-bit
+skip-if = [
+  "arch == 'x86'", # autoAllocateChunkSize limit is different on 32-bit
+]

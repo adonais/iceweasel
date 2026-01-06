@@ -29,6 +29,7 @@ add_task(async function () {
   checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [
         {
           name: "color",
@@ -41,6 +42,7 @@ add_task(async function () {
     },
     {
       selector: "element",
+      selectorEditable: false,
       inherited: true,
       declarations: [
         {
@@ -55,6 +57,7 @@ add_task(async function () {
     },
     {
       selector: "element",
+      selectorEditable: false,
       inherited: true,
       declarations: [
         {
@@ -69,6 +72,7 @@ add_task(async function () {
     },
     {
       selector: "element",
+      selectorEditable: false,
       inherited: true,
       declarations: [
         {

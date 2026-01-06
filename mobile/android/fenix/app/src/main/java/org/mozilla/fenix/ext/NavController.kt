@@ -18,7 +18,11 @@ import org.mozilla.fenix.R
  * Navigate from the fragment with [id] using the given [directions].
  * If the id doesn't match the current destination, an error is recorded.
  */
-fun NavController.nav(@IdRes id: Int?, directions: NavDirections, navOptions: NavOptions? = null) {
+fun NavController.nav(
+    @IdRes id: Int?,
+    directions: NavDirections,
+    navOptions: NavOptions? = null,
+) {
     if (id == null || this.currentDestination?.id == id) {
         this.navigate(directions, navOptions)
     } else {
@@ -26,7 +30,9 @@ fun NavController.nav(@IdRes id: Int?, directions: NavDirections, navOptions: Na
     }
 }
 
-fun NavController.alreadyOnDestination(@IdRes destId: Int?): Boolean {
+fun NavController.alreadyOnDestination(
+    @IdRes destId: Int?,
+): Boolean {
     return destId?.let { currentDestination?.id == it || popBackStack(it, false) } ?: false
 }
 

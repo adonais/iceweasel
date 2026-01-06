@@ -121,17 +121,17 @@ class LoadedScript : public nsIMemoryReporter {
     // This script is received as a plain text from the channel.
     // mScriptData holds the text source, and mStencil holds the compiled
     // stencil.
-    // mSRIAndBytecode holds the SRI.
+    // mSRIAndSerializedStencil holds the SRI.
     eTextSource,
 
-    // This script is received as a bytecode from the channel.
-    // mSRIAndBytecode holds the SRI and the bytecode, and mStencil holds the
-    // decoded stencil.
-    eBytecode,
+    // This script is received as a serialized stencil from the channel,
+    // mSRIAndSerializedStencil holds the SRI and the serialized stencil, and
+    // mStencil holds the decoded stencil.
+    eSerializedStencil,
 
     // This script is cached from the previous load.
-    // mStencil holds the cached stencil, and mSRIAndBytecode holds the SRI.
-    // mScriptData is unused.
+    // mStencil holds the cached stencil, and mSRIAndSerializedStencil holds
+    // the SRI. mScriptData is unused.
     eCachedStencil
   };
 
@@ -144,11 +144,16 @@ class LoadedScript : public nsIMemoryReporter {
   using MaybeSourceText =
       mozilla::MaybeOneOf<SourceText<char16_t>, SourceText<Utf8Unit>>;
 
+  // ==== Methods to query the data type ====
+
   bool IsUnknownDataType() const { return mDataType == DataType::eUnknown; }
   bool IsTextSource() const { return mDataType == DataType::eTextSource; }
-  bool IsSource() const { return IsTextSource(); }
-  bool IsBytecode() const { return mDataType == DataType::eBytecode; }
+  bool IsSerializedStencil() const {
+    return mDataType == DataType::eSerializedStencil;
+  }
   bool IsCachedStencil() const { return mDataType == DataType::eCachedStencil; }
+
+  // ==== Methods to convert the data type ====
 
   void SetUnknownDataType() {
     mDataType = DataType::eUnknown;
@@ -161,9 +166,9 @@ class LoadedScript : public nsIMemoryReporter {
     mScriptData.emplace(VariantType<ScriptTextBuffer<Utf8Unit>>());
   }
 
-  void SetBytecode() {
+  void SetSerializedStencil() {
     MOZ_ASSERT(IsUnknownDataType());
-    mDataType = DataType::eBytecode;
+    mDataType = DataType::eSerializedStencil;
   }
 
   void ConvertToCachedStencil() {
@@ -178,6 +183,8 @@ class LoadedScript : public nsIMemoryReporter {
   bool IsUTF8Text() const {
     return mScriptData->is<ScriptTextBuffer<Utf8Unit>>();
   }
+
+  // ==== Methods to access the text soutce ====
 
   template <typename Unit>
   const ScriptTextBuffer<Unit>& ScriptText() const {
@@ -201,12 +208,6 @@ class LoadedScript : public nsIMemoryReporter {
   nsresult GetScriptSource(JSContext* aCx, MaybeSourceText* aMaybeSource,
                            LoadContextBase* aMaybeLoadContext);
 
-  void ClearScriptSource() {
-    if (IsTextSource()) {
-      ClearScriptText();
-    }
-  }
-
   void ClearScriptText() {
     MOZ_ASSERT(IsTextSource());
     return IsUTF16Text() ? ScriptText<char16_t>().clearAndFree()
@@ -219,48 +220,66 @@ class LoadedScript : public nsIMemoryReporter {
     mReceivedScriptTextLength = aLength;
   }
 
-  bool CanHaveBytecode() const {
-    return IsBytecode() || IsSource() || IsCachedStencil();
-  }
+  // ==== Methods to access the serialized data or the SRI part ====
+  // mSRIAndSerializedStencil field is shared between two separate consumers.
+  // See mSRIAndSerializedStencil comment for more info.
 
-  TranscodeBuffer& SRIAndBytecode() {
-    // Note: SRIAndBytecode might be called even if the IsSource() returns true,
-    // as we want to be able to save the bytecode content when we are loading
-    // from source.
-    MOZ_ASSERT(CanHaveBytecode());
-    return mSRIAndBytecode;
-  }
-  TranscodeRange Bytecode() const {
-    MOZ_ASSERT(IsBytecode());
-    const auto& bytecode = mSRIAndBytecode;
-    auto offset = mBytecodeOffset;
-    return TranscodeRange(bytecode.begin() + offset,
-                          bytecode.length() - offset);
-  }
+  // ---- For SRI-only consumers ----
 
-  size_t GetSRILength() const {
-    MOZ_ASSERT(CanHaveBytecode());
-    return mBytecodeOffset;
-  }
-  void SetSRILength(size_t sriLength) {
-    MOZ_ASSERT(CanHaveBytecode());
-    mBytecodeOffset = AlignTranscodingBytecodeOffset(sriLength);
-  }
-
-  void DropBytecode() {
-    MOZ_ASSERT(CanHaveBytecode());
-    mSRIAndBytecode.clearAndFree();
-  }
+  bool CanHaveSRIOnly() const { return IsTextSource() || IsCachedStencil(); }
 
   bool HasSRI() {
-    MOZ_ASSERT(IsSource() || IsCachedStencil());
-    return !mSRIAndBytecode.empty();
+    MOZ_ASSERT(CanHaveSRIOnly());
+    return !mSRIAndSerializedStencil.empty();
+  }
+
+  TranscodeBuffer& SRI() {
+    MOZ_ASSERT(CanHaveSRIOnly());
+    return mSRIAndSerializedStencil;
   }
 
   void DropSRI() {
-    MOZ_ASSERT(IsSource() || IsCachedStencil());
-    mSRIAndBytecode.clearAndFree();
+    MOZ_ASSERT(CanHaveSRIOnly());
+    mSRIAndSerializedStencil.clearAndFree();
   }
+
+  // ---- For SRI and serialized Stencil consumers ---
+
+  bool CanHaveSRIAndSerializedStencil() const { return IsSerializedStencil(); }
+
+  TranscodeBuffer& SRIAndSerializedStencil() {
+    MOZ_ASSERT(CanHaveSRIAndSerializedStencil());
+    return mSRIAndSerializedStencil;
+  }
+  TranscodeRange SerializedStencil() const {
+    MOZ_ASSERT(CanHaveSRIAndSerializedStencil());
+    const auto& buf = mSRIAndSerializedStencil;
+    auto offset = mSerializedStencilOffset;
+    return TranscodeRange(buf.begin() + offset, buf.length() - offset);
+  }
+
+  // ---- Methods shared between both consumers ----
+
+  size_t GetSRILength() const {
+    MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
+    return mSerializedStencilOffset;
+  }
+  void SetSRILength(size_t sriLength) {
+    MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
+    mSerializedStencilOffset = AlignTranscodingBytecodeOffset(sriLength);
+  }
+
+  bool HasNoSRIOrSRIAndSerializedStencil() const {
+    MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
+    return mSRIAndSerializedStencil.empty();
+  }
+
+  void DropSRIOrSRIAndSerializedStencil() {
+    MOZ_ASSERT(CanHaveSRIOnly() || CanHaveSRIAndSerializedStencil());
+    mSRIAndSerializedStencil.clearAndFree();
+  }
+
+  // ==== Methods to access the stencil ====
 
   bool HasStencil() const { return mStencil; }
 
@@ -278,6 +297,8 @@ class LoadedScript : public nsIMemoryReporter {
 
   void ClearStencil() { mStencil = nullptr; }
 
+  // ==== Methods to access the disk cache reference ====
+
   // Check the reference to the cache info channel, which is used by the disk
   // cache.
   bool HasDiskCacheReference() const { return !!mCacheInfo; }
@@ -287,10 +308,12 @@ class LoadedScript : public nsIMemoryReporter {
 
   void DropDiskCacheReferenceAndSRI() {
     DropDiskCacheReference();
-    if (IsSource()) {
+    if (IsTextSource()) {
       DropSRI();
     }
   }
+
+  // ==== Other methods ====
 
   /*
    * Set the mBaseURL, based on aChannel.
@@ -299,10 +322,38 @@ class LoadedScript : public nsIMemoryReporter {
   void SetBaseURLFromChannelAndOriginalURI(nsIChannel* aChannel,
                                            nsIURI* aOriginalURI);
 
+  bool IsDirty() const { return mIsDirty; }
+  void SetDirty() {
+    MOZ_ASSERT(HasCacheEntryId());
+    mIsDirty = true;
+  }
+  void UnsetDirty() {
+    MOZ_ASSERT(HasCacheEntryId());
+    mIsDirty = false;
+  }
+
+  bool HasCacheEntryId() const { return mCacheEntryId != InvalidCacheEntryId; }
+  uint64_t CacheEntryId() const {
+    MOZ_ASSERT(HasCacheEntryId());
+    return mCacheEntryId;
+  }
+  void SetCacheEntryId(uint64_t aId) {
+    mCacheEntryId = aId;
+
+    // mCacheEntryId is 48bits.  Verify no overflow happened.
+    MOZ_ASSERT(mCacheEntryId == aId);
+  }
+
+  void AddFetchCount() {
+    if (mFetchCount < UINT8_MAX) {
+      mFetchCount++;
+    }
+  }
+
  public:
   // Fields.
 
-  // Determine whether the mScriptData or mSRIAndBytecode is used.
+  // Determine whether the mScriptData or mSRIAndSerializedStencil is used.
   // See DataType description for more info.
   DataType mDataType;
 
@@ -321,10 +372,39 @@ class LoadedScript : public nsIMemoryReporter {
   mozilla::dom::ReferrerPolicy mReferrerPolicy;
 
  public:
-  // Offset of the bytecode in mSRIAndBytecode.
-  uint32_t mBytecodeOffset;
+  // Offset of the serialized Stencil in mSRIAndSerializedStencil.
+  uint32_t mSerializedStencilOffset;
 
  private:
+  static constexpr uint64_t InvalidCacheEntryId = 0;
+
+  // The cache entry ID of this script.
+  //
+  // 0 if the response doesn't have the corresponding cache entry,
+  // or any other failure happened.
+  //
+  // This value comes from mozilla::net::CacheEntry::mCacheEntryId,
+  // which comes from mozilla::net::CacheEntry::GetNextId.
+  // It generates sequential IDs from 1 (thus 0 is treated as invalid value),
+  // and the ID is valid within single browser session.
+  //
+  // In order to pack this field with mIsDirty below, we use shorter bits than
+  // the original mozilla::net::CacheEntry::mCacheEntryId type (uint64_t).
+  //
+  // As long as the per-session sequential ID is the sole source of this value,
+  // 48 bits should be sufficient.  1000 new IDs per second for 365 days
+  // becomes 0x7_57b1_2c00, which is 35 bits.
+  uint64_t mCacheEntryId : 48;
+
+  // Set to true in the following situation:
+  //   * this is cached in SharedScriptCache
+  //   * A behavior around the network request is modified, and
+  //     the cache needs validation on the necko side
+  //
+  // NOTE: In order to pack this with the mCacheEntryId above on windows,
+  //       this must be uint64_t.
+  uint64_t mIsDirty : 1;
+
   RefPtr<ScriptFetchOptions> mFetchOptions;
   nsCOMPtr<nsIURI> mURI;
 
@@ -344,19 +424,20 @@ class LoadedScript : public nsIMemoryReporter {
   // Holds either of the following for non-inline scripts:
   //   * The SRI serialized hash and the paddings, which is calculated when
   //     receiving the source text
-  //   * The SRI, padding, and the script bytecode, which is received
+  //   * The SRI, padding, and the serialized Stencil, which is received
   //     from necko. The data is laid out according to ScriptBytecodeDataLayout
   //     or, if compression is enabled, ScriptBytecodeCompressedDataLayout.
-  TranscodeBuffer mSRIAndBytecode;
+  TranscodeBuffer mSRIAndSerializedStencil;
 
   // Holds the stencil for the script.  This field is used in all DataType.
   RefPtr<Stencil> mStencil;
 
-  // The cache info channel used when saving the bytecode to the necko cache.
+  // The cache info channel used when saving the serialized Stencil to the
+  // necko cache.
   //
   // This field is populated if the cache is enabled and this is either
-  // IsTextSource() or IsCachedStencil(), and it's cleared after saving the
-  // bytecode (Thus, used only once).
+  // IsTextSource() or IsCachedStencil(), and it's cleared after saving to the
+  // necko cache, and thus, this field is used only once.
   nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
 };
 
@@ -380,12 +461,6 @@ class LoadedScriptDelegate {
   template <typename Unit>
   using ScriptTextBuffer = LoadedScript::ScriptTextBuffer<Unit>;
   using MaybeSourceText = LoadedScript::MaybeSourceText;
-
-  bool IsModuleScript() const { return GetLoadedScript()->IsModuleScript(); }
-  bool IsEventScript() const { return GetLoadedScript()->IsEventScript(); }
-  bool IsImportMapScript() const {
-    return GetLoadedScript()->IsImportMapScript();
-  }
 
   mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
     return GetLoadedScript()->ReferrerPolicy();
@@ -412,8 +487,9 @@ class LoadedScriptDelegate {
     return GetLoadedScript()->IsUnknownDataType();
   }
   bool IsTextSource() const { return GetLoadedScript()->IsTextSource(); }
-  bool IsSource() const { return GetLoadedScript()->IsSource(); }
-  bool IsBytecode() const { return GetLoadedScript()->IsBytecode(); }
+  bool IsSerializedStencil() const {
+    return GetLoadedScript()->IsSerializedStencil();
+  }
   bool IsCachedStencil() const { return GetLoadedScript()->IsCachedStencil(); }
 
   void SetUnknownDataType() { GetLoadedScript()->SetUnknownDataType(); }
@@ -422,9 +498,7 @@ class LoadedScriptDelegate {
     GetLoadedScript()->SetTextSource(maybeLoadContext);
   }
 
-  void SetBytecode() { GetLoadedScript()->SetBytecode(); }
-
-  void ConvertToCachedStencil() { GetLoadedScript()->ConvertToCachedStencil(); }
+  void SetSerializedStencil() { GetLoadedScript()->SetSerializedStencil(); }
 
   bool IsUTF16Text() const { return GetLoadedScript()->IsUTF16Text(); }
   bool IsUTF8Text() const { return GetLoadedScript()->IsUTF8Text(); }
@@ -459,21 +533,28 @@ class LoadedScriptDelegate {
     return GetLoadedScript()->GetScriptSource(aCx, aMaybeSource, aLoadContext);
   }
 
-  void ClearScriptSource() { GetLoadedScript()->ClearScriptSource(); }
-
   void ClearScriptText() { GetLoadedScript()->ClearScriptText(); }
 
-  TranscodeBuffer& SRIAndBytecode() {
-    return GetLoadedScript()->SRIAndBytecode();
+  bool HasNoSRIOrSRIAndSerializedStencil() const {
+    return GetLoadedScript()->HasNoSRIOrSRIAndSerializedStencil();
   }
-  TranscodeRange Bytecode() const { return GetLoadedScript()->Bytecode(); }
+
+  TranscodeBuffer& SRI() { return GetLoadedScript()->SRI(); }
+  TranscodeBuffer& SRIAndSerializedStencil() {
+    return GetLoadedScript()->SRIAndSerializedStencil();
+  }
+  TranscodeRange SerializedStencil() const {
+    return GetLoadedScript()->SerializedStencil();
+  }
 
   size_t GetSRILength() const { return GetLoadedScript()->GetSRILength(); }
   void SetSRILength(size_t sriLength) {
     GetLoadedScript()->SetSRILength(sriLength);
   }
 
-  void DropBytecode() { GetLoadedScript()->DropBytecode(); }
+  void DropSRIOrSRIAndSerializedStencil() {
+    GetLoadedScript()->DropSRIOrSRIAndSerializedStencil();
+  }
 
   bool HasStencil() const { return GetLoadedScript()->HasStencil(); }
   Stencil* GetStencil() const { return GetLoadedScript()->GetStencil(); }

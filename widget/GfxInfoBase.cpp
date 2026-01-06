@@ -45,7 +45,6 @@
 #include "DriverCrashGuard.h"
 
 #ifdef MOZ_WIDGET_ANDROID
-#  include <set>
 #  include "AndroidBuild.h"
 #  include "nsContentUtils.h"
 #endif
@@ -398,8 +397,9 @@ static bool BlocklistEntryToDriverInfo(const nsACString& aBlocklistEntry,
     } else if (key.EqualsLiteral("feature")) {
       aDriverInfo->mFeature = BlocklistFeatureToGfxFeature(dataValue);
       if (aDriverInfo->mFeature == nsIGfxInfo::FEATURE_INVALID) {
-        // If we don't recognize the feature, we do not want to proceed.
-        gfxWarning() << "Unrecognized feature " << value.get();
+        // If we don't recognize the feature, we do not want to proceed. This
+        // can happen if we add a new feature that this build doesn't support,
+        // or removed a feature we used to support.
         return false;
       }
     } else if (key.EqualsLiteral("featureStatus")) {

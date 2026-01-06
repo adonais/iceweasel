@@ -27,9 +27,6 @@
 #include <sys/un.h>
 #include <sys/uio.h>
 
-#include <string>
-#include <map>
-
 #include "base/command_line.h"
 #include "base/eintr_wrapper.h"
 #include "base/logging.h"
@@ -41,7 +38,6 @@
 #include "chrome/common/ipc_message_utils.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/ProtocolUtils.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/UniquePtr.h"
 

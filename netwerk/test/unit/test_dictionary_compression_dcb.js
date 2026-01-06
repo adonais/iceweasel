@@ -444,7 +444,7 @@ async function setupDicts() {
     let dictKey = dictKeys[i];
     let url = `${server.origin()}${path}`;
     dump(
-      `registering dictionary ${path} for match patter ${DCB_TEST_DICTIONARIES[dictKey].patterh}\n`
+      `registering dictionary ${path} for match pattern ${DCB_TEST_DICTIONARIES[dictKey].pattern}\n`
     );
 
     let chan = makeChan(url);
@@ -496,9 +496,9 @@ add_task(async function test_basic_dcb_compression() {
   // Setup DCB endpoint for HTML content
   let dict = DCB_TEST_DICTIONARIES.html_common;
   let content = DCB_TEST_CONTENT.html_page;
-  await registerDCBEndpoint(server, "/test.html", dict, content, true);
+  await registerDCBEndpoint(server, "/dict/test.html", dict, content, true);
 
-  let url = `${server.origin()}/test.html`;
+  let url = `${server.origin()}/dict/test.html`;
   let chan = makeChan(url);
   let [request, data] = await channelOpenPromise(chan);
 
@@ -509,6 +509,37 @@ add_task(async function test_basic_dcb_compression() {
     dict
   );
   Assert.ok(usedDCB, "DCB compression should be used");
+});
+
+// Test correct use of URLPattern baseurl
+add_task(async function test_baseurl() {
+  dump("**** test_baseurl\n");
+  requestLog = [];
+  await sync_to_server();
+
+  // Setup DCB endpoint for HTML content
+  let dict = DCB_TEST_DICTIONARIES.html_common;
+  let content = DCB_TEST_CONTENT.html_page;
+  await registerDCBEndpoint(server, "/test.html", dict, content, true);
+
+  let url = `${server.origin()}/test.html`;
+  let chan = makeChan(url);
+  let [request, data] = await channelOpenPromise(chan);
+
+  Assert.greater(
+    data.length,
+    0,
+    "Should still receive content without dictionary in use"
+  );
+  // Check if DCB compression was used (should be false)
+  Assert.ok(
+    !verifyDCBResponse(
+      request.QueryInterface(Ci.nsIHttpChannel),
+      data,
+      DCB_TEST_DICTIONARIES.html_common_no_dictionary
+    ),
+    "DCB compression should not be used with the wrong path"
+  );
 });
 
 // Test correct dictionary selection for dcb compression
@@ -525,7 +556,7 @@ add_task(async function test_dcb_dictionary_selection() {
   // Register endpoints that should match different dictionaries
   await registerDCBEndpoint(
     server,
-    "/specific-test.html",
+    "/dict/specific-test.html",
     htmlDict,
     DCB_TEST_CONTENT.html_page,
     true
@@ -539,7 +570,7 @@ add_task(async function test_dcb_dictionary_selection() {
   );
 
   // Test HTML dictionary selection
-  let htmlUrl = `${server.origin()}/specific-test.html`;
+  let htmlUrl = `${server.origin()}/dict/specific-test.html`;
   let htmlChan = makeChan(htmlUrl);
   let [, htmlData] = await channelOpenPromise(htmlChan);
 
@@ -552,7 +583,7 @@ add_task(async function test_dcb_dictionary_selection() {
   // Check if correct dictionary was used
   await sync_from_server();
   let htmlLogEntry = requestLog.find(
-    entry => entry.path === "/specific-test.html"
+    entry => entry.path === "/dict/specific-test.html"
   );
   Assert.ok(
     htmlLogEntry && htmlLogEntry.hasAvailableDict,
@@ -715,7 +746,7 @@ add_task(async function test_dcb_compression_after_cache_eviction() {
   let dict = DCB_TEST_DICTIONARIES.html_common;
   let dict2 = DCB_TEST_DICTIONARIES.html_common_no_dictionary;
   let testContent = DCB_TEST_CONTENT.html_page;
-  let testPath = "/cache-eviction-test.html";
+  let testPath = "/dict/cache-eviction-test.html";
   let dictUrl = `${server.origin()}/dict/html`;
   let contentUrl = `${server.origin()}${testPath}`;
 
@@ -807,9 +838,9 @@ add_task(async function test_dcb_with_http_redirect() {
 
   let dict = DCB_TEST_DICTIONARIES.html_common;
   let content = DCB_TEST_CONTENT.html_page;
-  await registerDCBEndpoint(server, "/test.html", dict, content, true);
+  await registerDCBEndpoint(server, "/dict/test.html", dict, content, true);
   let originalPath = "/redirect/original";
-  let finalPath = "/test.html";
+  let finalPath = "/dict/test.html";
   let originalUrl = `${server.origin()}${originalPath}`;
   let finalUrl = `${server.origin()}${finalPath}`;
 

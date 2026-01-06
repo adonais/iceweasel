@@ -54,7 +54,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param action Optional other composable to show just below the popup text.
  */
 @Composable
-@Suppress("LongMethod")
+@Suppress("LongMethod", "CognitiveComplexMethod")
 fun CFRPopupContent(
     popupBodyColors: List<Int>,
     showDismissButton: Boolean,

@@ -19,7 +19,7 @@ private val validChannelSet = setOf("ts")
  *
  * @see [TrackKeyInfo.createTrackKey]
  */
-@Suppress("NestedBlockDepth")
+@Suppress("NestedBlockDepth", "CognitiveComplexMethod")
 internal fun getTrackKey(
     provider: SearchProviderModel,
     uri: Uri,

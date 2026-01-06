@@ -23,7 +23,7 @@ let LIMIT_OFFSET = 0;
 let LIMIT_COUNT = 200;
 let METRIC_DATA_INITIALIZED = false;
 const INVALID_VALUE_REASONS = {
-  LABELED_METRIC: 0,
+  DUAL_LABELED_METRIC: 0,
   UNKNOWN_METRIC: 1,
 };
 const SIMPLE_TYPES = {
@@ -794,8 +794,8 @@ function updateValueSelection(selection) {
   selection
     ?.attr("data-l10n-id", d => {
       switch (d.invalidValue) {
-        case INVALID_VALUE_REASONS.LABELED_METRIC:
-          return "about-glean-labeled-metric-warning";
+        case INVALID_VALUE_REASONS.DUAL_LABELED_METRIC:
+          return "about-glean-dual-labeled-metric-warning";
         case INVALID_VALUE_REASONS.UNKNOWN_METRIC:
           return "about-glean-unknown-metric-type-warning";
         default:
@@ -840,8 +840,8 @@ function updateDatum(datum) {
     }
     datum.loaded = true;
     datum.invalidValue = undefined;
-  } else if (datum.type.includes("Labeled")) {
-    datum.invalidValue = INVALID_VALUE_REASONS.LABELED_METRIC;
+  } else if (datum.type.includes("DualLabeled")) {
+    datum.invalidValue = INVALID_VALUE_REASONS.DUAL_LABELED_METRIC;
   } else {
     datum.invalidValue = INVALID_VALUE_REASONS.UNKNOWN_METRIC;
   }

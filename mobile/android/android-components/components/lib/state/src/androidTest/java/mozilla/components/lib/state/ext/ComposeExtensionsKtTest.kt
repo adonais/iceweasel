@@ -5,7 +5,6 @@
 package mozilla.components.lib.state.ext
 
 import androidx.compose.ui.test.junit4.createComposeRule
-import kotlinx.coroutines.runBlocking
 import mozilla.components.lib.state.Action
 import mozilla.components.lib.state.State
 import mozilla.components.lib.state.Store
@@ -48,7 +47,7 @@ class ComposeExtensionsKtTest {
             value = composeState.value
         }
 
-        store.dispatchBlockingOnIdle(TestAction.IncrementAction)
+        store.dispatch(TestAction.IncrementAction)
 
         rule.runOnIdle {
             assertEquals(86, value)
@@ -79,10 +78,10 @@ class ComposeExtensionsKtTest {
             assertEquals(listOf("Loading"), value)
         }
 
-        store.dispatchBlockingOnIdle(TestAction.IncrementAction)
-        store.dispatchBlockingOnIdle(TestAction.IncrementAction)
-        store.dispatchBlockingOnIdle(TestAction.IncrementAction)
-        store.dispatchBlockingOnIdle(TestAction.IncrementAction)
+        store.dispatch(TestAction.IncrementAction)
+        store.dispatch(TestAction.IncrementAction)
+        store.dispatch(TestAction.IncrementAction)
+        store.dispatch(TestAction.IncrementAction)
 
         rule.runOnIdle {
             // Value after 4 increments, aka counter is 4. Note that it doesn't recompose here
@@ -91,7 +90,7 @@ class ComposeExtensionsKtTest {
         }
 
         // 5th increment
-        store.dispatchBlockingOnIdle(TestAction.IncrementAction)
+        store.dispatch(TestAction.IncrementAction)
 
         rule.runOnIdle {
             assertEquals(listOf(loading, content), value)
@@ -118,46 +117,39 @@ class ComposeExtensionsKtTest {
 
         assertEquals(84, value)
 
-        store.dispatchBlockingOnIdle(TestAction.IncrementAction)
+        store.dispatch(TestAction.IncrementAction)
 
         rule.runOnIdle {
             // State value didn't change because value returned by `observer` function did not change
             assertEquals(84, value)
         }
 
-        store.dispatchBlockingOnIdle(TestAction.SetTextAction("Hello World"))
+        store.dispatch(TestAction.SetTextAction("Hello World"))
 
         rule.runOnIdle {
             // Now, after the value from the observer function changed, we are seeing the new value
             assertEquals(86, value)
         }
 
-        store.dispatchBlockingOnIdle(TestAction.SetValueAction(23))
+        store.dispatch(TestAction.SetValueAction(23))
 
         rule.runOnIdle {
             // Observer function result is the same, no state update
             assertEquals(86, value)
         }
 
-        store.dispatchBlockingOnIdle(TestAction.SetTextAction("Hello World"))
+        store.dispatch(TestAction.SetTextAction("Hello World"))
 
         rule.runOnIdle {
             // Text was updated to the same value, observer function result is the same, no state update
             assertEquals(86, value)
         }
 
-        store.dispatchBlockingOnIdle(TestAction.SetTextAction("Hello World Again"))
+        store.dispatch(TestAction.SetTextAction("Hello World Again"))
 
         rule.runOnIdle {
             // Now, after the value from the observer function changed, we are seeing the new value
             assertEquals(46, value)
-        }
-    }
-
-    private fun Store<TestState, TestAction>.dispatchBlockingOnIdle(action: TestAction) {
-        rule.runOnIdle {
-            val job = dispatch(action)
-            runBlocking { job.join() }
         }
     }
 }

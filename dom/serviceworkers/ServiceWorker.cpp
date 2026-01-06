@@ -85,7 +85,7 @@ ServiceWorker::ServiceWorker(nsIGlobalObject* aGlobal,
   RefPtr<ServiceWorkerRegistration> reg =
       aGlobal->GetServiceWorkerRegistration(ServiceWorkerRegistrationDescriptor(
           mDescriptor.RegistrationId(), mDescriptor.RegistrationVersion(),
-          mDescriptor.PrincipalInfo(), mDescriptor.Scope(),
+          mDescriptor.PrincipalInfo(), mDescriptor.Scope(), mDescriptor.Type(),
           ServiceWorkerUpdateViaCache::Imports));
 
   if (reg) {

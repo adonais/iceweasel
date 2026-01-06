@@ -42,6 +42,7 @@ function clamp(val, min, max) {
 
 /**
  * Formats a file size.
+ *
  * @param {number} num - The number (in bytes) to format.
  * @returns {string} e.g. "10 B", "100 MiB"
  */
@@ -191,6 +192,7 @@ function makePowerOf2Scale(rangeStart, rangeEnd) {
 /**
  * Scale a source range to a destination range, but clamp it within the
  * destination range.
+ *
  * @param {number} val - The source range value to map to the destination range,
  * @param {number} sourceRangeStart,
  * @param {number} sourceRangeEnd,

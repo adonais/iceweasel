@@ -327,6 +327,25 @@ bool CycleCollectedJSContext::getHostDefinedGlobal(
   return true;
 }
 
+void CycleCollectedJSContext::traceNonGCThingMicroTask(JSTracer* trc,
+                                                       JS::Value* valuePtr) {
+  // This hook is called for non-JSObject microtask values.
+  // In Gecko, the microtask queue should only contain JSObjects (JS microtasks)
+  // or Private values (Gecko MicroTaskRunnables). Private values are
+  // indistinguishable from doubles at the bit level, so if this hook is called,
+  // we know it's not an object, and by design it must be a Private value
+  // containing a MicroTaskRunnable pointer that was enqueued via
+  // EnqueueMicroTask.
+
+  MOZ_ASSERT(!valuePtr->isObject(),
+             "This hook should only be called for non-objects");
+  if (void* ptr = valuePtr->toPrivate()) {
+    // The pointer is a MicroTaskRunnable that may have GC-reachable data
+    auto* runnable = static_cast<MicroTaskRunnable*>(ptr);
+    runnable->TraceMicroTask(trc);
+  }
+}
+
 bool CycleCollectedJSContext::getHostDefinedData(
     JSContext* aCx, JS::MutableHandle<JSObject*> aData) const {
   nsIGlobalObject* global = mozilla::dom::GetIncumbentGlobal();
@@ -833,9 +852,9 @@ void CycleCollectedJSContext::AddPendingIDBTransaction(
 //
 // - This means runnables in the queue have their refcounts stay above zero for
 // the duration of the time they are in the queue.
-JS::MicroTask RunnableToMicroTask(
+JS::GenericMicroTask RunnableToMicroTask(
     already_AddRefed<MicroTaskRunnable>& aRunnable) {
-  JS::MicroTask v;
+  JS::GenericMicroTask v;
   auto* r = aRunnable.take();
   MOZ_ASSERT(r);
   v.setPrivate(r);
@@ -845,13 +864,13 @@ JS::MicroTask RunnableToMicroTask(
 bool EnqueueMicroTask(JSContext* aCx,
                       already_AddRefed<MicroTaskRunnable> aRunnable) {
   MOZ_ASSERT(StaticPrefs::javascript_options_use_js_microtask_queue());
-  JS::MicroTask v = RunnableToMicroTask(aRunnable);
+  JS::GenericMicroTask v = RunnableToMicroTask(aRunnable);
   return JS::EnqueueMicroTask(aCx, v);
 }
 bool EnqueueDebugMicroTask(JSContext* aCx,
                            already_AddRefed<MicroTaskRunnable> aRunnable) {
   MOZ_ASSERT(StaticPrefs::javascript_options_use_js_microtask_queue());
-  JS::MicroTask v = RunnableToMicroTask(aRunnable);
+  JS::GenericMicroTask v = RunnableToMicroTask(aRunnable);
   return JS::EnqueueDebugMicroTask(aCx, v);
 }
 
@@ -965,6 +984,15 @@ static void MOZ_CAN_RUN_SCRIPT RunMicroTask(
     return;
   }
 
+  // After this point, if we fail to run, we
+  //
+  // 1. Know we have JS microtask
+  // 2. Can freely ignore it if we cannot execute it.
+  //
+  // Create a ScopeExit to handle this.
+  auto ignoreMicroTasks = mozilla::MakeScopeExit(
+      [&aMicroTask]() { aMicroTask.get().IgnoreJSMicroTask(); });
+
   // Avoid the overhead of GetFlowIdFromJSMicroTask in the common case
   // of not having the profiler enabled.
   mozilla::Maybe<AutoProfilerTerminatingFlowMarkerFlowOnly> terminatingMarker;
@@ -994,10 +1022,20 @@ static void MOZ_CAN_RUN_SCRIPT RunMicroTask(
 
   JS::RootedField<JSObject*, 0> callbackGlobal(
       roots, aMicroTask.get().GetExecutionGlobalFromJSMicroTask(aCx));
-  JS::RootedField<JSObject*, 1> hostDefinedData(
-      roots, aMicroTask.get().MaybeGetHostDefinedDataFromJSMicroTask());
-  JS::RootedField<JSObject*, 2> allocStack(
-      roots, aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask());
+  if (!callbackGlobal) {
+    return;
+  }
+  JS::RootedField<JSObject*, 1> hostDefinedData(roots);
+  JS::RootedField<JSObject*, 2> allocStack(roots);
+
+  // Don't run if we fail to unwrap the host defined data.
+  if (!aMicroTask.get().MaybeGetHostDefinedDataFromJSMicroTask(
+          &hostDefinedData)) {
+    return;
+  }
+
+  // We do however still need to run if we can't unwrap the stack
+  (void)aMicroTask.get().MaybeGetAllocationSiteFromJSMicroTask(&allocStack);
 
   nsIGlobalObject* incumbentGlobal = nullptr;
 
@@ -1051,11 +1089,12 @@ static void MOZ_CAN_RUN_SCRIPT RunMicroTask(
                   "promise callback" /* Some tests care about this string. */,
                   dom::CallbackObject::eReportExceptions);
   if (!setup.GetContext()) {
-    // We can't run, so we must ignore here!
-    aMicroTask.get().IgnoreJSMicroTask();
-
     return;
   }
+
+  // At this point we will definitely consume the task, so we
+  // no longer need the scope exit.
+  ignoreMicroTasks.release();
 
   // Note: We're dropping the return value on the floor here, however
   // cleanup and exception handling are done as part of the CallSetup
@@ -1166,7 +1205,7 @@ bool CycleCollectedJSContext::PerformMicroTaskCheckPoint(bool aForce) {
     while (JS::HasAnyMicroTasks(cx)) {
       MOZ_ASSERT(mDebuggerMicroTaskQueue.empty());
       MOZ_ASSERT(mPendingMicroTaskRunnables.empty());
-      job = DequeueNextMicroTask(cx);
+      job.set(DequeueNextMicroTask(cx));
 
       // To avoid us accidentally re-enqueing a SuppressionMicroTaskList in
       // itself, we determine here if the job is actually the suppression task
@@ -1296,11 +1335,11 @@ void CycleCollectedJSContext::PerformDebuggerMicroTaskCheckpoint() {
 
   JSContext* cx = Context();
   if (StaticPrefs::javascript_options_use_js_microtask_queue()) {
+    JS::Rooted<MustConsumeMicroTask> job(cx);
     while (JS::HasDebuggerMicroTasks(cx)) {
       MOZ_ASSERT(mDebuggerMicroTaskQueue.empty());
       MOZ_ASSERT(mPendingMicroTaskRunnables.empty());
 
-      JS::Rooted<MustConsumeMicroTask> job(cx);
       job.set(DequeueNextDebuggerMicroTask(cx));
 
       RunMicroTask(cx, &job);

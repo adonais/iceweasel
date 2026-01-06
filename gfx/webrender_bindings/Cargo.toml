@@ -23,6 +23,7 @@ wr_malloc_size_of = { path = "../wr/wr_malloc_size_of" }
 gecko-profiler = { path = "../../tools/profiler/rust-api" }
 static_prefs = { path = "../../modules/libpref/init/static_prefs" }
 remove_dir_all = "0.5.3"
+mozbuild = "0.1"
 
 [dependencies.webrender]
 path = "../wr/webrender"
@@ -34,7 +35,7 @@ features = ["capture", "serialize_program", "gecko", "sw_compositor"]
 debugger = ["webrender/debugger"]
 
 [target.'cfg(target_os = "windows")'.dependencies]
-dwrote = "0.11"
+dwrote = "0.11.5"
 winapi = "0.3"
 
 [target.'cfg(any(target_os = "macos", target_os = "ios"))'.dependencies]

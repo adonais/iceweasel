@@ -41,7 +41,7 @@ class ProfileMarkerMiddlewareTest {
 
         val actionMessages = listOf("one!", "two!", "buckle my shoe!")
         actionMessages.forEach { message ->
-            store.dispatch(AAction(message)).join()
+            store.dispatch(AAction(message))
             this.advanceUntilIdle()
             assertTrue(captured.any { it.first == markerName && it.second!!.contains("AAction") })
         }

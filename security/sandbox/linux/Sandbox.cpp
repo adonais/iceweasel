@@ -39,7 +39,6 @@
 #include "mozilla/Array.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/Range.h"
 #include "mozilla/SandboxInfo.h"
 #include "mozilla/StackWalk.h"
 #include "mozilla/UniquePtr.h"

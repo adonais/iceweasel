@@ -61,6 +61,7 @@ extern "C" {
 // clang-format off
 #include "nr_api.h"
 #include "registry.h"
+#include "addrs.h"
 #include "async_timer.h"
 #include "r_crc32.h"
 #include "r_memory.h"
@@ -70,7 +71,6 @@ extern "C" {
 #include "nr_socket.h"
 #include "nr_socket_local.h"
 #include "stun_reg.h"
-#include "stun_util.h"
 #include "ice_codeword.h"
 #include "ice_ctx.h"
 #include "ice_candidate.h"
@@ -556,7 +556,7 @@ void NrIceCtx::InitializeGlobals(const GlobalConfig& aConfig) {
   RLogConnector::CreateInstance();
   // Initialize the crypto callbacks and logging stuff
   if (!initialized) {
-    NR_reg_init(NR_REG_MODE_LOCAL);
+    NR_reg_init();
     nr_crypto_vtbl = &nr_ice_crypto_nss_vtbl;
     initialized = true;
 
@@ -618,7 +618,7 @@ nsTArray<NrIceStunAddr> NrIceCtx::GetStunAddrs() {
   }
 
   MOZ_MTLOG(ML_INFO, "NrIceCtx static call to find local stun addresses");
-  if (nr_stun_find_local_addresses(local_addrs, MAXADDRS, &addr_ct)) {
+  if (nr_stun_get_addrs(local_addrs, MAXADDRS, &addr_ct)) {
     MOZ_MTLOG(ML_INFO, "Error finding local stun addresses");
   } else {
     for (int i = 0; i < addr_ct; ++i) {

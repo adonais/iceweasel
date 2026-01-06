@@ -101,7 +101,10 @@ class SitePermissionsManageExceptionsPhoneFeatureFragment : Fragment() {
     }
 
     @VisibleForTesting
-    internal fun initAutoplayOption(@IdRes viewId: Int, value: AutoplayValue) {
+    internal fun initAutoplayOption(
+        @IdRes viewId: Int,
+        value: AutoplayValue,
+    ) {
         val radio = rootView.findViewById<RadioButton>(viewId)
         radio.isVisible = true
         radio.text = value.label

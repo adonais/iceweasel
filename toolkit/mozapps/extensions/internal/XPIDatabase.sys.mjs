@@ -226,7 +226,7 @@ async function getRepositoryAddon(aAddon) {
  *        An array of properties to be copied
  * @param {object?} [aTarget]
  *        An optional target object to copy the properties to
- * @returns {Object}
+ * @returns {object}
  *        The object that the properties were copied onto
  */
 function copyProperties(aObject, aProperties, aTarget) {
@@ -344,7 +344,7 @@ export class AddonInternal {
    * SitePermission addons are a special case, where the triggering install site may be a subdomain
    * of a valid xpi origin.
    *
-   * @param {Object}  origins             Object containing URIs related to install.
+   * @param {object}  origins             Object containing URIs related to install.
    * @params {nsIURI} origins.installFrom The nsIURI of the website that has triggered the install flow.
    * @params {nsIURI} origins.source      The nsIURI where the xpi is hosted.
    * @returns {boolean}
@@ -759,7 +759,7 @@ export class AddonInternal {
    * This method reads particular properties of that metadata that may be newer
    * than that in the extension manifest, like compatibility information.
    *
-   * @param {Object} aObj
+   * @param {object} aObj
    *        A JS object containing the cached metadata
    */
   importMetadata(aObj) {
@@ -1881,7 +1881,7 @@ export const XPIDatabase = {
    * Converts the current internal state of the XPI addon database to
    * a JSON.stringify()-ready structure
    *
-   * @returns {Object}
+   * @returns {object}
    */
   toJSON() {
     if (!this.addonDB) {
@@ -2895,7 +2895,7 @@ export const XPIDatabase = {
    *
    * @param {AddonInternal} aAddon
    *        The AddonInternal being updated
-   * @param {Object} aProperties
+   * @param {object} aProperties
    *        A dictionary of properties to set
    */
   setAddonProperties(aAddon, aProperties) {
@@ -2976,7 +2976,7 @@ export const XPIDatabase = {
    *
    * @param {AddonInternal} aAddon
    *        The AddonInternal to update
-   * @param {Object} properties - Properties to set on the addon
+   * @param {object} properties - Properties to set on the addon
    * @param {boolean?} [properties.userDisabled]
    *        Value for the userDisabled property. If undefined the value will
    *        not change
@@ -3181,7 +3181,7 @@ export const XPIDatabaseReconcile = {
    * Returns a map of ID -> add-on. When the same add-on ID exists in multiple
    * install locations the highest priority location is chosen.
    *
-   * @param {Map<String, AddonInternal>} addonMap
+   * @param {Map<string, AddonInternal>} addonMap
    *        The add-on map to flatten.
    * @param {function(string, string): boolean} [hideAddonCb]
    *        An optional callback used to determine if any of the addons
@@ -3216,7 +3216,7 @@ export const XPIDatabaseReconcile = {
   /**
    * Finds the visible add-ons from the map.
    *
-   * @param {Map<String, AddonInternal>} addonMap
+   * @param {Map<string, AddonInternal>} addonMap
    *        The add-on map to filter.
    * @returns {Map<string, AddonInternal>}
    */
@@ -3715,7 +3715,7 @@ export const XPIDatabaseReconcile = {
    * Always called after XPIDatabase.sys.mjs and extensions.json have been
    * loaded.
    *
-   * @param {Object} aManifests
+   * @param {object} aManifests
    *        A dictionary of cached AddonInstalls for add-ons that have been
    *        installed
    * @param {boolean} aUpdateCompatibility

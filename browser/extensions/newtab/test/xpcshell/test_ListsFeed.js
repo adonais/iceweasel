@@ -81,7 +81,61 @@ add_task(async function test_isEnabled() {
     },
   };
 
-  info("ListsFeed should be enabled");
+  info("ListsFeed should be enabled via system pref");
+  Assert.ok(feed.enabled);
+});
+
+add_task(async function test_isEnabled() {
+  let feed = new ListsFeed();
+
+  feed.store = {
+    getState() {
+      return this.state;
+    },
+    dispatch: sinon.spy(),
+    state: {
+      Prefs: {
+        values: {
+          [PREF_LISTS_ENABLED]: true,
+          trainhopConfig: {
+            widgets: {
+              enabled: true,
+              listsEnabled: true,
+              timerEnabled: true,
+            },
+          },
+        },
+      },
+    },
+  };
+
+  info("ListsFeed should be enabled via trainhopConfig");
+  Assert.ok(feed.enabled);
+});
+
+add_task(async function test_isEnabled() {
+  let feed = new ListsFeed();
+
+  feed.store = {
+    getState() {
+      return this.state;
+    },
+    dispatch: sinon.spy(),
+    state: {
+      Prefs: {
+        values: {
+          [PREF_LISTS_ENABLED]: true,
+          widgetsConfig: {
+            enabled: true,
+            listsEnabled: true,
+            timerEnabled: true,
+          },
+        },
+      },
+    },
+  };
+
+  info("ListsFeed should be enabled via widgetsConfig");
   Assert.ok(feed.enabled);
 });
 

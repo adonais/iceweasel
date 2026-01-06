@@ -80,4 +80,11 @@ class OnboardingFirstFragment : Fragment() {
             }
         }
     }
+
+    /**
+     * Companion object for the [OnboardingFirstFragment].
+     */
+    companion object {
+        const val FRAGMENT_TAG = "onboarding-first-fragment"
+    }
 }

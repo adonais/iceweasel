@@ -52,7 +52,7 @@ class ContentStateReducerTest {
             initialState = BrowserState(tabs = listOf(mock(), currentTab)),
         )
 
-        browserStore.dispatch(ContentAction.EnteredPdfViewer(currentTabId)).join()
+        browserStore.dispatch(ContentAction.EnteredPdfViewer(currentTabId))
 
         assertTrue(browserStore.state.findTabOrCustomTabOrSelectedTab(currentTabId)!!.content.isPdf)
     }
@@ -71,7 +71,7 @@ class ContentStateReducerTest {
             initialState = BrowserState(tabs = listOf(mock(), currentTab)),
         )
 
-        browserStore.dispatch(ContentAction.ExitedPdfViewer(currentTabId)).join()
+        browserStore.dispatch(ContentAction.ExitedPdfViewer(currentTabId))
 
         assertFalse(browserStore.state.findTabOrCustomTabOrSelectedTab(currentTabId)!!.content.isPdf)
     }

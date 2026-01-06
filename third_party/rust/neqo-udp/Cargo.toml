@@ -13,7 +13,7 @@
 edition = "2021"
 rust-version = "1.81.0"
 name = "neqo-udp"
-version = "0.18.0"
+version = "0.20.0"
 authors = ["The Neqo Authors <necko@mozilla.com>"]
 build = "build.rs"
 autolib = false
@@ -74,7 +74,7 @@ version = "0.2"
 default-features = false
 
 [target."cfg(windows)".dependencies.windows]
-version = "0.58"
+version = ">=0.60,<0.63"
 features = ["Win32_Networking_WinSock"]
 default-features = false
 
@@ -168,4 +168,4 @@ unused_qualifications = "warn"
 [lints.rust.unexpected_cfgs]
 level = "warn"
 priority = 0
-check-cfg = ["cfg(coverage,coverage_nightly)"]
+check-cfg = ["cfg(coverage,coverage_nightly,fuzzing)"]

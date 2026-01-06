@@ -19,7 +19,6 @@
 #include "gfxRect.h"
 
 #include "cairo.h"
-#include <algorithm>
 
 #ifdef CAIRO_HAS_WIN32_SURFACE
 #  include "gfxWindowsSurface.h"

@@ -7,6 +7,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   AppInfo: "chrome://remote/content/shared/AppInfo.sys.mjs",
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
 });
 
 import { RemotePageChild } from "resource://gre/actors/RemotePageChild.sys.mjs";
@@ -19,7 +20,7 @@ export class NetErrorChild extends RemotePageChild {
     // to allow content-privileged about:neterror or about:certerror to use it.
     const exportableFunctions = [
       "RPMGetAppBuildID",
-      "RPMGetInnerMostURI",
+      "RPMGetHostForDisplay",
       "RPMRecordGleanEvent",
       "RPMCheckAlternateHostAvailable",
       "RPMGetHttpResponseHeader",
@@ -70,13 +71,11 @@ export class NetErrorChild extends RemotePageChild {
     }
   }
 
-  RPMGetInnerMostURI(uriString) {
-    let uri = Services.io.newURI(uriString);
-    if (uri instanceof Ci.nsINestedURI) {
-      uri = uri.QueryInterface(Ci.nsINestedURI).innermostURI;
-    }
-
-    return uri.spec;
+  RPMGetHostForDisplay(document) {
+    // Note: not document.documentURIObject, which will be the network error
+    // page's URI - we want the URI of the page that failed to load.
+    let uri = document.mozDocumentURIIfNotForErrorPages;
+    return lazy.BrowserUtils.formatURIForDisplay(uri);
   }
 
   RPMGetAppBuildID() {

@@ -25,6 +25,7 @@ const SELECTOR_PANEL_COMPLETION_TOAST = "#confirmation-hint";
 /**
  * Wait for the reset pbm confirmation panel to open. May also be called if the
  * panel is already open.
+ *
  * @param {ChromeWindow} win - Chrome window in which the panel is embedded.
  * @returns {Promise} - Promise which resolves once the panel has been shown.
  * Resolves directly if the panel is already visible.
@@ -46,6 +47,7 @@ async function waitForConfirmPanelShow(win) {
 /**
  * Hides the completion toast which is shown after the reset action has been
  * completed.
+ *
  * @param {ChromeWindow} win - Chrome window the toast is shown in.
  */
 async function hideCompletionToast(win) {
@@ -62,6 +64,7 @@ async function hideCompletionToast(win) {
 /**
  * Trigger the reset pbm toolbar button which may open the confirm panel in the
  * given window.
+ *
  * @param {nsIDOMWindow} win - PBM window to trigger the button in.
  * @param {boolean} [expectPanelOpen] - After the button action: whether the
  * panel is expected to open (true) or remain closed (false).
@@ -91,6 +94,7 @@ async function triggerResetBtn(win, expectPanelOpen = true) {
 
 /**
  * Provides a promise that resolves once the reset confirmation panel has been hidden.
+ *
  * @param nsIDOMWindow win - Chrome window that has the panel.
  * @returns {Promise}
  */
@@ -103,6 +107,7 @@ function waitForConfirmPanelHidden(win) {
 
 /**
  * Provides a promise that resolves once the completion toast has been shown.
+ *
  * @param nsIDOMWindow win - Chrome window that has the panel.
  * @returns {Promise}
  */
@@ -120,6 +125,7 @@ function waitForCompletionToastShown(win) {
  * Clearing is not guaranteed to be done at this point. Bug 1846494 will add a
  * promise based mechanism and potentially a new triggering method for clearing,
  * at which point this helper should be updated.
+ *
  * @returns {Promise} Promise which resolves when the last-pb-context-exited
  * message has been dispatched.
  */
@@ -129,6 +135,7 @@ function waitForPBMDataClear() {
 
 /**
  * Test panel visibility.
+ *
  * @param {nsIDOMWindow} win - Chrome window which is the parent of the panel.
  * @param {string} selector - Query selector for the panel.
  * @param {boolean} expectVisible - Whether the panel should be visible (true) or invisible or not present (false).

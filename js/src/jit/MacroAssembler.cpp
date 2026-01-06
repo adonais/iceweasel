@@ -2062,7 +2062,8 @@ void MacroAssembler::loadInt32ToStringWithBase(
       // "Unsigned Division by 7" for the case when |rmc.multiplier| exceeds
       // UINT32_MAX and we need to adjust the shift amount.
 
-      auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(base);
+      auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(
+          uint32_t(base));
 
       // We first compute |q = (M * n) >> 32), where M = rmc.multiplier.
       mulHighUnsigned32(Imm32(rmc.multiplier), input, scratch1);
@@ -3243,24 +3244,72 @@ void MacroAssembler::extractCurrentIndexAndKindFromIterator(Register iterator,
                          PropertyIteratorObject::offsetOfIteratorSlot());
   loadPrivate(nativeIterAddr, outIndex);
 
-  // Compute offset of propertyCursor_ from propertiesBegin()
-  loadPtr(Address(outIndex, NativeIterator::offsetOfPropertyCursor()), outKind);
-  subPtr(Address(outIndex, NativeIterator::offsetOfShapesEnd()), outKind);
+  // Load the property count into outKind.
+  load32(Address(outIndex, NativeIterator::offsetOfPropertyCount()), outKind);
 
-  // Compute offset of current index from indicesBegin(). Note that because
-  // propertyCursor has already been incremented, this is actually the offset
-  // of the next index. We adjust accordingly below.
-  size_t indexAdjustment =
-      sizeof(GCPtr<JSLinearString*>) / sizeof(PropertyIndex);
-  if (indexAdjustment != 1) {
-    MOZ_ASSERT(indexAdjustment == 2);
-    rshift32(Imm32(1), outKind);
+  // We need two bits of wiggle room in a u32 here for the logic below.
+  static_assert(NativeIterator::PropCountLimit <= 1 << 30);
+
+  // Shift up the property count on 64 bit. Ultimately we want
+  // sizeof(IteratorProperty) * count + sizeof(PropertyIndex) * cursor.
+  // If we shift up our count to be on the same scale as cursor right now,
+  // we can do this all with one register.
+  static_assert(sizeof(IteratorProperty) == sizeof(PropertyIndex) ||
+                sizeof(IteratorProperty) == sizeof(PropertyIndex) * 2);
+  if constexpr (sizeof(IteratorProperty) > sizeof(PropertyIndex)) {
+    lshift32(Imm32(1), outKind);
   }
 
-  // Load current index.
-  loadPtr(Address(outIndex, NativeIterator::offsetOfPropertiesEnd()), outIndex);
-  load32(BaseIndex(outIndex, outKind, Scale::TimesOne,
-                   -int32_t(sizeof(PropertyIndex))),
+  // Add the current cursor. This is a uint32_t which has already been
+  // incremented in iteration to index the *next* property, so we'll want to
+  // keep that in mind in our final address calculation.
+  add32(Address(outIndex, NativeIterator::offsetOfPropertyCursor()), outKind);
+
+  // outKind holds the offset in u32's to our PropertyIndex, so just multiply
+  // by four, add it to the offset of the first property, and subtract a
+  // PropertyIndex since we know we already incremented.
+  load32(BaseIndex(outIndex, outKind, Scale::TimesFour,
+                   NativeIterator::offsetOfFirstProperty() -
+                       int32_t(sizeof(PropertyIndex))),
+         outIndex);
+
+  // Extract kind.
+  rshift32(Imm32(PropertyIndex::KindShift), outIndex, outKind);
+
+  // Extract index.
+  and32(Imm32(PropertyIndex::IndexMask), outIndex);
+}
+
+void MacroAssembler::extractIndexAndKindFromIteratorByIterIndex(
+    Register iterator, Register inIndex, Register outKind, Register outIndex) {
+  // Load iterator object
+  Address nativeIterAddr(iterator,
+                         PropertyIteratorObject::offsetOfIteratorSlot());
+  loadPrivate(nativeIterAddr, outIndex);
+
+  // Load the property count into outKind.
+  load32(Address(outIndex, NativeIterator::offsetOfPropertyCount()), outKind);
+
+  // We need two bits of wiggle room in a u32 here for the logic below.
+  static_assert(NativeIterator::PropCountLimit <= 1 << 30);
+
+  // Shift up the property count on 64 bit. Ultimately we want
+  // sizeof(IteratorProperty) * count + sizeof(PropertyIndex) * cursor.
+  // If we shift up our count to be on the same scale as cursor right now,
+  // we can do this all with one register.
+  static_assert(sizeof(IteratorProperty) == sizeof(PropertyIndex) ||
+                sizeof(IteratorProperty) == sizeof(PropertyIndex) * 2);
+  if constexpr (sizeof(IteratorProperty) > sizeof(PropertyIndex)) {
+    lshift32(Imm32(1), outKind);
+  }
+
+  // Add the index
+  add32(inIndex, outKind);
+
+  // outKind holds the offset in u32's to our PropertyIndex, so just multiply
+  // by four and add it to the offset of the first property
+  load32(BaseIndex(outIndex, outKind, Scale::TimesFour,
+                   NativeIterator::offsetOfFirstProperty()),
          outIndex);
 
   // Extract kind.
@@ -5842,40 +5891,33 @@ void MacroAssembler::wasmTrap(wasm::Trap trap,
   append(trap, wasm::TrapMachineInsn::OfficialUD, fco.get(), trapSiteDesc);
 }
 
-std::pair<CodeOffset, uint32_t> MacroAssembler::wasmReserveStackChecked(
-    uint32_t amount, const wasm::TrapSiteDesc& trapSiteDesc) {
+uint32_t MacroAssembler::wasmReserveStackChecked(uint32_t amount, Label* fail) {
+  Register scratch1 = ABINonArgReg0;
+  Register scratch2 = ABINonArgReg1;
+  loadPtr(Address(InstanceReg, wasm::Instance::offsetOfCx()), scratch2);
+
   if (amount > MAX_UNCHECKED_LEAF_FRAME_SIZE) {
     // The frame is large.  Don't bump sp until after the stack limit check so
     // that the trap handler isn't called with a wild sp.
-    Label ok;
-    Register scratch = ABINonArgReg0;
-    moveStackPtrTo(scratch);
-
-    Label trap;
-    branchPtr(Assembler::Below, scratch, Imm32(amount), &trap);
-    subPtr(Imm32(amount), scratch);
-    branchPtr(Assembler::Below,
-              Address(InstanceReg, wasm::Instance::offsetOfStackLimit()),
-              scratch, &ok);
-
-    bind(&trap);
-    wasmTrap(wasm::Trap::StackOverflow, trapSiteDesc);
-    CodeOffset trapInsnOffset = CodeOffset(currentOffset());
-
-    bind(&ok);
+    moveStackPtrTo(scratch1);
+    branchPtr(Assembler::Below, scratch1, Imm32(amount), fail);
+    subPtr(Imm32(amount), scratch1);
+    branchPtr(Assembler::AboveOrEqual,
+              Address(scratch2, JSContext::offsetOfWasm() +
+                                    wasm::Context::offsetOfStackLimit()),
+              scratch1, fail);
     reserveStack(amount);
-    return std::pair<CodeOffset, uint32_t>(trapInsnOffset, 0);
+    // The stack amount was reserved after branching to the fail label.
+    return 0;
   }
 
   reserveStack(amount);
-  Label ok;
-  branchStackPtrRhs(Assembler::Below,
-                    Address(InstanceReg, wasm::Instance::offsetOfStackLimit()),
-                    &ok);
-  wasmTrap(wasm::Trap::StackOverflow, trapSiteDesc);
-  CodeOffset trapInsnOffset = CodeOffset(currentOffset());
-  bind(&ok);
-  return std::pair<CodeOffset, uint32_t>(trapInsnOffset, amount);
+  branchStackPtrRhs(Assembler::AboveOrEqual,
+                    Address(scratch2, JSContext::offsetOfWasm() +
+                                          wasm::Context::offsetOfStackLimit()),
+                    fail);
+  // The stack amount was reserved before branching to the fail label.
+  return amount;
 }
 
 static void MoveDataBlock(MacroAssembler& masm, Register base, int32_t from,
@@ -6882,15 +6924,16 @@ BranchWasmRefIsSubtypeRegisters MacroAssembler::regsForBranchWasmRefIsSubtype(
   }
 }
 
-void MacroAssembler::branchWasmRefIsSubtype(
+FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtype(
     Register ref, wasm::MaybeRefType sourceType, wasm::RefType destType,
-    Label* label, bool onSuccess, Register superSTV, Register scratch1,
-    Register scratch2) {
+    Label* label, bool onSuccess, bool signalNullChecks, Register superSTV,
+    Register scratch1, Register scratch2) {
+  FaultingCodeOffset result = FaultingCodeOffset();
   switch (destType.hierarchy()) {
     case wasm::RefTypeHierarchy::Any: {
-      branchWasmRefIsSubtypeAny(ref, sourceType.valueOr(wasm::RefType::any()),
-                                destType, label, onSuccess, superSTV, scratch1,
-                                scratch2);
+      result = branchWasmRefIsSubtypeAny(
+          ref, sourceType.valueOr(wasm::RefType::any()), destType, label,
+          onSuccess, signalNullChecks, superSTV, scratch1, scratch2);
     } break;
     case wasm::RefTypeHierarchy::Func: {
       branchWasmRefIsSubtypeFunc(ref, sourceType.valueOr(wasm::RefType::func()),
@@ -6909,12 +6952,14 @@ void MacroAssembler::branchWasmRefIsSubtype(
     default:
       MOZ_CRASH("unknown type hierarchy for wasm cast");
   }
+  MOZ_ASSERT_IF(!signalNullChecks, !result.isValid());
+  return result;
 }
 
-void MacroAssembler::branchWasmRefIsSubtypeAny(
+FaultingCodeOffset MacroAssembler::branchWasmRefIsSubtypeAny(
     Register ref, wasm::RefType sourceType, wasm::RefType destType,
-    Label* label, bool onSuccess, Register superSTV, Register scratch1,
-    Register scratch2) {
+    Label* label, bool onSuccess, bool signalNullChecks, Register superSTV,
+    Register scratch1, Register scratch2) {
   MOZ_ASSERT(sourceType.isValid());
   MOZ_ASSERT(destType.isValid());
   MOZ_ASSERT(sourceType.isAnyHierarchy());
@@ -6944,8 +6989,53 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
     bind(&fallthrough);
   };
 
+  // We can omit the null check, and catch nulls in signal handling, if the dest
+  // type is non-nullable and the cast process will attempt to load from the
+  // (null) ref. This logic must be kept in sync with the flow of checks below;
+  // this will be checked by fcoLogicCheck.
+  bool willLoadShape =
+      // Dest type is a GC object
+      (wasm::RefType::isSubTypeOf(destType, wasm::RefType::eq()) &&
+       !destType.isI31() && !destType.isNone()) &&
+      // Source type is not already known to be a GC object
+      !(wasm::RefType::isSubTypeOf(sourceType, wasm::RefType::struct_()) ||
+        wasm::RefType::isSubTypeOf(sourceType, wasm::RefType::array()));
+  bool willLoadSTV =
+      // Dest type is struct or array or concrete type
+      (wasm::RefType::isSubTypeOf(destType, wasm::RefType::struct_()) ||
+       wasm::RefType::isSubTypeOf(destType, wasm::RefType::array())) &&
+      !destType.isNone();
+  bool canOmitNullCheck = signalNullChecks && !destType.isNullable() &&
+                          (willLoadShape || willLoadSTV);
+
+  FaultingCodeOffset fco = FaultingCodeOffset();
+  auto trackFCO = [&](FaultingCodeOffset newFco) {
+    if (signalNullChecks && !destType.isNullable() && !fco.isValid()) {
+      fco = newFco;
+    }
+  };
+  auto fcoLogicCheck = mozilla::DebugOnly(mozilla::MakeScopeExit([&]() {
+    // When we think we can omit the null check, we should get a valid FCO, and
+    // vice versa. These are asserted to match because:
+    //  - If we think we cannot omit the null check, but get a valid FCO, then
+    //    we wasted an optimization opportunity.
+    //  - If we think we *can* omit the null check, but do not get a valid FCO,
+    //    then we will segfault.
+    // We could ignore the former check, but better to be precise and ensure
+    // that we are getting the optimizations we expect.
+    MOZ_ASSERT_IF(signalNullChecks && fco.isValid(), canOmitNullCheck);
+    MOZ_ASSERT_IF(signalNullChecks && !fco.isValid(), !canOmitNullCheck);
+
+    // We should never get a valid FCO if the caller doesn't expect signal
+    // handling. This simplifies life for the caller.
+    MOZ_ASSERT_IF(!signalNullChecks, !fco.isValid());
+  }));
+
+  // -----------------------------------
+  // Actual test/cast logic begins here.
+
   // Check for null.
-  if (sourceType.isNullable()) {
+  if (sourceType.isNullable() && !canOmitNullCheck) {
     branchWasmAnyRefIsNull(true, ref, nullLabel);
   }
 
@@ -6953,13 +7043,15 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
   // not-null.
   if (destType.isNone()) {
     finishFail();
-    return;
+    MOZ_ASSERT(!willLoadShape && !willLoadSTV);
+    return fco;
   }
 
   if (destType.isAny()) {
     // No further checks for 'any'
     finishSuccess();
-    return;
+    MOZ_ASSERT(!willLoadShape && !willLoadSTV);
+    return fco;
   }
 
   // 'type' is now 'eq' or lower, which currently will either be a gc object or
@@ -6973,7 +7065,8 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
     if (destType.isI31()) {
       // No further checks for 'i31'
       finishFail();
-      return;
+      MOZ_ASSERT(!willLoadShape && !willLoadSTV);
+      return fco;
     }
   }
 
@@ -6982,13 +7075,18 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
   if (!wasm::RefType::isSubTypeOf(sourceType, wasm::RefType::struct_()) &&
       !wasm::RefType::isSubTypeOf(sourceType, wasm::RefType::array())) {
     branchWasmAnyRefIsObjectOrNull(false, ref, failLabel);
-    branchObjectIsWasmGcObject(false, ref, scratch1, failLabel);
+
+    MOZ_ASSERT(willLoadShape);
+    trackFCO(branchObjectIsWasmGcObject(false, ref, scratch1, failLabel));
+  } else {
+    MOZ_ASSERT(!willLoadShape);
   }
 
   if (destType.isEq()) {
     // No further checks for 'eq'
     finishSuccess();
-    return;
+    MOZ_ASSERT(!willLoadSTV);
+    return fco;
   }
 
   // 'type' is now 'struct', 'array', or a concrete type. (Bottom types and i31
@@ -6999,14 +7097,16 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
   // requires loading the object's superTypeVector->typeDef->kind, and checking
   // that it is correct.
 
-  loadPtr(Address(ref, int32_t(WasmGcObject::offsetOfSuperTypeVector())),
-          scratch1);
+  MOZ_ASSERT(willLoadSTV);
+  trackFCO(
+      loadPtr(Address(ref, int32_t(WasmGcObject::offsetOfSuperTypeVector())),
+              scratch1));
   if (destType.isTypeRef()) {
     // Concrete type, do superTypeVector check.
     branchWasmSTVIsSubtype(scratch1, superSTV, scratch2, destType.typeDef(),
                            label, onSuccess);
     bind(&fallthrough);
-    return;
+    return fco;
   }
 
   // Abstract type, do kind check
@@ -7018,6 +7118,7 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
   branch32(onSuccess ? Assembler::Equal : Assembler::NotEqual, scratch1,
            Imm32(int32_t(destType.typeDefKind())), label);
   bind(&fallthrough);
+  return fco;
 }
 
 void MacroAssembler::branchWasmRefIsSubtypeFunc(
@@ -7449,19 +7550,22 @@ void MacroAssembler::convertStringToWasmAnyRef(Register src, Register dest) {
   orPtr(Imm32(int32_t(wasm::AnyRefTag::String)), src, dest);
 }
 
-void MacroAssembler::branchObjectIsWasmGcObject(bool isGcObject, Register src,
-                                                Register scratch,
-                                                Label* label) {
+FaultingCodeOffset MacroAssembler::branchObjectIsWasmGcObject(bool isGcObject,
+                                                              Register src,
+                                                              Register scratch,
+                                                              Label* label) {
   constexpr uint32_t ShiftedMask = (Shape::kindMask() << Shape::kindShift());
   constexpr uint32_t ShiftedKind =
       (uint32_t(Shape::Kind::WasmGC) << Shape::kindShift());
   MOZ_ASSERT(src != scratch);
 
-  loadPtr(Address(src, JSObject::offsetOfShape()), scratch);
+  FaultingCodeOffset fco =
+      loadPtr(Address(src, JSObject::offsetOfShape()), scratch);
   load32(Address(scratch, Shape::offsetOfImmutableFlags()), scratch);
   and32(Imm32(ShiftedMask), scratch);
   branch32(isGcObject ? Assembler::Equal : Assembler::NotEqual, scratch,
            Imm32(ShiftedKind), label);
+  return fco;
 }
 
 void MacroAssembler::wasmNewStructObject(Register instance, Register result,
@@ -7963,12 +8067,59 @@ void MacroAssembler::nopPatchableToCall(const wasm::CallSiteDesc& desc) {
   append(desc, offset);
 }
 
-void MacroAssembler::emitPreBarrierFastPath(JSRuntime* rt, MIRType type,
-                                            Register temp1, Register temp2,
-                                            Register temp3, Label* noBarrier) {
+// Given a cell and the chunk containing that cell, load the word containing
+// the mark bits for that cell, and compute the bitIndex for a particular mark
+// color.
+void MacroAssembler::loadMarkBits(Register cell, Register chunk,
+                                  Register markWord, Register bitIndex,
+                                  Register temp, gc::ColorBit color) {
+  MOZ_ASSERT(temp != bitIndex);
+  MOZ_ASSERT(temp != chunk);
+  MOZ_ASSERT(chunk != bitIndex);
+
+  // Determine the bit index and store in bitIndex.
+  //
+  // bit = (addr & js::gc::ChunkMask) / js::gc::CellBytesPerMarkBit +
+  //        static_cast<uint32_t>(colorBit);
+  static_assert(gc::CellBytesPerMarkBit == 8,
+                "Calculation below relies on this");
+  andPtr(Imm32(gc::ChunkMask), cell, bitIndex);
+  rshiftPtr(Imm32(3), bitIndex);
+  if (int32_t(color) != 0) {
+    addPtr(Imm32(int32_t(color)), bitIndex);
+  }
+
+  static_assert(gc::ChunkMarkBitmap::BitsPerWord == JS_BITS_PER_WORD,
+                "Calculation below relies on this");
+
+  // Load the mark word
+  //
+  // word = chunk.bitmap[bit / WordBits];
+
+  // Fold the adjustment for the fact that arenas don't start at the beginning
+  // of the chunk into the offset to the chunk bitmap.
+  const size_t firstArenaAdjustment =
+      gc::ChunkMarkBitmap::FirstThingAdjustmentBits / CHAR_BIT;
+  const intptr_t offset =
+      intptr_t(gc::ChunkMarkBitmapOffset) - intptr_t(firstArenaAdjustment);
+
+  uint8_t shift = mozilla::FloorLog2Size(JS_BITS_PER_WORD);
+  rshiftPtr(Imm32(shift), bitIndex, temp);
+  loadPtr(BaseIndex(chunk, temp, ScalePointer, offset), markWord);
+}
+
+void MacroAssembler::emitPreBarrierFastPath(MIRType type, Register temp1,
+                                            Register temp2, Register temp3,
+                                            Label* noBarrier) {
   MOZ_ASSERT(temp1 != PreBarrierReg);
   MOZ_ASSERT(temp2 != PreBarrierReg);
   MOZ_ASSERT(temp3 != PreBarrierReg);
+
+#ifdef JS_CODEGEN_X64
+  MOZ_ASSERT(temp3 == rcx);
+#elif JS_CODEGEN_X86
+  MOZ_ASSERT(temp3 == ecx);
+#endif
 
   // Load the GC thing in temp1.
   if (type == MIRType::Value) {
@@ -8007,71 +8158,76 @@ void MacroAssembler::emitPreBarrierFastPath(JSRuntime* rt, MIRType type,
 #endif
   }
 
-  // Determine the bit index and store in temp1.
-  //
-  // bit = (addr & js::gc::ChunkMask) / js::gc::CellBytesPerMarkBit +
-  //        static_cast<uint32_t>(colorBit);
-  static_assert(gc::CellBytesPerMarkBit == 8,
-                "Calculation below relies on this");
-  static_assert(size_t(gc::ColorBit::BlackBit) == 0,
-                "Calculation below relies on this");
-  andPtr(Imm32(gc::ChunkMask), temp1);
-  rshiftPtr(Imm32(3), temp1);
-
-  static_assert(gc::ChunkMarkBitmap::BitsPerWord == JS_BITS_PER_WORD,
-                "Calculation below relies on this");
-
-  // Load the bitmap word in temp2.
-  //
-  // word = chunk.bitmap[bit / WordBits];
-
-  // Fold the adjustment for the fact that arenas don't start at the beginning
-  // of the chunk into the offset to the chunk bitmap.
-  const size_t firstArenaAdjustment =
-      gc::ChunkMarkBitmap::FirstThingAdjustmentBits / CHAR_BIT;
-  const intptr_t offset =
-      intptr_t(gc::ChunkMarkBitmapOffset) - intptr_t(firstArenaAdjustment);
-
-  movePtr(temp1, temp3);
-#if JS_BITS_PER_WORD == 64
-  rshiftPtr(Imm32(6), temp1);
-  loadPtr(BaseIndex(temp2, temp1, TimesEight, offset), temp2);
-#else
-  rshiftPtr(Imm32(5), temp1);
-  loadPtr(BaseIndex(temp2, temp1, TimesFour, offset), temp2);
-#endif
+  // Check if the cell is marked black.
+  // Load the bitindex into temp3 and the bitmap word into temp2.
+  loadMarkBits(temp1, temp2, temp2, temp3, temp1, gc::ColorBit::BlackBit);
 
   // Load the mask in temp1.
-  //
   // mask = uintptr_t(1) << (bit % WordBits);
   andPtr(Imm32(gc::ChunkMarkBitmap::BitsPerWord - 1), temp3);
   move32(Imm32(1), temp1);
-#ifdef JS_CODEGEN_X64
-  MOZ_ASSERT(temp3 == rcx);
-  shlq_cl(temp1);
-#elif JS_CODEGEN_X86
-  MOZ_ASSERT(temp3 == ecx);
-  shll_cl(temp1);
-#elif JS_CODEGEN_ARM
-  ma_lsl(temp3, temp1, temp1);
-#elif JS_CODEGEN_ARM64
-  Lsl(ARMRegister(temp1, 64), ARMRegister(temp1, 64), ARMRegister(temp3, 64));
-#elif JS_CODEGEN_MIPS64
-  ma_dsll(temp1, temp1, temp3);
-#elif JS_CODEGEN_LOONG64
-  as_sll_d(temp1, temp1, temp3);
-#elif JS_CODEGEN_RISCV64
-  sll(temp1, temp1, temp3);
-#elif JS_CODEGEN_WASM32
-  MOZ_CRASH();
-#elif JS_CODEGEN_NONE
-  MOZ_CRASH();
-#else
-#  error "Unknown architecture"
-#endif
+  lshiftPtr(temp3, temp1);
 
   // No barrier is needed if the bit is set, |word & mask != 0|.
   branchTestPtr(Assembler::NonZero, temp2, temp1, noBarrier);
+}
+
+void MacroAssembler::emitValueReadBarrierFastPath(
+    ValueOperand value, Register cell, Register temp1, Register temp2,
+    Register temp3, Register temp4, Label* barrier) {
+  Label done;
+
+  // No barrier needed for non-GC types
+  branchTestGCThing(Assembler::NotEqual, value, &done);
+
+  // Load the GC thing in `cell`.
+  unboxGCThingForGCBarrier(value, cell);
+
+  // Load the chunk address.
+  Register chunk = temp1;
+  andPtr(Imm32(int32_t(~gc::ChunkMask)), cell, chunk);
+
+  // If the GC thing is in the nursery, we don't need to barrier it.
+  branchPtr(Assembler::NotEqual, Address(chunk, gc::ChunkStoreBufferOffset),
+            ImmWord(0), &done);
+
+  // Load the mark word and bit index for the black bit.
+  Register markWord = temp2;
+  Register bitIndex = temp3;
+  loadMarkBits(cell, chunk, markWord, bitIndex, temp4, gc::ColorBit::BlackBit);
+
+  // The mask for the black bit is 1 << (bitIndex % WordBits).
+  Register mask = temp4;
+  andPtr(Imm32(gc::ChunkMarkBitmap::BitsPerWord - 1), bitIndex);
+  move32(Imm32(1), mask);
+  flexibleLshiftPtr(bitIndex, mask);
+
+  // No barrier is needed if the black bit is set.
+  branchTestPtr(Assembler::NonZero, markWord, mask, &done);
+
+  // The bit index for the gray bit is bitIndex + 1. If the black bit
+  // is any bit except the highest bit of the mark word, we can reuse
+  // the mark word we've already loaded, and simply shift the mask by
+  // 1.
+  Label noMaskOverflow;
+  lshiftPtr(Imm32(1), mask);
+  branchTestPtr(Assembler::NonZero, mask, mask, &noMaskOverflow);
+
+  // If the black bit was the high bit of the mark word, we need to load
+  // a new mark word. In this case the mask for the gray bit will always
+  // be 1 (the lowest bit of the next word).
+  loadMarkBits(cell, chunk, markWord, bitIndex, temp4,
+               gc::ColorBit::GrayOrBlackBit);
+  move32(Imm32(1), mask);
+  bind(&noMaskOverflow);
+
+  // If the gray bit is set, then we *do* need a barrier.
+  branchTestPtr(Assembler::NonZero, markWord, mask, barrier);
+
+  // Otherwise, we don't need a barrier unless we're in the middle of
+  // an incremental GC.
+  branchTestNeedsIncrementalBarrierAnyZone(Assembler::NonZero, barrier, temp1);
+  bind(&done);
 }
 
 // ========================================================================
@@ -9366,7 +9522,7 @@ void MacroAssembler::branchIfResizableArrayBufferViewInBounds(Register obj,
 void MacroAssembler::branchIfNativeIteratorNotReusable(Register ni,
                                                        Label* notReusable) {
   // See NativeIterator::isReusable.
-  Address flagsAddr(ni, NativeIterator::offsetOfFlagsAndCount());
+  Address flagsAddr(ni, NativeIterator::offsetOfFlags());
 
 #ifdef DEBUG
   Label niIsInitialized;
@@ -9380,17 +9536,6 @@ void MacroAssembler::branchIfNativeIteratorNotReusable(Register ni,
 
   branchTest32(Assembler::NonZero, flagsAddr,
                Imm32(NativeIterator::Flags::NotReusable), notReusable);
-}
-
-void MacroAssembler::branchNativeIteratorIndices(Condition cond, Register ni,
-                                                 Register temp,
-                                                 NativeIteratorIndices kind,
-                                                 Label* label) {
-  Address iterFlagsAddr(ni, NativeIterator::offsetOfFlagsAndCount());
-  load32(iterFlagsAddr, temp);
-  and32(Imm32(NativeIterator::IndicesMask), temp);
-  uint32_t shiftedKind = uint32_t(kind) << NativeIterator::IndicesShift;
-  branch32(cond, temp, Imm32(shiftedKind), label);
 }
 
 static void LoadNativeIterator(MacroAssembler& masm, Register obj,
@@ -9422,8 +9567,8 @@ static void LoadNativeIterator(MacroAssembler& masm, Register obj,
 // Otherwise, jump to |failure|.
 void MacroAssembler::maybeLoadIteratorFromShape(Register obj, Register dest,
                                                 Register temp, Register temp2,
-                                                Register temp3,
-                                                Label* failure) {
+                                                Register temp3, Label* failure,
+                                                bool exclusive) {
   // Register usage:
   // obj: always contains the input object
   // temp: walks the obj->shape->baseshape->proto->shape->... chain
@@ -9459,18 +9604,30 @@ void MacroAssembler::maybeLoadIteratorFromShape(Register obj, Register dest,
   // Load the native iterator and verify that it's reusable.
   andPtr(Imm32(~ShapeCachePtr::MASK), dest);
   LoadNativeIterator(*this, dest, nativeIterator);
-  branchIfNativeIteratorNotReusable(nativeIterator, failure);
+
+  if (exclusive) {
+    branchIfNativeIteratorNotReusable(nativeIterator, failure);
+  }
+
+  Label skipIndices;
+  load32(Address(nativeIterator, NativeIterator::offsetOfPropertyCount()),
+         temp3);
+  branchTest32(Assembler::Zero,
+               Address(nativeIterator, NativeIterator::offsetOfFlags()),
+               Imm32(NativeIterator::Flags::IndicesAllocated), &skipIndices);
+
+  computeEffectiveAddress(BaseIndex(nativeIterator, temp3, Scale::TimesFour),
+                          nativeIterator);
+
+  bind(&skipIndices);
+  computeEffectiveAddress(BaseIndex(nativeIterator, temp3, ScalePointer,
+                                    NativeIterator::offsetOfFirstProperty()),
+                          nativeIterator);
+
+  Register expectedProtoShape = nativeIterator;
 
   // We have to compare the shapes in the native iterator with the shapes on the
-  // proto chain to ensure the cached iterator is still valid. The shape array
-  // always starts at a fixed offset from the base of the NativeIterator, so
-  // instead of using an instruction outside the loop to initialize a pointer to
-  // the shapes array, we can bake it into the offset and reuse the pointer to
-  // the NativeIterator. We add |sizeof(Shape*)| to start at the second shape.
-  // (The first shape corresponds to the object itself. We don't have to check
-  // it, because we got the iterator via the shape.)
-  size_t nativeIteratorProtoShapeOffset =
-      NativeIterator::offsetOfFirstShape() + sizeof(Shape*);
+  // proto chain to ensure the cached iterator is still valid.
 
   // Loop over the proto chain. At the head of the loop, |shape| is the shape of
   // the current object, and |iteratorShapes| points to the expected shape of
@@ -9497,11 +9654,11 @@ void MacroAssembler::maybeLoadIteratorFromShape(Register obj, Register dest,
 
   // Compare the shape of the proto to the expected shape.
   loadPtr(Address(shapeAndProto, JSObject::offsetOfShape()), shapeAndProto);
-  loadPtr(Address(nativeIterator, nativeIteratorProtoShapeOffset), temp3);
+  loadPtr(Address(expectedProtoShape, 0), temp3);
   branchPtr(Assembler::NotEqual, shapeAndProto, temp3, failure);
 
   // Increment |iteratorShapes| and jump back to the top of the loop.
-  addPtr(Imm32(sizeof(Shape*)), nativeIterator);
+  addPtr(Imm32(sizeof(Shape*)), expectedProtoShape);
   jump(&protoLoop);
 
 #ifdef DEBUG
@@ -9523,15 +9680,17 @@ void MacroAssembler::iteratorMore(Register obj, ValueOperand output,
   Label iterDone, restart;
   bind(&restart);
   Address cursorAddr(outputScratch, NativeIterator::offsetOfPropertyCursor());
-  Address cursorEndAddr(outputScratch, NativeIterator::offsetOfPropertiesEnd());
-  loadPtr(cursorAddr, temp);
-  branchPtr(Assembler::BelowOrEqual, cursorEndAddr, temp, &iterDone);
+  Address cursorEndAddr(outputScratch, NativeIterator::offsetOfPropertyCount());
+  load32(cursorAddr, temp);
+  branch32(Assembler::BelowOrEqual, cursorEndAddr, temp, &iterDone);
 
   // Get next string.
-  loadPtr(Address(temp, 0), temp);
+  BaseIndex propAddr(outputScratch, temp, ScalePointer,
+                     NativeIterator::offsetOfFirstProperty());
+  loadPtr(propAddr, temp);
 
   // Increase the cursor.
-  addPtr(Imm32(sizeof(IteratorProperty)), cursorAddr);
+  addPtr(Imm32(1), cursorAddr);
 
   // Check if the property has been deleted while iterating. Skip it if so.
   branchTestPtr(Assembler::NonZero, temp,
@@ -9546,11 +9705,34 @@ void MacroAssembler::iteratorMore(Register obj, ValueOperand output,
   bind(&done);
 }
 
+void MacroAssembler::iteratorLength(Register obj, Register output) {
+  LoadNativeIterator(*this, obj, output);
+  load32(Address(output, NativeIterator::offsetOfOwnPropertyCount()), output);
+}
+
+void MacroAssembler::iteratorLoadElement(Register obj, Register index,
+                                         Register output) {
+  LoadNativeIterator(*this, obj, output);
+  loadPtr(BaseIndex(output, index, ScalePointer,
+                    NativeIterator::offsetOfFirstProperty()),
+          output);
+  andPtr(Imm32(int32_t(~IteratorProperty::DeletedBit)), output);
+}
+
+void MacroAssembler::iteratorLoadElement(Register obj, int32_t index,
+                                         Register output) {
+  LoadNativeIterator(*this, obj, output);
+  loadPtr(Address(output, index * sizeof(IteratorProperty) +
+                              NativeIterator::offsetOfFirstProperty()),
+          output);
+  andPtr(Imm32(int32_t(~IteratorProperty::DeletedBit)), output);
+}
+
 void MacroAssembler::iteratorClose(Register obj, Register temp1, Register temp2,
                                    Register temp3) {
   LoadNativeIterator(*this, obj, temp1);
 
-  Address flagsAddr(temp1, NativeIterator::offsetOfFlagsAndCount());
+  Address flagsAddr(temp1, NativeIterator::offsetOfFlags());
 
   // The shared iterator used for for-in with null/undefined is immutable and
   // unlinked. See NativeIterator::isEmptyIteratorSingleton.
@@ -9564,8 +9746,7 @@ void MacroAssembler::iteratorClose(Register obj, Register temp1, Register temp2,
   storePtr(ImmPtr(nullptr), iterObjAddr);
 
   // Reset property cursor.
-  loadPtr(Address(temp1, NativeIterator::offsetOfShapesEnd()), temp2);
-  storePtr(temp2, Address(temp1, NativeIterator::offsetOfPropertyCursor()));
+  store32(Imm32(0), Address(temp1, NativeIterator::offsetOfPropertyCursor()));
 
   // Clear deleted bits (only if we have unvisited deletions)
   Label clearDeletedLoopStart, clearDeletedLoopEnd;
@@ -9573,7 +9754,13 @@ void MacroAssembler::iteratorClose(Register obj, Register temp1, Register temp2,
                Imm32(NativeIterator::Flags::HasUnvisitedPropertyDeletion),
                &clearDeletedLoopEnd);
 
-  loadPtr(Address(temp1, NativeIterator::offsetOfPropertiesEnd()), temp3);
+  load32(Address(temp1, NativeIterator::offsetOfPropertyCount()), temp3);
+
+  computeEffectiveAddress(BaseIndex(temp1, temp3, ScalePointer,
+                                    NativeIterator::offsetOfFirstProperty()),
+                          temp3);
+  computeEffectiveAddress(
+      Address(temp1, NativeIterator::offsetOfFirstProperty()), temp2);
 
   bind(&clearDeletedLoopStart);
   and32(Imm32(~uint32_t(IteratorProperty::DeletedBit)), Address(temp2, 0));
@@ -9801,17 +9988,13 @@ void MacroAssembler::scrambleHashCode(Register result) {
   mul32(Imm32(mozilla::kGoldenRatioU32), result);
 }
 
-void MacroAssembler::prepareHashNonGCThing(ValueOperand value, Register result,
-                                           Register temp) {
-  // Inline implementation of |OrderedHashTableImpl::prepareHash()| and
-  // |mozilla::HashGeneric(v.asRawBits())|.
-
-#ifdef DEBUG
-  Label ok;
-  branchTestGCThing(Assembler::NotEqual, value, &ok);
-  assumeUnreachable("Unexpected GC thing");
-  bind(&ok);
-#endif
+void MacroAssembler::hashAndScrambleValue(ValueOperand value, Register result,
+                                          Register temp) {
+  // Inline implementation of:
+  // mozilla::ScrambleHashCode(mozilla::HashGeneric(v.asRawBits()))
+  // Note that this uses the raw bits, which will change if a GC thing moves.
+  // This function should only be used for non-GC things, or in cases where
+  // moving GC things are handled specially (eg WeakMapObject).
 
   // uint32_t v1 = static_cast<uint32_t>(aValue);
 #ifdef JS_PUNBOX64
@@ -9845,6 +10028,21 @@ void MacroAssembler::prepareHashNonGCThing(ValueOperand value, Register result,
   //
   // scrambleHashCode(result);
   mul32(Imm32(mozilla::kGoldenRatioU32 * mozilla::kGoldenRatioU32), result);
+}
+
+void MacroAssembler::prepareHashNonGCThing(ValueOperand value, Register result,
+                                           Register temp) {
+  // Inline implementation of |OrderedHashTableImpl::prepareHash()| and
+  // |mozilla::HashGeneric(v.asRawBits())|.
+
+#ifdef DEBUG
+  Label ok;
+  branchTestGCThing(Assembler::NotEqual, value, &ok);
+  assumeUnreachable("Unexpected GC thing");
+  bind(&ok);
+#endif
+
+  hashAndScrambleValue(value, result, temp);
 }
 
 void MacroAssembler::prepareHashString(Register str, Register result,
@@ -10336,6 +10534,187 @@ void MacroAssembler::loadSetObjectSize(Register setObj, Register result) {
 void MacroAssembler::loadMapObjectSize(Register mapObj, Register result) {
   loadOrderedHashTableCount<MapObject>(mapObj, result);
 }
+
+void MacroAssembler::prepareHashMFBT(Register hashCode, bool alreadyScrambled) {
+  // Inline implementation of |mozilla::HashTable::prepareHash()|.
+  static_assert(sizeof(HashNumber) == sizeof(uint32_t));
+
+  // In some cases scrambling can be more efficiently folded into the
+  // computation of the hash itself.
+  if (!alreadyScrambled) {
+    // HashNumber keyHash = ScrambleHashCode(aInputHash);
+    scrambleHashCode(hashCode);
+  }
+
+  const mozilla::HashNumber RemovedKey = mozilla::detail::kHashTableRemovedKey;
+  const mozilla::HashNumber CollisionBit =
+      mozilla::detail::kHashTableCollisionBit;
+
+  // Avoid reserved hash codes:
+  // if (!isLiveHash(keyHash)) {
+  Label isLive;
+  branch32(Assembler::Above, hashCode, Imm32(RemovedKey), &isLive);
+  //   keyHash -= (sRemovedKey + 1);
+  sub32(Imm32(RemovedKey + 1), hashCode);
+  bind(&isLive);
+
+  // return keyHash & ~sCollisionBit;
+  and32(Imm32(~CollisionBit), hashCode);
+}
+
+template <typename Table>
+void MacroAssembler::computeHash1MFBT(Register hashTable, Register hashCode,
+                                      Register hash1, Register scratch) {
+  // Inline implementation of |mozilla::HashTable::hash1|
+  // return aHash0 >> hashShift();
+  move32(hashCode, hash1);
+  load8ZeroExtend(Address(hashTable, Table::offsetOfHashShift()), scratch);
+  flexibleRshift32(scratch, hash1);
+}
+
+template void MacroAssembler::computeHash1MFBT<WeakMapObject::Map>(
+    Register hashTable, Register hashCode, Register hash1, Register scratch);
+
+template <typename Table>
+void MacroAssembler::computeHash2MFBT(Register hashTable, Register hashCode,
+                                      Register hash2, Register sizeMask,
+                                      Register scratch) {
+  // Inline implementation of |mozilla::detail::HashTable::hash2|
+
+  // Load hashShift into sizeMask
+  load8ZeroExtend(Address(hashTable, Table::offsetOfHashShift()), sizeMask);
+
+  //   uint32_t sizeLog2 = kHashNumberBits - hashShift();
+  move32(Imm32(kHashNumberBits), scratch);
+  sub32(sizeMask, scratch);
+
+  //   DoubleHash dh = {((aCurKeyHash << sizeLog2) >> hashShift()) | 1,
+  move32(hashCode, hash2);
+  flexibleLshift32(scratch, hash2);
+  flexibleRshift32(sizeMask, hash2);
+  or32(Imm32(1), hash2);
+
+  // sizeMask = (HashNumber(1) << sizeLog2) - 1};
+  move32(Imm32(1), sizeMask);
+  flexibleLshift32(scratch, sizeMask);
+  sub32(Imm32(1), sizeMask);
+}
+
+template void MacroAssembler::computeHash2MFBT<WeakMapObject::Map>(
+    Register hashTable, Register hashCode, Register hash2, Register sizeMask,
+    Register scratch);
+
+void MacroAssembler::applyDoubleHashMFBT(Register hash1, Register hash2,
+                                         Register sizeMask) {
+  // Inline implementation of |mozilla::detail::HashTable::applyDoubleHash|
+
+  // return WrappingSubtract(aHash1, aDoubleHash.mHash2) & aDoubleHash.mSizeMask
+  sub32(hash2, hash1);
+  and32(sizeMask, hash1);
+}
+
+template <typename Table>
+void MacroAssembler::checkForMatchMFBT(Register hashTable, Register hashIndex,
+                                       Register hashCode, Register scratch,
+                                       Register scratch2, Label* missing,
+                                       Label* collision) {
+  // Helper for inline implementation of |mozilla::detail::HashTable::lookup|
+  // The following code is used twice in |lookup|:
+  //
+  //  Slot slot = slotForIndex(h1);
+  //  if (slot.isFree()) {
+  //    <not found>
+  //  }
+  //  if (slot.matchHash(aKeyHash) && match(slot.get(), aLookup)) {
+  //    <found>
+  //  }
+  //
+  // To reduce register pressure, we do some inlining and reorder some
+  // intermediate computation. We inline the following functions:
+  //
+  // Slot slotForIndex(HashNumber aIndex) const {
+  //   auto hashes = reinterpret_cast<HashNumber*>(mTable);
+  //   auto entries = reinterpret_cast<Entry*>(&hashes[capacity()]);
+  //   return Slot(&entries[aIndex], &hashes[aIndex]);
+  // }
+  //
+  // uint32_t rawCapacity() { return 1u << (kHashNumberBits - hashShift()); }
+  //
+  // bool isFree() const { return *mKeyHash == Entry::sFreeKey; }
+  //
+  // bool matchHash(HashNumber hn) {
+  //   return (*mKeyHash & ~Entry::sCollisionBit) == hn;
+  // }
+  //
+  // Reordered, we implement:
+  //
+  // auto hashes = reinterpret_cast<HashNumber*>(mTable);
+  // HashNumber hashInTable = hashes[hashIndex];
+  // if (hashInTable == Entry::sFreeKey) {
+  //   <jump to missing label>
+  // }
+  // if (hashInTable & ~CollisionBit != hashCode) {
+  //   <jump to collision label>
+  // }
+  // auto entries = hashes[capacity()];
+  // Entry* entry = entries[hashIndex]
+  // <fall through to entry-specific match code>
+  const mozilla::HashNumber FreeKey = mozilla::detail::kHashTableFreeKey;
+  const mozilla::HashNumber CollisionBit =
+      mozilla::detail::kHashTableCollisionBit;
+
+  Address tableAddr(hashTable, Table::offsetOfTable());
+  Address hashShiftAddr(hashTable, Table::offsetOfHashShift());
+
+  // auto hashes = reinterpret_cast<HashNumber*>(mTable);
+  Register hashes = scratch;
+  loadPtr(tableAddr, scratch);
+
+  // HashNumber hashInTable = hashes[hashIndex];
+  Register hashInTable = scratch2;
+  static_assert(sizeof(HashNumber) == 4);
+  load32(BaseIndex(hashes, hashIndex, Scale::TimesFour), hashInTable);
+
+  // if (hashInTable == Entry::sFreeKey) {
+  //   <jump to missing label>
+  // }
+  branch32(Assembler::Equal, hashInTable, Imm32(FreeKey), missing);
+
+  // if (hashInTable & ~CollisionBit != hashCode) {
+  //   <jump to collision label>
+  // }
+  and32(Imm32(~CollisionBit), hashInTable);
+  branch32(Assembler::NotEqual, hashInTable, hashCode, collision);
+
+  // entries = hashes[capacity()]
+  // = hashes[1 << (kHashNumberBits - hashShift()]
+  // = &hashes + (1 << (kHashNumberBits - hashShift())) * sizeof(HashNumber)
+  // = &hashes + sizeof(HashNumber) << (kHashNumberBits - hashShift())
+  // = &hashes + sizeof(HashNumber) << (kHashNumberBits + -hashShift())
+  Register capacityOffset = scratch;
+  load8ZeroExtend(hashShiftAddr, scratch2);
+  neg32(scratch2);
+  add32(Imm32(kHashNumberBits), scratch2);
+  move32(Imm32(sizeof(mozilla::HashNumber)), capacityOffset);
+  flexibleLshift32(scratch2, capacityOffset);
+  Register entries = scratch2;
+  loadPtr(tableAddr, entries);
+  addPtr(capacityOffset, entries);
+
+  // Load entries[hashIndex] into |scratch|
+  // TODO: support non-power-of-2 entry sizes
+  constexpr size_t EntrySize = sizeof(typename Table::Entry);
+  static_assert(mozilla::IsPowerOfTwo(EntrySize));
+  uint32_t shift = mozilla::FloorLog2(EntrySize);
+  lshiftPtr(Imm32(shift), hashIndex, scratch);
+
+  computeEffectiveAddress(BaseIndex(entries, scratch, Scale::TimesOne),
+                          scratch);
+}
+
+template void MacroAssembler::checkForMatchMFBT<WeakMapObject::Map>(
+    Register hashTable, Register hashIndex, Register hashCode, Register scratch,
+    Register scratch2, Label* missing, Label* collision);
 
 // Can't push large frames blindly on windows, so we must touch frame memory
 // incrementally, with no more than 4096 - 1 bytes between touches.

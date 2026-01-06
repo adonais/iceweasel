@@ -11,6 +11,7 @@
 #define BASE_FILE_VERSION_INFO_WIN_H_
 
 #include <memory>
+#include <minwindef.h>
 #include <vector>
 
 #include "base/version.h"

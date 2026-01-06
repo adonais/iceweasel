@@ -993,17 +993,9 @@ static void* WasmHandleTrap() {
     case Trap::CheckInterrupt:
       return CheckInterrupt(cx, activation);
     case Trap::StackOverflow: {
-      // Instance::setInterrupt() causes a fake stack overflow. Since
-      // Instance::setInterrupt() is called racily, it's possible for a real
-      // stack overflow to trap, followed by a racy call to setInterrupt().
-      // Thus, we must check for a real stack overflow first before we
-      // CheckInterrupt() and possibly resume execution.
       AutoCheckRecursionLimit recursion(cx);
       if (!recursion.check(cx)) {
         return nullptr;
-      }
-      if (activation->wasmExitInstance()->isInterrupted()) {
-        return CheckInterrupt(cx, activation);
       }
       ReportTrapError(cx, JSMSG_OVER_RECURSED);
       return nullptr;

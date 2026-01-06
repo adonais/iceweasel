@@ -6,8 +6,6 @@
 
 #include "mozilla/dom/DOMQuad.h"
 
-#include <algorithm>
-
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/DOMPoint.h"

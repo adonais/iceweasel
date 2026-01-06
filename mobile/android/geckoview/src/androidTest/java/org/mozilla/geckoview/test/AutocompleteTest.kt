@@ -2654,6 +2654,7 @@ class AutocompleteTest : BaseSessionTest() {
             val expectedResult = listOf(
                 Pair("postal-code", "autofill-address-postal-code"),
                 Pair("address-level1", "autofill-address-prefecture"),
+                Pair("address-level2", "autofill-address-city"),
                 Pair("street-address", "autofill-address-street"),
                 Pair("organization", "autofill-address-organization"),
                 Pair("name", "autofill-address-name"),

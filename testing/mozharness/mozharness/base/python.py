@@ -890,10 +890,6 @@ class ResourceMonitoringMixin(PerfherderResourceOptionsMixin):
         try:
             if not os.path.exists(upload_dir):
                 os.makedirs(upload_dir)
-            with open(os.path.join(upload_dir, "resource-usage.json"), "w") as fh:
-                json.dump(
-                    self._resource_monitor.as_dict(), fh, sort_keys=True, indent=4
-                )
             with open(
                 os.path.join(upload_dir, "profile_resource-usage.json"), "w"
             ) as fh:

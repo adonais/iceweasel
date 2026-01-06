@@ -158,7 +158,7 @@ function templateHTML(options) {
  *
  * @param {string} destPath      Path to write the files to
  * @param {Map}    filesMap      Mapping of a string file name to templater
- * @param {Object} options       Various options for the templater
+ * @param {object} options       Various options for the templater
  */
 function writeFiles(destPath, filesMap, options) {
   for (const [file, templater] of filesMap) {

@@ -999,6 +999,7 @@ bool wasm::MemoryAccessTraps(const RegisterState& regs, uint8_t* addr,
     case Trap::OutOfBounds:
       break;
     case Trap::NullPointerDereference:
+    case Trap::BadCast:
       break;
 #  ifdef WASM_HAS_HEAPREG
     case Trap::IndirectCallToNull:
@@ -1021,6 +1022,7 @@ bool wasm::MemoryAccessTraps(const RegisterState& regs, uint8_t* addr,
       }
       break;
     case Trap::NullPointerDereference:
+    case Trap::BadCast:
       if ((uintptr_t)addr >= NullPtrGuardSize) {
         return false;
       }

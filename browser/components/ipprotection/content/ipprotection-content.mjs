@@ -201,11 +201,36 @@ export default class IPProtectionContentElement extends MozLitElement {
   }
 
   messageBarTemplate() {
-    // Fallback to a generic error
+    let messageId;
+    let messageLink;
+    let messageLinkl10nId;
+    // If there are errors, the error message should take precedence
+    if (this.#hasErrors) {
+      messageId = "ipprotection-message-generic-error";
+    } else if (this.state.onboardingMessage) {
+      messageId = this.state.onboardingMessage;
+
+      switch (this.state.onboardingMessage) {
+        case "ipprotection-message-continuous-onboarding-intro":
+          break;
+        case "ipprotection-message-continuous-onboarding-autostart":
+          messageLink = "about:settings#privacy";
+          messageLinkl10nId = "setting-link";
+          break;
+        case "ipprotection-message-continuous-onboarding-site-settings":
+          messageLink = "about:settings#privacy";
+          messageLinkl10nId = "setting-link";
+          break;
+      }
+    }
+
     return html`
       <ipprotection-message-bar
         class="vpn-top-content"
-        type=${ERRORS.GENERIC}
+        type=${this.#hasErrors ? ERRORS.GENERIC : "info"}
+        .messageId=${ifDefined(messageId)}
+        .messageLink=${ifDefined(messageLink)}
+        .messageLinkl10nId=${ifDefined(messageLinkl10nId)}
       ></ipprotection-message-bar>
     `;
   }
@@ -266,12 +291,16 @@ export default class IPProtectionContentElement extends MozLitElement {
   }
 
   render() {
-    if (this.#hasErrors && !this._messageDismissed) {
+    if (
+      (this.#hasErrors || this.state.onboardingMessage) &&
+      !this._messageDismissed
+    ) {
       this._showMessageBar = true;
     }
 
     const messageBar = this._showMessageBar ? this.messageBarTemplate() : null;
-    const content = html`${messageBar}${this.mainContentTemplate()}`;
+
+    let content = html`${messageBar}${this.mainContentTemplate()}`;
 
     // TODO: Conditionally render post-upgrade subview within #ipprotection-content-wrapper - Bug 1973813
     return html`

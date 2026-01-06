@@ -33,6 +33,10 @@
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">เข้าถึงข้อมูลของคุณในโดเมนอื่น</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
   <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">เข้าถึงข้อมูลของคุณสำหรับไซต์ในโดเมน %1$d</string>
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
+    <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
+    <item quantity="other">เข้าถึงข้อมูลของคุณสำหรับไซต์ในโดเมน %1$d</item>
+  </plurals>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d จาก %3$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -329,6 +333,8 @@
   <string name="mozac_feature_addons_updater_notification_short_intro">ยกเลิกเพื่อคงเวอร์ชันและการตั้งค่าเดิม</string>
   <!-- The heading for the permissions section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of sentences. -->
   <string name="mozac_feature_addons_updater_notification_heading_permissions">สิทธิ์ที่ต้องการใหม่: %1$s</string>
+  <!-- The heading for the data collection permission section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of permissions. -->
+  <string name="mozac_feature_addons_updater_notification_heading_data_collection_permissions">มีการเก็บข้อมูลจำเป็นใหม่: ผู้พัฒนาระบุว่าส่วนขยายจะเก็บ %1$s</string>
   <!-- Name of the "notification channel" used for displaying a notification for updating an extension. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_addons_updater_notification_channel_2">การอัปเดตส่วนขยาย</string>
   <!-- Name of the "notification channel" used for displaying a notification for new supported add-ons. See https://developer.android.com/training/notify-user/channels -->
@@ -373,6 +379,8 @@
   <string name="mozac_feature_addons_admin_install_only">ไม่สามารถติดตั้ง %1$s ได้ เนื่องจากต้องติดตั้งโดยองค์กรที่ใช้นโยบายขององค์กรเท่านั้น ซึ่งไม่รองรับในแพลตฟอร์มนี้</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_1" moz:removedIn="147" tools:ignore="UnusedResources">%1$s ละเมิดนโยบายของ Mozilla และไม่สามารถติดตั้งบน %2$s ได้</string>
+  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_soft_blocked_2">%1$s ถูกจำกัดและไม่สามารถติดตั้งบน %2$s ได้</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">ไม่สามารถเปิดใช้งาน %1$s ได้</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -407,6 +415,8 @@
   <string name="mozac_feature_addons_installed_dialog_title_2">เพิ่ม %1$s แล้ว</string>
   <!-- Used as text for the link in the description of the post-installation dialog. -->
   <string name="mozac_feature_addons_installed_dialog_description_link_text">การตั้งค่าส่วนขยาย</string>
+  <!-- Text shown in the dialog when add-on installation is completed. %1$s is replaced by an active link, using mozac_feature_addons_installed_dialog_description_link_text as text ("extension settings"). -->
+  <string name="mozac_feature_addons_installed_dialog_description_3">ปรับสิทธิ์และการตั้งค่าข้อมูลเองได้ตลอดเวลาใน %1$s</string>
   <!-- Confirmation button text for the dialog when add-on installation is completed. -->
   <string name="mozac_feature_addons_installed_dialog_okay_button_2">ตกลง</string>
   <!-- "Learn more" link displayed below an add-on status message. -->
@@ -417,8 +427,12 @@
   <string name="mozac_feature_addons_status_blocklisted_1">ส่วนขยายนี้ถูกปิดกั้นเนื่องจากละเมิดนโยบายของ Mozilla และถูกปิดใช้งานแล้ว</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
   <string name="mozac_feature_addons_status_softblocked_1" moz:removedIn="147" tools:ignore="UnusedResources">ส่วนขยายนี้ถูกจำกัดเนื่องจากละเมิดนโยบายของ Mozilla และถูกปิดใช้งานแล้ว คุณสามารถเปิดใช้งานได้ แต่อาจมีความเสี่ยง</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
+  <string name="mozac_feature_addons_status_softblocked_2">ส่วนขยายนี้ถูกจำกัดและได้ถูกปิดใช้งานแล้ว คุณสามารถเปิดใช้งานได้ แต่อาจมีความเสี่ยง</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
   <string name="mozac_feature_addons_status_softblocked_re_enabled" moz:removedIn="147" tools:ignore="UnusedResources">ส่วนขยายนี้ละเมิดนโยบายของ Mozilla การใช้ส่วนขยายนี้อาจมีความเสี่ยง</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
+  <string name="mozac_feature_addons_status_softblocked_re_enabled_2">ส่วนขยายนี้ถูกจำกัด การใช้ส่วนขยายนี้อาจมีความเสี่ยง</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">%1$s ไม่สามารถยืนยันได้ว่าปลอดภัยและได้ถูกปิดใช้งาน</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->

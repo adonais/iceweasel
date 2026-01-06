@@ -132,8 +132,8 @@ class RequestPanel extends Component {
    * This function is not sorting result properties since it can
    * results in unexpected order of params. See bug 1469533
    *
-   * @param {Object[]} arr - key-value pair array or form params
-   * @returns {Object} Rep compatible object
+   * @param {object[]} arr - key-value pair array or form params
+   * @returns {object} Rep compatible object
    */
   getProperties(arr) {
     return arr.reduce((map, obj) => {

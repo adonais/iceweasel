@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.search.awesomebar
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -15,17 +14,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.theme.AcornTheme
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 /**
@@ -40,42 +41,55 @@ fun ClipboardSuggestionBar(
     shouldUseBottomToolbar: Boolean,
     onClick: () -> Unit,
 ) {
-    Box {
-        Row(
-            modifier = Modifier
-                .clickable(onClick = onClick)
-                .background(color = AcornTheme.colors.layer1)
-                .padding(8.dp)
-                .height(32.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                painter = painterResource(id = iconsR.drawable.mozac_ic_link_24),
-                contentDescription = null,
-                tint = FirefoxTheme.colors.iconPrimary,
-                modifier = Modifier.size(20.dp),
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.awesomebar_clipboard_title),
-                color = FirefoxTheme.colors.textPrimary,
-                style = FirefoxTheme.typography.body2,
-                modifier = Modifier.weight(1f),
+    Surface {
+        Box {
+            Row(
+                modifier = Modifier
+                    .clickable(onClick = onClick)
+                    .padding(8.dp)
+                    .height(32.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    painter = painterResource(id = iconsR.drawable.mozac_ic_link_24),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = stringResource(R.string.awesomebar_clipboard_title),
+                    style = FirefoxTheme.typography.body2,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            HorizontalDivider(
+                modifier = when (shouldUseBottomToolbar) {
+                    true -> Modifier.align(Alignment.TopCenter)
+                    false -> Modifier.align(Alignment.BottomCenter)
+                },
             )
         }
-        HorizontalDivider(
-            modifier = when (shouldUseBottomToolbar) {
-                true -> Modifier.align(Alignment.TopCenter)
-                false -> Modifier.align(Alignment.BottomCenter)
-            },
-        )
     }
 }
 
 @PreviewLightDark
 @Composable
 private fun ClipboardBarPreview() {
-    AcornTheme {
+    FirefoxTheme {
+        ClipboardSuggestionBar(
+            shouldUseBottomToolbar = false,
+            onClick = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun ClipboardBarPreviewPreview() {
+    FirefoxTheme(theme = Theme.Private) {
         ClipboardSuggestionBar(
             shouldUseBottomToolbar = false,
             onClick = {},

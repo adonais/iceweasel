@@ -36,6 +36,7 @@ exports.reportProfilerReady = isActive => ({
 
 /**
  * Dispatched when the profiler starting is observed.
+ *
  * @return {Action}
  */
 exports.reportProfilerStarted = () => ({
@@ -44,6 +45,7 @@ exports.reportProfilerStarted = () => ({
 
 /**
  * Dispatched when the profiler stopping is observed.
+ *
  * @return {Action}
  */
 exports.reportProfilerStopped = () => ({
@@ -52,6 +54,7 @@ exports.reportProfilerStopped = () => ({
 
 /**
  * Updates the recording settings for the interval.
+ *
  * @param {number} interval
  * @return {Action}
  */
@@ -62,6 +65,7 @@ exports.changeInterval = interval => ({
 
 /**
  * Updates the recording settings for the entries.
+ *
  * @param {number} entries
  * @return {Action}
  */
@@ -72,6 +76,7 @@ exports.changeEntries = entries => ({
 
 /**
  * Updates the recording settings for the features.
+ *
  * @param {string[]} features
  * @return {ThunkAction<void>}
  */
@@ -100,6 +105,7 @@ exports.changeFeatures = features => {
 
 /**
  * Updates the recording settings for the threads.
+ *
  * @param {string[]} threads
  * @return {Action}
  */
@@ -110,6 +116,7 @@ exports.changeThreads = threads => ({
 
 /**
  * Change the preset.
+ *
  * @param {Presets} presets
  * @param {string} presetName
  * @return {Action}
@@ -124,6 +131,7 @@ exports.changePreset = (presets, presetName) => ({
 
 /**
  * Updates the recording settings for the objdirs.
+ *
  * @param {string[]} objdirs
  * @return {Action}
  */
@@ -135,6 +143,7 @@ exports.changeObjdirs = objdirs => ({
 /**
  * Receive the values to initialize the store. See the reducer for what values
  * are expected.
+ *
  * @param {InitializeStoreValues} values
  * @return {Action}
  */
@@ -148,6 +157,7 @@ exports.initializeStore = values => {
 /**
  * Whenever the preferences are updated, this action is dispatched to update the
  * redux store.
+ *
  * @param {RecordingSettings} recordingSettingsFromPreferences
  * @return {Action}
  */
@@ -160,6 +170,7 @@ exports.updateSettingsFromPreferences = recordingSettingsFromPreferences => {
 
 /**
  * Start a new recording with the perfFront and update the internal recording state.
+ *
  * @param {PerfFront} perfFront
  * @return {ThunkAction<void>}
  */
@@ -176,6 +187,7 @@ exports.startRecording = perfFront => {
 
 /**
  * Stops the profiler, and opens the profile in a new window.
+ *
  * @param {PerfFront} perfFront
  * @return {ThunkAction<Promise<MockedExports.ProfileAndAdditionalInformation>>}
  */
@@ -191,6 +203,7 @@ exports.getProfileAndStopProfiler = perfFront => {
 
 /**
  * Stops the profiler, but does not try to retrieve the profile.
+ *
  * @param {PerfFront} perfFront
  * @return {ThunkAction<void>}
  */

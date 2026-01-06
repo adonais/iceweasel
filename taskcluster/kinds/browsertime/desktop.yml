@@ -498,12 +498,6 @@ browsertime-benchmark:
                             macosx1500.*shippable.*: [trunk]
                             .*nightlyasrelease.*: [autoland, mozilla-central]
                             default: []
-                    custom-car:
-                        by-test-platform:
-                            # NOTE: this includes windows -hw-ref machines
-                            linux.*shippable.*: [mozilla-central]
-                            windows.*shippable.*: [mozilla-central]
-                            default: []
                     safari-tp:
                         by-test-platform:
                             macosx1400.*: [mozilla-central]
@@ -1264,6 +1258,7 @@ browsertime-trr-performance:
             - trr-comcas
             - trr-next
             - trr-native
+            - trr-multi
             - trr-w-clou
             - trr-w-cira
             - trr-w-comc

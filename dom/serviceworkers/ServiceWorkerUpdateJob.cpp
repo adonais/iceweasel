@@ -418,8 +418,9 @@ void ServiceWorkerUpdateJob::ComparisonResult(nsresult aStatus,
   }
 
   RefPtr<ServiceWorkerInfo> sw = new ServiceWorkerInfo(
-      mRegistration->Principal(), mRegistration->Scope(), mRegistration->Id(),
-      mRegistration->Version(), mScriptSpec, aNewCacheName, flags);
+      mRegistration->Principal(), mRegistration->Scope(), mRegistration->Type(),
+      mRegistration->Id(), mRegistration->Version(), mScriptSpec, aNewCacheName,
+      flags);
 
   // If the registration is corrupt enough to force an uninstall if the
   // upgrade fails, then we want to make sure the upgrade takes effect

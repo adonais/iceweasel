@@ -21,7 +21,8 @@ ChromeUtils.defineESModuleGetters(this, {
 
 const FAKE_FAVICON = "data987";
 const FAKE_FAVICON_SIZE = 128;
-const FAKE_FRECENCY = 200;
+// Two visits on the same day.
+const FAKE_FRECENCY = PlacesUtils.history.pageFrecencyThreshold(0, 2, false);
 const FAKE_LINKS = new Array(2 * TOP_SITES_MAX_SITES_PER_ROW)
   .fill(null)
   .map((v, i) => ({

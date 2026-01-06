@@ -18,7 +18,6 @@
 #include <string>
 #include <tuple>
 #include <utility>
-#include <variant>
 #include <vector>
 
 #include "absl/algorithm/container.h"
@@ -39,6 +38,7 @@
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "api/video/corruption_detection/frame_instrumentation_data.h"
 #include "api/video/encoded_image.h"
 #include "api/video/render_resolution.h"
 #include "api/video/video_adaptation_counters.h"
@@ -65,7 +65,6 @@
 #include "call/adaptation/resource_adaptation_processor.h"
 #include "call/adaptation/video_source_restrictions.h"
 #include "call/adaptation/video_stream_adapter.h"
-#include "common_video/frame_instrumentation_data.h"
 #include "media/base/media_channel.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
@@ -1028,8 +1027,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     encoder_.reset();
 
     encoder_ = MaybeCreateFrameDumpingEncoderWrapper(
-        settings_.encoder_factory->Create(env_, encoder_config_.video_format),
-        env_.field_trials());
+        env_,
+        settings_.encoder_factory->Create(env_, encoder_config_.video_format));
     if (!encoder_) {
       RTC_LOG(LS_ERROR) << "CreateVideoEncoder failed, failing encoder format: "
                         << encoder_config_.video_format.ToString();
@@ -1833,7 +1832,10 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
                      << ", texture=" << last_frame_info_->is_texture << ".";
     // Force full frame update, since resolution has changed.
     accumulated_update_rect_ =
-        VideoFrame::UpdateRect{0, 0, video_frame.width(), video_frame.height()};
+        VideoFrame::UpdateRect{.offset_x = 0,
+                               .offset_y = 0,
+                               .width = video_frame.width(),
+                               .height = video_frame.height()};
   }
 
   // We have to create the encoder before the frame drop logic,
@@ -2023,8 +2025,10 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
           cropped_height);
       update_rect.offset_x -= offset_x;
       update_rect.offset_y -= offset_y;
-      update_rect.Intersect(
-          VideoFrame::UpdateRect{0, 0, cropped_width, cropped_height});
+      update_rect.Intersect(VideoFrame::UpdateRect{.offset_x = 0,
+                                                   .offset_y = 0,
+                                                   .width = cropped_width,
+                                                   .height = cropped_height});
 
     } else {
       // The difference is large, scale it.
@@ -2033,8 +2037,10 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
       if (!update_rect.IsEmpty()) {
         // Since we can't reason about pixels after scaling, we invalidate whole
         // picture, if anything changed.
-        update_rect =
-            VideoFrame::UpdateRect{0, 0, cropped_width, cropped_height};
+        update_rect = VideoFrame::UpdateRect{.offset_x = 0,
+                                             .offset_y = 0,
+                                             .width = cropped_width,
+                                             .height = cropped_height};
       }
     }
     if (!cropped_buffer) {
@@ -2051,7 +2057,10 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
     // frame here.
     if (!accumulated_update_rect_.IsEmpty()) {
       accumulated_update_rect_ =
-          VideoFrame::UpdateRect{0, 0, out_frame.width(), out_frame.height()};
+          VideoFrame::UpdateRect{.offset_x = 0,
+                                 .offset_y = 0,
+                                 .width = out_frame.width(),
+                                 .height = out_frame.height()};
       accumulated_update_rect_is_valid_ = false;
     }
   }
@@ -2062,7 +2071,10 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
              out_frame.has_update_rect()) {
     accumulated_update_rect_.Union(out_frame.update_rect());
     accumulated_update_rect_.Intersect(
-        VideoFrame::UpdateRect{0, 0, out_frame.width(), out_frame.height()});
+        VideoFrame::UpdateRect{.offset_x = 0,
+                               .offset_y = 0,
+                               .width = out_frame.width(),
+                               .height = out_frame.height()});
     out_frame.set_update_rect(accumulated_update_rect_);
     accumulated_update_rect_.MakeEmptyUpdate();
   }
@@ -2254,10 +2266,8 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
 
   std::unique_ptr<CodecSpecificInfo> codec_specific_info_copy;
   if (codec_specific_info && frame_instrumentation_generator_) {
-    std::optional<
-        std::variant<FrameInstrumentationSyncData, FrameInstrumentationData>>
-        frame_instrumentation_data =
-            frame_instrumentation_generator_->OnEncodedImage(image_copy);
+    std::optional<FrameInstrumentationData> frame_instrumentation_data =
+        frame_instrumentation_generator_->OnEncodedImage(image_copy);
     RTC_CHECK(!codec_specific_info->frame_instrumentation_data.has_value())
         << "CodecSpecificInfo must not have frame_instrumentation_data set.";
     if (frame_instrumentation_data.has_value()) {

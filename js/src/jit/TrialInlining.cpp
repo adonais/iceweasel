@@ -15,7 +15,9 @@
 #include "jit/CacheIRCloner.h"
 #include "jit/CacheIRHealth.h"
 #include "jit/CacheIRWriter.h"
+#include "jit/InlineScriptTree.h"
 #include "jit/Ion.h"  // TooManyFormalArguments
+#include "jit/StubFolding.h"
 
 #include "vm/BytecodeLocation-inl.h"
 
@@ -72,8 +74,13 @@ bool DoTrialInlining(JSContext* cx, BaselineFrame* frame) {
     return true;
   }
 
-  const uint32_t MAX_INLINING_DEPTH = 4;
-  if (icScript->depth() > MAX_INLINING_DEPTH) {
+  // Maximum trial inlining depth for ICScripts. This is smaller than
+  // InlineScriptTree::MaxDepth because we can reach the bigger number if we are
+  // doing monomorphic inlining using shared IC data.
+  const uint32_t MaxICScriptDepth = 4;
+  static_assert(MaxICScriptDepth <= InlineScriptTree::MaxDepth,
+                "Trial inlining depth must not exceed max inlining depth");
+  if (icScript->depth() > MaxICScriptDepth) {
     return true;
   }
 

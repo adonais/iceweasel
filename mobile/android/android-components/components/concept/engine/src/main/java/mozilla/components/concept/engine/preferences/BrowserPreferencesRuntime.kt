@@ -46,7 +46,8 @@ interface BrowserPreferencesRuntime {
      * Method for removing a specific browser preference for observation on the observer delegate.
      */
     fun unregisterPrefForObservation(
-        pref: String, onSuccess: () -> Unit,
+        pref: String,
+        onSuccess: () -> Unit,
         onError: (Throwable) -> Unit,
     ) = onError(UnsupportedOperationException(UNSUPPORTED_ERROR))
 

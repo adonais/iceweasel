@@ -301,7 +301,8 @@ class SettingsSubMenuAddonsManagerRobot {
         verifyTheRecommendedAddons(composeTestRule)
         Log.i(TAG, "verifyRecommendedAddonsViewFromRedesignedMainMenu: Trying to verify that that the \"Discover more extensions\" button is displayed")
         composeTestRule.onNode(
-            hasText(getStringResource(R.string.browser_menu_discover_more_extensions)), useUnmergedTree = true,
+            hasText(getStringResource(R.string.browser_menu_discover_more_extensions)),
+            useUnmergedTree = true,
         ).assertIsDisplayed()
         Log.i(TAG, "verifyRecommendedAddonsViewFromRedesignedMainMenu: Verified that that the \"Discover more extensions\" button is displayed")
     }

@@ -31,8 +31,8 @@ class WebCompatReporterTelemetryMiddleware :
                 Webcompatreporting.reasonDropdown.set(action.newReason.name)
             }
 
-            WebCompatReporterAction.SendMoreInfoClicked -> {
-                Webcompatreporting.sendMoreInfo.record(NoExtras())
+            WebCompatReporterAction.AddMoreInfoClicked -> {
+                Webcompatreporting.addMoreInfo.record(NoExtras())
             }
 
             WebCompatReporterAction.SendReportClicked -> {

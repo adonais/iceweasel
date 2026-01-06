@@ -5,13 +5,13 @@
 package org.mozilla.fenix.home.fake
 
 import android.content.Context
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import mozilla.components.browser.state.state.ContentState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.recover.RecoverableTab
-import mozilla.components.compose.base.SelectableChipColors
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.sync.DeviceType
 import mozilla.components.feature.tab.collections.Tab
@@ -22,10 +22,6 @@ import mozilla.components.service.nimbus.messaging.MessageData
 import mozilla.components.service.nimbus.messaging.StyleData
 import mozilla.components.service.pocket.PocketStory
 import mozilla.components.service.pocket.PocketStory.ContentRecommendation
-import mozilla.components.service.pocket.PocketStory.PocketRecommendedStory
-import mozilla.components.service.pocket.PocketStory.PocketSponsoredStory
-import mozilla.components.service.pocket.PocketStory.PocketSponsoredStoryCaps
-import mozilla.components.service.pocket.PocketStory.PocketSponsoredStoryShim
 import mozilla.components.service.pocket.PocketStory.SponsoredContent
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
@@ -33,6 +29,7 @@ import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.components.appstate.setup.checklist.ChecklistItem
 import org.mozilla.fenix.compose.MessageCardColors
 import org.mozilla.fenix.compose.MessageCardState
+import org.mozilla.fenix.ext.TOTAL_CONTENT_RECOMMENDATIONS_TO_SHOW_COUNT
 import org.mozilla.fenix.home.bookmarks.Bookmark
 import org.mozilla.fenix.home.bookmarks.interactor.BookmarksInteractor
 import org.mozilla.fenix.home.collections.CollectionColors
@@ -55,7 +52,6 @@ import org.mozilla.fenix.home.sessioncontrol.CollectionInteractor
 import org.mozilla.fenix.home.store.NimbusMessageState
 import org.mozilla.fenix.home.topsites.interactor.TopSiteInteractor
 import org.mozilla.fenix.search.toolbar.SearchSelectorMenu
-import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.wallpapers.WallpaperState
 import java.io.File
 import java.util.UUID
@@ -296,7 +292,7 @@ internal object FakeHomepagePreview {
         }
     }
 
-    internal fun recentTabs(tabCount: Int = 2): List<RecentTab.Tab> =
+    internal fun recentTabs(tabCount: Int = 1): List<RecentTab.Tab> =
         mutableListOf<RecentTab.Tab>().apply {
             repeat(tabCount) {
                 add(
@@ -305,6 +301,7 @@ internal object FakeHomepagePreview {
                             id = randomId(),
                             content = ContentState(
                                 url = URL,
+                                title = "A title that is really really really long",
                             ),
                         ),
                     ),
@@ -323,6 +320,14 @@ internal object FakeHomepagePreview {
 
     internal fun bookmarks(bookmarkCount: Int = 4) =
         mutableListOf<Bookmark>().apply {
+            add(
+                Bookmark(
+                    title = "A long long Other Bookmark Title",
+                    url = "https://www.example.com",
+                    previewImageUrl = null,
+                ),
+            )
+
             repeat(bookmarkCount) {
                 add(
                     Bookmark(
@@ -400,19 +405,19 @@ internal object FakeHomepagePreview {
     }
 
     @Composable
-    internal fun pocketState(limit: Int = 1) = PocketState(
-        stories = pocketStories(limit = limit),
+    internal fun pocketState(limit: Int = TOTAL_CONTENT_RECOMMENDATIONS_TO_SHOW_COUNT) = PocketState(
+        stories = stories(limit = limit),
         categories = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor"
             .split(" ")
             .map { PocketRecommendedStoriesCategory(it) },
         categoriesSelections = emptyList(),
-        categoryColors = SelectableChipColors.buildColors(),
-        textColor = FirefoxTheme.colors.textPrimary,
+        categoryColors = FilterChipDefaults.filterChipColors(),
+        textColor = MaterialTheme.colorScheme.onSurface,
         linkTextColor = MaterialTheme.colorScheme.tertiary,
         showDiscoverMoreButton = false,
     )
 
-    internal fun contentRecommendation(index: Int = 0): ContentRecommendation =
+    internal fun contentRecommendation(index: Int = Random.nextInt(until = 5)): ContentRecommendation =
         ContentRecommendation(
             corpusItemId = "corpusItemId$index",
             scheduledCorpusItemId = "scheduledCorpusItemId$index",
@@ -429,32 +434,7 @@ internal object FakeHomepagePreview {
             impressions = index.toLong(),
         )
 
-    internal fun pocketRecommendedStory(index: Int = 0) = PocketRecommendedStory(
-            title = "Story - This is a ${"very ".repeat(index)} long title",
-            publisher = "Publisher",
-            url = "https://story$index.com",
-            imageUrl = URL,
-            timeToRead = index,
-            category = "Category #$index",
-            timesShown = index.toLong(),
-        )
-
-    internal fun pocketSponsoredStory(index: Int = 0) = PocketSponsoredStory(
-        id = index,
-        title = "This is a ${"very ".repeat(index)} long title",
-        url = "https://sponsored-story$index.com",
-        imageUrl = URL,
-        sponsor = "Mozilla",
-        shim = PocketSponsoredStoryShim("", ""),
-        priority = index,
-        caps = PocketSponsoredStoryCaps(
-            flightCount = index,
-            flightPeriod = index * 2,
-            lifetimeCount = index * 3,
-        ),
-    )
-
-    internal fun sponsoredContent(index: Int = 0) = SponsoredContent(
+    internal fun sponsoredContent(index: Int = Random.nextInt(until = 5)) = SponsoredContent(
         url = "https://sponsored-story$index.com",
         title = "This is a ${"very ".repeat(index)}long title",
         callbacks = PocketStory.SponsoredContentCallbacks(clickUrl = "", impressionUrl = ""),
@@ -467,23 +447,11 @@ internal object FakeHomepagePreview {
         caps = PocketStory.SponsoredContentFrequencyCaps(flightPeriod = 1, flightCount = 0),
     )
 
-    @Suppress("MagicNumber")
-    internal fun pocketStories(limit: Int = 5) = mutableListOf<PocketStory>().apply {
-        for (index in 0 until limit) {
-            when {
-                (index % 4 == 0) -> add(
-                    sponsoredContent(index),
-                )
-                (index % 3 == 0) -> add(
-                    contentRecommendation(index),
-                )
-                (index % 2 == 0) -> add(
-                    pocketRecommendedStory(index),
-                )
-                else -> add(
-                    pocketSponsoredStory(index),
-                )
-            }
+    internal fun stories(limit: Int = 5) = (0 until limit).map { index ->
+        if (index % 2 == 0) {
+            sponsoredContent(index)
+        } else {
+            contentRecommendation(index)
         }
     }
 

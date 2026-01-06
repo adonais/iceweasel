@@ -44,11 +44,11 @@
 
 #include <assert.h>
 #include <string.h>
+#include <csi_platform.h>
 #include "registry.h"
 #include "registry_int.h"
 #include "r_assoc.h"
 #include "r_errors.h"
-#include "nr_common.h"
 #include "r_log.h"
 #include "r_macros.h"
 
@@ -77,7 +77,6 @@ static int compute_cb_id(void *cb, char action, unsigned char cb_id[SIZEOF_CB_ID
 static int nr_reg_info_free(void *ptr);
 static int nr_reg_raise_event_recurse(char *name, char *tmp, int action);
 static int nr_reg_register_callback(NR_registry name, char action, void (*cb)(void *cb_arg, char action, NR_registry name), void *cb_arg);
-static int nr_reg_unregister_callback(char *name, char action, void (*cb)(void *cb_arg, char action, NR_registry name));
 
 int
 nr_reg_cb_init()
@@ -184,55 +183,6 @@ nr_reg_register_callback(NR_registry name, char action, void (*cb)(void *cb_arg,
       if (create_info && info) RFREE(info);
       if (create_assoc && assoc) nr_reg_assoc_destroy(&assoc);
     }
-    return(_status);
-}
-
-int
-nr_reg_unregister_callback(char *name, char action, void (*cb)(void *cb_arg, char action, NR_registry name))
-{
-    int r, _status;
-    r_assoc *assoc = 0;
-    int size;
-    unsigned char cb_id[SIZEOF_CB_ID];
-
-    if (name == 0 || cb == 0)
-      ABORT(R_BAD_ARGS);
-
-    if (nr_registry_callbacks == 0)
-      ABORT(R_FAILED);
-
-    if ((r=nr_reg_is_valid(name)))
-      ABORT(r);
-
-    if ((r=nr_reg_validate_action(action)))
-      ABORT(r);
-
-    if ((r=r_assoc_fetch(nr_registry_callbacks, name, strlen(name)+1, (void*)&assoc))) {
-      if (r != R_NOT_FOUND)
-        ABORT(r);
-    }
-    else {
-      if ((r=compute_cb_id(cb, action, cb_id)))
-        ABORT(r);
-
-      if ((r=r_assoc_delete(assoc, (char*)cb_id, SIZEOF_CB_ID))) {
-        if (r != R_NOT_FOUND)
-          ABORT(r);
-      }
-
-      if ((r=r_assoc_num_elements(assoc, &size)))
-        ABORT(r);
-
-      if (size == 0) {
-        if ((r=r_assoc_delete(nr_registry_callbacks, name, strlen(name)+1)))
-          ABORT(r);
-      }
-    }
-
-    _status=0;
-  abort:
-    r_log(NR_LOG_REGISTRY, LOG_DEBUG, "unregister callback %p on '%s' for '%s' %s", cb, name, nr_reg_action_name(action), (_status ? "FAILED" : "succeeded"));
-
     return(_status);
 }
 
@@ -402,29 +352,6 @@ NR_reg_register_callback(NR_registry name, char action, void (*cb)(void *cb_arg,
     for (i = 0; i < sizeof(CB_ACTIONS); ++i) {
         if (action & CB_ACTIONS[i]) {
             if ((r=nr_reg_register_callback(name, CB_ACTIONS[i], cb, cb_arg)))
-                ABORT(r);
-
-            action &= ~(CB_ACTIONS[i]);
-        }
-    }
-
-    if (action)
-        ABORT(R_BAD_ARGS);
-
-    _status=0;
-  abort:
-    return(_status);
-}
-
-int
-NR_reg_unregister_callback(NR_registry name, char action, void (*cb)(void *cb_arg, char action, NR_registry name))
-{
-    int r, _status;
-    size_t i;
-
-    for (i = 0; i < sizeof(CB_ACTIONS); ++i) {
-        if (action & CB_ACTIONS[i]) {
-            if ((r=nr_reg_unregister_callback(name, CB_ACTIONS[i], cb)))
                 ABORT(r);
 
             action &= ~(CB_ACTIONS[i]);

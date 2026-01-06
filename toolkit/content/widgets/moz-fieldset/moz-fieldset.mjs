@@ -5,7 +5,11 @@
 import { html, ifDefined } from "../vendor/lit.all.mjs";
 import { MozLitElement } from "../lit-utils.mjs";
 
-// Functions to wrap a string in a heading.
+/**
+ * Functions to wrap a string in a heading.
+ *
+ * @type {Record<number, (label: string) => ReturnType<typeof html>>}
+ */
 const HEADING_LEVEL_TEMPLATES = {
   1: label => html`<h1>${label}</h1>`,
   2: label => html`<h2>${label}</h2>`,
@@ -33,16 +37,31 @@ export default class MozFieldset extends MozLitElement {
     supportPage: { type: String, attribute: "support-page" },
     ariaLabel: { type: String, fluent: true, mapped: true },
     ariaOrientation: { type: String, mapped: true },
-    headingLevel: { type: Number, reflect: true },
+    headingLevel: { type: Number },
     disabled: { type: Boolean, reflect: true },
     iconSrc: { type: String },
   };
 
   constructor() {
     super();
+
+    /** @type {number} */
     this.headingLevel = -1;
+
+    /** @type {boolean} */
     this.disabled = false;
+
+    /** @type {string} */
     this.iconSrc = "";
+
+    /**@type {string | undefined} */
+    this.label = undefined;
+
+    /**@type {string | undefined} */
+    this.description = undefined;
+
+    /**@type {string | undefined} */
+    this.supportPage = undefined;
   }
 
   updated(changedProperties) {
@@ -50,6 +69,21 @@ export default class MozFieldset extends MozLitElement {
     if (changedProperties.has("disabled")) {
       this.#updateChildDisabledState();
     }
+    if (
+      changedProperties.has("headingLevel") ||
+      changedProperties.has("label")
+    ) {
+      this.toggleAttribute("hasheading", this.hasHeading);
+    }
+  }
+
+  /**
+   * Returns true when the fieldset should render its label as a heading element.
+   *
+   * @returns {boolean}
+   */
+  get hasHeading() {
+    return !!this.label && !!HEADING_LEVEL_TEMPLATES[this.headingLevel];
   }
 
   #updateChildDisabledState() {

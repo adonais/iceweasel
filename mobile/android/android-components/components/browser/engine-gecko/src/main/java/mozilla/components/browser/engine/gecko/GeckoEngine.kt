@@ -720,7 +720,7 @@ class GeckoEngine(
     override fun registerActivityDelegate(
         activityDelegate: ActivityDelegate,
     ) {
-        /**
+        /*
          * Having the activity delegate on the engine can cause issues with resolving multiple requests to the delegate
          * from different sessions. Ideally, this should be moved to the [EngineView].
          *
@@ -1665,8 +1665,16 @@ class GeckoEngine(
             set(value) { runtime.settings.setBannedPorts(value) }
 
         override var lnaBlockingEnabled: Boolean
-            get() = runtime.settings.lnaBlockingEnabled
-            set(value) { runtime.settings.setLnaBlockingEnabled(value) }
+            get() = runtime.settings.lnaBlocking ?: false
+            set(value) { runtime.settings.setLnaBlocking(value) }
+
+        override var lnaTrackerBlockingEnabled: Boolean
+            get() = runtime.settings.lnaBlockTrackers ?: false
+            set(value) { runtime.settings.setLnaBlockTrackers(value) }
+
+        override var lnaFeatureEnabled: Boolean
+            get() = runtime.settings.lnaEnabled ?: false
+            set(value) { runtime.settings.setLnaEnabled(value) }
 
         override var crliteChannel: String?
             get() = runtime.settings.crliteChannel
@@ -1722,6 +1730,8 @@ class GeckoEngine(
             this.dohAutoselectEnabled = it.dohAutoselectEnabled
             this.bannedPorts = it.bannedPorts
             this.lnaBlockingEnabled = it.lnaBlockingEnabled
+            this.lnaFeatureEnabled = it.lnaFeatureEnabled
+            this.lnaTrackerBlockingEnabled = it.lnaTrackerBlockingEnabled
             this.crliteChannel = it.crliteChannel
             this.safeBrowsingV5Enabled = it.safeBrowsingV5Enabled
         }

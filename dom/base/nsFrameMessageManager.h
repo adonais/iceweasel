@@ -10,7 +10,6 @@
 #include <string.h>
 
 #include <cstdint>
-#include <utility>
 
 #include "ErrorList.h"
 #include "js/TypeDecls.h"

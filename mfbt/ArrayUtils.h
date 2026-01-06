@@ -19,7 +19,6 @@
 
 #ifdef __cplusplus
 #  include <algorithm>
-#  include <array>
 #  include <type_traits>
 
 namespace mozilla {

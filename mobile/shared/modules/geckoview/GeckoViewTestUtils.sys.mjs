@@ -18,10 +18,10 @@ export const GeckoViewTabUtil = {
    * @throws {Error} Throws an error if the tab cannot be created.
    */
   async createNewTab(url = "about:blank") {
-    let sessionId = "";
+    let sessionId = undefined;
     const windowPromise = new Promise(resolve => {
       const openingObserver = subject => {
-        if (subject.name === sessionId) {
+        if (sessionId !== undefined && subject.name === sessionId) {
           Services.obs.removeObserver(
             openingObserver,
             "browser-delayed-startup-finished"

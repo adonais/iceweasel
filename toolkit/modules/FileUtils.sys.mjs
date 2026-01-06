@@ -17,6 +17,7 @@ export var FileUtils = {
   /**
    * Gets a directory at the specified hierarchy under a nsIDirectoryService
    * key.
+   *
    * @param   key
    *          The Directory Service Key to start from
    * @param   pathArray
@@ -34,6 +35,7 @@ export var FileUtils = {
 
   /**
    * Opens a file output stream for writing.
+   *
    * @param   file
    *          The file to write to.
    * @param   modeFlags
@@ -54,6 +56,7 @@ export var FileUtils = {
 
   /**
    * Opens an atomic file output stream for writing.
+   *
    * @param   file
    *          The file to write to.
    * @param   modeFlags
@@ -76,6 +79,7 @@ export var FileUtils = {
 
   /**
    * Opens a safe file output stream for writing.
+   *
    * @param   file
    *          The file to write to.
    * @param   modeFlags
@@ -108,6 +112,7 @@ export var FileUtils = {
 
   /**
    * Closes an atomic file output stream.
+   *
    * @param   stream
    *          The stream to close.
    */
@@ -125,6 +130,7 @@ export var FileUtils = {
 
   /**
    * Closes a safe file output stream.
+   *
    * @param   stream
    *          The stream to close.
    */

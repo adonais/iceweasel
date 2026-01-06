@@ -47,6 +47,8 @@
   <string name="tab_tray_close_multiselect_content_description">Sortir del mòde seleccion multipla</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description">Enregistrar los onglets seleccionats dins la colleccion</string>
+  <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
+  <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">Connexion</string>
   <!--
     Home - Bookmarks
 
@@ -61,6 +63,8 @@
   <string name="about_content">%1$s es produch per Mozilla.</string>
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">Mites màgers de la navegacion privada</string>
+  <!-- Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active. -->
+  <string name="private_browsing_a11y_session_announcement">Session de navegacion privada</string>
   <!--
     True Private Browsing Mode
 
@@ -227,6 +231,8 @@
   <string name="browser_menu_save_to_collection_2">Salvar a la colleccion</string>
   <!-- Browser menu button that open a share menu to share the current site -->
   <string name="browser_menu_share">Partejar</string>
+  <!-- Browser menu button that goes to the homepage screen -->
+  <string name="browser_menu_homepage">Pagina d\'acuèlh</string>
   <!--
     Browser menu button shown in custom tabs that opens the current tab in Fenix
     %1$s is the name of the app (for example "Firefox").
@@ -260,14 +266,22 @@
   <string name="browser_menu_customize_home_1">Personalizar la pagina d’acuèlh</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">Connexion</string>
+  <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
+  <string name="browser_menu_sign_in_caption_3">Sincronizar los senhals, los marcapaginas e encara mai</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
   <string name="browser_menu_sign_back_in_to_sync">Reconnectatz-vos per sincronizar</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
   <string name="browser_menu_syncing_paused_caption">Sincronizacion en pausa</string>
+  <!-- Browser menu caption label for an authenticated user -->
+  <string name="browser_menu_signed_in_caption">Gerissètz çò que salvagardatz e sincronizatz</string>
   <!-- Browser menu label that creates a private tab -->
   <string name="browser_menu_new_private_tab">Novèl onglet de nav. privada</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">Senhals</string>
+  <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
+  <string name="browser_close_main_menu_handlebar_content_description">Tampar lo menú</string>
+  <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
+  <string name="browser_main_menu_content_description_navigation_header">Navegacion</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu help button. -->
   <string name="browser_main_menu_content_description_help_button" tools:ignore="UnusedResources" moz:removedIn="146">Ajuda</string>
   <!-- Content description (not visible, for screen readers etc.) for main menu settings button. -->
@@ -302,6 +316,13 @@
   -->
   <string name="browser_menu_delete_browsing_data_on_quit">Quitar %s</string>
   <!--
+    Content description for a banner within the menu which prompt the user to make this app their default browser.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="browser_menu_default_banner_title">Definir %1$s coma navegador per defaut</string>
+  <!-- Label text within the set as default banner -->
+  <string name="browser_menu_default_banner_subtitle_2">Rapid, privat e a fach per vos.</string>
+  <!--
     Menu "contextual feature recommendation" (CFR)
 
     Text for the title in the contextual feature recommendation popup promoting the menu feature.
@@ -329,6 +350,18 @@
     %2$s is the name of the language which the page was translated to. (For example: French)
   -->
   <string name="browser_toolbar_translated_successfully">Pagina traducha en %1$s, originala en %2$s.</string>
+  <!--
+    Translation Toolbar
+
+    Translation toolbar label that is displayed when the current page has been translated by the translation feature.
+    %1$s is the name of the language that is displayed in the original page. (For example: English)
+    %2$s is the name of the language which the page was translated to. (For example: French)
+  -->
+  <string name="translation_toolbar_translated_from_and_to" tools:ignore="UnusedResources">Traduch de %1$s en %2$s</string>
+  <!-- Content description for the translate toolbar action that opens the translations dialog. -->
+  <string name="translation_toolbar_expand_action">Dobrir lo fuèlh de traduccion</string>
+  <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
+  <string name="translation_toolbar_close_action">Ignorar lo messatge</string>
   <!--
     Locale Settings Fragment
 
@@ -457,6 +490,10 @@
   <string name="onboarding_preferences_dialog_crash_reporting_description">Los rapòrts de plantatge nos permeton de diagnosticar e de corregir de problèmas amb lo navegador. Los rapòrts pòdon conténer de donadas personalas o sensiblas.</string>
   <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">Ne saber mai</string>
+  <!-- Button text to continue and not send a startup crash report -->
+  <string name="startup_crash_negative">Non, mercé</string>
+  <!-- Button text to reopen firefox after the crash is processed %s is the name of the app (for example "Firefox") -->
+  <string name="startup_crash_restart">Tornar dobrir %s</string>
   <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_usage_data_title">Enviar de donadas tecnicas e d’interraccion a Mozilla</string>
   <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">Donadas a prepaus de vòstre aparelh, la configuracion materiala, e cossí utilizatz Firefox ajudan a melhorar las caracteristicas, la performança, e l’estabilitat per tot lo monde.</string>
@@ -481,6 +518,29 @@
   <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">Per ajudar a melhorar lo navegador, Firefox envia de donadas de diagnostic e d\'interaccion a Mozilla. %1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">Gestion</string>
+  <!-- Terms of use (ToU) second subheader. -->
+  <string name="onboarding_redesign_tou_subheader_two">Proteccion automatica contra lo seguiment</string>
+  <!--
+    Terms of use (ToU) first body text. %1$s is replaced by an active link,
+    using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
+  -->
+  <string name="onboarding_redesign_tou_body_one">En contunhant, acceptatz las %1$s.</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage">condicions d’utilizacion de Firefox</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
+  <string name="onboarding_redesign_tou_body_three_link_text">Gerir los paramètres</string>
+  <!-- Terms of use (ToU) onboarding page continue button label. -->
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label">Contunhar</string>
+  <!-- Onboarding header for the toolbar selection card. -->
+  <string name="onboarding_redesign_customize_toolbar_title">Ont volètz plaçar la barra d’adreça\u00a0?</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button">Contunhar</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_redesign_learn_more">Cossí utilizam las donadas</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button">Confirmar</string>
+  <!-- Sync onboarding redesign negative button text. -->
+  <string name="onboarding_redesign_sync_negative_button">Pas ara</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">Ajudatz-nos a far conéisser Firefox</string>
   <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
@@ -495,6 +555,18 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Partejatz cossí avètz descobèrt Firefox e que l’utilizatz, amb los partenaris marketing de Mozilla. Aquestas donadas son pas jamai vendudas.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Acceptar e començar de navegar</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- "Continue" onboarding button. -->
+  <string name="nova_onboarding_continue_button" tools:ignore="UnusedResources">Contunhar</string>
+  <!-- "Not now" onboarding button. -->
+  <string name="nova_onboarding_negative_button" tools:ignore="UnusedResources">Pas ara</string>
+  <!-- Theme selection onboarding "dark" option label. -->
+  <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">Escur</string>
+  <!-- Notifications onboarding button. -->
+  <string name="nova_onboarding_notifications_button" tools:ignore="UnusedResources">Activar las notificacions</string>
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Causissètz ont conhar la barra d’aisinas</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -681,8 +753,6 @@
   <string name="preferences_gestures">Gèstes</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Personalizacion</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Connectatz-vos per sincronizar onglets, marcapaginas, senhals e plan mai encara.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Compte Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -862,12 +932,16 @@
   <string name="alternative_app_icon_option_purple">Violet</string>
   <!-- Title for the "Purple Dark" alternative app icon variant in the icon picker screen. -->
   <string name="alternative_app_icon_option_purple_dark">Violet escur</string>
+  <!-- Title for the "Sunrise" gradient alternative app icon variant in the icon picker screen. The app icon features a soft yellow-to-blue gradient background, resembling the colors of early morning light. -->
+  <string name="alternative_app_icon_option_gradient_sunrise">Alba</string>
   <!-- Title for the "Golden Hour" gradient alternative app icon variant in the icon picker screen. The app icon features a warm golden-to-pink gradient background, resembling the colors of the sunlight shortly before sunset. -->
   <string name="alternative_app_icon_option_gradient_golden_hour">Ora d’aura</string>
   <!-- Title for the "Blue Hour" gradient alternative app icon variant in the icon picker screen. The app icon has a cool blue gradient background, resembling the sky color around the time just after sunset or before sunrise. -->
   <string name="alternative_app_icon_option_gradient_blue_hour">Ora blava</string>
   <!-- Title for the "Midnight" gradient alternative app icon variant in the icon picker screen. The app icon features a dark gradient background, resembling the deep tones of the night sky. -->
   <string name="alternative_app_icon_option_gradient_midnight">Mièjanuèch</string>
+  <!-- Title for the "Northern Lights" gradient alternative app icon variant in the icon picker screen. The app icon has a dynamic green, blue, and purple gradient background, resembling the aurora borealis. -->
+  <string name="alternative_app_icon_option_gradient_northern_lights">Auròras borealas</string>
   <!-- Title for the "Retro 2004" themed alternative app icon variant in the icon picker screen. This app icon uses the classic Firefox logo from 2004. -->
   <string name="alternative_app_icon_option_retro_2004">Retro 2004</string>
   <!-- Title for the "Pixelated" themed alternative app icon variant in the icon picker screen. This app icon features a pixel-art style, resembling retro 8-bit graphics. -->
@@ -876,6 +950,14 @@
   <string name="alternative_app_icon_option_minimal">Minimal</string>
   <!-- Title for the "Pride" themed alternative app icon variant in the icon picker screen. The app icon incorporates a rainbow color scheme in support of the LGBTQ+ community. -->
   <string name="alternative_app_icon_option_pride">Fiertat</string>
+  <!-- Title for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
+  <string name="alternative_app_icon_option_momo">Momo</string>
+  <!-- Subtitle for the "Momo" themed alternative app icon variant in the icon picker screen. The app icon was created by artist @heyheymomodraws and features a unique hand-drawn style with a friendly fox. -->
+  <string name="alternative_app_icon_option_momo_subtitle">Creada per @heyheymodraws</string>
+  <!-- Title for the "Solid colors" group of alternative app icon variants in the icon picker screen. This group contains icons with flat, uniform color backgrounds. -->
+  <string name="alternative_app_icon_group_solid_colors">Colors unidas</string>
+  <!-- Dialog button text for cancelling app icon change -->
+  <string name="restart_warning_dialog_button_negative">Anullar</string>
   <!--
     Add-ons general availability nimbus message
 
@@ -1014,9 +1096,9 @@
   <!--
     Turn On Sync Preferences
 
-    Header of the Sync and save your data preference view
+    Header of the Sign in preference view
   -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Sincronizar e enregistrar vòstras donadas</string>
+  <string name="preferences_sign_in">Connexion</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">S’identificar per se reconnectar</string>
   <!-- Preference for removing FxA account -->
@@ -1854,8 +1936,6 @@
   <string name="toast_copy_link_to_clipboard">Copiat dins lo quichapapièrs</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Se connectar a Sync</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Sincronizar e enregistrar las donadas</string>
   <!-- An option from the three dot menu to sign in -->
   <string name="sync_menu_sign_in">Connexion</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
@@ -1976,7 +2056,7 @@
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">Talha de polissa</string>
   <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
-  <string name="a11y_preference_accessibility_font_size_percentage">%d\u00a0%%.</string>
+  <string name="a11y_preference_accessibility_font_size_percentage" tools:ignore="UnusedResources" moz:removedIn="148">%d\u00a0%%.</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">Talha de polissa automatica</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
@@ -3558,16 +3638,14 @@
   <!-- Message displayed when the search field in the Settings Search screen is empty -->
   <string name="settings_search_empty_query_placeholder">Cap de recèrca recenta</string>
   <!-- Message when error happens with Settings Search -->
-  <string name="settings_search_error_message">Una error s\'es producha</string>
+  <string name="settings_search_error_message" tools:ignore="UnusedResources" moz:removedIn="147">Una error s\'es producha</string>
   <!-- Text of button allowing to clear history of recent searches done in the settings screen. -->
   <string name="settings_search_clear_recent_searches_message">Tot escafar</string>
   <!-- Section header for recent search results -->
   <string name="settings_search_recent_searches_section_header">Resultats de recèrca recents</string>
-  <!--
-    Terms of use pop up prompt
+  <!-- ==== Terms of use pop up prompt ==== -->
 
-    Title for the pop up prompt
-  -->
+  <!-- Title for the pop up prompt -->
   <string name="terms_of_use_prompt_title">I a de nòu</string>
   <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
   <string name="terms_of_use_prompt_link_terms_of_use">Condicions d’utilizacion</string>
@@ -3579,4 +3657,9 @@
   <string name="terms_of_use_prompt_accept">Acceptar</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Lo me remembrar mai tard</string>
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- Link text for terms_of_use_prompt_body_line_two_alternative that links to a site with more information about the Terms of Use -->
+  <string name="terms_of_use_prompt_body_line_two_alternative_link" tools:ignore="UnusedResources">aicí</string>
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

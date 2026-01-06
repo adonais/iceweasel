@@ -4,7 +4,6 @@
 #include "gtest/gtest.h"
 #include <windows.h>
 #include <string>
-#include <optional>
 #include <shellapi.h>
 #include <winhttp.h>
 

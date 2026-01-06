@@ -57,17 +57,6 @@ export class MerinoClient {
   }
 
   /**
-   * @returns {boolean}
-   *   Returns true if the OHTTP Prefs are defined for use.
-   */
-  static get hasOHTTPPrefs() {
-    return (
-      lazy.UrlbarPrefs.get("merinoOhttpConfigURL") &&
-      lazy.UrlbarPrefs.get("merinoOhttpRelayURL")
-    );
-  }
-
-  /**
    * @param {string} [name]
    *   An optional name for the client. It will be included in log messages.
    * @param {object} [options]

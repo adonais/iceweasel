@@ -7,8 +7,6 @@
 #ifndef mozilla_dom_HTMLProgressElement_h
 #define mozilla_dom_HTMLProgressElement_h
 
-#include <algorithm>
-
 #include "nsAttrValue.h"
 #include "nsAttrValueInlines.h"
 #include "nsGenericHTMLElement.h"

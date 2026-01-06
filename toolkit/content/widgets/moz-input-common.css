@@ -141,10 +141,11 @@
     margin-inline-start: var(--input-space-offset);
     display: flex;
     flex-direction: column;
-    gap: var(--space-large);
   }
 
-  ::slotted([slot="nested"]:first-child) {
+  ::slotted([slot="nested"]) {
+    /* Apply margin to all elements rather than using gap so the first visible
+     * element has a margin between it and the parent. */
     margin-block-start: var(--space-large);
   }
 }

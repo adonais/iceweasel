@@ -33,18 +33,21 @@ const TOPIC_TRANSLATIONS_PREF_CHANGED = "translations:pref-changed";
 let gTranslationsPane = {
   /**
    * List of languages set in the Always Translate Preferences
+   *
    * @type Array<string>
    */
   alwaysTranslateLanguages: [],
 
   /**
    * List of languages set in the Never Translate Preferences
+   *
    * @type Array<string>
    */
   neverTranslateLanguages: [],
 
   /**
    * List of languages set in the Never Translate Site Preferences
+   *
    * @type Array<string>
    */
   neverTranslateSites: [],
@@ -52,6 +55,7 @@ let gTranslationsPane = {
   /**
    * A mapping from the language tag to the current download phase for that language
    * and it's download size.
+   *
    * @type {Map<string, {downloadPhase: "downloaded" | "removed" | "loading", size: number}>}
    */
   downloadPhases: new Map(),
@@ -65,6 +69,7 @@ let gTranslationsPane = {
 
   /**
    * List of languages names supported along with their tags (BCP 47 locale identifiers).
+   *
    * @type Array<{ langTag: string, displayName: string}>
    */
   supportedLanguageTagsNames: [],
@@ -463,6 +468,7 @@ let gTranslationsPane = {
   /**
    * Event handler when the user wants to add a language to
    * Always translate settings preferences list.
+   *
    * @param {Event} event
    */
   async handleAddAlwaysTranslateLanguage(langTag) {
@@ -478,6 +484,7 @@ let gTranslationsPane = {
   /**
    * Event handler when the user wants to add a language to
    * Never translate settings preferences list.
+   *
    * @param {Event} event
    */
   async handleAddNeverTranslateLanguage(langTag) {
@@ -494,9 +501,10 @@ let gTranslationsPane = {
   /**
    * Finds the langauges added and/or removed in the
    * Always/Never translate lists.
+   *
    * @param {Array<string>} currentSet
    * @param {Array<string>} newSet
-   * @returns {Object} {Array<string>, Array<string>}
+   * @returns {object} {Array<string>, Array<string>}
    */
   setDifference(currentSet, newSet) {
     const added = newSet.filter(lang => !currentSet.includes(lang));
@@ -507,6 +515,7 @@ let gTranslationsPane = {
   /**
    * Builds HTML elements for the Always/Never translate list
    * According to the preference setting
+   *
    * @param {string} pref - name of the preference for which the HTML is built
    *                      NEVER_TRANSLATE_LANGS_PREF / ALWAYS_TRANSLATE_LANGS_PREF
    */
@@ -563,6 +572,7 @@ let gTranslationsPane = {
 
   /**
    * Adds a site to Never translate site list
+   *
    * @param {string} site
    */
   addSite(site) {
@@ -605,6 +615,7 @@ let gTranslationsPane = {
 
   /**
    * Removes a site from Never translate site list
+   *
    * @param {string} site
    */
   removeSite(site) {
@@ -634,6 +645,7 @@ let gTranslationsPane = {
 
   /**
    * Oberver
+   *
    * @param {string} subject Notification specific interface pointer.
    * @param {string} topic nsPref:changed/perm-changed
    * @param {string} data cleared/changed/added/deleted
@@ -691,6 +703,7 @@ let gTranslationsPane = {
 
   /**
    * Create a div HTML element representing a language.
+   *
    * @param {Array} langChildren
    * @returns {Element} div HTML element
    */
@@ -710,6 +723,7 @@ let gTranslationsPane = {
 
   /**
    * Creates a moz-button element as icon
+   *
    * @param {string} classNames classes added to the moz-button element
    * @param {string} buttonFluentID Fluent ID for the aria-label
    * @param {string} accessibleName  "name" variable value of the aria-label
@@ -736,6 +750,7 @@ let gTranslationsPane = {
   /**
    * Adds a language selected by the user to the list of
    * Always/Never translate settings list in the HTML.
+   *
    * @param {string} langTag - The BCP-47 language tag for the language
    * @param {Element} languageList - HTML element for the list of the languages.
    * @param {string} translatePrefix - "never" / "always" prefix depending on the settings section
@@ -790,6 +805,7 @@ let gTranslationsPane = {
   /**
    * Creates a label HTML element representing
    * a language
+   *
    * @param {string} textContent
    * @param {string} value
    * @param {string} id
@@ -806,6 +822,7 @@ let gTranslationsPane = {
   /**
    * Removes a language currently in the always/never translate language list
    * from the DOM. Invoked in response to changes in the relevant preferences.
+   *
    * @param {string} langTag The BCP-47 language tag for the language
    * @param {Element} languageList - HTML element for the list of the languages.
    */
@@ -822,6 +839,7 @@ let gTranslationsPane = {
   /**
    * Event Handler to remove a language selected by the user from the list of
    * Always translate settings list in Preferences.
+   *
    * @param {Event} event
    */
   handleRemoveAlwaysTranslateLanguage(event) {
@@ -834,6 +852,7 @@ let gTranslationsPane = {
   /**
    * Event Handler to remove a language selected by the user from the list of
    * Never translate settings list in Preferences.
+   *
    * @param {Event} event
    */
   handleRemoveNeverTranslateLanguage(event) {
@@ -846,6 +865,7 @@ let gTranslationsPane = {
   /**
    * Removes the site chosen by the user in the HTML
    * from the Never Translate Site Permission
+   *
    * @param {Event} event
    */
   handleRemoveNeverTranslateSite(event) {
@@ -857,6 +877,7 @@ let gTranslationsPane = {
   /**
    * Record the download phase downloaded/loading/removed for
    * given language in the local data.
+   *
    * @param {string} langTag
    * @param {string} downloadPhase
    */
@@ -945,6 +966,7 @@ let gTranslationsPane = {
 
   /**
    * Event Handler to download a language model selected by the user through HTML
+   *
    * @param {Event} event
    */
   async handleDownloadLanguage(event) {
@@ -1011,6 +1033,7 @@ let gTranslationsPane = {
 
   /**
    * Event Handler to remove a language model selected by the user through HTML
+   *
    * @param {Event} event
    */
   async handleRemoveDownloadLanguage(event) {
@@ -1072,6 +1095,7 @@ let gTranslationsPane = {
 
   /**
    * Event Handler to download all language models
+   *
    * @param {Event} event
    */
   async handleDownloadAllLanguages(event) {
@@ -1106,6 +1130,7 @@ let gTranslationsPane = {
 
   /**
    * Event Handler to remove all language models
+   *
    * @param {Event} event
    */
   async handleRemoveAllDownloadLanguages(event) {
@@ -1161,6 +1186,7 @@ let gTranslationsPane = {
    * changes the icon of individual language buttons:
    * from "download" icon to "remove" icon if "All Language" is downloaded.
    * from "remove" icon to "download" icon if "All Language" is removed.
+   *
    * @param {string} allLanguageDownloadStatus "All Language" status: downloaded/removed
    */
   updateAllLanguageDownloadButtons(allLanguageDownloadStatus) {

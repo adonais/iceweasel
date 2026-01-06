@@ -546,7 +546,7 @@ class ManagedProcess extends BaseProcess {
    * A ManagedProcess is already running, so here the spawn just performs the
    * connection of the file descriptors received.
    *
-   * @param {array} options
+   * @param {Array} options
    *        An array of file descriptors from an existing process.
    */
   spawn(options) {

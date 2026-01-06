@@ -573,7 +573,7 @@ function runSubtestsSeriallyInFreshWindows(aSubtests) {
             "Subtest URL " +
               subtestUrl +
               " does not resolve. " +
-              "Be sure it's present in the support-files section of mochitest.ini."
+              "Be sure it's present in the support-files section of mochitest.toml."
           );
           reject();
           return undefined;

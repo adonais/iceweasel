@@ -191,7 +191,6 @@ const char kSessionOriginAddrtype[] = "IP4";
 const char kSessionOriginAddress[] = "127.0.0.1";
 const char kSessionName[] = "s=-";
 const char kTimeDescription[] = "t=0 0";
-const char kAttrGroup[] = "a=group:BUNDLE";
 const char kConnectionNettype[] = "IN";
 const char kConnectionIpv4Addrtype[] = "IP4";
 const char kConnectionIpv6Addrtype[] = "IP6";
@@ -1570,13 +1569,18 @@ bool ParseGroupAttribute(absl::string_view line,
                          SdpParseError* error) {
   RTC_DCHECK(desc != nullptr);
 
-  // RFC 5888 and draft-holmberg-mmusic-sdp-bundle-negotiation-00
+  // RFC 5888 and RFC 8843.
   // a=group:BUNDLE video voice
   std::vector<absl::string_view> fields =
       split(line.substr(kLinePrefixLength), kSdpDelimiterSpaceChar);
   std::string semantics;
   if (!GetValue(fields[0], kAttributeGroup, &semantics, error)) {
-    return false;
+    return ParseFailed(line, "Failed to parse group attribute.", error);
+  }
+  for (size_t i = 1; i < fields.size(); ++i) {
+    if (!absl::c_all_of(fields[i], IsTokenChar)) {
+      return ParseFailed(line, "Failed to parse group tag.", error);
+    }
   }
   ContentGroup group(semantics);
   for (size_t i = 1; i < fields.size(); ++i) {
@@ -1879,11 +1883,9 @@ void RemoveDuplicateRidDescriptions(const std::vector<int>& payload_types,
   }
   // Remove every rid description that appears in the to_remove list.
   if (!to_remove.empty()) {
-    rids->erase(std::remove_if(rids->begin(), rids->end(),
-                               [&to_remove](const RidDescription& rid) {
-                                 return to_remove.count(rid.rid) > 0;
-                               }),
-                rids->end());
+    std::erase_if(*rids, [&to_remove](const RidDescription& rid) {
+      return to_remove.contains(rid.rid);
+    });
   }
 }
 
@@ -1991,13 +1993,25 @@ struct StaticPayloadAudioCodec {
   size_t channels;
 };
 const StaticPayloadAudioCodec kStaticPayloadAudioCodecs[] = {
-    {"PCMU", 8000, 1},  {"reserved", 0, 0}, {"reserved", 0, 0},
-    {"GSM", 8000, 1},   {"G723", 8000, 1},  {"DVI4", 8000, 1},
-    {"DVI4", 16000, 1}, {"LPC", 8000, 1},   {"PCMA", 8000, 1},
-    {"G722", 8000, 1},  {"L16", 44100, 2},  {"L16", 44100, 1},
-    {"QCELP", 8000, 1}, {"CN", 8000, 1},    {"MPA", 90000, 1},
-    {"G728", 8000, 1},  {"DVI4", 11025, 1}, {"DVI4", 22050, 1},
-    {"G729", 8000, 1},
+    {.name = "PCMU", .clockrate = 8000, .channels = 1},
+    {.name = "x-illegal-value-1", .clockrate = 8000, .channels = 0},
+    {.name = "x-illegal-value-2", .clockrate = 8000, .channels = 0},
+    {.name = "GSM", .clockrate = 8000, .channels = 1},
+    {.name = "G723", .clockrate = 8000, .channels = 1},
+    {.name = "DVI4", .clockrate = 8000, .channels = 1},
+    {.name = "DVI4", .clockrate = 16000, .channels = 1},
+    {.name = "LPC", .clockrate = 8000, .channels = 1},
+    {.name = "PCMA", .clockrate = 8000, .channels = 1},
+    {.name = "G722", .clockrate = 8000, .channels = 1},
+    {.name = "L16", .clockrate = 44100, .channels = 2},
+    {.name = "L16", .clockrate = 44100, .channels = 1},
+    {.name = "QCELP", .clockrate = 8000, .channels = 1},
+    {.name = "CN", .clockrate = 8000, .channels = 1},
+    {.name = "MPA", .clockrate = 90000, .channels = 1},
+    {.name = "G728", .clockrate = 8000, .channels = 1},
+    {.name = "DVI4", .clockrate = 11025, .channels = 1},
+    {.name = "DVI4", .clockrate = 22050, .channels = 1},
+    {.name = "G729", .clockrate = 8000, .channels = 1},
 };
 
 void MaybeCreateStaticPayloadAudioCodecs(const std::vector<int>& fmts,
@@ -2247,7 +2261,7 @@ bool ParseSsrcAttribute(absl::string_view line,
     // msid:identifier [appdata]
     std::vector<absl::string_view> fields =
         split(value, kSdpDelimiterSpaceChar);
-    if (fields.size() < 1 || fields.size() > 2) {
+    if (fields.empty() || fields.size() > 2) {
       return ParseFailed(
           line, "Expected format \"msid:<identifier>[ <appdata>]\".", error);
     }
@@ -3242,13 +3256,13 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc) {
   std::vector<const ContentGroup*> groups =
       desc->GetGroupsByName(GROUP_TYPE_BUNDLE);
   for (const ContentGroup* group : groups) {
-    std::string group_line = kAttrGroup;
     RTC_DCHECK(group != nullptr);
+    InitAttrLine(kAttributeGroup, &os);
+    os << kSdpDelimiterColon << GROUP_TYPE_BUNDLE;
     for (const std::string& content_name : group->content_names()) {
-      group_line.append(" ");
-      group_line.append(content_name);
+      os << " " << content_name;
     }
-    AddLine(group_line, &message);
+    AddLine(os.str(), &message);
   }
 
   // Mixed one- and two-byte header extension.
@@ -3370,7 +3384,10 @@ bool SdpDeserializeCandidate(absl::string_view transport_name,
   if (!ParseCandidate(message, candidate, error, true)) {
     return false;
   }
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
   candidate->set_transport_name(transport_name);
+#pragma clang diagnostic pop
   return true;
 }
 

@@ -117,7 +117,7 @@ internal fun CollectionsPlaceholder(
 @Composable
 private fun CollectionsPlaceholderPreview() {
     FirefoxTheme {
-        Surface(color = FirefoxTheme.colors.layer1) {
+        Surface {
             Column(modifier = Modifier.padding(16.dp)) {
                 CollectionsPlaceholder(
                     interactor = FakeHomepagePreview.collectionInteractor,

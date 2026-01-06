@@ -9,6 +9,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/EventHandlerBinding.h"
 #include "mozilla/dom/HTMLFrameSetElementBinding.h"
+#include "nsAttrValueOrString.h"
 #include "nsGlobalWindowInner.h"
 
 NS_IMPL_NS_NEW_HTML_ELEMENT(FrameSet)
@@ -143,13 +144,11 @@ nsresult HTMLFrameSetElement::ParseRowCol(const nsAttrValue& aValue,
     return NS_OK;
   }
 
-  MOZ_ASSERT(aValue.Type() == nsAttrValue::eString);
-
   static const char16_t sAster('*');
   static const char16_t sPercent('%');
   static const char16_t sComma(',');
 
-  nsAutoString spec(aValue.GetStringValue());
+  nsAutoString spec(nsAttrValueOrString(&aValue).String());
   // remove whitespace (Bug 33699) and quotation marks (bug 224598)
   // also remove leading/trailing commas (bug 31482)
   spec.StripChars(u" \n\r\t\"\'");

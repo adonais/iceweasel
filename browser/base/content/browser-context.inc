@@ -125,6 +125,7 @@
                 data-l10n-id="main-context-menu-copy-clean-link"
                 hidden="true"
                 />
+      <menuseparator id="context-sep-copylink"/>
       <menu id="context-sendlinktodevice"
             class="sync-ui-item"
             data-l10n-id="main-context-menu-link-send-to-device"
@@ -133,7 +134,6 @@
       </menu>
       <menuseparator id="context-sep-sendlinktodevice" class="sync-ui-item"
                 hidden="true"/>
-      <menuseparator id="context-sep-copylink"/>
       <menuitem id="context-media-play"
                 data-l10n-id="main-context-menu-media-play"
                 />
@@ -266,12 +266,6 @@
       <menuitem id="context-savepage"
                 data-l10n-id="main-context-menu-page-save"
                 />
-      <menu id="context-sendpagetodevice"
-            class="sync-ui-item"
-            data-l10n-id="main-context-menu-send-to-device"
-            hidden="true">
-        <menupopup id="context-sendpagetodevice-popup"/>
-      </menu>
       <menu id="fill-login" hidden="true">
         <menupopup id="fill-login-popup" />
       </menu>
@@ -442,6 +436,15 @@
                 hidden="true"
                 data-l10n-id="main-context-menu-inspect"
                 />
+      <menuseparator id="context-sep-sendpagetodevice"
+            class="sync-ui-item"
+            hidden="true"/>
+      <menu id="context-sendpagetodevice"
+            class="sync-ui-item"
+            data-l10n-id="main-context-menu-send-to-device-2"
+            hidden="true">
+        <menupopup id="context-sendpagetodevice-popup"/>
+      </menu>
       <menuseparator id="context-media-eme-separator" hidden="true"/>
       <menuitem id="context-media-eme-learnmore"
                 class="menuitem-iconic"

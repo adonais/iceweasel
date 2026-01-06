@@ -160,7 +160,7 @@ NetMonitorAPI.prototype = {
   /**
    * Add listener for `onRequestFinished` events.
    *
-   * @param {Object} listener
+   * @param {object} listener
    *        The listener to be called it's expected to be
    *        a function that takes ({harEntry, requestId})
    *        as first argument.
@@ -201,7 +201,8 @@ NetMonitorAPI.prototype = {
 
   /**
    * Resends a given network request
-   * @param {String} requestId
+   *
+   * @param {string} requestId
    *        Id of the network request
    */
   resendRequest(requestId) {

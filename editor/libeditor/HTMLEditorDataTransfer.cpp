@@ -395,10 +395,11 @@ class MOZ_STACK_CLASS HTMLEditor::HTMLWithContextInserter final {
       const EditorDOMPoint& aLastInsertedPoint) const;
 
   /**
-   * @return error result or the last inserted point. The latter is only set, if
-   *         content was inserted.
+   * Insert nodes in aArrayOfTopMostChildContents or their children to
+   * aPointToInsert (if the container is not a proper parent of inserting node,
+   * this splits the ancestors).
    */
-  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
+  [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateContentResult, nsresult>
   InsertContents(
       const EditorDOMPoint& aPointToInsert,
       nsTArray<OwningNonNull<nsIContent>>& aArrayOfTopMostChildContents,
@@ -872,23 +873,30 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
   MOZ_ASSERT(pointToInsert.GetContainer()->GetChildAt_Deprecated(
                  pointToInsert.Offset()) == pointToInsert.GetChild());
 
-  Result<EditorDOMPoint, nsresult> lastInsertedPoint = InsertContents(
-      pointToInsert, arrayOfTopMostChildContents, fragmentAsNode);
-  if (lastInsertedPoint.isErr()) {
+  Result<CreateContentResult, nsresult> insertNodeResultOrError =
+      InsertContents(pointToInsert, arrayOfTopMostChildContents,
+                     fragmentAsNode);
+  if (MOZ_UNLIKELY(insertNodeResultOrError.isErr())) {
     NS_WARNING("HTMLWithContextInserter::InsertContents() failed.");
-    return lastInsertedPoint.propagateErr();
+    return insertNodeResultOrError.propagateErr();
   }
 
+  // The inserting content may contain empty container elements.  However, it's
+  // intended.  Therefore, we should not clean up them in the post-processing.
   mHTMLEditor.TopLevelEditSubActionDataRef().mNeedsToCleanUpEmptyElements =
       false;
 
-  if (MOZ_UNLIKELY(!lastInsertedPoint.inspect().IsInComposedDoc())) {
+  CreateContentResult insertNodeResult = insertNodeResultOrError.unwrap();
+  if (MOZ_UNLIKELY(!insertNodeResult.Handled())) {
+    // Even if we haven't inserted new content nodes, we "handled" to insert
+    // them so that return "handled" state.
     return EditActionResult::HandledResult();
   }
 
-  if (MOZ_LIKELY(lastInsertedPoint.inspect().IsInContentNode())) {
+  if (MOZ_LIKELY(insertNodeResult.GetNewNode()->IsInComposedDoc())) {
     const auto afterLastInsertedContent =
-        lastInsertedPoint.inspect().NextPointOrAfterContainer();
+        EditorRawDOMPoint(insertNodeResult.GetNewNode())
+            .NextPointOrAfterContainer<EditorDOMPoint>();
     if (MOZ_LIKELY(afterLastInsertedContent.IsInContentNode())) {
       nsresult rv = mHTMLEditor.EnsureNoFollowingUnnecessaryLineBreak(
           afterLastInsertedContent);
@@ -900,60 +908,59 @@ Result<EditActionResult, nsresult> HTMLEditor::HTMLWithContextInserter::Run(
     }
   }
 
-  const EditorDOMPoint pointToPutCaret =
-      GetNewCaretPointAfterInsertingHTML(lastInsertedPoint.inspect());
-  // Now collapse the selection to the end of what we just inserted.
-  rv = mHTMLEditor.CollapseSelectionTo(pointToPutCaret);
-  if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
-    NS_WARNING(
-        "EditorBase::CollapseSelectionTo() caused destroying the editor");
-    return Err(NS_ERROR_EDITOR_DESTROYED);
+  MOZ_ASSERT(insertNodeResult.HasCaretPointSuggestion());
+  rv = insertNodeResult.SuggestCaretPointTo(
+      mHTMLEditor, {SuggestCaret::AndIgnoreTrivialError});
+  if (NS_FAILED(rv)) {
+    NS_WARNING("CaretPoint::SuggestCaretPointTo() failed");
+    return Err(rv);
   }
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::CollapseSelectionTo() failed, but ignored");
+  NS_WARNING_ASSERTION(rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
+                       "CaretPoint::SuggestCaretPointTo() failed, but ignored");
 
   // If we didn't start from an `<a href>` element, we should not keep
   // caret in the link to make users type something outside the link.
   if (insertionPointWasInLink) {
     return EditActionResult::HandledResult();
   }
-  RefPtr<Element> linkElement = GetLinkElement(pointToPutCaret.GetContainer());
+  if (Element* const parentElement =
+          insertNodeResult.GetNewNode()->GetParentElement()) {
+    const RefPtr<Element> linkElement = GetLinkElement(parentElement);
+    if (MOZ_LIKELY(!linkElement)) {
+      return EditActionResult::HandledResult();
+    }
 
-  if (!linkElement) {
-    return EditActionResult::HandledResult();
-  }
-
-  rv = MoveCaretOutsideOfLink(*linkElement, pointToPutCaret);
-  if (NS_FAILED(rv)) {
-    NS_WARNING(
-        "HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink "
-        "failed.");
-    return Err(rv);
+    nsresult rv =
+        MoveCaretOutsideOfLink(*linkElement, insertNodeResult.CaretPointRef());
+    if (NS_FAILED(rv)) {
+      NS_WARNING(
+          "HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink() "
+          "failed");
+      return Err(rv);
+    }
   }
 
   return EditActionResult::HandledResult();
 }
 
-Result<EditorDOMPoint, nsresult>
+Result<CreateContentResult, nsresult>
 HTMLEditor::HTMLWithContextInserter::InsertContents(
     const EditorDOMPoint& aPointToInsert,
     nsTArray<OwningNonNull<nsIContent>>& aArrayOfTopMostChildContents,
     const nsINode* aFragmentAsNode) {
   MOZ_ASSERT(aPointToInsert.IsSetAndValidInComposedDoc());
 
-  EditorDOMPoint pointToInsert{aPointToInsert};
-
   // Loop over the node list and paste the nodes:
   const RefPtr<const Element> maybeNonEditableBlockElement =
-      pointToInsert.IsInContentNode()
+      aPointToInsert.IsInContentNode()
           ? HTMLEditUtils::GetInclusiveAncestorElement(
-                *pointToInsert.ContainerAs<nsIContent>(),
+                *aPointToInsert.ContainerAs<nsIContent>(),
                 HTMLEditUtils::ClosestBlockElement,
                 BlockInlineCheck::UseComputedDisplayOutsideStyle)
           : nullptr;
 
-  EditorDOMPoint lastInsertedPoint;
   nsCOMPtr<nsIContent> insertedContextParentContent;
+  RefPtr<nsIContent> lastInsertedContent;
   for (const OwningNonNull<nsIContent>& content :
        aArrayOfTopMostChildContents) {
     if (NS_WARN_IF(content == aFragmentAsNode) ||
@@ -967,133 +974,142 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
       // Else we will paste twice.
       // XXX This check may be really expensive.  Cannot we check whether
       //     the node's `ownerDocument` is the `aFragmentAsNode` or not?
-      // XXX If content was moved to outside of insertedContextParentContent
-      //     by mutation event listeners, we will anyway duplicate it.
       if (EditorUtils::IsDescendantOf(*content,
                                       *insertedContextParentContent)) {
         continue;
       }
+      // Okay, now, we finished moving nodes in insertedContextParentContent.
+      // We can forget it now to skip the expensive check.
+      insertedContextParentContent = nullptr;
     }
+
+    // In the most cases, we want to move `content` into the DOM as-is. However,
+    // in some cases, we don't want to insert content but do want to insert its
+    // children into the existing proper container.  Therefore, we will check
+    // the `content` type and insertion point's container below.  However, even
+    // in such case, we may not be able to move only its children.  Then, we
+    // need to fall it back to the default behavior.  Therefore, let's wrap the
+    // default behavior into this lambda.
+    const auto InsertCurrentContentToNextInsertionPoint =
+        [&](const EditorDOMPoint& aPointToInsertContent)
+            MOZ_CAN_RUN_SCRIPT MOZ_NEVER_INLINE_DEBUG -> Result<Ok, nsresult> {
+      // MOZ_KnownLive(content) because 'aArrayOfTopMostChildContents'
+      // guarantees its lifetime.
+      Result<CreateContentResult, nsresult> moveContentResult =
+          mHTMLEditor.InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
+              MOZ_KnownLive(content), aPointToInsertContent,
+              SplitAtEdges::eDoNotCreateEmptyContainer);
+      if (MOZ_LIKELY(moveContentResult.isOk())) {
+        moveContentResult.inspect().IgnoreCaretPointSuggestion();
+        if (MOZ_UNLIKELY(!moveContentResult.inspect().Handled())) {
+          MOZ_ASSERT(aPointToInsertContent.IsSetAndValidInComposedDoc());
+          MOZ_ASSERT_IF(lastInsertedContent,
+                        lastInsertedContent->IsInComposedDoc());
+          return Ok{};
+        }
+        lastInsertedContent = content;
+        MOZ_ASSERT(lastInsertedContent->IsInComposedDoc());
+        return Ok{};
+      }
+      // If we got unexpected DOM tree, let's abort.
+      if (NS_WARN_IF(moveContentResult.inspectErr() ==
+                     NS_ERROR_EDITOR_DESTROYED) ||
+          NS_WARN_IF(moveContentResult.inspectErr() ==
+                     NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE)) {
+        return moveContentResult.propagateErr();
+      }
+      // If we the next insertion point becomes invalid, it means that we
+      // got unexpected DOM tree which couldn't be detected by
+      // InsertNodeIntoProperAncestorWithTransaction().  Let's abort to
+      // avoid to move the node into unexpected position/documents.
+      if (NS_WARN_IF(!aPointToInsertContent.IsSetAndValidInComposedDoc())) {
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+      }
+      // Assume failure means no legal parent in the document hierarchy,
+      // try again with the parent of content in the paste hierarchy.
+      // FYI: We cannot use `InclusiveAncestorOfType` here because of
+      //      calling `InsertNodeIntoProperAncestorWithTransaction()`.
+      EditorDOMPoint pointToInsert = aPointToInsertContent;
+      for (nsCOMPtr<nsIContent> parent = content->GetParent(); parent;
+           parent = parent->GetParent()) {
+        if (NS_WARN_IF(parent->IsHTMLElement(nsGkAtoms::body))) {
+          break;  // for the inner `for` loop
+        }
+        Result<CreateContentResult, nsresult> moveParentResult =
+            mHTMLEditor.InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
+                *parent, pointToInsert,
+                SplitAtEdges::eDoNotCreateEmptyContainer);
+        if (MOZ_UNLIKELY(moveParentResult.isErr())) {
+          // If we got unexpected DOM tree, let's abort.
+          if (NS_WARN_IF(moveParentResult.inspectErr() ==
+                         NS_ERROR_EDITOR_DESTROYED) ||
+              NS_WARN_IF(moveParentResult.inspectErr() ==
+                         NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE)) {
+            return moveParentResult.propagateErr();
+          }
+          // If we the next insertion point becomes invalid, it means that we
+          // got unexpected DOM tree which couldn't be detected by
+          // InsertNodeIntoProperAncestorWithTransaction().  Let's abort to
+          // avoid to move the node into unexpected position/documents.
+          if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc())) {
+            return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+          }
+          // If the parent cannot be inserted into the DOM tree, the node may be
+          // an element to make a specific structure like a table. Then, we can
+          // insert one of its ancestors to the inserting position.  So, let's
+          // retry with its parent.
+          continue;  // the inner `for` loop
+        }
+        moveParentResult.inspect().IgnoreCaretPointSuggestion();
+        if (MOZ_UNLIKELY(!moveParentResult.inspect().Handled())) {
+          MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
+          MOZ_ASSERT_IF(lastInsertedContent,
+                        lastInsertedContent->IsInComposedDoc());
+          continue;
+        }
+        pointToInsert = EditorDOMPoint::After(*parent);
+        lastInsertedContent = parent;
+        MOZ_ASSERT(lastInsertedContent->IsInComposedDoc());
+        insertedContextParentContent = std::move(parent);
+        break;  // from the inner `for` loop
+      }  // end of the inner `for` loop iterating ancestors of content
+      return Ok{};
+    };
 
     // If a `<table>` or `<tr>` element on the clipboard, and pasting it into
     // a `<table>` or `<tr>` element, insert only the appropriate children
     // instead.
-    bool inserted = false;
-    if (HTMLEditUtils::IsTableRowElement(*content) &&
-        HTMLEditUtils::IsTableRowElement(
-            pointToInsert.GetContainerAs<nsIContent>()) &&
-        (content->IsHTMLElement(nsGkAtoms::table) ||
-         pointToInsert.IsContainerHTMLElement(nsGkAtoms::table))) {
-      // Move children of current node to the insertion point.
-      AutoTArray<OwningNonNull<nsIContent>, 24> children;
-      HTMLEditUtils::CollectAllChildren(*content, children);
-      EditorDOMPoint pointToPutCaret;
-      for (const OwningNonNull<nsIContent>& child : children) {
-        // MOZ_KnownLive(child) because of bug 1622253
-        Result<CreateContentResult, nsresult> moveChildResult =
-            mHTMLEditor.InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
-                MOZ_KnownLive(child), pointToInsert,
-                SplitAtEdges::eDoNotCreateEmptyContainer);
-        if (MOZ_UNLIKELY(moveChildResult.isErr())) {
-          // If moving node is moved to different place, we should ignore
-          // this result and keep trying to insert next content node to same
-          // position.
-          if (moveChildResult.inspectErr() ==
-              NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE) {
-            inserted = true;
-            continue;  // the inner `for` loop
-          }
-          NS_WARNING(
-              "HTMLEditor::InsertNodeIntoProperAncestorWithTransaction("
-              "SplitAtEdges::eDoNotCreateEmptyContainer) failed, maybe "
-              "ignored");
-          break;  // from the inner `for` loop
-        }
-        if (MOZ_UNLIKELY(!moveChildResult.inspect().Handled())) {
-          continue;
-        }
-        inserted = true;
-        lastInsertedPoint.Set(child);
-        pointToInsert = lastInsertedPoint.NextPoint();
-        MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
-        CreateContentResult unwrappedMoveChildResult = moveChildResult.unwrap();
-        unwrappedMoveChildResult.MoveCaretPointTo(
-            pointToPutCaret, mHTMLEditor,
-            {SuggestCaret::OnlyIfHasSuggestion,
-             SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
-      }  // end of the inner `for` loop
-
-      if (pointToPutCaret.IsSet()) {
-        nsresult rv = mHTMLEditor.CollapseSelectionTo(pointToPutCaret);
-        if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
-          NS_WARNING(
-              "EditorBase::CollapseSelectionTo() caused destroying the editor");
-          return Err(NS_ERROR_EDITOR_DESTROYED);
-        }
-        NS_WARNING_ASSERTION(
-            NS_SUCCEEDED(rv),
-            "EditorBase::CollapseSelectionTo() failed, but ignored");
-      }
-    }
-    // If a list element on the clipboard, and pasting it into a list or
-    // list item element, insert the appropriate children instead.  I.e.,
-    // merge the list elements instead of pasting as a sublist.
-    else if (HTMLEditUtils::IsListElement(*content) &&
-             (HTMLEditUtils::IsListElement(
-                  pointToInsert.GetContainerAs<nsIContent>()) ||
-              HTMLEditUtils::IsListItemElement(
-                  pointToInsert.GetContainerAs<nsIContent>()))) {
-      AutoTArray<OwningNonNull<nsIContent>, 24> children;
-      HTMLEditUtils::CollectAllChildren(*content, children);
-      EditorDOMPoint pointToPutCaret;
-      for (const OwningNonNull<nsIContent>& child : children) {
-        if (HTMLEditUtils::IsListItemElement(*child) ||
-            HTMLEditUtils::IsListElement(*child)) {
-          // If we're pasting into empty list item, we should remove it
-          // and past current node into the parent list directly.
-          // XXX This creates invalid structure if current list item element
-          //     is not proper child of the parent element, or current node
-          //     is a list element.
-          if (HTMLEditUtils::IsListItemElement(
-                  pointToInsert.GetContainerAs<nsIContent>()) &&
-              HTMLEditUtils::IsEmptyNode(
-                  *pointToInsert.GetContainer(),
-                  {EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
-            NS_WARNING_ASSERTION(pointToInsert.GetContainerParent(),
-                                 "Insertion point is out of the DOM tree");
-            if (pointToInsert.GetContainerParent()) {
-              pointToInsert.Set(pointToInsert.GetContainer());
-              MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
-              AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
-              nsresult rv = mHTMLEditor.DeleteNodeWithTransaction(
-                  MOZ_KnownLive(*pointToInsert.GetChild()));
-              if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
-                NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
-                return Err(NS_ERROR_EDITOR_DESTROYED);
-              }
-              NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                                   "EditorBase::DeleteNodeWithTransaction() "
-                                   "failed, but ignored");
-            }
-          }
-          // MOZ_KnownLive(child) because of bug 1622253
+    if (HTMLEditUtils::IsTableRowElement(*content)) {
+      EditorDOMPoint pointToInsert =
+          lastInsertedContent ? EditorDOMPoint::After(*lastInsertedContent)
+                              : aPointToInsert;
+      if (HTMLEditUtils::IsTableRowElement(
+              pointToInsert.GetContainerAs<nsIContent>()) &&
+          (content->IsHTMLElement(nsGkAtoms::table) ||
+           pointToInsert.IsContainerHTMLElement(nsGkAtoms::table))) {
+        MOZ_ASSERT(!content->IsInComposedDoc());
+        bool inserted = false;
+        for (RefPtr<nsIContent> child = content->GetFirstChild(); child;
+             child = content->GetFirstChild()) {
           Result<CreateContentResult, nsresult> moveChildResult =
               mHTMLEditor
                   .InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
-                      MOZ_KnownLive(child), pointToInsert,
+                      *child, pointToInsert,
                       SplitAtEdges::eDoNotCreateEmptyContainer);
           if (MOZ_UNLIKELY(moveChildResult.isErr())) {
-            // If moving node is moved to different place, we should ignore
-            // this result and keep trying to insert next content node to
-            // same position.
-            if (moveChildResult.inspectErr() ==
-                NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE) {
-              inserted = true;
-              continue;  // the inner `for` loop
-            }
+            // If we got unexpected DOM tree, let's abort.
             if (NS_WARN_IF(moveChildResult.inspectErr() ==
-                           NS_ERROR_EDITOR_DESTROYED)) {
-              return Err(NS_ERROR_EDITOR_DESTROYED);
+                           NS_ERROR_EDITOR_DESTROYED) ||
+                NS_WARN_IF(moveChildResult.inspectErr() ==
+                           NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE)) {
+              return moveChildResult.propagateErr();
+            }
+            // If we the next insertion point becomes invalid, it means that
+            // we got unexpected DOM tree which couldn't be detected by
+            // InsertNodeIntoProperAncestorWithTransaction().  Let's abort to
+            // avoid to move the node into unexpected position/documents.
+            if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc())) {
+              return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
             }
             NS_WARNING(
                 "HTMLEditor::InsertNodeIntoProperAncestorWithTransaction("
@@ -1101,83 +1117,176 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
                 "ignored");
             break;  // from the inner `for` loop
           }
+          moveChildResult.inspect().IgnoreCaretPointSuggestion();
           if (MOZ_UNLIKELY(!moveChildResult.inspect().Handled())) {
+            MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
+            MOZ_ASSERT_IF(lastInsertedContent,
+                          lastInsertedContent->IsInComposedDoc());
             continue;
           }
           inserted = true;
-          lastInsertedPoint.Set(child);
-          pointToInsert = lastInsertedPoint.NextPoint();
+          pointToInsert = EditorDOMPoint::After(*child);
           MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
-          CreateContentResult unwrappedMoveChildResult =
-              moveChildResult.unwrap();
-          unwrappedMoveChildResult.MoveCaretPointTo(
-              pointToPutCaret, mHTMLEditor,
-              {SuggestCaret::OnlyIfHasSuggestion,
-               SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
-        }
-        // If the child of current node is not list item nor list element,
-        // we should remove it from the DOM tree.
-        else if (HTMLEditUtils::IsRemovableNode(child)) {
-          AutoEditorDOMPointChildInvalidator lockOffset(pointToInsert);
-          IgnoredErrorResult ignoredError;
-          content->RemoveChild(child, ignoredError);
-          if (MOZ_UNLIKELY(mHTMLEditor.Destroyed())) {
-            NS_WARNING(
-                "nsIContent::RemoveChild() caused destroying the editor");
-            return Err(NS_ERROR_EDITOR_DESTROYED);
+          lastInsertedContent = std::move(child);
+          MOZ_ASSERT(lastInsertedContent->IsInComposedDoc());
+        }  // end of the inner `for` loop iterating children of `content`
+        if (!inserted) {
+          Result<Ok, nsresult> moveContentOrParentResultOrError =
+              InsertCurrentContentToNextInsertionPoint(pointToInsert);
+          if (MOZ_UNLIKELY(moveContentOrParentResultOrError.isErr())) {
+            NS_WARNING("InsertCurrentContentToNextInsertionPoint() failed");
+            return moveContentOrParentResultOrError.propagateErr();
           }
-          NS_WARNING_ASSERTION(!ignoredError.Failed(),
-                               "nsINode::RemoveChild() failed, but ignored");
-        } else {
-          NS_WARNING(
-              "Failed to delete the first child of a list element because the "
-              "list element non-editable");
-          break;  // from the inner `for` loop
         }
-      }  // end of the inner `for` loop
+        continue;
+      }
+    }  // if <tr>
 
-      if (MOZ_UNLIKELY(mHTMLEditor.Destroyed())) {
-        NS_WARNING("The editor has been destroyed");
-        return Err(NS_ERROR_EDITOR_DESTROYED);
-      }
-      if (pointToPutCaret.IsSet()) {
-        nsresult rv = mHTMLEditor.CollapseSelectionTo(pointToPutCaret);
-        if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
-          NS_WARNING(
-              "EditorBase::CollapseSelectionTo() caused destroying the editor");
-          return Err(NS_ERROR_EDITOR_DESTROYED);
+    // If a list element on the clipboard, and pasting it into a list or
+    // list item element, insert the appropriate children instead.  I.e.,
+    // merge the list elements instead of pasting as a sublist.
+    if (HTMLEditUtils::IsListElement(*content)) {
+      EditorDOMPoint pointToInsert =
+          lastInsertedContent ? EditorDOMPoint::After(*lastInsertedContent)
+                              : aPointToInsert;
+      if (HTMLEditUtils::IsListElement(
+              pointToInsert.GetContainerAs<nsIContent>()) ||
+          HTMLEditUtils::IsListItemElement(
+              pointToInsert.GetContainerAs<nsIContent>())) {
+        MOZ_ASSERT(!content->IsInComposedDoc());
+        bool inserted = false;
+        for (RefPtr<nsIContent> child = content->GetFirstChild(); child;
+             child = content->GetFirstChild()) {
+          // Ignore invisible nodes like `Comment` or white-space only `Text`
+          // and invalid children of the list element.
+          // XXX Although we should not construct invalid structure, but
+          // shouldn't we preserve invalid children for avoiding dataloss?
+          if (!HTMLEditUtils::IsListItemElement(*child) &&
+              !HTMLEditUtils::IsListElement(*child)) {
+            continue;
+          }
+          // If we're pasting into empty list item, we should remove it
+          // and past current node into the parent list directly.
+          // XXX This creates invalid structure if current list item element
+          //     is not proper child of the parent element, or current node
+          //     is a list element.
+          if (HTMLEditUtils::IsListItemElement(
+                  pointToInsert.GetContainerAs<nsIContent>()) &&
+              HTMLEditUtils::IsRemovableNode(
+                  *pointToInsert.ContainerAs<Element>()) &&
+              HTMLEditUtils::IsEmptyNode(
+                  *pointToInsert.ContainerAs<Element>(),
+                  {EmptyCheckOption::TreatNonEditableContentAsInvisible})) {
+            const OwningNonNull<Element> emptyListItemElement =
+                *pointToInsert.ContainerAs<Element>();
+            nsCOMPtr<nsINode> parentNode =
+                emptyListItemElement->GetParentNode();
+            MOZ_ASSERT(parentNode);
+            nsCOMPtr<nsIContent> nextSibling =
+                emptyListItemElement->GetNextSibling();
+            nsresult rv =
+                mHTMLEditor.DeleteNodeWithTransaction(*emptyListItemElement);
+            if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+              NS_WARNING("EditorBase::DeleteNodeWithTransaction() failed");
+              return Err(NS_ERROR_EDITOR_DESTROYED);
+            }
+            if (NS_WARN_IF(!parentNode->IsInComposedDoc()) ||
+                NS_WARN_IF(nextSibling &&
+                           nextSibling->GetParentNode() != parentNode)) {
+              return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+            }
+            NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                                 "EditorBase::DeleteNodeWithTransaction() "
+                                 "failed, but ignored");
+            pointToInsert =
+                nextSibling ? EditorDOMPoint(std::move(nextSibling))
+                            : EditorDOMPoint::AtEndOf(std::move(parentNode));
+            MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
+          }
+          NS_WARNING(nsPrintfCString("%s into %s", ToString(*child).c_str(),
+                                     ToString(pointToInsert).c_str())
+                         .get());
+          Result<CreateContentResult, nsresult> moveChildResult =
+              mHTMLEditor
+                  .InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
+                      *child, pointToInsert,
+                      SplitAtEdges::eDoNotCreateEmptyContainer);
+          if (MOZ_UNLIKELY(moveChildResult.isErr())) {
+            // If we got unexpected DOM tree, let's abort.
+            if (NS_WARN_IF(moveChildResult.inspectErr() ==
+                           NS_ERROR_EDITOR_DESTROYED) ||
+                NS_WARN_IF(moveChildResult.inspectErr() ==
+                           NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE)) {
+              return moveChildResult.propagateErr();
+            }
+            // If we the next insertion point becomes invalid, it means that
+            // we got unexpected DOM tree which couldn't be detected by
+            // InsertNodeIntoProperAncestorWithTransaction().  Let's abort to
+            // avoid to move the node into unexpected position/documents.
+            if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc())) {
+              return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+            }
+            NS_WARNING(
+                "HTMLEditor::InsertNodeIntoProperAncestorWithTransaction("
+                "SplitAtEdges::eDoNotCreateEmptyContainer) failed, but maybe "
+                "ignored");
+            break;  // from the inner `for` loop
+          }
+          moveChildResult.inspect().IgnoreCaretPointSuggestion();
+          if (MOZ_UNLIKELY(!moveChildResult.inspect().Handled())) {
+            MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
+            MOZ_ASSERT_IF(lastInsertedContent,
+                          lastInsertedContent->IsInComposedDoc());
+            continue;
+          }
+          inserted = true;
+          pointToInsert = EditorDOMPoint::After(*child);
+          MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
+          lastInsertedContent = std::move(child);
+          MOZ_ASSERT(lastInsertedContent->IsInComposedDoc());
+        }  // end of the inner `for` loop iterating children of `content`
+        if (!inserted) {
+          Result<Ok, nsresult> moveContentOrParentResultOrError =
+              InsertCurrentContentToNextInsertionPoint(pointToInsert);
+          if (MOZ_UNLIKELY(moveContentOrParentResultOrError.isErr())) {
+            NS_WARNING("InsertCurrentContentToNextInsertionPoint() failed");
+            return moveContentOrParentResultOrError.propagateErr();
+          }
         }
-        NS_WARNING_ASSERTION(
-            NS_SUCCEEDED(rv),
-            "EditorBase::CollapseSelectionTo() failed, but ignored");
+        continue;
       }
-    }
+    }  // if <ul>, <ol> or <dl>
+
     // If pasting into a `<pre>` element and current node is a `<pre>` element,
     // move only its children.
-    else if (maybeNonEditableBlockElement &&
-             maybeNonEditableBlockElement->IsHTMLElement(nsGkAtoms::pre) &&
-             content->IsHTMLElement(nsGkAtoms::pre)) {
-      // Check for pre's going into pre's.
-      AutoTArray<OwningNonNull<nsIContent>, 24> children;
-      HTMLEditUtils::CollectAllChildren(*content, children);
-      EditorDOMPoint pointToPutCaret;
-      for (const OwningNonNull<nsIContent>& child : children) {
-        // MOZ_KnownLive(child) because of bug 1622253
+    if (maybeNonEditableBlockElement &&
+        maybeNonEditableBlockElement->IsHTMLElement(nsGkAtoms::pre) &&
+        content->IsHTMLElement(nsGkAtoms::pre)) {
+      MOZ_ASSERT(!content->IsInComposedDoc());
+      EditorDOMPoint pointToInsert =
+          lastInsertedContent ? EditorDOMPoint::After(*lastInsertedContent)
+                              : aPointToInsert;
+      bool inserted = false;
+      for (RefPtr<nsIContent> child = content->GetFirstChild(); child;
+           child = content->GetFirstChild()) {
         Result<CreateContentResult, nsresult> moveChildResult =
             mHTMLEditor.InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
-                MOZ_KnownLive(child), pointToInsert,
+                *child, pointToInsert,
                 SplitAtEdges::eDoNotCreateEmptyContainer);
         if (MOZ_UNLIKELY(moveChildResult.isErr())) {
-          // If moving node is moved to different place, we should ignore
-          // this result and keep trying to insert next content node there.
-          if (moveChildResult.inspectErr() ==
-              NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE) {
-            inserted = true;
-            continue;  // the inner `for` loop
-          }
+          // If we got unexpected DOM tree, let's abort.
           if (NS_WARN_IF(moveChildResult.inspectErr() ==
-                         NS_ERROR_EDITOR_DESTROYED)) {
+                         NS_ERROR_EDITOR_DESTROYED) ||
+              NS_WARN_IF(moveChildResult.inspectErr() ==
+                         NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE)) {
             return moveChildResult.propagateErr();
+          }
+          // If we the next insertion point becomes invalid, it means that we
+          // got unexpected DOM tree which couldn't be detected by
+          // InsertNodeIntoProperAncestorWithTransaction().  Let's abort to
+          // avoid to move the node into unexpected position/documents.
+          if (NS_WARN_IF(!pointToInsert.IsSetAndValidInComposedDoc())) {
+            return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
           }
           NS_WARNING(
               "HTMLEditor::InsertNodeIntoProperAncestorWithTransaction("
@@ -1185,140 +1294,48 @@ HTMLEditor::HTMLWithContextInserter::InsertContents(
               "ignored");
           break;  // from the inner `for` loop
         }
+        moveChildResult.inspect().IgnoreCaretPointSuggestion();
         if (MOZ_UNLIKELY(!moveChildResult.inspect().Handled())) {
-          continue;
-        }
-        CreateContentResult unwrappedMoveChildResult = moveChildResult.unwrap();
-        inserted = true;
-        lastInsertedPoint.Set(child);
-        pointToInsert = lastInsertedPoint.NextPoint();
-        MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
-        unwrappedMoveChildResult.MoveCaretPointTo(
-            pointToPutCaret, mHTMLEditor,
-            {SuggestCaret::OnlyIfHasSuggestion,
-             SuggestCaret::OnlyIfTransactionsAllowedToDoIt});
-      }  // end of the inner `for` loop
-
-      if (pointToPutCaret.IsSet()) {
-        nsresult rv = mHTMLEditor.CollapseSelectionTo(pointToPutCaret);
-        if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
-          NS_WARNING(
-              "EditorBase::CollapseSelectionTo() caused destroying the editor");
-          return Err(NS_ERROR_EDITOR_DESTROYED);
-        }
-        NS_WARNING_ASSERTION(
-            NS_SUCCEEDED(rv),
-            "EditorBase::CollapseSelectionTo() failed, but ignored");
-      }
-    }
-
-    // TODO: For making the above code clearer, we should move this fallback
-    //       path into a lambda and call it in each if/else-if block.
-    // If we haven't inserted current node nor its children, move current node
-    // to the insertion point.
-    if (!inserted) {
-      // MOZ_KnownLive(content) because 'aArrayOfTopMostChildContents' is
-      // guaranteed to keep it alive.
-      Result<CreateContentResult, nsresult> moveContentResult =
-          mHTMLEditor.InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
-              MOZ_KnownLive(content), pointToInsert,
-              SplitAtEdges::eDoNotCreateEmptyContainer);
-      if (MOZ_LIKELY(moveContentResult.isOk())) {
-        if (MOZ_UNLIKELY(!moveContentResult.inspect().Handled())) {
-          continue;
-        }
-        lastInsertedPoint.Set(content);
-        pointToInsert = lastInsertedPoint;
-        MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
-        nsresult rv = moveContentResult.inspect().SuggestCaretPointTo(
-            mHTMLEditor, {SuggestCaret::OnlyIfHasSuggestion,
-                          SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                          SuggestCaret::AndIgnoreTrivialError});
-        if (NS_FAILED(rv)) {
-          NS_WARNING("CreateContentResult::SuggestCaretPointTo() failed");
-          return Err(rv);
-        }
-        NS_WARNING_ASSERTION(
-            rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-            "CreateContentResult::SuggestCaretPointTo() failed, but ignored");
-      } else if (moveContentResult.inspectErr() ==
-                 NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE) {
-        // Moving node is moved to different place, we should keep trying to
-        // insert the next content to same position.
-      } else {
-        NS_WARNING(
-            "HTMLEditor::InsertNodeIntoProperAncestorWithTransaction("
-            "SplitAtEdges::eDoNotCreateEmptyContainer) failed, but ignored");
-        // Assume failure means no legal parent in the document hierarchy,
-        // try again with the parent of content in the paste hierarchy.
-        // FYI: We cannot use `InclusiveAncestorOfType` here because of
-        //      calling `InsertNodeIntoProperAncestorWithTransaction()`.
-        for (nsCOMPtr<nsIContent> childContent = content; childContent;
-             childContent = childContent->GetParent()) {
-          if (NS_WARN_IF(!childContent->GetParent()) ||
-              NS_WARN_IF(
-                  childContent->GetParent()->IsHTMLElement(nsGkAtoms::body))) {
-            break;  // for the inner `for` loop
-          }
-          const OwningNonNull<nsIContent> oldParentContent =
-              *childContent->GetParent();
-          Result<CreateContentResult, nsresult> moveParentResult =
-              mHTMLEditor
-                  .InsertNodeIntoProperAncestorWithTransaction<nsIContent>(
-                      oldParentContent, pointToInsert,
-                      SplitAtEdges::eDoNotCreateEmptyContainer);
-          if (MOZ_UNLIKELY(moveParentResult.isErr())) {
-            // Moving node is moved to different place, we should keep trying to
-            // insert the next content to same position.
-            if (moveParentResult.inspectErr() ==
-                NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE) {
-              break;  // from the inner `for` loop
-            }
-            if (NS_WARN_IF(moveParentResult.inspectErr() ==
-                           NS_ERROR_EDITOR_DESTROYED)) {
-              return Err(NS_ERROR_EDITOR_DESTROYED);
-            }
-            NS_WARNING(
-                "HTMLEditor::InsertNodeInToProperAncestorWithTransaction("
-                "SplitAtEdges::eDoNotCreateEmptyContainer) failed, but "
-                "ignored");
-            continue;  // the inner `for` loop
-          }
-          if (MOZ_UNLIKELY(!moveParentResult.inspect().Handled())) {
-            continue;
-          }
-          insertedContextParentContent = oldParentContent;
-          pointToInsert.Set(oldParentContent);
           MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
-          nsresult rv = moveParentResult.inspect().SuggestCaretPointTo(
-              mHTMLEditor, {SuggestCaret::OnlyIfHasSuggestion,
-                            SuggestCaret::OnlyIfTransactionsAllowedToDoIt,
-                            SuggestCaret::AndIgnoreTrivialError});
-          if (NS_FAILED(rv)) {
-            NS_WARNING("CreateContentResult::SuggestCaretPointTo() failed");
-            return Err(rv);
-          }
-          NS_WARNING_ASSERTION(
-              rv != NS_SUCCESS_EDITOR_BUT_IGNORED_TRIVIAL_ERROR,
-              "CreateContentResult::SuggestCaretPointTo() failed, but ignored");
-          break;  // from the inner `for` loop
-        }  // end of the inner `for` loop
+          MOZ_ASSERT_IF(lastInsertedContent,
+                        lastInsertedContent->IsInComposedDoc());
+          continue;
+        }
+        inserted = true;
+        pointToInsert = EditorDOMPoint::After(*child);
+        MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
+        lastInsertedContent = std::move(child);
+        MOZ_ASSERT(lastInsertedContent->IsInComposedDoc());
+      }  // end of the inner `for` loop iterating children of `content`
+      if (!inserted) {
+        Result<Ok, nsresult> moveContentOrParentResultOrError =
+            InsertCurrentContentToNextInsertionPoint(pointToInsert);
+        if (MOZ_UNLIKELY(moveContentOrParentResultOrError.isErr())) {
+          NS_WARNING("InsertCurrentContentToNextInsertionPoint() failed");
+          return moveContentOrParentResultOrError.propagateErr();
+        }
       }
-    }
-    if (lastInsertedPoint.IsSet()) {
-      if (MOZ_UNLIKELY(lastInsertedPoint.GetContainer() !=
-                       lastInsertedPoint.GetChild()->GetParentNode())) {
-        NS_WARNING(
-            "HTMLEditor::InsertHTMLWithContextAsSubAction() got lost insertion "
-            "point");
-        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
-      }
-      pointToInsert = lastInsertedPoint.NextPoint();
-      MOZ_ASSERT(pointToInsert.IsSetAndValidInComposedDoc());
-    }
-  }  // end of the `for` loop
+      continue;
+    }  // if <pre> and inserting into a connected <pre>
 
-  return lastInsertedPoint;
+    // By default, we should move `content` into the DOM.
+    Result<Ok, nsresult> moveContentOrParentResultOrError =
+        InsertCurrentContentToNextInsertionPoint(
+            lastInsertedContent ? EditorDOMPoint::After(*lastInsertedContent)
+                                : aPointToInsert);
+    if (MOZ_UNLIKELY(moveContentOrParentResultOrError.isErr())) {
+      NS_WARNING("InsertCurrentContentToNextInsertionPoint() failed");
+      return moveContentOrParentResultOrError.propagateErr();
+    }
+  }  // end of the `for` loop iterating aArrayOfTopMostChildContents
+
+  if (!lastInsertedContent) {
+    return CreateContentResult::NotHandled();
+  }
+  EditorDOMPoint pointToPutCaret =
+      GetNewCaretPointAfterInsertingHTML(EditorDOMPoint(lastInsertedContent));
+  return CreateContentResult(std::move(lastInsertedContent),
+                             std::move(pointToPutCaret));
 }
 
 nsresult HTMLEditor::HTMLWithContextInserter::MoveCaretOutsideOfLink(

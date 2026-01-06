@@ -28,7 +28,6 @@ import org.mozilla.fenix.trackingprotection.TrackingProtectionCategory
 @Composable
 internal fun TrackerCategoryDetailsPanel(
     title: String,
-    isTotalCookieProtectionEnabled: Boolean,
     detailedTrackerCategory: TrackingProtectionCategory?,
     bucketedTrackers: TrackerBuckets,
     onBackButtonClick: () -> Unit,
@@ -49,9 +48,7 @@ internal fun TrackerCategoryDetailsPanel(
             val trackerCategoryTitle: String
             val trackerCategoryDescription: String
 
-            if (detailedTrackerCategory == TrackingProtectionCategory.CROSS_SITE_TRACKING_COOKIES &&
-                isTotalCookieProtectionEnabled
-            ) {
+            if (detailedTrackerCategory == TrackingProtectionCategory.CROSS_SITE_TRACKING_COOKIES) {
                 trackerCategoryTitle = stringResource(id = R.string.etp_cookies_title_2)
                 trackerCategoryDescription = stringResource(id = R.string.etp_cookies_description_2)
             } else if (detailedTrackerCategory != null) {
@@ -109,7 +106,6 @@ private fun TrackersBlockedPanelPreview() {
         ) {
             TrackerCategoryDetailsPanel(
                 title = "Mozilla",
-                isTotalCookieProtectionEnabled = true,
                 detailedTrackerCategory = TrackingProtectionCategory.CROSS_SITE_TRACKING_COOKIES,
                 bucketedTrackers = TrackerBuckets(),
                 onBackButtonClick = {},

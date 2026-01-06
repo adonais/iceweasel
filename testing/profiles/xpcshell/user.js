@@ -14,7 +14,6 @@ user_pref("extensions.webextensions.warnings-as-errors", true);
 // so we bypass the OSX dialog raised by the corelocation provider
 user_pref("geo.provider.testing", true);
 user_pref("browser.region.network.url", "");
-user_pref("geo.provider.network.compare.url", "");
 user_pref("media.gmp-manager.updateEnabled", false);
 user_pref("media.gmp-manager.url.override", "http://%(server)s/dummy-gmp-manager.xml");
 user_pref("toolkit.telemetry.server", "https://%(server)s/telemetry-dummy");

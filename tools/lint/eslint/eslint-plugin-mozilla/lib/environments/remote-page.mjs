@@ -12,7 +12,7 @@ export default {
     btoa: "readonly",
     RPMAddTRRExcludedDomain: "readonly",
     RPMGetAppBuildID: "readonly",
-    RPMGetInnerMostURI: "readonly",
+    RPMGetHostForDisplay: "readonly",
     RPMGetIntPref: "readonly",
     RPMGetStringPref: "readonly",
     RPMGetBoolPref: "readonly",

@@ -905,7 +905,7 @@ void Animation::CommitStyles(ErrorResult& aRv) {
   // Set the animated styles
   bool changed = false;
   const AnimatedPropertyIDSet& properties = keyframeEffect->GetPropertySet();
-  for (const AnimatedPropertyID& property : properties) {
+  for (const CSSPropertyId& property : properties) {
     RefPtr<StyleAnimationValue> computedValue =
         Servo_AnimationValueMap_GetValue(animationValues.get(), &property)
             .Consume();

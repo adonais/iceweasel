@@ -52,7 +52,12 @@ add_task(async function () {
   // The `main, [test="no-inherit"]` only has 1 definition that should be hidden,
   // which means that the whole rule should be hidden
   await checkRuleViewContent(view, [
-    { selector: `element`, ancestorRulesData: null, declarations: [] },
+    {
+      selector: `element`,
+      ancestorRulesData: null,
+      selectorEditable: false,
+      declarations: [],
+    },
     {
       selector: `h1`,
       declarations: [
@@ -63,12 +68,12 @@ add_task(async function () {
     },
     { header: "Inherited from main" },
     {
-      selector: `main, [test="unregistered"]`,
+      selector: `main, ~~[test="unregistered"]~~`,
       inherited: true,
       declarations: [{ name: "--myvar", value: "brown" }],
     },
     {
-      selector: `main, [test="inherit"]`,
+      selector: `main, ~~[test="inherit"]~~`,
       inherited: true,
       declarations: [{ name: "--inherit", value: "red" }],
     },

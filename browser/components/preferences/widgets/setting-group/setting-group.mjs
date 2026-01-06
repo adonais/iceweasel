@@ -8,8 +8,19 @@ import {
   spread,
 } from "chrome://browser/content/preferences/widgets/setting-element.mjs";
 
-/** @import { SettingControl } from "../setting-control/setting-control.mjs"; */
-/** @import {PreferencesSettingsConfig, Preferences} from "chrome://global/content/preferences/Preferences.mjs" */
+/** @import { SettingElementConfig } from "chrome://browser/content/preferences/widgets/setting-element.mjs" */
+/** @import { SettingControlConfig, SettingControlEvent } from "../setting-control/setting-control.mjs" */
+/** @import { Preferences } from "chrome://global/content/preferences/Preferences.mjs" */
+
+/**
+ * @typedef {object} SettingGroupConfigExtensions
+ * @property {SettingControlConfig[]} items Array of SettingControlConfigs to render.
+ * @property {number} [headingLevel] A heading level to create the legend as (1-6).
+ * @property {boolean} [inProgress]
+ * Hide this section unless the browser.settings-redesign.enabled or
+ * browser.settings-redesign.<groupid>.enabled prefs are true.
+ */
+/** @typedef {SettingElementConfig & SettingGroupConfigExtensions} SettingGroupConfig */
 
 const CLICK_HANDLERS = new Set([
   "dialog-button",
@@ -19,6 +30,17 @@ const CLICK_HANDLERS = new Set([
   "moz-button",
   "moz-box-group",
 ]);
+
+/**
+ * Enumish of attribute names used for changing setting-group and groupbox
+ * visibilities based on the visibility of child setting-controls.
+ */
+const HiddenAttr = Object.freeze({
+  /** Attribute used to hide elements without using the hidden attribute. */
+  Self: "data-hidden-by-setting-group",
+  /** Attribute used to signal that this element should not be searchable. */
+  Search: "data-hidden-from-search",
+});
 
 export class SettingGroup extends SettingElement {
   constructor() {
@@ -30,7 +52,7 @@ export class SettingGroup extends SettingElement {
     this.getSetting = undefined;
 
     /**
-     * @type {PreferencesSettingsConfig | undefined}
+     * @type {SettingGroupConfig | undefined}
      */
     this.config = undefined;
   }
@@ -51,30 +73,31 @@ export class SettingGroup extends SettingElement {
 
   async handleVisibilityChange() {
     await this.updateComplete;
-    let visibleControls = [...this.controlEls].filter(el => !el.hidden);
-    if (!visibleControls.length) {
-      this.hidden = true;
+    // @ts-expect-error bug 1997478
+    let hasVisibleControls = [...this.controlEls].some(el => !el.hidden);
+    let groupbox = /** @type {XULElement} */ (this.closest("groupbox"));
+    if (hasVisibleControls) {
+      if (this.hasAttribute(HiddenAttr.Self)) {
+        this.removeAttribute(HiddenAttr.Self);
+        this.removeAttribute(HiddenAttr.Search);
+      }
+      if (groupbox && groupbox.hasAttribute(HiddenAttr.Self)) {
+        groupbox.removeAttribute(HiddenAttr.Search);
+        groupbox.removeAttribute(HiddenAttr.Self);
+      }
     } else {
-      this.hidden = false;
-    }
-    // FIXME: We need to replace this.closest() once the SettingGroup
-    // provides its own card wrapper/groupbox replacement element.
-    let closestGroupbox = this.closest("groupbox");
-    if (!closestGroupbox) {
-      return;
-    }
-    if (this.hidden) {
-      // Can't rely on .hidden for the toplevel groupbox because
-      // of the pane hiding/showing code potentially changing the
-      // hidden attribute.
-      closestGroupbox.style.display = "none";
-    } else {
-      closestGroupbox.style.display = "";
+      this.setAttribute(HiddenAttr.Self, "");
+      this.setAttribute(HiddenAttr.Search, "true");
+      if (groupbox && !groupbox.hasAttribute(HiddenAttr.Search)) {
+        groupbox.setAttribute(HiddenAttr.Search, "true");
+        groupbox.setAttribute(HiddenAttr.Self, "");
+      }
     }
   }
 
   async getUpdateComplete() {
     let result = await super.getUpdateComplete();
+    // @ts-expect-error bug 1997478
     await Promise.all([...this.controlEls].map(el => el.updateComplete));
     return result;
   }
@@ -83,24 +106,31 @@ export class SettingGroup extends SettingElement {
    * Notify child controls when their input has fired an event. When controls
    * are nested the parent receives events for the nested controls, so this is
    * actually easier to manage here; it also registers fewer listeners.
+   *
+   * @param {SettingControlEvent<InputEvent>} e
    */
   onChange(e) {
     let inputEl = e.target;
-    let control = inputEl.control;
-    control?.onChange(inputEl);
-  }
-
-  onClick(e) {
-    if (!CLICK_HANDLERS.has(e.target.localName)) {
-      return;
-    }
-    let inputEl = e.target;
-    let control = inputEl.control;
-    control?.onClick(e);
+    inputEl.control?.onChange(inputEl);
   }
 
   /**
-   * @param {PreferencesSettingsConfig} item
+   * Notify child controls when their input has been clicked. When controls
+   * are nested the parent receives events for the nested controls, so this is
+   * actually easier to manage here; it also registers fewer listeners.
+   *
+   * @param {SettingControlEvent<MouseEvent>} e
+   */
+  onClick(e) {
+    let inputEl = e.target;
+    if (!CLICK_HANDLERS.has(inputEl.localName)) {
+      return;
+    }
+    inputEl.control?.onClick(e);
+  }
+
+  /**
+   * @param {SettingControlConfig} item
    */
   itemTemplate(item) {
     let setting = this.getSetting(item.id);

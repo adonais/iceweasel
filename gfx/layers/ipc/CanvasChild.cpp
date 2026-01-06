@@ -517,24 +517,32 @@ already_AddRefed<gfx::DrawTargetRecording> CanvasChild::CreateDrawTarget(
   return dt.forget();
 }
 
-bool CanvasChild::EnsureDataSurfaceShmem(gfx::IntSize aSize,
-                                         gfx::SurfaceFormat aFormat) {
-  NS_ASSERT_OWNINGTHREAD(CanvasChild);
-
+size_t CanvasChild::SizeOfDataSurfaceShmem(gfx::IntSize aSize,
+                                           gfx::SurfaceFormat aFormat) {
   if (!mRecorder) {
-    return false;
+    return 0;
   }
-
   size_t sizeRequired =
       ImageDataSerializer::ComputeRGBBufferSize(aSize, aFormat);
-  if (!sizeRequired) {
+  return sizeRequired > 0 ? ipc::shared_memory::PageAlignedSize(sizeRequired)
+                          : 0;
+}
+
+bool CanvasChild::ShouldGrowDataSurfaceShmem(size_t aSizeRequired) {
+  return aSizeRequired > 0 && (!mDataSurfaceShmemAvailable ||
+                               mDataSurfaceShmem->Size() < aSizeRequired);
+}
+
+bool CanvasChild::EnsureDataSurfaceShmem(size_t aSizeRequired) {
+  NS_ASSERT_OWNINGTHREAD(CanvasChild);
+
+  if (!aSizeRequired) {
     return false;
   }
-  sizeRequired = ipc::shared_memory::PageAlignedSize(sizeRequired);
 
-  if (!mDataSurfaceShmemAvailable || mDataSurfaceShmem->Size() < sizeRequired) {
+  if (ShouldGrowDataSurfaceShmem(aSizeRequired)) {
     RecordEvent(RecordedPauseTranslation());
-    auto shmemHandle = ipc::shared_memory::Create(sizeRequired);
+    auto shmemHandle = ipc::shared_memory::Create(aSizeRequired);
     if (!shmemHandle) {
       return false;
     }
@@ -544,7 +552,12 @@ bool CanvasChild::EnsureDataSurfaceShmem(gfx::IntSize aSize,
       return false;
     }
 
-    if (!SendSetDataSurfaceBuffer(std::move(shmemHandle))) {
+    auto id = ++mNextDataSurfaceShmemId;
+    if (!id) {
+      // If ids overflow, ensure that zero is reserved.
+      id = ++mNextDataSurfaceShmemId;
+    }
+    if (!SendSetDataSurfaceBuffer(id, std::move(shmemHandle))) {
       return false;
     }
 
@@ -555,6 +568,16 @@ bool CanvasChild::EnsureDataSurfaceShmem(gfx::IntSize aSize,
 
   MOZ_ASSERT(mDataSurfaceShmemAvailable);
   return true;
+}
+
+bool CanvasChild::EnsureDataSurfaceShmem(gfx::IntSize aSize,
+                                         gfx::SurfaceFormat aFormat) {
+  size_t sizeRequired = SizeOfDataSurfaceShmem(aSize, aFormat);
+  if (!sizeRequired) {
+    return false;
+  }
+
+  return EnsureDataSurfaceShmem(sizeRequired);
 }
 
 void CanvasChild::RecordEvent(const gfx::RecordedEvent& aEvent) {
@@ -625,13 +648,18 @@ already_AddRefed<gfx::DataSourceSurface> CanvasChild::GetDataSurface(
     }
   }
 
-  RecordEvent(RecordedCacheDataSurface(aSurface, true));
-
-  if (!EnsureDataSurfaceShmem(ssSize, ssFormat)) {
+  size_t sizeRequired = SizeOfDataSurfaceShmem(ssSize, ssFormat);
+  if (!sizeRequired) {
     return nullptr;
   }
 
-  RecordEvent(RecordedGetDataForSurface(aSurface));
+  RecordEvent(RecordedCacheDataSurface(aSurface));
+
+  if (!EnsureDataSurfaceShmem(sizeRequired)) {
+    return nullptr;
+  }
+
+  RecordEvent(RecordedGetDataForSurface(mNextDataSurfaceShmemId, aSurface));
   auto checkpoint = CreateCheckpoint();
   if (NS_WARN_IF(!mRecorder->WaitForCheckpoint(checkpoint))) {
     return nullptr;

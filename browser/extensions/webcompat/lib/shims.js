@@ -12,7 +12,7 @@
 // on tabs where a shim using a given logo happens to be active).
 const LogosBaseURL = "https://smartblock.firefox.etp/";
 
-const loggingPrefPromise = browser.aboutConfigPrefs.getPref(
+const loggingPrefValue = browser.aboutConfigPrefs.getPref(
   "disable_debug_logging"
 );
 
@@ -24,7 +24,7 @@ const platformPromise = browser.runtime.getPlatformInfo().then(info => {
 
 let debug = async function () {
   if (
-    (await loggingPrefPromise) !== true &&
+    loggingPrefValue !== true &&
     (await releaseBranchPromise) !== "release_or_beta"
   ) {
     console.debug.apply(this, arguments);
@@ -69,8 +69,10 @@ class Shim {
     this.runFirst = opts.runFirst;
     this.unblocksOnOptIn = unblocksOnOptIn;
     this.requestStorageAccessForRedirect = opts.requestStorageAccessForRedirect;
-    this.shouldUseScriptingAPI =
-      browser.aboutConfigPrefs.getBoolPrefSync("useScriptingAPI");
+    this.shouldUseScriptingAPI = browser.aboutConfigPrefs.getPref(
+      "useScriptingAPI",
+      false
+    );
     this.isSmartblockEmbedShim = opts.isSmartblockEmbedShim || false;
     debug(
       `WebCompat Shim ${this.id} will be injected using ${
@@ -130,36 +132,33 @@ class Shim {
     }
 
     browser.aboutConfigPrefs.onPrefChange.addListener(async () => {
-      const value = await browser.aboutConfigPrefs.getPref(pref);
+      const value = browser.aboutConfigPrefs.getPref(pref);
       this._disabledPrefValue = value;
       this._onEnabledStateChanged({ alsoClearResourceCache: true });
     }, pref);
 
-    this.ready = Promise.all([
-      browser.aboutConfigPrefs.getPref(pref),
-      platformPromise,
-      releaseBranchPromise,
-    ]).then(([disabledPrefValue, platform, branch]) => {
-      this._disabledPrefValue = disabledPrefValue;
+    this._disabledPrefValue = browser.aboutConfigPrefs.getPref(pref);
+    this.ready = Promise.all([platformPromise, releaseBranchPromise]).then(
+      ([platform, branch]) => {
+        this._disabledByPlatform =
+          this.platform !== "all" && this.platform !== platform;
 
-      this._disabledByPlatform =
-        this.platform !== "all" && this.platform !== platform;
-
-      this._disabledByReleaseBranch = false;
-      for (const supportedBranchAndPlatform of this.branches || []) {
-        const [supportedBranch, supportedPlatform] =
-          supportedBranchAndPlatform.split(":");
-        if (
-          (!supportedPlatform || supportedPlatform == platform) &&
-          supportedBranch != branch
-        ) {
-          this._disabledByReleaseBranch = true;
+        this._disabledByReleaseBranch = false;
+        for (const supportedBranchAndPlatform of this.branches || []) {
+          const [supportedBranch, supportedPlatform] =
+            supportedBranchAndPlatform.split(":");
+          if (
+            (!supportedPlatform || supportedPlatform == platform) &&
+            supportedBranch != branch
+          ) {
+            this._disabledByReleaseBranch = true;
+          }
         }
-      }
 
-      this._preprocessOptions(platform, branch);
-      this._onEnabledStateChanged();
-    });
+        this._preprocessOptions(platform, branch);
+        this._onEnabledStateChanged();
+      }
+    );
   }
 
   _preprocessOptions(platform, branch) {
@@ -874,15 +873,14 @@ class Shims {
   }
 
   async _checkEnabledPref() {
-    await browser.aboutConfigPrefs.getPref(this.ENABLED_PREF).then(value => {
-      if (value === undefined) {
-        browser.aboutConfigPrefs.setPref(this.ENABLED_PREF, true);
-      } else if (value === false) {
-        this.enabled = false;
-      } else {
-        this.enabled = true;
-      }
-    });
+    const value = browser.aboutConfigPrefs.getPref(this.ENABLED_PREF);
+    if (value === undefined) {
+      await browser.aboutConfigPrefs.setPref(this.ENABLED_PREF, true);
+    } else if (value === false) {
+      this.enabled = false;
+    } else {
+      this.enabled = true;
+    }
   }
 
   get enabled() {
@@ -909,20 +907,19 @@ class Shims {
   }
 
   async _checkSmartblockEmbedsEnabledPref() {
-    await browser.aboutConfigPrefs
-      .getPref(this.SMARTBLOCK_EMBEDS_ENABLED_PREF)
-      .then(value => {
-        if (value === undefined) {
-          browser.aboutConfigPrefs.setPref(
-            this.SMARTBLOCK_EMBEDS_ENABLED_PREF,
-            true
-          );
-        } else if (value === false) {
-          this.smartblockEmbedsEnabled = false;
-        } else {
-          this.smartblockEmbedsEnabled = true;
-        }
-      });
+    const value = browser.aboutConfigPrefs.getPref(
+      this.SMARTBLOCK_EMBEDS_ENABLED_PREF
+    );
+    if (value === undefined) {
+      await browser.aboutConfigPrefs.setPref(
+        this.SMARTBLOCK_EMBEDS_ENABLED_PREF,
+        true
+      );
+    } else if (value === false) {
+      this.smartblockEmbedsEnabled = false;
+    } else {
+      this.smartblockEmbedsEnabled = true;
+    }
   }
 
   get smartblockEmbedsEnabled() {

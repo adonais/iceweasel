@@ -18,7 +18,6 @@
 #include "mozilla/Vector.h"
 
 #include <algorithm>    // std::{all_of,copy_n,enable_if,is_const,move}
-#include <iterator>     // std::size
 #include <type_traits>  // std::is_same, std::is_unsigned
 
 #include "jsfriendapi.h"

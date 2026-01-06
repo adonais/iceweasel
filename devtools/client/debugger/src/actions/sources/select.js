@@ -4,6 +4,7 @@
 
 /**
  * Redux actions for the sources state
+ *
  * @module actions/sources
  */
 import { prettyPrintSource } from "./prettyPrint";
@@ -91,9 +92,9 @@ export function selectSourceURL(url, options) {
  * Note that it ignores the currently selected source and will select
  * the precise generated/original source passed as argument.
  *
- * @param {String} source
+ * @param {string} source
  *        The precise source to select.
- * @param {String} sourceActor
+ * @param {string} sourceActor
  *        The specific source actor of the source to
  *        select the source text. This is optional.
  */
@@ -112,12 +113,12 @@ export function selectSource(source, sourceActor) {
  * Based on `keepContext` argument passed to `selectLocation`,
  * this will automatically select the related mapped source (original or generated).
  *
- * @param {Object} location
+ * @param {object} location
  *        The location to select.
- * @param {Boolean} keepContext
+ * @param {boolean} keepContext
  *        If true, will try to select a mapped source.
- * @param {Object} thunkArgs
- * @return {Object}
+ * @param {object} thunkArgs
+ * @return {object}
  *        Object with two attributes:
  *         - `shouldSelectOriginalLocation`, to know if we should keep trying to select the original location
  *         - `newLocation`, for the final location to select
@@ -223,8 +224,8 @@ async function mayBeSelectMappedSource(location, keepContext, thunkArgs) {
  * Note that by default, this may map your passed location to the original
  * or generated location based on the selected source state. (see keepContext)
  *
- * @param {Object} location
- * @param {Object} options
+ * @param {object} location
+ * @param {object} options
  * @param {boolean} options.keepContext
  *        If false, this will ignore the currently selected source
  *        and select the generated or original location, even if we
@@ -384,7 +385,7 @@ export function selectLocation(
  * This will select the generated location even if the currently
  * select source is an original source. And the other way around.
  *
- * @param {Object} location
+ * @param {object} location
  *        The location to select, object which includes enough
  *        information to specify a precise source, line and column.
  */
@@ -401,7 +402,7 @@ export function selectSpecificLocation(location) {
  * after reload, because the source objects are new on each new page load, but source
  * with the same URL may still exist.
  *
- * @param {Object} location
+ * @param {object} location
  *        The location to select.
  * @return {function}
  *        The action will return true if a matching source was found.

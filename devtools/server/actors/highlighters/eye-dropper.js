@@ -143,7 +143,7 @@ class EyeDropper {
    * Show the eye-dropper highlighter.
    *
    * @param {DOMNode} node The node which document the highlighter should be inserted in.
-   * @param {Object} options The options object may contain the following properties:
+   * @param {object} options The options object may contain the following properties:
    * - {Boolean} copyOnSelect: Whether selecting a color should copy it to the clipboard.
    * - {String|null} screenshot: a dataURL representation of the page screenshot. If null,
    *                 the eyedropper will use `drawWindow` to get the the screenshot
@@ -241,7 +241,7 @@ class EyeDropper {
    * Create an image bitmap from the page screenshot, draw the eyedropper and set the
    * "drawn" attribute on the "root" element once it's done.
    *
-   * @params {String|null} screenshot: a dataURL representation of the page screenshot.
+   * @params {string | null} screenshot: a dataURL representation of the page screenshot.
    *                       If null, we'll use `drawWindow` to get the the page screenshot
    *                       (⚠️ but it won't handle remote frames).
    */
@@ -538,6 +538,7 @@ class EyeDropper {
 
   /**
    * Copy the currently inspected color to the clipboard.
+   *
    * @return {Promise} Resolves when the copy has been done (after a delay that is used to
    * let users know that something was copied).
    */
@@ -563,6 +564,7 @@ exports.EyeDropper = EyeDropper;
 
 /**
  * Draw the visible portion of the window on a canvas and get the resulting ImageData.
+ *
  * @param {Window} win
  * @return {ImageData} The image data for the window.
  */
@@ -588,7 +590,8 @@ function getWindowAsImageData(win) {
 
 /**
  * Get a formatted CSS color string from a color value.
- * @param {array} rgb Rgb values of a color to format.
+ *
+ * @param {Array} rgb Rgb values of a color to format.
  * @param {string} format Format of string. One of "hex", "rgb", "hsl", "name".
  * @return {string} Formatted color value, e.g. "#FFF" or "hsl(20, 10%, 10%)".
  */
@@ -613,7 +616,8 @@ function toColorString(rgb, format) {
 
 /**
  * Produce a hex-formatted color string from rgb values.
- * @param {array} rgb Rgb values of color to stringify.
+ *
+ * @param {Array} rgb Rgb values of color to stringify.
  * @return {string} Hex formatted string for color, e.g. "#FFEE00".
  */
 function hexString([r, g, b]) {

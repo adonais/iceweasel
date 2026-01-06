@@ -267,23 +267,25 @@ void PendingTransactionQueue::Compact() {
 }
 
 void PendingTransactionQueue::CancelAllTransactions(nsresult reason) {
-  for (const auto& pendingTransInfo : mUrgentStartQ) {
-    LOG(("PendingTransactionQueue::CancelAllTransactions %p\n",
-         pendingTransInfo->Transaction()));
-    pendingTransInfo->Transaction()->Close(reason);
+  AutoTArray<RefPtr<nsHttpTransaction>, 64> toClose;
+  for (const auto& info : mUrgentStartQ) {
+    toClose.AppendElement(info->Transaction());
   }
   mUrgentStartQ.Clear();
 
+  // Drain all table entries into toClose, then clear them.
   for (const auto& data : mPendingTransactionTable.Values()) {
-    for (const auto& pendingTransInfo : *data) {
-      LOG(("PendingTransactionQueue::CancelAllTransactions %p\n",
-           pendingTransInfo->Transaction()));
-      pendingTransInfo->Transaction()->Close(reason);
+    for (const auto& info : *data) {
+      toClose.AppendElement(info->Transaction());
     }
     data->Clear();
   }
-
   mPendingTransactionTable.Clear();
+
+  for (auto trans : toClose) {
+    LOG(("PendingTransactionQueue::CancelAllTransactions %p\n", trans.get()));
+    trans->Close(reason);
+  }
 }
 
 }  // namespace net

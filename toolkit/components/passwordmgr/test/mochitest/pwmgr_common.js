@@ -82,6 +82,7 @@ function checkAutoCompleteResults(actualValues, expectedValues, hostname, msg) {
 
 /**
  * Wait for autocomplete popup to get closed
+ *
  * @return {Promise} resolving when the AC popup is closed
  */
 async function untilAutocompletePopupClosed() {
@@ -299,6 +300,7 @@ function createLoginForm({
 
 /**
  * Check for expected username/password in form.
+ *
  * @see `checkForm` below for a similar function.
  */
 function checkLoginForm(
@@ -358,6 +360,7 @@ function ensureCondition(
 
 /**
  * Wait a while to ensure login form stays filled with username and password
+ *
  * @see `checkLoginForm` below for a similar function.
  * @returns a promise, resolving when done
  *
@@ -821,9 +824,10 @@ async function promisePromptShown(expectedTopic) {
 
 /**
  * Run a function synchronously in the parent process and destroy it in the test cleanup function.
- * @param {Function|String} aFunctionOrURL - either a function that will be stringified and run
+ *
+ * @param {Function | string} aFunctionOrURL - either a function that will be stringified and run
  *                                           or the URL to a JS file.
- * @return {Object} - the return value of loadChromeScript providing message-related methods.
+ * @return {object} - the return value of loadChromeScript providing message-related methods.
  *                    @see loadChromeScript in specialpowersAPI.js
  */
 function runInParent(aFunctionOrURL) {
@@ -888,7 +892,8 @@ function manageLoginsInParent() {
 
 /**
  * Initialize with a list of logins. The logins are added within the parent chrome process.
- * @param {array} aLogins - a list of logins to add. Each login is an array of the arguments
+ *
+ * @param {Array} aLogins - a list of logins to add. Each login is an array of the arguments
  *                          that would be passed to nsLoginInfo.init().
  */
 async function addLoginsInParent(...aLogins) {
@@ -900,7 +905,8 @@ async function addLoginsInParent(...aLogins) {
 /**
  * Initialize with a list of logins, after removing all user facing logins.
  * The logins are added within the parent chrome process.
- * @param {array} aLogins - a list of logins to add. Each login is an array of the arguments
+ *
+ * @param {Array} aLogins - a list of logins to add. Each login is an array of the arguments
  *                          that would be passed to nsLoginInfo.init().
  */
 async function setStoredLoginsAsync(...aLogins) {
@@ -914,7 +920,8 @@ async function setStoredLoginsAsync(...aLogins) {
  * Sets given logins for the duration of the test. Existing logins are first
  * removed and finally restored when the test is finished.
  * The logins are added within the parent chrome process.
- * @param {array} logins - a list of logins to add. Each login is an array of the arguments
+ *
+ * @param {Array} logins - a list of logins to add. Each login is an array of the arguments
  *                          that would be passed to nsLoginInfo.init().
  */
 async function setStoredLoginsDuringTest(...logins) {
@@ -931,7 +938,8 @@ async function setStoredLoginsDuringTest(...logins) {
 /**
  * Sets given logins for the duration of the task. Existing logins are first
  * removed and finally restored when the task is finished.
- * @param {array} logins - a list of logins to add. Each login is an array of the arguments
+ *
+ * @param {Array} logins - a list of logins to add. Each login is an array of the arguments
  *                          that would be passed to nsLoginInfo.init().
  */
 async function setStoredLoginsDuringTask(...logins) {
@@ -1108,7 +1116,7 @@ this.LoginManager = new Proxy(
  * Returns the first child node of the newly created content div for convenient
  * access of the newly created dom node.
  *
- * @param {String} html
+ * @param {string} html
  *        string of dom content or dom element to be inserted into content element
  */
 function setContentForTask(html) {
@@ -1160,7 +1168,7 @@ SimpleTest.registerTaskCleanupFunction(() => {
  * Works with forms processed in the past since the task started and in the future,
  * across parent and child processes.
  *
- * @param {String} formId / the id of the form of which to expect formautofill events
+ * @param {string} formId / the id of the form of which to expect formautofill events
  * @returns promise, resolving with the autofill result.
  */
 async function formAutofillResult(formId) {

@@ -85,8 +85,6 @@ export class PromptListener {
    * Handles `DOMModalDialogClosed` events.
    */
   handleEvent(event) {
-    lazy.logger.trace(`Received event ${event.type}`);
-
     const chromeWin = event.target.opener
       ? event.target.opener.ownerGlobal
       : event.target.ownerGlobal;
@@ -136,12 +134,10 @@ export class PromptListener {
    * `domwindowopened` - when a new chrome window opened,
    * `geckoview-prompt-show` - when a modal dialog opened on Android.
    */
-  observe(subject, topic) {
-    lazy.logger.trace(`Received observer notification ${topic}`);
-
+  async observe(subject, topic) {
     let curBrowser = this.#curBrowserFn && this.#curBrowserFn();
     switch (topic) {
-      case "common-dialog-loaded":
+      case "common-dialog-loaded": {
         if (curBrowser) {
           if (
             !this.#hasCommonDialog(
@@ -178,12 +174,14 @@ export class PromptListener {
         });
 
         break;
+      }
 
-      case "domwindowopened":
+      case "domwindowopened": {
         subject.addEventListener("DOMModalDialogClosed", this);
         break;
+      }
 
-      case "geckoview-prompt-show":
+      case "geckoview-prompt-show": {
         for (let win of Services.wm.getEnumerator(null)) {
           const subjectObject = subject.wrappedJSObject;
           const prompt = win
@@ -210,6 +208,7 @@ export class PromptListener {
           }
         }
         break;
+      }
     }
   }
 
@@ -248,9 +247,13 @@ export class PromptListener {
   }
 
   #register() {
-    Services.obs.addObserver(this, "common-dialog-loaded");
-    Services.obs.addObserver(this, "domwindowopened");
-    Services.obs.addObserver(this, "geckoview-prompt-show");
+    for (const observerName of [
+      "common-dialog-loaded",
+      "domwindowopened",
+      "geckoview-prompt-show",
+    ]) {
+      Services.obs.addObserver(this, observerName);
+    }
 
     // Register event listener and save already open prompts for all already open windows.
     for (const win of Services.wm.getEnumerator(null)) {
@@ -259,21 +262,19 @@ export class PromptListener {
   }
 
   #unregister() {
-    const removeObserver = observerName => {
-      try {
-        Services.obs.removeObserver(this, observerName);
-      } catch (e) {
-        lazy.logger.debug(`Failed to remove observer "${observerName}"`);
-      }
-    };
-
-    for (const observerName of [
+    [
       "common-dialog-loaded",
       "domwindowopened",
       "geckoview-prompt-show",
-    ]) {
-      removeObserver(observerName);
-    }
+    ].forEach(observerName => {
+      try {
+        Services.obs.removeObserver(this, observerName);
+      } catch (e) {
+        lazy.logger.debug(
+          `${this.constructor.name}: Failed to remove observer "${observerName}"`
+        );
+      }
+    });
 
     // Unregister event listener for all open windows
     for (const win of Services.wm.getEnumerator(null)) {

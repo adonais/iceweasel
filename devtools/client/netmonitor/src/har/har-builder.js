@@ -25,19 +25,19 @@ const {
  * https://dvcs.w3.org/hg/webperf/raw-file/tip/specs/HAR/Overview.html
  * http://www.softwareishard.com/blog/har-12-spec/
  *
- * @param {Object} options
+ * @param {object} options
  *        configuration object
- * @param {Boolean} options.connector
+ * @param {boolean} options.connector
  *        Set to true to include HTTP response bodies in the result data
  *        structure.
- * @param {String} options.id
+ * @param {string} options.id
  *        ID of the exported page.
- * @param {Boolean} options.includeResponseBodies
+ * @param {boolean} options.includeResponseBodies
  *        Set to true to include HTTP response bodies in the result data
  *        structure.
  * @param {Array} options.items
  *        List of network events to be exported.
- * @param {Boolean} options.supportsMultiplePages
+ * @param {boolean} options.supportsMultiplePages
  *        Set to true to create distinct page entries for each navigation.
  */
 var HarBuilder = function (options) {
@@ -268,7 +268,7 @@ HarBuilder.prototype = {
    * Fetch all header values from the backend (if necessary) and
    * build the result HAR structure.
    *
-   * @param {Object} input Request or response header object.
+   * @param {object} input Request or response header object.
    */
   buildHeaders(input) {
     if (!input) {

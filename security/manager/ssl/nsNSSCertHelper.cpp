@@ -4,11 +4,8 @@
 
 #include "nsNSSCertHelper.h"
 
-#include <algorithm>
-
 #include "ScopedNSSTypes.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Casting.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/Utf8.h"
 #include "mozilla/net/DNS.h"

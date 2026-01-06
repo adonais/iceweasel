@@ -11,9 +11,9 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.compose.content
-import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.coroutineScope
 import androidx.navigation.fragment.findNavController
-import org.mozilla.fenix.components.StoreProvider
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.storeProvider
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -49,33 +49,17 @@ class SettingsSearchFragment : Fragment() {
     private fun buildSettingsSearchStore(): SettingsSearchStore {
         val recentSettingsSearchesRepository = FenixRecentSettingsSearchesRepository(requireContext())
 
-        return StoreProvider.get(this) {
+        return storeProvider.get { restoredState ->
             SettingsSearchStore(
-                initialState = SettingsSearchState.Default(emptyList()),
+                initialState = restoredState ?: SettingsSearchState.Default(emptyList()),
                 middleware = listOf(
                     SettingsSearchMiddleware(
                         fenixSettingsIndexer = requireContext().components.settingsIndexer,
-                    ),
-                ),
-            )
-        }.also {
-            it.dispatch(
-                SettingsSearchAction.EnvironmentRehydrated(
-                    environment = SettingsSearchEnvironment(
-                        fragment = this,
                         navController = findNavController(),
-                        context = requireContext(),
                         recentSettingsSearchesRepository = recentSettingsSearchesRepository,
+                        scope = viewLifecycleOwner.lifecycle.coroutineScope,
                     ),
                 ),
-            )
-
-            viewLifecycleOwner.lifecycle.addObserver(
-                object : DefaultLifecycleObserver {
-                    override fun onDestroy(owner: androidx.lifecycle.LifecycleOwner) {
-                        it.dispatch(SettingsSearchAction.EnvironmentCleared)
-                    }
-                },
             )
         }
     }

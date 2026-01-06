@@ -1510,78 +1510,100 @@ static ALWAYS_INLINE WideRGBA8 dither(WideRGBA8 color, int32_t fragCoordX,
   return color + ditherNoiseYIndexed[fragCoordX & 7];
 }
 
-// Finds the gradient stop pair that affects the provided offset.
-//
-// The returned index corresponds to the gradient stop immediately before the
-// current offset (in increasing offset order), so the gradient stop pair
-// is defined by [index, index + 1].
-//
-// Output parameters:
-//  - (out) prevOffset is set to the offset of the returned stop.
-//  - (out) nextOffset is set to the offset of the following stop.
-//  - (in/out) initialIndex is the index at which to start the search.
-//    It is updated by this function.
-//  - (in/out) initialOffset is the offset of the stop at initalOffset.
-//    It is updated by this function.
+/// Find the gradient stops pair affecting the current offset by searching
+/// into gradient stop offsets organized in a tree structure.
+///
+/// This is ported from sample_gradient_stops_tree in ps_quad_gradient.glsl.
+/// The tree structure is explained in the documentation of
+/// write_gpu_gradient_stops_tree in prim_store/gradient/mod.rs
 static int32_t findGradientStopPair(float offset, float* stops,
-                                    int32_t numStops, int32_t& initialIndex,
-                                    float& initialOffset, float& prevOffset,
+                                    int32_t numStops,
+                                    float& prevOffset,
                                     float& nextOffset) {
-  int32_t index = initialIndex;
+    int32_t levelBaseAddr = 0;
+    // Number of blocks of 4 indices for the current level.
+    // At the root, a single block is stored. Each level stores
+    // 5 times more blocks than the previous one.
+    int32_t levelStride = 1;
+    // Relative address within the current level.
+    int32_t offsetInLevel = 0;
+    // By the end of this function, this will contain the index of the
+    // second stop of the pair we are looking for.
+    int32_t index = 0;
 
-  // Walk forward or backward depending on where the target offset is relative
-  // to the initial offset.
-  if (offset >= initialOffset) {
-    // Walk the gradient stops forward
-    float next = stops[initialIndex];
-    float prev = stops[max(initialIndex - 1, 0)];
-    while (index < numStops) {
-      if (next > offset) {
-        break;
-      }
-
-      index += 1;
-      prev = next;
-      next = stops[index];
+    // The index distance between consecutive stop offsets at
+    // the current level. At the last level, the stride is 1.
+    // each has a 5 times more stride than the next (so the
+    // index stride starts high and is divided by 5 at each
+    // iteration).
+    int32_t indexStride = 1;
+    while (indexStride * 5 <= numStops) {
+        indexStride *= 5;
     }
 
-    // We wither:
-    //  - Walked 1 stop past the one we are looking for, so we need to
-    //    adjust the index by decrementing it.
-    //  - Walked past the last stop so the index is out of bounds. We
-    //    don't *have* to decrement it since we are going to clamp it
-    //    at the end of the function but doing it does not break the
-    //    logic either.
-    index -= 1;
 
-    prevOffset = prev;
-    nextOffset = next;
-  } else {
-    // Walk back.
-    float next = stops[initialIndex];
-    float prev = stops[min(initialIndex + 1, numStops - 1)];
-    while (index > 0) {
-      if (next < offset) {
-        break;
-      }
+    // We take advantage of the fact that stop offsets are normalized from
+    // 0 to 1 which means that the first offset is always 0 and the last is
+    // always 1.
+    // This is important because in the loop, we won't be setting prevOffset
+    // if offset is < 0.0 and won't be setting nextOffset if offset > 1.0,
+    // so initializing them this way here handles those cases.
+    prevOffset = 0.0;
+    nextOffset = 1.0;
 
-      index -= 1;
-      prev = next;
-      next = stops[index];
+    while (true) {
+        int32_t addr = (levelBaseAddr + offsetInLevel) * 4;
+        float currentStops0 = stops[addr];
+        float currentStops1 = stops[addr + 1];
+        float currentStops2 = stops[addr + 2];
+        float currentStops3 = stops[addr + 3];
+
+        // Determine which of the five partitions (sub-trees)
+        // to take next.
+        int32_t nextPartition = 4;
+        if (currentStops0 > offset) {
+            nextPartition = 0;
+            nextOffset = currentStops0;
+        } else if (currentStops1 > offset) {
+            nextPartition = 1;
+            prevOffset = currentStops0;
+            nextOffset = currentStops1;
+        } else if (currentStops2 > offset) {
+            nextPartition = 2;
+            prevOffset = currentStops1;
+            nextOffset = currentStops2;
+        } else if (currentStops3 > offset) {
+            nextPartition = 3;
+            prevOffset = currentStops2;
+            nextOffset = currentStops3;
+        } else {
+            prevOffset = currentStops3;
+        }
+
+        index += nextPartition * indexStride;
+
+        if (indexStride == 1) {
+            // If the index stride is 1, we visited a leaf,
+            // we are done.
+            break;
+        }
+
+        indexStride /= 5;
+        levelBaseAddr += levelStride;
+        levelStride *= 5;
+        offsetInLevel = offsetInLevel * 5 + nextPartition;
     }
 
-    // Since we are walking backwards, prev and next are swapped.
-    prevOffset = next;
-    nextOffset = prev;
-  }
+    // clamp the index to [1..numStops]
+    if (index < 1) {
+        index = 1;
+    } else if (index > numStops - 1) {
+        index = numStops - 1;
+    }
 
-  index = clamp(index, 0, numStops - 2);
-
-  initialIndex = index;
-  initialOffset = prevOffset;
-
-  return index;
+    return index - 1;
 }
+
 
 // Samples an entire span of a linear gradient by crawling the gradient table
 // and looking for consecutive stops that can be merged into a single larger
@@ -1835,13 +1857,6 @@ static bool commitLinearGradientFromStops(sampler2D sampler, int offsetsAddress,
     return false;
   }
 
-  // In order to avoid re-traversing the whole sequence of gradient stops for
-  // each sub-span when searching for the pair of stops that affect it, we keep
-  // track a recent offset+index to start the search from.
-  int32_t initialIndex = 0;
-  // This is not the real offset, what matters is that it is lower than lowest
-  // stop offset (since we start searching at index 0).
-  float initialOffset = -1.0f;
   for (; span > 0;) {
     // The number of pixels that are affected by the current gradient stop pair.
     float subSpan = span;
@@ -1874,8 +1889,8 @@ static bool commitLinearGradientFromStops(sampler2D sampler, int offsetsAddress,
       // that affect the start of the current block and how many blocks
       // are affected by the same pair.
       stopIndex =
-          findGradientStopPair(offset.x, stopOffsets, stopCount, initialIndex,
-                               initialOffset, prevOffset, nextOffset);
+          findGradientStopPair(offset.x, stopOffsets, stopCount,
+                               prevOffset, nextOffset);
       float offsetRange =
           delta > 0.0f ? nextOffset - offset.x : prevOffset - offset.x;
       subSpan = min(subSpan, offsetRange / delta);
@@ -2391,15 +2406,7 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
   Float dotPos = dot(pos, pos);
   Float dotPosDelta = 2.0f * dot(pos, delta) + deltaDelta;
   float deltaDelta2 = 2.0f * deltaDelta;
-  // In order to avoid re-traversing the whole sequence of gradient stops for
-  // each sub-span when searching for the pair of stops that affect it, we keep
-  // track a recent offset+index to start the search from. We start from the
-  // last stop since it is more likely that the edge of the quad is away from
-  // the center than close to it.
-  int32_t initialIndex = stopCount - 1;
-  // This is not the real offset what matters is that it is greater than the
-  // outermost one.
-  float initialOffset = 2.0f;
+
   for (int t = 0; t < span;) {
     // Compute the gradient table offset from the current position.
     Float offset = fastSqrt<true>(dotPos) - startRadius;
@@ -2440,8 +2447,8 @@ static bool commitRadialGradientFromStops(sampler2D sampler, int offsetsAddress,
       // Otherwise, we're inside the valid part of the gradient table.
 
       stopIndex =
-          findGradientStopPair(offset.x, stopOffsets, stopCount, initialIndex,
-                               initialOffset, prevOffset, nextOffset);
+          findGradientStopPair(offset.x, stopOffsets, stopCount,
+                                   prevOffset, nextOffset);
       if (t >= middleT) {
         intercept = adjustedStartRadius + nextOffset;
       } else {

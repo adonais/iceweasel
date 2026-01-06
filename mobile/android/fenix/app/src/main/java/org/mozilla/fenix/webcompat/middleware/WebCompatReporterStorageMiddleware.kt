@@ -53,7 +53,7 @@ class WebCompatReporterStorageMiddleware(
                 }
             }
             WebCompatReporterAction.BackPressed,
-            WebCompatReporterAction.SendMoreInfoClicked,
+            WebCompatReporterAction.AddMoreInfoClicked,
             WebCompatReporterAction.LearnMoreClicked,
             -> appStore.dispatch(
                 WebCompatAction.WebCompatStateUpdated(

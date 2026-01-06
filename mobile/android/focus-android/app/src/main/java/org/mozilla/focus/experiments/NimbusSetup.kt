@@ -5,9 +5,11 @@
 package org.mozilla.focus.experiments
 
 import android.content.Context
+import mozilla.appservices.remotesettings.RemoteSettingsService
 import mozilla.components.service.nimbus.NimbusApi
 import mozilla.components.service.nimbus.NimbusAppInfo
 import mozilla.components.service.nimbus.NimbusBuilder
+import mozilla.components.service.nimbus.NimbusServerSettings
 import mozilla.components.support.base.log.logger.Logger
 import org.json.JSONObject
 import org.mozilla.experiments.nimbus.NimbusInterface
@@ -29,7 +31,7 @@ private const val TIME_OUT_LOADING_EXPERIMENT_FROM_DISK_MS = 200L
 /**
  * Create the Nimbus singleton object for the Focus/Klar apps.
  */
-fun createNimbus(context: Context, urlString: String?): NimbusApi {
+fun createNimbus(context: Context, urlString: String?, remoteSettingsService: RemoteSettingsService?): NimbusApi {
     val isAppFirstRun = context.settings.isFirstRun
 
     // These values can be used in the JEXL expressions when targeting experiments.
@@ -58,6 +60,17 @@ fun createNimbus(context: Context, urlString: String?): NimbusApi {
         customTargetingAttributes = customTargetingAttributes,
     )
 
+    val serverSettings: NimbusServerSettings? = remoteSettingsService?.let { service ->
+        NimbusServerSettings(
+            remoteSettingsService = service,
+            collection = if (context.settings.shouldUseNimbusPreview) {
+                "nimbus-preview"
+            } else {
+                "nimbus-mobile-experiments"
+            },
+        )
+    }
+
     return NimbusBuilder(context).apply {
         url = urlString
         errorReporter = { message, e ->
@@ -68,11 +81,10 @@ fun createNimbus(context: Context, urlString: String?): NimbusApi {
         }
         initialExperiments = R.raw.initial_experiments
         timeoutLoadingExperiment = TIME_OUT_LOADING_EXPERIMENT_FROM_DISK_MS
-        usePreviewCollection = context.settings.shouldUseNimbusPreview
         sharedPreferences = context.settings.preferences
         isFirstRun = isAppFirstRun
         featureManifest = FocusNimbus
-    }.build(appInfo)
+    }.build(appInfo, serverSettings)
 }
 
 internal fun finishNimbusInitialization(experiments: NimbusApi) =

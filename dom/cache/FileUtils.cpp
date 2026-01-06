@@ -32,7 +32,7 @@
 
 namespace mozilla::dom::cache {
 
-static_assert(SNAPPY_VERSION == 0x010200);
+static_assert(SNAPPY_VERSION == 0x010202);
 
 using mozilla::dom::quota::Client;
 using mozilla::dom::quota::CloneFileAndAppend;

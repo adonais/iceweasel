@@ -754,10 +754,6 @@
 
     async function runTests() {
       try {
-        await SpecialPowers.pushPrefEnv({"set": [
-        ["dom.text_fragments.enabled", true],
-        ["dom.text_fragments.create_text_fragment.enabled", true],
-      ]});
         testRangeBoundariesAreEqual();
         await basicTests();
         await testEmptyRange();

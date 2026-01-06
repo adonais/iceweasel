@@ -860,7 +860,19 @@ class QuotaManager final : public BackgroundThreadObject {
 
   OriginInfosNestedTraversable GetOriginInfosExceedingGlobalLimit() const;
 
-  OriginInfosNestedTraversable GetOriginInfosWithZeroUsage() const;
+  // Returns origins with zero usage. If aCutoffAccessTime is provided, origins
+  // whose last access time is newer than the cutoff are excluded.
+  //
+  // The cutoff time is expressed as an int64_t value in microseconds since the
+  // Unix epoch (1970-01-01 00:00:00 UTC), matching the format returned by
+  // PR_Now(). This is the same time unit used throughout Quota Manager for
+  // access and modification timestamps.
+  //
+  // Typically callers compute it as:
+  //     const int64_t cutoff = PR_Now() - (N * PR_USEC_PER_SEC);
+  // where N is the desired age threshold in seconds (for example, one week).
+  OriginInfosNestedTraversable GetOriginInfosWithZeroUsage(
+      const Maybe<int64_t>& aCutoffAccessTime = Nothing()) const;
 
   /**
    * Clears the given set of origins.

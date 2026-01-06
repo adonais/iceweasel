@@ -211,14 +211,11 @@ export default class IPProtectionStatusCard extends MozLitElement {
     return this.location
       ? html`
           <div id="vpn-details">
-            <div
-              id="location-label"
-              data-l10n-id="ipprotection-location-title"
-              style=${labelStyles}
-            >
+            <div id="location-label" style=${labelStyles}>
               <span>${this.location.name}</span>
               <img
                 src="chrome://global/skin/icons/info.svg"
+                data-l10n-id="ipprotection-location-title"
                 style=${imgStyles}
               />
             </div>

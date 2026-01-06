@@ -12,7 +12,7 @@
 #include <cmath>
 #include <stdint.h>
 
-#include "builtin/temporal/Int128.h"
+#include "vm/Int128.h"
 
 namespace js::temporal {
 

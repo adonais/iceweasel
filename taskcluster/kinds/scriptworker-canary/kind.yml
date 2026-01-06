@@ -15,7 +15,7 @@ task-defaults:
         platform: firefox-release/opt
         tier: 1
         kind: build
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     worker:
         docker-image: {in-tree: push-to-try}
         max-run-time: 1800

@@ -26,5 +26,5 @@ support-files = [
 
 ["browser_WindowManager.js"]
 skip-if = [
-  "os == 'linux' && os_version == '22.04' && display == 'wayland'", # Bug 1923833: Window restoring doesn't work after the window was minimized on Wayland
+  "os == 'linux' && os_version == '22.04' && arch == 'x86_64' && display == 'wayland'", # Bug 1923833: Window restoring doesn't work after the window was minimized on Wayland
 ]

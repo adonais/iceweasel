@@ -22,6 +22,7 @@ make -f GNUmakefile $PROGS \
     PREFIX=/
 mkdir -p "$dir/bin"
 install -m 755 $PROGS $SH_PROGS "$dir/bin"
+install -m 644 ./utils/dynamic_covfilter/make_symbol_list.py "$dir/bin/"
 
 make -f GNUmakefile.llvm install \
     CODE_COVERAGE=1 \

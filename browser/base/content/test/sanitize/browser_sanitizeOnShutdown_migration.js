@@ -37,6 +37,8 @@ add_task(async function testMigrationForDeleteOnClose() {
   ok(!alwaysClearBox.checked, "AlwaysClear initial state is deselected");
 
   deleteOnCloseBox.click();
+  // Wait for change to take effect.
+  await new Promise(resolve => requestAnimationFrame(resolve));
 
   ok(deleteOnCloseBox.checked, "DeleteOnClose is selected");
   is(
@@ -46,7 +48,6 @@ add_task(async function testMigrationForDeleteOnClose() {
   );
   // We are done changing settings in about:preferences, remove the tab
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
-
   // Open the clear on shutdown preferences dialog
   let dh = new ClearHistoryDialogHelper({ mode: "clearOnShutdown" });
   dh.onload = function () {

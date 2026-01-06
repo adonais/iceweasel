@@ -26,6 +26,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,7 +47,6 @@ import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.lib.state.ext.observeAsState
-import mozilla.components.ui.colors.PhotonColors
 import org.mozilla.fenix.R
 import org.mozilla.fenix.onboarding.store.OnboardingStore
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -99,79 +100,80 @@ fun ToolbarOnboardingPage(
     pageState: OnboardingPageState,
     onToolbarSelectionClicked: (ToolbarOptionType) -> Unit,
 ) {
-    BoxWithConstraints {
-        val boxWithConstraintsScope = this
-        // Base
-        Column(
-            modifier = Modifier
-                .background(FirefoxTheme.colors.layer1)
-                .padding(horizontal = 16.dp, vertical = 24.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.SpaceBetween,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            with(pageState) {
-                // Main content group
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Spacer(Modifier)
+    Surface {
+        BoxWithConstraints {
+            val boxWithConstraintsScope = this
+            // Base
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp, vertical = 24.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.SpaceBetween,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                with(pageState) {
+                    // Main content group
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Spacer(Modifier)
 
-                    Image(
-                        painter = painterResource(id = imageRes),
-                        contentDescription = stringResource(
-                            R.string.onboarding_customize_toolbar_main_image_content_description,
-                        ),
-                        modifier = Modifier.height(mainImageHeight(boxWithConstraintsScope)),
-                    )
+                        Image(
+                            painter = painterResource(id = imageRes),
+                            contentDescription = stringResource(
+                                R.string.onboarding_customize_toolbar_main_image_content_description,
+                            ),
+                            modifier = Modifier.height(mainImageHeight(boxWithConstraintsScope)),
+                        )
 
-                    Spacer(Modifier.height(32.dp))
+                        Spacer(Modifier.height(32.dp))
 
-                    Text(
-                        text = title,
-                        color = FirefoxTheme.colors.textPrimary,
-                        textAlign = TextAlign.Center,
-                        style = FirefoxTheme.typography.headline5,
-                    )
+                        Text(
+                            text = title,
+                            textAlign = TextAlign.Center,
+                            style = FirefoxTheme.typography.headline5,
+                        )
 
-                    Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(16.dp))
 
-                    Text(
-                        text = description,
-                        color = FirefoxTheme.colors.textPrimary,
-                        textAlign = TextAlign.Center,
-                        style = FirefoxTheme.typography.body2,
-                    )
+                        Text(
+                            text = description,
+                            textAlign = TextAlign.Center,
+                            style = FirefoxTheme.typography.body2,
+                        )
 
-                    Spacer(Modifier.height(34.dp))
+                        Spacer(Modifier.height(34.dp))
 
-                    val state by onboardingStore.observeAsState(initialValue = onboardingStore.state) { state -> state }
+                        val state by onboardingStore.observeAsState(
+                            initialValue = onboardingStore.state,
+                        ) { state -> state }
 
-                    Row(Modifier.width(176.dp), horizontalArrangement = Arrangement.Center) {
-                        toolbarOptions?.let {
-                            ToolbarOptions(
-                                boxWithConstraintsScope = boxWithConstraintsScope,
-                                options = it,
-                                selectedOption = state.toolbarOptionSelected,
-                                onClick = onToolbarSelectionClicked,
-                            )
+                        Row(Modifier.width(176.dp), horizontalArrangement = Arrangement.Center) {
+                            toolbarOptions?.let {
+                                ToolbarOptions(
+                                    boxWithConstraintsScope = boxWithConstraintsScope,
+                                    options = it,
+                                    selectedOption = state.toolbarOptionSelected,
+                                    onClick = onToolbarSelectionClicked,
+                                )
+                            }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    FilledButton(
+                        text = primaryButton.text,
+                        modifier = Modifier
+                            .width(width = FirefoxTheme.layout.size.maxWidth.small)
+                            .semantics { testTag = title + "onboarding_card.positive_button" },
+                        onClick = primaryButton.onClick,
+                    )
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                FilledButton(
-                    text = primaryButton.text,
-                    modifier = Modifier
-                        .width(width = FirefoxTheme.layout.size.maxWidth.small)
-                        .semantics { testTag = title + "onboarding_card.positive_button" },
-                    onClick = primaryButton.onClick,
-                )
             }
-        }
 
-        LaunchedEffect(pageState) {
-            pageState.onRecordImpressionEvent()
+            LaunchedEffect(pageState) {
+                pageState.onRecordImpressionEvent()
+            }
         }
     }
 }
@@ -242,7 +244,7 @@ private fun SelectableImageItem(
                     .width(optionImageWidth(boxWithConstraintsScope))
                     .border(
                         2.dp,
-                        FirefoxTheme.colors.actionPrimary,
+                        MaterialTheme.colorScheme.primary,
                         RoundedCornerShape(borderModifier),
                     )
             } else {
@@ -252,7 +254,6 @@ private fun SelectableImageItem(
 
         Text(
             text = toolbarOption.label,
-            color = FirefoxTheme.colors.textPrimary,
             modifier = Modifier.padding(vertical = 6.dp),
             style = FirefoxTheme.typography.caption,
         )
@@ -261,7 +262,7 @@ private fun SelectableImageItem(
             Box(
                 modifier = Modifier
                     .background(
-                        color = FirefoxTheme.colors.layerAccent,
+                        color = MaterialTheme.colorScheme.primary,
                         shape = CircleShape,
                     )
                     .size(24.dp),
@@ -271,14 +272,14 @@ private fun SelectableImageItem(
                     painter = painterResource(id = iconsR.drawable.mozac_ic_checkmark_24),
                     contentDescription = null, // decorative only.
                     modifier = Modifier.size(12.dp),
-                    tint = PhotonColors.White,
+                    tint = MaterialTheme.colorScheme.onPrimary,
                 )
             }
         } else {
             Box(
                 modifier = Modifier
                     .size(24.dp)
-                    .border(2.dp, FirefoxTheme.colors.actionSecondary, CircleShape),
+                    .border(2.dp, MaterialTheme.colorScheme.onSurfaceVariant, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
             }

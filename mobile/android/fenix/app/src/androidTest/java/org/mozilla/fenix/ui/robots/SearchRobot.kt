@@ -378,7 +378,8 @@ class SearchRobot {
     }
 
     fun verifySearchBarPlaceholderWithComposableToolbar(
-        composeTestRule: ComposeTestRule, searchHint: String,
+        composeTestRule: ComposeTestRule,
+        searchHint: String,
     ) {
         Log.i(TAG, "verifySearchBarPlaceholderWithComposableToolbar: Verify hint is $searchHint")
         composeTestRule
@@ -559,7 +560,9 @@ class SearchRobot {
         )
 
     fun verifyTypedToolbarTextWithComposableToolbar(
-        composeTestRule: ComposeTestRule, expectedText: String, exists: Boolean,
+        composeTestRule: ComposeTestRule,
+        expectedText: String,
+        exists: Boolean,
     ) {
         Log.i(TAG, "verifyTypedToolbarTextWithComposableToolbar: Verifying that text '$expectedText' exists?: $exists")
 
@@ -658,7 +661,8 @@ class SearchRobot {
 
         fun submitQueryWithComposableToolbar(
             composeTestRule: ComposeTestRule,
-            query: String, interact: BrowserRobot.() -> Unit,
+            query: String,
+            interact: BrowserRobot.() -> Unit,
         ): BrowserRobot.Transition {
             Log.i(TAG, "submitQueryWithComposableToolbar: Trying to set toolbar text to: $query and pressing IME action")
 

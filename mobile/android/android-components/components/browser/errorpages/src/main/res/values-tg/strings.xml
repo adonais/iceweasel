@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Сомона бо муҳтавои қалбакӣ</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Ин саҳифаи сомона дар %1$s ҳамчун сомонаи қалбакӣ гузориш дода шудааст ва дар асоси бартариҳои амниятии шумо баста шудааст.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Сомона барои бехатарии шумо манъ шудааст</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Ин саҳифаи сомона дар нишонии %1$s қатъ карда шуд, зеро яке аз ҷузъҳои иловагии насбшуда кӯшиш кард, ки онро кушояд. Ин сомона метавонад барои ба даст овардани маълумоти шахсии шумо, аз он ҷумла, ниҳонвожаҳо ё рақамҳои кортҳои бонкӣ, истифода карда шавад.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Сомонаи бехатар дастрас нест</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

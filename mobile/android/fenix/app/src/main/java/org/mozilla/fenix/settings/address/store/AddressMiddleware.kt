@@ -22,7 +22,7 @@ import org.mozilla.fenix.GleanMetrics.Addresses
  * @param ioDispatcher the dispatcher to run background code on.
  */
 class AddressMiddleware(
-    private var environment: AddressEnvironment? = null,
+    private val environment: AddressEnvironment,
     private val scope: CoroutineScope = MainScope(),
     private val ioDispatcher: CoroutineDispatcher = IO,
 ) : Middleware<AddressState, AddressAction> {
@@ -33,23 +33,22 @@ class AddressMiddleware(
     ) {
         next(action)
         when (action) {
-            is EnvironmentRehydrated -> environment = action.environment
             is SaveTapped -> runAndNavigateBack {
                 context.state.guidToUpdate?.let {
-                    environment?.updateAddress(it, context.state.address)
+                    environment.updateAddress(it, context.state.address)
                     Addresses.updated.add()
                 } ?: run {
-                    environment?.createAddress(context.state.address)
+                    environment.createAddress(context.state.address)
                     Addresses.saved.add()
                 }
             }
             is DeleteDialogAction.DeleteTapped -> runAndNavigateBack {
                 context.state.guidToUpdate?.also {
-                    environment?.deleteAddress(it)
+                    environment.deleteAddress(it)
                     Addresses.deleted.add()
                 }
             }
-            BackTapped, CancelTapped -> environment?.navigateBack()
+            BackTapped, CancelTapped -> environment.navigateBack()
             else -> {} // noop
         }
     }
@@ -58,7 +57,7 @@ class AddressMiddleware(
         action()
 
         scope.launch(Dispatchers.Main) {
-            environment?.navigateBack()
+            environment.navigateBack()
         }
     }
 }

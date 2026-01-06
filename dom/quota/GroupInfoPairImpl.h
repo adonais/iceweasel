@@ -42,9 +42,11 @@ void GroupInfoPair::MaybeInsertNonPersistedOriginInfos(Iterator aDest) const {
 
 template <typename Iterator>
 void GroupInfoPair::MaybeInsertNonPersistedZeroUsageOriginInfos(
-    Iterator aDest) const {
-  MaybeInsertOriginInfos(aDest, [](const auto& originInfo) {
-    return !originInfo->LockedPersisted() && originInfo->LockedUsage() == 0;
+    Iterator aDest, const Maybe<int64_t>& aCutoffAccessTime) const {
+  MaybeInsertOriginInfos(aDest, [aCutoffAccessTime](const auto& originInfo) {
+    return !originInfo->LockedPersisted() && originInfo->LockedUsage() == 0 &&
+           (!aCutoffAccessTime ||
+            originInfo->LockedAccessTime() < *aCutoffAccessTime);
   });
 }
 

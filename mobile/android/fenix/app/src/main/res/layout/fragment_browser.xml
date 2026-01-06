@@ -49,7 +49,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom"
-                android:background="?attr/layer1"
+                android:background="?attr/colorSurface"
                 android:elevation="24dp"
                 android:visibility="gone" />
 

@@ -1701,4 +1701,75 @@ TEST(HTMLEditUtilsTest, GetPreviousLeafContentOrPreviousBlockElement_Content)
 // TODO: Test GetPreviousLeafContentOrPreviousBlockElement() which takes
 // EditorDOMPoint
 
+struct MOZ_STACK_CLASS LineBreakBeforeBlockBoundaryTest final {
+  const char16_t* const mInnerHTML;
+  const char* const mContainer;
+  const Maybe<uint32_t>
+      mContainerIndex;  // Set if need to use CharacterData in mContainer.
+  const uint32_t mOffset;
+  const bool mExpectedResult;  // true if the method return a line break
+
+  friend std::ostream& operator<<(
+      std::ostream& aStream, const LineBreakBeforeBlockBoundaryTest& aTest) {
+    aStream << "Scan from { container: " << aTest.mContainer;
+    if (aTest.mContainerIndex) {
+      aStream << "'s " << aTest.mContainerIndex.value() + 1 << "th child";
+    }
+    return aStream << ", offset: " << aTest.mOffset << " } in "
+                   << NS_ConvertUTF16toUTF8(aTest.mInnerHTML).get() << "\"";
+  }
+};
+
+TEST(HTMLEditUtilsTest, GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem)
+{
+  const RefPtr<Document> doc = CreateHTMLDoc();
+  const RefPtr<nsGenericHTMLElement> body = doc->GetBody();
+  MOZ_RELEASE_ASSERT(body);
+  for (const auto& testData : {
+           LineBreakBeforeBlockBoundaryTest{u"<div contenteditable>abc</div>",
+                                            "div", Some(0), 3, false},
+           LineBreakBeforeBlockBoundaryTest{u"<div contenteditable>abc</div>",
+                                            "div", Nothing{}, 1, false},
+           LineBreakBeforeBlockBoundaryTest{u"<div contenteditable><br></div>",
+                                            "div", Nothing{}, 0, false},
+           LineBreakBeforeBlockBoundaryTest{u"<div contenteditable><br></div>",
+                                            "div", Nothing{}, 1, true},
+           LineBreakBeforeBlockBoundaryTest{
+               u"<div contenteditable><br>  </div>", "div", Some(1), 2, true},
+           LineBreakBeforeBlockBoundaryTest{
+               u"<div contenteditable><br><!-- X --></div>", "div", Nothing{},
+               2,
+               // FIXME: Currently, this fails with a bug of WSRunScanner
+               // (actually, a bug of
+               // HTMLEditUtils::GetPreviousLeafContentOrPreviousBlockElement)
+               false},
+           LineBreakBeforeBlockBoundaryTest{
+               u"<div contenteditable><br><br></div>", "div", Nothing{}, 1,
+               false},
+           LineBreakBeforeBlockBoundaryTest{
+               u"<div contenteditable><br><p>abc</p></div>", "div", Nothing{},
+               1, true},
+       }) {
+    body->SetInnerHTMLTrusted(nsDependentString(testData.mInnerHTML),
+                              doc->NodePrincipal(), IgnoreErrors());
+    const Element* const containerElement = body->QuerySelector(
+        nsDependentCString(testData.mContainer), IgnoreErrors());
+    MOZ_ASSERT(containerElement);
+    const Element* const editingHost =
+        body->QuerySelector("[contenteditable]"_ns, IgnoreErrors());
+    MOZ_ASSERT(editingHost);
+    const nsIContent* const container =
+        testData.mContainerIndex
+            ? containerElement->GetChildAt_Deprecated(*testData.mContainerIndex)
+            : containerElement;
+    MOZ_RELEASE_ASSERT(container);
+    const Maybe<EditorRawLineBreak> result =
+        HTMLEditUtils::GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem<
+            EditorRawLineBreak>(EditorRawDOMPoint(container, testData.mOffset),
+                                *editingHost);
+    EXPECT_EQ(result.isSome(), testData.mExpectedResult)
+        << "GetLineBreakBeforeBlockBoundaryIfPointIsBetweenThem: " << testData;
+  }
+}
+
 }  // namespace mozilla

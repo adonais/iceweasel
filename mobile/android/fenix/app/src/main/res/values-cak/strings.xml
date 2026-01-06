@@ -366,6 +366,10 @@
   <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">Titz\'aqatisäx ruwidget Firefox</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">Wakami mani</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!--
     Search Widget
 
@@ -499,8 +503,6 @@
   <string name="preferences_gestures">B\'anoj paläj</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Tichinäx</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Tatikirisaj molojri\'ïl richin ye\'axïm taq ruwi\', taq yaketal, ewan tzij chuqa\' juley chik.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Rub\'i\' rutaqoya\'l Mozilla</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -687,12 +689,6 @@
   <string name="preference_experiments_2">Taq tijonïk</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">Taya\' q\'ij chi ri Mozilla nuyäk chuqa\' nub\'än taq tijonïk</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Tixim chuqa\' Tiyak Atzij</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Titikirisäx molojri\'ïl richin nok chik</string>
   <!-- Preference for removing FxA account -->
@@ -1167,8 +1163,6 @@
   <string name="toast_copy_link_to_clipboard">Wachib\'en pa molwuj</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Tatikirisaj molojri\'ïl pa Sync</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Tixim chuqa\' tiyak tzij</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Titaq pa ronojel okisab\'äl</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1877,4 +1871,10 @@
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

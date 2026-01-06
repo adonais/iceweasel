@@ -7,6 +7,7 @@ const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   ClientID: "resource://gre/modules/ClientID.sys.mjs",
   TelemetryUtils: "resource://gre/modules/TelemetryUtils.sys.mjs",
+  sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
 // Note: copied from preferences head.js. We can remove this when we migrate
@@ -90,6 +91,17 @@ function promiseLoadSubDialog(aURL) {
   });
 }
 
+// Note: copied from preferences head.js. We can remove this when we migrate
+// this test into that component.
+async function waitForPaneChange(paneId) {
+  let doc = gBrowser.selectedBrowser.contentDocument;
+  let event = await BrowserTestUtils.waitForEvent(doc, "paneshown");
+  let expectId = paneId.startsWith("pane")
+    ? paneId
+    : `pane${paneId[0].toUpperCase()}${paneId.substring(1)}`;
+  is(event.detail.category, expectId, "Loaded the correct pane");
+}
+
 add_task(async function testHiddenWhenDisabled() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.profiles.enabled", false]],
@@ -104,9 +116,8 @@ add_task(async function testHiddenWhenDisabled() {
   ok(profilesCategory, "The category exists");
   ok(!BrowserTestUtils.isVisible(profilesCategory), "The category is hidden");
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
-
   await SpecialPowers.popPrefEnv();
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 add_task(async function testEnabled() {
@@ -114,6 +125,7 @@ add_task(async function testEnabled() {
     leaveOpen: true,
   });
   let doc = gBrowser.contentDocument;
+  let win = doc.ownerGlobal;
 
   // Verify the profiles section is shown when enabled.
   let profilesCategory = doc.getElementById("profilesGroup");
@@ -122,19 +134,163 @@ add_task(async function testEnabled() {
   ok(BrowserTestUtils.isVisible(profilesCategory), "The category is visible");
 
   // Verify the Learn More link exists and points to the right place.
-  let learnMore = doc.getElementById("profile-management-learn-more");
+  let profilesSettingGroup = doc.querySelector(
+    "setting-group[groupid='profiles']"
+  ).firstElementChild;
+  let learnMore = profilesSettingGroup.shadowRoot.querySelector(
+    "a[is='moz-support-link']"
+  );
   Assert.equal(
     "http://127.0.0.1:8888/support-dummy/profile-management",
     learnMore.href,
     "Learn More link should have expected URL"
   );
 
-  // Verify that clicking the button shows the manage screen in a subdialog.
+  // Verify that clicking the button opens the expected subpane.
+  let profilesSubPane = doc.querySelector(
+    "setting-pane[data-category='paneProfiles']"
+  );
+  ok(
+    !BrowserTestUtils.isVisible(profilesSubPane),
+    "Profiles subpane should be hidden"
+  );
+  let paneLoaded = waitForPaneChange("profiles");
+  let subPaneButton = profilesSettingGroup.querySelector("#profilesSettings");
+  subPaneButton.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(subPaneButton, {}, win);
+  await paneLoaded;
+  ok(
+    BrowserTestUtils.isVisible(profilesSubPane),
+    "Profiles subpane should be visible"
+  );
+  await profilesSubPane.updateComplete;
+
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function subpaneContentsWithOneProfile() {
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+    leaveOpen: true,
+  });
+  let doc = gBrowser.contentDocument;
+  let win = doc.ownerGlobal;
+
+  let paneLoaded = waitForPaneChange("profiles");
+  win.gotoPref("paneProfiles");
+  await paneLoaded;
+
+  let profilesSubPane = doc.querySelector(
+    "setting-pane[data-category='paneProfiles']"
+  );
+  await profilesSubPane.updateComplete;
+
+  Assert.equal(
+    "preferences-profiles-group-header",
+    profilesSubPane
+      .querySelector("moz-page-header")
+      .getAttribute("data-l10n-id"),
+    "Subpane should have expected heading l10nId"
+  );
+
+  let manageProfilesButton = profilesSubPane.querySelector("#manageProfiles");
+  ok(
+    BrowserTestUtils.isVisible(manageProfilesButton),
+    "Manage profiles button should be visible"
+  );
+
+  let copyProfilesSection = profilesSubPane.querySelector("#copyProfileHeader");
+  ok(
+    !BrowserTestUtils.isVisible(copyProfilesSection),
+    "Until we create a second profile, the copy section should be hidden"
+  );
+
+  // Verify the manage profiles button opens the correct subdialog.
+  manageProfilesButton.scrollIntoView();
   let promiseSubDialogLoaded = promiseLoadSubDialog("about:profilemanager");
-  let profilesButton = doc.getElementById("manage-profiles");
-  profilesButton.click();
+  EventUtils.synthesizeMouseAtCenter(manageProfilesButton, {}, win);
   await promiseSubDialogLoaded;
 
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
+});
+
+add_task(async function copyProfile() {
+  // Add an additional profile, then load the subpane, and the copy section should be visible.
+  await initGroupDatabase();
+  await SelectableProfileService.createNewProfile(false);
+
+  await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
+    leaveOpen: true,
+  });
+  let doc = gBrowser.contentDocument;
+  let win = doc.ownerGlobal;
+
+  let paneLoaded = waitForPaneChange("profiles");
+  win.gotoPref("paneProfiles");
+  await paneLoaded;
+  let profilesSubPane = doc.querySelector(
+    "setting-pane[data-category='paneProfiles']"
+  );
+  await profilesSubPane.updateComplete;
+
+  let manageProfilesButton = profilesSubPane.querySelector("#manageProfiles");
+  ok(
+    BrowserTestUtils.isVisible(manageProfilesButton),
+    "Manage profiles button should be visible"
+  );
+
+  let copyProfilesSection = profilesSubPane.querySelector("#copyProfileHeader");
+  ok(
+    BrowserTestUtils.isVisible(copyProfilesSection),
+    "Copy profile section should be visible"
+  );
+
+  let profilesCopyButton = copyProfilesSection.querySelector("#copyProfile");
+  let profilesSelect = copyProfilesSection.querySelector("#copyProfileSelect");
+  ok(
+    profilesCopyButton.disabled,
+    "Initially the copy button should be disabled"
+  );
+  ok(!profilesSelect.value, "Initially the select value should be unset");
+  Assert.equal(
+    profilesSelect.options.length,
+    3,
+    "Both profiles and the placeholder should be in the options list"
+  );
+  Assert.equal(
+    profilesSelect.options[1].label,
+    "Original profile",
+    "The first profile should be listed"
+  );
+  Assert.equal(
+    profilesSelect.options[2].label,
+    "Profile 1",
+    "The second profile should be listed"
+  );
+
+  profilesSelect.value = "1";
+  profilesSelect.dispatchEvent(new win.Event("change", { bubbles: true }));
+  await profilesCopyButton.updateComplete;
+  ok(
+    !profilesCopyButton.disabled,
+    "When a profile is selected, the copy button should be enabled"
+  );
+
+  let copyCalled = false;
+  let mockGetProfile = lazy.sinon
+    .stub(SelectableProfileService, "getProfile")
+    .resolves({
+      copyProfile: () => (copyCalled = true),
+    });
+  profilesCopyButton.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(profilesCopyButton, {}, win);
+  await profilesSelect.updateComplete;
+  ok(copyCalled, "The profile copy method should have been called");
+  ok(
+    !profilesSelect.value,
+    "After copy, select value should be reset to empty value"
+  );
+
+  mockGetProfile.restore();
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
@@ -184,8 +340,8 @@ add_task(async function testPrivacyInfoHiddenWhenDisabled() {
 
   ok(!BrowserTestUtils.isVisible(profilesNote), "The profiles note is hidden");
 
-  BrowserTestUtils.removeTab(gBrowser.selectedTab);
   await SpecialPowers.popPrefEnv();
+  BrowserTestUtils.removeTab(gBrowser.selectedTab);
 });
 
 // If the user disables data collection, then re-enables data collection in

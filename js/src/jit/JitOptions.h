@@ -70,6 +70,7 @@ struct DefaultJitOptions {
   bool disableRedundantShapeGuards;
   bool disableRedundantGCBarriers;
   bool disableBailoutLoopCheck;
+  bool disableObjectKeysScalarReplacement;
 #ifdef ENABLE_PORTABLE_BASELINE_INTERP
   bool portableBaselineInterpreter;
 #endif

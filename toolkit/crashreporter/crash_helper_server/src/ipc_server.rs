@@ -3,14 +3,12 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use anyhow::Result;
-use crash_helper_common::{errors::IPCError, messages, IPCConnector, IPCEvent, IPCListener};
+use crash_helper_common::{
+    messages::Header, AncillaryData, IPCConnector, IPCConnectorKey, IPCEvent, IPCListener, IPCQueue,
+};
+use std::{collections::HashMap, rc::Rc};
 
 use crate::crash_generation::{CrashGenerator, MessageResult};
-
-#[cfg(any(target_os = "android", target_os = "linux", target_os = "macos"))]
-mod unix;
-#[cfg(target_os = "windows")]
-mod windows;
 
 #[derive(PartialEq)]
 pub enum IPCServerState {
@@ -21,61 +19,73 @@ pub enum IPCServerState {
 #[derive(PartialEq)]
 enum IPCEndpoint {
     Parent, // A connection to the parent process
-    #[allow(dead_code)]
+
     Child, // A connection to the child process
+    #[allow(dead_code)]
     External, // A connection to an external process
 }
 
 struct IPCConnection {
-    connector: IPCConnector,
+    connector: Rc<IPCConnector>,
     endpoint: IPCEndpoint,
 }
 
 pub(crate) struct IPCServer {
-    #[cfg_attr(unix, allow(dead_code))]
-    listener: IPCListener,
-    connections: Vec<IPCConnection>,
+    /// Platform-specific mechanism to wait for events. This will contain
+    /// references to the connectors so needs to be the first element in
+    /// the structure so that it's dropped first.
+    queue: IPCQueue,
+    connections: HashMap<IPCConnectorKey, IPCConnection>,
 }
 
 impl IPCServer {
-    pub(crate) fn new(listener: IPCListener, connector: IPCConnector) -> IPCServer {
-        IPCServer {
-            listener,
-            connections: vec![IPCConnection {
+    pub(crate) fn new(listener: IPCListener, connector: IPCConnector) -> Result<IPCServer> {
+        let connector = Rc::new(connector);
+        let mut queue = IPCQueue::new(listener)?;
+        queue.add_connector(&connector)?;
+
+        let mut connections = HashMap::with_capacity(10);
+        connections.insert(
+            connector.key(),
+            IPCConnection {
                 connector,
                 endpoint: IPCEndpoint::Parent,
-            }],
-        }
+            },
+        );
+
+        Ok(IPCServer { queue, connections })
     }
 
-    pub(crate) fn run(
-        &mut self,
-        generator: &mut CrashGenerator,
-    ) -> Result<IPCServerState, IPCError> {
-        let events = self.wait_for_events()?;
+    pub(crate) fn run(&mut self, generator: &mut CrashGenerator) -> Result<IPCServerState> {
+        let events = self.queue.wait_for_events()?;
 
-        // We reverse the order of events, so that we start processing them
-        // from the highest indexes toward the lowest. If we did the opposite
-        // removed connections would invalidate the successive indexes.
-        for event in events.into_iter().rev() {
+        for event in events.into_iter() {
             match event {
                 IPCEvent::Connect(connector) => {
-                    self.connections.push(IPCConnection {
-                        connector,
-                        endpoint: IPCEndpoint::External,
-                    });
+                    self.connections.insert(
+                        connector.key(),
+                        IPCConnection {
+                            connector,
+                            endpoint: IPCEndpoint::External,
+                        },
+                    );
                 }
-                IPCEvent::Header(index, header) => {
-                    let res = self.handle_message(index, &header, generator);
-                    if let Err(error) = res {
+                IPCEvent::Message(key, header, payload, ancillary_data) => {
+                    if let Err(error) =
+                        self.handle_message(key, &header, payload, ancillary_data, generator)
+                    {
                         log::error!(
-                            "Error {error} while handling a message of {:?} kind",
+                            "Error {error} when handling a message of kind {:?}",
                             header.kind
                         );
                     }
                 }
-                IPCEvent::Disconnect(index) => {
-                    let connection = self.connections.remove(index);
+                IPCEvent::Disconnect(key) => {
+                    let connection = self
+                        .connections
+                        .remove(&key)
+                        .expect("Disconnection event but no corresponding connection");
+
                     if connection.endpoint == IPCEndpoint::Parent {
                         // The main process disconnected, leave
                         return Ok(IPCServerState::ClientDisconnected);
@@ -89,37 +99,41 @@ impl IPCServer {
 
     fn handle_message(
         &mut self,
-        index: usize,
-        header: &messages::Header,
+        key: IPCConnectorKey,
+        header: &Header,
+        data: Vec<u8>,
+        ancillary_data: Option<AncillaryData>,
         generator: &mut CrashGenerator,
     ) -> Result<()> {
         let connection = self
             .connections
-            .get_mut(index)
-            .expect("Invalid connector index");
-        let connector = &mut connection.connector;
-        let (data, ancillary_data) = connector.recv(header.size)?;
+            .get(&key)
+            .expect("Event received on non-existing connection");
+        let connector = &connection.connector;
 
-        let connection = match connection.endpoint {
+        match connection.endpoint {
             IPCEndpoint::Parent => {
-                generator.parent_message(connector, header.kind, &data, ancillary_data)
+                let res =
+                    generator.parent_message(connector, header.kind, &data, ancillary_data)?;
+                if let MessageResult::Connection(connector) = res {
+                    let connector = Rc::new(connector);
+                    self.queue.add_connector(&connector)?;
+                    self.connections.insert(
+                        connector.key(),
+                        IPCConnection {
+                            connector,
+                            endpoint: IPCEndpoint::Child,
+                        },
+                    );
+                }
             }
-            IPCEndpoint::Child => generator.child_message(header.kind, &data, ancillary_data),
+            IPCEndpoint::Child => {
+                generator.child_message(header.kind, &data, ancillary_data)?;
+            }
             IPCEndpoint::External => {
-                generator.external_message(connector, header.kind, &data, ancillary_data)
+                generator.external_message(connector, header.kind, &data, ancillary_data)?;
             }
-        }?;
-
-        match connection {
-            MessageResult::Connection(connector) => {
-                self.connections.push(IPCConnection {
-                    connector,
-                    endpoint: IPCEndpoint::Child,
-                });
-            }
-
-            MessageResult::None => {}
-        }
+        };
 
         Ok(())
     }

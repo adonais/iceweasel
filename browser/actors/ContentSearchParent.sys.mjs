@@ -8,6 +8,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   BrowserSearchTelemetry:
     "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  DEFAULT_FORM_HISTORY_PARAM:
+    "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
   SearchSuggestionController:
@@ -168,6 +170,7 @@ export let ContentSearch = {
 
   /**
    * Observes changes in prefs tracked by UrlbarPrefs.
+   *
    * @param {string} pref
    *   The name of the pref, relative to `browser.urlbar.` if the pref is
    *   in that branch.
@@ -190,7 +193,7 @@ export let ContentSearch = {
       );
       lazy.FormHistory.update({
         op: "remove",
-        fieldname: browserData.controller.formHistoryParam,
+        fieldname: lazy.DEFAULT_FORM_HISTORY_PARAM,
         value: entry,
         guid: result.guid,
       }).catch(err =>
@@ -261,8 +264,8 @@ export let ContentSearch = {
     let browserData = this._suggestionDataForBrowser(browser, true);
     let { controller } = browserData;
     let ok = lazy.SearchSuggestionController.engineOffersSuggestions(engine);
-    controller.maxLocalResults = ok ? MAX_LOCAL_SUGGESTIONS : MAX_SUGGESTIONS;
-    controller.maxRemoteResults = ok ? MAX_SUGGESTIONS : 0;
+    let maxLocalResults = ok ? MAX_LOCAL_SUGGESTIONS : MAX_SUGGESTIONS;
+    let maxRemoteResults = ok ? MAX_SUGGESTIONS : 0;
     // fetch() rejects its promise if there's a pending request, but since we
     // process our event queue serially, there's never a pending request.
     this._currentSuggestion = { controller, browser };
@@ -270,6 +273,8 @@ export let ContentSearch = {
       searchString,
       inPrivateBrowsing: lazy.PrivateBrowsingUtils.isBrowserPrivate(browser),
       engine,
+      maxLocalResults,
+      maxRemoteResults,
     });
 
     // Simplify results since we do not support rich results in this component.
@@ -321,10 +326,9 @@ export let ContentSearch = {
     ) {
       return false;
     }
-    let browserData = this._suggestionDataForBrowser(browser, true);
     lazy.FormHistory.update({
       op: "bump",
-      fieldname: browserData.controller.formHistoryParam,
+      fieldname: lazy.DEFAULT_FORM_HISTORY_PARAM,
       value: entry.value,
       source: entry.engineName,
     }).catch(err => console.error("Error adding form history entry: ", err));
@@ -334,7 +338,7 @@ export let ContentSearch = {
   /**
    * Construct a state object representing the search engine state.
    *
-   * @returns {Object} state
+   * @returns {object} state
    */
   async currentStateObj() {
     let state = {

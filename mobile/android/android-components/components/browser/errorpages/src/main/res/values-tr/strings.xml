@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Aldatıcı site sorunu</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p> %1$s web sayfasının aldatıcı bir sayfa olduğu ihbar edilmiştir. Sayfa, güvenlik tercihlerinize dayanılarak engellendi.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Güvenliğiniz için bu site engellendi</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>%1$s adresindeki web sayfası, eklentilerinizden biri tarafından açılmaya çalışıldığı için engellendi. Bu site, parolalarınız veya kredi kartı numaralarınız gibi bilgilerinizi çalmak için kullanılabilir.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Güvenli site mevcut değil</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

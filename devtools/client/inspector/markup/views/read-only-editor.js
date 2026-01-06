@@ -9,27 +9,21 @@ const nodeConstants = require("resource://devtools/shared/dom-node-constants.js"
 /**
  * Creates an editor for non-editable nodes.
  */
-function ReadOnlyEditor(container, node) {
+function ReadOnlyEditor(container, nodeFront) {
   this.container = container;
   this.markup = this.container.markup;
   this.buildMarkup();
 
-  if (node.isPseudoElement) {
-    this.tag.classList.add("pseudo", "force-color-on-flash");
-    if (node.isMarkerPseudoElement) {
-      this.tag.textContent = "::marker";
-    } else if (node.isBeforePseudoElement) {
-      this.tag.textContent = "::before";
-    } else if (node.isAfterPseudoElement) {
-      this.tag.textContent = "::after";
-    }
-  } else if (node.nodeType == nodeConstants.DOCUMENT_TYPE_NODE) {
+  if (nodeFront.nodeType == nodeConstants.DOCUMENT_TYPE_NODE) {
     this.elt.classList.add("comment", "doctype");
-    this.tag.textContent = node.doctypeString;
-  } else if (node.isShadowRoot) {
-    this.tag.textContent = `#shadow-root (${node.shadowRootMode})`;
+    this.tag.textContent = nodeFront.doctypeString;
+  } else if (nodeFront.isShadowRoot) {
+    this.tag.textContent = `#shadow-root (${nodeFront.shadowRootMode})`;
   } else {
-    this.tag.textContent = node.nodeName;
+    this.tag.textContent = nodeFront.displayName;
+    if (nodeFront.isPseudoElement) {
+      this.tag.classList.add("pseudo", "force-color-on-flash");
+    }
   }
 
   // Make the "tag" part of this editor focusable.
@@ -62,7 +56,7 @@ ReadOnlyEditor.prototype = {
   /**
    * Show overflow highlight if showOverflowHighlight is true, otherwise hide it.
    *
-   * @param {Boolean} showOverflowHighlight
+   * @param {boolean} showOverflowHighlight
    */
   setOverflowHighlight(showOverflowHighlight) {
     this.container.tagState.classList.toggle(

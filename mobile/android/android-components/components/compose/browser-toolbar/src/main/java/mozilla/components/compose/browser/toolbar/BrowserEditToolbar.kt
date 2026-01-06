@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,9 +22,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.AcornTheme
+import mozilla.components.compose.base.theme.acornPrivateColorScheme
+import mozilla.components.compose.base.theme.privateColorPalette
 import mozilla.components.compose.browser.toolbar.concept.Action
 import mozilla.components.compose.browser.toolbar.concept.Action.ActionButtonRes
 import mozilla.components.compose.browser.toolbar.concept.Action.SearchSelectorAction
@@ -73,51 +78,52 @@ fun BrowserEditToolbar(
     onUrlCommitted: (String) -> Unit = {},
     onInteraction: (BrowserToolbarEvent) -> Unit,
 ) {
-    Box(
-        modifier = Modifier
-            .background(color = AcornTheme.colors.layer1)
-            .fillMaxWidth()
-            .semantics { testTagsAsResourceId = true },
-    ) {
-        Row(
+    Surface {
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(all = 8.dp)
-                .height(48.dp)
-                .clip(shape = ROUNDED_CORNER_SHAPE)
-                .background(color = AcornTheme.colors.layer3),
-            verticalAlignment = Alignment.CenterVertically,
+                .semantics { testTagsAsResourceId = true },
         ) {
-            ActionContainer(
-                actions = editActionsStart,
-                onInteraction = onInteraction,
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(all = 8.dp)
+                    .height(48.dp)
+                    .clip(shape = ROUNDED_CORNER_SHAPE)
+                    .background(color = MaterialTheme.colorScheme.surfaceDim),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                ActionContainer(
+                    actions = editActionsStart,
+                    onInteraction = onInteraction,
+                )
 
-            InlineAutocompleteTextField(
-                query = query,
-                hint = hint,
-                suggestion = suggestion,
-                showQueryAsPreselected = isQueryPrefilled,
-                usePrivateModeQueries = usePrivateModeQueries,
-                modifier = Modifier.weight(1f),
-                onUrlEdit = onUrlEdit,
-                onUrlCommitted = onUrlCommitted,
-            )
+                InlineAutocompleteTextField(
+                    query = query,
+                    hint = hint,
+                    suggestion = suggestion,
+                    showQueryAsPreselected = isQueryPrefilled,
+                    usePrivateModeQueries = usePrivateModeQueries,
+                    modifier = Modifier.weight(1f),
+                    onUrlEdit = onUrlEdit,
+                    onUrlCommitted = onUrlCommitted,
+                )
 
-            ActionContainer(
-                actions = editActionsEnd,
-                onInteraction = onInteraction,
+                ActionContainer(
+                    actions = editActionsEnd,
+                    onInteraction = onInteraction,
+                )
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.align(
+                    when (gravity) {
+                        Top -> Alignment.BottomCenter
+                        Bottom -> Alignment.TopCenter
+                    },
+                ),
             )
         }
-
-        HorizontalDivider(
-            modifier = Modifier.align(
-                when (gravity) {
-                    Top -> Alignment.BottomCenter
-                    Bottom -> Alignment.TopCenter
-                },
-            ),
-        )
     }
 }
 
@@ -125,6 +131,45 @@ fun BrowserEditToolbar(
 @Composable
 private fun BrowserEditToolbarPreview() {
     AcornTheme {
+        BrowserEditToolbar(
+            query = "http://www.mozilla.org",
+            hint = "Search or enter address",
+            gravity = Top,
+            suggestion = null,
+            editActionsStart = listOf(
+                SearchSelectorAction(
+                    icon = DrawableIcon(
+                        AppCompatResources.getDrawable(LocalContext.current, iconsR.drawable.mozac_ic_search_24)!!,
+                    ),
+                    contentDescription = StringResContentDescription(android.R.string.untitled),
+                    menu = { emptyList() },
+                    onClick = null,
+                ),
+            ),
+            editActionsEnd = listOf(
+                ActionButtonRes(
+                    drawableResId = iconsR.drawable.mozac_ic_microphone_24,
+                    contentDescription = android.R.string.untitled,
+                    onClick = object : BrowserToolbarEvent {},
+                ),
+                ActionButtonRes(
+                    drawableResId = iconsR.drawable.mozac_ic_qr_code_24,
+                    contentDescription = android.R.string.untitled,
+                    onClick = object : BrowserToolbarEvent {},
+                ),
+            ),
+            onInteraction = {},
+        )
+    }
+}
+
+@Preview
+@Composable
+private fun BrowserEditToolbarPrivatePreview() {
+    AcornTheme(
+        colors = privateColorPalette,
+        colorScheme = acornPrivateColorScheme(),
+    ) {
         BrowserEditToolbar(
             query = "http://www.mozilla.org",
             hint = "Search or enter address",

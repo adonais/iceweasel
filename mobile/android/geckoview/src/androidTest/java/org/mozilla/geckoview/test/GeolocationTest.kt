@@ -33,9 +33,9 @@ import org.mozilla.geckoview.test.rule.GeckoSessionTestRule.TimeoutMillis
 @RunWith(AndroidJUnit4::class)
 @LargeTest
 class GeolocationTest : BaseSessionTest() {
-    private val LOGTAG = "GeolocationTest"
     private val activityRule = ActivityScenarioRule(GeckoViewTestActivity::class.java)
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
+    private val logTag = "GeolocationTest"
     private lateinit var locManager: LocationManager
     private lateinit var mockGpsProvider: MockLocationProvider
     private lateinit var mockNetworkProvider: MockLocationProvider
@@ -237,7 +237,7 @@ class GeolocationTest : BaseSessionTest() {
         ProcessLifecycleOwner.get().lifecycle.addObserver(
             object : DefaultLifecycleObserver {
                 override fun onResume(owner: LifecycleOwner) {
-                    Log.i(LOGTAG, "onResume Event")
+                    Log.i(logTag, "onResume Event")
                     actualResumeCount++
                     super.onResume(owner)
                     try {
@@ -271,14 +271,14 @@ class GeolocationTest : BaseSessionTest() {
                 }
 
                 override fun onPause(owner: LifecycleOwner) {
-                    Log.i(LOGTAG, "onPause Event")
+                    Log.i(logTag, "onPause Event")
                     actualPauseCount++
                     super.onPause(owner)
                     try {
                         mockGpsProvider.setMockLocation(afterPauseLat, afterPauseLon)
                         mockGpsProvider.postLocation()
                     } catch (e: Exception) {
-                        Log.w(LOGTAG, "onPause was called too late.")
+                        Log.w(logTag, "onPause was called too late.")
                         // Potential situation where onPause is called too late
                     }
                 }

@@ -10,7 +10,6 @@
 
 #include "device_info_android.h"
 
-#include <algorithm>
 #include <sstream>
 #include <string>
 #include <vector>

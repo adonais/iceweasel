@@ -5,7 +5,7 @@
 :host {
   display: grid;
   padding: 1em 0 1em;
-  border-block: 0.5px solid var(--in-content-border-color);
+  border-block: 0.5px solid var(--border-color);
   border-inline: 0.5px solid transparent;
   position: relative;
 }
@@ -13,7 +13,7 @@
 :host(:hover) {
   background-color: var(--in-content-item-hover);
   color: var(--in-content-item-hover-text);
-  border-inline-color: var(--in-content-border-color);
+  border-inline-color: var(--border-color);
   cursor: pointer;
 }
 

@@ -213,7 +213,7 @@ class Spectrum {
    * Map current rgb to the closest color available in the database by
    * calculating the delta-E between each available color and the current rgb
    *
-   * @return {String}
+   * @return {string}
    *         Color name or closest color name
    */
   get colorName() {
@@ -280,7 +280,7 @@ class Spectrum {
    * Creates and initializes a slider element, attaches it to its parent container
    * based on the slider type and returns it
    *
-   * @param  {String} sliderType
+   * @param  {string} sliderType
    *         The type of the slider (i.e. alpha or hue)
    * @param  {Function} onSliderMove
    *         The function to tie the slider to on input
@@ -309,7 +309,7 @@ class Spectrum {
    * Updates the contrast label with appropriate content (i.e. large text indicator
    * if the contrast is calculated for large text, or a base label otherwise)
    *
-   * @param  {Boolean} isLargeText
+   * @param  {boolean} isLargeText
    *         True if contrast is calculated for large text.
    */
   updateContrastLabel(isLargeText) {
@@ -347,9 +347,9 @@ class Spectrum {
    *
    * @param  {DOMNode} el
    *         Contrast value element to update.
-   * @param  {String} score
+   * @param  {string} score
    *         Contrast ratio score.
-   * @param  {Number} value
+   * @param  {number} value
    *         Contrast ratio value.
    * @param  {Array} backgroundColor
    *         RGBA color array for the background color to show in the swatch.
@@ -671,11 +671,11 @@ function draggable(element, dragHelper, onmove) {
  * Calculates the contrast ratio for a DOM node's computed style against
  * a given background.
  *
- * @param  {Object} computedStyle
+ * @param  {object} computedStyle
  *         The computed style for which we want to calculate the contrast ratio.
- * @param  {Object} backgroundColor
+ * @param  {object} backgroundColor
  *         Object with one or more of the following properties: value, min, max
- * @return {Object}
+ * @return {object}
  *         An object that may contain one or more of the following fields: error,
  *         isLargeText, value, score for contrast.
  */

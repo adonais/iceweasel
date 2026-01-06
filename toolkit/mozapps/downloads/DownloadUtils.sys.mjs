@@ -157,6 +157,7 @@ export var DownloadUtils = {
   /**
    * Helper function that returns a transfer string, a time remaining string,
    * and a new value of "last seconds".
+   *
    * @param aCurrBytes
    *        Number of bytes transferred so far
    * @param [optional] aMaxBytes
@@ -449,6 +450,7 @@ export var DownloadUtils = {
 
   /**
    * Converts a number of seconds to "downloading file opens in X" status.
+   *
    * @param aSeconds
    *        Seconds to convert into the time format.
    * @return status object, example:

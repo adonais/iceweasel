@@ -213,6 +213,7 @@ export class LoginManagerStorage extends LoginManagerStorage_json {
   /**
    * GeckoView logins are already decrypted before this component receives them
    * so this method is a no-op for this backend.
+   *
    * @see _vanillaLoginToStorageLogin
    */
   _decryptLogins(logins) {

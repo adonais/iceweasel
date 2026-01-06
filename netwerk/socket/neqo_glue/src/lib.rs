@@ -41,11 +41,11 @@ use neqo_transport::{
     Error as TransportError, Output, OutputBatch, RandomConnectionIdGenerator, StreamId, Version,
 };
 use nserror::{
-    nsresult, NS_BASE_STREAM_WOULD_BLOCK, NS_ERROR_CONNECTION_REFUSED, NS_ERROR_FAILURE,
-    NS_ERROR_FILE_ALREADY_EXISTS, NS_ERROR_ILLEGAL_VALUE, NS_ERROR_INVALID_ARG,
-    NS_ERROR_NET_HTTP3_PROTOCOL_ERROR, NS_ERROR_NET_INTERRUPT, NS_ERROR_NET_RESET,
-    NS_ERROR_NET_TIMEOUT, NS_ERROR_NOT_AVAILABLE, NS_ERROR_NOT_CONNECTED, NS_ERROR_OUT_OF_MEMORY,
-    NS_ERROR_SOCKET_ADDRESS_IN_USE, NS_ERROR_UNEXPECTED, NS_OK,
+    nsresult, NS_BASE_STREAM_WOULD_BLOCK, NS_ERROR_CONNECTION_REFUSED,
+    NS_ERROR_DOM_INVALID_HEADER_NAME, NS_ERROR_FILE_ALREADY_EXISTS, NS_ERROR_ILLEGAL_VALUE,
+    NS_ERROR_INVALID_ARG, NS_ERROR_NET_HTTP3_PROTOCOL_ERROR, NS_ERROR_NET_INTERRUPT,
+    NS_ERROR_NET_RESET, NS_ERROR_NET_TIMEOUT, NS_ERROR_NOT_AVAILABLE, NS_ERROR_NOT_CONNECTED,
+    NS_ERROR_OUT_OF_MEMORY, NS_ERROR_SOCKET_ADDRESS_IN_USE, NS_ERROR_UNEXPECTED, NS_OK,
 };
 use nsstring::{nsACString, nsCString};
 use thin_vec::ThinVec;
@@ -423,6 +423,8 @@ impl NeqoHttp3Conn {
         let pmtud_enabled =
             // Check if PMTUD is explicitly enabled,
             pmtud_enabled
+            // or enabled via pref,
+            || static_prefs::pref!("network.http.http3.pmtud")
             // but disable PMTUD if NSPR is used (socket == None) or
             // transmitted UDP datagrams might get fragmented by the IP layer.
             && socket.as_ref().map_or(false, |s| !s.may_fragment());
@@ -439,7 +441,6 @@ impl NeqoHttp3Conn {
             .pmtud_iface_mtu(cfg!(not(target_os = "openbsd")))
             // MLKEM support is configured further below. By default, disable it.
             .mlkem(false)
-            .datagram_size(1500)
             .pmtud(pmtud_enabled);
 
         // Set a short timeout when fuzzing.
@@ -1144,39 +1145,59 @@ fn parse_headers(headers: &nsACString) -> Result<Vec<Header>, nsresult> {
     let mut hdrs = Vec::new();
     // this is only used for headers built by Firefox.
     // Firefox supplies all headers already prepared for sending over http1.
-    // They need to be split into (String, String) pairs.
-    match str::from_utf8(headers) {
-        Err(_) => {
-            return Err(NS_ERROR_INVALID_ARG);
-        }
-        Ok(h) => {
-            for elem in h.split("\r\n").skip(1) {
-                if elem.starts_with(':') {
-                    // colon headers are for http/2 and 3 and this is http/1
-                    // input, so that is probably a smuggling attack of some
-                    // kind.
-                    continue;
-                }
-                if elem.is_empty() {
-                    continue;
-                }
+    // They need to be split into (name, value) pairs where name is a String
+    // and value is a Vec<u8>.
 
-                let mut hdr_str = elem.splitn(2, ':');
-                let name = hdr_str
-                    .next()
-                    .expect("`elem` is not empty")
-                    .trim()
-                    .to_lowercase();
-                if is_excluded_header(&name) {
-                    continue;
-                }
-                let value = hdr_str
-                    .next()
-                    .map_or_else(String::new, |v| v.trim().to_string());
+    let headers_bytes: &[u8] = headers;
 
-                hdrs.push(Header::new(name, value));
-            }
+    // Split on either \r or \n. When splitting "\r\n" sequences, this produces
+    // an empty element between them which is filtered out by the is_empty check.
+    // This also handles malformed inputs with bare \r or \n.
+    for elem in headers_bytes.split(|&b| b == b'\r' || b == b'\n').skip(1) {
+        if elem.is_empty() {
+            continue;
         }
+        if elem.starts_with(b":") {
+            // colon headers are for http/2 and 3 and this is http/1
+            // input, so that is probably a smuggling attack of some
+            // kind.
+            continue;
+        }
+
+        let colon_pos = match elem.iter().position(|&b| b == b':') {
+            Some(pos) => pos,
+            None => continue, // No colon, skip this line
+        };
+
+        let name_bytes = &elem[..colon_pos];
+        // Safe: if colon is at the end, this yields an empty slice
+        let value_bytes = &elem[colon_pos + 1..];
+
+        // Header names must be valid UTF-8
+        let name = match str::from_utf8(name_bytes) {
+            Ok(n) => n.trim().to_lowercase(),
+            Err(_) => return Err(NS_ERROR_DOM_INVALID_HEADER_NAME),
+        };
+
+        if is_excluded_header(&name) {
+            continue;
+        }
+
+        // Trim leading and trailing optional whitespace (OWS) from value.
+        // Per RFC 9110, OWS is defined as *( SP / HTAB ), i.e., space and tab only.
+        let value = value_bytes
+            .iter()
+            .position(|&b| b != b' ' && b != b'\t')
+            .map_or(&value_bytes[0..0], |start| {
+                let end = value_bytes
+                    .iter()
+                    .rposition(|&b| b != b' ' && b != b'\t')
+                    .map_or(value_bytes.len(), |pos| pos + 1);
+                &value_bytes[start..end]
+            })
+            .to_vec();
+
+        hdrs.push(Header::new(name, value));
     }
     Ok(hdrs)
 }
@@ -1793,13 +1814,13 @@ fn convert_h3_to_h1_headers(headers: &[Header], ret_headers: &mut ThinVec<u8>) -
         .value();
 
     ret_headers.extend_from_slice(b"HTTP/3 ");
-    ret_headers.extend_from_slice(status_val.as_bytes());
+    ret_headers.extend_from_slice(status_val);
     ret_headers.extend_from_slice(b"\r\n");
 
     for hdr in headers.iter().filter(|&h| h.name() != ":status") {
         ret_headers.extend_from_slice(&sanitize_header(Cow::from(hdr.name().as_bytes())));
         ret_headers.extend_from_slice(b": ");
-        ret_headers.extend_from_slice(&sanitize_header(Cow::from(hdr.value().as_bytes())));
+        ret_headers.extend_from_slice(&sanitize_header(Cow::from(hdr.value())));
         ret_headers.extend_from_slice(b"\r\n");
     }
     ret_headers.extend_from_slice(b"\r\n");
@@ -2377,6 +2398,7 @@ pub unsafe extern "C" fn neqo_http3conn_webtransport_set_sendorder(
 ///
 /// Note that this conversion is specific to `neqo_glue`, i.e. does not aim to
 /// implement a general-purpose conversion.
+/// Treat NS_ERROR_NET_RESET as a generic retryable error for the upper layer.
 ///
 /// Modeled after
 /// [`ErrorAccordingToNSPR`](https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/netwerk/base/nsSocketTransport2.cpp#164-168).
@@ -2427,16 +2449,6 @@ fn into_nsresult(e: &io::Error) -> nsresult {
 
         // TODO: nightly-only for now <https://doc.rust-lang.org/std/io/enum.ErrorKind.html#variant.FilesystemLoop>.
         // io::ErrorKind::FilesystemLoop => NS_ERROR_FILE_UNRESOLVABLE_SYMLINK,
-
-        // > NSPR's socket code can return these, but they're not worth breaking out
-        // > into their own error codes, distinct from NS_ERROR_FAILURE:
-        // >
-        // > PR_BAD_DESCRIPTOR_ERROR
-        // > PR_INVALID_ARGUMENT_ERROR
-        //
-        // <https://searchfox.org/mozilla-central/rev/a965e3c683ecc035dee1de72bd33a8d91b1203ed/netwerk/base/nsSocketTransport2.cpp#231>
-        io::ErrorKind::InvalidInput => NS_ERROR_FAILURE,
-
         io::ErrorKind::TimedOut => NS_ERROR_NET_TIMEOUT,
         io::ErrorKind::Interrupted => NS_ERROR_NET_INTERRUPT,
 
@@ -2456,7 +2468,7 @@ fn into_nsresult(e: &io::Error) -> nsresult {
         | io::ErrorKind::InvalidData
         | io::ErrorKind::WriteZero
         | io::ErrorKind::Unsupported
-        | io::ErrorKind::Other => NS_ERROR_FAILURE,
+        | io::ErrorKind::Other => NS_ERROR_NET_RESET,
 
         // TODO: available since Rust v1.83.0 only
         // <https://doc.rust-lang.org/std/io/enum.ErrorKind.html>.
@@ -2470,11 +2482,13 @@ fn into_nsresult(e: &io::Error) -> nsresult {
         // | io::ErrorKind::ArgumentListTooLong
         // | io::ErrorKind::NetworkDown
         // | io::ErrorKind::StaleNetworkFileHandle
-        // | io::ErrorKind::StorageFull => NS_ERROR_FAILURE,
+        // | io::ErrorKind::StorageFull => NS_ERROR_NET_RESET,
 
         // TODO: nightly-only for now <https://doc.rust-lang.org/std/io/enum.ErrorKind.html>.
-        // io::ErrorKind::CrossesDevices | io::ErrorKind::InvalidFilename => NS_ERROR_FAILURE,
-        _ => NS_ERROR_FAILURE,
+        // io::ErrorKind::CrossesDevices
+        // | io::ErrorKind::InvalidFilename
+        // | io::ErrorKind::InvalidInput => NS_ERROR_NET_RESET,
+        _ => NS_ERROR_NET_RESET,
     }
 }
 
@@ -2682,4 +2696,33 @@ pub unsafe extern "C" fn neqo_decoder_remaining(decoder: &mut NeqoDecoder) -> u6
 pub unsafe extern "C" fn neqo_decoder_offset(decoder: &mut NeqoDecoder) -> u64 {
     let decoder = decoder.decoder.as_mut().unwrap();
     decoder.offset() as u64
+}
+
+// Test function called from C++ gtest
+// Callback signature: fn(user_data, name_ptr, name_len, value_ptr, value_len)
+type HeaderCallback = extern "C" fn(*mut c_void, *const u8, usize, *const u8, usize);
+
+#[no_mangle]
+pub extern "C" fn neqo_glue_test_parse_headers(
+    headers_input: &nsACString,
+    callback: HeaderCallback,
+    user_data: *mut c_void,
+) -> bool {
+    match parse_headers(headers_input) {
+        Ok(headers) => {
+            for header in headers {
+                let name_bytes = header.name().as_bytes();
+                let value_bytes = header.value();
+                callback(
+                    user_data,
+                    name_bytes.as_ptr(),
+                    name_bytes.len(),
+                    value_bytes.as_ptr(),
+                    value_bytes.len(),
+                );
+            }
+            true
+        }
+        Err(_) => false,
+    }
 }

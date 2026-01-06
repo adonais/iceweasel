@@ -44,13 +44,16 @@ class SourceSurfaceWebgl : public DataSourceSurface {
 
   already_AddRefed<SourceSurface> ExtractSubrect(const IntRect& aRect) override;
 
+  bool ReadDataInto(uint8_t* aData, int32_t aStride) override;
+
  private:
   friend class DrawTargetWebgl;
   friend class SharedContextWebgl;
 
   explicit SourceSurfaceWebgl(const RefPtr<SharedContextWebgl>& aSharedContext);
 
-  bool EnsureData(bool aForce = true);
+  bool EnsureData(bool aForce = true, uint8_t* aData = nullptr,
+                  int32_t aStride = 0);
   bool ForceReadFromPBO();
 
   void DrawTargetWillChange(bool aNeedHandle);
@@ -69,6 +72,8 @@ class SourceSurfaceWebgl : public DataSourceSurface {
   RefPtr<WebGLBuffer> mReadBuffer;
   // Any data that has been read back from the WebGL context for mapping.
   RefPtr<DataSourceSurface> mData;
+  // Whether the data is safe to modify
+  bool mOwnsData = true;
   // The draw target that currently owns the texture for this surface.
   WeakPtr<DrawTargetWebgl> mDT;
   // The actual shared context that any WebGL resources belong to.

@@ -182,7 +182,10 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
         }
     }
 
-    private fun showAddonToast(@StringRes textId: Int, addon: Addon) {
+    private fun showAddonToast(
+        @StringRes textId: Int,
+        addon: Addon,
+    ) {
         Toast.makeText(
             this,
             getString(textId, addon.translateName(context = this)),

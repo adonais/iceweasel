@@ -47,7 +47,7 @@ class TranslationsMiddleware(
 ) : Middleware<BrowserState, BrowserAction> {
     private val logger = Logger("TranslationsMiddleware")
 
-    @Suppress("LongMethod", "CyclomaticComplexMethod")
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
     override fun invoke(
         context: MiddlewareContext<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
@@ -273,7 +273,6 @@ class TranslationsMiddleware(
                     logger.info("Success requesting engine support. isEngineSupported: $isEngineSupported")
                     continuation.resume(isEngineSupported)
                 },
-
                 onError = { error ->
                     context.store.dispatch(
                         TranslationsAction.EngineExceptionAction(
@@ -384,7 +383,6 @@ class TranslationsMiddleware(
                 )
                 logger.info("Success requesting language models.")
             },
-
             onError = { error ->
                 context.store.dispatch(
                     TranslationsAction.EngineExceptionAction(
@@ -429,7 +427,6 @@ class TranslationsMiddleware(
                 )
                 logger.info("Success requesting never translate sites.")
             },
-
             onError = {
                 context.store.dispatch(
                     TranslationsAction.EngineExceptionAction(
@@ -578,12 +575,10 @@ class TranslationsMiddleware(
         return suspendCoroutine { continuation ->
             engine.getLanguageSetting(
                 languageCode = pageLanguage,
-
                 onSuccess = { setting ->
                     logger.info("Success requesting language settings.")
                     continuation.resume(setting)
                 },
-
                 onError = {
                     logger.error("Could not retrieve language settings: $it")
                     continuation.resume(null)
@@ -615,7 +610,6 @@ class TranslationsMiddleware(
         tabId: String? = null,
     ) {
         engine.getLanguageSettings(
-
             onSuccess = { settings ->
                 context.store.dispatch(
                     TranslationsAction.SetLanguageSettingsAction(
@@ -624,7 +618,6 @@ class TranslationsMiddleware(
                 )
                 logger.info("Success requesting language settings.")
             },
-
             onError = {
                 context.store.dispatch(
                     TranslationsAction.EngineExceptionAction(
@@ -688,7 +681,6 @@ class TranslationsMiddleware(
         engine.getTranslationsPairDownloadSize(
             fromLanguage = fromLanguage.code,
             toLanguage = toLanguage.code,
-
             onSuccess = { size ->
                 context.store.dispatch(
                     TranslationsAction.SetTranslationDownloadSizeAction(
@@ -703,7 +695,6 @@ class TranslationsMiddleware(
                 )
                 logger.info("Success requesting download size.")
             },
-
             onError = { error ->
                 context.store.dispatch(
                     TranslationsAction.SetTranslationDownloadSizeAction(
@@ -823,7 +814,6 @@ class TranslationsMiddleware(
         engine.setLanguageSetting(
             languageCode = languageCode,
             languageSetting = setting,
-
             onSuccess = {
                 // Value was proactively updated in [TranslationsStateReducer] for
                 // [TranslationsBrowserState.languageSettings]
@@ -840,7 +830,6 @@ class TranslationsMiddleware(
 
                 logger.info("Successfully updated the language preference.")
             },
-
             onError = {
                 logger.error("Could not update the language preference.", it)
                 // The browser store [TranslationsBrowserState.languageSettings] is out of sync,
@@ -959,6 +948,7 @@ class TranslationsMiddleware(
      * @param context The context used to update the language models.
      * @param options The change and specified language models that should change state.
      */
+    @Suppress("CognitiveComplexMethod")
     private fun updateLanguageModel(
         context: MiddlewareContext<BrowserState, BrowserAction>,
         options: ModelManagementOptions,
@@ -1003,7 +993,6 @@ class TranslationsMiddleware(
                     requestLanguageModels(context)
                 }
             },
-
             onError = { error ->
                 logger.error("Could not update the language model(s).", error)
                 // Value was set to a wait state in [TranslationsStateReducer] for

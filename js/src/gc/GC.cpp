@@ -198,8 +198,6 @@
 #include "mozilla/TimeStamp.h"
 
 #include <algorithm>
-#include <initializer_list>
-#include <iterator>
 #include <stdlib.h>
 #include <string.h>
 #include <utility>

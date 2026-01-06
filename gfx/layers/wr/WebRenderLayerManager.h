@@ -206,8 +206,7 @@ class WebRenderLayerManager final : public WindowRenderer {
         mUserData.Get(static_cast<gfx::UserDataKey*>(aKey)));
   }
 
-  std::unordered_set<ScrollableLayerGuid::ViewID>
-  ClearPendingScrollInfoUpdate();
+  void ClearAndNotifyOfFullTransactionPendingScrollInfoUpdate();
 
 #ifdef DEBUG
   gfxContext* GetTarget() const { return mTarget; }

@@ -15,7 +15,7 @@ private val LIST_SCREEN_METRIC_SOURCE = MetricsUtils.BookmarkAction.Source.BOOKM
 
 internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, BookmarksAction> {
 
-    @Suppress("LongMethod", "ComplexMethod")
+    @Suppress("CyclomaticComplexMethod")
     override fun invoke(
         context: MiddlewareContext<BookmarksState, BookmarksAction>,
         next: (BookmarksAction) -> Unit,
@@ -25,21 +25,7 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
         next(action)
         when (action) {
             BackClicked -> preReductionState.handleBackClick()
-            is BookmarksListMenuAction.Bookmark.CopyClicked -> {
-                BookmarksManagement.copied.record(NoExtras())
-            }
-            DeletionDialogAction.DeleteTapped -> {
-                val deletedItems = preReductionState.bookmarkItems.filter {
-                    it.guid in preReductionState.bookmarksDeletionDialogState.guidsToDelete
-                }
-                if (deletedItems.any { it is BookmarkItem.Folder }) {
-                    BookmarksManagement.folderRemove.record(NoExtras())
-                }
-
-                if (deletedItems.size > 1) {
-                    BookmarksManagement.multiRemoved.record(NoExtras())
-                }
-            }
+            is DeletionDialogAction -> preReductionState.handleDeleteDialogAction(action)
             is BookmarkClicked -> {
                 if (preReductionState.selectedItems.isEmpty()) {
                     BookmarksManagement.open.record(NoExtras())
@@ -49,82 +35,21 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
                     )
                 }
             }
-            is BookmarksListMenuAction.Folder.OpenAllInNormalTabClicked -> {
-                BookmarksManagement.openAllInNewTabs.record(NoExtras())
-                MetricsUtils.recordBookmarkMetrics(
-                    MetricsUtils.BookmarkAction.OPEN,
-                    LIST_SCREEN_METRIC_SOURCE,
-                )
-            }
-            is BookmarksListMenuAction.Folder.OpenAllInPrivateTabClicked -> {
-                BookmarksManagement.openInPrivateTabs.record(NoExtras())
-                MetricsUtils.recordBookmarkMetrics(
-                    MetricsUtils.BookmarkAction.OPEN,
-                    LIST_SCREEN_METRIC_SOURCE,
-                )
-            }
-            is BookmarksListMenuAction.Bookmark.OpenInNormalTabClicked -> {
-                BookmarksManagement.openInNewTab.record(NoExtras())
-                MetricsUtils.recordBookmarkMetrics(
-                    MetricsUtils.BookmarkAction.OPEN,
-                    LIST_SCREEN_METRIC_SOURCE,
-                )
-            }
-            is BookmarksListMenuAction.Bookmark.OpenInPrivateTabClicked -> {
-                BookmarksManagement.openInPrivateTab.record(NoExtras())
-                MetricsUtils.recordBookmarkMetrics(
-                    MetricsUtils.BookmarkAction.OPEN,
-                    LIST_SCREEN_METRIC_SOURCE,
-                )
-            }
-            BookmarksListMenuAction.MultiSelect.OpenInNormalTabsClicked -> {
-                BookmarksManagement.openInNewTabs.record(NoExtras())
-                MetricsUtils.recordBookmarkMetrics(
-                    MetricsUtils.BookmarkAction.OPEN,
-                    LIST_SCREEN_METRIC_SOURCE,
-                )
-            }
-            BookmarksListMenuAction.MultiSelect.OpenInPrivateTabsClicked -> {
-                BookmarksManagement.openInPrivateTabs.record(NoExtras())
-                MetricsUtils.recordBookmarkMetrics(
-                    MetricsUtils.BookmarkAction.OPEN,
-                    LIST_SCREEN_METRIC_SOURCE,
-                )
-            }
-            SnackbarAction.Dismissed -> {
-                val snackSnate = preReductionState.bookmarksSnackbarState
-                if (snackSnate is BookmarksSnackbarState.UndoDeletion && snackSnate.guidsToDelete.size == 1) {
-                    BookmarksManagement.removed.record(NoExtras())
-                    val source = if (preReductionState.bookmarksEditFolderState != null) {
-                        EDIT_SCREEN_METRIC_SOURCE
-                    } else {
-                        LIST_SCREEN_METRIC_SOURCE
-                    }
-                    MetricsUtils.recordBookmarkMetrics(MetricsUtils.BookmarkAction.DELETE, source)
-                }
-            }
+
+            is BookmarksListMenuAction.Folder -> handleBookmarksListMenuFolderAction(action)
+            is BookmarksListMenuAction.Bookmark -> handleBookmarksListMenuBookmarkAction(action)
+            is BookmarksListMenuAction.MultiSelect -> preReductionState.handleBookmarksListMenuMultiSelectAction(
+                action,
+            )
+            is SnackbarAction -> preReductionState.handleSnackbarDismissedAction(action)
             SearchClicked -> {
                 BookmarksManagement.searchIconTapped.record(NoExtras())
             }
-            is BookmarksListMenuAction.Bookmark.ShareClicked -> {
-                BookmarksManagement.shared.record(NoExtras())
-            }
-            BookmarksListMenuAction.MultiSelect.ShareClicked -> {
-                preReductionState.selectedItems.filterIsInstance<BookmarkItem.Bookmark>()
-                    .forEach { BookmarksManagement.shared.record(NoExtras()) }
-            }
             is BookmarksListMenuAction.SortMenu -> action.record()
-            is BookmarksListMenuAction.Folder.DeleteClicked,
             CloseClicked,
             AddFolderClicked,
             is SelectFolderAction.SortMenu,
             is BookmarkLongClicked,
-            is BookmarksListMenuAction.Bookmark.DeleteClicked,
-            is BookmarksListMenuAction.Bookmark.EditClicked,
-            is BookmarksListMenuAction.Folder.EditClicked,
-            BookmarksListMenuAction.MultiSelect.DeleteClicked,
-            BookmarksListMenuAction.MultiSelect.EditClicked,
-            BookmarksListMenuAction.MultiSelect.MoveClicked,
             BookmarksListMenuAction.SelectAll,
             is BookmarksLoaded,
             is SearchDismissed,
@@ -143,13 +68,10 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
             is EditBookmarkAction.TitleChanged,
             is EditBookmarkAction.URLChanged,
             SelectFolderAction.ViewAppeared,
-            DeletionDialogAction.CancelTapped,
-            is DeletionDialogAction.CountLoaded,
             EditFolderAction.DeleteClicked,
             EditFolderAction.ParentFolderClicked,
             is RecursiveSelectionCountLoaded,
             is EditFolderAction.TitleChanged,
-            SnackbarAction.Undo,
             OpenTabsConfirmationDialogAction.CancelTapped,
             OpenTabsConfirmationDialogAction.ConfirmTapped,
             is OpenTabsConfirmationDialogAction.Present,
@@ -160,6 +82,111 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
             ViewDisposed,
             PrivateBrowsingAuthorized,
             -> Unit
+        }
+    }
+
+    private fun BookmarksState.handleSnackbarDismissedAction(action: SnackbarAction) {
+        when (action) {
+            SnackbarAction.Dismissed -> {
+                val snackSnate = bookmarksSnackbarState
+                if (snackSnate is BookmarksSnackbarState.UndoDeletion && snackSnate.guidsToDelete.size == 1) {
+                    BookmarksManagement.removed.record(NoExtras())
+                    val source = if (bookmarksEditFolderState != null) {
+                        EDIT_SCREEN_METRIC_SOURCE
+                    } else {
+                        LIST_SCREEN_METRIC_SOURCE
+                    }
+                    MetricsUtils.recordBookmarkMetrics(MetricsUtils.BookmarkAction.DELETE, source)
+                }
+            }
+
+            SnackbarAction.Undo -> Unit
+        }
+    }
+
+    private fun BookmarksState.handleBookmarksListMenuMultiSelectAction(action: BookmarksListMenuAction.MultiSelect) {
+        when (action) {
+            BookmarksListMenuAction.MultiSelect.OpenInNormalTabsClicked -> {
+                BookmarksManagement.openInNewTabs.record(NoExtras())
+                MetricsUtils.recordBookmarkMetrics(
+                    MetricsUtils.BookmarkAction.OPEN,
+                    LIST_SCREEN_METRIC_SOURCE,
+                )
+            }
+
+            BookmarksListMenuAction.MultiSelect.OpenInPrivateTabsClicked -> {
+                BookmarksManagement.openInPrivateTabs.record(NoExtras())
+                MetricsUtils.recordBookmarkMetrics(
+                    MetricsUtils.BookmarkAction.OPEN,
+                    LIST_SCREEN_METRIC_SOURCE,
+                )
+            }
+
+            BookmarksListMenuAction.MultiSelect.ShareClicked -> {
+                selectedItems.filterIsInstance<BookmarkItem.Bookmark>()
+                    .forEach { _ -> BookmarksManagement.shared.record(NoExtras()) }
+            }
+
+            BookmarksListMenuAction.MultiSelect.DeleteClicked,
+            BookmarksListMenuAction.MultiSelect.EditClicked,
+            BookmarksListMenuAction.MultiSelect.MoveClicked,
+                -> Unit
+        }
+    }
+
+    private fun handleBookmarksListMenuBookmarkAction(action: BookmarksListMenuAction.Bookmark) {
+        when (action) {
+            is BookmarksListMenuAction.Bookmark.OpenInNormalTabClicked -> {
+                BookmarksManagement.openInNewTab.record(NoExtras())
+                MetricsUtils.recordBookmarkMetrics(
+                    MetricsUtils.BookmarkAction.OPEN,
+                    LIST_SCREEN_METRIC_SOURCE,
+                )
+            }
+
+            is BookmarksListMenuAction.Bookmark.OpenInPrivateTabClicked -> {
+                BookmarksManagement.openInPrivateTab.record(NoExtras())
+                MetricsUtils.recordBookmarkMetrics(
+                    MetricsUtils.BookmarkAction.OPEN,
+                    LIST_SCREEN_METRIC_SOURCE,
+                )
+            }
+
+            is BookmarksListMenuAction.Bookmark.ShareClicked -> {
+                BookmarksManagement.shared.record(NoExtras())
+            }
+
+            is BookmarksListMenuAction.Bookmark.CopyClicked -> {
+                BookmarksManagement.copied.record(NoExtras())
+            }
+
+            is BookmarksListMenuAction.Bookmark.DeleteClicked,
+            is BookmarksListMenuAction.Bookmark.EditClicked,
+                -> Unit
+        }
+    }
+
+    private fun handleBookmarksListMenuFolderAction(action: BookmarksListMenuAction.Folder) {
+        when (action) {
+            is BookmarksListMenuAction.Folder.OpenAllInNormalTabClicked -> {
+                BookmarksManagement.openAllInNewTabs.record(NoExtras())
+                MetricsUtils.recordBookmarkMetrics(
+                    MetricsUtils.BookmarkAction.OPEN,
+                    LIST_SCREEN_METRIC_SOURCE,
+                )
+            }
+
+            is BookmarksListMenuAction.Folder.OpenAllInPrivateTabClicked -> {
+                BookmarksManagement.openInPrivateTabs.record(NoExtras())
+                MetricsUtils.recordBookmarkMetrics(
+                    MetricsUtils.BookmarkAction.OPEN,
+                    LIST_SCREEN_METRIC_SOURCE,
+                )
+            }
+
+            is BookmarksListMenuAction.Folder.EditClicked,
+            is BookmarksListMenuAction.Folder.DeleteClicked,
+                -> Unit
         }
     }
 
@@ -200,5 +227,26 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
         BookmarksListMenuAction.SortMenu.OldestClicked -> BookmarksManagement.sortByOldest.record()
         BookmarksListMenuAction.SortMenu.AtoZClicked -> BookmarksManagement.sortByAToZ.record()
         BookmarksListMenuAction.SortMenu.ZtoAClicked -> BookmarksManagement.sortByZToA.record()
+    }
+
+    private fun BookmarksState.handleDeleteDialogAction(action: DeletionDialogAction) {
+        when (action) {
+            DeletionDialogAction.DeleteTapped -> {
+                val deletedItems = bookmarkItems.filter {
+                    it.guid in bookmarksDeletionDialogState.guidsToDelete
+                }
+                if (deletedItems.any { it is BookmarkItem.Folder }) {
+                    BookmarksManagement.folderRemove.record(NoExtras())
+                }
+
+                if (deletedItems.size > 1) {
+                    BookmarksManagement.multiRemoved.record(NoExtras())
+                }
+            }
+
+            is DeletionDialogAction.CountLoaded,
+            DeletionDialogAction.CancelTapped,
+                -> Unit
+        }
     }
 }

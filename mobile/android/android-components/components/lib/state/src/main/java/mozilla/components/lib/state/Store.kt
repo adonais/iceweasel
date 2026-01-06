@@ -6,15 +6,10 @@ package mozilla.components.lib.state
 
 import androidx.annotation.CheckResult
 import androidx.annotation.VisibleForTesting
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import mozilla.components.lib.state.internal.DefaultStoreDispatcher
 import mozilla.components.lib.state.internal.ReducerChainBuilder
-import mozilla.components.lib.state.internal.StoreDispatcher
 import java.lang.ref.WeakReference
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
 
 /**
  * A generic store holding an immutable [State].
@@ -26,34 +21,12 @@ import java.util.concurrent.Executors
  * @param reducer A function that gets the current [State] and [Action] passed in and will return a new [State].
  * @param middleware Optional list of [Middleware] sitting between the [Store] and the [Reducer].
  */
-open class Store<S : State, A : Action> internal constructor(
+open class Store<S : State, A : Action>(
     initialState: S,
     reducer: Reducer<S, A>,
-    middleware: List<Middleware<S, A>>,
-    dispatcher: StoreDispatcher,
+    middleware: List<Middleware<S, A>> = emptyList(),
 ) {
-
-    /**
-     * @param initialState The initial state until a dispatched [Action] creates a new state.
-     * @param reducer A function that gets the current [State] and [Action] passed in and will return a new [State].
-     * @param middleware Optional list of [Middleware] sitting between the [Store] and the [Reducer].
-     * @param threadNamePrefix Optional prefix with which to name threads for the [Store]. If not provided,
-     * the naming scheme will be deferred to [Executors.defaultThreadFactory]
-     */
-    constructor(
-        initialState: S,
-        reducer: Reducer<S, A>,
-        middleware: List<Middleware<S, A>> = emptyList(),
-        threadNamePrefix: String? = null,
-    ) : this(
-        initialState = initialState,
-        reducer = reducer,
-        middleware = middleware,
-        dispatcher = DefaultStoreDispatcher(threadNamePrefix),
-    )
-
-    private val reducerChainBuilder = ReducerChainBuilder(dispatcher, reducer, middleware)
-    private val scope = CoroutineScope(dispatcher.coroutineContext)
+    private val reducerChainBuilder = ReducerChainBuilder(reducer, middleware)
 
     @VisibleForTesting
     internal val subscriptions = Collections.newSetFromMap(ConcurrentHashMap<Subscription<S, A>, Boolean>())
@@ -90,12 +63,17 @@ open class Store<S : State, A : Action> internal constructor(
 
     /**
      * Dispatch an [Action] to the store in order to trigger a [State] change.
+     * This function may be invoked on any thread.
+     * Invocations are serialized by synchronizing on `this@Store`,
+     * preventing concurrent modification of the underlying store.
+     * Long running reducers and/or middlewares can and will impact all consumers.
+     *
+     * @return Unit. Previously this returned a new Job that was launched here, but this no longer happens.
      */
-    fun dispatch(action: A) = scope.launch {
+    fun dispatch(action: A) =
         synchronized(this@Store) {
             reducerChainBuilder.get(this@Store).invoke(action)
         }
-    }
 
     /**
      * Transitions from the current [State] to the passed in [state] and notifies all observers.

@@ -292,8 +292,9 @@ function do_test() {
   ok(testValues(values, expected), "property box-shadow's values");
 
   // Regression test for bug 1255379.
-  var shapeFunction = [ "close", "evenodd", "nonzero", "by", "to", "cw", "ccw",
-                        "small", "large", "end", "origin", "start"];
+  var shapeFunction = [ "close", "evenodd", "nonzero", "cw", "ccw", "small", "large",
+                        "end", "origin", "start", "center", "left", "right", "top",
+                        "bottom", "x-end","x-start", "y-end","y-start" ];
   var expected = [ "inherit", "initial", "unset", "revert", "revert-layer",
                    "none", "url", "polygon", "circle", "ellipse", "inset",
                    "path", "rect", "xywh", "fill-box", "stroke-box",

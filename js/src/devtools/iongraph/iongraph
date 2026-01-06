@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.request
 
 def quote(s):
     return '"%s"' % str(s)
@@ -382,8 +383,20 @@ def gen(args):
         s = fd.read()
 
     sys.stderr.write("loading %s...\n" % (args.input))
-    ion = json.loads(parenthesize(s))
+    fixed = parenthesize(s)
 
+    # Emit HTML early instead of generating graphviz :)
+    if args.format == 'html':
+        with urllib.request.urlopen("https://mozilla-spidermonkey.github.io/iongraph/standalone.html") as response:
+            html = response.read().decode("utf-8")
+        formatted = re.sub(r'\{\{\s*IONJSON\s*\}\}', fixed, html)
+        outname = "iongraph.html"
+        with open(os.path.join(args.outdir, outname), "w") as outfile:
+            outfile.write(formatted)
+        sys.stderr.write("output written to %s\n" % (outname))
+        return
+
+    ion = json.loads(fixed)
     sys.stderr.write("generating graphviz...\n")
 
     funcnums = parsenums(args.funcnum)
@@ -488,8 +501,8 @@ def add_main_arguments(parser):
     parser.add_argument('-f', '--funcnum', help='Only operate on the specified function(s), by index. Multiple functions can be separated by commas, e.g. `1,5,234`.')
     parser.add_argument('-n', '--funcname', help='Only operate on the specified function(s), by name. Multiple functions can be separated by commas, e.g. `foo,bar,baz`.')
     parser.add_argument('-p', '--passnum', help='Only operate on the specified pass(es), by index. Multiple passes can be separated by commas, e.g. `1,5,234`.')
-    parser.add_argument('--format', help='The output file format (pdf by default). `pdf` will merge all the graphs for each function into a single PDF; all other formats will produce a single file per graph.',
-                                    choices=['gv', 'pdf', 'pdfs', 'png', 'svg'], default='pdf')
+    parser.add_argument('--format', help='The output file format (html by default). `html` will produce a standalone HTML file with the iongraph web viewer. All other options will use graphviz. `pdf` will merge all the graphs for each function into a single PDF; all other formats will produce a single file per graph.',
+                                    choices=['html', 'gv', 'pdf', 'pdfs', 'png', 'svg'], default='html')
     parser.add_argument('--final', help='Only generate the final optimized MIR/LIR graphs.',
                                    action='store_true')
     parser.add_argument('--out-mir', help='Select the file where the MIR output would be written to.',

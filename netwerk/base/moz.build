@@ -134,6 +134,7 @@ EXPORTS += [
     "nsASocketHandler.h",
     "nsAsyncRedirectVerifyHelper.h",
     "nsBaseChannel.h",
+    "nsBaseParentChannel.h",
     "nsFileStreams.h",
     "nsInputStreamPump.h",
     "nsMIMEInputStream.h",
@@ -173,7 +174,6 @@ EXPORTS.mozilla.net += [
     "ProtocolHandlerInfo.h",
     "RedirectChannelRegistrar.h",
     "RequestContextService.h",
-    "SimpleChannelParent.h",
     "SimpleURIUnknownSchemes.h",
     "SSLTokensCache.h",
     "ThrottleQueue.h",
@@ -203,6 +203,7 @@ UNIFIED_SOURCES += [
     "nsBase64Encoder.cpp",
     "nsBaseChannel.cpp",
     "nsBaseContentStream.cpp",
+    "nsBaseParentChannel.cpp",
     "nsBufferedStreams.cpp",
     "nsDirectoryIndexStream.cpp",
     "nsDNSPrefetch.cpp",
@@ -247,7 +248,6 @@ UNIFIED_SOURCES += [
     "RequestContextService.cpp",
     "SimpleBuffer.cpp",
     "SimpleChannel.cpp",
-    "SimpleChannelParent.cpp",
     "SimpleURIUnknownSchemes.cpp",
     "SSLTokensCache.cpp",
     "SuspendableChannelWrapper.cpp",
@@ -267,16 +267,13 @@ if CONFIG["FUZZING"]:
 if CONFIG["FUZZING_INTERFACES"] and CONFIG["LIBFUZZER"]:
     include("/tools/fuzzing/libfuzzer-flags.mozbuild")
     SOURCES += [
-        "nsMediaFragmentURIParser.cpp",
         "nsURLHelper.cpp",
         "nsURLParsers.cpp",
     ]
-    SOURCES["nsMediaFragmentURIParser.cpp"].flags += libfuzzer_flags
     SOURCES["nsURLHelper.cpp"].flags += libfuzzer_flags
     SOURCES["nsURLParsers.cpp"].flags += libfuzzer_flags
 else:
     UNIFIED_SOURCES += [
-        "nsMediaFragmentURIParser.cpp",
         "nsURLHelper.cpp",
         "nsURLParsers.cpp",
     ]

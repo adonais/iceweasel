@@ -14,8 +14,11 @@
 
 namespace mozilla::dom {
 
-CSSUnitValue::CSSUnitValue(nsCOMPtr<nsISupports> aParent)
-    : CSSNumericValue(std::move(aParent)) {}
+CSSUnitValue::CSSUnitValue(nsCOMPtr<nsISupports> aParent, double aValue,
+                           const nsACString& aUnit)
+    : CSSNumericValue(std::move(aParent), ValueType::UnitValue),
+      mValue(aValue),
+      mUnit(aUnit) {}
 
 JSObject* CSSUnitValue::WrapObject(JSContext* aCx,
                                    JS::Handle<JSObject*> aGivenProto) {
@@ -24,19 +27,45 @@ JSObject* CSSUnitValue::WrapObject(JSContext* aCx,
 
 // start of CSSUnitValue Web IDL implementation
 
+// https://drafts.css-houdini.org/css-typed-om-1/#dom-cssunitvalue-cssunitvalue
+//
 // static
 already_AddRefed<CSSUnitValue> CSSUnitValue::Constructor(
     const GlobalObject& aGlobal, double aValue, const nsACString& aUnit,
     ErrorResult& aRv) {
-  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports());
+  // XXX Units should be normalized to lowercase. The Typed OM spec doesn’t
+  // state this explicitly, but WPT requires lowercase normalization and it
+  // can also be deduced from the CSS Values spec. Besides fixing it here,
+  // a spec issue may be needed to clarify this.
+
+  // Step 1.
+
+  // XXX A type should be created from unit and if that fails, the failure
+  // should be propagated here
+
+  // Step 2.
+
+  return MakeAndAddRef<CSSUnitValue>(aGlobal.GetAsSupports(), aValue, aUnit);
 }
 
-double CSSUnitValue::Value() const { return 0; }
+double CSSUnitValue::Value() const { return mValue; }
 
-void CSSUnitValue::SetValue(double aArg) {}
+void CSSUnitValue::SetValue(double aArg) { mValue = aArg; }
 
-void CSSUnitValue::GetUnit(nsCString& aRetVal) const {}
+void CSSUnitValue::GetUnit(nsCString& aRetVal) const { aRetVal = mUnit; }
 
 // end of CSSUnitValue Web IDL implementation
+
+void CSSUnitValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                                         nsACString& aDest) const {
+  aDest.AppendFloat(mValue);
+  aDest.Append(mUnit);
+}
+
+CSSUnitValue& CSSStyleValue::GetAsCSSUnitValue() {
+  MOZ_DIAGNOSTIC_ASSERT(mValueType == ValueType::UnitValue);
+
+  return *static_cast<CSSUnitValue*>(this);
+}
 
 }  // namespace mozilla::dom

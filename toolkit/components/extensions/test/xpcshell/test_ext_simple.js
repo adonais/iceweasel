@@ -11,6 +11,10 @@ AddonTestUtils.createAppInfo(
   "43"
 );
 
+add_setup(async () => {
+  await AddonTestUtils.promiseStartupManager();
+});
+
 add_task(async function test_simple() {
   let extensionData = {
     manifest: {
@@ -120,8 +124,6 @@ add_task(async function test_extensionTypes() {
 });
 
 add_task(async function test_policy_temporarilyInstalled() {
-  await AddonTestUtils.promiseStartupManager();
-
   let extensionData = {
     manifest: {
       manifest_version: 2,
@@ -190,19 +192,38 @@ add_task(async function test_manifest_allowInsecureRequests_throws() {
 });
 
 add_task(async function test_gecko_android_key_in_applications() {
-  const extensionData = {
+  const xpiFile = AddonTestUtils.createTempWebExtensionFile({
     manifest: {
       manifest_version: 2,
       applications: {
         gecko_android: {},
       },
     },
-  };
-  const extension = ExtensionTestUtils.loadExtension(extensionData);
+  });
 
-  await Assert.rejects(
-    extension.startup(),
-    /applications: Property "gecko_android" is unsupported by Firefox/,
-    "expected applications.gecko_android to be invalid"
+  ExtensionTestUtils.failOnSchemaWarnings(false);
+  let { messages } = await promiseConsoleOutput(async () => {
+    const { AddonManager } = ChromeUtils.importESModule(
+      "resource://gre/modules/AddonManager.sys.mjs"
+    );
+    await Assert.rejects(
+      AddonManager.installTemporaryAddon(xpiFile),
+      /Extension is invalid/,
+      "Install failed with privileged permission"
+    );
+  });
+  ExtensionTestUtils.failOnSchemaWarnings(true);
+  AddonTestUtils.checkMessages(
+    messages,
+    {
+      expected: [
+        {
+          message:
+            /applications: Property "gecko_android" is unsupported by Firefox/,
+        },
+      ],
+    },
+    true
   );
+  xpiFile.remove(true);
 });

@@ -540,9 +540,7 @@ export class UrlbarView {
       return;
     }
 
-    this.#inputWidthOnLastClose = getBoundsWithoutFlushing(
-      this.input.textbox
-    ).width;
+    this.#inputWidthOnLastClose = getBoundsWithoutFlushing(this.input).width;
 
     // We exit search mode preview on close since the result previewing it is
     // implicitly unselected.
@@ -656,8 +654,7 @@ export class UrlbarView {
     if (
       this.#rows.firstElementChild &&
       this.#queryContext.searchString == this.input.value &&
-      this.#inputWidthOnLastClose ==
-        getBoundsWithoutFlushing(this.input.textbox).width
+      this.#inputWidthOnLastClose == getBoundsWithoutFlushing(this.input).width
     ) {
       // We can reuse the current rows.
       queryOptions.allowAutofill = this.#queryContext.allowAutofill;
@@ -1786,13 +1783,8 @@ export class UrlbarView {
         name: "result-menu",
         classList: ["urlbarView-button-menu"],
         l10n: result.showFeedbackMenu
-          ? {
-              id: "urlbar-result-menu-button-feedback",
-              cacheable: true,
-            }
-          : {
-              id: "urlbar-result-menu-button",
-            },
+          ? { id: "urlbar-result-menu-button-feedback" }
+          : { id: "urlbar-result-menu-button" },
         attributes: lazy.UrlbarPrefs.get("resultMenu.keyboardAccessible")
           ? null
           : {
@@ -2332,9 +2324,13 @@ export class UrlbarView {
   #setRowSelectable(item, isRowSelectable) {
     item.toggleAttribute("row-selectable", isRowSelectable);
     item._content.toggleAttribute("selectable", isRowSelectable);
+
+    // Set or remove role="option" on the inner. "option" should be set iff the
+    // row is selectable. Some providers may set a different role if the inner
+    // is not selectable, so when removing it, only do so if it's "option".
     if (isRowSelectable) {
       item._content.setAttribute("role", "option");
-    } else {
+    } else if (item._content.getAttribute("role") == "option") {
       item._content.removeAttribute("role");
     }
   }
@@ -2438,6 +2434,7 @@ export class UrlbarView {
       if (update.l10n) {
         this.#l10nCache.setElementL10n(node, update.l10n);
       } else if (update.hasOwnProperty("textContent")) {
+        this.#l10nCache.removeElementL10n(node);
         lazy.UrlbarUtils.addTextContentWithHighlights(
           node,
           update.textContent,
@@ -3170,9 +3167,6 @@ export class UrlbarView {
    *   The DOM node for the result's action.
    */
   #setSwitchTabActionChiclet(result, actionNode) {
-    this.#l10nCache.setElementL10n(actionNode, {
-      id: "urlbar-result-action-switch-tab",
-    });
     actionNode.classList.add("urlbarView-switchToTab");
 
     let contextualIdentityAction = actionNode.parentNode.querySelector(
@@ -3189,6 +3183,7 @@ export class UrlbarView {
       if (!contextualIdentityAction) {
         contextualIdentityAction = actionNode.cloneNode(true);
         contextualIdentityAction.classList.add("action-contextualidentity");
+        this.#l10nCache.removeElementL10n(contextualIdentityAction);
         actionNode.parentNode.insertBefore(
           contextualIdentityAction,
           actionNode
@@ -3213,6 +3208,7 @@ export class UrlbarView {
     ) {
       if (!tabGroupAction) {
         tabGroupAction = actionNode.cloneNode(true);
+        this.#l10nCache.removeElementL10n(tabGroupAction);
         actionNode.parentNode.insertBefore(tabGroupAction, actionNode);
       }
 
@@ -3220,6 +3216,10 @@ export class UrlbarView {
     } else {
       tabGroupAction?.remove();
     }
+
+    this.#l10nCache.setElementL10n(actionNode, {
+      id: "urlbar-result-action-switch-tab",
+    });
   }
 
   #addContextualIdentityToSwitchTabChiclet(result, actionNode) {
@@ -3336,7 +3336,7 @@ export class UrlbarView {
   }
 
   #enableOrDisableRowWrap() {
-    let wrap = getBoundsWithoutFlushing(this.input.textbox).width < 650;
+    let wrap = getBoundsWithoutFlushing(this.input).width < 650;
     this.#rows.toggleAttribute("wrap", wrap);
     this.oneOffSearchButtons?.container.toggleAttribute("wrap", wrap);
   }

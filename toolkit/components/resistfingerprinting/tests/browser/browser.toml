@@ -36,22 +36,36 @@ support-files = [
 ["browser_fpiServiceWorkers_fingerprinting.js"]
 
 ["browser_fpp_protections_matrix_1.js"]
-skip-if = ["verify"] # See https://bugzilla.mozilla.org/show_bug.cgi?id=1975803#c3
+skip-if = [
+  "verify", # See https://bugzilla.mozilla.org/show_bug.cgi?id=1975803#c3
+]
 
 ["browser_fpp_protections_matrix_2.js"]
-skip-if = ["verify"] # See https://bugzilla.mozilla.org/show_bug.cgi?id=1975803#c3
+skip-if = [
+  "verify", # See https://bugzilla.mozilla.org/show_bug.cgi?id=1975803#c3
+]
 
 ["browser_fpp_protections_matrix_3.js"]
-skip-if = ["verify"] # See https://bugzilla.mozilla.org/show_bug.cgi?id=1975803#c3
+skip-if = [
+  "verify", # See https://bugzilla.mozilla.org/show_bug.cgi?id=1975803#c3
+]
 
 ["browser_fpp_protections_matrix_4.js"]
-skip-if = ["verify"] # See https://bugzilla.mozilla.org/show_bug.cgi?id=1975803#c3
+skip-if = [
+  "verify", # See https://bugzilla.mozilla.org/show_bug.cgi?id=1975803#c3
+]
 
 ["browser_fpp_remote_settings_jexl.js"]
 
 ["browser_js_locale.js"]
 
 ["browser_navigator_online.js"]
+
+["browser_resistfingerprinting_getbuffersubdata.js"]
+
+["browser_resistfingerprinting_readpixels.js"]
+
+["browser_resistfingerprinting_readpixels_placeholder.js"]
 
 ["browser_rfp_canvasplaceholder_pdfjs.js"]
 support-files = ["file_pdf.pdf"]
@@ -71,9 +85,3 @@ support-files = ["file_pdf.pdf"]
 ["browser_worker_granular_overrides.js"]
 
 ["browser_worker_overrides.js"]
-
-["browser_resistfingerprinting_readpixels.js"]
-
-["browser_resistfingerprinting_getbuffersubdata.js"]
-
-["browser_resistfingerprinting_readpixels_placeholder.js"]

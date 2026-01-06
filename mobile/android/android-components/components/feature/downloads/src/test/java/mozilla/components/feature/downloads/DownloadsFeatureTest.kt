@@ -31,8 +31,6 @@ import mozilla.components.feature.downloads.ui.DownloaderApp
 import mozilla.components.support.test.any
 import mozilla.components.support.test.argumentCaptor
 import mozilla.components.support.test.eq
-import mozilla.components.support.test.ext.joinBlocking
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.robolectric.grantPermission
 import mozilla.components.support.test.robolectric.testContext
@@ -100,7 +98,6 @@ class DownloadsFeatureTest {
         assertFalse(requestedPermissions)
 
         store.dispatch(ContentAction.UpdateDownloadAction("test-tab", download))
-            .joinBlocking()
 
         dispatcher.scheduler.advanceUntilIdle()
 
@@ -127,7 +124,6 @@ class DownloadsFeatureTest {
         val download = DownloadState(url = "https://www.mozilla.org", sessionId = "test-tab")
 
         store.dispatch(ContentAction.UpdateDownloadAction("test-tab", download))
-            .joinBlocking()
 
         dispatcher.scheduler.advanceUntilIdle()
 
@@ -183,7 +179,6 @@ class DownloadsFeatureTest {
         doReturn(false).`when`(feature).isDownloadBiggerThanAvailableSpace(download)
 
         store.dispatch(ContentAction.UpdateDownloadAction("test-tab", download))
-            .joinBlocking()
 
         dispatcher.scheduler.advanceUntilIdle()
 
@@ -225,10 +220,8 @@ class DownloadsFeatureTest {
         doReturn(false).`when`(feature).isDownloadBiggerThanAvailableSpace(download)
 
         store.dispatch(ContentAction.UpdateDownloadAction("test-tab", download))
-            .joinBlocking()
 
         dispatcher.scheduler.advanceUntilIdle()
-        store.waitUntilIdle()
 
         verify(fragmentManager, never()).beginTransaction()
         verify(downloadManager).download(eq(download), anyString())
@@ -242,7 +235,6 @@ class DownloadsFeatureTest {
 
         val download = DownloadState(url = "https://www.mozilla.org", sessionId = "test-tab")
         store.dispatch(ContentAction.UpdateDownloadAction("test-tab", download))
-            .joinBlocking()
 
         val dialogFragment: DownloadDialogFragment = mock()
         val fragmentManager: FragmentManager = mock()
@@ -280,7 +272,6 @@ class DownloadsFeatureTest {
 
         doReturn(dialogFragment).`when`(fragmentManager).findFragmentByTag(DownloadDialogFragment.FRAGMENT_TAG)
         store.dispatch(ContentAction.UpdateDownloadAction("test-tab", download))
-            .joinBlocking()
         doReturn(closeDownloadResponseUseCase).`when`(downloadsUseCases).cancelDownloadRequest
 
         val feature = spy(
@@ -311,7 +302,6 @@ class DownloadsFeatureTest {
         val grantedPermissionsArray = arrayOf(PackageManager.PERMISSION_GRANTED, PackageManager.PERMISSION_GRANTED).toIntArray()
 
         store.dispatch(ContentAction.UpdateDownloadAction("test-tab", download = download))
-            .joinBlocking()
 
         doReturn(permissionsArray).`when`(downloadManager).permissions
         doReturn(consumeDownloadUseCase).`when`(downloadsUseCases).consumeDownload
@@ -347,7 +337,6 @@ class DownloadsFeatureTest {
         val grantedPermissionsArray = arrayOf(PackageManager.PERMISSION_GRANTED, PackageManager.PERMISSION_GRANTED).toIntArray()
 
         store.dispatch(ContentAction.UpdateDownloadAction("test-tab", download = download))
-            .joinBlocking()
 
         val feature = spy(
             DownloadsFeature(
@@ -391,7 +380,7 @@ class DownloadsFeatureTest {
                 "test-tab",
                 DownloadState("https://www.mozilla.org"),
             ),
-        ).joinBlocking()
+        )
 
         val downloadManager: DownloadManager = mock()
         doReturn(
@@ -413,8 +402,6 @@ class DownloadsFeatureTest {
             arrayOf(INTERNET, WRITE_EXTERNAL_STORAGE),
             arrayOf(PackageManager.PERMISSION_GRANTED, PackageManager.PERMISSION_DENIED).toIntArray(),
         )
-
-        store.waitUntilIdle()
 
         verify(downloadManager, never()).download(any(), anyString())
         verify(closeDownloadResponseUseCase).invoke(anyString(), anyString())
@@ -473,7 +460,6 @@ class DownloadsFeatureTest {
         doReturn(false).`when`(feature).isDownloadBiggerThanAvailableSpace(download)
 
         store.dispatch(ContentAction.UpdateDownloadAction("test-tab", download))
-            .joinBlocking()
 
         dispatcher.scheduler.advanceUntilIdle()
 
@@ -1372,7 +1358,6 @@ class DownloadsFeatureTest {
         val cancelDownloadRequestUseCase = mock<CancelDownloadRequestUseCase>()
         val download = DownloadState(url = "https://www.mozilla.org", sessionId = "test-tab")
         store.dispatch(ContentAction.UpdateDownloadAction("test-tab", download = download))
-            .joinBlocking()
 
         doReturn(cancelDownloadRequestUseCase).`when`(downloadsUseCases).cancelDownloadRequest
 
@@ -1391,12 +1376,11 @@ class DownloadsFeatureTest {
         feature.start()
 
         store.dispatch(ContentAction.UpdateDownloadAction("test-tab", download = download))
-            .joinBlocking()
 
         grantPermissions()
 
         val tab = createTab("https://www.firefox.com")
-        store.dispatch(TabListAction.AddTabAction(tab, select = true)).joinBlocking()
+        store.dispatch(TabListAction.AddTabAction(tab, select = true))
 
         verify(feature).dismissAllDownloadDialogs()
         verify(downloadsUseCases).cancelDownloadRequest
@@ -1409,7 +1393,6 @@ class DownloadsFeatureTest {
         val cancelDownloadRequestUseCase = mock<CancelDownloadRequestUseCase>()
         val download = DownloadState(url = "https://www.mozilla.org", sessionId = "test-tab")
         store.dispatch(ContentAction.UpdateDownloadAction("test-tab", download = download))
-            .joinBlocking()
 
         doReturn(cancelDownloadRequestUseCase).`when`(downloadsUseCases).cancelDownloadRequest
 
@@ -1428,12 +1411,11 @@ class DownloadsFeatureTest {
         feature.start()
 
         store.dispatch(ContentAction.UpdateDownloadAction("test-tab", download = download))
-            .joinBlocking()
 
         grantPermissions()
 
         val tab = createTab("https://www.mozilla.org/example")
-        store.dispatch(TabListAction.AddTabAction(tab, select = true)).joinBlocking()
+        store.dispatch(TabListAction.AddTabAction(tab, select = true))
 
         verify(feature, never()).dismissAllDownloadDialogs()
         verify(downloadsUseCases, never()).cancelDownloadRequest

@@ -92,13 +92,6 @@ XPCOMUtils.defineLazyPreferenceGetter(
   false
 );
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "TEXT_FRAGMENTS_SHOW_CONTEXT_MENU",
-  "dom.text_fragments.create_text_fragment.enabled",
-  false
-);
-
 const PASSWORD_FIELDNAME_HINTS = ["current-password", "new-password"];
 const USERNAME_FIELDNAME_HINT = "username";
 
@@ -107,6 +100,7 @@ export class nsContextMenu {
    * A promise to retrieve the translations language pair
    * if the context menu was opened in a context relevant to
    * open the SelectTranslationsPanel.
+   *
    * @type {Promise<{sourceLanguage: string, targetLanguage: string}>}
    */
   #translationsLangPairPromise;
@@ -114,6 +108,7 @@ export class nsContextMenu {
   /**
    * The value of the `main-context-menu-new-feature-badge` l10n string. Fetched
    * lazily.
+   *
    * @type {string}
    */
   #newFeatureBadgeL10nString;
@@ -455,9 +450,7 @@ export class nsContextMenu {
 
   initTextFragmentItems() {
     const shouldShow =
-      lazy.TEXT_FRAGMENTS_SHOW_CONTEXT_MENU &&
       lazy.TEXT_FRAGMENTS_ENABLED &&
-      lazy.STRIP_ON_SHARE_ENABLED &&
       !(
         this.inPDFViewer ||
         this.inFrame ||
@@ -466,7 +459,10 @@ export class nsContextMenu {
       ) &&
       (this.hasTextFragments || this.isContentSelected);
     this.showItem("context-copy-link-to-highlight", shouldShow);
-    this.showItem("context-copy-clean-link-to-highlight", shouldShow);
+    this.showItem(
+      "context-copy-clean-link-to-highlight",
+      shouldShow && lazy.STRIP_ON_SHARE_ENABLED
+    );
 
     // disables both options by default, while API tries to build a text fragment
     this.setItemAttr("context-copy-link-to-highlight", "disabled", true);
@@ -478,12 +474,7 @@ export class nsContextMenu {
   }
 
   async getTextDirective() {
-    if (
-      !Services.prefs.getBoolPref(
-        "dom.text_fragments.create_text_fragment.enabled",
-        false
-      )
-    ) {
+    if (!lazy.TEXT_FRAGMENTS_ENABLED) {
       return;
     }
     this.textFragmentURL = await this.actor.getTextDirective();
@@ -1091,19 +1082,10 @@ export class nsContextMenu {
     let disabledAttr = this.#canStripParams() ? null : true;
     this.setItemAttr("context-stripOnShareLink", "disabled", disabledAttr);
 
-    let copyLinkSeparator = this.document.getElementById(
-      "context-sep-copylink"
+    let sendLinkSeparator = this.document.getElementById(
+      "context-sep-sendlinktodevice"
     );
-    // Show "Copy Link", "Copy" and "Copy Clean Link" with no divider, and "copy link" and "Send link to Device" with no divider between.
-    // Other cases will show a divider.
-    copyLinkSeparator.toggleAttribute(
-      "ensureHidden",
-      this.onLink &&
-        !this.onMailtoLink &&
-        !this.onTelLink &&
-        !this.onImage &&
-        this.syncItemsShown
-    );
+    sendLinkSeparator.toggleAttribute("ensureHidden", !this.syncItemsShown);
 
     this.showItem("context-copyvideourl", this.onVideo);
     this.showItem("context-copyaudiourl", this.onAudio);
@@ -2356,9 +2338,9 @@ export class nsContextMenu {
    * Show/hide one item (specified via name or the item element itself).
    * If the element is not found, then this function finishes silently.
    *
-   * @param {Element|String} aItemOrId The item element or the name of the element
+   * @param {Element | string} aItemOrId The item element or the name of the element
    *                                   to show.
-   * @param {Boolean} aShow Set to true to show the item, false to hide it.
+   * @param {boolean} aShow Set to true to show the item, false to hide it.
    */
   showItem(aItemOrId, aShow) {
     var item =
@@ -2414,9 +2396,9 @@ export class nsContextMenu {
 
   /**
    * Strips any known query params from the link URI.
+   *
    * @returns {nsIURI|null} - the stripped version of the URI,
    * or the original URI if we could not strip any query parameter.
-   *
    */
   getStrippedLink(uri = this.linkURI) {
     if (!uri) {
@@ -2437,8 +2419,8 @@ export class nsContextMenu {
 
   /**
    * Checks if there is a query parameter that can be stripped
-   * @returns {Boolean}
    *
+   * @returns {boolean}
    */
   #canStripParams(uri = this.linkURI) {
     if (!uri) {
@@ -2454,8 +2436,8 @@ export class nsContextMenu {
 
   /**
    * Checks if a webpage is a secure interal webpage
-   * @returns {Boolean}
    *
+   * @returns {boolean}
    */
   isSecureAboutPage() {
     let { currentURI } = this.browser;

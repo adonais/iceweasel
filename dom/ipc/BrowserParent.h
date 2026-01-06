@@ -7,8 +7,6 @@
 #ifndef mozilla_dom_BrowserParent_h
 #define mozilla_dom_BrowserParent_h
 
-#include <utility>
-
 #include "LiveResizeListener.h"
 #include "Units.h"
 #include "js/TypeDecls.h"
@@ -701,8 +699,7 @@ class BrowserParent final : public PBrowserParent,
 
   void NavigateByKey(bool aForward, bool aForDocumentNavigation);
 
-  bool GetDocShellIsActive();
-  void SetDocShellIsActive(bool aDocShellIsActive);
+  bool GetDocShellIsActive() const;
 
   bool GetHasPresented();
   bool GetHasLayers();

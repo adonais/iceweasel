@@ -834,11 +834,12 @@ export class _ASRouter {
   }
 
   /**
-   * _resetInitialization - adds the following to the instance:
+   * Adds the following to the instance:
    *  .initialized {bool}            Has AS Router been initialized?
    *  .waitForInitialized {Promise}  A promise that resolves when initializion is complete
    *  ._finishInitializing {func}    A function that, when called, resolves the .waitForInitialized
    *                                 promise and sets .initialized to true.
+   *
    * @memberof _ASRouter
    */
   _resetInitialization() {
@@ -855,6 +856,7 @@ export class _ASRouter {
 
   /**
    * Check all provided groups are enabled.
+   *
    * @param groups Set of groups to verify
    * @returns bool
    */
@@ -866,6 +868,7 @@ export class _ASRouter {
 
   /**
    * Verify that the provider block the message through the `exclude` field
+   *
    * @param message Message to verify
    * @returns bool
    */
@@ -932,8 +935,9 @@ export class _ASRouter {
   }
 
   /**
-   * loadMessagesFromAllProviders - Loads messages from all providers if they require updates.
-   *                                Checks the .lastUpdated field on each provider to see if updates are needed
+   * Loads messages from all providers if they require updates. Checks the
+   * .lastUpdated field on each provider to see if updates are needed
+   *
    * @param toUpdate  An optional list of providers to update. This overrides
    *                  the checks to determine which providers to update.
    * @memberof _ASRouter
@@ -987,7 +991,8 @@ export class _ASRouter {
           lazy.ASRouterTriggerListeners.get(trigger.id).init(
             this._triggerHandler,
             trigger.params,
-            trigger.patterns
+            trigger.patterns,
+            trigger.regexPatterns
           );
           unseenListeners.delete(trigger.id);
         }
@@ -1766,7 +1771,7 @@ export class _ASRouter {
    * for the given items, then store it and return it.
    *
    * @param {obj} state Reference to ASRouter internal state
-   * @param {array} items Can be messages, providers or groups that we count impressions for
+   * @param {Array} items Can be messages, providers or groups that we count impressions for
    * @param {string} impressionsString Key name for entry in state where impressions are stored
    */
   _cleanupImpressionsForItems(state, items, impressionsString) {
@@ -1817,7 +1822,7 @@ export class _ASRouter {
    * - Updates the shared database after each cleanup operation
    *
    * @param {obj} state Reference to ASRouter internal state
-   * @param {array} items are messages that we count impressions for
+   * @param {Array} items are messages that we count impressions for
    * @param {string} impressionsString Key name for entry in state where impressions are stored
    * @returns {obj} Updated impressions object with cleaned data
    */
@@ -2112,6 +2117,7 @@ export class _ASRouter {
   /**
    * Edit the ASRouter state directly. For use by the ASRouter devtools.
    * Requires browser.newtabpage.activity-stream.asrouter.devtoolsEnabled
+   *
    * @param {string} key Key of the property to edit, one of:
    *   | "groupImpressions"
    *   | "messageImpressions"
@@ -2194,6 +2200,7 @@ export class _ASRouter {
    * It forces the browser attribution to be set to something specified in asrouter admin
    * tools, and reloads the providers in order to get messages that are dependant on this
    * attribution data (see Return to AMO flow in bug 1475354 for example). Note - OSX and Windows only
+   *
    * @param {data} Object an object containing the attribtion data that came from asrouter admin page
    */
   async forceAttribution(data) {
@@ -2305,6 +2312,7 @@ export class _ASRouter {
   /**
    * Fire a trigger, look for a matching message, and route it to the
    * appropriate message handler/messaging surface.
+   *
    * @param {object} trigger
    * @param {string} trigger.id the name of the trigger, e.g. "openURL"
    * @param {object} [trigger.param] an object with host, url, type, etc. keys

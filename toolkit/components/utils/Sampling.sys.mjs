@@ -9,6 +9,7 @@ const hashMultiplier = Math.pow(2, hashBits) - 1;
 export var Sampling = {
   /**
    * Map from the range [0, 1] to [0, 2^48].
+   *
    * @param  {number} frac A float from 0.0 to 1.0.
    * @return {string} A 48 bit number represented in hex, padded to 12 characters.
    */
@@ -24,7 +25,7 @@ export var Sampling = {
 
   /**
    * @param {ArrayBuffer} buffer Data to convert
-   * @returns {String}    `buffer`'s content, converted to a hexadecimal string.
+   * @returns {string}    `buffer`'s content, converted to a hexadecimal string.
    */
   bufferToHex(buffer) {
     const hexCodes = [];
@@ -82,7 +83,7 @@ export var Sampling = {
    * into the first bucket.
    *
    * @param    {object}  input Input to hash to determine the sample.
-   * @param    {Number}  rate  Number between 0.0 and 1.0 to sample at. A value of
+   * @param    {number}  rate  Number between 0.0 and 1.0 to sample at. A value of
    *                           0.25 returns true 25% of the time.
    * @promises {boolean} True if the input is in the sample.
    */

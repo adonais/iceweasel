@@ -83,11 +83,6 @@ sealed class DeleteDialogAction : AddressAction {
 }
 
 /**
- * The Environment has been rehydrated from a configuration change.
- */
-data class EnvironmentRehydrated(val environment: AddressEnvironment) : AddressAction
-
-/**
  * The Address View appeared.
  */
 data object ViewAppeared : AddressAction

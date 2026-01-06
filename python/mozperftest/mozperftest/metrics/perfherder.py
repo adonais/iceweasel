@@ -1,11 +1,13 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+import hashlib
 import json
 import os
 import pathlib
 import statistics
 import sys
+import time
 
 import jsonschema
 
@@ -155,7 +157,10 @@ class Perfherder(Layer):
             schema = json.load(f)
         jsonschema.validate(all_perfherder_data, schema)
 
-        file = "perfherder-data.json"
+        sequence = int(time.monotonic() * 1000)
+        payload = json.dumps(all_perfherder_data, sort_keys=True).encode("utf-8")
+        digest = hashlib.sha1(payload).hexdigest()[:8]
+        file = f"perfherder-data-{sequence}-{digest}.json"
         if prefix:
             file = f"{prefix}-{file}"
         self.info(f"Writing perfherder results to {os.path.join(output, file)}")

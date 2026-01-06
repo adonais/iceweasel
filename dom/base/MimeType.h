@@ -88,6 +88,8 @@ class TMimeType final {
   void SetParameterValue(const nsTSubstring<char_type>& aName,
                          const nsTSubstring<char_type>& aValue);
 
+  size_t GetParameterCount() const { return mParameterNames.Length(); }
+
   NS_INLINE_DECL_REFCOUNTING(TMimeType)
 };
 

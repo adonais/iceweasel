@@ -9,6 +9,8 @@
 
 #include "base/win/win_util.h"
 
+#include <windows.h>
+
 #include "base/logging.h"
 #include "base/strings/string_util.h"
 

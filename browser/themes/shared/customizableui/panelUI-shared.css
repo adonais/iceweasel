@@ -663,7 +663,7 @@ toolbarbutton[constrain-size="true"][cui-areatype="panel"] > .toolbarbutton-badg
 
 /* Handle different UI states. */
 
-#appMenu-mainView:not([showing-fxa-menu-message]) #appMenu-fxa-menu-message,
+#appMenu-mainView:not([showing-fxa-menu-message], [showing-default-cta-menu-message]) #appMenu-menu-message,
 #PanelUI-fxa:not([showing-fxa-menu-message]) #PanelUI-fxa-menu-message {
   display: none;
 }
@@ -2155,12 +2155,128 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
 }
 
 .report-broken-site-view {
+  max-height: 68vh;
+
   description,
   label,
   menulist,
   input,
   textarea {
     margin: 0;
+  }
+
+  > .panel-subview-body {
+    toolbarbutton {
+      margin-inline: calc(-1 * var(--arrowpanel-menuitem-padding-inline));
+    }
+
+    toolbarbutton::after {
+      position: absolute;
+      inset-inline-end: calc(2 * var(--arrowpanel-menuitem-padding-inline));
+    }
+  }
+
+  #report-broken-site-panel-preview-items {
+    margin: var(--arrowpanel-menuitem-padding);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    border: var(--border-width) solid var(--border-color-card);
+    border-radius: var(--border-radius-medium);
+    background-color: var(--background-color-box);
+    box-sizing: border-box;
+
+    summary {
+      cursor: pointer;
+      padding-block: var(--space-large);
+    }
+
+    .data {
+      padding: var(--arrowpanel-menuitem-padding);
+      background:
+        linear-gradient(0deg, color-mix(in srgb, currentColor 7%, transparent) 0, transparent 16px),
+        linear-gradient(180deg, color-mix(in srgb, currentColor 7%, transparent) 0, transparent 16px);
+      overflow: auto;
+
+      .entry {
+        text-indent: var(--space-large) hanging;
+      }
+
+      .entry > span:first-child {
+        margin-inline-end: var(--space-small);
+      }
+    }
+
+    details {
+      & {
+        width: 100%;
+      }
+
+      &:not(:first-of-type) > summary {
+        border-top: 1px solid var(--border-color-card);
+      }
+
+      > summary {
+        list-style: none;
+        cursor: pointer;
+        width: -moz-available;
+        padding: var(--arrowpanel-menuitem-padding);
+        padding-inline-start: calc(16px + calc(2 * var(--arrowpanel-menuitem-padding-block)));
+        background-image: url("chrome://global/skin/icons/arrow-down.svg");
+        background-position: var(--arrowpanel-menuitem-padding-block) var(--arrowpanel-menuitem-padding-inline);
+        background-repeat: no-repeat;
+        -moz-context-properties: fill;
+        fill: currentColor;
+      }
+
+      &[open] > summary {
+        background-image: url("chrome://global/skin/icons/arrow-up.svg");
+      }
+    }
+
+    details > summary {
+      color: var(--button-text-color);
+      background-color: var(--button-background-color-ghost);
+
+      &:hover {
+        background-color: var(--button-background-color-hover);
+        color: var(--button-text-color-hover);
+      }
+
+      &:active {
+        background-color: var(--button-background-color-active);
+        color: var(--button-text-color-active);
+      }
+
+      &:focus-visible {
+        outline: var(--focus-outline);
+      }
+
+      @media (prefers-contrast) {
+        outline: var(--button-border-color) solid var(--border-width);
+      }
+    }
+
+    details > summary {
+      border-radius: calc(var(--border-radius-medium) - var(--border-width));
+    }
+
+    details:not(:first-of-type):not(:last-of-type) > summary {
+      border-radius: 0;
+    }
+
+    details:first-of-type,
+    details:last-of-type[open] {
+      > summary {
+        border-end-end-radius: 0;
+        border-end-start-radius: 0;
+      }
+    }
+
+    details:last-of-type > summary {
+      border-start-start-radius: 0;
+      border-start-end-radius: 0;
+    }
   }
 
   p {
@@ -2171,7 +2287,7 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
     margin-block-start: var(--space-large);
   }
 
-  vbox > p {
+  #report-broken-site-popup-blocked-trackers > p {
     font-size: 0.9em;
     color: var(--text-color-deemphasized);
     line-height: 1.2em;
@@ -2213,7 +2329,11 @@ radiogroup:focus-visible > .subviewradio[focused="true"] {
     }
 
     a {
-      margin-top: 1.5em;
+      margin-block: 1.5em 1em;
+    }
+
+    hbox:has(a#report-broken-site-popup-send-more-info-link[hidden]) + #report-broken-site-popup-preview-button {
+      margin-block-start: 1.5em;
     }
   }
 

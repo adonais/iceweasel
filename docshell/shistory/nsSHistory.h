@@ -175,7 +175,11 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   nsresult Reload(uint32_t aReloadFlags,
                   nsTArray<LoadEntryResult>& aLoadResults);
   nsresult ReloadCurrentEntry(nsTArray<LoadEntryResult>& aLoadResults);
-  nsresult GotoIndex(int32_t aIndex, nsTArray<LoadEntryResult>& aLoadResults,
+  // Passing aSourceBrowsingContext should only be done by
+  // CanonicalBrowsingContext::HistoryGo, since that corresponds to a call to
+  // #apply-the-traverse-history-step
+  nsresult GotoIndex(mozilla::dom::BrowsingContext* aSourceBrowsingContext,
+                     int32_t aIndex, nsTArray<LoadEntryResult>& aLoadResults,
                      bool aSameEpoch, bool aLoadCurrentEntry,
                      bool aUserActivation);
 
@@ -198,10 +202,11 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
     }
   }
 
-  int32_t GetIndexForReplace() {
-    // Replace current entry in session history; If the requested index is
-    // valid, it indicates the loading was triggered by a history load, and
-    // we should replace the entry at requested index instead.
+  int32_t GetTargetIndexForHistoryOperation() {
+    // When performing a session history operation, such as replace or
+    // navigation by key that can happen during ongoing history traversals; If
+    // the requested index is valid, it indicates the loading was triggered by a
+    // history load, and we should target the entry at requested index instead.
     return mRequestedIndex == -1 ? mIndex : mRequestedIndex;
   }
 
@@ -241,13 +246,15 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
       mozilla::dom::BrowsingContext* aParent,
       const std::function<void(nsISHEntry*, mozilla::dom::BrowsingContext*)>&
           aCallback);
-  void InitiateLoad(nsISHEntry* aFrameEntry,
+  void InitiateLoad(mozilla::dom::BrowsingContext* aSourceBrowsingContext,
+                    nsISHEntry* aFrameEntry,
                     mozilla::dom::BrowsingContext* aFrameBC, long aLoadType,
                     nsTArray<LoadEntryResult>& aLoadResult,
                     bool aLoadCurrentEntry, bool aUserActivation,
                     int32_t aOffset);
 
-  nsresult LoadEntry(int32_t aIndex, long aLoadType, uint32_t aHistCmd,
+  nsresult LoadEntry(mozilla::dom::BrowsingContext* aSourceBrowsingContext,
+                     int32_t aIndex, long aLoadType, uint32_t aHistCmd,
                      nsTArray<LoadEntryResult>& aLoadResults, bool aSameEpoch,
                      bool aLoadCurrentEntry, bool aUserActivation);
 
@@ -271,10 +278,11 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
   // content viewers to cache, based on amount of total memory
   static uint32_t CalcMaxTotalViewers();
 
-  nsresult LoadNextPossibleEntry(int32_t aNewIndex, long aLoadType,
-                                 uint32_t aHistCmd,
-                                 nsTArray<LoadEntryResult>& aLoadResults,
-                                 bool aLoadCurrentEntry, bool aUserActivation);
+  nsresult LoadNextPossibleEntry(
+      mozilla::dom::BrowsingContext* aSourceBrowsingContext, int32_t aNewIndex,
+      long aLoadType, uint32_t aHistCmd,
+      nsTArray<LoadEntryResult>& aLoadResults, bool aLoadCurrentEntry,
+      bool aUserActivation);
 
   // aIndex is the index of the entry which may be removed.
   // If aKeepNext is true, aIndex is compared to aIndex + 1,

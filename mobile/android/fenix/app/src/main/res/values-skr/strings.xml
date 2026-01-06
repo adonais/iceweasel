@@ -408,6 +408,10 @@
   <string name="onboarding_term_of_service_line_two_link_text">رازداری نوٹس</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">بندوبست کرو</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding toolbar selection card label for 'top' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_top_option">چوٹی</string>
   <!-- Onboarding toolbar selection card label for 'bottom' option, used by Nimbus experiments. -->
@@ -555,8 +559,6 @@
   <string name="preferences_gestures">اشارے</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">تخصیص کرو</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">ٹیباں، نشانیاں، پاس ورڈ تے ٻیا ٻہوں کجھ ہم وقت کرݨ کیتے سائن ان تھیوو۔</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
   <string name="preferences_account_default_name_2">Mozilla کھاتہ</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
@@ -806,12 +808,6 @@
   <string name="preference_experiments_2">مطالعہ</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">موزلّا کوں پڑھائی انسٹال کرݨ تے چلاوݨ دی اجازت ݙیندے</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">آپݨا ڈیٹا ہم وقت کرو تے محفوظ کرو</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">ولدا کنکٹ کرݨ کیتے سائن ان تھیوو</string>
   <!-- Preference for removing FxA account -->
@@ -1363,8 +1359,6 @@
   <string name="toast_copy_link_to_clipboard">کلپ بورڈ تے نقل تھی ڳیا</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">ہم وقت کرݨ کیتے سائن ان تھیوو</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">ڈیٹا ہم وقت کرو تے محفوظ کرو</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">ساریاں ڈیوائساں تے بھیڄو</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -2613,4 +2607,10 @@
   -->
   <string name="certificate_warning_homepage_card_update_now_button" tools:ignore="UnusedResources">ہݨ ابڈیٹ کرو</string>
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

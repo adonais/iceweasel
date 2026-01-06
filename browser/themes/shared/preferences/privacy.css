@@ -109,7 +109,7 @@
 }
 
 .privacy-detailedoption {
-  border-color: var(--in-content-box-border-color);
+  border-color: var(--border-color);
 }
 
 .privacy-detailedoption.disabled {
@@ -192,12 +192,12 @@
 }
 
 .privacy-detailedoption.selected {
-  border-color: var(--color-accent-primary);
+  border-color: var(--border-color-selected);
 }
 
 @media (forced-colors) {
   .privacy-detailedoption.selected {
-    outline: 2px solid var(--color-accent-primary);
+    outline: 2px solid var(--border-color-selected);
   }
 }
 
@@ -333,4 +333,8 @@
 
 #openWindowsPasskeySettings {
   margin-block-start: 2em;
+}
+
+#statusPrimaryPassword {
+  --box-icon-fill: var(--icon-color-success);
 }

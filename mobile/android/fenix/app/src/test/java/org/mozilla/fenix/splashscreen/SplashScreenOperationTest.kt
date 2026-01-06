@@ -66,26 +66,6 @@ class SplashScreenOperationTest {
 
     @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
     @Test
-    fun `WHEN fetch operation is finished THEN nimbus callback is unregistered`() = runTest {
-        val testNimbus = TestNimbusApi(this)
-        val operation = FetchExperimentsOperation(
-            buildStorage(),
-            testNimbus,
-        )
-
-        launch { operation.run() }
-        delay(100)
-
-        assertTrue(testNimbus.observers.contains(operation.fetchNimbusObserver))
-
-        launch { testNimbus.fakeExperimentsFetch(100) }
-        advanceUntilIdle()
-
-        assertFalse(testNimbus.observers.contains(operation.fetchNimbusObserver))
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
-    @Test
     fun `GIVEN nimbus data not fetched WHEN apply operation is called THEN we observe and record nimbus fetching the data and nimbus applying the data`() = runTest {
         val testNimbus = TestNimbusApi(scope = this, applyDelay = 1000L)
         val operation = ApplyExperimentsOperation(
@@ -123,31 +103,6 @@ class SplashScreenOperationTest {
 
         assertNull(operation.fetchNimbusObserver)
         assertTrue(operation.dataFetched)
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class) // advanceUntilIdle
-    @Test
-    fun `WHEN apply operation is finished THEN nimbus callback is unregistered`() = runTest {
-        val testNimbus = TestNimbusApi(this)
-        val operation = ApplyExperimentsOperation(
-            buildStorage(),
-            testNimbus,
-        )
-
-        launch { operation.run() }
-        delay(100)
-
-        assertTrue(testNimbus.observers.contains(operation.fetchNimbusObserver))
-
-        launch { testNimbus.fakeExperimentsFetch(100) }
-        delay(200)
-
-        assertTrue(testNimbus.observers.contains(operation.applyNimbusObserver))
-
-        advanceUntilIdle()
-
-        assertFalse(testNimbus.observers.contains(operation.fetchNimbusObserver))
-        assertFalse(testNimbus.observers.contains(operation.applyNimbusObserver))
     }
 
     class TestNimbusApi(

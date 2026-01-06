@@ -21,7 +21,6 @@
 #include "mozilla/llama/LlamaBackend.h"
 
 #include "prsystem.h"
-#include "mozilla/Casting.h"
 #include "mozilla/SPSCQueue.h"
 #include "mozilla/Array.h"
 #include <cstdint>

@@ -22,7 +22,7 @@ class Sinf : public Atom {
         mDefaultSkipByteBlock(0) {}
   explicit Sinf(Box& aBox);
 
-  bool IsValid() override {
+  bool IsValid() const override {
     return !!mDefaultEncryptionType &&  // Should have an encryption scheme
            (mDefaultIVSize > 0 ||       // and either a default IV size
             mDefaultConstantIV.Length() > 0);  // or a constant IV.

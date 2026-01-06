@@ -27,6 +27,7 @@
 #include "nsGenericHTMLElement.h"
 #include "nsGkAtoms.h"
 #include "nsIMutationObserver.h"
+#include "nsISizeOf.h"
 #include "nsImageFrame.h"
 #include "nsNodeInfoManager.h"
 #include "nsPresContext.h"
@@ -1154,6 +1155,14 @@ void HTMLImageElement::SetDensity(double aDensity) {
 
 FetchPriority HTMLImageElement::GetFetchPriorityForImage() const {
   return Element::GetFetchPriority();
+}
+
+void HTMLImageElement::AddSizeOfExcludingThis(nsWindowSizes& aSizes,
+                                              size_t* aNodeSize) const {
+  nsGenericHTMLElement::AddSizeOfExcludingThis(aSizes, aNodeSize);
+  if (nsCOMPtr<nsISizeOf> iface = do_QueryInterface(mSrcURI)) {
+    *aNodeSize += iface->SizeOfIncludingThis(aSizes.mState.mMallocSizeOf);
+  }
 }
 
 }  // namespace mozilla::dom

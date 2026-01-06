@@ -212,9 +212,8 @@ nsIContent::IMEState nsIContent::GetDesiredIMEState() {
   if (!htmlEditor) {
     return IMEState(IMEEnabled::Disabled);
   }
-  IMEState state;
-  htmlEditor->GetPreferredIMEState(&state);
-  return state;
+  // FYI: HTMLEditor::GetPreferredIMEState() is infallible.
+  return htmlEditor->GetPreferredIMEState().unwrap();
 }
 
 bool nsIContent::HasIndependentSelection() const {
@@ -1052,7 +1051,7 @@ bool nsIContent::CanStartSelectionAsWebCompatHack() const {
     if (!frame) {
       return true;
     }
-    if (!frame->IsSelectable(nullptr)) {
+    if (!frame->IsSelectable()) {
       return false;
     }
   }
@@ -1900,7 +1899,7 @@ void FragmentOrElement::GetMarkup(bool aIncludeSelf, nsAString& aMarkup) {
     }
   }
 
-  DebugOnly<nsresult> rv = docEncoder->NativeInit(doc, contentType, flags);
+  DebugOnly<nsresult> rv = docEncoder->Init(doc, contentType, flags);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   if (aIncludeSelf) {

@@ -263,7 +263,8 @@ class EditorBase : public nsIEditor,
   /**
    * Get preferred IME status of current widget.
    */
-  virtual nsresult GetPreferredIMEState(widget::IMEState* aState);
+  [[nodiscard]] virtual Result<widget::IMEState, nsresult>
+  GetPreferredIMEState() const = 0;
 
   /**
    * Returns true if there is composition string and not fixed.

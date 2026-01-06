@@ -582,7 +582,7 @@ class GitRepository(Repository):
             raise
 
 
-def get_repository(path):
+def get_repository(path: str):
     """Get a repository object for the repository at `path`.
     If `path` is not a known VCS repository, raise an exception.
     """

@@ -254,7 +254,7 @@ async function assertChartContent(
  * on the condition.
  *
  * @param {Array} requests
- * @param {String} field
+ * @param {string} field
  * @param {Function} condition
  * @returns {number}
  */
@@ -269,10 +269,10 @@ function accumulate(requests, field, condition = () => true) {
 /**
  * Assert that two values are equal or different by up to a specific margin
  *
- * @param {Number} actual
- * @param {Number} expected
- * @param {Number} margin
- * @param {String} comment
+ * @param {number} actual
+ * @param {number} expected
+ * @param {number} margin
+ * @param {string} comment
  */
 function isSimilar(actual, expected, margin, comment) {
   Assert.greaterOrEqual(actual, expected - margin, comment);

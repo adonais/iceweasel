@@ -13,6 +13,8 @@ import {
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
+  DEFAULT_FORM_HISTORY_PARAM:
+    "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   FormHistory: "resource://gre/modules/FormHistory.sys.mjs",
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
@@ -69,10 +71,10 @@ export class UrlbarProviderRecentSearches extends UrlbarProvider {
       queryContext.isPrivate
     );
 
-    if (details.selType == "dismiss" && queryContext.formHistoryName) {
+    if (details.selType == "dismiss") {
       lazy.FormHistory.update({
         op: "remove",
-        fieldname: "searchbar-history",
+        fieldname: lazy.DEFAULT_FORM_HISTORY_PARAM,
         value: result.payload.suggestion,
         source: engine.name,
       }).catch(error =>
@@ -97,7 +99,7 @@ export class UrlbarProviderRecentSearches extends UrlbarProvider {
       return;
     }
     let results = await lazy.FormHistory.search(["value", "lastUsed"], {
-      fieldname: "searchbar-history",
+      fieldname: lazy.DEFAULT_FORM_HISTORY_PARAM,
       source: engine.name,
     });
 

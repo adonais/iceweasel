@@ -224,6 +224,7 @@ var _attemptTransport = async function (settings) {
  * Typically, this will only fail if the host / port is unreachable.  Other
  * problems, such as security errors, will allow this stage to succeed, but then
  * fail later when the streams are actually used.
+ *
  * @return s nsISocketTransport
  *         Underlying socket transport, in case more details are needed.
  * @return input nsIAsyncInputStream
@@ -315,7 +316,7 @@ function _isInputAlive(input) {
  * If remote connections are disabled, an error is thrown.
  *
  * @param {DevToolsServer} devToolsServer
- * @param {Object} socketOptions
+ * @param {object} socketOptions
  *        options of socket as follows
  *        {
  *          authenticator:

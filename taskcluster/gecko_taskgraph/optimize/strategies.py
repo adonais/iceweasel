@@ -82,12 +82,19 @@ class SkipUnlessHasRelevantTests(OptimizationStrategy):
 # in `gecko_taskgraph.register` at the same time.
 @register_strategy("skip-unless-changed")
 class SkipUnlessChanged(OptimizationStrategy):
+    @memoize
+    def _match_path(self, path, pattern):
+        return match_path(path, pattern)
+
     def check(self, files_changed, patterns):
-        for pattern in patterns:
-            for path in files_changed:
-                if match_path(path, pattern):
-                    return True
-        return False
+        """Optimized check using memoized path matching"""
+        # Check if any path matches any pattern
+        #  short-circuits on first match via generator
+        return any(
+            self._match_path(path, pattern)
+            for path in files_changed
+            for pattern in patterns
+        )
 
     def should_remove_task(self, task, params, file_patterns):
         # pushlog_id == -1 - this is the case when run from a cron.yml job or on a git repository

@@ -7,6 +7,7 @@
 #include "nsScreen.h"
 
 #include "mozilla/GeckoBindings.h"
+#include "mozilla/dom/BrowsingContextBinding.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/widget/ScreenManager.h"
@@ -69,7 +70,7 @@ CSSIntRect nsScreen::GetRect() {
   }
 
   // Here we manipulate the value of aRect to represent the screen size,
-  // if in RDM.
+  // if there is an override set with WebDriver BiDi or in RDM.
   if (nsPIDOMWindowInner* owner = GetOwnerWindow()) {
     if (Document* doc = owner->GetExtantDoc()) {
       Maybe<CSSIntSize> deviceSize =
@@ -77,6 +78,12 @@ CSSIntRect nsScreen::GetRect() {
       if (deviceSize.isSome()) {
         const CSSIntSize& size = deviceSize.value();
         return {0, 0, size.width, size.height};
+      }
+    }
+
+    if (BrowsingContext* bc = owner->GetBrowsingContext()) {
+      if (auto size = bc->GetScreenAreaOverride()) {
+        return {{}, *size};
       }
     }
   }
@@ -104,7 +111,7 @@ CSSIntRect nsScreen::GetAvailRect() {
   }
 
   // Here we manipulate the value of aRect to represent the screen size,
-  // if in RDM.
+  // if there is an override set with WebDriver BiDi or in RDM.
   if (nsPIDOMWindowInner* owner = GetOwnerWindow()) {
     if (Document* doc = owner->GetExtantDoc()) {
       Maybe<CSSIntSize> deviceSize =
@@ -112,6 +119,12 @@ CSSIntRect nsScreen::GetAvailRect() {
       if (deviceSize.isSome()) {
         const CSSIntSize& size = deviceSize.value();
         return {0, 0, size.width, size.height};
+      }
+    }
+
+    if (BrowsingContext* bc = owner->GetBrowsingContext()) {
+      if (auto size = bc->GetScreenAreaOverride()) {
+        return {{}, *size};
       }
     }
   }

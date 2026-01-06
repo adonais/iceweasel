@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">Maxfiy %s</string>
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
@@ -232,6 +232,10 @@
     Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
   -->
   <string name="onboarding_home_content_description_close_button">Yopish</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!--
     Search Widget
 
@@ -317,8 +321,6 @@
   <string name="preferences_gestures">Ishoralar</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Moslash</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Varaq va xatchoʻplarni sinxronlash uchun hisobingizga kiring.</string>
   <!-- Preference text for account title when there was an error syncing FxA -->
   <string name="preferences_account_sync_error">Sinxronlashni davom ettirish uchun qayta ulaning</string>
   <!-- Preference for language -->
@@ -458,12 +460,6 @@
   <string name="preference_experiments_2">Tadqiqotlar</string>
   <!-- Summary for studies preferences -->
   <string name="preference_experiments_summary_2">Mozillaga tadqiqotlarni oʻrnatish va ishga tushirish imkonini beradi</string>
-  <!--
-    Turn On Sync Preferences
-
-    Header of the Sync and save your data preference view
-  -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Maʼlumotlaringizni sinxronlang va saqlang</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Qayta ulanish uchun tizimga kiring</string>
   <!-- Preference for removing FxA account -->
@@ -923,8 +919,6 @@
   <string name="toast_copy_link_to_clipboard">Vaqtinchalik xotiraga nusxalalandi</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Sinxronlash uchun hisobingizga kiring</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Sinxronizatsiya va maʼlumotlarni saqlash</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
   <string name="sync_send_to_all">Barcha qurilmalarga joʻnatish</string>
   <!-- An option from the share dialog to reconnect to sync -->
@@ -1532,4 +1526,10 @@
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

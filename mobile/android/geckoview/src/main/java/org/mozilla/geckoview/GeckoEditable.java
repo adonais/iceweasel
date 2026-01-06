@@ -112,6 +112,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
   private String mIMEAutocapitalize = ""; // Used by IC thread.
   private boolean mIMEAutocorrect = false; // Used by IC thread.
   @IMEContextFlags private int mIMEFlags; // Used by IC thread.
+  private volatile boolean mIsNewICCreated = false; // Used by IC and UI
 
   private boolean mIgnoreSelectionChange; // Used by Gecko thread
   // Combined offsets from the previous batch of onTextChange calls; valid
@@ -1033,12 +1034,18 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         for (final CharacterStyle span : styleSpans) {
           span.updateDrawState(tp);
         }
-        int tpUnderlineColor = 0;
-        float tpUnderlineThickness = 0.0f;
 
-        // These TextPaint fields only exist on Android ICS+ and are not in the SDK.
-        tpUnderlineColor = (Integer) getField(tp, "underlineColor", 0);
-        tpUnderlineThickness = (Float) getField(tp, "underlineThickness", 0.0f);
+        final int tpUnderlineColor;
+        final float tpUnderlineThickness;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+          tpUnderlineColor = tp.underlineColor;
+          tpUnderlineThickness = tp.underlineThickness;
+        } else {
+          // These TextPaint fields only exist on Android ICS+ and are not in the SDK.
+          tpUnderlineColor = (Integer) getField(tp, "underlineColor", 0);
+          tpUnderlineThickness = (Float) getField(tp, "underlineThickness", 0.0f);
+        }
         if (tpUnderlineColor != 0) {
           rangeStyles |= IME_RANGE_UNDERLINE | IME_RANGE_LINECOLOR;
           rangeLineColor = tpUnderlineColor;
@@ -1838,9 +1845,20 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
         new Runnable() {
           @Override
           public void run() {
-            if (DEBUG) {
-              Log.d(LOGTAG, "restartInput(" + reason + ", " + toggleSoftInput + ')');
+            if (LOGGING) {
+              final StringBuilder sb = new StringBuilder("restartInput(reason=");
+              sb.append(
+                      getConstantName(
+                          GeckoSession.TextInputDelegate.class, "RESTART_REASON_", reason))
+                  .append(", toggleSoftInput=")
+                  .append(toggleSoftInput)
+                  .append(")");
+              MozLog.d(LOGTAG, sb.toString());
             }
+
+            // Avoid multiple toggleSoftInput call. If this becomes true, onCreateInputConnection is
+            // called.
+            mIsNewICCreated = false;
 
             final GeckoSession session = mSession.get();
             if (session != null) {
@@ -1861,6 +1879,16 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
                       // mIMEState is not up-to-date here and we need to override it.
                       state = SessionTextInput.EditableListener.IME_STATE_DISABLED;
                     }
+                    if (state != SessionTextInput.EditableListener.IME_STATE_DISABLED
+                        && mIsNewICCreated) {
+                      // If state isn't disabled, and new InputConnection is created during
+                      // icRestartInput, we don't call toggleSoftInput twice.
+                      return;
+                    }
+
+                    // Unnecessary to track onCreateInputConnection.
+                    mIsNewICCreated = true;
+
                     toggleSoftInput(/* force */ false, state);
                   }
                 });
@@ -1876,6 +1904,9 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     final String autocapitalize = mIMEAutocapitalize;
     boolean autocorrect = mIMEAutocorrect;
     final int flags = mIMEFlags;
+
+    // New InputConnection is created.
+    mIsNewICCreated = true;
 
     // Some keyboards require us to fill out outAttrs even if we return null.
     outAttrs.imeOptions = EditorInfo.IME_ACTION_NONE;

@@ -119,9 +119,6 @@ class nsTextControlFrame : public nsContainerFrame,
   nsFrameSelection* GetOwnedFrameSelection() {
     return ControlElement()->GetIndependentFrameSelection();
   }
-  nsISelectionController* GetSelectionController() {
-    return ControlElement()->GetSelectionController();
-  }
 
   void PlaceholderChanged(const nsAttrValue* aOld, const nsAttrValue* aNew);
 

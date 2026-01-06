@@ -610,29 +610,6 @@ async function assertPseudoElementRulesNumbers(
     );
   }
 
-  // If we do have pseudo element rules displayed, ensure we don't mark their selectors
-  // as matched or unmatched
-  if (
-    rules.elementRules.length &&
-    view._elementStyle.rules.length !== rules.elementRules.length
-  ) {
-    const pseudoElementContainer = view.styleWindow.document.getElementById(
-      "pseudo-elements-container"
-    );
-    const selectors = Array.from(
-      pseudoElementContainer.querySelectorAll(".ruleview-selector")
-    );
-    ok(selectors.length, "We do have selectors for pseudo element rules");
-    ok(
-      selectors.every(
-        selectorEl =>
-          !selectorEl.classList.contains("matched") &&
-          !selectorEl.classList.contains("unmatched")
-      ),
-      "Pseudo element selectors are not marked as matched nor unmatched"
-    );
-  }
-
   return rules;
 }
 

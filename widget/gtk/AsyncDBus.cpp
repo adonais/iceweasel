@@ -6,6 +6,7 @@
 #include "AsyncDBus.h"
 #include "gio/gio.h"
 #include "mozilla/XREAppData.h"
+#include "nsAppShell.h"
 
 namespace mozilla::widget {
 
@@ -21,6 +22,7 @@ static void CreateProxyCallback(GObject*, GAsyncResult* aResult,
   } else {
     promise->Reject(std::move(error), __func__);
   }
+  nsAppShell::DBusConnectionCheck();
 }
 
 RefPtr<DBusProxyPromise> CreateDBusProxyForBus(
@@ -28,6 +30,7 @@ RefPtr<DBusProxyPromise> CreateDBusProxyForBus(
     GDBusInterfaceInfo* aInterfaceInfo, const char* aName,
     const char* aObjectPath, const char* aInterfaceName,
     GCancellable* aCancellable) {
+  nsAppShell::DBusConnectionCheck();
   auto promise = MakeRefPtr<DBusProxyPromise::Private>(__func__);
   g_dbus_proxy_new_for_bus(aBusType, aFlags, aInterfaceInfo, aName, aObjectPath,
                            aInterfaceName, aCancellable, CreateProxyCallback,
@@ -47,6 +50,7 @@ static void ProxyCallCallback(GObject* aSourceObject, GAsyncResult* aResult,
   } else {
     promise->Reject(std::move(error), __func__);
   }
+  nsAppShell::DBusConnectionCheck();
 }
 
 RefPtr<DBusCallPromise> DBusProxyCall(GDBusProxy* aProxy, const char* aMethod,
@@ -54,6 +58,7 @@ RefPtr<DBusCallPromise> DBusProxyCall(GDBusProxy* aProxy, const char* aMethod,
                                       gint aTimeout,
                                       GCancellable* aCancellable) {
   auto promise = MakeRefPtr<DBusCallPromise::Private>(__func__);
+  nsAppShell::DBusConnectionCheck();
   g_dbus_proxy_call(aProxy, aMethod, aArgs, aFlags, aTimeout, aCancellable,
                     ProxyCallCallback, do_AddRef(promise).take());
   return promise.forget();
@@ -75,6 +80,7 @@ static void ProxyCallWithUnixFDListCallback(GObject* aSourceObject,
   } else {
     promise->Reject(std::move(error), __func__);
   }
+  nsAppShell::DBusConnectionCheck();
 }
 
 RefPtr<DBusCallPromise> DBusProxyCallWithUnixFDList(
@@ -82,6 +88,7 @@ RefPtr<DBusCallPromise> DBusProxyCallWithUnixFDList(
     GDBusCallFlags aFlags, gint aTimeout, GUnixFDList* aFDList,
     GCancellable* aCancellable) {
   auto promise = MakeRefPtr<DBusCallPromise::Private>(__func__);
+  nsAppShell::DBusConnectionCheck();
   g_dbus_proxy_call_with_unix_fd_list(
       aProxy, aMethod, aArgs, aFlags, aTimeout, aFDList, aCancellable,
       ProxyCallWithUnixFDListCallback, do_AddRef(promise).take());
@@ -138,6 +145,7 @@ struct PortalResponseData {
                     const gchar* object_path, const gchar* interface_name,
                     const gchar* signal_name, GVariant* parameters,
                     gpointer user_data) {
+    nsAppShell::DBusConnectionCheck();
     auto* data = static_cast<PortalResponseData*>(user_data);
     auto callback = std::move(data->mCallback);
     g_dbus_connection_signal_unsubscribe(connection, data->mSubscriptionId);
@@ -148,6 +156,7 @@ struct PortalResponseData {
 
 guint OnDBusPortalResponse(GDBusProxy* aProxy, const nsCString& aRequestToken,
                            PortalResponseListener aCallback) {
+  nsAppShell::DBusConnectionCheck();
   auto boxedData = MakeUnique<PortalResponseData>(std::move(aCallback));
 
   nsAutoCString requestPath;

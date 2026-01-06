@@ -229,6 +229,7 @@ void nsFieldSetFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   if (GetPrevInFlow()) {
     DisplayOverflowContainers(aBuilder, aLists);
+    DisplayAbsoluteContinuations(aBuilder, aLists);
   }
 
   nsDisplayListCollection contentDisplayItems(aBuilder);
@@ -698,8 +699,6 @@ void nsFieldSetFrame::Reflow(nsPresContext* aPresContext,
                                           containerSize);
 
     legend->SetPosition(wm, actualLegendPos, containerSize);
-    nsContainerFrame::PositionFrameView(legend);
-    nsContainerFrame::PositionChildViews(legend);
   }
 
   // Skip our block-end border if we're INCOMPLETE.

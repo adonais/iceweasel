@@ -2113,8 +2113,8 @@ HWY_INLINE Vec256<uint32_t> SumsOf4(hwy::UnsignedTag /*type_tag*/,
 // ------------------------------ SumsOfAdjQuadAbsDiff
 
 template <int kAOffset, int kBOffset>
-static Vec256<uint16_t> SumsOfAdjQuadAbsDiff(Vec256<uint8_t> a,
-                                             Vec256<uint8_t> b) {
+HWY_API Vec256<uint16_t> SumsOfAdjQuadAbsDiff(Vec256<uint8_t> a,
+                                              Vec256<uint8_t> b) {
   static_assert(0 <= kAOffset && kAOffset <= 1,
                 "kAOffset must be between 0 and 1");
   static_assert(0 <= kBOffset && kBOffset <= 3,
@@ -6424,7 +6424,24 @@ HWY_API VFromD<DI32> SumOfMulQuadAccumulate(
   return VFromD<DI32>{_mm256_dpbusd_epi32(sum.raw, a_u.raw, b_i.raw)};
 }
 
-#endif
+#if HWY_X86_HAVE_AVX10_2_OPS
+template <class DI32, HWY_IF_I32_D(DI32), HWY_IF_V_SIZE_D(DI32, 32)>
+HWY_API VFromD<DI32> SumOfMulQuadAccumulate(DI32 /*di32*/,
+                                            VFromD<Repartition<int8_t, DI32>> a,
+                                            VFromD<Repartition<int8_t, DI32>> b,
+                                            VFromD<DI32> sum) {
+  return VFromD<DI32>{_mm256_dpbssd_epi32(sum.raw, a.raw, b.raw)};
+}
+
+template <class DU32, HWY_IF_U32_D(DU32), HWY_IF_V_SIZE_D(DU32, 32)>
+HWY_API VFromD<DU32> SumOfMulQuadAccumulate(
+    DU32 /*du32*/, VFromD<Repartition<uint8_t, DU32>> a,
+    VFromD<Repartition<uint8_t, DU32>> b, VFromD<DU32> sum) {
+  return VFromD<DU32>{_mm256_dpbuud_epi32(sum.raw, a.raw, b.raw)};
+}
+#endif  // HWY_X86_HAVE_AVX10_2_OPS
+
+#endif  // HWY_TARGET <= HWY_AVX3_DL
 
 // ================================================== CONVERT
 

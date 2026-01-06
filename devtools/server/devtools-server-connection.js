@@ -90,6 +90,7 @@ DevToolsServerConnection.prototype = {
 
   /**
    * Used when sending a bulk reply from an actor.
+   *
    * @see DebuggerTransport.prototype.startBulkSend
    */
   startBulkSend(header) {
@@ -271,7 +272,7 @@ DevToolsServerConnection.prototype = {
    * This function returns whether the connection was accepted by passed SocketListener.
    *
    * @param {SocketListener} socketListener
-   * @return {Boolean} return true if this connection was accepted by socketListener,
+   * @return {boolean} return true if this connection was accepted by socketListener,
    *         else returns false.
    */
   isAcceptedBy(socketListener) {

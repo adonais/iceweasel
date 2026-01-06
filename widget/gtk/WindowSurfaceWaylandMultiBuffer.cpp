@@ -156,9 +156,7 @@ WindowSurfaceWaylandMB::WindowSurfaceWaylandMB(
     RefPtr<nsWindow> aWindow, GtkCompositorWidget* aCompositorWidget)
     : mSurfaceLock("WindowSurfaceWayland lock"),
       mWindow(std::move(aWindow)),
-      mCompositorWidget(aCompositorWidget),
-      mFrameInProcess(false),
-      mCallbackRequested(false) {}
+      mCompositorWidget(aCompositorWidget) {}
 
 bool WindowSurfaceWaylandMB::MaybeUpdateWindowSize() {
   // We want to get window size from compositor widget as it matches window
@@ -189,7 +187,6 @@ already_AddRefed<DrawTarget> WindowSurfaceWaylandMB::Lock(
   if (mWindow->GetWindowType() == WindowType::Invisible) {
     return nullptr;
   }
-  mFrameInProcess = true;
 
   CollectPendingSurfaces(lock);
 
@@ -281,30 +278,10 @@ void WindowSurfaceWaylandMB::Commit(
     // invisible window
     return;
   }
-  mFrameInProcess = false;
 
   MozContainer* container = mWindow->GetMozContainer();
   WaylandSurface* waylandSurface = MOZ_WL_SURFACE(container);
   WaylandSurfaceLock lock(waylandSurface);
-  if (!waylandSurface->IsMapped()) {
-    LOGWAYLAND(
-        "WindowSurfaceWaylandMB::Commit [%p] frame queued: can't lock "
-        "wl_surface\n",
-        (void*)mWindow.get());
-    if (!mCallbackRequested) {
-      RefPtr<WindowSurfaceWaylandMB> self(this);
-      waylandSurface->AddReadyToDrawCallbackLocked(
-          lock, [self, aInvalidRegion]() -> void {
-            MutexAutoLock lock(self->mSurfaceLock);
-            if (!self->mFrameInProcess) {
-              self->Commit(lock, aInvalidRegion);
-            }
-            self->mCallbackRequested = false;
-          });
-      mCallbackRequested = true;
-    }
-    return;
-  }
 
   waylandSurface->InvalidateRegionLocked(lock,
                                          aInvalidRegion.ToUnknownRegion());

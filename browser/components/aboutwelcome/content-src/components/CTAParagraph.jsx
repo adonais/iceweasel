@@ -37,12 +37,15 @@ export const CTAParagraph = props => {
               ["Enter", " "].includes(event.key) ? onClick(event) : null
             }
             value="cta_paragraph"
-            role="link"
           >
             {" "}
             {/* <a> is valid here because of click and keyup handling. */}
             {/* <button> cannot be used due to fluent integration. <a> content is provided by fluent */}
-            <a data-l10n-name={content.text.string_name} tabIndex="0"></a>
+            <a
+              data-l10n-name={content.text.string_name}
+              tabIndex="0"
+              role="link"
+            ></a>
           </span>
         ) : null}
       </Localized>

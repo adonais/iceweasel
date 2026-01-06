@@ -1402,6 +1402,49 @@ nsresult nsHttpConnectionMgr::TryDispatchTransaction(
   // look for existing spdy connection - that's always best because it is
   // essentially pipelining without head of line blocking
 
+  // For WebSocket/WebTransport through H3 proxy, we need to create a TCP
+  // tunnel through the H3 proxy first. But if there's already an H2 session
+  // available (from a previously established tunnel), we should use that
+  // instead of creating a new tunnel.
+  // The WebSocket transaction doesn't have a connection set (it was queued
+  // without one in DnsAndConnectSocket::SetupConn to avoid triggering reclaim
+  // when we clear it here).
+  if ((trans->IsWebsocketUpgrade() || trans->IsForWebTransport()) &&
+      ent->IsHttp3ProxyConnection()) {
+    // First check if there's an H2 session available (from existing tunnel)
+    // This handles the case where the tunnel was already established and the
+    // WebSocket transaction was reset to wait for H2 negotiation.
+    // We can't use GetH2orH3ActiveConn because it skips H3 proxy entries when
+    // looking for H2 connections. We use GetH2TunnelActiveConn to directly
+    // look for an H2 tunnel connection in the active connections.
+    RefPtr<nsHttpConnection> h2Tunnel = ent->GetH2TunnelActiveConn();
+    if (h2Tunnel) {
+      LOG(
+          ("TryDispatchTransaction: WebSocket through H3 proxy - using "
+           "existing H2 tunnel"));
+      return TryDispatchExtendedCONNECTransaction(ent, trans, h2Tunnel);
+    }
+
+    // No H2 session available yet - create a tunnel through the H3 proxy
+    RefPtr<HttpConnectionBase> conn = GetH2orH3ActiveConn(ent, true, false);
+    RefPtr<HttpConnectionUDP> connUDP = do_QueryObject(conn);
+    if (connUDP) {
+      LOG(("TryDispatchTransaction: WebSocket through HTTP/3 proxy"));
+      RefPtr<HttpConnectionBase> tunnelConn;
+      nsresult rv =
+          connUDP->CreateTunnelStream(trans, getter_AddRefs(tunnelConn), true);
+      if (NS_FAILED(rv)) {
+        return rv;
+      }
+      ent->InsertIntoActiveConns(tunnelConn);
+      tunnelConn->SetInTunnel();
+      if (trans->IsWebsocketUpgrade()) {
+        trans->SetIsHttp2Websocket(true);
+      }
+      return DispatchTransaction(ent, trans, tunnelConn);
+    }
+  }
+
   RefPtr<HttpConnectionBase> conn = GetH2orH3ActiveConn(
       ent,
       (!StaticPrefs::network_http_http2_enabled() ||

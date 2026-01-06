@@ -811,7 +811,8 @@ TEST_F(ApmTest, ChannelsInt16Interface) {
   // Testing number of invalid and valid channels.
   Init(16000, 16000, 16000, 4, 4, 4, false);
 
-  TestChangingChannelsInt16Interface(0, apm_->kBadNumberChannelsError);
+  TestChangingChannelsInt16Interface(0,
+                                     AudioProcessing::kBadNumberChannelsError);
 
   for (size_t i = 1; i < 4; i++) {
     TestChangingChannelsInt16Interface(i, AudioProcessing::kNoError);
@@ -823,8 +824,8 @@ TEST_F(ApmTest, Channels) {
   // Testing number of invalid and valid channels.
   Init(16000, 16000, 16000, 4, 4, 4, false);
 
-  TestChangingForwardChannels(0, 1, apm_->kBadNumberChannelsError);
-  TestChangingReverseChannels(0, apm_->kBadNumberChannelsError);
+  TestChangingForwardChannels(0, 1, AudioProcessing::kBadNumberChannelsError);
+  TestChangingReverseChannels(0, AudioProcessing::kBadNumberChannelsError);
 
   for (size_t i = 1; i < 4; ++i) {
     for (size_t j = 0; j < 1; ++j) {
@@ -2076,8 +2077,30 @@ TEST_P(AudioProcessingTest, Formats) {
     int num_reverse_output;
   };
   ChannelFormat cf[] = {
-      {1, 1, 1, 1}, {1, 1, 2, 1}, {2, 1, 1, 1},
-      {2, 1, 2, 1}, {2, 2, 1, 1}, {2, 2, 2, 2},
+      {.num_input = 1,
+       .num_output = 1,
+       .num_reverse_input = 1,
+       .num_reverse_output = 1},
+      {.num_input = 1,
+       .num_output = 1,
+       .num_reverse_input = 2,
+       .num_reverse_output = 1},
+      {.num_input = 2,
+       .num_output = 1,
+       .num_reverse_input = 1,
+       .num_reverse_output = 1},
+      {.num_input = 2,
+       .num_output = 1,
+       .num_reverse_input = 2,
+       .num_reverse_output = 1},
+      {.num_input = 2,
+       .num_output = 2,
+       .num_reverse_input = 1,
+       .num_reverse_output = 1},
+      {.num_input = 2,
+       .num_output = 2,
+       .num_reverse_input = 2,
+       .num_reverse_output = 2},
   };
 
   for (auto [num_input, num_output, num_reverse_input, num_reverse_output] :
@@ -2741,7 +2764,7 @@ TEST(MAYBE_ApmStatistics, AECEnabledTest) {
 
   // Fill the audio frame with a sawtooth pattern.
   int16_t* ptr = frame.data.data();
-  for (size_t i = 0; i < frame.kMaxDataSizeSamples; i++) {
+  for (size_t i = 0; i < Int16FrameData::kMaxDataSizeSamples; i++) {
     ptr[i] = 10000 * ((i % 3) - 1);
   }
 
@@ -2790,7 +2813,7 @@ TEST(MAYBE_ApmStatistics, AECMEnabledTest) {
 
   // Fill the audio frame with a sawtooth pattern.
   int16_t* ptr = frame.data.data();
-  for (size_t i = 0; i < frame.kMaxDataSizeSamples; i++) {
+  for (size_t i = 0; i < Int16FrameData::kMaxDataSizeSamples; i++) {
     ptr[i] = 10000 * ((i % 3) - 1);
   }
 
@@ -2837,7 +2860,7 @@ TEST(ApmStatistics, DoNotReportVoiceDetectedStat) {
 
   // Fill the audio frame with a sawtooth pattern.
   int16_t* ptr = frame.data.data();
-  for (size_t i = 0; i < frame.kMaxDataSizeSamples; i++) {
+  for (size_t i = 0; i < Int16FrameData::kMaxDataSizeSamples; i++) {
     ptr[i] = 10000 * ((i % 3) - 1);
   }
 

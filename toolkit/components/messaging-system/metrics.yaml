@@ -24,7 +24,7 @@ messaging_experiments:
     data_reviews: &messaging_experiments_targeting_data_reviews
       - https://bugzil.la/1644743
     notification_emails: &messaging_experiments_targeting_emails
-      - ujet@mozilla.com
+      - omc-core@mozilla.com
     expires: never
     extra_keys: &messaging_experiments_targeting_extra
       value:
@@ -67,7 +67,7 @@ messaging_experiments:
     data_reviews: &messaging_experiments_reach_data_reviews
       - https://bugzil.la/1471318
     notification_emails: &messaging_experiments_reach_emails
-      - ujet@mozilla.com
+      - omc-core@mozilla.com
     expires: never
     extra_keys: &messaging_experiments_reach_extra
       value:

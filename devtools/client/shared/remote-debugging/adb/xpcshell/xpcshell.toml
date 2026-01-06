@@ -3,7 +3,9 @@ tags = "devtools"
 head = "xpcshell-head.js"
 firefox-appdir = "browser"
 support-files = ["adb.py"]
-run-if = ["os != 'android'"]
+run-if = [
+  "os != 'android'",
+]
 
 ["test_adb.js"]
 run-sequentially = ["true"] # An extension having the same id is installed/uninstalled in different tests

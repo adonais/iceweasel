@@ -23,18 +23,22 @@ prefs = [
 
 ["browser_dbg-sourcemapped-scopes.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent results (fails on Try, passes on Autoland)
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1858041 and 1849028 intermittent results (fails on Try, passes on Autoland)
 ]
 
 ["browser_dbg-sourcemapped-stepping.js"]
-run-if = ["false"] # original stepping is currently disabled
+run-if = [
+  "false", # original stepping is currently disabled
+]
 
 ["browser_dbg-sourcemapped-toggle.js"]
 
 ["browser_dbg-sourcemaps-bogus.js"]
 
 ["browser_dbg-sourcemaps-breakpoints.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_dbg-sourcemaps-credentials.js"]
 
@@ -51,9 +55,13 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_dbg-sourcemaps-reloading.js"]
 
 ["browser_dbg-sourcemaps.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_dbg-sourcemaps2.js"]
 
 ["browser_dbg-sourcemaps3.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]

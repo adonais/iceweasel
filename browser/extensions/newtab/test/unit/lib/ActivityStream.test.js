@@ -41,6 +41,7 @@ describe("ActivityStream", () => {
       DEFAULT_SITES,
       AboutPreferences,
       DefaultPrefs,
+      NewTabActorRegistry: { init: () => {} },
       NewTabInit,
       SectionsFeed,
       RecommendationProvider,
@@ -872,6 +873,221 @@ describe("ActivityStream", () => {
           "google"
         );
       }
+    });
+  });
+
+  describe("proxying images", () => {
+    let registerStub;
+    let unregisterStub;
+
+    beforeEach(() => {
+      registerStub = sandbox.stub(as, "registerNetworkProxy");
+      unregisterStub = sandbox.stub(as, "unregisterNetworkProxy");
+    });
+
+    describe("#init", () => {
+      it("should call registerNetworkProxy during init", () => {
+        as.init();
+        assert.calledOnce(registerStub);
+      });
+    });
+
+    describe("#uninit", () => {
+      it("should call unregisterNetworkProxy during uninit", () => {
+        as.init();
+        as.uninit();
+        assert.calledOnce(unregisterStub);
+      });
+    });
+
+    describe("#getImageProxyConfig", () => {
+      beforeEach(() => {
+        as.initialized = true;
+      });
+
+      it("should return null when proxy config is missing", () => {
+        as.store = {
+          getState: () => ({
+            Prefs: {
+              values: {},
+            },
+          }),
+        };
+
+        const config = as.getImageProxyConfig();
+        assert.isNull(config);
+      });
+
+      it("should return null when proxy is disabled", () => {
+        as.store = {
+          getState: () => ({
+            Prefs: {
+              values: {
+                trainhopConfig: {
+                  imageProxy: {
+                    enabled: false,
+                    proxyHost: "proxy.example.com",
+                    proxyPort: 443,
+                    proxyAuthHeader: "auth",
+                  },
+                },
+                "discoverystream.sections.personalization.inferred.enabled": true,
+              },
+            },
+          }),
+        };
+
+        const config = as.getImageProxyConfig();
+        assert.isNull(config);
+      });
+
+      it("should return null when required fields are missing", () => {
+        as.store = {
+          getState: () => ({
+            Prefs: {
+              values: {
+                trainhopConfig: {
+                  imageProxy: {
+                    enabled: true,
+                    proxyHost: "proxy.example.com",
+                  },
+                },
+                "discoverystream.sections.personalization.inferred.enabled": true,
+              },
+            },
+          }),
+        };
+
+        const config = as.getImageProxyConfig();
+        assert.isNull(config);
+      });
+
+      it("should return null when inferred personalization is disabled", () => {
+        as.store = {
+          getState: () => ({
+            Prefs: {
+              values: {
+                trainhopConfig: {
+                  imageProxy: {
+                    enabled: true,
+                    proxyHost: "proxy.example.com",
+                    proxyPort: 443,
+                    proxyAuthHeader: "auth",
+                  },
+                },
+                "discoverystream.sections.personalization.inferred.enabled": false,
+                "discoverystream.imageProxy.enabled": true,
+              },
+            },
+          }),
+        };
+
+        const config = as.getImageProxyConfig();
+        assert.isNull(config);
+      });
+
+      it("should return valid config when properly configured", () => {
+        as.store = {
+          getState: () => ({
+            Prefs: {
+              values: {
+                trainhopConfig: {
+                  imageProxy: {
+                    enabled: true,
+                    proxyHost: "host",
+                    proxyPort: 1124,
+                    proxyAuthHeader: "123",
+                    connectionIsolationKey: "isolation-key",
+                    failoverProxy: "failover.example.com",
+                    imageProxyHosts: "host1.com,host2.com,host3.com",
+                  },
+                },
+                "discoverystream.sections.personalization.inferred.enabled": true,
+                "discoverystream.imageProxy.enabled": true,
+              },
+            },
+          }),
+        };
+
+        const config = as.getImageProxyConfig();
+        assert.ok(config);
+      });
+    });
+
+    describe("#applyFilter", () => {
+      let mockChannel;
+      let mockCallback;
+      let mockProxyInfo;
+      let mockBrowser;
+      let mockCustomProxyInfo;
+      let getConfigStub;
+      let AboutNewTabParent;
+
+      beforeEach(() => {
+        mockCallback = { onProxyFilterResult: sandbox.stub() };
+        mockProxyInfo = {};
+        mockCustomProxyInfo = {};
+        mockBrowser = {};
+
+        mockChannel = {
+          URI: { host: "example.com", scheme: "https" },
+          loadInfo: {
+            browsingContext: { top: { embedderElement: mockBrowser } },
+          },
+        };
+
+        getConfigStub = sandbox.stub(as, "getImageProxyConfig");
+
+        AboutNewTabParent = { loadedTabs: new Set([mockBrowser]) };
+        globals.set({
+          AboutNewTabParent,
+          ProxyService: {
+            newProxyInfo: sandbox.stub().returns(mockCustomProxyInfo),
+          },
+        });
+      });
+
+      it("should pass through original proxy when config is null", () => {
+        getConfigStub.returns(null);
+
+        as.applyFilter(mockChannel, mockProxyInfo, mockCallback);
+
+        assert.calledOnce(mockCallback.onProxyFilterResult);
+        assert.calledWith(mockCallback.onProxyFilterResult, mockProxyInfo);
+      });
+
+      it("should apply proxy for matching HTTPS host from newtab", () => {
+        const config = {
+          imageProxyHosts: ["example.com", "other.com"],
+          proxyHost: "proxy.example.com",
+          proxyPort: 443,
+          proxyAuthHeader: "Bearer token",
+          connectionIsolationKey: "key",
+          failoverProxy: "failover.example.com",
+        };
+        getConfigStub.returns(config);
+
+        as.applyFilter(mockChannel, mockProxyInfo, mockCallback);
+
+        assert.calledOnce(global.ProxyService.newProxyInfo);
+        assert.calledWith(
+          global.ProxyService.newProxyInfo,
+          "https",
+          config.proxyHost,
+          config.proxyPort,
+          config.proxyAuthHeader,
+          config.connectionIsolationKey,
+          0,
+          5000,
+          config.failoverProxy
+        );
+
+        assert.calledOnce(mockCallback.onProxyFilterResult);
+        assert.calledWith(
+          mockCallback.onProxyFilterResult,
+          mockCustomProxyInfo
+        );
+      });
     });
   });
 });

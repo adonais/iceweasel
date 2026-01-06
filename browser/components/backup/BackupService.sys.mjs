@@ -195,6 +195,19 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
+  "backupErrorCode",
+  BACKUP_ERROR_CODE_PREF_NAME,
+  0,
+  function onUpdateBackupErrorCode(_pref, _prevVal, newVal) {
+    let bs = BackupService.get();
+    if (bs) {
+      bs.onUpdateBackupErrorCode(newVal);
+    }
+  }
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
   "lastBackupFileName",
   LAST_BACKUP_FILE_NAME_PREF_NAME,
   ""
@@ -635,13 +648,8 @@ export class BackupService extends EventTarget {
       BACKUP_ARCHIVE_ENABLED_OVERRIDE_PREF_NAME,
       false
     );
-    // This is explicitly checking for archiveKillswitchTriggered !== false because
-    // we now also (potentially) want to use this nimbus setting for doing staged rollout
-    // of the feature. What this means is that if the value is:
-    //     - true: feature is turned off ("killed")
-    //     - undefined: feature is turned off (not launched yet)
-    //     - false: feature is turned on
-    if (archiveKillswitchTriggered !== false && !archiveOverrideEnabled) {
+    // Only disable feature if archiveKillswitch is true.
+    if (archiveKillswitchTriggered && !archiveOverrideEnabled) {
       return {
         enabled: false,
         reason: "Archiving a profile disabled remotely.",
@@ -714,8 +722,6 @@ export class BackupService extends EventTarget {
       false
     );
 
-    // restoreKillswitch is a "normal" killswitch, in contrast
-    // to archiveKillswitch
     if (restoreKillswitchTriggered && !restoreOverrideEnabled) {
       return {
         enabled: false,
@@ -850,7 +856,6 @@ export class BackupService extends EventTarget {
     lastBackupFileName: "",
     supportBaseLink: Services.urlFormatter.formatURLPref("app.support.baseURL"),
     recoveryInProgress: false,
-    recoveryErrorCode: 0,
     /**
      * Every file we load successfully is going to get a restore ID which is
      * basically the identifier for that profile restore event. If we actually
@@ -861,6 +866,8 @@ export class BackupService extends EventTarget {
     restoreID: null,
     /** Utilized by the spotlight to persist information between screens */
     embeddedComponentPersistentData: {},
+    recoveryErrorCode: ERRORS.NONE,
+    backupErrorCode: lazy.backupErrorCode,
   };
 
   /**
@@ -1794,6 +1801,7 @@ export class BackupService extends EventTarget {
             })
           );
 
+          this.stateUpdate();
           throw e;
         } finally {
           this.#backupInProgress = false;
@@ -3382,8 +3390,12 @@ export class BackupService extends EventTarget {
           profileSvc.defaultProfile = profile;
         }
 
-        // let's rename the old profile with a prefix old-[profile_name]
-        profileSvc.currentProfile.name = `old-${profileSvc.currentProfile.name}`;
+        // If the profile already has an [old-] prefix, let's skip adding new prefixes
+        if (!profileSvc.currentProfile.name.startsWith("old-")) {
+          // Looks like this is a new restoration of this profile,
+          // add the prefix old-[profile_name]
+          profileSvc.currentProfile.name = `old-${profileSvc.currentProfile.name}`;
+        }
       }
 
       await profileSvc.asyncFlush();
@@ -3624,6 +3636,20 @@ export class BackupService extends EventTarget {
     Glean.browserBackup.changeLocation.record();
 
     this.#_state.backupDirPath = newDirPath;
+    this.stateUpdate();
+  }
+
+  /**
+   * Updates backupErrorCode in the backup service state. Should be called every time
+   * the value for browser.backup.errorCode changes.
+   *
+   * @param {number} newErrorCode
+   *    Any of the ERROR code's from backup-constants.mjs
+   */
+  onUpdateBackupErrorCode(newErrorCode) {
+    lazy.logConsole.debug(`Updating backup error code to ${newErrorCode}`);
+
+    this.#_state.backupErrorCode = newErrorCode;
     this.stateUpdate();
   }
 

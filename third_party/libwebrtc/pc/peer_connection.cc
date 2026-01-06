@@ -404,7 +404,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     SdpSemantics sdp_semantics;
     std::optional<AdapterType> network_preference;
     bool active_reset_srtp_params;
-    std::optional<CryptoOptions> crypto_options;
+    CryptoOptions crypto_options;
     bool offer_extmap_allow_mixed;
     std::string turn_logging_id;
     bool enable_implicit_rollback;
@@ -539,7 +539,7 @@ PeerConnection::PeerConnection(
           /*alive=*/call_ != nullptr,
           worker_thread())),
       call_ptr_(call_.get()),
-      legacy_stats_(std::make_unique<LegacyStatsCollector>(this)),
+      legacy_stats_(std::make_unique<LegacyStatsCollector>(this, env_.clock())),
       stats_collector_(RTCStatsCollector::Create(this, env_)),
       // RFC 3264: The numeric value of the session id and version in the
       // o line MUST be representable with a "64 bit signed integer".
@@ -579,12 +579,12 @@ PeerConnection::PeerConnection(
     rtp_manager_->transceivers()->Add(
         RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
             signaling_thread(), make_ref_counted<RtpTransceiver>(
-                                    webrtc::MediaType::AUDIO, context_.get(),
+                                    env_, MediaType::AUDIO, context_.get(),
                                     codec_lookup_helper_.get())));
     rtp_manager_->transceivers()->Add(
         RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
             signaling_thread(), make_ref_counted<RtpTransceiver>(
-                                    webrtc::MediaType::VIDEO, context_.get(),
+                                    env_, MediaType::VIDEO, context_.get(),
                                     codec_lookup_helper_.get())));
   }
 
@@ -687,9 +687,7 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
   config.disable_encryption = options_.disable_encryption;
   config.bundle_policy = configuration.bundle_policy;
   config.rtcp_mux_policy = configuration.rtcp_mux_policy;
-  config.crypto_options = configuration.crypto_options.has_value()
-                              ? *configuration.crypto_options
-                              : CryptoOptions();
+  config.crypto_options = configuration.crypto_options;
 
   // Maybe enable PQC from FieldTrials
   config.crypto_options.ephemeral_key_exchange_cipher_groups.Update(
@@ -697,7 +695,6 @@ JsepTransportController* PeerConnection::InitializeTransportController_n(
   config.transport_observer = this;
   config.rtcp_handler = InitializeRtcpCallback();
   config.un_demuxable_packet_handler = InitializeUnDemuxablePacketHandler();
-  config.event_log = &env_.event_log();
 #if defined(ENABLE_EXTERNAL_AUTH)
   config.enable_external_auth = true;
 #endif
@@ -1366,7 +1363,7 @@ std::optional<bool> PeerConnection::can_trickle_ice_candidates() {
     return std::nullopt;
   }
   // TODO(bugs.webrtc.org/7443): Change to retrieve from session-level option.
-  if (description->description()->transport_infos().size() < 1) {
+  if (description->description()->transport_infos().empty()) {
     return std::nullopt;
   }
   return description->description()->transport_infos()[0].description.HasOption(
@@ -1399,6 +1396,7 @@ PeerConnection::CreateDataChannelOrError(const std::string& label,
     return ret.MoveError();
   }
 
+  ClearStatsCache();
   scoped_refptr<DataChannelInterface> channel = ret.MoveValue();
 
   // Check the onRenegotiationNeeded event (with plan-b backward compat)
@@ -1494,8 +1492,7 @@ RTCError PeerConnection::SetConfiguration(
   }
 
   if (has_local_description &&
-      configuration.crypto_options.value_or(CryptoOptions()) !=
-          configuration_.crypto_options) {
+      configuration.crypto_options != configuration_.crypto_options) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
                          "Can't change crypto_options after calling "
                          "SetLocalDescription.");
@@ -1597,6 +1594,11 @@ RTCError PeerConnection::SetBitrate(const BitrateSettings& bitrate) {
   }
   RTC_DCHECK_RUN_ON(worker_thread());
 
+  if (!call_) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_STATE,
+                         "PeerConnection is closed.");
+  }
+
   const bool has_min = bitrate.min_bitrate_bps.has_value();
   const bool has_start = bitrate.start_bitrate_bps.has_value();
   const bool has_max = bitrate.max_bitrate_bps.has_value();
@@ -1626,7 +1628,6 @@ RTCError PeerConnection::SetBitrate(const BitrateSettings& bitrate) {
     }
   }
 
-  RTC_DCHECK(call_.get());
   call_->SetClientBitratePreferences(bitrate);
 
   return RTCError::OK();
@@ -2083,19 +2084,17 @@ void PeerConnection::OnIceCandidatesRemoved(
   if (IsClosed()) {
     return;
   }
-  // Since this callback is based on the Candidate type, and not IceCandidate,
-  // all candidate instances should have the transport_name() property set to
-  // `mid`. See BasicPortAllocatorSession::PrunePortsAndRemoveCandidates for
-  // where the list of candidates is initially gathered.
-  std::vector<Candidate> candidates_for_notification;
-  candidates_for_notification.reserve(candidates.size());
-  for (Candidate candidate : candidates) {  // Create a copy.
+
+  for (Candidate candidate : candidates) {  // Get a copy to set the transport.
+    // For backwards compatibility reasons, all candidate instances still need
+    // to have the transport_name() property set to the `mid`.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
     candidate.set_transport_name(mid);
-    candidates_for_notification.push_back(candidate);
+#pragma clang diagnostic pop
+    IceCandidate c(mid, -1, candidate);
+    RunWithObserver([&](auto o) { o->OnIceCandidateRemoved(&c); });
   }
-  RunWithObserver([&](auto observer) {
-    observer->OnIceCandidatesRemoved(candidates_for_notification);
-  });
 }
 
 void PeerConnection::OnSelectedCandidatePairChanged(
@@ -2973,10 +2972,7 @@ RTCError PeerConnection::StartSctpTransport(const SctpOptions& options) {
 
 CryptoOptions PeerConnection::GetCryptoOptions() {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  if (!configuration_.crypto_options) {
-    configuration_.crypto_options = CryptoOptions();
-  }
-  return *configuration_.crypto_options;
+  return configuration_.crypto_options;
 }
 
 void PeerConnection::ClearStatsCache() {
@@ -3007,14 +3003,14 @@ void PeerConnection::RequestUsagePatternReportForTesting() {
 int PeerConnection::FeedbackAccordingToRfc8888CountForTesting() const {
   return worker_thread()->BlockingCall([this]() {
     RTC_DCHECK_RUN_ON(worker_thread());
-    return call_->FeedbackAccordingToRfc8888Count();
+    return call_->FeedbackAccordingToRfc8888Count().value_or(0);
   });
 }
 
 int PeerConnection::FeedbackAccordingToTransportCcCountForTesting() const {
   return worker_thread()->BlockingCall([this]() {
     RTC_DCHECK_RUN_ON(worker_thread());
-    return call_->FeedbackAccordingToTransportCcCount();
+    return call_->FeedbackAccordingToTransportCcCount().value_or(0);
   });
 }
 

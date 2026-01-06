@@ -90,8 +90,6 @@ nrappkit copyright:
 #include <string.h>
 #include <sys/types.h>
 
-#include <string>
-
 #include "mozilla/ProfilerBandwidthCounter.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/net/DNS.h"

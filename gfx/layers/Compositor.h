@@ -23,7 +23,6 @@
 #include "mozilla/widget/CompositorWidget.h"
 #include "nsISupportsImpl.h"  // for MOZ_COUNT_CTOR, etc
 #include "nsRegion.h"
-#include <vector>
 #include "mozilla/WidgetUtils.h"
 
 /**

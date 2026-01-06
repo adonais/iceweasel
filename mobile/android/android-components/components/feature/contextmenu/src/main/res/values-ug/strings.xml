@@ -21,6 +21,8 @@
   <string name="mozac_feature_contextmenu_share_image">رەسىمنى ھەمبەھىرلەش</string>
   <!-- Text for context menu item to copy the link to the clipboard. -->
   <string name="mozac_feature_contextmenu_copy_link">ئۇلانما كۆچۈر</string>
+  <!-- Text for context menu item to copy the link text to the clipboard. -->
+  <string name="mozac_feature_contextmenu_copy_link_text">ئۇلانما تېكىستىنى كۆچۈر</string>
   <!-- Text for context menu item to copy the URL pointing to the image to the clipboard. -->
   <string name="mozac_feature_contextmenu_copy_image_location">سۈرەت ئورنىنى كۆچۈر</string>
   <!-- Text for context menu item to save / download the image. -->
@@ -35,6 +37,8 @@
   <string name="mozac_feature_contextmenu_snackbar_new_private_tab_opened">يېڭى شەخسىي بەتكۈچ ئېچىلدى</string>
   <!-- Text for confirmation "snackbar" shown after copying a link or image URL to the clipboard. -->
   <string name="mozac_feature_contextmenu_snackbar_link_copied">ئۇلانما چاپلاش تاختىسىغا كۆچۈرۈلدى</string>
+  <!-- Text for confirmation "snackbar" shown after copying a link text to the clipboard. -->
+  <string name="mozac_feature_contextmenu_snackbar_link_text_copied">ئۇلانما تېكىستى چاپلاش تاختىسىغا كۆچۈرۈلدى</string>
   <!-- Action shown in a "snacbkar" after opening a new/private tab. Clicking this action will switch to the newly opened tab. -->
   <string name="mozac_feature_contextmenu_snackbar_action_switch">ئالماشتۇر</string>
   <!-- Text for context menu item to open the link in an external app. -->

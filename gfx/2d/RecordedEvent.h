@@ -11,7 +11,6 @@
 #include <sstream>
 #include <cstring>
 #include <functional>
-#include <vector>
 
 #include "RecordingTypes.h"
 #include "mozilla/PodOperations.h"

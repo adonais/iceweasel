@@ -614,12 +614,13 @@ nsresult nsHttpResponseHead::ComputeFreshnessLifetime(uint32_t* result) {
     return NS_OK;
   }
 
-  // From RFC 7234 Section 4.2.2, heuristics can only be used on responses
-  // without explicit freshness whose status codes are defined as cacheable
-  // by default, and those responses without explicit freshness that have been
-  // marked as explicitly cacheable.
+  // From RFC 9111 Section 4.2.2
+  // (https://www.rfc-editor.org/rfc/rfc9111.html#name-calculating-heuristic-fresh),
+  // heuristics can only be used on responses without explicit freshness whose
+  // status codes are defined as cacheable by default, and those responses
+  // without explicit freshness that have been marked as explicitly cacheable.
   // Note that |MustValidate| handled most of non-cacheable status codes.
-  if ((mStatus == 302 || mStatus == 304 || mStatus == 307) &&
+  if ((mStatus == 302 || mStatus == 303 || mStatus == 304 || mStatus == 307) &&
       !mCacheControlPublic && !mCacheControlPrivate) {
     LOG((
         "nsHttpResponseHead::ComputeFreshnessLifetime [this = %p] "
@@ -666,6 +667,7 @@ bool nsHttpResponseHead::MustValidate() {
     case 300:
     case 301:
     case 302:
+    case 303:
     case 304:
     case 307:
     case 308:
@@ -673,7 +675,6 @@ bool nsHttpResponseHead::MustValidate() {
     case 410:
       break;
       // Uncacheable redirects
-    case 303:
     case 305:
       // Other known errors
     case 401:

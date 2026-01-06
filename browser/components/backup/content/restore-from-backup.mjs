@@ -28,6 +28,14 @@ export default class RestoreFromBackup extends MozLitElement {
    */
   #backupFileReadPromise = null;
 
+  /**
+   * Resolves when BackupUIParent sends state for the first time.
+   */
+  get initializedPromise() {
+    return this.#initializedResolvers.promise;
+  }
+  #initializedResolvers = Promise.withResolvers();
+
   static properties = {
     _fileIconURL: { type: String },
     aboutWelcomeEmbedded: { type: Boolean },
@@ -175,6 +183,7 @@ export default class RestoreFromBackup extends MozLitElement {
 
       this.getBackupFileInfo(path);
     } else if (event.type == "BackupUI:StateWasUpdated") {
+      this.#initializedResolvers.resolve();
       if (this.#backupFileReadPromise) {
         this.#backupFileReadPromise.resolve();
         this.#backupFileReadPromise = null;
@@ -345,7 +354,11 @@ export default class RestoreFromBackup extends MozLitElement {
     const { backupFileInfo, recoveryErrorCode } = this.backupServiceState || {};
 
     // We have errors and are embedded in about:welcome
-    if (recoveryErrorCode && this.aboutWelcomeEmbedded) {
+    if (
+      recoveryErrorCode &&
+      !this.isIncorrectPassword &&
+      this.aboutWelcomeEmbedded
+    ) {
       return this.genericFileErrorTemplate();
     }
 
@@ -411,7 +424,7 @@ export default class RestoreFromBackup extends MozLitElement {
     const { backupFileInfo, recoveryErrorCode } = this.backupServiceState || {};
 
     if (this.aboutWelcomeEmbedded) {
-      if (recoveryErrorCode) {
+      if (recoveryErrorCode && !this.isIncorrectPassword) {
         describedBy = "backup-generic-file-error";
       } else if (!backupFileInfo) {
         describedBy = "restore-from-backup-no-backup-file-link";

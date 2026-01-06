@@ -2,7 +2,9 @@
 tags = "condprof"
 firefox-appdir = "browser"
 head = "head.js"
-skip-if = ["os == 'android'"]
+skip-if = [
+  "os == 'android'",
+]
 support-files = ""
 prefs = [
   "privacy.bounceTrackingProtection.enabled=true",
@@ -14,7 +16,9 @@ prefs = [
 requesttimeoutfactor = 4  # Slow on condprof
 
 ["test_bounce_tracking_protection.js"]
-skip-if = ["condprof"] # Bug 1893058
+skip-if = [
+  "condprof", # Bug 1893058
+]
 
 ["test_certs.js"]
 
@@ -34,7 +38,9 @@ requesttimeoutfactor = 4  # Slow on Linux condprof
 ["test_identity_credential_storage.js"]
 
 ["test_network_cache.js"]
-skip-if = ["condprof"]  # Bug 1769154 - expected fail w/condprof
+skip-if = [
+  "condprof", # Bug 1769154 - expected fail w/condprof
+]
 
 ["test_permissions.js"]
 

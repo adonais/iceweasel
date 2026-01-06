@@ -234,14 +234,15 @@ nsresult nsCoreUtils::ScrollSubstringTo(nsIFrame* aFrame, nsRange* aRange,
     return NS_ERROR_FAILURE;
   }
 
-  nsPresContext* presContext = aFrame->PresContext();
-
-  nsCOMPtr<nsISelectionController> selCon;
-  aFrame->GetSelectionController(presContext, getter_AddRefs(selCon));
-  NS_ENSURE_TRUE(selCon, NS_ERROR_FAILURE);
-
-  RefPtr<dom::Selection> selection =
-      selCon->GetSelection(nsISelectionController::SELECTION_ACCESSIBILITY);
+  const RefPtr<dom::Selection> selection = [&]() -> dom::Selection* {
+    nsISelectionController* const selCon = aFrame->GetSelectionController();
+    NS_ENSURE_TRUE(selCon, nullptr);
+    return selCon->GetSelection(
+        nsISelectionController::SELECTION_ACCESSIBILITY);
+  }();
+  if (MOZ_UNLIKELY(!selection)) {
+    return NS_ERROR_FAILURE;
+  }
 
   selection->RemoveAllRanges(IgnoreErrors());
   selection->AddRangeAndSelectFramesAndNotifyListeners(*aRange, IgnoreErrors());

@@ -112,6 +112,7 @@ export const ResetPBMPanel = {
 
   /**
    * Handles the confirmation panel cancel button.
+   *
    * @param {MozButton} button - Cancel button that triggered the action.
    */
   onCancel(button) {
@@ -129,6 +130,7 @@ export const ResetPBMPanel = {
   /**
    * Handles the confirmation panel confirm button which triggers the clear
    * action.
+   *
    * @param {MozButton} button - Confirm button that triggered the action.
    */
   async onConfirm(button) {

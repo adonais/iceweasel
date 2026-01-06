@@ -17,6 +17,7 @@ nix = { version = "0.30", features = ["fs", "poll", "socket", "uio"] }
 minidump-writer = "0.10"
 
 [target."cfg(target_os = \"windows\")".dependencies]
+getrandom = { version = "0.3" }
 windows-sys = { version = "0.52", features = [
     "Win32_Foundation",
     "Win32_Security",

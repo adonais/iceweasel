@@ -48,8 +48,9 @@ const STYLESHEET_URI =
 
 /**
  * Is this content window a XUL window?
+ *
  * @param {Window} window
- * @return {Boolean}
+ * @return {boolean}
  */
 function isXUL(window) {
   return window.document.documentElement?.namespaceURI === XUL_NS;
@@ -59,9 +60,10 @@ exports.isXUL = isXUL;
 /**
  * Returns true if a DOM node is "valid", where "valid" means that the node isn't a dead
  * object wrapper, is still attached to a document, and is of a given type.
+ *
  * @param {DOMNode} node
- * @param {Number} nodeType Optional, defaults to ELEMENT_NODE
- * @return {Boolean}
+ * @param {number} nodeType Optional, defaults to ELEMENT_NODE
+ * @return {boolean}
  */
 function isNodeValid(node, nodeType = Node.ELEMENT_NODE) {
   // Is it still alive?
@@ -105,10 +107,10 @@ class CanvasFrameAnonymousContentHelper {
    * @param {Function} nodeBuilder
    *        A function that, when executed, returns a DOM node to be inserted into
    *        the canvasFrame.
-   * @param {Object} options
-   * @param {String|undefined} options.contentRootHostClassName
+   * @param {object} options
+   * @param {string | undefined} options.contentRootHostClassName
    *        An optional class to add to the AnonymousContent root's host.
-   * @param {Boolean} options.waitForDocumentToLoad
+   * @param {boolean} options.waitForDocumentToLoad
    *        Set to false to try to insert the anonymous content even if the document
    *        isn't loaded yet. Defaults to true.
    */
@@ -341,8 +343,8 @@ class CanvasFrameAnonymousContentHelper {
    * ID, the callback is executed (and then IDs of parent nodes of the
    * originalTarget are checked too).
    *
-   * @param {String} id
-   * @param {String} type
+   * @param {string} id
+   * @param {string} type
    * @param {Function} handler
    */
   addEventListenerForElement(id, type, handler) {
@@ -367,8 +369,9 @@ class CanvasFrameAnonymousContentHelper {
   /**
    * Remove an event listener from one of the elements inserted in the
    * canvasFrame native anonymous container.
-   * @param {String} id
-   * @param {String} type
+   *
+   * @param {string} id
+   * @param {string} type
    */
   removeEventListenerForElement(id, type) {
     const listeners = this.#listeners.get(type);
@@ -488,7 +491,7 @@ class CanvasFrameAnonymousContentHelper {
    *
    * @param {DOMNode} node This node is used to determine which container window
    * should be used to read the current zoom value.
-   * @param {String} id The ID of the root element inserted with this API.
+   * @param {string} id The ID of the root element inserted with this API.
    */
   scaleRootElement(node, id) {
     const boundaryWindow = this.#highlighterEnv.window;
@@ -514,7 +517,8 @@ class CanvasFrameAnonymousContentHelper {
 
   /**
    * Helper function that creates SVG DOM nodes.
-   * @param {Object} Options for the node include:
+   *
+   * @param {object} Options for the node include:
    * - nodeType: the type of node, defaults to "box".
    * - attributes: a {name:value} object to be used as attributes for the node.
    * - parent: if provided, the newly created element will be appended to this
@@ -532,7 +536,8 @@ class CanvasFrameAnonymousContentHelper {
 
   /**
    * Helper function that creates DOM nodes.
-   * @param {Object} Options for the node include:
+   *
+   * @param {object} Options for the node include:
    * - nodeType: the type of node, defaults to "div".
    * - namespace: the namespace to use to create the node, defaults to XHTML namespace.
    * - attributes: a {name:value} object to be used as attributes for the node.
@@ -567,7 +572,8 @@ exports.CanvasFrameAnonymousContentHelper = CanvasFrameAnonymousContentHelper;
 
 /**
  * Wait for document readyness.
- * @param {Object} iframeOrWindow
+ *
+ * @param {object} iframeOrWindow
  *        IFrame or Window for which the content should be loaded.
  */
 function waitForContentLoaded(iframeOrWindow) {
@@ -604,13 +610,13 @@ function waitForContentLoaded(iframeOrWindow) {
  *
  * @param  {DOMNode} container
  *         The container element which will be used to position the infobar.
- * @param  {Object} bounds
+ * @param  {object} bounds
  *         The content bounds of the container element.
  * @param  {Window} win
  *         The window object.
- * @param  {Object} [options={}]
+ * @param  {object} [options={}]
  *         Advanced options for the infobar.
- * @param  {String} options.position
+ * @param  {string} options.position
  *         Force the infobar to be displayed either on "top" or "bottom". Any other value
  *         will be ingnored.
  */

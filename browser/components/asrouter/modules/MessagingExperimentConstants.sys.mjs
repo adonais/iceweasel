@@ -14,6 +14,7 @@
  * Other Nimbus features contain specific variables whose keys are enumerated in
  * FeatureManifest.yaml. Conversely, messaging experiment features contain
  * actual messages, with the usual message keys like `template` and `targeting`.
+ *
  * @see FeatureManifest.yaml
  * Messages delivered through these feature IDs record reach events, with the
  * exception of "pbNewtab". If you're adding new features to this list, make

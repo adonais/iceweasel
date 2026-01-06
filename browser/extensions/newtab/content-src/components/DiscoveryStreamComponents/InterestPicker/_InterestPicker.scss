@@ -77,6 +77,12 @@
 
       &:has(input:checked) {
         background-color: var(--color-accent-primary);
+
+        /**
+         * @backward-compat { version 147 }
+         *
+         * Replace this with `--border-color-selected` once 147 hits release.
+         */
         border-color: var(--color-accent-primary);
         color: var(--button-text-color-primary);
       }

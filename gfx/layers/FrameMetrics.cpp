@@ -47,17 +47,50 @@ std::ostream& operator<<(std::ostream& aStream, const FrameMetrics& aMetrics) {
   return aStream;
 }
 
-void FrameMetrics::RecalculateLayoutViewportOffset() {
+CSSRect FrameMetrics::GetVisualViewportForLayoutViewportContainment(
+    ScreenCoord aFixedLayerBottomMargin) const {
+  const bool hasDynamicToolbar = GetCompositionSizeWithoutDynamicToolbar() !=
+                                 GetCompositionBounds().Size();
+  // In the case where the toolbar is dynamic if `aFixedLayerBottomMargin`
+  // is zero, it means the dynamic toolbar is fully visible.
+  const bool isDynamicToolbarFullyVisible =
+      hasDynamicToolbar && aFixedLayerBottomMargin == 0;
+
+  return CSSRect(
+      GetVisualScrollOffset(),
+      // Use `mCompositionSizeWithoutDynamicToolbar` in the case where the
+      // dynamic toolbar is fully visible.
+      // Theoretically we don't need to check `IsSoftwareKeyboardVisible()` or
+      // `GetInteractiveWidget()` either, but for now we'd like to restrict this
+      // behavior change in the scope of the visual scroll offset change
+      // initiated by zoom-to-focused-input on resizes-visual with the software
+      // keyboard.
+      // TODO Bug 2003420: This restriction will be dropped in one of the bugs
+      // blocking bug 2003420. As of now it's unclear what kind of test
+      // cases need to drop this restction as user visible issues.
+      isDynamicToolbarFullyVisible && IsSoftwareKeyboardVisible() &&
+              GetInteractiveWidget() == dom::InteractiveWidget::ResizesVisual
+          ? CalculateCompositedSizeInCssPixels(
+                ParentLayerRect(ParentLayerPoint(),
+                                mCompositionSizeWithoutDynamicToolbar),
+                mZoom)
+          : CalculateCompositedSizeInCssPixels());
+}
+
+void FrameMetrics::RecalculateLayoutViewportOffset(
+    ScreenCoord aFixedLayerBottomMargin) {
   // For subframes, the visual and layout viewports coincide, so just
   // keep the layout viewport offset in sync with the visual one.
   if (!mIsRootContent) {
     mLayoutViewport.MoveTo(GetVisualScrollOffset());
     return;
   }
+
   // For the root, the two viewports can diverge, but the layout
   // viewport needs to keep enclosing the visual viewport.
-  KeepLayoutViewportEnclosingVisualViewport(GetVisualViewport(),
-                                            mScrollableRect, mLayoutViewport);
+  KeepLayoutViewportEnclosingVisualViewport(
+      GetVisualViewportForLayoutViewportContainment(aFixedLayerBottomMargin),
+      mScrollableRect, mLayoutViewport);
 }
 
 /* static */

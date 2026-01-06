@@ -35,7 +35,6 @@
 #include "libwebrtcglue/MediaConduitInterface.h"
 #include "libwebrtcglue/WebrtcImageBuffer.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "mozilla/Logging.h"
 #include "mozilla/NullPrincipal.h"

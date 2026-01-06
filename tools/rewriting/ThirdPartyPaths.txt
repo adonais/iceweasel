@@ -98,6 +98,7 @@ ipc/chromium/src/third_party/
 js/src/ctypes/libffi/
 js/src/dtoa.c
 js/src/editline/
+js/src/irregexp/imported/
 js/src/jit/arm64/vixl/
 js/src/octane/
 js/src/tests/test262/
@@ -147,7 +148,7 @@ modules/woff2/
 modules/xz-embedded/
 modules/zlib/
 mozglue/misc/decimal/
-mozglue/static/lz4/.*
+mozglue/static/lz4/
 mozglue/tests/glibc_printf_tests/
 netwerk/sctp/src/
 netwerk/srtp/src/

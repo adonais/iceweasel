@@ -40,6 +40,7 @@ add_task(async function testUnusedVariablesAndAddingDeclarations() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -65,6 +66,7 @@ add_task(async function testUnusedVariablesAndAddingDeclarations() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -87,6 +89,7 @@ add_task(async function testUnusedVariablesAndAddingDeclarations() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -117,6 +120,7 @@ add_task(async function testUnusedVariablesAndAddingDeclarations() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -156,6 +160,7 @@ add_task(async function testUnusedVariablesAndAddingDeclarations() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -205,6 +210,7 @@ add_task(async function testUnusedVariablesAndAddingDeclarations() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -270,6 +276,7 @@ add_task(async function testUnusedVariablesAndAddingDeclarations() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [],
     },
     {
@@ -340,6 +347,7 @@ add_task(async function testUnusedVariablesAndAddingDeclarations() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [{ name: "--unused-4", value: "new-4", dirty: true }],
     },
     {
@@ -416,6 +424,7 @@ add_task(async function testUnusedVariablesAndAddingDeclarations() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [{ name: "--unused-4", value: "new-4", dirty: true }],
     },
     {
@@ -489,6 +498,7 @@ add_task(async function testUnusedVariablesAndAddingDeclarations() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [{ name: "--unused-4", value: "new-4", dirty: true }],
     },
     {
@@ -580,6 +590,7 @@ add_task(async function testUnusedVariablesAndAddingDeclarations() {
   await checkRuleViewContent(view, [
     {
       selector: "element",
+      selectorEditable: false,
       declarations: [{ name: "--unused-4", value: "new-4", dirty: true }],
     },
     {

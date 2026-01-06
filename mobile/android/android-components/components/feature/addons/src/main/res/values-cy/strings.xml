@@ -33,9 +33,9 @@
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Cael mynediad at eich data ar barthau eraill</string>
   <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
   <string name="mozac_feature_addons_permissions_all_domain_count_description" moz:removedIn="148" tools:ignore="PluralsCandidate">Cael mynediad i\'ch data ar gyfer gwefannau mewn %1$d parth</string>
-  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2" tools:ignore="MissingQuantity">
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
     <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
-    <item quantity="zero">Mynediad i\'ch data ar gyfer gwefannau mewn %1$d parth</item>
+    <item quantity="zero">Mynediad i\'ch data ar gyfer gwefannau mewn %1$d parthau</item>
     <item quantity="one">Mynediad i\'ch data ar gyfer gwefannau mewn %1$d parth</item>
     <item quantity="two">Mynediad i\'ch data ar gyfer gwefannau mewn %1$d parth</item>
     <item quantity="few">Mynediad i\'ch data ar gyfer gwefannau mewn %1$d parth</item>

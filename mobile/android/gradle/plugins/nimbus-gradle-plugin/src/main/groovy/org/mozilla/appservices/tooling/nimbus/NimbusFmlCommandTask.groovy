@@ -6,11 +6,13 @@ package org.mozilla.tooling.nimbus
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
@@ -41,9 +43,6 @@ abstract class NimbusFmlCommandTask extends DefaultTask {
     abstract ProjectLayout getProjectLayout()
 
     @Input
-    abstract Property<String> getProjectDir()
-
-    @Input
     @Optional
     abstract Property<String> getApplicationServicesDir()
 
@@ -68,18 +67,16 @@ abstract class NimbusFmlCommandTask extends DefaultTask {
     void execute() {
         execOperations.exec { spec ->
             spec.with {
-                // Absolutize `projectDir`, so that we can resolve our paths
-                // against it. If it's already absolute, it'll be used as-is.
-                def projectDir = projectLayout.projectDirectory.dir(projectDir.get())
+                def projDir = projectLayout.projectDirectory
                 def localAppServices = applicationServicesDir.getOrNull()
                 if (localAppServices == null) {
                     if (!fmlBinary.get().asFile.exists()) {
                         throw new GradleException("`nimbus-fml` wasn't downloaded and `nimbus.applicationServicesDir` isn't set")
                     }
-                    workingDir projectDir
+                    workingDir projDir
                     commandLine fmlBinary.get().asFile
                 } else {
-                    def cargoManifest = projectDir.file("$localAppServices/$APPSERVICES_FML_HOME/Cargo.toml").asFile
+                    def cargoManifest = projDir.file("$localAppServices/$APPSERVICES_FML_HOME/Cargo.toml").asFile
 
                     commandLine 'cargo'
                     args 'run'

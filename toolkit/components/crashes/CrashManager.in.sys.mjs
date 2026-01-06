@@ -33,9 +33,9 @@ export function dateToDays(date) {
  * Get a field from the specified object and remove it.
  *
  * @param obj {Object} The object holding the field
- * @param field {String} The name of the field to be parsed and removed
+ * @param field {string} The name of the field to be parsed and removed
  *
- * @returns {String} the field contents as a string, null if none was found
+ * @returns {string} the field contents as a string, null if none was found
  */
 function getAndRemoveField(obj, field) {
   let value = null;
@@ -52,10 +52,10 @@ function getAndRemoveField(obj, field) {
  * Parse the string stored in the specified field as JSON and then remove the
  * field from the object.
  *
- * @param obj {Object} The object holding the field
+ * @param obj {object} The object holding the field
  * @param field {String} The name of the field to be parsed and removed
  *
- * @returns {Object} the parsed object, null if none was found
+ * @returns {object} the parsed object, null if none was found
  */
 function parseAndRemoveField(obj, field) {
   let value = null;
@@ -76,9 +76,9 @@ function parseAndRemoveField(obj, field) {
 /**
  * Convert a legacy Telemetry `StackTraces` layout to that expected by Glean.
  *
- * @param stackTraces {Object} The legacy Telemetry StackTraces object.
+ * @param stackTraces {object} The legacy Telemetry StackTraces object.
  *
- * @returns {Object} The stack traces layout expected by the Glean crash.stackTraces metric.
+ * @returns {object} The stack traces layout expected by the Glean crash.stackTraces metric.
  */
 function stackTracesLegacyToGlean(stackTraces) {
   let ret = {};
@@ -125,7 +125,7 @@ function stackTracesLegacyToGlean(stackTraces) {
  *
  * @param value {String} The legacy Telemetry value.
  *
- * @returns {Object} The object appropriate for being `.set()` on the Glean
+ * @returns {object} The object appropriate for being `.set()` on the Glean
  * crash.asyncShutdownTimeout metric.
  */
 function asyncShutdownTimeoutLegacyToGlean(value) {
@@ -1677,6 +1677,7 @@ CrashStore.prototype = Object.freeze({
 
   /**
    * Ensure the submission record is present in storage.
+   *
    * @returns [submission, crash]
    */
   _ensureSubmissionRecord(crashID, submissionID) {

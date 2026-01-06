@@ -2147,6 +2147,26 @@ async function doOneTest({ expectedItems }) {
     "Row should be a sports result"
   );
 
+  if (expectedItems.length > 1) {
+    Assert.deepEqual(
+      document.l10n.getAttributes(row._content),
+      {
+        id: "urlbar-result-aria-group-sports",
+        args: null,
+      },
+      "ARIA group label should be set on the row inner"
+    );
+  } else {
+    Assert.deepEqual(
+      document.l10n.getAttributes(row._content),
+      {
+        id: null,
+        args: null,
+      },
+      "ARIA group label should not be set on the row inner"
+    );
+  }
+
   // Check each realtime item in the row.
   for (let i = 0; i < expectedItems.length; i++) {
     let expectedItem = expectedItems[i];

@@ -12,7 +12,6 @@
 #include "nsCOMPtr.h"
 #include "nsIDocShell.h"
 #include "nsIDocShellTreeOwner.h"
-#include "nsViewManager.h"
 
 class nsIContent;
 class nsPresContext;
@@ -58,7 +57,6 @@ class nsPrintObject final {
 
   RefPtr<nsPresContext> mPresContext;
   RefPtr<mozilla::PresShell> mPresShell;
-  RefPtr<nsViewManager> mViewManager;
 
   nsCOMPtr<nsIContent> mContent;
 

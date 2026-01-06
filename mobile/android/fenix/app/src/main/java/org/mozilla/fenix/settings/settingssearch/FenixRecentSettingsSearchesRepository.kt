@@ -38,7 +38,7 @@ class FenixRecentSettingsSearchesRepository(
                     preferenceKey = protoItem.preferenceKey,
                     title = protoItem.title,
                     summary = protoItem.summary,
-                    breadcrumbs = protoItem.breadcrumbsList,
+                    categoryHeader = "",
                     preferenceFileInformation = prefInfo,
                 )
             }
@@ -59,7 +59,6 @@ class FenixRecentSettingsSearchesRepository(
                 .setPreferenceKey(item.preferenceKey)
                 .setTitle(item.title)
                 .setSummary(item.summary)
-                .addAllBreadcrumbs(item.breadcrumbs)
                 .setXmlResourceId(item.preferenceFileInformation.xmlResourceId)
                 .build()
             currentItems.add(0, newProtoItem)

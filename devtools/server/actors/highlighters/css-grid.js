@@ -147,45 +147,45 @@ const gCachedGridPattern = new Map();
  * h.hide();
  * h.destroy();
  *
- * @param {String} options.color
+ * @param {string} options.color
  *        The color that should be used to draw the highlighter for this grid.
- * @param {Number} options.globalAlpha
+ * @param {number} options.globalAlpha
  *        The alpha (transparency) value that should be used to draw the highlighter for
  *        this grid.
- * @param {Boolean} options.showAllGridAreas
+ * @param {boolean} options.showAllGridAreas
  *        Shows all the grid area highlights for the current grid if isShown is
  *        true.
- * @param {String} options.showGridArea
+ * @param {string} options.showGridArea
  *        Shows the grid area highlight for the given area name.
- * @param {Boolean} options.showGridAreasOverlay
+ * @param {boolean} options.showGridAreasOverlay
  *        Displays an overlay of all the grid areas for the current grid
  *        container if isShown is true.
- * @param {Object} options.showGridCell
+ * @param {object} options.showGridCell
  *        An object containing the grid fragment index, row and column numbers
  *        to the corresponding grid cell to highlight for the current grid.
- * @param {Number} options.showGridCell.gridFragmentIndex
+ * @param {number} options.showGridCell.gridFragmentIndex
  *        Index of the grid fragment to render the grid cell highlight.
- * @param {Number} options.showGridCell.rowNumber
+ * @param {number} options.showGridCell.rowNumber
  *        Row number of the grid cell to highlight.
- * @param {Number} options.showGridCell.columnNumber
+ * @param {number} options.showGridCell.columnNumber
  *        Column number of the grid cell to highlight.
- * @param {Object} options.showGridLineNames
+ * @param {object} options.showGridLineNames
  *        An object containing the grid fragment index and line number to the
  *        corresponding grid line to highlight for the current grid.
- * @param {Number} options.showGridLineNames.gridFragmentIndex
+ * @param {number} options.showGridLineNames.gridFragmentIndex
  *        Index of the grid fragment to render the grid line highlight.
- * @param {Number} options.showGridLineNames.lineNumber
+ * @param {number} options.showGridLineNames.lineNumber
  *        Line number of the grid line to highlight.
- * @param {String} options.showGridLineNames.type
+ * @param {string} options.showGridLineNames.type
  *        The dimension type of the grid line.
- * @param {Boolean} options.showGridLineNumbers
+ * @param {boolean} options.showGridLineNumbers
  *        Displays the grid line numbers on the grid lines if isShown is true.
- * @param {Boolean} options.showInfiniteLines
+ * @param {boolean} options.showInfiniteLines
  *        Displays an infinite line to represent the grid lines if isShown is
  *        true.
- * @param {Number} options.isParent
+ * @param {number} options.isParent
  *        Set to true if this is a "parent" grid, i.e. a grid with a subgrid.
- * @param {Number} options.zIndex
+ * @param {number} options.zIndex
  *        The z-index to decide the displaying order.
  *
  * Structure:
@@ -523,9 +523,9 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
    * Gets the grid gap pattern used to render the gap regions based on the device
    * pixel ratio given.
    *
-   * @param  {Number} devicePixelRatio
+   * @param  {number} devicePixelRatio
    *         The device pixel ratio we want the pattern for.
-   * @param  {Object} dimension
+   * @param  {object} dimension
    *         Refers to the Map key for the grid dimension type which is either the
    *         constant COLUMNS or ROWS.
    * @return {CanvasPattern} grid gap pattern.
@@ -584,7 +584,7 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
    *
    * @param  {GridTracks} tracks
    *         The grid track of a given grid dimension.
-   * @return {Number} index of the last edge of the explicit grid for a grid dimension.
+   * @return {number} index of the last edge of the explicit grid for a grid dimension.
    */
   getLastEdgeLineIndex(tracks) {
     let trackIndex = tracks.length - 1;
@@ -675,7 +675,7 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
   /**
    * Checks if the current node has a CSS Grid layout.
    *
-   * @return {Boolean} true if the current node has a CSS grid layout, false otherwise.
+   * @return {boolean} true if the current node has a CSS grid layout, false otherwise.
    */
   isGrid() {
     return this.currentNode.hasGridFragments();
@@ -686,8 +686,8 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
    * may have a fragment that defines column tracks but doesn't have any rows (or vice
    * versa). In which case we do not want to draw anything for that fragment.
    *
-   * @param  {Object} fragment
-   * @return {Boolean}
+   * @param  {object} fragment
+   * @return {boolean}
    */
   isValidFragment(fragment) {
     return fragment.cols.tracks.length && fragment.rows.tracks.length;
@@ -778,7 +778,7 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
   /**
    * Shows the grid area highlight for the given area name.
    *
-   * @param  {String} areaName
+   * @param  {string} areaName
    *         Grid area name.
    */
   showGridArea(areaName) {
@@ -788,11 +788,11 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
   /**
    * Shows the grid cell highlight for the given grid cell options.
    *
-   * @param  {Number} options.gridFragmentIndex
+   * @param  {number} options.gridFragmentIndex
    *         Index of the grid fragment to render the grid cell highlight.
-   * @param  {Number} options.rowNumber
+   * @param  {number} options.rowNumber
    *         Row number of the grid cell to highlight.
-   * @param  {Number} options.columnNumber
+   * @param  {number} options.columnNumber
    *         Column number of the grid cell to highlight.
    */
   showGridCell({ gridFragmentIndex, rowNumber, columnNumber }) {
@@ -802,11 +802,11 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
   /**
    * Shows the grid line highlight for the given grid line options.
    *
-   * @param  {Number} options.gridFragmentIndex
+   * @param  {number} options.gridFragmentIndex
    *         Index of the grid fragment to render the grid line highlight.
-   * @param  {Number} options.lineNumber
+   * @param  {number} options.lineNumber
    *         Line number of the grid line to highlight.
-   * @param  {String} options.type
+   * @param  {string} options.type
    *         The dimension type of the grid line.
    */
   showGridLineNames({ gridFragmentIndex, lineNumber, type }) {
@@ -886,7 +886,7 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
   /**
    * Render the grid area highlight for the given area name or for all the grid areas.
    *
-   * @param  {String} areaName
+   * @param  {string} areaName
    *         Name of the grid area to be highlighted. If no area name is provided, all
    *         the grid areas should be highlighted.
    */
@@ -954,9 +954,9 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
   /**
    * Render grid area name on the containing grid area cell.
    *
-   * @param  {Object} fragment
+   * @param  {object} fragment
    *         The grid fragment of the grid container.
-   * @param  {Object} area
+   * @param  {object} area
    *         The area overlay to render on the CSS highlighter canvas.
    */
   renderGridAreaName(fragment, area) {
@@ -1101,11 +1101,11 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
    * Render the grid cell highlight for the given grid fragment index, row and column
    * number.
    *
-   * @param  {Number} gridFragmentIndex
+   * @param  {number} gridFragmentIndex
    *         Index of the grid fragment to render the grid cell highlight.
-   * @param  {Number} rowNumber
+   * @param  {number} rowNumber
    *         Row number of the grid cell to highlight.
-   * @param  {Number} columnNumber
+   * @param  {number} columnNumber
    *         Column number of the grid cell to highlight.
    */
   renderGridCell(gridFragmentIndex, rowNumber, columnNumber) {
@@ -1156,16 +1156,16 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
   /**
    * Render the grid gap area on the css grid highlighter canvas.
    *
-   * @param  {Number} linePos
+   * @param  {number} linePos
    *         The line position along the x-axis for a column grid line and
    *         y-axis for a row grid line.
-   * @param  {Number} startPos
+   * @param  {number} startPos
    *         The start position of the cross side of the grid line.
-   * @param  {Number} endPos
+   * @param  {number} endPos
    *         The end position of the cross side of the grid line.
-   * @param  {Number} breadth
+   * @param  {number} breadth
    *         The grid line breadth value.
-   * @param  {String} dimensionType
+   * @param  {string} dimensionType
    *         The grid dimension type which is either the constant COLUMNS or ROWS.
    */
   renderGridGap(linePos, startPos, endPos, breadth, dimensionType) {
@@ -1233,11 +1233,11 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
    * Render the grid line name highlight for the given grid fragment index, lineNumber,
    * and dimensionType.
    *
-   * @param  {Number} gridFragmentIndex
+   * @param  {number} gridFragmentIndex
    *         Index of the grid fragment to render the grid line highlight.
-   * @param  {Number} lineNumber
+   * @param  {number} lineNumber
    *         Line number of the grid line to highlight.
-   * @param  {String} dimensionType
+   * @param  {string} dimensionType
    *         The dimension type of the grid line.
    */
   renderGridLineNames(gridFragmentIndex, lineNumber, dimensionType) {
@@ -1283,16 +1283,16 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
   /**
    * Render the grid line number on the css grid highlighter canvas.
    *
-   * @param  {Number} lineNumber
+   * @param  {number} lineNumber
    *         The grid line number.
-   * @param  {Number} linePos
+   * @param  {number} linePos
    *         The line position along the x-axis for a column grid line and
    *         y-axis for a row grid line.
-   * @param  {Number} startPos
+   * @param  {number} startPos
    *         The start position of the cross side of the grid line.
-   * @param  {Number} breadth
+   * @param  {number} breadth
    *         The grid line breadth value.
-   * @param  {String} dimensionType
+   * @param  {string} dimensionType
    *         The grid dimension type which is either the constant COLUMNS or ROWS.
    * @param  {Boolean||undefined} isStackedLine
    *         Boolean indicating if the line is stacked.
@@ -1517,11 +1517,11 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
   /**
    * Determine which edge of a line number box to aim the line number arrow at.
    *
-   * @param  {String} dimensionType
+   * @param  {string} dimensionType
    *         The grid line dimension type which is either the constant COLUMNS or ROWS.
-   * @param  {Number} lineNumber
+   * @param  {number} lineNumber
    *         The grid line number.
-   * @return {String} The edge of the box: top, right, bottom or left.
+   * @return {string} The edge of the box: top, right, bottom or left.
    */
   getBoxEdge(dimensionType, lineNumber) {
     let boxEdge;
@@ -1578,16 +1578,16 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
   /**
    * Render the grid line on the css grid highlighter canvas.
    *
-   * @param  {Number} linePos
+   * @param  {number} linePos
    *         The line position along the x-axis for a column grid line and
    *         y-axis for a row grid line.
-   * @param  {Number} startPos
+   * @param  {number} startPos
    *         The start position of the cross side of the grid line.
-   * @param  {Number} endPos
+   * @param  {number} endPos
    *         The end position of the cross side of the grid line.
-   * @param  {String} dimensionType
+   * @param  {string} dimensionType
    *         The grid dimension type which is either the constant COLUMNS or ROWS.
-   * @param  {String} lineType
+   * @param  {string} lineType
    *         The grid line type - "edge", "explicit", or "implicit".
    */
   renderLine(linePos, startPos, endPos, dimensionType, lineType) {
@@ -1645,14 +1645,14 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
    *
    * @param  {GridDimension} gridDimension
    *         Column or row grid dimension object.
-   * @param  {Object} quad.bounds
+   * @param  {object} quad.bounds
    *         The content bounds of the box model region quads.
-   * @param  {String} dimensionType
+   * @param  {string} dimensionType
    *         The grid dimension type which is either the constant COLUMNS or ROWS.
-   * @param  {Number} startPos
+   * @param  {number} startPos
    *         The start position of the cross side ("left" for ROWS and "top" for COLUMNS)
    *         of the grid dimension.
-   * @param  {Number} endPos
+   * @param  {number} endPos
    *         The end position of the cross side ("left" for ROWS and "top" for COLUMNS)
    *         of the grid dimension.
    */
@@ -1702,9 +1702,9 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
    *
    * @param  {GridDimension} gridDimension
    *         Column or row grid dimension object.
-   * @param  {String} dimensionType
+   * @param  {string} dimensionType
    *         The grid dimension type which is either the constant COLUMNS or ROWS.
-   * @param  {Number} startPos
+   * @param  {number} startPos
    *         The start position of the cross side ("left" for ROWS and "top" for COLUMNS)
    *         of the grid dimension.
    */
@@ -1762,9 +1762,9 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
    *
    * @param  {GridDimension} gridDimension
    *         Column or row grid dimension object.
-   * @param  {String} dimensionType
+   * @param  {string} dimensionType
    *         The grid dimension type which is either the constant COLUMNS or ROWS.
-   * @param  {Number} startPos
+   * @param  {number} startPos
    *         The start position of the cross side ("left" for ROWS and "top" for COLUMNS)
    *         of the grid dimension.
    */
@@ -1880,7 +1880,7 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
    *
    * @param  {GridArea} area
    *         The grid area object.
-   * @param  {Object} bounds
+   * @param  {object} bounds
    *         A DOMRect-like object represent the grid area rectangle.
    */
   _updateGridAreaInfobar(area, bounds) {
@@ -1902,11 +1902,11 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
   /**
    * Update the grid information displayed in the grid cell info bar.
    *
-   * @param  {Number} rowNumber
+   * @param  {number} rowNumber
    *         The grid cell's row number.
-   * @param  {Number} columnNumber
+   * @param  {number} columnNumber
    *         The grid cell's column number.
-   * @param  {Object} bounds
+   * @param  {object} bounds
    *         A DOMRect-like object represent the grid cell rectangle.
    */
   _updateGridCellInfobar(rowNumber, columnNumber, bounds) {
@@ -1932,13 +1932,13 @@ class CssGridHighlighter extends AutoRefreshHighlighter {
   /**
    * Update the grid information displayed in the grid line info bar.
    *
-   * @param  {String} gridLineNames
+   * @param  {string} gridLineNames
    *         Comma-separated string of names for the grid line.
-   * @param  {Number} gridLineNumber
+   * @param  {number} gridLineNumber
    *         The grid line number.
-   * @param  {Number} x
+   * @param  {number} x
    *         The x-coordinate of the grid line.
-   * @param  {Number} y
+   * @param  {number} y
    *         The y-coordinate of the grid line.
    */
   _updateGridLineInfobar(gridLineNames, gridLineNumber, x, y) {

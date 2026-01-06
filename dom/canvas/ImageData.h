@@ -8,7 +8,6 @@
 #define mozilla_dom_ImageData_h
 
 #include <cstdint>
-#include <utility>
 
 #include "js/RootingAPI.h"
 #include "mozilla/AlreadyAddRefed.h"

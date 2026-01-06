@@ -2787,7 +2787,7 @@ void CanvasRenderingContext2D::SetShadowColor(const nsACString& aShadowColor) {
 //
 
 static already_AddRefed<StyleLockedDeclarationBlock> CreateDeclarationForServo(
-    nsCSSPropertyID aProperty, const nsACString& aPropertyValue,
+    NonCustomCSSPropertyId aProperty, const nsACString& aPropertyValue,
     Document* aDocument) {
   ServoCSSParser::ParsingEnvironment env{aDocument->DefaultStyleAttrURLData(),
                                          aDocument->GetCompatibilityMode(),
@@ -2973,7 +2973,7 @@ void CanvasRenderingContext2D::SetFilter(const nsACString& aFilter,
 }
 
 static already_AddRefed<const ComputedStyle> ResolveStyleForServo(
-    nsCSSPropertyID aProperty, const nsACString& aString,
+    NonCustomCSSPropertyId aProperty, const nsACString& aString,
     const ComputedStyle* aParentStyle, PresShell* aPresShell,
     ErrorResult& aError) {
   RefPtr<StyleLockedDeclarationBlock> declarations =
@@ -2992,8 +2992,8 @@ static already_AddRefed<const ComputedStyle> ResolveStyleForServo(
 }
 
 already_AddRefed<const ComputedStyle>
-CanvasRenderingContext2D::ResolveStyleForProperty(nsCSSPropertyID aProperty,
-                                                  const nsACString& aValue) {
+CanvasRenderingContext2D::ResolveStyleForProperty(
+    NonCustomCSSPropertyId aProperty, const nsACString& aValue) {
   RefPtr<PresShell> presShell = GetPresShell();
   if (NS_WARN_IF(!presShell)) {
     return nullptr;
@@ -5301,11 +5301,18 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
   nsPresContext* presContext =
       presShell ? presShell->GetPresContext() : nullptr;
 
+  FontVisibilityProvider* visProvider = nullptr;
+  if (presContext) {
+    visProvider = presContext;
+  } else {
+    visProvider = mOffscreenCanvas;
+  }
+
   // If we have a cached fontGroup, check that it is valid for the current
-  // prescontext; if not, we need to discard and re-create it.
+  // prescontext or canvas; if not, we need to discard and re-create it.
   RefPtr<gfxFontGroup>& fontGroup = CurrentState().fontGroup;
   if (fontGroup) {
-    if (fontGroup->GetFontVisibilityProvider() != presContext) {
+    if (fontGroup->GetFontVisibilityProvider() != visProvider) {
       fontGroup = nullptr;
     }
   }
@@ -5333,7 +5340,7 @@ gfxFontGroup* CanvasRenderingContext2D::GetCurrentFontStyle() {
       const auto* sans =
           Servo_FontFamily_Generic(StyleGenericFontFamily::SansSerif);
       fontGroup = new gfxFontGroup(
-          presContext, sans->families, &style, language, explicitLanguage,
+          visProvider, sans->families, &style, language, explicitLanguage,
           presContext ? presContext->GetTextPerfMetrics() : nullptr, nullptr,
           devToCssSize, StyleFontVariantEmoji::Normal);
       if (fontGroup) {

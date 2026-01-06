@@ -200,7 +200,7 @@ add_task(async function prettyPrintHtmlWithSurrogatePairCharacters() {
  * Return the expected pretty-printed HTML. Lines starting with ➤ indicate breakable
  * lines for easier maintenance.
  *
- * @returns {String}
+ * @returns {string}
  */
 function getExpectedPrettyPrintedHtml() {
   return `<!-- This Source Code Form is subject to the terms of the Mozilla Public

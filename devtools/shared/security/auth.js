@@ -87,6 +87,7 @@ Prompt.Client.prototype = {
   /**
    * When client is about to make a new connection, verify that the connection settings
    * are compatible with this authenticator.
+   *
    * @throws if validation requirements are not met
    */
   validateSettings() {},

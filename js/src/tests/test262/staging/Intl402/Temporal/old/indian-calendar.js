@@ -1,4 +1,4 @@
-// |reftest| shell-option(--enable-temporal) skip-if(!this.hasOwnProperty('Temporal')||!xulRuntime.shell) -- Temporal is not enabled unconditionally, requires shell-options
+// |reftest| skip-if(!this.hasOwnProperty('Temporal')) -- Temporal is not enabled unconditionally
 // Copyright (C) 2018 Bloomberg LP. All rights reserved.
 // This code is governed by the BSD license found in the LICENSE file.
 
@@ -8,12 +8,6 @@ description: Indian calendar
 features: [Temporal]
 ---*/
 
-
-// throws in Node 12 & 14 before 1 CE
-var vulnerableToBceBug = new Date("0000-01-01T00:00Z").toLocaleDateString("en-US-u-ca-indian", { timeZone: "UTC" }) !== "10/11/-79 Saka";
-if (vulnerableToBceBug) {
-  assert.throws(RangeError, () => Temporal.PlainDate.from("0000-01-01").withCalendar("indian").day);
-}
 
 // handles leap days
 var leapYearFirstDay = Temporal.PlainDate.from("2004-03-21[u-ca=indian]");

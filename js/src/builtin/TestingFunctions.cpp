@@ -29,8 +29,6 @@
 #include <cstdlib>
 #include <ctime>
 #include <functional>
-#include <initializer_list>
-#include <iterator>
 #include <utility>
 
 #if defined(XP_UNIX) && !defined(XP_DARWIN)

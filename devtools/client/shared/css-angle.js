@@ -229,7 +229,7 @@ CssAngle.prototype = {
    * Check whether the angle value is in the special list e.g.
    * inherit or invalid.
    *
-   * @return {String|Boolean}
+   * @return {string | boolean}
    *         - If the current angle is a special value e.g. "inherit" then
    *           return the angle.
    *         - If the angle is invalid return an empty string.
@@ -249,7 +249,7 @@ CssAngle.prototype = {
   /**
    * Change angle
    *
-   * @param  {String} angle
+   * @param  {string} angle
    *         Any valid angle value + unit string
    */
   newAngle(angle) {
@@ -326,9 +326,9 @@ CssAngle.prototype = {
  * Given a color, classify its type as one of the possible angle
  * units, as known by |CssAngle.angleUnit|.
  *
- * @param  {String} value
+ * @param  {string} value
  *         The angle, in any form accepted by CSS.
- * @return {String}
+ * @return {string}
  *         The angle classification, one of "deg", "rad", "grad", or "turn".
  */
 function classifyAngle(value) {

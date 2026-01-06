@@ -172,7 +172,7 @@ function querySelectorCodeMirror(stylesheetEditor, selector) {
  *        The last CSS selector of the array is for the node in its frame doc.
  *        The before-last CSS selector is for the frame in its parent frame, etc...
  *        Ex: ["frame.first-frame", ..., "frame.last-frame", ".target-node"]
- * @returns {Object} with left/top/width/height properties representing the node bounds
+ * @returns {object} with left/top/width/height properties representing the node bounds
  */
 async function getElementNodeRectWithinTarget(selectors) {
   // Retrieve the browsing context in which the element is

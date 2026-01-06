@@ -122,7 +122,7 @@ static uint64_t GetMonotonicTimestamp() {
 #  ifdef XP_LINUX
   return TimeStamp::Now().RawClockMonotonicNanosecondsSinceBoot();
 #  elif XP_WIN
-  return TimeStamp::Now().RawQueryPerformanceCounterValue().value();
+  return TimeStamp::Now().RawQueryPerformanceCounterValue();
 #  elif XP_DARWIN
   return TimeStamp::Now().RawMachAbsoluteTimeNanoseconds();
 #  else

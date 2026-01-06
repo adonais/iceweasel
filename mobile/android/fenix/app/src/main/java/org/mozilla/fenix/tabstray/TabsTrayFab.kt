@@ -50,7 +50,10 @@ fun TabsTrayFab(
     ) { state -> state.mode == TabsTrayState.Mode.Normal }
 
     val shouldDisplayFloatingActionButton = shouldDisplayFloatingActionButton(
-        isPbmLocked, currentPage, isInNormalMode, isSignedIn,
+        isPbmLocked,
+        currentPage,
+        isInNormalMode,
+        isSignedIn,
     )
 
     val icon: Painter

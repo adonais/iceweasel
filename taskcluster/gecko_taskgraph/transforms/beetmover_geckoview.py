@@ -6,9 +6,8 @@ Transform the beetmover task into an actual task description.
 """
 
 
-from copy import deepcopy
-
 from taskgraph.transforms.base import TransformSequence
+from taskgraph.util.copy import deepcopy
 from taskgraph.util.dependencies import get_primary_dependency
 from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
 from voluptuous import Optional, Required

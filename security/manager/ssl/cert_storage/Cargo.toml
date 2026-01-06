@@ -12,7 +12,6 @@ clubcard = "0.3"
 clubcard-crlite = "0.3"
 crossbeam-utils = "0.8"
 cstr = "0.2"
-firefox-on-glean = { path = "../../../../toolkit/components/glean/api" }
 log = "0.4"
 moz_task = { path = "../../../../xpcom/rust/moz_task" }
 nserror = { path = "../../../../xpcom/rust/nserror" }

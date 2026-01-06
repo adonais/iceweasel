@@ -436,7 +436,7 @@ export class FxAccountsPairingFlow {
   /**
    * Grant an OAuth authorization code for the connecting client.
    *
-   * @param {Object} options
+   * @param {object} options
    * @param options.client_id
    * @param options.state
    * @param options.scope
@@ -444,7 +444,7 @@ export class FxAccountsPairingFlow {
    * @param options.code_challenge_method
    * @param options.code_challenge
    * @param [options.keys_jwe]
-   * @returns {Promise<Object>} Object containing "code" and "state" properties.
+   * @returns {Promise<object>} Object containing "code" and "state" properties.
    */
   _authorizeOAuthCode(options) {
     return this._fxa._withVerifiedAccountState(async state => {
@@ -486,10 +486,10 @@ export class FxAccountsPairingFlow {
    *   * This client must actually have the key.
    *   * The other client must be allowed to request that key.
    *
-   * @param {String} sessionToken the sessionToken to use when fetching key metadata
-   * @param {String} clientId the client requesting access to our keys
-   * @param {String} scopes Space separated requested scopes being requested
-   * @param {Object} jwk Ephemeral JWK provided by the client for secure key transfer
+   * @param {string} sessionToken the sessionToken to use when fetching key metadata
+   * @param {string} clientId the client requesting access to our keys
+   * @param {string} scopes Space separated requested scopes being requested
+   * @param {object} jwk Ephemeral JWK provided by the client for secure key transfer
    */
   async _createKeysJWE(sessionToken, clientId, scopes, jwk) {
     // This checks with the FxA server about what scopes the client is allowed.

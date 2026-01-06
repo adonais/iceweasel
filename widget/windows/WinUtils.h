@@ -11,7 +11,6 @@
 #include <shobjidl.h>
 #include <uxtheme.h>
 #include <dwmapi.h>
-#include <unordered_map>
 #include <utility>
 
 // Undo the windows.h damage

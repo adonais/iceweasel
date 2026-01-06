@@ -169,6 +169,7 @@ class WebConsoleActor extends Actor {
 
   /**
    * This is used by the ObjectActor to keep track of the depth of grip() calls.
+   *
    * @private
    * @type number
    */
@@ -294,6 +295,7 @@ class WebConsoleActor extends Actor {
 
   /**
    * The ConsoleServiceListener instance.
+   *
    * @type object
    */
   consoleServiceListener = null;
@@ -1457,14 +1459,14 @@ class WebConsoleActor extends Actor {
    * Handler for the DocumentEventsListener.
    *
    * @see DocumentEventsListener
-   * @param {String} name
+   * @param {string} name
    *        The document event name that either of followings.
    *        - dom-loading
    *        - dom-interactive
    *        - dom-complete
-   * @param {Number} time
+   * @param {number} time
    *        The time that the event is fired.
-   * @param {Boolean} hasNativeConsoleAPI
+   * @param {boolean} hasNativeConsoleAPI
    *        Tells if the window.console object is native or overwritten by script in the page.
    *        Only passed when `name` is "dom-complete" (see devtools/server/actors/webconsole/listeners/document-events.js).
    */
@@ -1581,8 +1583,8 @@ class WebConsoleActor extends Actor {
    * So here we need to retrieve the properties of the first parameter, and also all the
    * sub-properties we might need.
    *
-   * @param {Object} result: The console.table message.
-   * @returns {Object} An object containing the properties of the first argument of the
+   * @param {object} result: The console.table message.
+   * @returns {object} An object containing the properties of the first argument of the
    *                   console.table call.
    */
   _getConsoleTableMessageItems(result) {

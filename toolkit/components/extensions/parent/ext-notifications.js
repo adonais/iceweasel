@@ -10,6 +10,12 @@ ChromeUtils.defineESModuleGetters(ToolkitModules, {
   EventEmitter: "resource://gre/modules/EventEmitter.sys.mjs",
 });
 
+const AlertNotification = Components.Constructor(
+  "@mozilla.org/alert-notification;1",
+  "nsIAlertNotification",
+  "initWithObject"
+);
+
 var { ignoreEvent } = ExtensionCommon;
 
 // Manages a notification popup (notifications API) created by the extension.
@@ -31,23 +37,19 @@ function Notification(context, notificationsMap, id, options) {
     let svc = Cc["@mozilla.org/alerts-service;1"].getService(
       Ci.nsIAlertsService
     );
-    svc.showAlertNotification(
+    // Principal is not set because doing so reveals buttons to control
+    // notification preferences, which are currently not implemented for
+    // notifications triggered via this extension API (bug 1589693).
+    let alert = new AlertNotification({
       imageURL,
-      options.title,
-      options.message,
-      true, // textClickable
-      this.id,
-      this,
-      this.id,
-      undefined,
-      undefined,
-      undefined,
-      // Principal is not set because doing so reveals buttons to control
-      // notification preferences, which are currently not implemented for
-      // notifications triggered via this extension API (bug 1589693).
-      undefined,
-      context.incognito
-    );
+      title: options.title,
+      text: options.message,
+      textClickable: true,
+      cookie: this.id,
+      name: this.id,
+      inPrivateBrowsing: context.incognito,
+    });
+    svc.showAlert(alert, this);
   } catch (e) {
     // This will fail if alerts aren't available on the system.
 

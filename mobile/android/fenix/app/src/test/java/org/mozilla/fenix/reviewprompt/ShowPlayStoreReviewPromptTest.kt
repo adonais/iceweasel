@@ -9,13 +9,12 @@ import androidx.navigation.NavDirections
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.coVerify
 import io.mockk.mockk
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.runTest
 import mozilla.components.support.test.middleware.CaptureActionsMiddleware
-import mozilla.components.support.test.rule.MainCoroutineRule
-import mozilla.components.support.test.rule.runTestOnMain
 import org.junit.Assert.assertEquals
 import org.junit.Before
-import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.NavGraphDirections
@@ -27,11 +26,11 @@ import org.mozilla.fenix.components.appstate.AppState
 import org.mozilla.fenix.reviewprompt.ReviewPromptState.NotEligible
 import java.lang.ref.WeakReference
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class ShowPlayStoreReviewPromptTest {
 
-    @get:Rule
-    val coroutinesTestRule = MainCoroutineRule()
+    private val testDispatcher = StandardTestDispatcher()
     var navDirection: NavDirections? = null
     lateinit var promptController: PlayStoreReviewPromptController
     lateinit var mockActivity: Activity
@@ -47,7 +46,7 @@ class ShowPlayStoreReviewPromptTest {
 
     @Test
     fun `GIVEN observing review prompt state WHEN eligible for custom prompt THEN custom prompt shown`() =
-        runTestOnMain {
+        runTest(testDispatcher) {
             val appStore = AppStore(
                 initialState = AppState(
                     reviewPrompt = ReviewPromptState.Eligible(ReviewPromptState.Eligible.Type.Custom),
@@ -57,12 +56,13 @@ class ShowPlayStoreReviewPromptTest {
                 appStore,
                 promptController,
                 activityRef,
-                uiScope = coroutinesTestRule.scope,
+                uiScope = this,
                 { navDirection = it },
+                mainDispatcher = testDispatcher,
             )
 
             feature.start()
-            appStore.waitUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
             coVerify(exactly = 0) {
                 promptController.tryPromptReview(mockActivity)
@@ -79,7 +79,7 @@ class ShowPlayStoreReviewPromptTest {
 
     @Test
     fun `GIVEN observing review prompt state WHEN state is unknown THEN does nothing`() =
-        runTestOnMain {
+        runTest(testDispatcher) {
             val captureMiddleware = CaptureActionsMiddleware<AppState, AppAction>()
             val appStore = AppStore(
                 initialState = AppState(
@@ -91,12 +91,13 @@ class ShowPlayStoreReviewPromptTest {
                 appStore,
                 promptController,
                 activityRef,
-                uiScope = coroutinesTestRule.scope,
+                uiScope = this,
                 { navDirection = it },
+                mainDispatcher = testDispatcher,
             )
 
             feature.start()
-            appStore.waitUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
             coVerify(exactly = 0) {
                 promptController.tryPromptReview(mockActivity)
@@ -107,7 +108,7 @@ class ShowPlayStoreReviewPromptTest {
 
     @Test
     fun `GIVEN observing review prompt state WHEN not eligible THEN does nothing`() =
-        runTestOnMain {
+        runTest(testDispatcher) {
             val captureMiddleware = CaptureActionsMiddleware<AppState, AppAction>()
             val appStore = AppStore(
                 initialState = AppState(
@@ -119,12 +120,13 @@ class ShowPlayStoreReviewPromptTest {
                 appStore,
                 promptController,
                 activityRef,
-                uiScope = coroutinesTestRule.scope,
+                uiScope = this,
                 { navDirection = it },
+                mainDispatcher = testDispatcher,
             )
 
             feature.start()
-            appStore.waitUntilIdle()
+            testDispatcher.scheduler.advanceUntilIdle()
 
             coVerify(exactly = 0) {
                 promptController.tryPromptReview(mockActivity)
@@ -133,7 +135,7 @@ class ShowPlayStoreReviewPromptTest {
         }
 
     @Test
-    fun `GIVEN observing review prompt state WHEN eligible for play store prompt THEN show it`() = runTestOnMain {
+    fun `GIVEN observing review prompt state WHEN eligible for play store prompt THEN show it`() = runTest(testDispatcher) {
         val captureMiddleware = CaptureActionsMiddleware<AppState, AppAction>()
         val appStore = AppStore(
             initialState = AppState(
@@ -145,12 +147,13 @@ class ShowPlayStoreReviewPromptTest {
             appStore,
             promptController,
             activityRef,
-            uiScope = coroutinesTestRule.scope,
+            uiScope = this,
             { navDirection = it },
+            mainDispatcher = testDispatcher,
         )
 
         feature.start()
-        appStore.waitUntilIdle()
+        testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify(exactly = 1) {
             promptController.tryPromptReview(mockActivity)

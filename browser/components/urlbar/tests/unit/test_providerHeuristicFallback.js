@@ -130,6 +130,23 @@ add_task(async function () {
     ],
   });
 
+  info("visit url on searchbar (should search)");
+  query = "https://mozilla.org";
+  context = createContext(query, {
+    isPrivate: false,
+    sapName: "searchbar",
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        heuristic: true,
+        query,
+      }),
+    ],
+  });
+
   info("visit url, about: protocol (no host)");
   query = "about:nonexistent";
   context = createContext(query, { isPrivate: false });
@@ -361,6 +378,23 @@ add_task(async function () {
       engineName: SUGGESTIONS_ENGINE_NAME,
       isGeneralPurposeEngine: false,
     },
+  });
+  await check_results({
+    context,
+    matches: [
+      makeSearchResult(context, {
+        engineName: SUGGESTIONS_ENGINE_NAME,
+        heuristic: true,
+        query: "bacon",
+      }),
+    ],
+  });
+
+  info("Forced search through searchbar, keyword.enabled = false");
+  query = "bacon";
+  context = createContext(query, {
+    isPrivate: false,
+    sapName: "searchbar",
   });
   await check_results({
     context,

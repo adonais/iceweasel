@@ -101,6 +101,8 @@ class RemoteTabsStorageTest {
                     listOf(
                         RemoteTab("Foo", listOf("https://foo/1/1", "https://foo/1", "https://foo"), "https://foo/icon", 1574457405635),
                     ),
+                    emptyMap(), // tabGroups
+                    emptyMap(), // windows
                 ),
                 ClientRemoteTabs(
                     "client2",
@@ -111,6 +113,8 @@ class RemoteTabsStorageTest {
                         RemoteTab("Bar", listOf("https://bar"), null, 1574458165555),
                         RemoteTab("Foo Bar", listOf("https://foo.bar"), "https://foo.bar/icon", 0),
                     ),
+                    emptyMap(), // tabGroups
+                    emptyMap(), // windows
                 ),
             ),
         )

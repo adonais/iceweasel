@@ -4,182 +4,73 @@
 
 package org.mozilla.fenix.termsofuse
 
-import io.mockk.every
-import io.mockk.spyk
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
-import mozilla.components.support.test.robolectric.testContext
-import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.mozilla.fenix.ext.settings
-import org.mozilla.fenix.utils.Settings
-import org.robolectric.RobolectricTestRunner
 
-@RunWith(RobolectricTestRunner::class)
 class TermsOfUseManagerTest {
+    @Test
+    fun `WHEN all conditions satisfied AND we ignore the first check THEN shouldShowTermsOfUsePrompt returns true`() {
+        val repository = FakeTermsOfUsePromptRepository()
 
-    private lateinit var settings: Settings
-    private lateinit var termsOfUseManager: TermsOfUseManager
+        val termsOfUseManager = TermsOfUseManager(repository)
 
-    @Before
-    fun setup() {
-        settings = Settings(testContext)
-        termsOfUseManager = TermsOfUseManager(settings)
-        every { testContext.settings() } returns settings
+        assertTrue(termsOfUseManager.shouldShowTermsOfUsePrompt(ignoreFirstCheckSinceAppStart = true))
     }
 
     @Test
-    fun `GIVEN the user has not accepted terms of use THEN the prompt should not show`() {
-        settings.hasAcceptedTermsOfService = true
-        settings.isTermsOfUsePromptEnabled = true
+    fun `GIVEN other conditions satisfied WHEN canShowTermsOfUsePrompt returns false THEN shouldShowTermsOfUsePrompt returns false`() {
+        val repository = FakeTermsOfUsePromptRepository(canShowTermsOfUsePrompt = false)
 
-        assertFalse(termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment())
+        val termsOfUseManager = TermsOfUseManager(repository)
+
+        assertFalse(termsOfUseManager.shouldShowTermsOfUsePrompt(ignoreFirstCheckSinceAppStart = true))
     }
 
     @Test
-    fun `GIVEN the user has not postponed accepting THEN the prompt should show`() {
-        settings.hasAcceptedTermsOfService = false
-        settings.isTermsOfUsePromptEnabled = true
-        settings.hasPostponedAcceptingTermsOfUse = false
-        termsOfUseManager.onStart()
+    fun `GIVEN other conditions satisfied WHEN userPostponedAndWithinCooldownPeriod returns true THEN shouldShowTermsOfUsePrompt returns false`() {
+        val repository = FakeTermsOfUsePromptRepository(userPostponedAndWithinCooldownPeriod = true)
 
-        assertTrue(termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment())
+        val termsOfUseManager = TermsOfUseManager(repository)
+
+        assertFalse(termsOfUseManager.shouldShowTermsOfUsePrompt(ignoreFirstCheckSinceAppStart = true))
     }
 
     @Test
-    fun `GIVEN the terms of use feature flag is disabled AND all other conditions to show are met THEN the prompt should not show`() {
-        settings.hasAcceptedTermsOfService = false
-        settings.isTermsOfUsePromptEnabled = false
-        settings.hasPostponedAcceptingTermsOfUse = false
-        termsOfUseManager.onStart()
+    fun `GIVEN other conditions satisfied WHEN this is not first check of the session and don't ignore first check THEN shouldShowTermsOfUsePrompt returns false`() {
+        val repository = FakeTermsOfUsePromptRepository()
 
-        assertFalse(termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment())
+        val termsOfUseManager = TermsOfUseManager(repository)
+
+        assertFalse(termsOfUseManager.shouldShowTermsOfUsePrompt())
     }
 
     @Test
-    fun `GIVEN the user has postponed accepting AND it has been 5 days since THEN the prompt should show`() {
-        settings.hasAcceptedTermsOfService = false
-        settings.isTermsOfUsePromptEnabled = true
-        settings.hasPostponedAcceptingTermsOfUse = true
-        termsOfUseManager.onStart()
-        settings.lastTermsOfUsePromptTimeInMillis = System.currentTimeMillis() - Settings.FIVE_DAYS_MS
+    fun `GIVEN other conditions satisfied WHEN this is first check of the session and don't ignore first check THEN shouldShowTermsOfUsePrompt returns true`() {
+        val repository = FakeTermsOfUsePromptRepository()
 
-        assertTrue(termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment())
-    }
-
-    @Test
-    fun `GIVEN the user has postponed accepting AND it has not been 5 days since THEN the prompt should not show`() {
-        settings.hasAcceptedTermsOfService = false
-        settings.isTermsOfUsePromptEnabled = true
-        settings.hasPostponedAcceptingTermsOfUse = true
-        termsOfUseManager.onStart()
-        settings.lastTermsOfUsePromptTimeInMillis = System.currentTimeMillis()
-
-        assertFalse(termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment())
-    }
-
-    @Test
-    fun `GIVEN this is the first check of the session AND other requirements are met THEN the prompt should show`() {
-        settings.hasAcceptedTermsOfService = false
-        settings.isTermsOfUsePromptEnabled = true
-        settings.hasPostponedAcceptingTermsOfUse = false
-        termsOfUseManager.onStart()
-
-        assertTrue(termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment())
-    }
-
-    @Test
-    fun `GIVEN this is not the first check of the session AND other requirements are met THEN the prompt should not show`() {
-        settings.hasAcceptedTermsOfService = false
-        settings.isTermsOfUsePromptEnabled = true
-        settings.hasPostponedAcceptingTermsOfUse = false
-        termsOfUseManager.onStart()
-
-        termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment()
-
-        assertFalse(termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment())
-    }
-
-    @Test
-    fun `GIVEN this is not the first check of the session AND we ignore the first check AND other requirements are met THEN the prompt should show`() {
-        settings.hasAcceptedTermsOfService = false
-        settings.isTermsOfUsePromptEnabled = true
-        settings.hasPostponedAcceptingTermsOfUse = false
-        termsOfUseManager.onStart()
-
-        termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment()
-
-        assertTrue(termsOfUseManager.shouldShowTermsOfUsePromptOnHomepage())
-    }
-
-    @Test
-    fun `GIVEN the first check was before 5 days WHEN we check again after 5 days on the Browser Fragment without restarting AND other requirements are met THEN the prompt should not show`() {
-        settings.hasAcceptedTermsOfService = false
-        settings.isTermsOfUsePromptEnabled = true
-        settings.hasPostponedAcceptingTermsOfUse = true
-        settings.lastTermsOfUsePromptTimeInMillis = System.currentTimeMillis()
-        termsOfUseManager.onStart()
-
-        termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment()
-
-        settings.lastTermsOfUsePromptTimeInMillis = System.currentTimeMillis() - Settings.FIVE_DAYS_MS
-
-        assertFalse(termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment())
-    }
-
-    @Test
-    fun `GIVEN the first check was before 5 days WHEN we check again after 5 days on the Home Fragment without restarting AND other requirements are met THEN the prompt should show`() {
-        settings.hasAcceptedTermsOfService = false
-        settings.isTermsOfUsePromptEnabled = true
-        settings.hasPostponedAcceptingTermsOfUse = true
-        settings.lastTermsOfUsePromptTimeInMillis = System.currentTimeMillis()
-        termsOfUseManager.onStart()
-
-        termsOfUseManager.shouldShowTermsOfUsePromptOnBrowserFragment()
-
-        settings.lastTermsOfUsePromptTimeInMillis = System.currentTimeMillis() - Settings.FIVE_DAYS_MS
-
-        assertTrue(termsOfUseManager.shouldShowTermsOfUsePromptOnHomepage())
-    }
-
-    @Test
-    fun `GIVEN other conditions satisfied WHEN prompt has not been displayed THEN shouldShowTermsOfUsePrompt returns true`() {
-        val settings = spyk(settings)
-        settings.hasAcceptedTermsOfService = false
-        settings.isTermsOfUsePromptEnabled = true
-        settings.hasPostponedAcceptingTermsOfUse = false
-        // Prompt display count configuration.
-        settings.termsOfUsePromptDisplayedCount = 0
-        every { settings.getTermsOfUseMaxDisplayCount() } returns 2
-
+        val termsOfUseManager = TermsOfUseManager(repository)
         termsOfUseManager.onStart()
 
         assertTrue(termsOfUseManager.shouldShowTermsOfUsePrompt())
     }
 
     @Test
-    fun `GIVEN other conditions satisfied WHEN prompt has been displayed the maximum number of times THEN shouldShowTermsOfUsePrompt returns false`() {
-        val settings = spyk(settings)
-        settings.hasAcceptedTermsOfService = false
-        settings.isTermsOfUsePromptEnabled = true
-        settings.hasPostponedAcceptingTermsOfUse = false
-        // Prompt display count configuration.
-        settings.termsOfUsePromptDisplayedCount = 2
-        every { settings.getTermsOfUseMaxDisplayCount() } returns 2
+    fun `GIVEN other conditions satisfied WHEN this is not the first check of the session and we ignore the first check THEN shouldShowTermsOfUsePrompt returns true`() {
+        val repository = FakeTermsOfUsePromptRepository()
 
-        assertFalse(termsOfUseManager.shouldShowTermsOfUsePrompt())
+        val termsOfUseManager = TermsOfUseManager(repository)
+        termsOfUseManager.shouldShowTermsOfUsePrompt()
+
+        assertTrue(termsOfUseManager.shouldShowTermsOfUsePrompt(ignoreFirstCheckSinceAppStart = true))
     }
 
     @Test
-    fun `GIVEN other conditions satisfied WHEN prompt has been displayed more than the maximum number of times THEN shouldShowTermsOfUsePrompt returns false`() {
-        val settings = spyk(settings)
-        settings.hasAcceptedTermsOfService = false
-        settings.isTermsOfUsePromptEnabled = true
-        settings.hasPostponedAcceptingTermsOfUse = false
-        // Prompt display count configuration.
-        settings.termsOfUsePromptDisplayedCount = 3
-        every { settings.getTermsOfUseMaxDisplayCount() } returns 2
+    fun `GIVEN other conditions satisfied WHEN this is not the first check of the session and we don't ignore the first check THEN shouldShowTermsOfUsePrompt returns false`() {
+        val repository = FakeTermsOfUsePromptRepository()
+
+        val termsOfUseManager = TermsOfUseManager(repository)
+        termsOfUseManager.shouldShowTermsOfUsePrompt()
 
         assertFalse(termsOfUseManager.shouldShowTermsOfUsePrompt())
     }

@@ -466,15 +466,20 @@ nsresult DragDataProducer::Produce(DataTransfer* aDataTransfer, bool* aCanDrag,
     bool haveSelectedContent = false;
 
     // only drag form elements by using the alt key,
-    // otherwise buttons and select widgets are hard to use
+    // otherwise select widgets are hard to use
 
     // Note that while <object> elements implement nsIFormControl, we should
     // really allow dragging them if they happen to be images.
+    // XXX Other browsers allow dragging ohter type of form element as well.
     if (!mIsAltKeyPressed) {
-      const auto* form = nsIFormControl::FromNodeOrNull(mTarget);
-      if (form && form->ControlType() != FormControlType::Object) {
-        *aCanDrag = false;
-        return NS_OK;
+      if (const auto* form = nsIFormControl::FromNodeOrNull(mTarget)) {
+        if (form->IsConceptButton()) {
+          return NS_OK;
+        }
+        if (form->ControlType() != FormControlType::Object) {
+          *aCanDrag = false;
+          return NS_OK;
+        }
       }
     }
 

@@ -39,7 +39,7 @@ void TextLeafAccessible::AppendTextTo(nsAString& aText, uint32_t aStartOffset,
   aText.Append(Substring(mText, aStartOffset, aLength));
 }
 
-ENameValueFlag TextLeafAccessible::Name(nsString& aName) const {
+ENameValueFlag TextLeafAccessible::DirectName(nsString& aName) const {
   // Text node, ARIA can't be used.
   aName = mText;
   return eNameOK;

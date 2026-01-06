@@ -37,6 +37,7 @@ XPCOMUtils.defineLazyServiceGetter(
 class ServiceWorkerRegistrationActor extends Actor {
   /**
    * Create the ServiceWorkerRegistrationActor
+   *
    * @param DevToolsServerConnection conn
    *   The server connection.
    * @param ServiceWorkerRegistrationInfo registration

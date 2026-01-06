@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <new>
 #include <string.h>
-#include <type_traits>
 #include <utility>
 
 #include "jstypes.h"

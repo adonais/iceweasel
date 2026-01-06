@@ -27,6 +27,7 @@
 #include "mozilla/glean/NetwerkMetrics.h"
 #include "mozilla/net/NeckoParent.h"
 #include "mozilla/net/TRRServiceChild.h"
+#include "mozilla/ProfilerMarkers.h"
 // Put DNSLogging.h at the end to avoid LOG being overwritten by other headers.
 #include "DNSLogging.h"
 
@@ -670,6 +671,7 @@ void TRRService::RebuildSuffixList(nsTArray<nsCString>&& aSuffixList) {
 
 void TRRService::ConfirmationContext::SetState(
     enum ConfirmationState aNewState) {
+  LOG(("ConfirmationContext::SetState %u", uint32_t(aNewState)));
   mState = aNewState;
 
   enum ConfirmationState state = mState;
@@ -801,9 +803,11 @@ bool TRRService::ConfirmationContext::HandleEvent(ConfirmationEvent aEvent,
 
     MOZ_ASSERT(mode == nsIDNSService::MODE_TRRFIRST,
                "Should only confirm in TRR first mode");
-    // Set aUseFreshConnection if TRR lookups are retried.
+    // Set aUseFreshConnection if TRR lookups are retried
+    // or if confirmation already failed.
     mTask = new TRR(service, service->mConfirmationNS, TRRTYPE_NS, ""_ns, false,
-                    StaticPrefs::network_trr_retry_on_recoverable_errors());
+                    mState == CONFIRM_TRYING_FAILED ||
+                        StaticPrefs::network_trr_retry_on_recoverable_errors());
     mTask->SetTimeout(StaticPrefs::network_trr_confirmation_timeout_ms());
     mTask->SetPurpose(TRR::Confirmation);
 
@@ -869,6 +873,8 @@ bool TRRService::ConfirmationContext::HandleEvent(ConfirmationEvent aEvent,
       }
       break;
     case ConfirmationEvent::ConfirmOK:
+      // Reset confirmation retry timeout to default
+      mRetryInterval = StaticPrefs::network_trr_retry_timeout_ms();
       SetState(CONFIRM_OK);
       mTask = nullptr;
       break;
@@ -878,7 +884,7 @@ bool TRRService::ConfirmationContext::HandleEvent(ConfirmationEvent aEvent,
       SetState(CONFIRM_FAILED);
       mTask = nullptr;
       // retry failed NS confirmation
-
+      LOG(("Setting timer to reconfirm %u", uint32_t(mRetryInterval)));
       NS_NewTimerWithCallback(getter_AddRefs(mTimer), this, mRetryInterval,
                               nsITimer::TYPE_ONE_SHOT);
       // double the interval up to this point
@@ -1299,8 +1305,12 @@ void TRRService::ConfirmationContext::CompleteConfirmation(nsresult aStatus,
 
     MOZ_ASSERT(mTask);
     if (NS_SUCCEEDED(aStatus)) {
+      profiler_add_marker("TRR Confirmation Success",
+                          geckoprofiler::category::NETWORK);
       HandleEvent(ConfirmationEvent::ConfirmOK, lock);
     } else {
+      profiler_add_marker("TRR Confirmation Failure",
+                          geckoprofiler::category::NETWORK);
       HandleEvent(ConfirmationEvent::ConfirmFail, lock);
     }
 

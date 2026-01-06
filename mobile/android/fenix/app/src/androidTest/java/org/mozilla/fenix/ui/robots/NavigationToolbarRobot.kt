@@ -182,7 +182,7 @@ class NavigationToolbarRobot {
 
     fun verifySearchBarPlaceholderWithComposableToolbar(composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifySearchBarPlaceholderWithComposableToolbar: Trying to verify that the search bar place holder is \"Search or enter address\"")
-        composeTestRule.onNodeWithTag(ADDRESSBAR_URL_BOX).assert(hasContentDescription(" Search or enter address. Search or enter address"))
+        composeTestRule.onNodeWithTag(ADDRESSBAR_URL_BOX).assert(hasContentDescription("Search or enter address"))
         Log.i(TAG, "verifySearchBarPlaceholderWithComposableToolbar: Verified that the search bar place holder is \"Search or enter address\"")
     }
 

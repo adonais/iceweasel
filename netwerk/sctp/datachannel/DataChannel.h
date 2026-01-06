@@ -232,21 +232,7 @@ class DataChannelConnection : public net::NeckoTargetHolder {
   void CloseAll_s();
   void MarkStreamAvailable(uint16_t aStream);
 
-  // Returns a POSIX error code.
-  int SendMessage(uint16_t stream, nsACString&& aMsg) {
-    return SendDataMessage(stream, std::move(aMsg), false);
-  }
-
-  // Returns a POSIX error code.
-  int SendBinaryMessage(uint16_t stream, nsACString&& aMsg) {
-    return SendDataMessage(stream, std::move(aMsg), true);
-  }
-
-  // Returns a POSIX error code.
-  int SendBlob(uint16_t stream, nsIInputStream* aBlob);
-
-  void ReadBlob(already_AddRefed<DataChannelConnection> aThis, uint16_t aStream,
-                nsIInputStream* aBlob);
+  nsISerialEventTarget* GetIOThread();
 
   bool InShutdown() const {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
@@ -293,7 +279,7 @@ class DataChannelConnection : public net::NeckoTargetHolder {
                         nsISerialEventTarget* aTarget,
                         MediaTransportHandler* aHandler);
 
-  int SendDataMessage(uint16_t aStream, nsACString&& aMsg, bool aIsBinary);
+  void SendDataMessage(uint16_t aStream, nsACString&& aMsg, bool aIsBinary);
 
   DataChannelConnectionState GetState() const {
     MOZ_ASSERT(mSTS->IsOnCurrentThread());
@@ -421,13 +407,13 @@ class DataChannel {
                                      ErrorResult& aRv);
 
   // Send a string
-  int SendMsg(nsACString&& aMsg);
+  void SendMsg(nsCString&& aMsg);
 
   // Send a binary message (TypedArray)
-  int SendBinaryMsg(nsACString&& aMsg);
+  void SendBinaryMsg(nsCString&& aMsg);
 
   // Send a binary blob
-  int SendBinaryBlob(nsIInputStream* aBlob);
+  void SendBinaryBlob(nsIInputStream* aBlob);
 
   void DecrementBufferedAmount(size_t aSize);
   void AnnounceOpen();
@@ -464,6 +450,8 @@ class DataChannel {
 
  private:
   nsresult AddDataToBinaryMsg(const char* data, uint32_t size);
+  void SendBuffer(nsCString&& aMsg, bool aBinary);
+  void UnsetMessagesSentPromiseWhenSettled();
 
   const nsCString mLabel;
   const nsCString mProtocol;
@@ -472,15 +460,13 @@ class DataChannel {
   const bool mNegotiated;
   const bool mOrdered;
 
-  // Mainthread only. Once we have transferrable datachannels, this could be
-  // worker only instead; wherever the RTCDataChannel lives. Once this can be
-  // on a worker thread, we'll need a ref to that thread for state updates and
-  // such. This will be nulled out when the RTCDataChannel tears down.
+  // DOM Thread only; wherever the RTCDataChannel lives.
   dom::RTCDataChannel* mMainthreadDomDataChannel = nullptr;
   bool mHasWorkerDomDataChannel = false;
   bool mEverOpened = false;
   bool mAnnouncedClosed = false;
   uint16_t mStream;
+  RefPtr<GenericNonExclusivePromise> mMessagesSentPromise;
   RefPtr<DataChannelConnection> mConnection;
 
   // STS only

@@ -17,6 +17,12 @@ const EXPECTED_REFLOWS = [
    */
 ];
 
+add_setup(async function setup() {
+  SpecialPowers.pushPrefEnv({
+    set: [["ui.prefersReducedMotion", 1]],
+  });
+});
+
 /*
  * This test ensures that there are no unexpected
  * uninterruptible reflows or flickering areas when opening new windows.

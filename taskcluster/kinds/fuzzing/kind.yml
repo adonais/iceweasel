@@ -17,7 +17,7 @@ kind-dependencies:
 
 task-defaults:
     run-on-repo-type: [hg]
-    worker-type: b-linux-gcp
+    worker-type: b-linux
     description: Python Fuzzing Smoke Tests
     worker:
         max-run-time: 1800
@@ -36,7 +36,6 @@ task-defaults:
 tasks:
     simple:
         platform: linux64/opt
-        worker-type: b-linux-gcp
         require-build:
             linux64/opt: build-linux64/opt
         description: Simple Fuzzing Test
@@ -59,7 +58,6 @@ tasks:
 
     grizzly-linux64-opt:
         platform: linux64/asan
-        worker-type: b-linux-gcp
         worker:
             docker-image: {in-tree: ubuntu2404-test}
             env:
@@ -77,7 +75,6 @@ tasks:
 
     grizzly-linux64-debug:
         platform: linux64/debug
-        worker-type: b-linux-gcp
         worker:
             docker-image: {in-tree: ubuntu2404-test}
             env:
@@ -95,7 +92,6 @@ tasks:
 
     grizzly-linux64-tsan:
         platform: linux64/tsan
-        worker-type: b-linux-gcp
         worker:
             docker-image: {in-tree: ubuntu2404-test}
             env:

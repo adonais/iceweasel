@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Mater gwefan twyllodrus</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Mae gwefan %1$s yn hysbys fel gwefan twyllodrus ac wedi cael ei rwystro ar sail eich dewisiadau diogelwch.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Gwefan wedi\'i rhwystro er eich diogelwch</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Mae\'r dudalen we hon yn %1$s wedi\'i rhwystro oherwydd bod un o\'ch ychwanegion wedi ceisio ei hagor. Gallai\'r wefan hon gael ei defnyddio i ddwyn eich manylion — cyfrineiriau neu rifau cerdyn credyd.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Gwefan Ddiogel Ddim ar Gael</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

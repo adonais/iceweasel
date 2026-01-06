@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
@@ -51,6 +52,7 @@
 #include "rtc_base/network.h"
 #include "rtc_base/network/received_packet.h"
 #include "rtc_base/network/sent_packet.h"
+#include "rtc_base/platform_thread_types.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/ssl_certificate.h"
@@ -623,7 +625,7 @@ Connection* TurnPort::CreateConnection(const Candidate& remote_candidate,
     if (local_candidate.is_relay() && local_candidate.address().family() ==
                                           remote_candidate.address().family()) {
       ProxyConnection* conn =
-          new ProxyConnection(NewWeakPtr(), index, remote_candidate);
+          new ProxyConnection(env(), NewWeakPtr(), index, remote_candidate);
       // Create an entry, if needed, so we can get our permissions set up
       // correctly.
       if (CreateOrRefreshEntry(conn, next_channel_number_)) {
@@ -940,8 +942,7 @@ void TurnPort::OnAllocateError(int error_code, absl::string_view reason) {
     port = 0;
   }
   if (error_code != STUN_ERROR_NOT_AN_ERROR) {
-    SignalCandidateError(
-        this,
+    SendCandidateError(
         IceCandidateErrorEvent(address, port, server_url_, error_code, reason));
   }
 }
@@ -1163,7 +1164,7 @@ bool TurnPort::ScheduleRefresh(uint32_t lifetime) {
 }
 
 void TurnPort::SendRequest(StunRequest* req, int delay) {
-  request_manager_.SendDelayed(req, delay);
+  request_manager_.Send(absl::WrapUnique(req), TimeDelta::Millis(delay));
 }
 
 void TurnPort::AddRequestAuthInfo(StunMessage* msg) {
@@ -1339,7 +1340,8 @@ void TurnPort::MaybeAddTurnLoggingId(StunMessage* msg) {
 }
 
 TurnAllocateRequest::TurnAllocateRequest(TurnPort* port)
-    : StunRequest(port->request_manager(),
+    : StunRequest(port->env(),
+                  port->request_manager(),
                   std::make_unique<TurnMessage>(TURN_ALLOCATE_REQUEST)),
       port_(port) {
   StunMessage* message = mutable_msg();
@@ -1537,7 +1539,8 @@ void TurnAllocateRequest::OnTryAlternate(StunMessage* response, int code) {
 }
 
 TurnRefreshRequest::TurnRefreshRequest(TurnPort* port, int lifetime /*= -1*/)
-    : StunRequest(port->request_manager(),
+    : StunRequest(port->env(),
+                  port->request_manager(),
                   std::make_unique<TurnMessage>(TURN_REFRESH_REQUEST)),
       port_(port) {
   StunMessage* message = mutable_msg();
@@ -1624,6 +1627,7 @@ TurnCreatePermissionRequest::TurnCreatePermissionRequest(
     TurnEntry* entry,
     const SocketAddress& ext_addr)
     : StunRequest(
+          port->env(),
           port->request_manager(),
           std::make_unique<TurnMessage>(TURN_CREATE_PERMISSION_REQUEST)),
       port_(port),
@@ -1693,7 +1697,8 @@ TurnChannelBindRequest::TurnChannelBindRequest(TurnPort* port,
                                                TurnEntry* entry,
                                                uint16_t channel_id,
                                                const SocketAddress& ext_addr)
-    : StunRequest(port->request_manager(),
+    : StunRequest(port->env(),
+                  port->request_manager(),
                   std::make_unique<TurnMessage>(TURN_CHANNEL_BIND_REQUEST)),
       port_(port),
       entry_(entry),

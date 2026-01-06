@@ -22,7 +22,7 @@ with Files("nsDOM*"):
 with Files("AnimationCollection.*"):
     BUG_COMPONENT = ("Core", "CSS Transitions and Animations")
 
-with Files("AnimatedPropertyID*"):
+with Files("CSSPropertyId*"):
     BUG_COMPONENT = ("Core", "CSS Transitions and Animations")
 
 with Files("AnimationCommon.*"):
@@ -49,7 +49,7 @@ XPIDL_SOURCES += [
 XPIDL_MODULE = "layout_style"
 
 EXPORTS += [
-    "!nsCSSPropertyID.h",
+    "!NonCustomCSSPropertyId.h",
     "AnimationCommon.h",
     "CounterStyleManager.h",
     "nsAnimationManager.h",
@@ -83,7 +83,6 @@ EXPORTS += [
 
 EXPORTS.mozilla += [
     "!ServoCSSPropList.h",
-    "AnimatedPropertyID.h",
     "AnimatedPropertyIDSet.h",
     "AnimationCollection.h",
     "AttributeStyles.h",
@@ -94,6 +93,7 @@ EXPORTS.mozilla += [
     "ComputedStyle.h",
     "ComputedStyleInlines.h",
     "CSSEnabledState.h",
+    "CSSPropertyId.h",
     "CSSPropFlags.h",
     "DeclarationBlock.h",
     "DocumentStyleRootIterator.h",
@@ -324,10 +324,10 @@ CONTENT_ACCESSIBLE_FILES += [
 
 
 GeneratedFile(
-    "nsCSSPropertyID.h",
+    "NonCustomCSSPropertyId.h",
     script="GenerateCSSPropertyID.py",
     entry_point="generate",
-    inputs=["nsCSSPropertyID.h.in", "!ServoCSSPropList.py"],
+    inputs=["NonCustomCSSPropertyId.h.in", "!ServoCSSPropList.py"],
 )
 GeneratedFile(
     "ServoCSSPropList.h",

@@ -20,7 +20,9 @@
 #include "nsCRT.h"
 #include "nsMIMEInfoMac.h"
 #include "nsEmbedCID.h"
+#include "nsCocoaUtils.h"
 
+#import <Cocoa/Cocoa.h>
 #import <CoreFoundation/CoreFoundation.h>
 #import <ApplicationServices/ApplicationServices.h>
 
@@ -88,37 +90,31 @@ nsOSHelperAppService::~nsOSHelperAppService() {}
 
 nsresult nsOSHelperAppService::OSProtocolHandlerExists(
     const char* aProtocolScheme, bool* aHandlerExists) {
+  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
+
   *aHandlerExists = false;
 
-  // CFStringCreateWithBytes() can fail even if we're not out of memory --
-  // for example if the 'bytes' parameter is something very weird (like
-  // "\xFF\xFF~"), or possibly if it can't be interpreted as using what's
-  // specified in the 'encoding' parameter.  See bug 548719.
-  CFStringRef schemeString = ::CFStringCreateWithBytes(
-      kCFAllocatorDefault, (const UInt8*)aProtocolScheme,
-      strlen(aProtocolScheme), kCFStringEncodingUTF8, false);
+  nsAutoreleasePool localPool;
+
+  NSString* schemeString = [NSString stringWithCString:aProtocolScheme
+                                              encoding:NSUTF8StringEncoding];
+  schemeString = [schemeString stringByAppendingString:@"://"];
   if (!schemeString) {
-    return NS_ERROR_FAILURE;
+    return NS_OK;
   }
 
-  // LSCopyDefaultHandlerForURLScheme() can fail to find the default handler
-  // for aProtocolScheme when it's never been explicitly set (using
-  // LSSetDefaultHandlerForURLScheme()).  For example, Safari is the default
-  // handler for the "http" scheme on a newly installed copy of OS X.  But
-  // this (presumably) wasn't done using LSSetDefaultHandlerForURLScheme(),
-  // so LSCopyDefaultHandlerForURLScheme() will fail to find Safari.  To get
-  // around this we use LSCopyAllHandlersForURLScheme() instead -- which seems
-  // never to fail.
-  // http://lists.apple.com/archives/Carbon-dev/2007/May/msg00349.html
-  // http://www.realsoftware.com/listarchives/realbasic-nug/2008-02/msg00119.html
-  CFArrayRef handlerArray = ::LSCopyAllHandlersForURLScheme(schemeString);
-  ::CFRelease(schemeString);
-  if (handlerArray) {
-    *aHandlerExists = true;
-    ::CFRelease(handlerArray);
+  NSURL* schemeURL = [NSURL URLWithString:schemeString];
+  if (!schemeURL) {
+    return NS_OK;
   }
+
+  NSURL* appURL =
+      [[NSWorkspace sharedWorkspace] URLForApplicationToOpenURL:schemeURL];
+  *aHandlerExists = !!appURL;
 
   return NS_OK;
+
+  NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
 NS_IMETHODIMP nsOSHelperAppService::GetApplicationDescription(
@@ -333,7 +329,7 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
   // Create a Mac-specific MIME info so we can use Mac-specific members.
   RefPtr<nsMIMEInfoMac> mimeInfoMac = new nsMIMEInfoMac(aMIMEType);
 
-  NSAutoreleasePool* localPool = [[NSAutoreleasePool alloc] init];
+  nsAutoreleasePool localPool;
 
   OSStatus err;
   bool haveAppForType = false;
@@ -557,7 +553,6 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
   MOZ_LOG(sLog, LogLevel::Debug,
           ("OS gave us: type '%s' found '%i'\n", mimeType.get(), *aFound));
 
-  [localPool release];
   mimeInfoMac.forget(aMIMEInfo);
   return NS_OK;
 

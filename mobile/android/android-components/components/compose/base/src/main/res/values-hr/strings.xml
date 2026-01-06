@@ -17,4 +17,8 @@
   <string name="text_field_cross_trailing_icon_default_content_description">Izbriši tekst</string>
   <!-- Announcement made by the screen reader when the progress bar is shown and a page is loading -->
   <string name="mozac_compose_base_progress_loading">Učitavanje</string>
+  <!-- Content description for the dismiss icon of a Snackbar -->
+  <string name="mozac_compose_base_snackbar_dismiss_content_description">Odbaci poruku</string>
+  <!-- Content description for the close icon of a Banner -->
+  <string name="mozac_compose_base_close_button_content_description">Zatvori</string>
 </resources>

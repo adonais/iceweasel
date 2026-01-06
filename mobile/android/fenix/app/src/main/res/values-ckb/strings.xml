@@ -146,6 +146,10 @@
   <string name="search_engine_suggestions_title">بگەڕێ بۆ %s</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">ڕاستەوخۆ گەڕان بکە لە توڵی ناونیشانەوە</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">گەڕان</string>
   <!-- Text preview for larger sized widgets -->
@@ -1046,4 +1050,10 @@
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

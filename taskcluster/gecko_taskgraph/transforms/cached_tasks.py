@@ -89,6 +89,11 @@ def cache_task(config, tasks):
             continue
 
         digest_data = cache["digest-data"] + sorted(dependency_digests)
+        # Ensure we don't re-use cached tasks across repo types, doing so
+        # breaks some CoT verifications.
+        if config.params["repository_type"] == "git":
+            digest_data.append(config.params["repository_type"])
+
         add_optimization(
             config,
             task,

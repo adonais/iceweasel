@@ -68,17 +68,17 @@ class DurationFormatObject : public NativeObject {
   static const JSClass& protoClass_;
 
   static constexpr uint32_t INTERNALS_SLOT = 0;
-  static constexpr uint32_t NUMBER_FORMAT_YEARS_SLOT = 1;
-  static constexpr uint32_t NUMBER_FORMAT_MONTHS_SLOT = 2;
-  static constexpr uint32_t NUMBER_FORMAT_WEEKS_SLOT = 3;
-  static constexpr uint32_t NUMBER_FORMAT_DAYS_SLOT = 4;
-  static constexpr uint32_t NUMBER_FORMAT_HOURS_SLOT = 5;
-  static constexpr uint32_t NUMBER_FORMAT_MINUTES_SLOT = 6;
-  static constexpr uint32_t NUMBER_FORMAT_SECONDS_SLOT = 7;
-  static constexpr uint32_t NUMBER_FORMAT_MILLISECONDS_SLOT = 8;
-  static constexpr uint32_t NUMBER_FORMAT_MICROSECONDS_SLOT = 9;
-  static constexpr uint32_t NUMBER_FORMAT_NANOSECONDS_SLOT = 10;
-  static constexpr uint32_t LIST_FORMAT_SLOT = 11;
+  static constexpr uint32_t LIST_FORMAT_SLOT = 1;
+  static constexpr uint32_t NUMBER_FORMAT_YEARS_SLOT = 2;
+  static constexpr uint32_t NUMBER_FORMAT_MONTHS_SLOT = 3;
+  static constexpr uint32_t NUMBER_FORMAT_WEEKS_SLOT = 4;
+  static constexpr uint32_t NUMBER_FORMAT_DAYS_SLOT = 5;
+  static constexpr uint32_t NUMBER_FORMAT_HOURS_SLOT = 6;
+  static constexpr uint32_t NUMBER_FORMAT_MINUTES_SLOT = 7;
+  static constexpr uint32_t NUMBER_FORMAT_SECONDS_SLOT = 8;
+  static constexpr uint32_t NUMBER_FORMAT_MILLISECONDS_SLOT = 9;
+  static constexpr uint32_t NUMBER_FORMAT_MICROSECONDS_SLOT = 10;
+  static constexpr uint32_t NUMBER_FORMAT_NANOSECONDS_SLOT = 11;
   static constexpr uint32_t OPTIONS_SLOT = 12;
   static constexpr uint32_t TIME_SEPARATOR_SLOT = 13;
   static constexpr uint32_t SLOT_COUNT = 14;

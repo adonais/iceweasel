@@ -54,7 +54,7 @@ async function hideAllPopups(win = window) {
  * Asserts that a given message is correctly rendered and visible in the
  * opened menu source for `win`.
  *
- * This function checks if the `fxa-menu-message` element exists within the
+ * This function checks if the `menu-message` element exists within the
  * source panel and ensures that it contains the correct content and properties
  * based on the provided message object.
  *
@@ -83,16 +83,14 @@ async function hideAllPopups(win = window) {
 async function assertMessageInMenuSource(source, message, win = window) {
   let messageEl;
   if (source === MenuMessage.SOURCES.APP_MENU) {
-    messageEl = win.PanelUI.mainView.querySelector("fxa-menu-message");
+    messageEl = win.PanelUI.mainView.querySelector("menu-message");
   } else if (source === MenuMessage.SOURCES.PXI_MENU) {
-    messageEl = win.document.querySelector("#PanelUI-fxa fxa-menu-message");
+    messageEl = win.document.querySelector("#PanelUI-fxa menu-message");
   }
   await messageEl.updateComplete;
 
-  Assert.ok(messageEl, "Found the fxa-menu-message element.");
-  Assert.ok(
-    BrowserTestUtils.isVisible(messageEl, "fxa-menu-message is visible.")
-  );
+  Assert.ok(messageEl, "Found the menu-message element.");
+  Assert.ok(BrowserTestUtils.isVisible(messageEl, "menu-message is visible."));
 
   Assert.equal(
     messageEl.primaryText,
@@ -189,18 +187,38 @@ async function assertMessageInMenuSource(source, message, win = window) {
 
   if (source === MenuMessage.SOURCES.APP_MENU) {
     // The zap gradient and the default sign-in button should be hidden.
-    Assert.ok(
-      BrowserTestUtils.isHidden(
-        win.PanelUI.mainView.querySelector("#appMenu-fxa-separator")
-      ),
-      "Zap gradient separator is hidden in the AppMenu."
-    );
-    Assert.ok(
-      BrowserTestUtils.isHidden(
-        win.PanelUI.mainView.querySelector("#appMenu-fxa-status2")
-      ),
-      "Default FxA sign-in button is hidden in the AppMenu."
-    );
+    const isFxAMessage =
+      message.content.messageType === MenuMessage.MESSAGE_TYPES.FXA_CTA;
+
+    if (isFxAMessage) {
+      // fxa_cta replaces the FxA row in the App Menu.
+      Assert.ok(
+        BrowserTestUtils.isHidden(
+          win.PanelUI.mainView.querySelector("#appMenu-fxa-separator")
+        ),
+        "Zap gradient separator is hidden in the AppMenu for fxa_cta."
+      );
+      Assert.ok(
+        BrowserTestUtils.isHidden(
+          win.PanelUI.mainView.querySelector("#appMenu-fxa-status2")
+        ),
+        "Default FxA sign-in button is hidden in the AppMenu for fxa_cta."
+      );
+    } else {
+      // default_cta should not replace fxa row in the App menu.
+      Assert.ok(
+        BrowserTestUtils.isVisible(
+          win.PanelUI.mainView.querySelector("#appMenu-fxa-separator")
+        ),
+        "Zap gradient separator is visible in the AppMenu for default_cta."
+      );
+      Assert.ok(
+        BrowserTestUtils.isVisible(
+          win.PanelUI.mainView.querySelector("#appMenu-fxa-status2")
+        ),
+        "Default FxA sign-in button is visible in the AppMenu for default_cta."
+      );
+    }
   } else if (source === MenuMessage.SOURCES.PXI_MENU) {
     Assert.ok(
       BrowserTestUtils.isHidden(
@@ -214,7 +232,7 @@ async function assertMessageInMenuSource(source, message, win = window) {
 }
 
 /**
- * Asserts that no fxa-menu-message is rendered in the opened menu source for
+ * Asserts that no menu-message is rendered in the opened menu source for
  * `win`.
  *
  * For the MenuMessage.SOURCES.APP_MENU source, it also ensures that the default
@@ -232,12 +250,12 @@ async function assertMessageInMenuSource(source, message, win = window) {
 function assertNoMessageInMenuSource(source, win = window) {
   let messageEl;
   if (source === MenuMessage.SOURCES.APP_MENU) {
-    messageEl = win.PanelUI.mainView.querySelector("fxa-menu-message");
+    messageEl = win.PanelUI.mainView.querySelector("menu-message");
   } else if (source === MenuMessage.SOURCES.PXI_MENU) {
-    messageEl = win.document.querySelector("#PanelUI-fxa fxa-menu-message");
+    messageEl = win.document.querySelector("#PanelUI-fxa menu-message");
   }
 
-  Assert.ok(!messageEl, "Should not have found an fxa-menu-message");
+  Assert.ok(!messageEl, "Should not have found an menu-message");
 
   if (source === MenuMessage.SOURCES.APP_MENU) {
     // The zap gradient and the default sign-in button should be visible.
@@ -323,11 +341,11 @@ async function reopenMenuSource(source, expectedMessage, win = window, taskFn) {
   }
 
   await hideAllPopups(win);
-  // Now ensure that there are no fxa-menu-message's in the window anymore,
+  // Now ensure that there are no menu-message's in the window anymore,
   // now that all the panels are closed.
   Assert.ok(
-    !win.document.querySelector("fxa-menu-message"),
-    "Should not find any fxa-menu-message elements"
+    !win.document.querySelector("menu-message"),
+    "Should not find any menu-message elements"
   );
 }
 
@@ -424,6 +442,31 @@ add_setup(async function () {
   });
 });
 
+function buildDefaultCtaMessage({
+  id = "TEST_DEFAULT_CTA",
+  layout = "column",
+} = {}) {
+  return {
+    id,
+    template: "menu_message",
+    content: {
+      layout,
+      messageType: "default_cta",
+      primaryText: "Firefox is not your default browser",
+      primaryActionText: "Set as default",
+      primaryButtonSize: "small",
+      logoURL: "chrome://branding/content/about-logo.svg",
+      secondaryText:
+        "Make Firefox your default browser to open links from other apps.",
+      primaryAction: {},
+      closeAction: {},
+    },
+    targeting: "true",
+    trigger: { id: "menuOpened" },
+    groups: [],
+  };
+}
+
 /**
  * Tests that opening each menu source causes the menuOpened trigger to fire.
  * We stub ASRouter to return no messages so this test is message-free.
@@ -469,7 +512,7 @@ add_task(async function test_trigger() {
 
 /**
  * Tests that a registered MenuMessage of type fxa_cta will cause an
- * fxa-menu-message element to appear in either menu source panel with the right
+ * menu-message element to appear in either menu source panel with the right
  * attributes. This also tests that upon becoming visible, an impression is
  * recorded. This also tests that clicking upon a non-button part of the message
  * doesn't cause the panel to be closed.
@@ -528,7 +571,7 @@ add_task(async function test_show_fxa_cta_message() {
 
 /**
  * Tests that a registered MenuMessage of type fxa_cta will cause an
- * fxa-menu-message element to appear in the menu sources for all newly
+ * menu-message element to appear in the menu sources for all newly
  * opened windows - and that, once blocked, will disappear from all menu
  * sources.
  */
@@ -565,8 +608,7 @@ add_task(async function test_show_fxa_cta_message_multiple_windows() {
         gTestFxAMessage,
         win3,
         async () => {
-          let win3Message =
-            win3.PanelUI.mainView.querySelector("fxa-menu-message");
+          let win3Message = win3.PanelUI.mainView.querySelector("menu-message");
           await win3Message.updateComplete;
           win3Message.closeButton.click();
           Assert.ok(
@@ -717,31 +759,6 @@ add_task(async function test_fxa_cta_notification_precedence() {
   sandbox.restore();
 });
 
-function buildDefaultCtaMessage({
-  id = "TEST_DEFAULT_CTA",
-  layout = "column",
-} = {}) {
-  return {
-    id,
-    template: "menu_message",
-    content: {
-      layout,
-      messageType: "default_cta",
-      primaryText: "Firefox is not your default browser",
-      primaryActionText: "Set as default",
-      primaryButtonSize: "small",
-      logoURL: "chrome://branding/content/about-logo.svg",
-      secondaryText:
-        "Make Firefox your default browser to open links from other apps.",
-      primaryAction: {},
-      closeAction: {},
-    },
-    targeting: "true",
-    trigger: { id: "menuOpened" },
-    groups: [],
-  };
-}
-
 add_task(async function test_default_cta_allowed_sources() {
   let sandbox = sinon.createSandbox();
 
@@ -796,5 +813,42 @@ add_task(async function test_message_type_suppression_rules() {
   });
 
   signedInStub.restore?.();
+  sandbox.restore();
+});
+
+/**
+ * 'default_cta' messages shown in the App Menu should not replace the FxA
+ * sign-in row and should appear as its own banner above it.
+ */
+add_task(async function test_default_cta_does_not_replace_fxa_row() {
+  let sandbox = sinon.createSandbox();
+
+  const defaultMsg = buildDefaultCtaMessage({
+    id: "TEST_DEFAULT_CTA_SIMPLE_LAYOUT",
+    layout: "simple",
+  });
+
+  await withTestMessage(sandbox, defaultMsg, async () => {
+    await reopenMenuSource(
+      MenuMessage.SOURCES.APP_MENU,
+      defaultMsg,
+      window,
+      async (_msgEl, panel) => {
+        const view = panel.ownerGlobal.PanelUI.mainView;
+        const separator = view.querySelector("#appMenu-fxa-separator");
+        const fxaRow = view.querySelector("#appMenu-fxa-status2");
+
+        Assert.ok(
+          BrowserTestUtils.isVisible(separator),
+          "FxA separator remains visible for default_cta."
+        );
+        Assert.ok(
+          BrowserTestUtils.isVisible(fxaRow),
+          "FxA sign-in row remains visible for default_cta."
+        );
+      }
+    );
+  });
+
   sandbox.restore();
 });

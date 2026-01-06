@@ -12,6 +12,7 @@
 
 #include "LayoutLogging.h"
 #include "TextOverflow.h"
+#include "fmt/format.h"
 #include "mozilla/AutoRestore.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_layout.h"
@@ -329,9 +330,8 @@ nsFlowAreaRect BlockReflowState::GetFloatAvailableSpaceWithState(
 #ifdef DEBUG
   if (nsBlockFrame::gNoisyReflow) {
     nsIFrame::IndentBy(stdout, nsBlockFrame::gNoiseIndent);
-    printf("%s: band=%d,%d,%d,%d hasfloats=%d\n", __func__,
-           result.mRect.IStart(wm), result.mRect.BStart(wm),
-           result.mRect.ISize(wm), result.mRect.BSize(wm), result.HasFloats());
+    fmt::println(FMT_STRING("{} band={} hasFloats={}"), __func__,
+                 ToString(result.mRect), YesOrNo(result.HasFloats()));
   }
 #endif
   return result;
@@ -360,9 +360,8 @@ nsFlowAreaRect BlockReflowState::GetFloatAvailableSpaceForBSize(
 #ifdef DEBUG
   if (nsBlockFrame::gNoisyReflow) {
     nsIFrame::IndentBy(stdout, nsBlockFrame::gNoiseIndent);
-    printf("%s: space=%d,%d,%d,%d hasfloats=%d\n", __func__,
-           result.mRect.IStart(wm), result.mRect.BStart(wm),
-           result.mRect.ISize(wm), result.mRect.BSize(wm), result.HasFloats());
+    fmt::println(FMT_STRING("{} band={} hasFloats={}"), __func__,
+                 ToString(result.mRect), YesOrNo(result.HasFloats()));
   }
 #endif
   return result;
@@ -436,8 +435,6 @@ void BlockReflowState::RecoverFloats(nsLineList::iterator aLine,
     for (nsIFrame* floatFrame : aLine->Floats()) {
       if (aDeltaBCoord != 0) {
         floatFrame->MovePositionBy(nsPoint(0, aDeltaBCoord));
-        nsContainerFrame::PositionFrameView(floatFrame);
-        nsContainerFrame::PositionChildViews(floatFrame);
       }
 #ifdef DEBUG
       if (nsBlockFrame::gNoisyReflow || nsBlockFrame::gNoisyFloatManager) {
@@ -885,14 +882,10 @@ BlockReflowState::PlaceFloatResult BlockReflowState::FlowAndPlaceFloat(
   ReflowInput::ApplyRelativePositioning(aFloat, wm, floatOffsets, &origin,
                                         ContainerSize());
 
-  // Position the float and make sure and views are properly
-  // positioned. We need to explicitly position its child views as
-  // well, since we're moving the float after flowing it.
+  // Position the float.
   bool moved = aFloat->GetLogicalPosition(wm, ContainerSize()) != origin;
   if (moved) {
     aFloat->SetPosition(wm, origin, ContainerSize());
-    nsContainerFrame::PositionFrameView(aFloat);
-    nsContainerFrame::PositionChildViews(aFloat);
   }
 
   // Update the float combined area state

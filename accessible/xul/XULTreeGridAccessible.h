@@ -87,7 +87,7 @@ class XULTreeGridRowAccessible final : public XULTreeItemAccessibleBase {
   // LocalAccessible
   virtual void Shutdown() override;
   virtual a11y::role NativeRole() const override;
-  virtual ENameValueFlag Name(nsString& aName) const override;
+  virtual ENameValueFlag DirectName(nsString& aName) const override;
   virtual LocalAccessible* LocalChildAtPoint(
       int32_t aX, int32_t aY, EWhichChildAtPoint aWhichChild) override;
 
@@ -131,7 +131,7 @@ class XULTreeGridCellAccessible : public LeafAccessible,
   virtual TableCellAccessible* AsTableCell() override { return this; }
   virtual nsRect BoundsInAppUnits() const override;
   virtual nsIntRect BoundsInCSSPixels() const override;
-  virtual ENameValueFlag Name(nsString& aName) const override;
+  virtual ENameValueFlag DirectName(nsString& aName) const override;
   virtual Accessible* FocusedChild() override;
   virtual already_AddRefed<AccAttributes> NativeAttributes() override;
   virtual int32_t IndexInParent() const override;

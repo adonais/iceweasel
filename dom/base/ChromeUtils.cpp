@@ -1694,6 +1694,11 @@ void ChromeUtils::ClearResourceCache(
   }
 }
 
+void ChromeUtils::InvalidateResourceCache(GlobalObject& aGlobal,
+                                          ErrorResult& aRv) {
+  SharedScriptCache::Invalidate();
+}
+
 void ChromeUtils::ClearBfcacheByPrincipal(GlobalObject& aGlobal,
                                           nsIPrincipal* aPrincipal,
                                           ErrorResult& aRv) {

@@ -741,7 +741,7 @@ gfxFloat gfxDWriteFont::MeasureGlyphWidth(uint16_t aGlyph) {
     // Mark the font as invalid, and wipe the fontEntry's charmap so that font
     // selection will skip it; we'll use a fallback font instead.
     mIsValid = false;
-    GetFontEntry()->mCharacterMap = new gfxCharacterMap();
+    GetFontEntry()->mCharacterMap = new gfxCharacterMap(0);
     GetFontEntry()->mShmemCharacterMap = nullptr;
     gfxCriticalError() << "Exception occurred measuring glyph width for "
                        << GetFontEntry()->Name().get();
@@ -775,7 +775,7 @@ bool gfxDWriteFont::GetGlyphBounds(uint16_t aGID, gfxRect* aBounds,
     // Mark the font as invalid, and wipe the fontEntry's charmap so that font
     // selection will skip it; we'll use a fallback font instead.
     mIsValid = false;
-    GetFontEntry()->mCharacterMap = new gfxCharacterMap();
+    GetFontEntry()->mCharacterMap = new gfxCharacterMap(0);
     GetFontEntry()->mShmemCharacterMap = nullptr;
     gfxCriticalError() << "Exception occurred measuring glyph bounds for "
                        << GetFontEntry()->Name().get();

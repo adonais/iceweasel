@@ -10,7 +10,6 @@ import mozilla.components.concept.engine.Engine
 import mozilla.components.lib.crash.store.CrashReportOption
 import mozilla.components.service.nimbus.NimbusApi
 import mozilla.components.support.test.argumentCaptor
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
@@ -75,7 +74,6 @@ class DataChoicesMiddlewareTest {
 
         store.dispatch(ViewCreated)
 
-        store.waitUntilIdle()
         dispatcher.scheduler.advanceUntilIdle()
 
         assertEquals(false, store.state.telemetryEnabled)
@@ -93,7 +91,6 @@ class DataChoicesMiddlewareTest {
         val store = makeStore()
 
         store.dispatch(ChoiceAction.TelemetryClicked)
-        store.waitUntilIdle()
 
         verify(settings).isTelemetryEnabled = false
         assertEquals(false, store.state.telemetryEnabled)
@@ -109,7 +106,6 @@ class DataChoicesMiddlewareTest {
         val store = makeStore()
 
         store.dispatch(ChoiceAction.MeasurementDataClicked)
-        store.waitUntilIdle()
 
         verify(settings).isMarketingTelemetryEnabled = true
         assertEquals(false, store.state.measurementDataEnabled)
@@ -122,7 +118,6 @@ class DataChoicesMiddlewareTest {
         val store = makeStore()
 
         store.dispatch(ChoiceAction.UsagePingClicked)
-        store.waitUntilIdle()
 
         verify(settings).isDailyUsagePingEnabled = false
         assertEquals(false, store.state.usagePingEnabled)
@@ -134,7 +129,6 @@ class DataChoicesMiddlewareTest {
         val store = makeStore()
 
         store.dispatch(ChoiceAction.ReportOptionClicked(CrashReportOption.Never))
-        store.waitUntilIdle()
         dispatcher.scheduler.advanceUntilIdle()
 
         verify(crashReportCache).setReportOption(CrashReportOption.Never)
@@ -149,7 +143,6 @@ class DataChoicesMiddlewareTest {
 
         val store = makeStore()
         store.dispatch(ChoiceAction.StudiesClicked)
-        store.waitUntilIdle()
 
         val directionsCaptor = argumentCaptor<NavDirections>()
         verify(nav).navigate(directionsCaptor.capture(), isNull<NavOptions>())

@@ -40,16 +40,25 @@ void GMPVideoi420FrameImpl::GMPFramePlane::Copy(uint8_t* aDst,
   }
 }
 
-GMPVideoi420FrameImpl::GMPVideoi420FrameImpl(GMPVideoHostImpl* aHost)
-    : mHost(aHost), mWidth(0), mHeight(0), mTimestamp(0ll), mDuration(0ll) {
+GMPVideoi420FrameImpl::GMPVideoi420FrameImpl(
+    GMPVideoHostImpl* aHost,
+    HostReportPolicy aReportPolicy /*= HostReportPolicy::None*/)
+    : mReportPolicy(aReportPolicy),
+      mHost(aHost),
+      mWidth(0),
+      mHeight(0),
+      mTimestamp(0ll),
+      mDuration(0ll) {
   MOZ_ASSERT(aHost);
   aHost->DecodedFrameCreated(this);
 }
 
 GMPVideoi420FrameImpl::GMPVideoi420FrameImpl(
     const GMPVideoi420FrameData& aFrameData, ipc::Shmem&& aShmemBuffer,
-    GMPVideoHostImpl* aHost)
-    : mHost(aHost),
+    GMPVideoHostImpl* aHost,
+    HostReportPolicy aReportPolicy /*= HostReportPolicy::None*/)
+    : mReportPolicy(aReportPolicy),
+      mHost(aHost),
       mShmemBuffer(std::move(aShmemBuffer)),
       mYPlane(aFrameData.mYPlane()),
       mUPlane(aFrameData.mUPlane()),
@@ -65,8 +74,10 @@ GMPVideoi420FrameImpl::GMPVideoi420FrameImpl(
 
 GMPVideoi420FrameImpl::GMPVideoi420FrameImpl(
     const GMPVideoi420FrameData& aFrameData, nsTArray<uint8_t>&& aArrayBuffer,
-    GMPVideoHostImpl* aHost)
-    : mHost(aHost),
+    GMPVideoHostImpl* aHost,
+    HostReportPolicy aReportPolicy /*= HostReportPolicy::None*/)
+    : mReportPolicy(aReportPolicy),
+      mHost(aHost),
       mArrayBuffer(std::move(aArrayBuffer)),
       mYPlane(aFrameData.mYPlane()),
       mUPlane(aFrameData.mUPlane()),

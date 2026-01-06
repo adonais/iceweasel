@@ -6,30 +6,23 @@ import os
 import re
 import shutil
 import sys
-from enum import Enum, auto
 from pathlib import Path
 
 from fetch_github_repo import fetch_repo
-from run_operations import get_last_line, run_git, run_hg, run_shell
+from run_operations import (
+    RepoType,
+    detect_repo_type,
+    get_last_line,
+    run_git,
+    run_hg,
+    run_shell,
+)
 
 # This script restores the mozilla patch stack and no-op commit tracking
 # files.  In the case of repo corruption or a mistake made during
 # various rebase conflict resolution operations, the patch-stack can be
 # restored rather than requiring the user to restart the fast-forward
 # process from the beginning.
-
-
-class RepoType(Enum):
-    HG = auto()
-    GIT = auto()
-
-
-def detect_repo_type():
-    if os.path.exists(".git"):
-        return RepoType.GIT
-    elif os.path.exists(".hg"):
-        return RepoType.HG
-    return None
 
 
 def check_repo_status(repo_type):

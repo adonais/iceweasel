@@ -4,7 +4,10 @@
 
 package mozilla.components.browser.engine.gecko.webnotifications
 
-import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import mozilla.components.concept.engine.webnotifications.WebNotification
 import mozilla.components.concept.engine.webnotifications.WebNotificationAction
@@ -14,12 +17,15 @@ import org.mozilla.geckoview.WebNotificationDelegate as GeckoViewWebNotification
 
 internal class GeckoWebNotificationDelegate(
     private val webNotificationDelegate: WebNotificationDelegate,
+    dispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : GeckoViewWebNotificationDelegate {
+
+    private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     override fun onShowNotification(webNotification: GeckoViewWebNotification) {
         val deferred = webNotificationDelegate.onShowNotification(
             webNotification.toWebNotification(),
         )
-        MainScope().launch {
+        scope.launch {
             val succeeded = deferred.await()
             if (succeeded) {
                 webNotification.show()

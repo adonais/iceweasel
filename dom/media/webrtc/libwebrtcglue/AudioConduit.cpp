@@ -21,7 +21,6 @@
 #include <stdint.h>
 
 #include <limits>
-#include <map>
 #include <memory>
 #include <string>
 #include <utility>

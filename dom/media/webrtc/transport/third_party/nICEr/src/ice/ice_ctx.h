@@ -44,7 +44,6 @@ extern "C" {
 #include "nr_socket.h"
 #include "nr_resolver.h"
 #include "nr_interface_prioritizer.h"
-#include "nr_socket_wrapper.h"
 #include "stun_client_ctx.h"
 #include "stun_server_ctx.h"
 #include "turn_client_ctx.h"
@@ -182,17 +181,13 @@ int nr_ice_get_global_attributes(nr_ice_ctx *ctx,char ***attrsp, int *attrctp);
 int nr_ice_ctx_deliver_packet(nr_ice_ctx *ctx, nr_ice_component *comp, nr_transport_addr *source_addr, UCHAR *data, int len);
 int nr_ice_ctx_is_known_id(nr_ice_ctx *ctx, UCHAR id[12]);
 int nr_ice_ctx_remember_id(nr_ice_ctx *ctx, nr_stun_message *msg);
-int nr_ice_ctx_finalize(nr_ice_ctx *ctx, nr_ice_peer_ctx *pctx);
 int nr_ice_ctx_set_stun_servers(nr_ice_ctx *ctx,nr_ice_stun_server *servers, int ct);
 int nr_ice_ctx_set_turn_servers(nr_ice_ctx *ctx,nr_ice_turn_server *servers, int ct);
-int nr_ice_ctx_copy_turn_servers(nr_ice_ctx *ctx, nr_ice_turn_server *servers, int ct);
 int nr_ice_ctx_set_resolver(nr_ice_ctx *ctx, nr_resolver *resolver);
 int nr_ice_ctx_set_interface_prioritizer(nr_ice_ctx *ctx, nr_interface_prioritizer *prioritizer);
 void nr_ice_ctx_set_socket_factory(nr_ice_ctx *ctx, nr_socket_factory *factory);
 int nr_ice_ctx_set_trickle_cb(nr_ice_ctx *ctx, nr_ice_trickle_candidate_cb cb, void *cb_arg);
 int nr_ice_ctx_hide_candidate(nr_ice_ctx *ctx, nr_ice_candidate *cand);
-int nr_ice_get_new_ice_ufrag(char** ufrag);
-int nr_ice_get_new_ice_pwd(char** pwd);
 
 #define NR_ICE_MAX_ATTRIBUTE_SIZE 256
 

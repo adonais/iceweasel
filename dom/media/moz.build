@@ -82,6 +82,17 @@ if CONFIG["MOZ_WEBRTC_SIGNALING"]:
     if CONFIG["FUZZING_INTERFACES"]:
         TEST_DIRS += ["webrtc/tests/fuzztests"]
 
+if CONFIG["FUZZING_INTERFACES"] and CONFIG["LIBFUZZER"]:
+    include("/tools/fuzzing/libfuzzer-flags.mozbuild")
+    SOURCES += [
+        "MediaFragmentURIParser.cpp",
+    ]
+    SOURCES["MediaFragmentURIParser.cpp"].flags += libfuzzer_flags
+else:
+    UNIFIED_SOURCES += [
+        "MediaFragmentURIParser.cpp",
+    ]
+
 MOCHITEST_MANIFESTS += [
     "test/mochitest.toml",
     "test/mochitest_background_video.toml",
@@ -213,6 +224,7 @@ EXPORTS += [
 ]
 
 EXPORTS.mozilla += [
+    "MediaFragmentURIParser.h",
     "MediaManager.h",
     "UnderrunHandler.h",
 ]

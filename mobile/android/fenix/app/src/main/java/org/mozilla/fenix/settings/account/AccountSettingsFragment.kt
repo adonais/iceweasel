@@ -30,6 +30,7 @@ import mozilla.components.concept.sync.AccountObserver
 import mozilla.components.concept.sync.ConstellationState
 import mozilla.components.concept.sync.DeviceConstellationObserver
 import mozilla.components.lib.state.ext.consumeFrom
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.service.fxa.SyncEngine
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
@@ -42,7 +43,6 @@ import mozilla.components.ui.widgets.withCenterAlignedButtons
 import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.SyncAccount
 import org.mozilla.fenix.R
-import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
@@ -97,6 +97,9 @@ class AccountSettingsFragment : PreferenceFragmentCompat() {
         super.onCreate(savedInstanceState)
         SyncTelemetry.processOpenSyncSettingsMenuTelemetry()
         SyncAccount.opened.record(NoExtras())
+
+        accountManager = requireComponents.backgroundServices.accountManager
+        accountManager.register(accountStateObserver, this, true)
     }
 
     override fun onStop() {
@@ -127,6 +130,19 @@ class AccountSettingsFragment : PreferenceFragmentCompat() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        accountSettingsStore = fragmentStore(
+            AccountSettingsFragmentState(
+                lastSyncedDate = if (getLastSynced(requireContext()) == 0L) {
+                    LastSyncTime.Never
+                } else {
+                    LastSyncTime.Success(getLastSynced(requireContext()))
+                },
+                deviceName = requireComponents.backgroundServices.defaultDeviceName(
+                    requireContext(),
+                ),
+            ),
+        ) { AccountSettingsFragmentStore(it) }.value
+
         consumeFrom(accountSettingsStore) {
             updateLastSyncTimePref(it)
             updateDeviceName(it)
@@ -138,33 +154,41 @@ class AccountSettingsFragment : PreferenceFragmentCompat() {
             ::syncDeviceName,
             accountSettingsStore,
         )
+
+        setupPreferenceListeners()
     }
 
-    @Suppress("ComplexMethod", "LongMethod")
+    @Suppress("LongMethod", "CyclomaticComplexMethod")
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.account_settings_preferences, rootKey)
+    }
 
-        accountSettingsStore = StoreProvider.get(this) {
-            AccountSettingsFragmentStore(
-                AccountSettingsFragmentState(
-                    lastSyncedDate = if (getLastSynced(requireContext()) == 0L) {
-                        LastSyncTime.Never
-                    } else {
-                        LastSyncTime.Success(getLastSynced(requireContext()))
-                    },
-                    deviceName = requireComponents.backgroundServices.defaultDeviceName(
-                        requireContext(),
-                    ),
-                ),
-            )
+    override fun onDisplayPreferenceDialog(preference: Preference) {
+        val handled = showCustomEditTextPreferenceDialog(preference)
+
+        if (!handled) {
+            super.onDisplayPreferenceDialog(preference)
         }
+    }
 
-        accountManager = requireComponents.backgroundServices.accountManager
-        accountManager.register(accountStateObserver, this, true)
-
+    private fun setupPreferenceListeners() {
         val preferenceManageAccount = requirePreference<Preference>(R.string.pref_key_sync_manage_account)
         preferenceManageAccount.onPreferenceClickListener = getClickListenerForManageAccount()
 
+        setupSignInOutPreferenceListeners()
+        setupDeviceNamePreferenceListeners()
+        setupSyncCategoriesPreferenceListeners()
+
+        // NB: ObserverRegistry will take care of cleaning up internal references to 'observer' and
+        // 'owner' when appropriate.
+        requireComponents.backgroundServices.accountManager.registerForSyncEvents(
+            syncStatusObserver,
+            owner = this,
+            autoPause = true,
+        )
+    }
+
+    private fun setupSignInOutPreferenceListeners() {
         // Sign out
         val preferenceSignOut = requirePreference<Preference>(R.string.pref_key_sign_out)
         preferenceSignOut.onPreferenceClickListener = getClickListenerForSignOut()
@@ -188,9 +212,11 @@ class AccountSettingsFragment : PreferenceFragmentCompat() {
                 isEnabled = true
             }
         }
+    }
 
-        // Device Name
+    private fun setupDeviceNamePreferenceListeners() {
         val deviceConstellation = accountManager.authenticatedAccount()?.deviceConstellation()
+
         requirePreference<EditTextPreference>(R.string.pref_key_sync_device_name).apply {
             onPreferenceChangeListener = getChangeListenerForDeviceName()
             deviceConstellation?.state()?.currentDevice?.let { device ->
@@ -204,6 +230,14 @@ class AccountSettingsFragment : PreferenceFragmentCompat() {
             }
         }
 
+        deviceConstellation?.registerDeviceObserver(
+            deviceConstellationObserver,
+            owner = this,
+            autoPause = true,
+        )
+    }
+
+    private fun setupSyncCategoriesPreferenceListeners() {
         // Make sure out sync engine checkboxes are up-to-date and disabled if currently syncing
         updateSyncEngineStates()
         setDisabledWhileSyncing(accountManager.isSyncActive())
@@ -243,28 +277,6 @@ class AccountSettingsFragment : PreferenceFragmentCompat() {
                     true
                 }
             }
-        }
-
-        deviceConstellation?.registerDeviceObserver(
-            deviceConstellationObserver,
-            owner = this,
-            autoPause = true,
-        )
-
-        // NB: ObserverRegistry will take care of cleaning up internal references to 'observer' and
-        // 'owner' when appropriate.
-        requireComponents.backgroundServices.accountManager.registerForSyncEvents(
-            syncStatusObserver,
-            owner = this,
-            autoPause = true,
-        )
-    }
-
-    override fun onDisplayPreferenceDialog(preference: Preference) {
-        val handled = showCustomEditTextPreferenceDialog(preference)
-
-        if (!handled) {
-            super.onDisplayPreferenceDialog(preference)
         }
     }
 

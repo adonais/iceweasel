@@ -13,10 +13,9 @@
 #  include <limits>
 #  include <optional>
 #  include <stdint.h>
-#  include <utility>
 
-#  include "builtin/temporal/Int128.h"
 #  include "jsapi-tests/tests.h"
+#  include "vm/Int128.h"
 
 // Use static_assert in compilers which support CWG2518. In all other cases
 // fall back to std::abort().
@@ -33,8 +32,7 @@
 #    define UINT128_PARSE_ERROR(...) std::abort()
 #  endif
 
-using Int128 = js::temporal::Int128;
-using Uint128 = js::temporal::Uint128;
+using namespace js;
 
 // Simple Uint128 parser.
 template <char... DIGITS>

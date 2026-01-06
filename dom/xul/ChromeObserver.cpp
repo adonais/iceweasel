@@ -15,7 +15,6 @@
 #include "nsIMutationObserver.h"
 #include "nsIWidget.h"
 #include "nsPresContext.h"
-#include "nsView.h"
 #include "nsXULElement.h"
 
 namespace mozilla::dom {

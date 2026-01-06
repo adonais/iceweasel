@@ -81,7 +81,7 @@ data class AddressState(
         fun initial(
             region: RegionState? = null,
             address: Address? = null,
-            ): AddressState {
+        ): AddressState {
             // We want to use the country unless it is empty, we fall back to the users region unless
             // it hasn't loaded yet meaning that we will have the Default value of XX falling back to
             // DEFAULT_COUNTRY.

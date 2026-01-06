@@ -11,6 +11,7 @@ const TEST_PAGE = TEST_ROOT + "get_user_media.html";
 
 /**
  * Tests that the given tab is the currently selected tab.
+ *
  * @param {Element} aTab - Tab to test.
  */
 function testSelected(aTab) {

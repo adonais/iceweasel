@@ -6,3 +6,7 @@ setting-group:not([hidden]) {
   display: flex;
   flex-direction: column;
 }
+
+[data-hidden-by-setting-group] {
+  display: none !important;
+}

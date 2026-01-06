@@ -199,6 +199,10 @@ void MacroAssembler::byteSwap32(Register reg) { bswapl(reg); }
 // ===============================================================
 // Arithmetic instructions
 
+void MacroAssembler::add32(const Address& src, Register dest) {
+  addl(Operand(src), dest);
+}
+
 void MacroAssembler::add32(Register src, Register dest) { addl(src, dest); }
 
 void MacroAssembler::add32(Imm32 imm, Register dest) { addl(imm, dest); }

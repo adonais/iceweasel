@@ -353,30 +353,52 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
       return null;
     }
 
-    // Set important properties that every Suggest result should have. See
-    // `QuickSuggest.getFeatureBySource()` for `source` and `provider` values.
-    // If the suggestion isn't managed by a feature, then it's from Merino and
-    // we assume `is_sponsored` is set appropriately. (Merino uses snake_case.)
+    // Set important properties that every Suggest result should have.
+
+    // `source` indicates the Suggest backend the suggestion came from.
     result.payload.source = suggestion.source;
+
+    // `provider` depends on `source` and generally indicates the type of
+    // Suggest suggestion. See `QuickSuggest.getFeatureBySource()`.
     result.payload.provider = suggestion.provider;
-    if (suggestion.suggestionType) {
-      // `suggestionType` is defined only for dynamic Rust suggestions and is
-      // the dynamic type. Avoid adding an undefined property to other payloads.
-      result.payload.suggestionType = suggestion.suggestionType;
-    }
-    result.payload.telemetryType = this.#getSuggestionTelemetryType(suggestion);
-    result.payload.isSponsored = feature
-      ? feature.isSuggestionSponsored(suggestion)
-      : !!suggestion.is_sponsored;
-    if (suggestion.source == "rust") {
-      // `suggestionObject` is passed back into the Rust component on dismissal.
-      result.payload.suggestionObject = suggestion;
+
+    // Set `isSponsored` unless the feature already did.
+    if (!result.payload.hasOwnProperty("isSponsored")) {
+      result.payload.isSponsored = !!feature?.isSuggestionSponsored(suggestion);
     }
 
-    // Handle icons here so each feature doesn't have to do it, but use `||=` to
-    // let them do it if they need to.
+    // For most Suggest results, the result type recorded in urlbar telemetry is
+    // `${source}_${telemetryType}` (the payload values).
+    result.payload.telemetryType = this.#getSuggestionTelemetryType(suggestion);
+
+    // Handle icons here unless the feature already did.
     result.payload.icon ||= suggestion.icon;
     result.payload.iconBlob ||= suggestion.icon_blob;
+
+    switch (suggestion.source) {
+      case "merino":
+        // Dismissals of Merino suggestions are recorded in the Rust component's
+        // database. Each dismissal is recorded as a string value called a key.
+        // If Merino includes `dismissal_key` in the suggestion, use that as the
+        // key. Otherwise we'll use its URL. See `QuickSuggest.dismissResult()`.
+        if (
+          suggestion.dismissal_key &&
+          !result.payload.hasOwnProperty("dismissalKey")
+        ) {
+          result.payload.dismissalKey = suggestion.dismissal_key;
+        }
+        break;
+      case "rust":
+        // `suggestionObject` is passed back to the Rust component on dismissal.
+        // See `QuickSuggest.dismissResult()`.
+        result.payload.suggestionObject = suggestion;
+        // `suggestionType` is defined only for dynamic Rust suggestions and is
+        // the dynamic type. Don't add an undefined property to other payloads.
+        if (suggestion.suggestionType) {
+          result.payload.suggestionType = suggestion.suggestionType;
+        }
+        break;
+    }
 
     // Set the appropriate suggested index and related properties unless the
     // feature did it already.
@@ -443,7 +465,7 @@ export class UrlbarProviderQuickSuggest extends UrlbarProvider {
     let payload = {
       url: suggestion.url,
       originalUrl: suggestion.original_url,
-      dismissalKey: suggestion.dismissal_key,
+      isSponsored: !!suggestion.is_sponsored,
       isBlockable: true,
       isManageable: true,
     };

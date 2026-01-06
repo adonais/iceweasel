@@ -24,11 +24,6 @@
 
     async function runTests() {
       try {
-        await SpecialPowers.pushPrefEnv({"set": [
-          ["dom.text_fragments.enabled", true],
-          ["dom.text_fragments.create_text_fragment.enabled", true],
-        ]});
-
         // Creating a text fragment from a selection in details2 should not reveal
         // other elements (closed <details> or hidden=until-found elements).
 

@@ -29,6 +29,11 @@ export default class MozPageHeader extends MozLitElement {
     backButton: { type: Boolean },
   };
 
+  static queries = {
+    headingEl: "h1",
+    backButtonEl: "moz-button",
+  };
+
   constructor() {
     super();
     this.heading = "";

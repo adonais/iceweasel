@@ -11,7 +11,7 @@
                      wrap="true"
                      hidden="true"/>
 
-      <toolbaritem id="appMenu-fxa-menu-message"
+      <toolbaritem id="appMenu-menu-message"
                    closemenu="none">
       </toolbaritem>
       <toolbaritem id="appMenu-fxa-status2"
@@ -49,6 +49,14 @@
                      data-l10n-id="appmenuitem-new-window"
                      key="key_newNavigator"
                      command="cmd_newNavigator"/>
+      <toolbarbutton id="appMenu-new-ai-window-button"
+                     class="subviewbutton"
+                     data-l10n-id="appmenuitem-new-ai-window"
+                     command="Tools:AIWindow"/>
+      <toolbarbutton id="appMenu-new-classic-window-button"
+                     class="subviewbutton"
+                     data-l10n-id="appmenuitem-new-classic-window"
+                     command="Tools:ClassicWindow"/>
       <toolbarbutton id="appMenu-new-private-window-button2"
                      class="subviewbutton"
                      data-l10n-id="appmenuitem-new-private-window"
@@ -630,16 +638,17 @@
                       data-l10n-id="fxa-menu-connect-another-device"
                       disabled="true"
                       />
-      <toolbarbutton id="PanelUI-fxa-menu-sendtab-button"
-                      class="subviewbutton subviewbutton-nav"
-                      data-l10n-id="fxa-menu-send-tab-to-device"
-                      data-l10n-args='{"tabCount":1}'
-                      closemenu="none"
-                      />
       <toolbarbutton id="PanelUI-fxa-menu-sync-prefs-button"
                       class="subviewbutton"
                       data-l10n-id="fxa-menu-sync-settings"
                       hidden="true"
+                      />
+      <toolbarseparator id="PanelUI-fxa-menu-sendtab-separator" />
+      <toolbarbutton id="PanelUI-fxa-menu-sendtab-button"
+                      class="subviewbutton subviewbutton-nav"
+                      data-l10n-id="fxa-menu-send-to-device"
+                      data-l10n-args='{"tabCount":1}'
+                      closemenu="none"
                       />
       <toolbarseparator id="PanelUI-sign-out-separator" />
       <toolbarbutton id="PanelUI-fxa-menu-account-signout-button"
@@ -836,9 +845,11 @@
     <vbox id="PanelUI-ipprotection-content" class="panel-subview-body"/>
   </panelview>
 
-  <panelview id="PanelUI-ipprotection-settings"
+  <panelview id="PanelUI-ipprotection-site-settings"
              class="PanelUI-subView"
-             mainview-with-header="true">
+             data-l10n-id="ipprotection-site-settings-title"
+             data-l10n-attrs="title">
+    <vbox id="PanelUI-ipprotection-site-settings-content" class="panel-subview-body"/>
   </panelview>
 
 #include ../../components/reportbrokensite/content/reportBrokenSitePanel.inc.xhtml

@@ -1,9 +1,9 @@
 [DEFAULT]
 subsuite = "a11y"
 skip-if = [
-  "os != 'win'",
-  "headless",
   "artifact",
+  "headless",
+  "os != 'win'",
 ]
 support-files = ["head.js"]
 prefs = [
@@ -35,7 +35,9 @@ prefs = [
 # For 32 bit Firefox, we can only build a 32 bit IA2 proxy dll, but the Python
 # runner is always 64 bit and thus needs a 64 bit dll. There isn't a feasible
 # solution here; our build system can't build for two architectures at once.
-run-if = ["processor != 'x86'"]
+run-if = [
+  "arch != 'x86'",
+]
 skip-if = [
   "asan", # The IA2 proxy dll fails when built with ASan.
   "ccov", # Bug 1968932

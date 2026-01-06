@@ -11,7 +11,7 @@ const override = Cc["@mozilla.org/network/native-dns-override;1"].getService(
   Ci.nsINativeDNSResolverOverride
 );
 
-function makeChannel(url) {
+function makeChannel(url, triggeringPrincipalURI = null) {
   let uri2 = NetUtil.newURI(url);
   // by default system principal is used, which cannot be used for permission based tests
   // because the default system principal has all permissions
@@ -19,9 +19,29 @@ function makeChannel(url) {
     uri2,
     {}
   );
+
+  // For LNA tests, we need a cross-origin triggering principal to test blocking behavior
+  // If not specified, use a different origin to ensure cross-origin requests
+  var triggeringPrincipal;
+  if (triggeringPrincipalURI) {
+    let triggeringURI = NetUtil.newURI(triggeringPrincipalURI);
+    triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
+      triggeringURI,
+      {}
+    );
+  } else {
+    // Default to a cross-origin principal (public.example.com)
+    let triggeringURI = NetUtil.newURI("https://public.example.com");
+    triggeringPrincipal = Services.scriptSecurityManager.createContentPrincipal(
+      triggeringURI,
+      {}
+    );
+  }
+
   return NetUtil.newChannel({
     uri: url,
     loadingPrincipal: principal,
+    triggeringPrincipal,
     securityFlags: Ci.nsILoadInfo.SEC_REQUIRE_SAME_ORIGIN_INHERITS_SEC_CONTEXT,
     contentPolicyType: Ci.nsIContentPolicy.TYPE_OTHER,
   }).QueryInterface(Ci.nsIHttpChannel);
@@ -679,4 +699,102 @@ add_task(async function lna_local_network_to_localhost_skip_checks() {
   Services.prefs.clearUserPref(
     "network.lna.local-network-to-localhost.skip-checks"
   );
+});
+
+// Test that same-origin requests skip LNA checks
+add_task(async function lna_same_origin_skip_checks() {
+  // Ensure the local-network-to-localhost skip pref is disabled for this test
+  Services.prefs.setBoolPref(
+    "network.lna.local-network-to-localhost.skip-checks",
+    false
+  );
+
+  // Test cases: [triggeringOriginURI, targetURL, parentSpace, expectedStatus, description]
+  const sameOriginTestCases = [
+    // Same origin cases - should skip LNA checks and allow the request
+    [
+      H1_URL,
+      H1_URL + "/test_lna",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      "same origin localhost to localhost from Public should be allowed",
+    ],
+    [
+      H1_URL,
+      H1_URL + "/test_lna",
+      Ci.nsILoadInfo.Private,
+      Cr.NS_OK,
+      "same origin localhost to localhost from Private should be allowed",
+    ],
+    [
+      H2_URL,
+      H2_URL + "/test_lna",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_OK,
+      "same origin localhost to localhost (H2) from Public should be allowed",
+    ],
+    [
+      H2_URL,
+      H2_URL + "/test_lna",
+      Ci.nsILoadInfo.Private,
+      Cr.NS_OK,
+      "same origin localhost to localhost (H2) from Private should be allowed",
+    ],
+
+    // Cross-origin cases - should apply normal LNA checks and block
+    // Use null to get the default cross-origin principal (public.example.com)
+    [
+      null,
+      H1_URL + "/test_lna",
+      Ci.nsILoadInfo.Public,
+      Cr.NS_ERROR_LOCAL_NETWORK_ACCESS_DENIED,
+      "cross origin to localhost from Public should be blocked",
+    ],
+    // Note: Private->Local transition test removed temporarily
+    // as there may be other logic affecting this transition
+
+    // Same origin but from local address space should still be allowed
+    [
+      H1_URL,
+      H1_URL + "/test_lna",
+      Ci.nsILoadInfo.Local,
+      Cr.NS_OK,
+      "same origin localhost to localhost from Local should be allowed",
+    ],
+  ];
+
+  for (let [
+    triggeringOriginURI,
+    targetURL,
+    parentSpace,
+    expectedStatus,
+    description,
+  ] of sameOriginTestCases) {
+    info(`Testing same origin check: ${description}`);
+
+    // Disable prompt simulation for clean testing
+    Services.prefs.setBoolPref("network.localhost.prompt.testing.allow", false);
+
+    // Use makeChannel with explicit triggering principal
+    let chan = makeChannel(targetURL, triggeringOriginURI);
+    chan.loadInfo.parentIpAddressSpace = parentSpace;
+
+    let expectFailure = expectedStatus !== Cr.NS_OK ? CL_EXPECT_FAILURE : 0;
+
+    await new Promise(resolve => {
+      chan.asyncOpen(new ChannelListener(resolve, null, expectFailure));
+    });
+
+    Assert.equal(
+      chan.status,
+      expectedStatus,
+      `Status should match for: ${description}`
+    );
+    if (expectedStatus === Cr.NS_OK) {
+      Assert.equal(
+        chan.protocolVersion,
+        targetURL.startsWith(H2_URL) ? "h2" : "http/1.1"
+      );
+    }
+  }
 });

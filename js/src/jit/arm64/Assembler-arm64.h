@@ -7,8 +7,6 @@
 #ifndef A64_ASSEMBLER_A64_H_
 #define A64_ASSEMBLER_A64_H_
 
-#include <iterator>
-
 #include "jit/arm64/vixl/Assembler-vixl.h"
 
 #include "jit/CompactBuffer.h"

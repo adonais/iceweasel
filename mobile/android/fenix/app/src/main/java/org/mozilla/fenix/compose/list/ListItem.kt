@@ -33,6 +33,7 @@ import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -89,6 +90,8 @@ private val EmptyListItemSlot: @Composable RowScope.() -> Unit = {}
  * @param overline An optional text shown above the label.
  * @param description An optional description text below the label.
  * @param maxDescriptionLines An optional maximum number of lines for the description text to span.
+ * @param enabled Controls the enabled state of the list item. When `false`, the list item will not
+ * be clickable.
  * @param minHeight An optional minimum height for the list item.
  * @param onClick Called when the user clicks on the item.
  * @param onLongClick Called when the user long clicks on the item.
@@ -106,6 +109,7 @@ fun TextListItem(
     overline: String? = null,
     description: String? = null,
     maxDescriptionLines: Int = 1,
+    enabled: Boolean = true,
     minHeight: Dp = LIST_ITEM_HEIGHT,
     onClick: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
@@ -121,6 +125,7 @@ fun TextListItem(
         overline = overline,
         description = description,
         maxDescriptionLines = maxDescriptionLines,
+        enabled = enabled,
         minHeight = minHeight,
         onClick = onClick,
         onLongClick = onLongClick,
@@ -662,6 +667,7 @@ fun SelectableFaviconListItem(
  * not supplied.
  */
 @Composable
+@Suppress("CognitiveComplexMethod")
 fun SelectableIconListItem(
     label: String,
     isSelected: Boolean,
@@ -968,7 +974,7 @@ private fun ListItemContent(
         description?.let {
             Text(
                 text = description,
-                color = colors.supportingTextColor,
+                color = if (enabled) colors.supportingTextColor else colors.disabledHeadlineColor,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = maxDescriptionLines,
                 style = FirefoxTheme.typography.body2,
@@ -985,6 +991,11 @@ private fun TextListItemPreview() {
     FirefoxTheme {
         Box(Modifier.background(MaterialTheme.colorScheme.surface)) {
             TextListItem(label = "Label only")
+
+            TextListItem(
+                label = "Label only - disabled",
+                enabled = false,
+            )
         }
     }
 }
@@ -993,11 +1004,19 @@ private fun TextListItemPreview() {
 @Preview(name = "TextListItem with a description", uiMode = Configuration.UI_MODE_NIGHT_YES)
 private fun TextListItemWithDescriptionPreview() {
     FirefoxTheme {
-        Box(Modifier.background(MaterialTheme.colorScheme.surface)) {
-            TextListItem(
-                label = "Label + description",
-                description = "Description text",
-            )
+        Surface {
+            Column {
+                TextListItem(
+                    label = "Label + description",
+                    description = "Description text",
+                )
+
+                TextListItem(
+                    label = "Label + description - disabled",
+                    description = "Description text",
+                    enabled = false,
+                )
+            }
         }
     }
 }

@@ -7,8 +7,6 @@ import os
 # ruff linter deprecates Dict required for Python 3.8 compatibility
 from typing import Any, Dict, Optional  # noqa UP035
 
-import yaml
-
 DictAny = Dict[str, Any]  # noqa UP006
 DictStr = Dict[str, str]  # noqa UP006
 OptTestSettings = Optional[DictAny]
@@ -177,6 +175,8 @@ class PlatformInfo:
         return build_type
 
     def get_variant_data(self):
+        import yaml
+
         if PlatformInfo.variant_data:
             return PlatformInfo.variant_data
 

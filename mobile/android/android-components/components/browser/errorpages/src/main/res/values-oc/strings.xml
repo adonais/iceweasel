@@ -135,6 +135,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Problèma de site enganaire</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Lo site a l’adreça %1$s es estat senhalat coma un site enganaire e es estat blocat segon vòstras preferéncias de seguretat.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Site blocat per vòstra seguretat</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Aquesta pagina web a l’adreça %1$s es estada blocada perque un de vòstres moduls complementaris a temptat de la dobrir. Aqueste site poiriá èsser utilizat per raubar vòstras informacions, talas coma vòstres senhals o numèros de carta bancària.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Site securizat non disponible</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

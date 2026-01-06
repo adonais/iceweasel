@@ -75,8 +75,8 @@ vendoring:
    - patches/remove-log-related-entries-from-otlp-exporter.patch
 
 updatebot:
-  maintainer-phab: mvanstraten
-  maintainer-bz: mvanstraten@mozilla.com
+  maintainer-phab: jari
+  maintainer-bz: jjalkanen@mozilla.com
   tasks:
    - type: vendoring
      enabled: true

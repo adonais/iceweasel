@@ -17,7 +17,6 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
-#include <algorithm>
 #include <stdarg.h>
 #include "prinit.h"
 #include "prerror.h"

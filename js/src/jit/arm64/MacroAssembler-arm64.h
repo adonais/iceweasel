@@ -1333,13 +1333,6 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
     Fmov(ARMFPRegister(dest, 64), ARMRegister(src.valueReg(), 64));
   }
 
-  void unboxArgObjMagic(const ValueOperand& src, Register dest) {
-    MOZ_CRASH("unboxArgObjMagic");
-  }
-  void unboxArgObjMagic(const Address& src, Register dest) {
-    MOZ_CRASH("unboxArgObjMagic");
-  }
-
   void unboxBoolean(const ValueOperand& src, Register dest) {
     move32(src.valueReg(), dest);
   }

@@ -15,6 +15,10 @@ const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
 
+const { MLTelemetry } = ChromeUtils.importESModule(
+  "chrome://global/content/ml/MLTelemetry.sys.mjs"
+);
+
 function getGleanCount(metricsName, engineId = "default-engine") {
   var metrics = Glean.firefoxAiRuntime[metricsName];
 
@@ -560,4 +564,125 @@ add_task(async function test_model_download_telemetry_mixed() {
 
   wasmBufferStub.restore();
   promiseStub.restore();
+});
+
+function getLastEvent(gleanMetric) {
+  const events = gleanMetric.testGetValue() || [];
+  return events.length ? events.at(-1) : null;
+}
+
+// A helper to wait for a new Glean event
+async function waitForGleanEvent(gleanMetric) {
+  const originalEvent = getLastEvent(gleanMetric);
+  await TestUtils.waitForCondition(() => {
+    return getLastEvent(gleanMetric) !== originalEvent;
+  }, "Waiting for new Glean event");
+  return getLastEvent(gleanMetric);
+}
+
+/**
+ * Tests that the MLTelemetry constructor auto-generates a flowId
+ * if one is not provided.
+ */
+add_task(async function test_ml_telemetry_flow_id_auto_generated() {
+  info("Starting MLTelemetry test: Constructor auto-generates flowId");
+
+  const telemetry1 = new MLTelemetry({ featureId: "feature-auto-id" });
+  telemetry1.sessionStart({ interaction: "test-1" });
+  let recordedEvent = await waitForGleanEvent(
+    Glean.firefoxAiRuntime.sessionStart
+  );
+
+  Assert.ok(
+    recordedEvent.extra.flow_id,
+    "An event was recorded with a flow_id"
+  );
+  Assert.equal(
+    recordedEvent.extra.flow_id,
+    telemetry1.flowId,
+    "Glean's recorded flow_id matches the instance's flowId"
+  );
+  Assert.equal(
+    recordedEvent.extra.flow_id.length,
+    36,
+    "The auto-generated flow_id looks like a UUID"
+  );
+});
+
+/**
+ * Tests that the MLTelemetry constructor correctly uses a flowId
+ * when one is provided.
+ */
+add_task(async function test_ml_telemetry_flow_id_provided() {
+  info("Starting MLTelemetry test: Constructor accepts provided flowId");
+
+  const telemetry2 = new MLTelemetry({
+    featureId: "feature-custom-id",
+    flowId: "my-custom-flow-id-69420",
+  });
+  telemetry2.sessionStart({ interaction: "test-2" });
+
+  let recordedEvent = await waitForGleanEvent(
+    Glean.firefoxAiRuntime.sessionStart
+  );
+
+  Assert.ok(
+    recordedEvent.extra.flow_id,
+    "An event was recorded with a flow_id"
+  );
+  Assert.equal(
+    recordedEvent.extra.flow_id,
+    "my-custom-flow-id-69420",
+    "Glean's recorded flow_id matches the provided flowId"
+  );
+  Assert.equal(
+    recordedEvent.extra.flow_id,
+    telemetry2.flowId,
+    "Glean's recorded flow_id also matches the instance's flowId"
+  );
+});
+
+/**
+ * Tests that the flowId set on the instance is used by all
+ * telemetry methods (e.g., sessionStart and sessionEnd).
+ */
+add_task(async function test_ml_telemetry_flow_id_persistent_on_instance() {
+  info("Starting MLTelemetry test: Instance flowId persists across methods");
+
+  const telemetry3 = new MLTelemetry({
+    featureId: "feature-persistent",
+    flowId: "my-instance-flow-id-789",
+  });
+
+  // Check sessionStart
+  telemetry3.sessionStart({ interaction: "test-3" });
+  let startEvent = await waitForGleanEvent(Glean.firefoxAiRuntime.sessionStart);
+  Assert.equal(
+    startEvent.extra.flow_id,
+    "my-instance-flow-id-789",
+    "sessionStart event used the instance flowId"
+  );
+
+  // Check sessionEnd
+  telemetry3.endSession({
+    status: "ok",
+  });
+  let endEvent = await waitForGleanEvent(Glean.firefoxAiRuntime.sessionEnd);
+
+  Assert.ok(
+    endEvent.extra.flow_id,
+    "endSession event was recorded with a flow_id"
+  );
+  Assert.equal(
+    endEvent.extra.flow_id,
+    "my-instance-flow-id-789",
+    "endSession event used the *same* instance flowId"
+  );
+
+  // Final check that the instance property itself wasn't modified
+  Assert.equal(
+    telemetry3.flowId,
+    "my-instance-flow-id-789",
+    "The instance's flowId property remained unchanged"
+  );
 });

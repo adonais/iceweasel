@@ -341,6 +341,13 @@ void ViewportFrame::RemoveFrame(DestroyContext& aContext, ChildListID aListID,
 }
 #endif
 
+void ViewportFrame::Destroy(DestroyContext& aContext) {
+  if (PresShell()->IsDestroying()) {
+    PresShell::ClearMouseCapture(this);
+  }
+  nsContainerFrame::Destroy(aContext);
+}
+
 nscoord ViewportFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
                                       IntrinsicISizeType aType) {
   return mFrames.IsEmpty()

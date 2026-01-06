@@ -46,7 +46,7 @@ class HomeDeepLinkIntentProcessor(
         }
     }
 
-    @Suppress("ComplexMethod")
+    @Suppress("CyclomaticComplexMethod")
     private fun handleDeepLink(
         deepLink: Uri,
         extras: Bundle?,

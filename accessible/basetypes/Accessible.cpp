@@ -931,19 +931,20 @@ role Accessible::ARIATransformRole(role aRole) const {
     }
 
   } else if (aRole == roles::OPTION) {
-    if (Parent() && Parent()->Role() == roles::COMBOBOX_LIST) {
-      return roles::COMBOBOX_OPTION;
-    }
-
-    // Orphaned option outside the context of a listbox.
     const Accessible* listbox = FindAncestorIf([](const Accessible& aAcc) {
       const role accRole = aAcc.Role();
-      return accRole == roles::LISTBOX    ? AncestorSearchOption::Found
+      return (accRole == roles::LISTBOX || accRole == roles::COMBOBOX_LIST)
+                 ? AncestorSearchOption::Found
              : accRole == roles::GROUPING ? AncestorSearchOption::Continue
                                           : AncestorSearchOption::NotFound;
     });
     if (!listbox) {
+      // Orphaned option outside the context of a listbox.
       return NativeRole();
+    }
+
+    if (listbox->Role() == roles::COMBOBOX_LIST) {
+      return roles::COMBOBOX_OPTION;
     }
   } else if (aRole == roles::MENUITEM) {
     // Menuitem has a submenu.

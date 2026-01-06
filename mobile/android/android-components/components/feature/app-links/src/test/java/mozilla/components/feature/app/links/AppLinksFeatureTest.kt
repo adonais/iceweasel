@@ -24,8 +24,6 @@ import mozilla.components.concept.engine.EngineSession
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.support.test.any
 import mozilla.components.support.test.eq
-import mozilla.components.support.test.ext.joinBlocking
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.mock
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.After
@@ -114,14 +112,13 @@ class AppLinksFeatureTest {
     @Test
     fun `WHEN feature started THEN feature observes app intents`() {
         val tab = createTab(webUrl)
-        store.dispatch(TabListAction.AddTabAction(tab)).joinBlocking()
+        store.dispatch(TabListAction.AddTabAction(tab))
         verify(feature, never()).handleAppIntent(any(), any(), any(), any(), any())
 
         val intent: Intent = mock()
         val appIntent = AppIntentState(intentUrl, intent, null, null)
-        store.dispatch(ContentAction.UpdateAppIntentAction(tab.id, appIntent)).joinBlocking()
+        store.dispatch(ContentAction.UpdateAppIntentAction(tab.id, appIntent))
 
-        store.waitUntilIdle()
         verify(feature).handleAppIntent(any(), any(), any(), any(), any())
 
         val tabWithConsumedAppIntent = store.state.findTab(tab.id)!!
@@ -131,14 +128,14 @@ class AppLinksFeatureTest {
     @Test
     fun `WHEN feature is stopped THEN feature doesn't observes app intents`() {
         val tab = createTab(webUrl)
-        store.dispatch(TabListAction.AddTabAction(tab)).joinBlocking()
+        store.dispatch(TabListAction.AddTabAction(tab))
         verify(feature, never()).handleAppIntent(any(), any(), any(), any(), any())
 
         feature.stop()
 
         val intent: Intent = mock()
         val appIntent = AppIntentState(intentUrl, intent, null, null)
-        store.dispatch(ContentAction.UpdateAppIntentAction(tab.id, appIntent)).joinBlocking()
+        store.dispatch(ContentAction.UpdateAppIntentAction(tab.id, appIntent))
 
         verify(feature, never()).handleAppIntent(any(), any(), any(), any(), any())
     }

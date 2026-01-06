@@ -431,12 +431,13 @@ class nsFrameSelection final {
    * @param aContent is the content asking
    * @param aContentOffset is the starting content boundary
    * @param aContentLength is the length of the content piece asking
-   * @param aSlowCheck will check using slow method with no shortcuts
+   * @param aIgnoreSelection is Yes, this won't return selection details about
+   * the normal selection.
    */
-  mozilla::UniquePtr<SelectionDetails> LookUpSelection(nsIContent* aContent,
-                                                       int32_t aContentOffset,
-                                                       int32_t aContentLength,
-                                                       bool aSlowCheck) const;
+  enum class IgnoreNormalSelection : bool { No, Yes };
+  mozilla::UniquePtr<SelectionDetails> LookUpSelection(
+      nsIContent* aContent, int32_t aContentOffset, int32_t aContentLength,
+      IgnoreNormalSelection aIgnoreNormalSelection) const;
 
   /**
    * Sets the drag state to aState for resons of drag state.

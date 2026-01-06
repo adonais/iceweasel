@@ -6,7 +6,6 @@ package org.mozilla.fenix.downloads.listscreen.ui
 
 import androidx.annotation.FloatRange
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -16,6 +15,7 @@ import androidx.compose.foundation.progressSemantics
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +43,7 @@ import org.mozilla.fenix.downloads.listscreen.DownloadsListTestTag
 import org.mozilla.fenix.downloads.listscreen.store.FileItem
 import org.mozilla.fenix.downloads.listscreen.store.TimeCategory
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 import mozilla.components.feature.media.R as mediaR
 import mozilla.components.ui.icons.R as iconsR
 
@@ -81,14 +82,14 @@ internal fun FileListItem(
         isSelected = isSelected,
         modifier = modifier.selectableListItemProgressSemantics(status = fileItem.status),
         descriptionTextColor = if (fileItem.status == FileItem.Status.Failed) {
-            FirefoxTheme.colors.iconCritical
+            MaterialTheme.colorScheme.error
         } else {
-            FirefoxTheme.colors.textSecondary
+            MaterialTheme.colorScheme.onSurfaceVariant
         },
         iconTint = if (fileItem.status == FileItem.Status.Failed) {
-            FirefoxTheme.colors.iconCritical
+            MaterialTheme.colorScheme.error
         } else {
-            FirefoxTheme.colors.iconPrimary
+            MaterialTheme.colorScheme.onSurfaceVariant
         },
         labelOverflow = TextOverflow.MiddleEllipsis,
         afterListItemAction = {
@@ -145,7 +146,7 @@ private fun AfterListItemAction(
                 Icon(
                     painter = painterResource(mediaR.drawable.mozac_feature_media_action_pause),
                     contentDescription = stringResource(R.string.download_pause_action),
-                    tint = FirefoxTheme.colors.iconPrimary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -156,7 +157,7 @@ private fun AfterListItemAction(
                 Icon(
                     painter = painterResource(mediaR.drawable.mozac_feature_media_action_play),
                     contentDescription = stringResource(R.string.download_resume_action),
-                    tint = FirefoxTheme.colors.iconPrimary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -168,7 +169,7 @@ private fun AfterListItemAction(
                 Icon(
                     painter = painterResource(iconsR.drawable.mozac_ic_arrow_counter_clockwise_24),
                     contentDescription = stringResource(R.string.download_retry_action),
-                    tint = FirefoxTheme.colors.iconPrimary,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -185,7 +186,7 @@ private fun AfterListItemAction(
         Icon(
             painter = painterResource(id = iconsR.drawable.mozac_ic_ellipsis_vertical_24),
             contentDescription = stringResource(id = R.string.content_description_menu),
-            tint = FirefoxTheme.colors.iconPrimary,
+            tint = MaterialTheme.colorScheme.onSurface,
         )
 
         DropdownMenu(
@@ -211,15 +212,11 @@ private fun DownloadProgressIndicator(
         if (progress == null) {
             LinearProgressIndicator(
                 modifier = Modifier.clearAndSetSemantics {},
-                color = FirefoxTheme.colors.borderAccent,
-                trackColor = FirefoxTheme.colors.borderPrimary,
             )
         } else {
             LinearProgressIndicator(
                 modifier = Modifier.clearAndSetSemantics {},
                 progress = { progress },
-                color = FirefoxTheme.colors.borderAccent,
-                trackColor = FirefoxTheme.colors.borderPrimary,
                 drawStopIndicator = {},
             )
         }
@@ -535,21 +532,38 @@ private fun FileListItemPreview(
     @PreviewParameter(FileListItemParameterProvider::class) fileListItemPreviewState: FileListItemPreviewState,
 ) {
     FirefoxTheme {
-        Box(
-            modifier = Modifier.background(FirefoxTheme.colors.layer1),
-        ) {
-            FileListItem(
-                isSelected = fileListItemPreviewState.isSelected,
-                fileItem = fileListItemPreviewState.fileItem,
-                areAfterListItemIconsVisible = fileListItemPreviewState.areAfterListItemIconsVisible,
-                onPauseClick = {},
-                onResumeClick = {},
-                onRetryClick = {},
-                onShareFileClick = {},
-                onDeleteClick = {},
-                onShareUrlClick = {},
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-        }
+        FileListItem(
+            isSelected = fileListItemPreviewState.isSelected,
+            fileItem = fileListItemPreviewState.fileItem,
+            areAfterListItemIconsVisible = fileListItemPreviewState.areAfterListItemIconsVisible,
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+            onPauseClick = {},
+            onResumeClick = {},
+            onRetryClick = {},
+            onShareFileClick = {},
+            onDeleteClick = {},
+            onShareUrlClick = {},
+        )
+    }
+}
+
+@PreviewLightDark
+@Composable
+private fun FileListItemPrivatePreview(
+    @PreviewParameter(FileListItemParameterProvider::class) fileListItemPreviewState: FileListItemPreviewState,
+) {
+    FirefoxTheme(theme = Theme.Private) {
+        FileListItem(
+            isSelected = fileListItemPreviewState.isSelected,
+            fileItem = fileListItemPreviewState.fileItem,
+            areAfterListItemIconsVisible = fileListItemPreviewState.areAfterListItemIconsVisible,
+            modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+            onPauseClick = {},
+            onResumeClick = {},
+            onRetryClick = {},
+            onShareFileClick = {},
+            onDeleteClick = {},
+            onShareUrlClick = {},
+        )
     }
 }

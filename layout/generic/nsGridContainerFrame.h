@@ -240,6 +240,18 @@ class nsGridContainerFrame final : public nsContainerFrame,
 
   using nsContainerFrame::IsMasonry;
 
+  /**
+   * Return true if this frame has masonry layout in aAxis (in this frame's own
+   * writing mode).
+   */
+  bool IsMasonry(mozilla::LogicalAxis aAxis) const;
+  bool IsColMasonry() const {
+    return HasAnyStateBits(NS_STATE_GRID_IS_COL_MASONRY);
+  }
+  bool IsRowMasonry() const {
+    return HasAnyStateBits(NS_STATE_GRID_IS_ROW_MASONRY);
+  }
+
   /** Return true if this frame has masonry layout in any axis. */
   bool IsMasonry() const {
     return HasAnyStateBits(NS_STATE_GRID_IS_ROW_MASONRY |

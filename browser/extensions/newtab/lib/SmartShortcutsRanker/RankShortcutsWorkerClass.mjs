@@ -132,8 +132,8 @@ export function normUpdate(vals, input_normobj) {
  * Normalize a dictionary of {key: hist[]} using squared values and column-wise normalization.
  * Returns {key: normedHist[]} where each hist[j] is divided by sum_k hist_k[j]^2.
  *
- * @param {Object<string, number[]>} dict - A dictionary mapping keys to arrays of P(t|s) values.
- * @returns {Object<string, number[]>} New dictionary with normalized histograms (P(s|t)).
+ * @param {{[key: string]: number}} dict - A dictionary mapping keys to arrays of P(t|s) values.
+ * @returns {{[key: string]: number}} New dictionary with normalized histograms (P(s|t)).
  */
 export function normHistDict(dict) {
   const keys = Object.keys(dict);
@@ -601,15 +601,16 @@ export function placeGuidsByPositions(guids, posMap) {
  * Given last-click positions aligned to guids, shift by numSponsored (clamp negatives to 0,
  * preserve nulls), then place GUIDs accordingly.
  *
- *  positions and guids are each arrays in the same order, here we map
- *  guid to poisitions, we do this here to put as much as possible on the promise
- *  we shift from "positions" which is absolute shortcut position to array index
- *  which ignores the sponsored shortcuts.
+ * Positions and guids are each arrays in the same order, here we map
+ * guid to positions, we do this here to put as much as possible on the promise
+ * we shift from "positions" which is absolute shortcut position to array index
+ * which ignores the sponsored shortcuts.
  *
  * This function has a known shortcoming where the positions will be incorrect if the number
  * of sponsored shortcuts changes. We accept this because 1) changes should be very rare
  * 2) it fails safely 3) the differences should be off by the change in the number of sponsored
  * shortcuts which is at most 3
+ *
  * @param {(number|null|undefined)[]} positions  // aligned with guids
  * @param {string[]} guids
  * @param {number} numSponsored

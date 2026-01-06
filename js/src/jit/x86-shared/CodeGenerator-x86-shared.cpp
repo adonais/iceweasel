@@ -872,40 +872,54 @@ void CodeGenerator::visitMulI(LMulI* ins) {
   }
 }
 
-void CodeGenerator::visitUDivOrMod(LUDivOrMod* ins) {
-  Register lhs = ToRegister(ins->lhs());
+template <class LIR>
+static void TrapIfDivideByZero(MacroAssembler& masm, LIR* lir, Register rhs) {
+  auto* mir = lir->mir();
+  MOZ_ASSERT(mir->trapOnError());
+  MOZ_ASSERT(mir->canBeDivideByZero());
+
+  Label nonZero;
+  masm.branchTest32(Assembler::NonZero, rhs, rhs, &nonZero);
+  masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+  masm.bind(&nonZero);
+}
+
+OutOfLineCode* CodeGeneratorX86Shared::emitOutOfLineZeroForDivideByZero(
+    Register rhs, Register output) {
+  // Truncated division by zero is zero: (±Infinity|0 == 0) and (NaN|0 == 0).
+  auto* ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
+    masm.mov(ImmWord(0), output);
+    masm.jmp(ool.rejoin());
+  });
+  masm.branchTest32(Assembler::Zero, rhs, rhs, ool->entry());
+
+  return ool;
+}
+
+void CodeGenerator::visitUDiv(LUDiv* ins) {
   Register rhs = ToRegister(ins->rhs());
   Register output = ToRegister(ins->output());
+  Register remainder = ToRegister(ins->temp0());
 
-  MOZ_ASSERT_IF(lhs != rhs, rhs != eax);
+  MOZ_ASSERT(ToRegister(ins->lhs()) == eax);
+  MOZ_ASSERT(rhs != eax);
   MOZ_ASSERT(rhs != edx);
-  MOZ_ASSERT_IF(output == eax, ToRegister(ins->remainder()) == edx);
+  MOZ_ASSERT(output == eax);
+  MOZ_ASSERT(remainder == edx);
+
+  MDiv* mir = ins->mir();
 
   OutOfLineCode* ool = nullptr;
 
-  // Put the lhs in eax.
-  if (lhs != eax) {
-    masm.mov(lhs, eax);
-  }
-
   // Prevent divide by zero.
-  if (ins->canBeDivideByZero()) {
-    masm.test32(rhs, rhs);
-    if (ins->mir()->isTruncated()) {
-      if (ins->trapOnError()) {
-        Label nonZero;
-        masm.j(Assembler::NonZero, &nonZero);
-        masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->trapSiteDesc());
-        masm.bind(&nonZero);
-      } else {
-        ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
-          masm.mov(ImmWord(0), output);
-          masm.jmp(ool.rejoin());
-        });
-        masm.j(Assembler::Zero, ool->entry());
-      }
+  if (mir->canBeDivideByZero()) {
+    if (mir->trapOnError()) {
+      TrapIfDivideByZero(masm, ins, rhs);
+    } else if (mir->isTruncated()) {
+      ool = emitOutOfLineZeroForDivideByZero(rhs, output);
     } else {
-      bailoutIf(Assembler::Zero, ins->snapshot());
+      MOZ_ASSERT(mir->fallible());
+      bailoutTest32(Assembler::Zero, rhs, rhs, ins->snapshot());
     }
   }
 
@@ -914,56 +928,102 @@ void CodeGenerator::visitUDivOrMod(LUDivOrMod* ins) {
   masm.udiv(rhs);
 
   // If the remainder is > 0, bailout since this must be a double.
-  if (ins->mir()->isDiv() && !ins->mir()->toDiv()->canTruncateRemainder()) {
-    Register remainder = ToRegister(ins->remainder());
-    masm.test32(remainder, remainder);
-    bailoutIf(Assembler::NonZero, ins->snapshot());
+  if (!mir->canTruncateRemainder()) {
+    bailoutTest32(Assembler::NonZero, remainder, remainder, ins->snapshot());
   }
 
-  // Unsigned div or mod can return a value that's not a signed int32.
+  // Unsigned div can return a value that's not a signed int32.
   // If our users aren't expecting that, bail.
-  if (!ins->mir()->isTruncated()) {
-    masm.test32(output, output);
-    bailoutIf(Assembler::Signed, ins->snapshot());
+  if (!mir->isTruncated()) {
+    bailoutTest32(Assembler::Signed, output, output, ins->snapshot());
   }
 
   if (ool) {
-    addOutOfLineCode(ool, ins->mir());
+    addOutOfLineCode(ool, mir);
     masm.bind(ool->rejoin());
   }
 }
 
-void CodeGenerator::visitUDivOrModConstant(LUDivOrModConstant* ins) {
-  Register lhs = ToRegister(ins->numerator());
+void CodeGenerator::visitUMod(LUMod* ins) {
+  Register rhs = ToRegister(ins->rhs());
   Register output = ToRegister(ins->output());
-  uint32_t d = ins->denominator();
 
-  // This emits the division answer into edx or the modulus answer into eax.
-  MOZ_ASSERT(output == eax || output == edx);
-  MOZ_ASSERT(lhs != eax && lhs != edx);
-  bool isDiv = (output == edx);
+  MOZ_ASSERT(ToRegister(ins->lhs()) == eax);
+  MOZ_ASSERT(rhs != eax);
+  MOZ_ASSERT(rhs != edx);
+  MOZ_ASSERT(output == edx);
+  MOZ_ASSERT(ToRegister(ins->temp0()) == eax);
 
-  if (d == 0) {
-    if (ins->mir()->isTruncated()) {
-      if (ins->trapOnError()) {
-        masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->trapSiteDesc());
-      } else {
-        masm.xorl(output, output);
-      }
+  MMod* mir = ins->mir();
+
+  OutOfLineCode* ool = nullptr;
+
+  // Prevent divide by zero.
+  if (mir->canBeDivideByZero()) {
+    if (mir->trapOnError()) {
+      TrapIfDivideByZero(masm, ins, rhs);
+    } else if (mir->isTruncated()) {
+      ool = emitOutOfLineZeroForDivideByZero(rhs, output);
     } else {
-      bailout(ins->snapshot());
+      MOZ_ASSERT(mir->fallible());
+      bailoutTest32(Assembler::Zero, rhs, rhs, ins->snapshot());
     }
-    return;
   }
 
+  // Zero extend the lhs into edx to make (edx:eax), since udiv is 64-bit.
+  masm.mov(ImmWord(0), edx);
+  masm.udiv(rhs);
+
+  // Unsigned mod can return a value that's not a signed int32.
+  // If our users aren't expecting that, bail.
+  if (!mir->isTruncated()) {
+    bailoutTest32(Assembler::Signed, output, output, ins->snapshot());
+  }
+
+  if (ool) {
+    addOutOfLineCode(ool, mir);
+    masm.bind(ool->rejoin());
+  }
+}
+
+template <class LUDivOrUMod>
+static void UnsignedDivideWithConstant(MacroAssembler& masm, LUDivOrUMod* ins,
+                                       Register result, Register temp) {
+  Register lhs = ToRegister(ins->numerator());
+  uint32_t d = ins->denominator();
+
+  MOZ_ASSERT(lhs != result && lhs != temp);
+#ifdef JS_CODEGEN_X86
+  MOZ_ASSERT(result == edx && temp == eax);
+#else
+  MOZ_ASSERT(result != temp);
+#endif
+
   // The denominator isn't a power of 2 (see LDivPowTwoI and LModPowTwoI).
-  MOZ_ASSERT((d & (d - 1)) != 0);
+  MOZ_ASSERT(!mozilla::IsPowerOfTwo(d));
 
   auto rmc = ReciprocalMulConstants::computeUnsignedDivisionConstants(d);
 
   // We first compute (M * n) >> 32, where M = rmc.multiplier.
+#ifdef JS_CODEGEN_X86
   masm.movl(Imm32(rmc.multiplier), eax);
   masm.umull(lhs);
+#else
+  // Zero-extend |lhs| in preparation for a 64-bit multiplication.
+  masm.movl(lhs, result);
+
+  // Note that imul sign-extends its 32-bit immediate, but we need an unsigned
+  // multiplication.
+  if (int32_t(rmc.multiplier) >= 0) {
+    masm.imulq(Imm32(rmc.multiplier), result, result);
+  } else {
+    masm.movl(Imm32(rmc.multiplier), temp);
+    masm.imulq(temp, result);
+  }
+  if (rmc.multiplier > UINT32_MAX || rmc.shiftAmount == 0) {
+    masm.shrq(Imm32(32), result);
+  }
+#endif
   if (rmc.multiplier > UINT32_MAX) {
     // M >= 2^32 and shift == 0 is impossible, as d >= 2 implies that
     // ((M * n) >> (32 + shift)) >= n > floor(n/d) whenever n >= d,
@@ -971,45 +1031,112 @@ void CodeGenerator::visitUDivOrModConstant(LUDivOrModConstant* ins) {
     MOZ_ASSERT(rmc.shiftAmount > 0);
     MOZ_ASSERT(rmc.multiplier < (int64_t(1) << 33));
 
-    // We actually computed edx = ((uint32_t(M) * n) >> 32) instead. Since
-    // (M * n) >> (32 + shift) is the same as (edx + n) >> shift, we can
+    // We actually computed result = ((uint32_t(M) * n) >> 32) instead. Since
+    // (M * n) >> (32 + shift) is the same as (result + n) >> shift, we can
     // correct for the overflow. This case is a bit trickier than the signed
-    // case, though, as the (edx + n) addition itself can overflow; however,
-    // note that (edx + n) >> shift == (((n - edx) >> 1) + edx) >> (shift - 1),
+    // case, though, as the (result + n) addition itself can overflow; however,
+    // note that
+    // (result + n) >> shift == (((n - result) >> 1) + result) >> (shift - 1),
     // which is overflow-free. See Hacker's Delight, section 10-8 for details.
 
-    // Compute (n - edx) >> 1 into eax.
-    masm.movl(lhs, eax);
-    masm.subl(edx, eax);
-    masm.shrl(Imm32(1), eax);
+    // Compute (n - result) >> 1 into temp.
+    masm.movl(lhs, temp);
+    masm.subl(result, temp);
+    masm.shrl(Imm32(1), temp);
 
     // Finish the computation.
-    masm.addl(eax, edx);
-    masm.shrl(Imm32(rmc.shiftAmount - 1), edx);
+    masm.addl(temp, result);
+    if (rmc.shiftAmount > 1) {
+      masm.shrl(Imm32(rmc.shiftAmount - 1), result);
+    }
   } else {
-    masm.shrl(Imm32(rmc.shiftAmount), edx);
+    if (rmc.shiftAmount > 0) {
+#ifdef JS_CODEGEN_X86
+      masm.shrl(Imm32(rmc.shiftAmount), result);
+#else
+      masm.shrq(Imm32(32 + rmc.shiftAmount), result);
+#endif
+    }
+  }
+}
+
+void CodeGenerator::visitUDivConstant(LUDivConstant* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  Register temp = ToRegister(ins->temp0());
+  uint32_t d = ins->denominator();
+
+  MDiv* mir = ins->mir();
+
+#ifdef JS_CODEGEN_X86
+  // This emits the division answer into edx.
+  MOZ_ASSERT(output == edx);
+  MOZ_ASSERT(temp == eax);
+#endif
+
+  if (d == 0) {
+    if (mir->trapOnError()) {
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+    } else if (mir->isTruncated()) {
+      masm.xorl(output, output);
+    } else {
+      bailout(ins->snapshot());
+    }
+    return;
   }
 
-  // We now have the truncated division value in edx. If we're
-  // computing a modulus or checking whether the division resulted
-  // in an integer, we need to multiply the obtained value by d and
-  // finish the computation/check.
-  if (!isDiv) {
-    masm.imull(Imm32(d), edx, edx);
-    masm.movl(lhs, eax);
-    masm.subl(edx, eax);
+  // Compute the truncated division result in |output|.
+  UnsignedDivideWithConstant(masm, ins, output, temp);
 
-    // The final result of the modulus op, just computed above by the
-    // sub instruction, can be a number in the range [2^31, 2^32). If
-    // this is the case and the modulus is not truncated, we must bail
-    // out.
-    if (!ins->mir()->isTruncated()) {
-      bailoutIf(Assembler::Signed, ins->snapshot());
+  if (!mir->isTruncated()) {
+    masm.imull(Imm32(d), output, temp);
+    bailoutCmp32(Assembler::NotEqual, lhs, temp, ins->snapshot());
+  }
+}
+
+void CodeGenerator::visitUModConstant(LUModConstant* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  Register temp = ToRegister(ins->temp0());
+  uint32_t d = ins->denominator();
+
+  MMod* mir = ins->mir();
+
+#ifdef JS_CODEGEN_X86
+  // This emits the modulus answer into eax.
+  MOZ_ASSERT(output == eax);
+  MOZ_ASSERT(temp == edx);
+#endif
+
+  if (d == 0) {
+    if (mir->trapOnError()) {
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+    } else if (mir->isTruncated()) {
+      masm.xorl(output, output);
+    } else {
+      bailout(ins->snapshot());
     }
-  } else if (!ins->mir()->isTruncated()) {
-    masm.imull(Imm32(d), edx, eax);
-    masm.cmpl(lhs, eax);
-    bailoutIf(Assembler::NotEqual, ins->snapshot());
+    return;
+  }
+
+  // Compute the truncated division result in |temp|.
+  UnsignedDivideWithConstant(masm, ins, temp, output);
+
+  // We now have the truncated division value in |temp|. If we're computing a
+  // modulus or checking whether the division resulted in an integer, we need
+  // to multiply the obtained value by d and finish the computation/check.
+  //
+  // output = lhs - d * temp
+  masm.imull(Imm32(d), temp, temp);
+  masm.movl(lhs, output);
+  masm.subl(temp, output);
+
+  // The final result of the modulus op, just computed above by the
+  // sub instruction, can be a number in the range [2^31, 2^32). If
+  // this is the case and the modulus is not truncated, we must bail
+  // out.
+  if (!mir->isTruncated()) {
+    bailoutIf(Assembler::Signed, ins->snapshot());
   }
 }
 
@@ -1027,15 +1154,14 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
 
   if (!mir->isTruncated() && negativeDivisor) {
     // 0 divided by a negative number must return a double.
-    masm.test32(lhs, lhs);
-    bailoutIf(Assembler::Zero, ins->snapshot());
+    bailoutTest32(Assembler::Zero, lhs, lhs, ins->snapshot());
   }
 
   if (shift) {
     if (!mir->isTruncated()) {
       // If the remainder is != 0, bailout since this must be a double.
-      masm.test32(lhs, Imm32(UINT32_MAX >> (32 - shift)));
-      bailoutIf(Assembler::NonZero, ins->snapshot());
+      bailoutTest32(Assembler::NonZero, lhs, Imm32(UINT32_MAX >> (32 - shift)),
+                    ins->snapshot());
     }
 
     if (mir->isUnsigned()) {
@@ -1084,93 +1210,165 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
       masm.bind(&ok);
     }
   } else if (mir->isUnsigned() && !mir->isTruncated()) {
-    // Unsigned division by 1 can overflow if output is not
-    // truncated.
-    masm.test32(lhs, lhs);
-    bailoutIf(Assembler::Signed, ins->snapshot());
+    // Unsigned division by 1 can overflow if output is not truncated.
+    bailoutTest32(Assembler::Signed, lhs, lhs, ins->snapshot());
   }
 }
 
-void CodeGenerator::visitDivOrModConstantI(LDivOrModConstantI* ins) {
+template <class LDivOrMod>
+static void DivideWithConstant(MacroAssembler& masm, LDivOrMod* ins,
+                               Register result, Register temp) {
   Register lhs = ToRegister(ins->numerator());
-  Register output = ToRegister(ins->output());
   int32_t d = ins->denominator();
 
-  // This emits the division answer into edx or the modulus answer into eax.
-  MOZ_ASSERT(output == eax || output == edx);
-  MOZ_ASSERT(lhs != eax && lhs != edx);
-  bool isDiv = (output == edx);
+  MOZ_ASSERT(lhs != result && lhs != temp);
+#ifdef JS_CODEGEN_X86
+  MOZ_ASSERT(result == edx && temp == eax);
+#else
+  MOZ_ASSERT(result != temp);
+#endif
 
   // The absolute value of the denominator isn't a power of 2 (see LDivPowTwoI
   // and LModPowTwoI).
   MOZ_ASSERT(!mozilla::IsPowerOfTwo(mozilla::Abs(d)));
+
+  auto* mir = ins->mir();
 
   // We will first divide by Abs(d), and negate the answer if d is negative.
   // If desired, this can be avoided by generalizing computeDivisionConstants.
   auto rmc = ReciprocalMulConstants::computeSignedDivisionConstants(d);
 
   // We first compute (M * n) >> 32, where M = rmc.multiplier.
+#ifdef JS_CODEGEN_X86
   masm.movl(Imm32(rmc.multiplier), eax);
   masm.imull(lhs);
+#else
+  // Sign-extend |lhs| in preparation for a 64-bit multiplication.
+  masm.movslq(lhs, result);
+  masm.imulq(Imm32(rmc.multiplier), result, result);
+  if (rmc.multiplier > INT32_MAX || rmc.shiftAmount == 0) {
+    masm.shrq(Imm32(32), result);
+  }
+#endif
   if (rmc.multiplier > INT32_MAX) {
     MOZ_ASSERT(rmc.multiplier < (int64_t(1) << 32));
 
-    // We actually computed edx = ((int32_t(M) * n) >> 32) instead. Since
-    // (M * n) >> 32 is the same as (edx + n), we can correct for the overflow.
-    // (edx + n) can't overflow, as n and edx have opposite signs because
-    // int32_t(M) is negative.
-    masm.addl(lhs, edx);
+    // We actually computed result = ((int32_t(M) * n) >> 32) instead. Since
+    // (M * n) >> 32 is the same as (result + n), we can correct for the
+    // overflow. (result + n) can't overflow, as n and |result| have opposite
+    // signs because int32_t(M) is negative.
+    masm.addl(lhs, result);
   }
   // (M * n) >> (32 + shift) is the truncated division answer if n is
   // non-negative, as proved in the comments of computeDivisionConstants. We
   // must add 1 later if n is negative to get the right answer in all cases.
-  masm.sarl(Imm32(rmc.shiftAmount), edx);
+  if (rmc.shiftAmount > 0) {
+#ifdef JS_CODEGEN_X86
+    masm.sarl(Imm32(rmc.shiftAmount), result);
+#else
+    if (rmc.multiplier > INT32_MAX) {
+      masm.sarl(Imm32(rmc.shiftAmount), result);
+    } else {
+      masm.sarq(Imm32(32 + rmc.shiftAmount), result);
+    }
+#endif
+  }
 
   // We'll subtract -1 instead of adding 1, because (n < 0 ? -1 : 0) can be
   // computed with just a sign-extending shift of 31 bits.
-  if (ins->canBeNegativeDividend()) {
-    masm.movl(lhs, eax);
-    masm.sarl(Imm32(31), eax);
-    masm.subl(eax, edx);
+  if (mir->canBeNegativeDividend()) {
+    masm.movl(lhs, temp);
+    masm.sarl(Imm32(31), temp);
+    masm.subl(temp, result);
   }
 
-  // After this, edx contains the correct truncated division result.
+  // After this, |result| contains the correct truncated division result.
   if (d < 0) {
-    masm.negl(edx);
+    masm.negl(result);
   }
+}
 
-  if (!isDiv) {
-    masm.imull(Imm32(-d), edx, eax);
-    masm.addl(lhs, eax);
-  }
+void CodeGenerator::visitDivConstantI(LDivConstantI* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  Register temp = ToRegister(ins->temp0());
+  int32_t d = ins->denominator();
 
-  if (!ins->mir()->isTruncated()) {
-    if (isDiv) {
-      // This is a division op. Multiply the obtained value by d to check if
-      // the correct answer is an integer. This cannot overflow, since |d| > 1.
-      masm.imull(Imm32(d), edx, eax);
-      masm.cmp32(lhs, eax);
-      bailoutIf(Assembler::NotEqual, ins->snapshot());
+  MDiv* mir = ins->mir();
 
-      // If lhs is zero and the divisor is negative, the answer should have
-      // been -0.
-      if (d < 0) {
-        masm.test32(lhs, lhs);
-        bailoutIf(Assembler::Zero, ins->snapshot());
-      }
-    } else if (ins->canBeNegativeDividend()) {
-      // This is a mod op. If the computed value is zero and lhs
-      // is negative, the answer should have been -0.
-      Label done;
+#ifdef JS_CODEGEN_X86
+  // This emits the division answer into edx.
+  MOZ_ASSERT(output == edx);
+  MOZ_ASSERT(temp == eax);
+#endif
 
-      masm.cmp32(lhs, Imm32(0));
-      masm.j(Assembler::GreaterThanOrEqual, &done);
-
-      masm.test32(eax, eax);
-      bailoutIf(Assembler::Zero, ins->snapshot());
-
-      masm.bind(&done);
+  if (d == 0) {
+    if (mir->trapOnError()) {
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+    } else if (mir->isTruncated()) {
+      masm.xorl(output, output);
+    } else {
+      bailout(ins->snapshot());
     }
+    return;
+  }
+
+  // Compute the truncated division result in |output|.
+  DivideWithConstant(masm, ins, output, temp);
+
+  if (!mir->isTruncated()) {
+    // This is a division op. Multiply the obtained value by d to check if
+    // the correct answer is an integer. This cannot overflow, since |d| > 1.
+    masm.imull(Imm32(d), output, temp);
+    bailoutCmp32(Assembler::NotEqual, lhs, temp, ins->snapshot());
+
+    // If lhs is zero and the divisor is negative, the answer should have
+    // been -0.
+    if (d < 0) {
+      bailoutTest32(Assembler::Zero, lhs, lhs, ins->snapshot());
+    }
+  }
+}
+
+void CodeGenerator::visitModConstantI(LModConstantI* ins) {
+  Register lhs = ToRegister(ins->numerator());
+  Register output = ToRegister(ins->output());
+  Register temp = ToRegister(ins->temp0());
+  int32_t d = ins->denominator();
+
+  MMod* mir = ins->mir();
+
+#ifdef JS_CODEGEN_X86
+  // This emits the modulus answer into eax.
+  MOZ_ASSERT(output == eax);
+  MOZ_ASSERT(temp == edx);
+#endif
+
+  if (d == 0) {
+    if (mir->trapOnError()) {
+      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
+    } else if (mir->isTruncated()) {
+      masm.xorl(output, output);
+    } else {
+      bailout(ins->snapshot());
+    }
+    return;
+  }
+
+  // Compute the truncated division result in |temp|.
+  DivideWithConstant(masm, ins, temp, output);
+
+  // Compute the remainder in |output|: output = lhs - d * temp
+  masm.imull(Imm32(-d), temp, output);
+  masm.addl(lhs, output);
+
+  if (!mir->isTruncated() && mir->canBeNegativeDividend()) {
+    // This is a mod op. If the computed value is zero and lhs
+    // is negative, the answer should have been -0.
+    Label done;
+    masm.branch32(Assembler::GreaterThanOrEqual, lhs, Imm32(0), &done);
+    bailoutTest32(Assembler::Zero, output, output, ins->snapshot());
+    masm.bind(&done);
   }
 }
 
@@ -1180,61 +1378,43 @@ void CodeGenerator::visitDivI(LDivI* ins) {
   Register rhs = ToRegister(ins->rhs());
   Register output = ToRegister(ins->output());
 
-  MDiv* mir = ins->mir();
-
-  MOZ_ASSERT_IF(lhs != rhs, rhs != eax);
+  MOZ_ASSERT(lhs == eax);
+  MOZ_ASSERT(rhs != eax);
   MOZ_ASSERT(rhs != edx);
   MOZ_ASSERT(remainder == edx);
   MOZ_ASSERT(output == eax);
 
+  MDiv* mir = ins->mir();
+
   Label done;
   OutOfLineCode* ool = nullptr;
 
-  // Put the lhs in eax, for either the negative overflow case or the regular
-  // divide case.
-  if (lhs != eax) {
-    masm.mov(lhs, eax);
-  }
-
   // Handle divide by zero.
   if (mir->canBeDivideByZero()) {
-    masm.test32(rhs, rhs);
     if (mir->trapOnError()) {
-      Label nonZero;
-      masm.j(Assembler::NonZero, &nonZero);
-      masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
-      masm.bind(&nonZero);
+      TrapIfDivideByZero(masm, ins, rhs);
     } else if (mir->canTruncateInfinities()) {
-      // Truncated division by zero is zero (Infinity|0 == 0)
-      if (!ool) {
-        ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
-          masm.mov(ImmWord(0), output);
-          masm.jmp(ool.rejoin());
-        });
-      }
-      masm.j(Assembler::Zero, ool->entry());
+      ool = emitOutOfLineZeroForDivideByZero(rhs, output);
     } else {
       MOZ_ASSERT(mir->fallible());
-      bailoutIf(Assembler::Zero, ins->snapshot());
+      bailoutTest32(Assembler::Zero, rhs, rhs, ins->snapshot());
     }
   }
 
   // Handle an integer overflow exception from -2147483648 / -1.
   if (mir->canBeNegativeOverflow()) {
     Label notOverflow;
-    masm.cmp32(lhs, Imm32(INT32_MIN));
-    masm.j(Assembler::NotEqual, &notOverflow);
-    masm.cmp32(rhs, Imm32(-1));
+    masm.branch32(Assembler::NotEqual, lhs, Imm32(INT32_MIN), &notOverflow);
     if (mir->trapOnError()) {
-      masm.j(Assembler::NotEqual, &notOverflow);
+      masm.branch32(Assembler::NotEqual, rhs, Imm32(-1), &notOverflow);
       masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->trapSiteDesc());
     } else if (mir->canTruncateOverflow()) {
       // (-INT32_MIN)|0 == INT32_MIN and INT32_MIN is already in the
       // output register (lhs == eax).
-      masm.j(Assembler::Equal, &done);
+      masm.branch32(Assembler::Equal, rhs, Imm32(-1), &done);
     } else {
       MOZ_ASSERT(mir->fallible());
-      bailoutIf(Assembler::Equal, ins->snapshot());
+      bailoutCmp32(Assembler::Equal, rhs, Imm32(-1), ins->snapshot());
     }
     masm.bind(&notOverflow);
   }
@@ -1242,24 +1422,18 @@ void CodeGenerator::visitDivI(LDivI* ins) {
   // Handle negative 0.
   if (!mir->canTruncateNegativeZero() && mir->canBeNegativeZero()) {
     Label nonzero;
-    masm.test32(lhs, lhs);
-    masm.j(Assembler::NonZero, &nonzero);
-    masm.cmp32(rhs, Imm32(0));
-    bailoutIf(Assembler::LessThan, ins->snapshot());
+    masm.branchTest32(Assembler::NonZero, lhs, lhs, &nonzero);
+    bailoutCmp32(Assembler::LessThan, rhs, Imm32(0), ins->snapshot());
     masm.bind(&nonzero);
   }
 
   // Sign extend the lhs into edx to make (edx:eax), since idiv is 64-bit.
-  if (lhs != eax) {
-    masm.mov(lhs, eax);
-  }
   masm.cdq();
   masm.idiv(rhs);
 
   if (!mir->canTruncateRemainder()) {
     // If the remainder is > 0, bailout since this must be a double.
-    masm.test32(remainder, remainder);
-    bailoutIf(Assembler::NonZero, ins->snapshot());
+    bailoutTest32(Assembler::NonZero, remainder, remainder, ins->snapshot());
   }
 
   masm.bind(&done);
@@ -1273,18 +1447,45 @@ void CodeGenerator::visitDivI(LDivI* ins) {
 void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
   Register lhs = ToRegister(ins->input());
   int32_t shift = ins->shift();
+  bool canBeNegative =
+      !ins->mir()->isUnsigned() && ins->mir()->canBeNegativeDividend();
+
+  if (shift == 0) {
+    if (canBeNegative && !ins->mir()->isTruncated()) {
+      bailoutTest32(Assembler::Signed, lhs, lhs, ins->snapshot());
+    }
+    masm.xorl(lhs, lhs);
+    return;
+  }
+
+  auto clearHighBits = [&]() {
+    switch (shift) {
+      case 16:
+        masm.movzwl(lhs, lhs);
+        break;
+      case 8:
+        if (AllocatableGeneralRegisterSet(Registers::SingleByteRegs).has(lhs)) {
+          masm.movzbl(lhs, lhs);
+          break;
+        }
+        [[fallthrough]];
+      default:
+        masm.andl(Imm32((uint32_t(1) << shift) - 1), lhs);
+        break;
+    }
+  };
 
   Label negative;
 
-  if (!ins->mir()->isUnsigned() && ins->mir()->canBeNegativeDividend()) {
+  if (canBeNegative) {
     // Switch based on sign of the lhs.
     // Positive numbers are just a bitmask
     masm.branchTest32(Assembler::Signed, lhs, lhs, &negative);
   }
 
-  masm.andl(Imm32((uint32_t(1) << shift) - 1), lhs);
+  clearHighBits();
 
-  if (!ins->mir()->isUnsigned() && ins->mir()->canBeNegativeDividend()) {
+  if (canBeNegative) {
     Label done;
     masm.jump(&done);
 
@@ -1298,7 +1499,7 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
     // The negl instruction overflows if lhs == INT32_MIN, but this is also not
     // a problem: shift is at most 31, and so the andl also always returns 0.
     masm.negl(lhs);
-    masm.andl(Imm32((uint32_t(1) << shift) - 1), lhs);
+    clearHighBits();
     masm.negl(lhs);
 
     // Since a%b has the same sign as b, and a is negative in this branch,
@@ -1344,42 +1545,27 @@ void CodeGenerator::visitModI(LModI* ins) {
   Register rhs = ToRegister(ins->rhs());
 
   // Required to use idiv.
-  MOZ_ASSERT_IF(lhs != rhs, rhs != eax);
+  MOZ_ASSERT(lhs == eax);
+  MOZ_ASSERT(rhs != eax);
   MOZ_ASSERT(rhs != edx);
   MOZ_ASSERT(remainder == edx);
   MOZ_ASSERT(ToRegister(ins->temp0()) == eax);
+
+  MMod* mir = ins->mir();
 
   Label done;
   OutOfLineCode* ool = nullptr;
   ModOverflowCheck* overflow = nullptr;
 
-  // Set up eax in preparation for doing a div.
-  if (lhs != eax) {
-    masm.mov(lhs, eax);
-  }
-
-  MMod* mir = ins->mir();
-
   // Prevent divide by zero.
   if (mir->canBeDivideByZero()) {
-    masm.test32(rhs, rhs);
-    if (mir->isTruncated()) {
-      if (mir->trapOnError()) {
-        Label nonZero;
-        masm.j(Assembler::NonZero, &nonZero);
-        masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->trapSiteDesc());
-        masm.bind(&nonZero);
-      } else {
-        if (!ool) {
-          ool = new (alloc()) LambdaOutOfLineCode([=](OutOfLineCode& ool) {
-            masm.mov(ImmWord(0), edx);
-            masm.jmp(ool.rejoin());
-          });
-        }
-        masm.j(Assembler::Zero, ool->entry());
-      }
+    if (mir->trapOnError()) {
+      TrapIfDivideByZero(masm, ins, rhs);
+    } else if (mir->isTruncated()) {
+      ool = emitOutOfLineZeroForDivideByZero(rhs, remainder);
     } else {
-      bailoutIf(Assembler::Zero, ins->snapshot());
+      MOZ_ASSERT(mir->fallible());
+      bailoutTest32(Assembler::Zero, rhs, rhs, ins->snapshot());
     }
   }
 
@@ -1425,17 +1611,16 @@ void CodeGenerator::visitModI(LModI* ins) {
     masm.bind(&negative);
 
     // Prevent an integer overflow exception from -2147483648 % -1
-    masm.cmp32(lhs, Imm32(INT32_MIN));
     overflow = new (alloc()) ModOverflowCheck(ins, rhs);
-    masm.j(Assembler::Equal, overflow->entry());
+    masm.branch32(Assembler::Equal, lhs, Imm32(INT32_MIN), overflow->entry());
     masm.bind(overflow->rejoin());
+
     masm.cdq();
     masm.idiv(rhs);
 
     if (!mir->isTruncated()) {
       // A remainder of 0 means that the rval must be -0, which is a double.
-      masm.test32(remainder, remainder);
-      bailoutIf(Assembler::Zero, ins->snapshot());
+      bailoutTest32(Assembler::Zero, remainder, remainder, ins->snapshot());
     }
   }
 

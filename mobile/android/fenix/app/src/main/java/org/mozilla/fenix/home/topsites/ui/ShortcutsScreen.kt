@@ -7,16 +7,13 @@ package org.mozilla.fenix.home.topsites.ui
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -25,6 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.utils.BackInvokedHandler
 import org.mozilla.fenix.R
 import org.mozilla.fenix.home.fake.FakeHomepagePreview
@@ -57,17 +55,17 @@ fun ShortcutsScreen(
                 title = {
                     Text(
                         text = stringResource(R.string.homepage_shortcuts_title),
-                        color = FirefoxTheme.colors.textPrimary,
-                        style = FirefoxTheme.typography.headline6,
+                        style = FirefoxTheme.typography.headline5,
                     )
                 },
-                modifier = Modifier.fillMaxWidth(),
                 navigationIcon = {
-                    IconButton(onClick = onNavigationIconClick) {
+                    IconButton(
+                        onClick = onNavigationIconClick,
+                        contentDescription = "",
+                    ) {
                         Icon(
                             painter = painterResource(iconsR.drawable.mozac_ic_back_24),
                             contentDescription = "",
-                            tint = FirefoxTheme.colors.iconPrimary,
                         )
                     }
                 },
@@ -75,10 +73,8 @@ fun ShortcutsScreen(
                     top = 0.dp,
                     bottom = 0.dp,
                 ),
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = FirefoxTheme.colors.layer1),
             )
         },
-        containerColor = FirefoxTheme.colors.layer1,
     ) { paddingValues ->
         ShortcutsScreenContent(
             state = state,

@@ -72,10 +72,10 @@ const INDENT_STR = " ".repeat(INDENT_SIZE);
  *        The CssRuleView containg the document holding this rule editor.
  * @param {Rule} rule
  *        The Rule object we're editing.
- * @param {Object} options
+ * @param {object} options
  * @param {Set} options.elementsWithPendingClicks
  * @param {Function} options.onShowUnusedCustomCssProperties
- * @param {Boolean} options.shouldHideUnusedCustomCssProperties
+ * @param {boolean} options.shouldHideUnusedCustomCssProperties
  */
 function RuleEditor(ruleView, rule, options = {}) {
   EventEmitter.decorate(this);
@@ -141,14 +141,19 @@ RuleEditor.prototype = {
   },
 
   get isSelectorEditable() {
-    const trait =
+    return (
       this.isEditable &&
       this.rule.domRule.type !== ELEMENT_STYLE &&
-      this.rule.domRule.type !== CSSRule.KEYFRAME_RULE;
+      this.rule.domRule.type !== CSSRule.KEYFRAME_RULE &&
+      this.rule.domRule.className !== "CSSPositionTryRule"
+    );
+  },
 
-    // Do not allow editing anonymousselectors until we can
-    // detect mutations on  pseudo elements in Bug 1034110.
-    return trait && !this.rule.elementStyle.element.isAnonymous;
+  get showSelectorHighlighterButton() {
+    return (
+      this.rule.domRule.type !== CSSRule.KEYFRAME_RULE &&
+      this.rule.domRule.className !== "CSSPositionTryRule"
+    );
   },
 
   _create() {
@@ -384,6 +389,8 @@ RuleEditor.prototype = {
         // devtools.inspector.rule-view.focusNextOnEnter set to true
         stopOnReturn: this.ruleView.inplaceEditorFocusNextOnEnter !== true,
       });
+    } else {
+      this.selectorText.classList.add("uneditable-selector");
     }
 
     if (this.rule.domRule.type !== CSSRule.KEYFRAME_RULE) {
@@ -395,18 +402,20 @@ RuleEditor.prototype = {
         // be computed on demand when the highlighter is requested.
       }
 
-      const isHighlighted =
-        this.ruleView.isSelectorHighlighted(computedSelector);
-      // Handling of click events is delegated to CssRuleView.handleEvent()
-      createChild(header, "button", {
-        class:
-          "ruleview-selectorhighlighter js-toggle-selector-highlighter" +
-          (isHighlighted ? " highlighted" : ""),
-        "aria-pressed": isHighlighted,
-        // This is used in rules.js for the selector highlighter
-        "data-computed-selector": computedSelector,
-        title: l10n("rule.selectorHighlighter.tooltip"),
-      });
+      if (this.showSelectorHighlighterButton) {
+        const isHighlighted =
+          this.ruleView.isSelectorHighlighted(computedSelector);
+        // Handling of click events is delegated to CssRuleView.handleEvent()
+        createChild(header, "button", {
+          class:
+            "ruleview-selectorhighlighter js-toggle-selector-highlighter" +
+            (isHighlighted ? " highlighted" : ""),
+          "aria-pressed": isHighlighted,
+          // This is used in rules.js for the selector highlighter
+          "data-computed-selector": computedSelector,
+          title: l10n("rule.selectorHighlighter.tooltip"),
+        });
+      }
     }
 
     this.openBrace = createChild(header, "span", {
@@ -486,7 +495,7 @@ RuleEditor.prototype = {
    *
    * @param {Integer} selectorIndex: The index of the selector we want to create the
    *        warnings for
-   * @param {Array<Object>} selectorWarnings: An array of object of the following shape:
+   * @param {Array<object>} selectorWarnings: An array of object of the following shape:
    *        - {Integer} index: The index of the selector this applies to
    *        - {String} kind: Identifies the warning
    * @returns {Element|null}
@@ -573,7 +582,7 @@ RuleEditor.prototype = {
    * original sources or not.  This is a callback for
    * SourceMapURLService.subscribeByID, which see.
    *
-   * @param {Object | null} originalLocation
+   * @param {object | null} originalLocation
    *        The original position object (url/line/column) or null.
    */
   _updateLocation(originalLocation) {
@@ -646,7 +655,7 @@ RuleEditor.prototype = {
   /**
    * Update the rule editor with the contents of the rule.
    *
-   * @param {Boolean} reset
+   * @param {boolean} reset
    *        True to completely reset the rule editor before populating.
    */
   populate(reset) {
@@ -663,6 +672,8 @@ RuleEditor.prototype = {
       this.selectorText.textContent = this.rule.selectorText;
     } else if (this.rule.domRule.type === CSSRule.KEYFRAME_RULE) {
       this.selectorText.textContent = this.rule.domRule.keyText;
+    } else if (this.rule.domRule.className === "CSSPositionTryRule") {
+      this.selectorText.textContent = this.rule.domRule.name;
     } else {
       this.rule.domRule.selectors.forEach((selector, i) => {
         this._populateSelector(selector, i);
@@ -923,8 +934,8 @@ RuleEditor.prototype = {
   /**
    * Render a given rule selector in this.selectorText element
    *
-   * @param {String} selector: The selector text to display
-   * @param {Number} selectorIndex: Its index in the rule
+   * @param {string} selector: The selector text to display
+   * @param {number} selectorIndex: Its index in the rule
    */
   _populateSelector(selector, selectorIndex) {
     if (selectorIndex !== 0) {
@@ -934,16 +945,11 @@ RuleEditor.prototype = {
       });
     }
 
-    let containerClass = "ruleview-selector ";
-
-    // Only add matched/unmatched class when the rule does have some matched
-    // selectors. We don't always have some (e.g. rules for pseudo elements)
-
-    if (this.rule.matchedSelectorIndexes.length) {
-      containerClass += this.rule.matchedSelectorIndexes.includes(selectorIndex)
+    const containerClass =
+      "ruleview-selector " +
+      (this.rule.matchedSelectorIndexes.includes(selectorIndex)
         ? "matched"
-        : "unmatched";
-    }
+        : "unmatched");
 
     let selectorContainerTitle;
     if (
@@ -1008,13 +1014,13 @@ RuleEditor.prototype = {
   /**
    * Programatically add a new property to the rule.
    *
-   * @param {String} name
+   * @param {string} name
    *        Property name.
-   * @param {String} value
+   * @param {string} value
    *        Property value.
-   * @param {String} priority
+   * @param {string} priority
    *        Property priority.
-   * @param {Boolean} enabled
+   * @param {boolean} enabled
    *        True if the property should be enabled.
    * @param {TextProperty} siblingProp
    *        Optional, property next to which the new property will be added.
@@ -1147,9 +1153,9 @@ RuleEditor.prototype = {
   /**
    * Called when the new property input has been dismissed.
    *
-   * @param {String} value
+   * @param {string} value
    *        The value in the editor.
-   * @param {Boolean} commit
+   * @param {boolean} commit
    *        True if the value should be committed.
    */
   _onNewProperty(value, commit) {
@@ -1203,11 +1209,11 @@ RuleEditor.prototype = {
    * Ignores the change if the user pressed escape, otherwise
    * commits it.
    *
-   * @param {String} value
+   * @param {string} value
    *        The value contained in the editor.
-   * @param {Boolean} commit
+   * @param {boolean} commit
    *        True if the change should be applied.
-   * @param {Number} direction
+   * @param {number} direction
    *        The move focus direction number.
    */
   async _onSelectorDone(value, commit, direction) {
@@ -1238,6 +1244,11 @@ RuleEditor.prototype = {
     try {
       const response = await this.rule.domRule.modifySelector(element, value);
 
+      // Modifying the selector might have removed the element (e.g. for pseudo element)
+      if (!element.actorID) {
+        return;
+      }
+
       // We recompute the list of applied styles, because editing a
       // selector might cause this rule's position to change.
       const applied = await elementStyle.pageStyle.getApplied(element, {
@@ -1245,6 +1256,11 @@ RuleEditor.prototype = {
         matchedSelectors: true,
         filter: elementStyle.showUserAgentStyles ? "ua" : undefined,
       });
+
+      // The element might have been removed while we were trying to get the applied declarations
+      if (!element.actorID) {
+        return;
+      }
 
       this.isEditing = false;
 
@@ -1297,7 +1313,7 @@ RuleEditor.prototype = {
   /**
    * Handle moving the focus change after a Tab keypress in the selector inplace editor.
    *
-   * @param {Number} direction
+   * @param {number} direction
    *        The move focus direction number.
    */
   _moveSelectorFocus(direction) {

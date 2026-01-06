@@ -63,8 +63,8 @@ HarAutomation.prototype = {
   // Automation
 
   async startMonitoring() {
-    await this.toolbox.resourceCommand.watchResources(
-      [this.toolbox.resourceCommand.TYPES.DOCUMENT_EVENT],
+    await this.commands.resourceCommand.watchResources(
+      [this.commands.resourceCommand.TYPES.DOCUMENT_EVENT],
       {
         onAvailable: resources => {
           // Only consider top level document, and ignore remote iframes top document

@@ -132,7 +132,7 @@ void MacroAssembler::byteSwap16ZeroExtend(Register reg) {
 
 void MacroAssembler::byteSwap32(Register reg) {
   ma_wsbh(reg, reg);
-  as_rotr(reg, reg, 16);
+  ma_ror(reg, reg, Imm32(16));
 }
 
 // ===============================================================
@@ -156,6 +156,13 @@ void MacroAssembler::add32(Imm32 imm, const Address& dest) {
   load32(dest, scratch2);
   ma_addu(scratch2, imm);
   store32(scratch2, dest);
+}
+
+void MacroAssembler::add32(const Address& src, Register dest) {
+  UseScratchRegisterScope temps(*this);
+  Register scratch2 = temps.Acquire();
+  load32(src, scratch2);
+  as_addu(dest, dest, scratch2);
 }
 
 void MacroAssembler::addPtr(Imm32 imm, const Address& dest) {

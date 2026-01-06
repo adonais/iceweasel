@@ -350,7 +350,7 @@ export const URILoadingHelper = {
    *
    * The params object is the same as for `openLinkIn` and documented below.
    *
-   * @param {String}  where
+   * @param {string}  where
    *   |where| can be:
    *    "current"     current tab            (if there aren't any browser windows, then in a new window instead)
    *    "tab"         new tab                (if there aren't any browser windows, then in a new window instead)
@@ -359,7 +359,7 @@ export const URILoadingHelper = {
    *    "chromeless"  new minimal window     (no browser navigation UI)
    *    "save"        save to disk (with no filename hint!)
    *
-   * @param {Object}  params
+   * @param {object}  params
    *
    * Options relating to what tab/window to use and how to open it:
    *
@@ -443,9 +443,9 @@ export const URILoadingHelper = {
    *                   This callback will be called when a new tab is created.
    * @param {function} params.resolveOnContentBrowserCreated
    *                   This callback will be called with the content browser once it's created.
-   * @param {Object}   params.globalHistoryOptions
+   * @param {object}   params.globalHistoryOptions
    *                   Used by places to keep track of search related metadata for loads.
-   * @param {Number}   params.frameID
+   * @param {number}   params.frameID
    *                   Used by webextensions for their loads.
    *
    * Options used for where="save" only:
@@ -672,7 +672,7 @@ export const URILoadingHelper = {
    *
    * @param {string} where
    *        The target location for the load (e.g. "current", "tab", "window").
-   * @param {Object} params
+   * @param {object} params
    *        The full params object passed to openLinkIn.
    * @param {Window} win
    *        The reference window used as a fallback for getTargetWindow.
@@ -706,7 +706,7 @@ export const URILoadingHelper = {
    * matches will be returned.
    *
    * @param {Window} window - The current window.
-   * @param {Object} params - Parameters for selecting the window.
+   * @param {object} params - Parameters for selecting the window.
    * @param {boolean} params.skipPopups - Require a non-popup window.
    * @param {boolean} params.skipTaskbarTabs - Require a non-taskbartab window.
    * @param {boolean} params.forceNonPrivate - Require a non-private window.
@@ -742,15 +742,15 @@ export const URILoadingHelper = {
    * openUILink handles clicks on UI elements that cause URLs to load.
    *
    * @param {string} url
-   * @param {Event | Object} event Event or JSON object representing an Event
-   * @param {Boolean | Object} aIgnoreButton
+   * @param {Event | object} event Event or JSON object representing an Event
+   * @param {boolean | object} aIgnoreButton
    *                           Boolean or object with the same properties as
    *                           accepted by openLinkIn, plus "ignoreButton"
    *                           and "ignoreAlt".
-   * @param {Boolean} aIgnoreAlt
-   * @param {Boolean} aAllowThirdPartyFixup
-   * @param {Object} aPostData
-   * @param {Object} aReferrerInfo
+   * @param {boolean} aIgnoreAlt
+   * @param {boolean} aAllowThirdPartyFixup
+   * @param {object} aPostData
+   * @param {object} aReferrerInfo
    */
   openUILink(
     window,

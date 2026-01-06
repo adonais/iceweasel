@@ -10,8 +10,6 @@ const {
   ERROR_INVALID_SCOPES,
   ERROR_INVALID_SCOPED_KEYS,
   ERROR_INVALID_STATE,
-  ERROR_SYNC_SCOPE_NOT_GRANTED,
-  ERROR_NO_KEYS_JWE,
   ERROR_OAUTH_FLOW_ABANDONED,
 } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccountsOAuth.sys.mjs"
@@ -125,11 +123,10 @@ add_task(function test_complete_oauth_flow() {
     const queryParams = await oauth.beginOAuthFlow(scopes);
     try {
       await oauth.completeOAuthFlow(sessionToken, "foo", queryParams.state);
-      Assert.fail(
-        "Should have thrown an error because the sync scope was not authorized"
-      );
     } catch (err) {
-      Assert.equal(err.message, ERROR_SYNC_SCOPE_NOT_GRANTED);
+      Assert.fail(
+        "We should throw if we don't receive requested scope, we skip sync setup"
+      );
     }
   });
   add_task(async function test_jwe_not_returned() {
@@ -147,11 +144,10 @@ add_task(function test_complete_oauth_flow() {
     const sessionToken = "01abcef12";
     try {
       await oauth.completeOAuthFlow(sessionToken, "foo", queryParams.state);
-      Assert.fail(
-        "Should have thrown an error because we didn't get back a keys_nwe"
-      );
     } catch (err) {
-      Assert.equal(err.message, ERROR_NO_KEYS_JWE);
+      Assert.fail(
+        "Should not have thrown an error because we didn't get back a keys_jwe,we instead skip sync setup"
+      );
     }
   });
   add_task(async function test_complete_oauth_ok() {

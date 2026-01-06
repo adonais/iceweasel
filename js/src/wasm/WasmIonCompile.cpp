@@ -1589,12 +1589,11 @@ class FunctionCompiler {
     //
     // If the memory's max size is known to be smaller than 64K pages exactly,
     // we can use a 32-bit check and avoid extension and wrapping.
-    static_assert(0x100000000 % PageSize == 0);
     bool mem32LimitIs64Bits =
         isMem32(memoryIndex) &&
-        !codeMeta().memories[memoryIndex].boundsCheckLimitIs32Bits() &&
-        MaxMemoryPages(codeMeta().memories[memoryIndex].addressType()) >=
-            Pages(0x100000000 / PageSize);
+        !codeMeta().memories[memoryIndex].boundsCheckLimitIsAlways32Bits() &&
+        MaxMemoryBytes(codeMeta().memories[memoryIndex].addressType()) >=
+            0x100000000;
 #else
     // On 32-bit platforms we have no more than 2GB memory and the limit for a
     // 32-bit base pointer is never a 64-bit value.
@@ -5862,7 +5861,12 @@ class FunctionCompiler {
 
     // Use branch hinting information if any.
     if (pendingBlocks_[absolute].hint != BranchHint::Invalid) {
-      join->setBranchHinting(pendingBlocks_[absolute].hint);
+      BranchHint hint = pendingBlocks_[absolute].hint;
+      if (hint == BranchHint::Likely) {
+        join->setFrequency(Frequency::Likely);
+      } else if (hint == BranchHint::Unlikely) {
+        join->setFrequency(Frequency::Unlikely);
+      }
     }
 
     pred->mark();
@@ -6186,7 +6190,11 @@ bool FunctionCompiler::emitIf() {
 
   // Store the branch hint in the basic block.
   if (!inDeadCode() && branchHint != BranchHint::Invalid) {
-    getCurBlock()->setBranchHinting(branchHint);
+    if (branchHint == BranchHint::Likely) {
+      getCurBlock()->setFrequency(Frequency::Likely);
+    } else if (branchHint == BranchHint::Unlikely) {
+      getCurBlock()->setFrequency(Frequency::Unlikely);
+    }
   }
 
   iter().controlItem().block = elseBlock;

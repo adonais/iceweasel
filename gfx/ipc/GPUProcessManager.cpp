@@ -615,6 +615,10 @@ void GPUProcessManager::OnProcessLaunchComplete(GPUProcessHost* aHost) {
   }
 #endif
 
+  // Set a high priority for the newly-created gpu process.
+  int pID = mProcess->GetChildProcessId();
+  hal::SetProcessPriority(pID, hal::PROCESS_PRIORITY_FOREGROUND_HIGH);
+
   ipc::Endpoint<PVsyncBridgeParent> vsyncParent;
   ipc::Endpoint<PVsyncBridgeChild> vsyncChild;
   nsresult rv = PVsyncBridge::CreateEndpoints(
@@ -630,7 +634,9 @@ void GPUProcessManager::OnProcessLaunchComplete(GPUProcessHost* aHost) {
   mGPUChild->SendInitVsyncBridge(std::move(vsyncParent));
 
   MOZ_DIAGNOSTIC_ASSERT(!mBatteryObserver);
-  mBatteryObserver = new BatteryObserver();
+  if (!AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
+    mBatteryObserver = new BatteryObserver();
+  }
 
   // Flush any pref updates that happened during launch and weren't
   // included in the blobs set up in LaunchGPUProcess.

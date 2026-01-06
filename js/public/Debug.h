@@ -14,8 +14,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Vector.h"
 
-#include <utility>
-
 #include "jstypes.h"
 
 #include "js/GCAPI.h"

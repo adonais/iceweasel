@@ -109,31 +109,80 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::InitSWDecoder(
   return InitDecoder(codec, aOptions);
 }
 
+#if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
+/* static */
+void FFmpegDataDecoder<LIBAV_VER>::CryptoInfoAddRef(void* aCryptoInfo) {
+  reinterpret_cast<MediaDrmCryptoInfo*>(aCryptoInfo)->AddRef();
+}
+
+/* static */
+void FFmpegDataDecoder<LIBAV_VER>::CryptoInfoRelease(void* aCryptoInfo) {
+  reinterpret_cast<MediaDrmCryptoInfo*>(aCryptoInfo)->Release();
+}
+
+MediaResult FFmpegDataDecoder<LIBAV_VER>::MaybeAttachCryptoInfo(
+    MediaRawData* aSample, AVPacket* aPacket) {
+  if (!aSample->mCrypto.IsEncrypted()) {
+    return NS_OK;
+  }
+
+  if (NS_WARN_IF(!mCDM)) {
+    return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                       RESULT_DETAIL("missing CDM for encrypted sample"));
+  }
+
+  RefPtr<MediaDrmCryptoInfo> cryptoInfo = mCDM->CreateCryptoInfo(aSample);
+  if (NS_WARN_IF(!cryptoInfo)) {
+    return MediaResult(
+        NS_ERROR_DOM_MEDIA_FATAL_ERR,
+        RESULT_DETAIL("missing MediaDrmCryptoInfo for encrypted sample"));
+  }
+
+  aPacket->moz_ndk_crypto_info = cryptoInfo->GetNdkCryptoInfo();
+  if (NS_WARN_IF(!aPacket->moz_ndk_crypto_info)) {
+    return MediaResult(
+        NS_ERROR_DOM_MEDIA_FATAL_ERR,
+        RESULT_DETAIL("missing AMediaCodecCryptoInfo for encrypted sample"));
+  }
+
+  aPacket->moz_crypto_info = cryptoInfo.forget().take();
+  aPacket->moz_crypto_info_addref = CryptoInfoAddRef;
+  aPacket->moz_crypto_info_release = CryptoInfoRelease;
+
+  FFMPEG_LOG("  encrypted packet, ndk_crypto_info=%p",
+             aPacket->moz_ndk_crypto_info);
+  return NS_OK;
+}
+
 MediaResult FFmpegDataDecoder<LIBAV_VER>::MaybeAttachCDM() {
   MOZ_ASSERT(mCodecContext);
 
-#if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION)
   if (!mCDM) {
     return NS_OK;
+  }
+
+  if (!(mCodecContext->codec->capabilities & AV_CODEC_CAP_HARDWARE)) {
+    return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                       RESULT_DETAIL("CDM requires MediaCodec decoder"));
   }
 
   mCrypto = mCDM->GetCrypto();
   if (NS_WARN_IF(!mCrypto)) {
     return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                       RESULT_DETAIL("missing crypto from cdm"));
+                       RESULT_DETAIL("missing MediaDrmCrypto from CDM"));
   }
 
-  auto* ndkCrypto = mCrypto->GetNdkCrypto();
-  MOZ_ASSERT(ndkCrypto);
+  mCodecContext->moz_ndk_crypto = mCrypto->GetNdkCrypto();
+  if (NS_WARN_IF(!mCodecContext->moz_ndk_crypto)) {
+    return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                       RESULT_DETAIL("missing AMediaCrypto from CDM"));
+  }
 
-  mCodecContext->moz_ndk_crypto = ndkCrypto;
-#endif
-
+  FFMPEG_LOG("  attached CDM, ndk_crypto=%p", mCodecContext->moz_ndk_crypto);
   return NS_OK;
 }
 
 void FFmpegDataDecoder<LIBAV_VER>::MaybeDetachCDM() {
-#if defined(MOZ_WIDGET_ANDROID) && defined(FFVPX_VERSION)
   if (mCodecContext) {
     mCodecContext->moz_ndk_crypto = nullptr;
   }
@@ -141,8 +190,8 @@ void FFmpegDataDecoder<LIBAV_VER>::MaybeDetachCDM() {
   if (mCDM) {
     mCDM = nullptr;
   }
-#endif
 }
+#endif
 
 MediaResult FFmpegDataDecoder<LIBAV_VER>::InitDecoder(AVCodec* aCodec,
                                                       AVDictionary** aOptions) {
@@ -177,6 +226,14 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::InitDecoder(AVCodec* aCodec,
 #if LIBAVCODEC_VERSION_MAJOR < 57
   if (aCodec->capabilities & CODEC_CAP_DR1) {
     mCodecContext->flags |= CODEC_FLAG_EMU_EDGE;
+  }
+#endif
+
+#if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
+  ret = MaybeAttachCDM();
+  if (NS_FAILED(ret)) {
+    ReleaseCodecContext();
+    return ret;
   }
 #endif
 

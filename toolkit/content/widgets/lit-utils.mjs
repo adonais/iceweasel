@@ -246,6 +246,7 @@ export class MozLitElement extends LitElement {
  * @property {string} ariaDescription - The aria-description text when there is no visible description.
  */
 export class MozBaseInputElement extends MozLitElement {
+  static formAssociated = true;
   #internals;
   #hasSlottedContent = new Map();
 
@@ -262,7 +263,10 @@ export class MozBaseInputElement extends MozLitElement {
     ariaLabel: { type: String, mapped: true },
     ariaDescription: { type: String, mapped: true },
   };
+  /** @type {"inline" | "block"} */
   static inputLayout = "inline";
+  /** @type {keyof MozBaseInputElement} */
+  static activatedProperty = null;
 
   constructor() {
     super();
@@ -270,9 +274,29 @@ export class MozBaseInputElement extends MozLitElement {
     this.#internals = this.attachInternals();
   }
 
+  get form() {
+    return this.#internals.form;
+  }
+
+  /**
+   * @param {string} value The current value of the element.
+   */
+  setFormValue(value) {
+    this.#internals.setFormValue(value);
+  }
+
+  formResetCallback() {
+    this.value = this.defaultValue;
+  }
+
   connectedCallback() {
     super.connectedCallback();
     this.setAttribute("inputlayout", this.constructor.inputLayout);
+    /** @type {string} val */
+    let val = this.getAttribute("value") || this.value;
+    this.defaultValue = val;
+    this.value = val;
+    this.#internals.setFormValue(this.value || null);
   }
 
   willUpdate(changedProperties) {
@@ -281,7 +305,12 @@ export class MozBaseInputElement extends MozLitElement {
     this.#updateInternalState(this.supportPage, "support-link");
     this.#updateInternalState(this.label, "label");
 
-    let activatedProperty = this.constructor.activatedProperty;
+    if (changedProperties.has("value")) {
+      this.setFormValue(this.value);
+    }
+    let activatedProperty = /** @type {typeof MozBaseInputElement} */ (
+      this.constructor
+    ).activatedProperty;
     if (
       (activatedProperty && changedProperties.has(activatedProperty)) ||
       changedProperties.has("disabled") ||

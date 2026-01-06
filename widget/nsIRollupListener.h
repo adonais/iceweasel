@@ -16,14 +16,11 @@ class nsIWidget;
 
 class nsIRollupListener {
  public:
-  enum class FlushViews : bool { No, Yes };
   enum class AllowAnimations : bool { No, Yes };
   struct RollupOptions {
     // aCount is the number of popups in a chain to close. If this is
     // zero, then all popups are closed.
     uint32_t mCount = 0;
-    // If this is true, then views should be flushed after the rollup.
-    FlushViews mFlush = FlushViews::No;
     // This is the mouse pointer position where the event that triggered the
     // rollup occurred, which may be nullptr.
     const mozilla::LayoutDeviceIntPoint* mPoint = nullptr;

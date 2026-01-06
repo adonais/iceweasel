@@ -3,7 +3,7 @@ https_first_disabled = true
 tags = "devtools"
 subsuite = "devtools"
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && http3", # Bug 1829298
 ]
 support-files = [
   "dropmarker.svg",
@@ -124,7 +124,9 @@ support-files = [
 ["browser_net_block-context.js"]
 
 ["browser_net_block-csp.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_block-draganddrop.js"]
 
@@ -133,7 +135,9 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_block-pattern.js"]
 
 ["browser_net_block-serviceworker.js"]
-skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64'"] # Bug 1980084
+skip-if = [
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1980084
+]
 
 ["browser_net_block.js"]
 
@@ -142,7 +146,9 @@ skip-if = ["os == 'mac' && os_version == '14.70' && processor == 'x86_64'"] # Bu
 ["browser_net_cache_details.js"]
 
 ["browser_net_cached-status.js"]
-skip-if = ["verify"] # Bug 1975964
+skip-if = [
+  "verify", # Bug 1975964
+]
 
 ["browser_net_cause_redirect.js"]
 
@@ -226,7 +232,9 @@ https_first_disabled = true # Bug 1898241
 ["browser_net_delayed-response.js"]
 
 ["browser_net_details_copy.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_disable_cache_rdm.js"]
 
@@ -245,15 +253,17 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_fission_switch_target.js"]
 
 ["browser_net_fonts.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_footer-summary.js"]
 
 ["browser_net_frame.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1479782
-  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1479782
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1479782
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1479782
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1479782
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1479782
 ]
 
 ["browser_net_header-docs.js"]
@@ -265,20 +275,28 @@ skip-if = [
 ["browser_net_headers-alignment.js"]
 
 ["browser_net_headers-link_clickable.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_headers-proxy.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_headers-resize.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_headers_filter.js"]
 
 ["browser_net_headers_sorted.js"]
 
 ["browser_net_html-preview.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_image-tooltip.js"]
 
@@ -327,10 +345,14 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_open_request_in_tab.js"]
 
 ["browser_net_overrides.js"]
-skip-if = ["os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && tsan"] # Bug 1949050
+skip-if = [
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && tsan", # Bug 1949050
+]
 
 ["browser_net_overrides_with_debugger.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_pane-collapse.js"]
 
@@ -344,7 +366,7 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 
 ["browser_net_persistent_logs.js"]
 skip-if = [
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64' && debug", # Bug 1661612
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64' && debug", # Bug 1661612
 ]
 
 ["browser_net_post-data-json-payloads.js"]
@@ -372,7 +394,9 @@ skip-if = [
 ["browser_net_response_CORS_blocked.js"]
 
 ["browser_net_response_node-expanded.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_save_response_as.js"]
 
@@ -387,7 +411,9 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_security-error.js"]
 
 ["browser_net_security-icon-click.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_security-redirect.js"]
 
@@ -404,20 +430,24 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_send-beacon.js"]
 
 ["browser_net_server_timings.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_service-worker-status.js"]
 
 ["browser_net_service-worker-timings.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_set-cookie-same-site.js"]
 
 ["browser_net_simple-request-data.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11'", # Bug 1667115
-  "os == 'mac' && os_version == '14.70' && processor == 'x86_64'", # Bug 1667115
-  "os == 'win' && os_version == '11.26100' && processor == 'x86_64'", # Bug 1667115
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1667115
+  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1667115
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1667115
 ]
 
 ["browser_net_simple-request-details.js"]
@@ -440,7 +470,7 @@ skip-if = [
 
 ["browser_net_statistics-02.js"]
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1767655
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt && a11y_checks", # Bug 1767655
 ]
 
 ["browser_net_statistics-content.js"]
@@ -458,7 +488,9 @@ skip-if = [
 ["browser_net_stylesheet_cache.js"]
 
 ["browser_net_tabbar_focus.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_telemetry_edit_resend.js"]
 
@@ -481,7 +513,9 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_throttling_profiles.js"]
 
 ["browser_net_timeline_ticks.js"]
-skip-if = ["true"] # TODO: fix the test
+skip-if = [
+  "true", # TODO: fix the test
+]
 
 ["browser_net_timing-division.js"]
 
@@ -490,13 +524,15 @@ skip-if = ["true"] # TODO: fix the test
 ["browser_net_truncate-post-data.js"]
 https_first_disabled = true # Intermittent crashes on macos when using HTTPS, Bug 1732865
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && processor == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1772211
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug && socketprocess_networking", # Bug 1772211
 ]
 
 ["browser_net_truncate.js"]
 
 ["browser_net_url-preview.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_use_as_fetch.js"]
 
@@ -505,7 +541,9 @@ fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and
 ["browser_net_waterfall-click.js"]
 
 ["browser_net_waterfall-resize.js"]
-fail-if = ["a11y_checks"] # Bug 1849028 clicked element may not be focusable and/or labeled
+fail-if = [
+  "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
+]
 
 ["browser_net_worker_stacks.js"]
 

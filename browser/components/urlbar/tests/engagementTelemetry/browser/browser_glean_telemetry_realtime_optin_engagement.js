@@ -23,11 +23,9 @@ add_setup(async function () {
                   icon: "chrome://browser/skin/illustrations/market-opt-in.svg",
                   titleL10n: {
                     id: "urlbar-result-market-opt-in-title",
-                    cacheable: true,
                   },
                   descriptionL10n: {
                     id: "urlbar-result-market-opt-in-description",
-                    cacheable: true,
                     parseMarkup: true,
                   },
                 },

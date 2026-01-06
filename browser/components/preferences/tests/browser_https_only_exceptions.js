@@ -283,6 +283,7 @@ add_task(async function checkDialogFunctionality() {
 
 /**
  * Changes HTTPS-Only Mode pref
+ *
  * @param {string} state "everywhere", "private", "off"
  */
 async function setHttpsOnlyPref(state) {
@@ -296,6 +297,7 @@ async function setHttpsOnlyPref(state) {
 
 /**
  * Changes HTTPS-First Mode pref
+ *
  * @param {string} state "everywhere", "private", "off"
  */
 async function setHttpsFirstPref(state) {
@@ -309,6 +311,7 @@ async function setHttpsFirstPref(state) {
 
 /**
  * Opens new exceptions dialog, runs test function
+ *
  * @param {HTMLElement} preferencesDoc document of about:preferences tab
  * @param {function} test function to call when dialog is open
  * @param {Array} observances permission changes to observe (order is important)

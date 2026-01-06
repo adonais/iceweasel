@@ -4,13 +4,14 @@
 
 package org.mozilla.fenix.compose
 
-import android.content.res.Configuration
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,6 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import mozilla.components.browser.icons.IconRequest
@@ -27,6 +29,7 @@ import mozilla.components.browser.icons.compose.WithIcon
 import mozilla.components.compose.base.utils.inComposePreview
 import org.mozilla.fenix.components.components
 import org.mozilla.fenix.theme.FirefoxTheme
+import org.mozilla.fenix.theme.Theme
 
 internal val FAVICON_ROUNDED_CORNER_SHAPE = RoundedCornerShape(2.dp)
 
@@ -168,21 +171,36 @@ private fun FaviconPlaceholder(
             .size(size)
             .clip(shape)
             .background(
-                color = FirefoxTheme.colors.layer2,
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
             ),
     )
 }
 
 @Composable
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
+@PreviewLightDark
 private fun FaviconPreview() {
     FirefoxTheme {
-        Box(Modifier.background(FirefoxTheme.colors.layer1)) {
-            Favicon(
-                url = "www.mozilla.com",
-                size = 64.dp,
-            )
-        }
+        Favicon(
+            url = "www.mozilla.com",
+            size = 64.dp,
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                .padding(all = FirefoxTheme.layout.space.static200),
+        )
+    }
+}
+
+@Composable
+@Preview
+private fun FaviconPrivatePreview() {
+    FirefoxTheme(theme = Theme.Private) {
+        Favicon(
+            url = "www.mozilla.com",
+            size = 64.dp,
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                .padding(all = FirefoxTheme.layout.space.static200),
+        )
     }
 }
 

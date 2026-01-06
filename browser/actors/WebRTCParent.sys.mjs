@@ -826,7 +826,8 @@ function prompt(aActor, aBrowser, aRequest) {
 
       /**
        * Prepare the device selector for one kind of device.
-       * @param {Object[]} devices - available devices of this kind.
+       *
+       * @param {object[]} devices - available devices of this kind.
        * @param {string} IDPrefix - indicating kind of device and so
        *   associated UI elements.
        * @param {string[]} describedByIDs - an array to which might be
@@ -1469,6 +1470,7 @@ function getPromptMessageId(
 /**
  * Checks whether we have a microphone/camera in use by checking the activePerms map
  * or if we have an allow permission for a microphone/camera in sitePermissions
+ *
  * @param {Browser} browser - Browser to find all active and allowed microphone and camera devices for
  * @return true if one of the above conditions is met
  */
@@ -1522,6 +1524,7 @@ function removePrompt(aBrowser, aCallId) {
 
 /**
  * Clears temporary permission grants used for WebRTC device grace periods.
+ *
  * @param browser - Browser element to clear permissions for.
  * @param {boolean} clearCamera - Clear camera grants.
  * @param {boolean} clearMicrophone - Clear microphone grants.
@@ -1581,6 +1584,7 @@ function persistGrantOrPromptPermission(principal, permissionName, remember) {
 
 /**
  * Clears any persisted PROMPT (aka Always Ask) permission.
+ *
  * @param principal - Principal to remove permission from.
  * @param {string} permissionName - name of permission.
  * @param browser - Browser element to clear permission for.
@@ -1602,6 +1606,7 @@ function maybeClearAlwaysAsk(principal, permissionName, browser) {
 
 /**
  * Helper for lazily creating the webrtc-preview element.
+ *
  * @param {Document} chromeDoc - The chrome document to create the webrtc-preview element in.
  * @returns {HTMLElement} The webrtc-preview element which has been inserted into the DOM.
  */

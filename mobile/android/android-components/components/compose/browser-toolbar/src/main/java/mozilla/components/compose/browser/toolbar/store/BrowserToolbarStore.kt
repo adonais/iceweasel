@@ -14,15 +14,15 @@ import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction
 import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteraction.BrowserToolbarEvent
 import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.lib.state.Middleware
-import mozilla.components.lib.state.UiStore
+import mozilla.components.lib.state.Store
 
 /**
- * [UiStore] for maintaining the state of the browser toolbar.
+ * [Store] for maintaining the state of the browser toolbar.
  */
-open class BrowserToolbarStore(
+class BrowserToolbarStore(
     initialState: BrowserToolbarState = BrowserToolbarState(),
     middleware: List<Middleware<BrowserToolbarState, BrowserToolbarAction>> = emptyList(),
-) : UiStore<BrowserToolbarState, BrowserToolbarAction>(
+) : Store<BrowserToolbarState, BrowserToolbarAction>(
     initialState = initialState,
     reducer = ::reduce,
     middleware = middleware,
@@ -52,6 +52,9 @@ private fun reduce(state: BrowserToolbarState, action: BrowserToolbarAction): Br
 
         is BrowserToolbarAction.EnterEditMode -> state.copy(
             mode = Mode.EDIT,
+            editState = state.editState.copy(
+                isQueryPrivate = action.isPrivate,
+            ),
         )
 
         is BrowserToolbarAction.ExitEditMode -> state.copy(
@@ -110,12 +113,6 @@ private fun reduce(state: BrowserToolbarState, action: BrowserToolbarAction): Br
             ),
         )
 
-        is BrowserEditToolbarAction.PrivateModeUpdated -> state.copy(
-            editState = state.editState.copy(
-                isQueryPrivate = action.inPrivateMode,
-            ),
-        )
-
         is AutocompleteSuggestionUpdated -> state.copy(
             editState = state.editState.copy(
                 suggestion = action.autocompletedSuggestion,
@@ -140,8 +137,6 @@ private fun reduce(state: BrowserToolbarState, action: BrowserToolbarAction): Br
             ),
         )
 
-        is EnvironmentRehydrated,
-        is EnvironmentCleared,
         is BrowserToolbarEvent,
             -> {
             // no-op

@@ -53,12 +53,7 @@ add_task(async function test_usageBeforeInitialization() {
 });
 
 async function test_initOnUpdateEventsFire() {
-  let storePath;
-
-  {
-    const store = NimbusTestUtils.stubs.store();
-    await store.init();
-
+  const storePath = await NimbusTestUtils.createStoreWith(store => {
     NimbusTestUtils.addEnrollmentForRecipe(
       NimbusTestUtils.factories.recipe.withFeatureConfig("testFeature-1", {
         featureId: "testFeature",
@@ -120,14 +115,12 @@ async function test_initOnUpdateEventsFire() {
       }),
       { store }
     );
-
-    storePath = await NimbusTestUtils.saveStore(store);
-  }
+  });
 
   const { sandbox, initExperimentAPI, cleanup } = await setupTest({
-    storePath,
     init: false,
-    migrationState: NimbusTestUtils.migrationState.IMPORTED_ENROLLMENTS_TO_SQL,
+    storePath,
+    migrationState: NimbusTestUtils.migrationState.LATEST,
   });
 
   const onFeatureUpdate = sandbox.stub();
@@ -893,26 +886,18 @@ add_task(async function test_cleanupOldRecipes() {
 });
 
 async function test_restore() {
-  let storePath;
-  {
-    const store = NimbusTestUtils.stubs.store();
-    await store.init();
-
-    NimbusTestUtils.addEnrollmentForRecipe(
-      NimbusTestUtils.factories.recipe("experiment"),
-      { store, branchSlug: "control" }
-    );
-    NimbusTestUtils.addEnrollmentForRecipe(
-      NimbusTestUtils.factories.recipe("rollout", { isRollout: true }),
-      { store }
-    );
-
-    storePath = await NimbusTestUtils.saveStore(store);
-  }
-
   const { store, cleanup } = await setupTest({
-    storePath,
-    migrationState: NimbusTestUtils.migrationState.IMPORTED_ENROLLMENTS_TO_SQL,
+    storePath: await NimbusTestUtils.createStoreWith(store => {
+      NimbusTestUtils.addEnrollmentForRecipe(
+        NimbusTestUtils.factories.recipe("experiment"),
+        { store, branchSlug: "control" }
+      );
+      NimbusTestUtils.addEnrollmentForRecipe(
+        NimbusTestUtils.factories.recipe("rollout", { isRollout: true }),
+        { store }
+      );
+    }),
+    migrationState: NimbusTestUtils.migrationState.LATEST,
   });
 
   Assert.ok(store.get("experiment"));
@@ -934,12 +919,7 @@ add_task(async function test_restore_db() {
 async function test_restoreDatabaseConsistency(primary = "jsonfile") {
   Services.fog.testResetFOG();
 
-  let storePath;
-
-  {
-    const store = await NimbusTestUtils.stubs.store();
-    await store.init();
-
+  const storePath = await NimbusTestUtils.createStoreWith(store => {
     const experimentRecipe = NimbusTestUtils.factories.recipe.withFeatureConfig(
       "experiment",
       { featureId: "no-feature-firefox-desktop" }
@@ -962,9 +942,9 @@ async function test_restoreDatabaseConsistency(primary = "jsonfile") {
       store,
       extra: { active: false },
     });
+  });
 
-    storePath = await NimbusTestUtils.saveStore(store);
-
+  {
     // We should expect to see one successful databaseWrite event.
     const events = Glean.nimbusEvents.databaseWrite
       .testGetValue("events")
@@ -980,7 +960,7 @@ async function test_restoreDatabaseConsistency(primary = "jsonfile") {
   const { cleanup } = await NimbusTestUtils.setupTest({
     storePath,
     clearTelemetry: true,
-    migrationState: NimbusTestUtils.migrationState.IMPORTED_ENROLLMENTS_TO_SQL,
+    migrationState: NimbusTestUtils.migrationState.LATEST,
   });
 
   const events = Glean.nimbusEvents.startupDatabaseConsistency

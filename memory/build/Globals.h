@@ -11,7 +11,6 @@
 // or the page size.  Page size isn't always known at compile time so some
 // values defined here may be determined at runtime.
 
-#include "mozilla/Assertions.h"
 #include "mozilla/Literals.h"
 #include "mozilla/MathAlgorithms.h"
 
@@ -49,28 +48,45 @@
 
 namespace mozilla {
 
+// mozjemalloc has two values for page size.
+//
+// gPageSize:     A logical page size used for mozjemalloc's own structures.
+// gRealPageSize  The actual page size used by the OS & Hardware.
+//
+// They can be different so that we can continue to use 4KB pages on systems
+// with a larger page size. (WIP see Bug 1980047).
+//
+// On x86-64 they are both 4KiB.  However Apple Silicon has a 16KiB page size,
+// so gRealPageSize will be 16KiB, but in order to keep the number of
+// regions-per-run to 256 we want to limit gPageSize to 4KiB.  (4096 / 16 =
+// 256).  Other platforms with different gRealPageSizes might also have
+// different gRealPageSize and gPageSize.
+//
+// gPageSize is always less than or equal to gRealPageSize.
+//
 #ifdef MALLOC_STATIC_PAGESIZE
-// VM page size. It must divide the runtime CPU page size or the code
-// will abort.
 // Platform specific page size conditions copied from js/public/HeapAPI.h
 #  if defined(__powerpc64__)
-static const size_t gPageSize = 64_KiB;
+static const size_t gRealPageSize = 64_KiB;
 #  elif defined(__loongarch64)
-static const size_t gPageSize = 16_KiB;
+static const size_t gRealPageSize = 16_KiB;
 #  else
-static const size_t gPageSize = 4_KiB;
+static const size_t gRealPageSize = 4_KiB;
 #  endif
-static const size_t gRealPageSize = gPageSize;
+static const size_t gPageSize = gRealPageSize;
 #else
-
-// When MALLOC_OPTIONS contains one or several `P`s, the page size used
-// across the allocator is multiplied by 2 for each `P`, but we also keep
-// the real page size for code paths that need it. gPageSize is thus a
-// power of two greater or equal to gRealPageSize.
+// When MALLOC_OPTIONS contains one or several `P`s, gPageSize will be
+// doubled for each `P`.  Likewise each 'p' will halve gPageSize.
 extern size_t gRealPageSize;
 extern size_t gPageSize;
-
 #endif
+
+// Return the smallest pagesize multiple that is >= s.
+#define PAGE_CEILING(s) (((s) + gPageSizeMask) & ~gPageSizeMask)
+#define REAL_PAGE_CEILING(s) (((s) + gRealPageSizeMask) & ~gRealPageSizeMask)
+
+#define PAGES_PER_REAL_PAGE_CEILING(s) \
+  (((s) + gPagesPerRealPage - 1) & ~(gPagesPerRealPage - 1))
 
 #ifdef MALLOC_STATIC_PAGESIZE
 #  define GLOBAL(type, name, value) static const type name = value;
@@ -118,9 +134,6 @@ void DefineGlobals();
 
 // Return the smallest sub page-size  that is >= a.
 #define SUBPAGE_CEILING(a) (RoundUpPow2(a))
-
-// Return the smallest pagesize multiple that is >= s.
-#define PAGE_CEILING(s) (((s) + gPageSizeMask) & ~gPageSizeMask)
 
 // Number of all the small-allocated classes
 #define NUM_SMALL_CLASSES \

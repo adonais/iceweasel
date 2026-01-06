@@ -780,16 +780,6 @@ class MacroAssemblerX64 : public MacroAssemblerX86Shared {
     loadDouble(Operand(src), dest);
   }
 
-  void unboxArgObjMagic(const ValueOperand& src, Register dest) {
-    unboxArgObjMagic(Operand(src.valueReg()), dest);
-  }
-  void unboxArgObjMagic(const Operand& src, Register dest) {
-    mov(ImmWord(0), dest);
-  }
-  void unboxArgObjMagic(const Address& src, Register dest) {
-    unboxArgObjMagic(Operand(src), dest);
-  }
-
   void unboxBoolean(const ValueOperand& src, Register dest) {
     movl(src.valueReg(), dest);
   }

@@ -46,7 +46,7 @@ GPUChild::GPUChild(GPUProcessHost* aHost) : mHost(aHost), mGPUReady(false) {}
 
 GPUChild::~GPUChild() = default;
 
-void GPUChild::Init() {
+RefPtr<GPUChild::InitPromiseType> GPUChild::Init() {
   nsTArray<GfxVarUpdate> updates = gfxVars::FetchNonDefaultVars();
 
   DevicePrefs devicePrefs;
@@ -70,12 +70,24 @@ void GPUChild::Init() {
     features = gfxInfoRaw->GetAllFeatures();
   }
 
-  SendInit(updates, devicePrefs, mappings, features,
-           GPUProcessManager::Get()->AllocateNamespace());
+  RefPtr<InitPromiseType> promise =
+      SendInit(updates, devicePrefs, mappings, features,
+               GPUProcessManager::Get()->AllocateNamespace())
+          ->Then(
+              GetCurrentSerialEventTarget(), __func__,
+              [self = RefPtr{this}](GPUDeviceData&& aData) {
+                self->OnInitComplete(aData);
+                return InitPromiseType::CreateAndResolve(Ok{}, __func__);
+              },
+              [](ipc::ResponseRejectReason) {
+                return InitPromiseType::CreateAndReject(Ok{}, __func__);
+              });
 
   gfxVars::AddReceiver(this);
 
   (void)SendInitProfiler(ProfilerParent::CreateForProcess(OtherPid()));
+
+  return promise;
 }
 
 void GPUChild::OnVarChanged(const nsTArray<GfxVarUpdate>& aVar) {
@@ -96,14 +108,7 @@ bool GPUChild::EnsureGPUReady(bool aForceSync /* = false */) {
     return false;
   }
 
-  // Only import and collect telemetry for the initial GPU process launch.
-  if (!mGPUReady) {
-    gfxPlatform::GetPlatform()->ImportGPUDeviceData(data);
-    glean::gpu_process::launch_time.AccumulateRawDuration(
-        TimeStamp::Now() - mHost->GetLaunchTime());
-    mGPUReady = true;
-  }
-
+  OnInitComplete(data);
   return true;
 }
 
@@ -136,17 +141,20 @@ void GPUChild::DeletePairedMinidump() {
   }
 }
 
-mozilla::ipc::IPCResult GPUChild::RecvInitComplete(const GPUDeviceData& aData) {
-  // We synchronously requested GPU parameters before this arrived.
+void GPUChild::OnInitComplete(const GPUDeviceData& aData) {
+  // This function may be called multiple times, for example if we synchronously
+  // requested GPU parameters before the asynchronous SendInit completed, or if
+  // EnsureGPUReady is called after launch to force a synchronization after a
+  // configuration change. We only want to import device data and collect
+  // telemetry for the initial GPU process launch.
   if (mGPUReady) {
-    return IPC_OK();
+    return;
   }
 
   gfxPlatform::GetPlatform()->ImportGPUDeviceData(aData);
   glean::gpu_process::launch_time.AccumulateRawDuration(TimeStamp::Now() -
                                                         mHost->GetLaunchTime());
   mGPUReady = true;
-  return IPC_OK();
 }
 
 mozilla::ipc::IPCResult GPUChild::RecvDeclareStable() {

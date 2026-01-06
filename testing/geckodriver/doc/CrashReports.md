@@ -39,4 +39,4 @@ If you submitted a crash please do not forget to also add the link of the
 crash report to the geckodriver issue.
 
 [crash reporter]: https://support.mozilla.org/kb/mozillacrashreporter#w_viewing-reports-outside-of-firefox
-[view the crash reports]: https://support.mozilla.orgkb/mozillacrashreporter#w_viewing-crash-reports
+[view the crash reports]: https://support.mozilla.org/kb/mozillacrashreporter#w_viewing-crash-reports

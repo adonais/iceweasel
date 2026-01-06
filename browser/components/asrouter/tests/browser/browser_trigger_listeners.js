@@ -46,6 +46,94 @@ async function waitForUrlLoad(url) {
   await BrowserTestUtils.browserLoaded(browser, false, url);
 }
 
+async function test_formAutofillTrigger(settingsRedesignEnabled) {
+  const sandbox = sinon.createSandbox();
+  const handlerStub = sandbox.stub();
+  const formAutofillTrigger = ASRouterTriggerListeners.get("formAutofill");
+  sandbox.stub(formAutofillTrigger, "_triggerDelay").value(0);
+  formAutofillTrigger.uninit();
+  formAutofillTrigger.init(handlerStub);
+
+  function notifyCreditCardSaved() {
+    Services.obs.notifyObservers(
+      {
+        wrappedJSObject: { sourceSync: false, collectionName: "creditCards" },
+      },
+      formAutofillTrigger._topic,
+      "add"
+    );
+  }
+
+  // Saving credit cards for autofill currently fails for some hardware
+  // configurations, so mock the event instead of really adding a card.
+  notifyCreditCardSaved();
+  await sleepMs(1);
+  Assert.ok(handlerStub.called, "Called after event");
+
+  // Test that the trigger doesn't fire when the credit card manager is open.
+  handlerStub.resetHistory();
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.settings-redesign.enabled", settingsRedesignEnabled]],
+  });
+  await BrowserTestUtils.withNewTab(
+    { gBrowser, url: "about:preferences#privacy" },
+    async browser => {
+      const redesignEnabled = Services.prefs.getBoolPref(
+        "browser.settings-redesign.enabled",
+        false
+      );
+      if (!redesignEnabled) {
+        await SpecialPowers.spawn(browser, [], async () =>
+          (
+            await ContentTaskUtils.waitForCondition(
+              () =>
+                content.document.querySelector(
+                  "setting-group[groupid=payments] #savedPaymentsButton"
+                ),
+              "Waiting for credit card manager button"
+            )
+          )?.click()
+        );
+        await BrowserTestUtils.waitForCondition(
+          () => browser.contentWindow?.gSubDialog?.dialogs.length
+        );
+      } else {
+        const savedPaymentsBtn = content.document.querySelector(
+          "#savedPaymentsButton"
+        );
+        savedPaymentsBtn.click();
+        const paymentsPage = content.document.querySelector(
+          '[data-category="paneManagePayments"]'
+        );
+        await BrowserTestUtils.waitForCondition(
+          () => !paymentsPage.hidden,
+          "Payments page failed to show."
+        );
+      }
+
+      notifyCreditCardSaved();
+      await sleepMs(1);
+
+      if (!redesignEnabled) {
+        Assert.ok(
+          handlerStub.notCalled,
+          "Not called when credit card manager is open"
+        );
+      }
+    }
+  );
+
+  formAutofillTrigger.uninit();
+  handlerStub.resetHistory();
+  notifyCreditCardSaved();
+  await sleepMs(1);
+  Assert.ok(handlerStub.notCalled, "Not called after uninit");
+
+  sandbox.restore();
+  formAutofillTrigger.uninit();
+}
+
 add_setup(async function () {
   // Runtime increases in chaos mode on Mac.
   if (inChaosMode && AppConstants.platform === "macosx") {
@@ -382,66 +470,9 @@ add_task(async function test_activityAfterIdleWake() {
   restore();
 });
 
-add_task(async function test_formAutofillTrigger() {
-  const sandbox = sinon.createSandbox();
-  const handlerStub = sandbox.stub();
-  const formAutofillTrigger = ASRouterTriggerListeners.get("formAutofill");
-  sandbox.stub(formAutofillTrigger, "_triggerDelay").value(0);
-  formAutofillTrigger.uninit();
-  formAutofillTrigger.init(handlerStub);
-
-  function notifyCreditCardSaved() {
-    Services.obs.notifyObservers(
-      {
-        wrappedJSObject: { sourceSync: false, collectionName: "creditCards" },
-      },
-      formAutofillTrigger._topic,
-      "add"
-    );
-  }
-
-  // Saving credit cards for autofill currently fails for some hardware
-  // configurations, so mock the event instead of really adding a card.
-  notifyCreditCardSaved();
-  await sleepMs(1);
-  Assert.ok(handlerStub.called, "Called after event");
-
-  // Test that the trigger doesn't fire when the credit card manager is open.
-  handlerStub.resetHistory();
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: "about:preferences#privacy" },
-    async browser => {
-      await SpecialPowers.spawn(browser, [], async () =>
-        (
-          await ContentTaskUtils.waitForCondition(
-            () =>
-              content.document.querySelector(
-                "#formAutofillGroupBox setting-group[groupid=payments] #savedPaymentsButton"
-              ),
-            "Waiting for credit card manager button"
-          )
-        )?.click()
-      );
-      await BrowserTestUtils.waitForCondition(
-        () => browser.contentWindow?.gSubDialog?.dialogs.length
-      );
-      notifyCreditCardSaved();
-      await sleepMs(1);
-      Assert.ok(
-        handlerStub.notCalled,
-        "Not called when credit card manager is open"
-      );
-    }
-  );
-
-  formAutofillTrigger.uninit();
-  handlerStub.resetHistory();
-  notifyCreditCardSaved();
-  await sleepMs(1);
-  Assert.ok(handlerStub.notCalled, "Not called after uninit");
-
-  sandbox.restore();
-  formAutofillTrigger.uninit();
+add_task(async function test_formAutofill() {
+  await test_formAutofillTrigger(false);
+  await test_formAutofillTrigger(true);
 });
 
 add_task(async function test_pageActionInUrlbarTrigger() {

@@ -147,6 +147,10 @@
   <string name="search_engine_suggestions_title">%s खोज्नुहोस्</string>
   <!-- Search engine suggestion description text -->
   <string name="search_engine_suggestions_description">ठेगाना पट्टीबाट सिधै खोज्नुहोस्</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Text preview for smaller sized widgets -->
   <string name="search_widget_text_short">खोजी गर्नुहोस्</string>
   <!-- Text preview for larger sized widgets -->
@@ -458,4 +462,10 @@
   <!-- Translations feature -->
 
   <!-- TextField Design System Component -->
+
+  <!-- ==== Terms of use pop up prompt ==== -->
+
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

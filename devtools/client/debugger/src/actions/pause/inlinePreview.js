@@ -65,9 +65,9 @@ export function generateInlinePreview(selectedFrame) {
 /**
  * Creates all the previews
  *
- * @param {Object} selectedFrame
- * @param {Object} scope - Scope from the platform
- * @param {Object} thunkArgs
+ * @param {object} selectedFrame
+ * @param {object} scope - Scope from the platform
+ * @param {object} thunkArgs
  * @returns
  */
 async function getPreviews(selectedFrame, scope, thunkArgs) {
@@ -119,11 +119,11 @@ async function getPreviews(selectedFrame, scope, thunkArgs) {
 /**
  * Generates the previews from the binding information
  *
- * @param {Object} bindingData - Scope binding data from the AST about a particular variable/argument at a particular level in the scope.
- * @param {Number} pausedOnLine - The current line we are paused on
- * @param {String} name - Name of binding from the platfom scopes
- * @param {Object} client - Client object for loading properties
- * @param {Object} thread - Thread used to get the expressions values
+ * @param {object} bindingData - Scope binding data from the AST about a particular variable/argument at a particular level in the scope.
+ * @param {number} pausedOnLine - The current line we are paused on
+ * @param {string} name - Name of binding from the platfom scopes
+ * @param {object} client - Client object for loading properties
+ * @param {object} thread - Thread used to get the expressions values
  * @returns
  */
 async function generatePreviewsForBinding(
@@ -187,11 +187,11 @@ async function generatePreviewsForBinding(
 /**
  * Get the name and value details to be displayed in the inline preview
  *
- * @param {String} name - Binding name
- * @param {String} value - Binding value which is the Enviroment object actor form
- * @param {Object} ref - Binding reference
- * @param {Object} client - Client object for loading properties
- * @param {String} thread - Thread used to get the expression values
+ * @param {string} name - Binding name
+ * @param {string} value - Binding value which is the Enviroment object actor form
+ * @param {object} ref - Binding reference
+ * @param {object} client - Client object for loading properties
+ * @param {string} thread - Thread used to get the expression values
  * @returns
  */
 async function getExpressionNameAndValue(name, value, ref, client, thread) {

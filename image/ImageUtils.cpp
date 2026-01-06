@@ -292,6 +292,8 @@ class AnonymousDecoderImpl final : public AnonymousDecoder {
       return;
     }
 
+    mMetadataResult.mNativeSizes = aMetadata->GetNativeSizes().Clone();
+
     const auto size = aMetadata->GetSize();
     mMetadataResult.mWidth = size.width;
     mMetadataResult.mHeight = size.height;

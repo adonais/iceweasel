@@ -13,11 +13,11 @@
 
 #include "jstypes.h"
 
-#include "builtin/temporal/Int128.h"
 #include "builtin/temporal/TemporalRoundingMode.h"
 #include "builtin/temporal/TemporalUnit.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
+#include "vm/Int128.h"
 #include "vm/NativeObject.h"
 
 namespace js {
@@ -141,22 +141,23 @@ enum class TemporalUnitKey {
 };
 
 /**
- * GetTemporalUnitValuedOption ( normalizedOptions, key, unitGroup, default [ ,
- * extraValues ] )
+ * GetTemporalUnitValuedOption ( options, key, default )
  */
 bool GetTemporalUnitValuedOption(JSContext* cx, JS::Handle<JSObject*> options,
-                                 TemporalUnitKey key,
-                                 TemporalUnitGroup unitGroup,
-                                 TemporalUnit* unit);
+                                 TemporalUnitKey key, TemporalUnit* unit);
 
 /**
  * GetTemporalUnitValuedOption ( normalizedOptions, key, unitGroup, default [ ,
  * extraValues ] )
  */
 bool GetTemporalUnitValuedOption(JSContext* cx, JS::Handle<JSString*> value,
-                                 TemporalUnitKey key,
-                                 TemporalUnitGroup unitGroup,
-                                 TemporalUnit* unit);
+                                 TemporalUnitKey key, TemporalUnit* unit);
+
+/**
+ * ValidateTemporalUnitValue ( value, unitGroup [ , extraValues ] )
+ */
+bool ValidateTemporalUnitValue(JSContext* cx, TemporalUnitKey key,
+                               TemporalUnit unit, TemporalUnitGroup unitGroup);
 
 /**
  * GetRoundingModeOption ( normalizedOptions, fallback )
@@ -258,7 +259,7 @@ bool GetTemporalFractionalSecondDigitsOption(JSContext* cx,
 
 struct SecondsStringPrecision final {
   Precision precision = Precision{0};
-  TemporalUnit unit = TemporalUnit::Auto;
+  TemporalUnit unit = TemporalUnit::Unset;
   Increment increment = Increment{1};
 };
 
@@ -354,8 +355,8 @@ inline const char* ToName(TemporalAddDuration addDuration) {
 }
 
 struct DifferenceSettings final {
-  TemporalUnit smallestUnit = TemporalUnit::Auto;
-  TemporalUnit largestUnit = TemporalUnit::Auto;
+  TemporalUnit smallestUnit = TemporalUnit::Unset;
+  TemporalUnit largestUnit = TemporalUnit::Unset;
   TemporalRoundingMode roundingMode = TemporalRoundingMode::Trunc;
   Increment roundingIncrement = Increment{1};
 };

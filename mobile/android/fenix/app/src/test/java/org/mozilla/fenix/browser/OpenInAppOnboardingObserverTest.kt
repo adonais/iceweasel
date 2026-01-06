@@ -20,7 +20,6 @@ import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.app.links.AppLinksUseCases
-import mozilla.components.support.test.ext.joinBlocking
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.After
@@ -92,10 +91,10 @@ class OpenInAppOnboardingObserverTest {
         every { settings.shouldOpenLinksInApp() } returns true
         every { settings.shouldShowOpenInAppCfr } returns true
         every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true)).joinBlocking()
+        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
 
         openInAppOnboardingObserver.start()
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false)).joinBlocking()
+        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
         verify(exactly = 0) { infoBanner.showBanner() }
     }
 
@@ -104,11 +103,11 @@ class OpenInAppOnboardingObserverTest {
         every { settings.shouldOpenLinksInApp() } returns false
         every { settings.shouldShowOpenInAppCfr } returns true
         every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true)).joinBlocking()
+        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
 
         openInAppOnboardingObserver.start()
 
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false)).joinBlocking()
+        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
         verify(exactly = 1) { infoBanner.showBanner() }
     }
 
@@ -117,10 +116,10 @@ class OpenInAppOnboardingObserverTest {
         every { settings.openLinksInExternalApp } returns "never"
         every { settings.shouldShowOpenInAppCfr } returns false
         every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true)).joinBlocking()
+        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
 
         openInAppOnboardingObserver.start()
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false)).joinBlocking()
+        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
         verify(exactly = 0) { infoBanner.showBanner() }
     }
 
@@ -129,11 +128,11 @@ class OpenInAppOnboardingObserverTest {
         every { settings.openLinksInExternalApp } returns "never"
         every { settings.shouldShowOpenInAppCfr } returns true
         every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns false
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true)).joinBlocking()
+        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
 
         openInAppOnboardingObserver.start()
 
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false)).joinBlocking()
+        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
         verify(exactly = 0) { infoBanner.showBanner() }
     }
 
@@ -143,18 +142,18 @@ class OpenInAppOnboardingObserverTest {
         every { settings.shouldShowOpenInAppCfr } returns true
         every { appLinksUseCases.appLinkRedirect.invoke(any()).hasExternalApp() } returns true
 
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true)).joinBlocking()
+        store.dispatch(ContentAction.UpdateLoadingStateAction("1", true))
 
         openInAppOnboardingObserver.start()
 
-        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false)).joinBlocking()
+        store.dispatch(ContentAction.UpdateLoadingStateAction("1", false))
         verify(exactly = 1) { infoBanner.showBanner() }
         verify(exactly = 0) { infoBanner.dismiss() }
 
-        store.dispatch(ContentAction.UpdateUrlAction("1", "https://www.mozilla.org/en-US/")).joinBlocking()
+        store.dispatch(ContentAction.UpdateUrlAction("1", "https://www.mozilla.org/en-US/"))
         verify(exactly = 0) { infoBanner.dismiss() }
 
-        store.dispatch(ContentAction.UpdateUrlAction("1", "https://www.firefox.com")).joinBlocking()
+        store.dispatch(ContentAction.UpdateUrlAction("1", "https://www.firefox.com"))
         verify(exactly = 1) { infoBanner.dismiss() }
     }
 

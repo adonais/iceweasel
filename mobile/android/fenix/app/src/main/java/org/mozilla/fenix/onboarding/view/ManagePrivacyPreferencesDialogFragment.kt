@@ -6,10 +6,11 @@ package org.mozilla.fenix.onboarding.view
 
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.compose.content
-import org.mozilla.fenix.components.lazyStore
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.onboarding.ManagePrivacyPreferencesDialog
 import org.mozilla.fenix.onboarding.store.DefaultPrivacyPreferencesRepository
@@ -28,22 +29,6 @@ import org.mozilla.fenix.theme.FirefoxTheme
  */
 class ManagePrivacyPreferencesDialogFragment : DialogFragment() {
 
-    private val store by lazyStore {
-        val repository = DefaultPrivacyPreferencesRepository(
-            settings = requireContext().settings(),
-        )
-        PrivacyPreferencesStore(
-            initialState = PrivacyPreferencesState(
-                crashReportingEnabled = repository.getPreference(PreferenceType.CrashReporting),
-                usageDataEnabled = repository.getPreference(PreferenceType.UsageData),
-            ),
-            middlewares = listOf(
-                PrivacyPreferencesMiddleware(repository),
-                PrivacyPreferencesTelemetryMiddleware(),
-            ),
-        )
-    }
-
     private val crashReportingUrl by lazy { sumoUrlFor(SupportUtils.SumoTopic.CRASH_REPORTS) }
     private val usageDataUrl by lazy { sumoUrlFor(SupportUtils.SumoTopic.TECHNICAL_AND_INTERACTION_DATA) }
 
@@ -51,20 +36,38 @@ class ManagePrivacyPreferencesDialogFragment : DialogFragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ) = content {
-        FirefoxTheme {
-            ManagePrivacyPreferencesDialog(
-                store = store,
-                onDismissRequest = { dismiss() },
-                onCrashReportingLinkClick = {
-                    store.dispatch(PrivacyPreferencesAction.CrashReportingLearnMore)
-                    launchSandboxCustomTab(requireContext(), crashReportingUrl)
-                },
-                onUsageDataLinkClick = {
-                    store.dispatch(PrivacyPreferencesAction.UsageDataUserLearnMore)
-                    launchSandboxCustomTab(requireContext(), usageDataUrl)
-                },
+    ): View {
+        val repository = DefaultPrivacyPreferencesRepository(requireContext().settings())
+        val store by fragmentStore(
+            PrivacyPreferencesState(
+                crashReportingEnabled = repository.getPreference(PreferenceType.CrashReporting),
+                usageDataEnabled = repository.getPreference(PreferenceType.UsageData),
+            ),
+        ) {
+            PrivacyPreferencesStore(
+                initialState = it,
+                middlewares = listOf(
+                    PrivacyPreferencesMiddleware(repository),
+                    PrivacyPreferencesTelemetryMiddleware(),
+                ),
             )
+        }
+
+        return content {
+            FirefoxTheme {
+                ManagePrivacyPreferencesDialog(
+                    store = store,
+                    onDismissRequest = { dismiss() },
+                    onCrashReportingLinkClick = {
+                        store.dispatch(PrivacyPreferencesAction.CrashReportingLearnMore)
+                        launchSandboxCustomTab(requireContext(), crashReportingUrl)
+                    },
+                    onUsageDataLinkClick = {
+                        store.dispatch(PrivacyPreferencesAction.UsageDataUserLearnMore)
+                        launchSandboxCustomTab(requireContext(), usageDataUrl)
+                    },
+                )
+            }
         }
     }
 

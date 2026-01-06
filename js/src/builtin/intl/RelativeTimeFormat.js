@@ -139,7 +139,7 @@ function InitializeRelativeTimeFormat(relativeTimeFormat, locales, options) {
   }
 
   // Step 4.
-  var opt = new_Record();
+  var opt = NEW_RECORD();
 
   // Steps 5-6.
   var matcher = GetOption(
@@ -245,7 +245,7 @@ function Intl_RelativeTimeFormat_format(value, unit) {
   }
 
   // Step 3.
-  var t = ToNumber(value);
+  var t = TO_NUMBER(value);
 
   // Step 4.
   var u = ToString(unit);
@@ -282,7 +282,7 @@ function Intl_RelativeTimeFormat_formatToParts(value, unit) {
   }
 
   // Step 3.
-  var t = ToNumber(value);
+  var t = TO_NUMBER(value);
 
   // Step 4.
   var u = ToString(unit);

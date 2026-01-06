@@ -11,6 +11,11 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 /* eslint-disable-next-line mozilla/reject-import-system-module-from-non-system */
 import { createEngine } from "chrome://global/content/ml/EngineProcess.sys.mjs";
+import { getFxAccountsSingleton } from "resource://gre/modules/FxAccounts.sys.mjs";
+import {
+  OAUTH_CLIENT_ID,
+  SCOPE_PROFILE,
+} from "resource://gre/modules/FxAccountsCommon.sys.mjs";
 
 const toolsConfig = [
   {
@@ -72,6 +77,20 @@ export const SmartAssistEngine = {
 
   _createEngine: createEngine,
 
+  async _getFxAccountToken() {
+    try {
+      const fxAccounts = getFxAccountsSingleton();
+      const token = await fxAccounts.getOAuthToken({
+        scope: SCOPE_PROFILE,
+        client_id: OAUTH_CLIENT_ID,
+      });
+      return token;
+    } catch (error) {
+      console.warn("Error obtaining FxA token:", error);
+      return null;
+    }
+  },
+
   /**
    * Creates an OpenAI engine instance configured with Smart Assists preferences.
    *
@@ -107,6 +126,7 @@ export const SmartAssistEngine = {
    */
   async *fetchWithHistory(messages) {
     const engineInstance = await this.createOpenAIEngine();
+    const fxAccountToken = await this._getFxAccountToken();
 
     // We'll mutate a local copy of the thread as we loop
     let convo = Array.isArray(messages) ? [...messages] : [];
@@ -115,6 +135,7 @@ export const SmartAssistEngine = {
     const streamModelResponse = () =>
       engineInstance.runWithGenerator({
         streamOptions: { enabled: true },
+        fxAccountToken,
         tool_choice: "auto",
         tools: toolsConfig,
         args: convo,

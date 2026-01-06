@@ -595,7 +595,7 @@ class ToolbarActivity : AppCompatActivity() {
 
     private var loading = MutableLiveData<Boolean>()
 
-    @Suppress("TooGenericExceptionCaught")
+    @Suppress("TooGenericExceptionCaught", "CognitiveComplexMethod")
     private fun simulateReload(view: UrlBoxProgressView? = null) {
         job?.cancel()
 
@@ -641,7 +641,9 @@ class ToolbarActivity : AppCompatActivity() {
         binding.toolbar.invalidateActions()
     }
 
-    private fun Resources.getThemedDrawable(@DrawableRes resId: Int) = ResourcesCompat.getDrawable(this, resId, theme)
+    private fun Resources.getThemedDrawable(
+        @DrawableRes resId: Int,
+    ) = ResourcesCompat.getDrawable(this, resId, theme)
 
     companion object {
         private val PROGRESS_RANGE = 0..100

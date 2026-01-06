@@ -53,6 +53,7 @@ import java.lang.Boolean;
 import java.lang.CharSequence;
 import java.lang.Class;
 import java.lang.Comparable;
+import java.lang.Deprecated;
 import java.lang.Double;
 import java.lang.Exception;
 import java.lang.Float;
@@ -90,6 +91,7 @@ import org.mozilla.geckoview.ContentBlocking;
 import org.mozilla.geckoview.ContentBlockingController;
 import org.mozilla.geckoview.CrashHandler;
 import org.mozilla.geckoview.CrashPullController;
+import org.mozilla.geckoview.DeprecationSchedule;
 import org.mozilla.geckoview.ExperimentDelegate;
 import org.mozilla.geckoview.GeckoDisplay;
 import org.mozilla.geckoview.GeckoPreferenceController;
@@ -541,8 +543,9 @@ package org.mozilla.geckoview {
 
   public static class ContentBlocking.SafeBrowsing {
     ctor protected SafeBrowsing();
-    field public static final int DEFAULT = 15360;
+    field public static final int DEFAULT = 31744;
     field public static final int HARMFUL = 4096;
+    field public static final int HARMFULADDON = 16384;
     field public static final int MALWARE = 1024;
     field public static final int NONE = 0;
     field public static final int PHISHING = 8192;
@@ -1038,7 +1041,10 @@ package org.mozilla.geckoview {
     method public boolean getIsolatedProcessEnabled();
     method public boolean getJavaScriptEnabled();
     method @NonNull public int getLargeKeepaliveFactor();
-    method public boolean getLnaBlockingEnabled();
+    method @Nullable public Boolean getLnaBlockTrackers();
+    method @Nullable public Boolean getLnaBlocking();
+    method @Deprecated @DeprecationSchedule(id="deprecated-lna-api",version=148) public boolean getLnaBlockingEnabled();
+    method @Nullable public Boolean getLnaEnabled();
     method @Nullable public String[] getLocales();
     method public boolean getLoginAutofillEnabled();
     method public boolean getLowMemoryDetection();
@@ -1093,7 +1099,10 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoRuntimeSettings setInputAutoZoomEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings setJavaScriptEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings setLargeKeepaliveFactor(int);
-    method @NonNull public GeckoRuntimeSettings setLnaBlockingEnabled(boolean);
+    method @NonNull public GeckoRuntimeSettings setLnaBlockTrackers(boolean);
+    method @NonNull public GeckoRuntimeSettings setLnaBlocking(boolean);
+    method @Deprecated @DeprecationSchedule(id="deprecated-lna-api",version=148) @NonNull public GeckoRuntimeSettings setLnaBlockingEnabled(boolean);
+    method @NonNull public GeckoRuntimeSettings setLnaEnabled(boolean);
     method public void setLocales(@Nullable String[]);
     method @NonNull public GeckoRuntimeSettings setLoginAutofillEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings setParallelMarkingEnabled(boolean);
@@ -1169,7 +1178,10 @@ package org.mozilla.geckoview {
     method @NonNull public GeckoRuntimeSettings.Builder preferredColorScheme(int);
     method @NonNull public GeckoRuntimeSettings.Builder remoteDebuggingEnabled(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder screenSizeOverride(int, int);
-    method @NonNull public GeckoRuntimeSettings.Builder setLnaBlockingEnabled(@NonNull Boolean);
+    method @NonNull public GeckoRuntimeSettings.Builder setLnaBlockTrackers(@NonNull Boolean);
+    method @NonNull public GeckoRuntimeSettings.Builder setLnaBlocking(@NonNull Boolean);
+    method @Deprecated @DeprecationSchedule(id="deprecated-lna-api",version=148) @NonNull public GeckoRuntimeSettings.Builder setLnaBlockingEnabled(@NonNull Boolean);
+    method @NonNull public GeckoRuntimeSettings.Builder setLnaEnabled(@NonNull Boolean);
     method @NonNull public GeckoRuntimeSettings.Builder setSameDocumentNavigationOverridesLoadType(boolean);
     method @NonNull public GeckoRuntimeSettings.Builder setSameDocumentNavigationOverridesLoadTypeForceDisable(@NonNull String);
     method @NonNull public GeckoRuntimeSettings.Builder translationsOfferPopup(boolean);
@@ -3109,6 +3121,7 @@ package org.mozilla.geckoview {
     field public static final int ERROR_DATA_URI_TOO_LONG = 117;
     field public static final int ERROR_FILE_ACCESS_DENIED = 101;
     field public static final int ERROR_FILE_NOT_FOUND = 85;
+    field public static final int ERROR_HARMFULADDON_URI = 103;
     field public static final int ERROR_HTTPS_ONLY = 163;
     field public static final int ERROR_INVALID_CONTENT_ENCODING = 84;
     field public static final int ERROR_MALFORMED_URI = 53;

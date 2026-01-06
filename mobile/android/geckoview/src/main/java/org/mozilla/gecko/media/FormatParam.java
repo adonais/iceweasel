@@ -71,7 +71,7 @@ public final class FormatParam implements Parcelable {
   }
 
   public void readFromParcel(final Parcel in) {
-    final Bundle bundle = in.readBundle();
+    final Bundle bundle = in.readBundle(FormatParam.class.getClassLoader());
     fromBundle(bundle);
   }
 

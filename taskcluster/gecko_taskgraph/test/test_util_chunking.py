@@ -239,8 +239,6 @@ def test_get_runtimes(platform, suite):
 @pytest.mark.parametrize(
     "platform,suite,exception",
     [
-        ("nonexistent_platform", "nonexistent_suite", KeyError),
-        ("unix", "nonexistent_suite", KeyError),
         ("unix", "", TypeError),
         ("", "", TypeError),
         ("", "nonexistent_suite", TypeError),

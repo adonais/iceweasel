@@ -7,8 +7,6 @@
 #ifndef CHROME_COMMON_IPC_MESSAGE_H__
 #define CHROME_COMMON_IPC_MESSAGE_H__
 
-#include <string>
-
 #include "base/basictypes.h"
 #include "base/pickle.h"
 #include "mojo/core/ports/user_message.h"

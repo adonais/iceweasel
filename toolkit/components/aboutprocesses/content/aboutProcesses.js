@@ -446,7 +446,7 @@ var View = {
    * Display a row showing a single process (without its threads).
    *
    * @param {ProcessDelta} data The data to display.
-   * @param {Number} maxSlopeCpu The largest slopeCpu value.
+   * @param {number} maxSlopeCpu The largest slopeCpu value.
    * @return {DOMElement} The row displaying the process.
    */
   displayProcessRow(data, maxSlopeCpu) {
@@ -947,7 +947,7 @@ var View = {
    * Display a row showing a single thread.
    *
    * @param {ThreadDelta} data The data to display.
-   * @param {Number} maxSlopeCpu The largest slopeCpu value.
+   * @param {number} maxSlopeCpu The largest slopeCpu value.
    */
   displayThreadRow(data, maxSlopeCpu) {
     const cellCount = 3;
@@ -1007,7 +1007,7 @@ var View = {
    * As a special case, we also handle `null`, which represents the case in which we do
    * not have sufficient information to compute an amount of memory.
    *
-   * @param {Number?} value The value to format. Must be either `null` or a non-negative number.
+   * @param {number?} value The value to format. Must be either `null` or a non-negative number.
    * @return { {unit: "GB" | "MB" | "KB" | B" | "?"}, amount: Number } The formated amount and its
    *  unit, which may be used for e.g. additional CSS formating.
    */

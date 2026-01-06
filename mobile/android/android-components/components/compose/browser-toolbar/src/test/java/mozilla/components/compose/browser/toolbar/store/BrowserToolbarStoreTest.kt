@@ -32,11 +32,26 @@ class BrowserToolbarStoreTest {
         val store = BrowserToolbarStore()
 
         assertEquals(Mode.DISPLAY, store.state.mode)
+        assertFalse(store.state.editState.isQueryPrivate)
 
-        store.dispatch(BrowserToolbarAction.EnterEditMode)
+        store.dispatch(BrowserToolbarAction.EnterEditMode(false))
 
         assertEquals(Mode.EDIT, store.state.mode)
         assertEquals("", store.state.editState.query.current)
+        assertEquals(false, store.state.editState.isQueryPrivate)
+    }
+
+    @Test
+    fun `WHEN enter edit mode action in private mode is dispatched THEN replace the old details with the new one`() {
+        val store = BrowserToolbarStore()
+        assertEquals(Mode.DISPLAY, store.state.mode)
+        assertFalse(store.state.editState.isQueryPrivate)
+
+        store.dispatch(BrowserToolbarAction.EnterEditMode(true))
+
+        assertEquals(Mode.EDIT, store.state.mode)
+        assertEquals("", store.state.editState.query.current)
+        assertEquals(true, store.state.editState.isQueryPrivate)
     }
 
     @Test
@@ -207,16 +222,6 @@ class BrowserToolbarStoreTest {
         store.dispatch(ToolbarGravityUpdated(Bottom))
 
         assertEquals(Bottom, store.state.gravity)
-    }
-
-    @Test
-    fun `WHEN the private mode is updated THEN replace the old details with the new one`() {
-        val store = BrowserToolbarStore()
-        assertFalse(store.state.editState.isQueryPrivate)
-
-        store.dispatch(BrowserEditToolbarAction.PrivateModeUpdated(true))
-
-        assertEquals(true, store.state.editState.isQueryPrivate)
     }
 
     private fun fakeActionButton() = ActionButtonRes(

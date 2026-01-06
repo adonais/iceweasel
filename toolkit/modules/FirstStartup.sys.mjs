@@ -7,11 +7,14 @@ import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
   Normandy: "resource://normandy/Normandy.sys.mjs",
   TaskScheduler: "resource://gre/modules/TaskScheduler.sys.mjs",
 });
 
 const PREF_TIMEOUT = "first-startup.timeout";
+const PREF_CATEGORY_TASKS = "first-startup.category-tasks-enabled";
+const CATEGORY_NAME = "first-startup-new-profile";
 
 /**
  * Service for blocking application startup, to be used on the first install. The intended
@@ -63,12 +66,14 @@ export var FirstStartup = {
     let promises = [];
 
     let normandyInitEndTime = null;
+    let normandyInitPromise = null;
     if (AppConstants.MOZ_NORMANDY) {
-      promises.push(
-        lazy.Normandy.init({ runAsync: false }).finally(() => {
+      normandyInitPromise = lazy.Normandy.init({ runAsync: false }).finally(
+        () => {
           normandyInitEndTime = ChromeUtils.now();
-        })
+        }
       );
+      promises.push(normandyInitPromise);
     }
 
     let deleteTasksEndTime = null;
@@ -84,8 +89,37 @@ export var FirstStartup = {
       );
     }
 
+    // Very important things that need to run before we launch the first window
+    // during new profile setup can register a hook with CATEGORY_NAME.
+    //
+    // Consumers should be aware that:
+    //
+    // * This blocks first startup window opening for new installs on Windows
+    //   ONLY for the first created default profile
+    // * If PREF_TIMEOUT elapses before all of these promises complete, the
+    //   registered category entries might not have all had a chance to
+    //   successfully complete before the first browser window appears.
+    const CATEGORY_TASKS_ENABLED = Services.prefs.getBoolPref(
+      PREF_CATEGORY_TASKS,
+      false
+    );
+    let categoryTasksEndTime = null;
+    if (CATEGORY_TASKS_ENABLED && AppConstants.MOZ_NORMANDY) {
+      promises.push(
+        normandyInitPromise.finally(() => {
+          return lazy.BrowserUtils.callModulesFromCategory({
+            categoryName: CATEGORY_NAME,
+            profileMarker: "first-startup-new-profile-tasks",
+            idleDispatch: false,
+          }).finally(() => {
+            categoryTasksEndTime = ChromeUtils.now();
+          });
+        })
+      );
+    }
+
     if (promises.length) {
-      Promise.all(promises).then(() => (initialized = true));
+      Promise.allSettled(promises).then(() => (initialized = true));
 
       this.elapsed = 0;
       Services.tm.spinEventLoopUntil("FirstStartup.sys.mjs:init", () => {
@@ -112,6 +146,12 @@ export var FirstStartup = {
     if (AppConstants.MOZ_UPDATE_AGENT) {
       Glean.firstStartup.deleteTasksTime.set(
         Math.ceil(deleteTasksEndTime || ChromeUtils.now() - startingTime)
+      );
+    }
+
+    if (CATEGORY_TASKS_ENABLED) {
+      Glean.firstStartup.categoryTasksTime.set(
+        Math.ceil(categoryTasksEndTime || ChromeUtils.now() - startingTime)
       );
     }
 

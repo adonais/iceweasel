@@ -1358,6 +1358,44 @@ export var PlacesDBUtils = {
     }
     return tasksMap;
   },
+
+  /**
+   * Helper used by FxBackup to remove downloads metadata from a copy of the Places
+   * database, for profile migration to another install (such as on another
+   * machine).
+   *
+   * @param {string} placesDbPath Full path to places.sqlite database to filter
+   *                              downloads metadata from.
+   */
+  async removeDownloadsMetadataFromDb(placesDbPath) {
+    // Don't create the database if it doesn't exist.
+    if (!(await IOUtils.exists(placesDbPath))) {
+      return;
+    }
+
+    let connection;
+    try {
+      connection = await lazy.Sqlite.openConnection({
+        path: placesDbPath,
+      });
+      const removeDownloads = `
+        -- Find download annotations
+        WITH found_annos AS (
+            SELECT a.id AS anno_id
+            FROM moz_annos a
+            JOIN moz_anno_attributes attr
+              ON a.anno_attribute_id = attr.id
+            WHERE INSTR(attr.name, 'downloads/') = 1
+        )
+        -- Delete downloads from moz_annos but leave the URLs in moz_places history
+        DELETE FROM moz_annos
+        WHERE id IN (SELECT anno_id FROM found_annos);
+      `;
+      await connection.execute(removeDownloads);
+    } finally {
+      await connection?.close();
+    }
+  },
 };
 
 async function integrity(dbName) {

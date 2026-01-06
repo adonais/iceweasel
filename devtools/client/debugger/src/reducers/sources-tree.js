@@ -501,7 +501,8 @@ function addSource(threadItems, source, sourceActor) {
 }
 /**
  * Find all the source items in tree
- * @param {Object} item - Current item node in the tree
+ *
+ * @param {object} item - Current item node in the tree
  * @param {Function} callback
  */
 function findSourceInThreadItem(source, threadItem) {
@@ -617,7 +618,7 @@ export function sortThreads(a, b) {
  *
  * @param {GroupItem} groupItem
  *        The Group Item for the group where the path should be displayed.
- * @param {String} path
+ * @param {string} path
  *        Path of the directory for which we want a Directory Item.
  * @return {GroupItem|DirectoryItem}
  *        The parent Item where this path should be inserted.
@@ -767,8 +768,8 @@ function createSourceTreeItem(source, sourceActor, parent) {
  * Update `expanded` and `focusedItem` so that we show and focus
  * the new selected source.
  *
- * @param {Object} state
- * @param {Object} selectedLocation
+ * @param {object} state
+ * @param {object} selectedLocation
  *        The new location being selected.
  */
 function updateSelectedLocation(state, selectedLocation) {
@@ -794,8 +795,8 @@ function updateSelectedLocation(state, selectedLocation) {
 /**
  * Get the SourceItem displayed in the SourceTree for the currently selected location.
  *
- * @param {Object} state
- * @param {Object} selectedLocation
+ * @param {object} state
+ * @param {object} selectedLocation
  * @return {SourceItem}
  *        The directory source item where the given source is displayed.
  */

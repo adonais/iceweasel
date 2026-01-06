@@ -21,7 +21,6 @@ import io.mockk.verify
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.search.SearchEngine.Type.BUNDLED
 import mozilla.components.concept.menu.Orientation
-import mozilla.components.support.test.libstate.ext.waitUntilIdle
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.test.rule.MainCoroutineRule
 import org.junit.Assert.assertEquals
@@ -116,7 +115,6 @@ class SearchSelectorToolbarActionTest {
                 settings = mockk(relaxed = true),
             ),
         )
-        store.waitUntilIdle()
 
         verify {
             view.setIcon(
@@ -145,8 +143,6 @@ class SearchSelectorToolbarActionTest {
                 settings = mockk(relaxed = true),
             ),
         )
-        store.waitUntilIdle()
-
         verify(exactly = 1) {
             view.setIcon(
                 icon = any(),
@@ -172,7 +168,6 @@ class SearchSelectorToolbarActionTest {
                 settings = mockk(relaxed = true),
             ),
         )
-        store.waitUntilIdle()
         verify(exactly = 1) {
             view.setIcon(
                 icon = any(),
@@ -191,7 +186,6 @@ class SearchSelectorToolbarActionTest {
                 settings = mockk(relaxed = true),
             ),
         )
-        store.waitUntilIdle()
         verify(exactly = 1) {
             view.setIcon(
                 icon = any(),
@@ -211,7 +205,6 @@ class SearchSelectorToolbarActionTest {
                 engine = newSearchEngine,
             ),
         )
-        store.waitUntilIdle()
         verify(exactly = 1) {
             view.setIcon(
                 icon = any(),

@@ -334,8 +334,6 @@ add_task(async function testTwoSuggestions() {
     descriptionL10n: {
       id: "urlbar-result-dates-countdown",
       args: { daysUntilStart: 4, name: "Event 1" },
-      cacheable: true,
-      excludeArgsFromCacheKey: true,
     },
   });
 
@@ -533,9 +531,7 @@ function makeExpectedResult({
       query: name,
       lowerCaseSuggestion: name.toLocaleLowerCase(),
       description,
-      descriptionL10n: descriptionL10n
-        ? { cacheable: true, excludeArgsFromCacheKey: true, ...descriptionL10n }
-        : undefined,
+      descriptionL10n,
       isSponsored,
       telemetryType: "important_dates",
       source: "rust",

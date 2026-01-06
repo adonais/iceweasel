@@ -73,6 +73,7 @@ class HomeActivityTestRule(
         isTermsOfServiceAccepted: Boolean = true,
         isComposeLoginsEnabled: Boolean = false,
         openLinksInExternalApp: OpenLinksInApp = getOpenLinksInApp(settings),
+        hasSeenBrowserToolbarCFR: Boolean = true,
     ) : this(initialTouchMode, launchActivity, skipOnboarding) {
         this.isHomepageHeaderEnabled = isHomepageHeaderEnabled
         this.isPocketEnabled = isPocketEnabled
@@ -96,6 +97,7 @@ class HomeActivityTestRule(
         this.isTermsOfServiceAccepted = isTermsOfServiceAccepted
         this.isComposeLoginsEnabled = isComposeLoginsEnabled
         this.openLinksInExternalApp = openLinksInExternalApp
+        this.hasSeenBrowserToolbarCFR = hasSeenBrowserToolbarCFR
     }
 
     /**
@@ -209,6 +211,7 @@ class HomeActivityIntentTestRule internal constructor(
         isComposeLoginsEnabled: Boolean = false,
         openLinksInExternalApp: OpenLinksInApp = getOpenLinksInApp(settings),
         tabManagerOpeningAnimationEnabled: Boolean = false,
+        hasSeenBrowserToolbarCFR: Boolean = true,
     ) : this(initialTouchMode, launchActivity, skipOnboarding) {
         this.isHomepageHeaderEnabled = isHomepageHeaderEnabled
         this.isPocketEnabled = isPocketEnabled
@@ -233,6 +236,7 @@ class HomeActivityIntentTestRule internal constructor(
         this.isComposeLoginsEnabled = isComposeLoginsEnabled
         this.openLinksInExternalApp = openLinksInExternalApp
         this.tabManagerOpeningAnimationEnabled = tabManagerOpeningAnimationEnabled
+        this.hasSeenBrowserToolbarCFR = hasSeenBrowserToolbarCFR
     }
 
     private val longTapUserPreference = getLongPressTimeout()
@@ -309,6 +313,7 @@ class HomeActivityIntentTestRule internal constructor(
         isComposeLoginsEnabled = settings.enableComposeLogins
         openLinksInExternalApp = getOpenLinksInApp(settings)
         tabManagerOpeningAnimationEnabled = settings.tabManagerOpeningAnimationEnabled
+        hasSeenBrowserToolbarCFR = settings.hasSeenBrowserToolbarCFR
     }
 
     companion object {

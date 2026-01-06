@@ -594,6 +594,10 @@
   <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">Bḍu amek i d-tufiḍ Firefox, daɣen i t-tesseqdaceḍ, akked yicriken n ulzuz n Mozilla. Isefka-a werǧin ttnuzun.</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">Qbel, syen bdu tunigin</string>
+  <!-- ==== Project "Nova" onboarding strings ==== -->
+
+  <!-- ==== End of Project "Nova" onboarding strings ==== -->
+
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">Fren adeg deg ufeggag n yifecka</string>
   <!-- Onboarding sub header for toolbar selection card, used by Nimbus experiments. -->
@@ -786,8 +790,6 @@
   <string name="preferences_gestures">Isillifen</string>
   <!-- Preference for settings related to visual options -->
   <string name="preferences_customize">Sagen</string>
-  <!-- Preference description for banner about signing in -->
-  <string name="preferences_sign_in_description_2" tools:ignore="UnusedResources" moz:removedIn="145">Qqen ɣer waccaren yemtawan, ticraḍ n yisebtar, awalen uffiren d wugar n wayen-nniḍen.</string>
   <!-- Preference description shown in the banner prompting the user to sign in for sync features -->
   <string name="preferences_sign_in_description">Mtawi iccaren, ticraḍ, awalen n uɛeddi d wayen niḍen.</string>
   <!-- Preference shown instead of account display name while account profile information isn't available yet. -->
@@ -1162,10 +1164,8 @@
   <!--
     Turn On Sync Preferences
 
-    Header of the Sync and save your data preference view
+    Header of the Sign in preference view
   -->
-  <string name="preferences_sync_2" tools:ignore="UnusedResources" moz:removedIn="145">Mtawi sakin sekles isefka-inek</string>
-  <!-- Header of the Sign in preference view -->
   <string name="preferences_sign_in">Kcem</string>
   <!-- Preference for reconnecting to FxA sync -->
   <string name="preferences_sync_sign_in_to_reconnect">Kcem akken ad talseḍ tuqqna</string>
@@ -1433,8 +1433,6 @@
   <string name="tab_tray_multiselect_menu_content_description">Umuɣ n waccaren i yettwafernen</string>
   <!-- Title text displayed for a homepage tab in the tabs tray. -->
   <string name="tab_tray_homepage_tab">Asebter agejdan</string>
-  <!-- Title text displayed for a homepage tab in the tabs tray. %s is a placeholder that will be replaced by app name. -->
-  <string name="tab_tray_homepage_tab_2" tools:ignore="UnusedResources" moz:removedIn="145">%s asebter agejdan</string>
   <!-- Content description (not visible, for screen readers etc.): Removes tab from collection button. Removes the selected tab from collection when pressed -->
   <string name="remove_tab_from_collection">Kkes iccer seg tegrumma</string>
   <!-- Text for button to enter multiselect mode in tabs tray -->
@@ -1996,8 +1994,6 @@
   <string name="toast_copy_link_to_clipboard">Ittwanɣel ɣeṛ tecfawt</string>
   <!-- An option from the share dialog to sign into sync -->
   <string name="sync_sign_in">Qqen ɣer Sync</string>
-  <!-- An option from the three dot menu to sync and save data -->
-  <string name="sync_menu_sync_and_save_data" tools:ignore="UnusedResources" moz:removedIn="145">Mtawi sakin sekles isefka</string>
   <!-- An option from the three dot menu to sign in -->
   <string name="sync_menu_sign_in">Kcem</string>
   <!-- An option from the share dialog to send link to all other sync devices -->
@@ -2116,7 +2112,7 @@
   <!-- Title for Accessibility Text Size Scaling Preference -->
   <string name="preference_accessibility_font_size_title">Tuɣzi n tesefsit</string>
   <!-- %d is the percentage of the slide bar for setting the text font size and %% will be announced as "percent". -->
-  <string name="a11y_preference_accessibility_font_size_percentage">%d %%.</string>
+  <string name="a11y_preference_accessibility_font_size_percentage" tools:ignore="UnusedResources" moz:removedIn="148">%d %%.</string>
   <!-- Title for Accessibility Text Automatic Size Scaling Preference -->
   <string name="preference_accessibility_auto_size_2">Teɣzi tawurmant n tsefsit</string>
   <!-- Summary for Accessibility Text Automatic Size Scaling Preference -->
@@ -3661,6 +3657,8 @@
   <string name="review_prompt_positive_button">Igerrez!</string>
   <!-- Label for a button opening a feedback forum -->
   <string name="review_prompt_feedback_button">Efk-d tikti-k</string>
+  <!-- ==== Terms of use pop up prompt ==== -->
+
   <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
   <string name="terms_of_use_prompt_link_terms_of_use">Tiwtilin n useqdec</string>
   <!-- Privacy notice link in the pop up prompt message that links to the privacy notice -->
@@ -3671,4 +3669,7 @@
   <string name="terms_of_use_prompt_accept">Qbel</string>
   <!-- Label for a button to postpone accepting the terms of use -->
   <string name="terms_of_use_prompt_postpone">Smekti-y-id ticki</string>
+  <!-- ==== Experiment strings. ==== -->
+
+  <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

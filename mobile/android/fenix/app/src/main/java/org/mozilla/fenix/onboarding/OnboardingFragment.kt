@@ -24,6 +24,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.navigation.fragment.findNavController
 import kotlinx.coroutines.launch
+import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.service.nimbus.evalJexlSafe
 import mozilla.components.service.nimbus.messaging.use
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
@@ -37,7 +38,6 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.initializeGlean
-import org.mozilla.fenix.components.lazyStore
 import org.mozilla.fenix.components.startMetricsIfEnabled
 import org.mozilla.fenix.compose.LinkTextState
 import org.mozilla.fenix.ext.components
@@ -52,6 +52,7 @@ import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.onboarding.redesign.view.OnboardingScreenRedesign
 import org.mozilla.fenix.onboarding.store.DefaultOnboardingPreferencesRepository
 import org.mozilla.fenix.onboarding.store.OnboardingPreferencesMiddleware
+import org.mozilla.fenix.onboarding.store.OnboardingState
 import org.mozilla.fenix.onboarding.store.OnboardingStore
 import org.mozilla.fenix.onboarding.view.Caption
 import org.mozilla.fenix.onboarding.view.ManagePrivacyPreferencesDialogFragment
@@ -93,8 +94,9 @@ class OnboardingFragment : Fragment() {
     }
     private val telemetryRecorder by lazy { OnboardingTelemetryRecorder() }
 
-    private val onboardingStore by lazyStore {
+    private val onboardingStore by fragmentStore(OnboardingState()) {
         OnboardingStore(
+            initialState = it,
             middleware = listOf(
                 OnboardingPreferencesMiddleware(
                     repository = DefaultOnboardingPreferencesRepository(

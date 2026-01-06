@@ -43,7 +43,16 @@ class HomeToolbarViewTest {
         binding = FragmentHomeBinding.inflate(LayoutInflater.from(testContext))
         every { homeFragment.requireContext() } returns context
         every { context.components.settings } returns mockk(relaxed = true)
-        toolbarView = spyk(HomeToolbarView(binding, mockk(relaxed = true), homeFragment, homeActivity))
+        toolbarView =
+            spyk(
+                HomeToolbarView(
+                    binding,
+                    mockk(relaxed = true),
+                    homeFragment,
+                    homeActivity,
+                    mockk(),
+                ),
+            )
         every { toolbarView.buildHomeMenu() } returns mockk(relaxed = true)
         every { toolbarView.buildTabCounter() } returns mockk(relaxed = true)
     }

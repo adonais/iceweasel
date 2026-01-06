@@ -57,9 +57,10 @@ function codegenTestX86_adhoc(module_text, export_name, expected, options = {}) 
         expected = x86_prefix + '\n' + expected;
     if (!options.no_suffix)
         expected = expected + '\n' + x86_suffix;
-    expected = fixlines(expected, `(?:${HEX}{2} )*`);
+    expected = fixlines(expected);
 
-    const output_matches_expected = output.match(new RegExp(expected)) != null;
+    const output_simple = stripencoding(output, `(?:${HEX}{2} )*`);
+    const output_matches_expected = output_simple.match(new RegExp(expected)) != null;
     if (!output_matches_expected) {
         print("---- codegen-x86-test.js: TEST FAILED ----");
     }

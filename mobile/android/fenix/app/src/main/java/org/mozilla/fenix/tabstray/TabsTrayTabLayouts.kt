@@ -6,8 +6,6 @@ package org.mozilla.fenix.tabstray
 
 import androidx.compose.animation.core.DecayAnimationSpec
 import androidx.compose.animation.rememberSplineBasedDecay
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -19,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -342,11 +341,7 @@ private fun TabListPreview() {
     val tabs = remember { generateFakeTabsList().toMutableStateList() }
 
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(FirefoxTheme.colors.layer1),
-        ) {
+        Surface {
             TabLayout(
                 tabs = tabs,
                 selectedTabId = tabs[1].id,
@@ -369,11 +364,7 @@ private fun TabGridPreview() {
     val tabs = remember { generateFakeTabsList().toMutableStateList() }
 
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(FirefoxTheme.colors.layer1),
-        ) {
+        Surface {
             TabLayout(
                 tabs = tabs,
                 selectedTabId = tabs[0].id,
@@ -390,7 +381,6 @@ private fun TabGridPreview() {
     }
 }
 
-@Suppress("MagicNumber")
 @PreviewLightDark
 @Composable
 private fun TabGridMultiSelectPreview() {
@@ -398,11 +388,7 @@ private fun TabGridMultiSelectPreview() {
     val selectedTabs = remember { tabs.take(4).toMutableStateList() }
 
     FirefoxTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(FirefoxTheme.colors.layer1),
-        ) {
+        Surface {
             TabLayout(
                 tabs = tabs,
                 selectedTabId = tabs[0].id,

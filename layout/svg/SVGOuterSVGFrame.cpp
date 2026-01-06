@@ -265,7 +265,7 @@ AspectRatio SVGOuterSVGFrame::GetIntrinsicRatio() const {
 
 /* virtual */
 nsIFrame::SizeComputationResult SVGOuterSVGFrame::ComputeSize(
-    gfxContext* aRenderingContext, WritingMode aWritingMode,
+    const SizeComputationInput& aSizingInput, WritingMode aWritingMode,
     const LogicalSize& aCBSize, nscoord aAvailableISize,
     const LogicalSize& aMargin, const LogicalSize& aBorderPadding,
     const StyleSizeOverrides& aSizeOverrides, ComputeSizeFlags aFlags) {
@@ -332,8 +332,9 @@ nsIFrame::SizeComputationResult SVGOuterSVGFrame::ComputeSize(
   }
 
   return {ComputeSizeWithIntrinsicDimensions(
-              aRenderingContext, aWritingMode, intrinsicSize, GetAspectRatio(),
-              cbSize, aMargin, aBorderPadding, aSizeOverrides, aFlags),
+              aSizingInput.mRenderingContext, aWritingMode, intrinsicSize,
+              GetAspectRatio(), cbSize, aMargin, aBorderPadding, aSizeOverrides,
+              aFlags),
           AspectRatioUsage::None};
 }
 

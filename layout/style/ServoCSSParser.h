@@ -9,9 +9,9 @@
 #ifndef mozilla_ServoCSSParser_h
 #define mozilla_ServoCSSParser_h
 
+#include "NonCustomCSSPropertyId.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/gfx/Matrix.h"
-#include "nsCSSPropertyID.h"
 #include "nsColor.h"
 #include "nsDOMCSSDeclaration.h"
 #include "nsStringFwd.h"
@@ -22,7 +22,7 @@ class RefPtr;
 
 namespace mozilla {
 
-struct AnimatedPropertyID;
+struct CSSPropertyId;
 class ServoStyleSet;
 struct URLExtraData;
 struct StyleAbsoluteColor;
@@ -133,11 +133,11 @@ class ServoCSSParser {
    *   in Servo.
    */
   static already_AddRefed<StyleLockedDeclarationBlock> ParseProperty(
-      nsCSSPropertyID aProperty, const nsACString& aValue,
+      NonCustomCSSPropertyId aProperty, const nsACString& aValue,
       const ParsingEnvironment& aParsingEnvironment,
       const StyleParsingMode& aParsingMode);
   static already_AddRefed<StyleLockedDeclarationBlock> ParseProperty(
-      const AnimatedPropertyID& aProperty, const nsACString& aValue,
+      const CSSPropertyId& aProperty, const nsACString& aValue,
       const ParsingEnvironment& aParsingEnvironment,
       const StyleParsingMode& aParsingMode);
 

@@ -166,7 +166,7 @@ const EXPECTED_SNAPSHOT = {
   description: "",
   indexInParent: 0,
   keyboardShortcut: "",
-  name: "",
+  name: null,
   nodeCssSelector: "",
   nodeType: 9,
   role: "document",
@@ -174,7 +174,6 @@ const EXPECTED_SNAPSHOT = {
   actions: [],
   attributes: {
     display: "block",
-    "explicit-name": "true",
     "margin-bottom": "8px",
     "margin-left": "8px",
     "margin-right": "8px",

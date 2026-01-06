@@ -7,7 +7,6 @@
 #include "nsIFile.h"
 #include "nsNetUtil.h"
 #include <stdlib.h>
-#include <algorithm>
 
 // These constants are the the strings that GTK expects as key-value pairs for
 // setting CUPS duplex modes. These are not universal to all CUPS systems, which

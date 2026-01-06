@@ -61,7 +61,7 @@ const JUSTIFY_CONTENT = "justify-content";
  * The FlexboxHighlighter is the class that overlays a visual canvas on top of
  * display: [inline-]flex elements.
  *
- * @param {String} options.color
+ * @param {string} options.color
  *        The color that should be used to draw the highlighter for this flexbox.
  * Structure:
  * <div class="highlighter-container">
@@ -209,7 +209,7 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
   /**
    * Gets the flexbox container pattern used to render the container regions.
    *
-   * @param  {Number} devicePixelRatio
+   * @param  {number} devicePixelRatio
    *         The device pixel ratio we want the pattern for.
    * @return {CanvasPattern} flex container pattern.
    */
@@ -256,7 +256,7 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
   /**
    * Gets the flexbox justify content pattern used to render the justify content regions.
    *
-   * @param  {Number} devicePixelRatio
+   * @param  {number} devicePixelRatio
    *         The device pixel ratio we want the pattern for.
    * @return {CanvasPattern} flex justify content pattern.
    */
@@ -761,7 +761,7 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
   /**
    * Set up the canvas with the given options prior to drawing.
    *
-   * @param {String} [options.lineDash = null]
+   * @param {string} [options.lineDash = null]
    *        An Array of numbers that specify distances to alternately draw a
    *        line and a gap (in coordinate space units). If the number of
    *        elements in the array is odd, the elements of the array get copied
@@ -773,13 +773,13 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
    *          FLEXBOX_LINES_PROPERTIES.edge.lineDash,
    *          FLEXBOX_LINES_PROPERTIES.item.lineDash
    *          FLEXBOX_LINES_PROPERTIES.alignItems.lineDash
-   * @param {Number} [options.lineWidthMultiplier = 1]
+   * @param {number} [options.lineWidthMultiplier = 1]
    *        The width of the line.
-   * @param {Number} [options.offset = `(displayPixelRatio / 2) % 1`]
+   * @param {number} [options.offset = `(displayPixelRatio / 2) % 1`]
    *        The single line width used to obtain a crisp line.
-   * @param {Boolean} [options.skipLineAndStroke = false]
+   * @param {boolean} [options.skipLineAndStroke = false]
    *        Skip the setting of lineWidth and strokeStyle.
-   * @param {Boolean} [options.useContainerScrollOffsets = false]
+   * @param {boolean} [options.useContainerScrollOffsets = false]
    *        Take the flexbox container's scroll and zoom offsets into account.
    *        This is needed for drawing flex lines and justify content when the
    *        flexbox container itself is display:scroll.
@@ -883,7 +883,7 @@ class FlexboxHighlighter extends AutoRefreshHighlighter {
  *
  * @param  {DOMNode} container
  *         The flex container.
- * @return {Object|null} representation of the Flex data object.
+ * @return {object | null} representation of the Flex data object.
  */
 function getFlexData(container) {
   const flex = container.getAsFlexContainer();
@@ -957,7 +957,7 @@ function getRectFromFlexItemValues(item, container) {
  *         The old Flex data object.
  * @param  {Flex} newFlexData
  *         The new Flex data object.
- * @return {Boolean} true if the flex data has changed and false otherwise.
+ * @return {boolean} true if the flex data has changed and false otherwise.
  */
 // eslint-disable-next-line complexity
 function compareFlexData(oldFlexData, newFlexData) {

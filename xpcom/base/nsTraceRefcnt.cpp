@@ -46,7 +46,6 @@
 #include "mozilla/PoisonIOInterposer.h"
 #include "mozilla/UniquePtr.h"
 
-#include <string>
 #include <vector>
 
 #ifdef HAVE_DLFCN_H

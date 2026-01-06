@@ -19,8 +19,6 @@ from mach.decorators import Command, CommandArgument, SubCommand
 from mach.util import strtobool
 from mozsystemmonitor.resourcemonitor import SystemResourceMonitor
 
-logger = logging.getLogger("taskcluster")
-
 
 def setup_logging(command_context, quiet=False, verbose=True):
     """
@@ -40,6 +38,7 @@ def setup_logging(command_context, quiet=False, verbose=True):
             write_interval=old.formatter.write_interval,
             write_times=old.formatter.write_times,
         )
+        logging.getLogger("taskcluster").setLevel(logging.INFO)
 
     # all of the taskgraph logging is unstructured logging
     command_context.log_manager.enable_unstructured()
@@ -114,6 +113,21 @@ def taskgraph_command(command_context):
     by dependencies: for example, a binary must be built before it is tested,
     and that build may further depend on various toolchains, libraries, etc.
     """
+
+
+@SubCommand(
+    "taskgraph",
+    "kind-graph",
+    description="Generate a graph of the relationship between taskgraph kinds",
+    parser=partial(get_taskgraph_command_parser, "kind-graph"),
+)
+def taskgraph_kind_graph(command_context, **options):
+    try:
+        setup_logging(command_context)
+        return taskgraph_commands["kind-graph"].func(options)
+    except Exception:
+        traceback.print_exc()
+        sys.exit(1)
 
 
 @SubCommand(

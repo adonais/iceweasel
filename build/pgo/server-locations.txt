@@ -354,8 +354,9 @@ https://tls13.example.com:443        privileged,tls1,tls1_3
 # Hosts for youtube rewrite tests
 https://mochitest.youtube.com:443
 
-# Host for U2F localhost tests
+# Hosts for WebAuthn localhost tests
 https://localhost:443
+https://badcertdomain.localhost:443     cert=badCertDomain
 
 # Bug 1402530
 http://localhost:80                 privileged

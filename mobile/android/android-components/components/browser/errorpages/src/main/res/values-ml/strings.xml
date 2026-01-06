@@ -135,6 +135,8 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">തെറ്റിദ്ധരിപ്പിക്കുന്ന സൈറ്റ്</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>%1$s എന്നിടത്തുള്ള സൈറ്റ് ഒരു തെറ്റിദ്ധരിപ്പിക്കുന്ന സൈറ്റാണ് എന്ന് രേഖപ്പെടുത്തിയിട്ടുള്ളതിനാൽ താങ്കളുടെ സുരക്ഷാ ക്രമീകരണങ്ങളനുസരിച്ച് തടയപ്പെട്ടിരിക്കുന്നു.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">താങ്ങളുടെ സുരക്ഷയ്ക്കായി വെബ്ബിടം തടഞ്ഞിരിക്കുന്നു</string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">സൂക്ഷമമുള്ള വെബ്സ്ഥാനം ലഭ്യമല്ല</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

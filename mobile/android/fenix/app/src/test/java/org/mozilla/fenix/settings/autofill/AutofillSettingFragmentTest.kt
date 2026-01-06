@@ -48,6 +48,7 @@ class AutofillSettingFragmentTest {
         every { testContext.components.settings } returns mockk(relaxed = true)
         every { testContext.components.core } returns mockk(relaxed = true)
 
+        every { testContext.components.settings.enableComposeAutofillSettings } returns false
         every { testContext.components.settings.addressFeature } returns true
         every { testContext.components.settings.shouldAutofillCreditCardDetails } returns true
         every { testContext.components.settings.shouldAutofillAddressDetails } returns true

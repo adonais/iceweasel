@@ -12,8 +12,6 @@
 #include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/MozPromise.h"
-#include <memory>
-#include <string>
 #include <limits>
 
 // PerfStats

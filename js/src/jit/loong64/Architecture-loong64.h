@@ -10,7 +10,6 @@
 #include "mozilla/MathAlgorithms.h"
 
 #include <algorithm>
-#include <iterator>
 
 #include "jit/shared/Architecture-shared.h"
 

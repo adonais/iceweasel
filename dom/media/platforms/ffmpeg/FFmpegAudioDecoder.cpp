@@ -119,7 +119,7 @@ RefPtr<MediaDataDecoder::InitPromise> FFmpegAudioDecoder<LIBAV_VER>::Init() {
   }
 
   MediaResult rv(NS_ERROR_NOT_AVAILABLE);
-#ifdef MOZ_WIDGET_ANDROID
+#if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
   if (XRE_IsRDDProcess() || XRE_IsUtilityProcess()) {
     AVCodec* codec = FindHardwareAVCodec(mLib, mCodecID, AV_HWDEVICE_TYPE_NONE);
     if (codec) {
@@ -435,6 +435,13 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
   AVPacket packet_mem;
   packet = &packet_mem;
   mLib->av_init_packet(packet);
+#endif
+
+#if defined(MOZ_WIDGET_ANDROID) && defined(USING_MOZFFVPX)
+  MediaResult ret = MaybeAttachCryptoInfo(aSample, packet);
+  if (NS_FAILED(ret)) {
+    return ret;
+  }
 #endif
 
   FFMPEG_LOG("FFmpegAudioDecoder::DoDecode: %d bytes, [%s,%s] (Duration: %s)",

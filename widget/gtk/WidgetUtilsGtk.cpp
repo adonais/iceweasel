@@ -31,6 +31,7 @@
 #ifdef MOZ_ENABLE_DBUS
 #  include "mozilla/ClearOnShutdown.h"
 #  include "mozilla/widget/AsyncDBus.h"
+#  include "nsAppShell.h"
 #endif  // MOZ_ENABLE_DBUS
 
 #ifdef MOZ_WAYLAND
@@ -103,14 +104,14 @@ bool IsMainWindowTransparent() {
 
 bool GdkIsWaylandDisplay(GdkDisplay* display) {
   static auto sGdkWaylandDisplayGetType =
-      (GType(*)())dlsym(RTLD_DEFAULT, "gdk_wayland_display_get_type");
+      (GType (*)())dlsym(RTLD_DEFAULT, "gdk_wayland_display_get_type");
   return sGdkWaylandDisplayGetType &&
          G_TYPE_CHECK_INSTANCE_TYPE(display, sGdkWaylandDisplayGetType());
 }
 
 bool GdkIsX11Display(GdkDisplay* display) {
   static auto sGdkX11DisplayGetType =
-      (GType(*)())dlsym(RTLD_DEFAULT, "gdk_x11_display_get_type");
+      (GType (*)())dlsym(RTLD_DEFAULT, "gdk_x11_display_get_type");
   return sGdkX11DisplayGetType &&
          G_TYPE_CHECK_INSTANCE_TYPE(display, sGdkX11DisplayGetType());
 }
@@ -170,6 +171,7 @@ bool IsRunningUnderFlatpak() {
 static void DoRegisterHostApp() {
   GUniquePtr<GError> error;
 
+  nsAppShell::DBusConnectionCheck();
   RefPtr<GDBusProxy> proxy = dont_AddRef(g_dbus_proxy_new_for_bus_sync(
       G_BUS_TYPE_SESSION, G_DBUS_PROXY_FLAGS_NONE, nullptr, sXdpServiceName,
       sXdpDBusPath, sXdpRegistryInterfaceName, nullptr /* cancellable */,

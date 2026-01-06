@@ -237,6 +237,7 @@ const jexlEvaluationCache = new Map();
 
 /**
  * CachedTargetingGetter
+ *
  * @param property {string} Name of the method
  * @param options {any=} Options passed to the method
  * @param updateInterval {number?} Update interval for query. Defaults to FRECENT_SITES_UPDATE_INTERVAL
@@ -584,7 +585,7 @@ function parseAboutPageURL(url) {
 /**
  * Get the number of records in autofill storage, e.g. credit cards/addresses.
  *
- * @param  {Object} [data]
+ * @param  {object} [data]
  * @param  {string} [data.collectionName]
  *         The name used to specify which collection to retrieve records.
  * @param  {string} [data.searchString]
@@ -1125,6 +1126,7 @@ const TargetingGetters = {
 
   /**
    * The distribution id, if any.
+   *
    * @return {string}
    */
   get distributionId() {
@@ -1135,6 +1137,7 @@ const TargetingGetters = {
 
   /**
    * Where the Firefox View button is shown, if at all.
+   *
    * @return {string} container of the button if it is shown in the toolbar/overflow menu
    * @return {string} `null` if the button has been removed
    */
@@ -1171,6 +1174,7 @@ const TargetingGetters = {
 
   /**
    * Has the user ever used the Migration Wizard to migrate bookmarks?
+   *
    * @return {boolean} `true` if bookmark migration has occurred.
    */
   get hasMigratedBookmarks() {
@@ -1180,6 +1184,7 @@ const TargetingGetters = {
   /**
    * Has the user ever used the Migration Wizard to migrate passwords from
    * a CSV file?
+   *
    * @return {boolean} `true` if CSV passwords have been imported via the
    *   migration wizard.
    */
@@ -1189,6 +1194,7 @@ const TargetingGetters = {
 
   /**
    * Has the user ever used the Migration Wizard to migrate history?
+   *
    * @return {boolean} `true` if history migration has occurred.
    */
   get hasMigratedHistory() {
@@ -1197,6 +1203,7 @@ const TargetingGetters = {
 
   /**
    * Has the user ever used the Migration Wizard to migrate passwords?
+   *
    * @return {boolean} `true` if password migration has occurred.
    */
   get hasMigratedPasswords() {
@@ -1208,6 +1215,7 @@ const TargetingGetters = {
    * wizard in about:welcome by having
    * "browser.migrate.content-modal.about-welcome-behavior" be equal to
    * "embedded".
+   *
    * @return {boolean} `true` if the embedded migration wizard is enabled.
    */
   get useEmbeddedMigrationWizard() {
@@ -1217,6 +1225,7 @@ const TargetingGetters = {
   /**
    * Returns the version number of the New Tab built-in addon being used
    * by the build.
+   *
    * @return {string}
    */
   get newtabAddonVersion() {
@@ -1225,6 +1234,7 @@ const TargetingGetters = {
 
   /**
    * Whether the user installed Firefox via the RTAMO flow.
+   *
    * @return {boolean} `true` when RTAMO has been used to download Firefox,
    * `false` otherwise.
    */
@@ -1239,6 +1249,7 @@ const TargetingGetters = {
 
   /**
    * Whether the user installed via the device migration flow.
+   *
    * @return {boolean} `true` when the link to download the browser was part
    * of guidance for device migration. `false` otherwise.
    */
@@ -1251,6 +1262,7 @@ const TargetingGetters = {
   /**
    * Whether the user opted into a special message action represented by an
    * installer attribution campaign and this choice still needs to be honored.
+   *
    * @return {string} A special message action to be executed on first-run. For
    * example, `"SET_DEFAULT_BROWSER"` when the user selected to set as default
    * via the install marketing page and set default has not yet been
@@ -1263,7 +1275,8 @@ const TargetingGetters = {
    * The values of the height and width available to the browser to display
    * web content. The available height and width are each calculated taking
    * into account the presence of menu bars, docks, and other similar OS elements
-   * @returns {Object} resolution The resolution object containing width and height
+   *
+   * @returns {object} resolution The resolution object containing width and height
    * @returns {number} resolution.width The available width of the primary monitor
    * @returns {number} resolution.height The available height of the primary monitor
    */

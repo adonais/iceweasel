@@ -460,7 +460,6 @@ bool GeckoEditableSupport::RemoveComposition(RemoveCompositionFlag aFlag) {
   }
 
   nsEventStatus status = nsEventStatus_eIgnore;
-
   NS_ENSURE_SUCCESS(BeginInputTransaction(mDispatcher), false);
   mDispatcher->CommitComposition(
       status, aFlag == CANCEL_IME_COMPOSITION ? &EmptyString() : nullptr);
@@ -646,7 +645,6 @@ void GeckoEditableSupport::FlushIMEChanges(FlushChangesFlag aFlags) {
   };
   TextRecord textTransaction;
 
-  nsEventStatus status = nsEventStatus_eIgnore;
   bool causedOnlyByComposition = mIMEPendingTextChange.IsValid() &&
                                  mIMEPendingTextChange.mCausedOnlyByComposition;
   mIMETextChangedDuringFlush = false;
@@ -682,7 +680,7 @@ void GeckoEditableSupport::FlushIMEChanges(FlushChangesFlag aFlags) {
           mIMEPendingTextChange.mStartOffset,
           mIMEPendingTextChange.mAddedEndOffset -
               mIMEPendingTextChange.mStartOffset);
-      widget->DispatchEvent(&queryTextContentEvent, status);
+      widget->DispatchEvent(&queryTextContentEvent);
 
       if (shouldAbort(NS_WARN_IF(queryTextContentEvent.Failed()))) {
         return;
@@ -715,7 +713,7 @@ void GeckoEditableSupport::FlushIMEChanges(FlushChangesFlag aFlags) {
       //     change.
       WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
                                                      widget);
-      widget->DispatchEvent(&querySelectedTextEvent, status);
+      widget->DispatchEvent(&querySelectedTextEvent);
 
       if (shouldAbort(
               NS_WARN_IF(querySelectedTextEvent.DidNotFindSelection()))) {
@@ -819,13 +817,12 @@ void GeckoEditableSupport::UpdateCompositionRects() {
 
   jni::ObjectArray::LocalRef rects;
   if (composition) {
-    nsEventStatus status = nsEventStatus_eIgnore;
     uint32_t offset = composition->NativeOffsetOfStartComposition();
     WidgetQueryContentEvent queryTextRectsEvent(true, eQueryTextRectArray,
                                                 widget);
     queryTextRectsEvent.InitForQueryTextRectArray(
         offset, composition->String().Length());
-    widget->DispatchEvent(&queryTextRectsEvent, status);
+    widget->DispatchEvent(&queryTextRectsEvent);
     rects = ConvertRectArrayToJavaRectFArray(
         queryTextRectsEvent.Succeeded()
             ? queryTextRectsEvent.mReply->mRectArray
@@ -840,8 +837,7 @@ void GeckoEditableSupport::UpdateCompositionRects() {
   options.mRelativeToInsertionPoint = true;
   queryCaretRectEvent.InitForQueryCaretRect(0, options);
 
-  nsEventStatus status = nsEventStatus_eIgnore;
-  widget->DispatchEvent(&queryCaretRectEvent, status);
+  widget->DispatchEvent(&queryCaretRectEvent);
   auto caretRect =
       queryCaretRectEvent.Succeeded()
           ? java::sdk::RectF::New(queryCaretRectEvent.mReply->mRect.x,
@@ -930,10 +926,9 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
 
 #ifdef NIGHTLY_BUILD
     {
-      nsEventStatus status = nsEventStatus_eIgnore;
       WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
                                                      widget);
-      widget->DispatchEvent(&querySelectedTextEvent, status);
+      widget->DispatchEvent(&querySelectedTextEvent);
       if (querySelectedTextEvent.Succeeded()) {
         ALOGIME(
             "IME: Current selection: %s",
@@ -952,7 +947,7 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
       event.mLength = uint32_t(aEnd - aStart);
       event.mExpandToClusterBoundary = false;
       event.mReason = nsISelectionListener::IME_REASON;
-      widget->DispatchEvent(&event, status);
+      status = widget->DispatchEvent(&event);
     }
 
     if (!mIMEKeyEvents.IsEmpty()) {
@@ -1029,7 +1024,7 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
     WidgetContentCommandEvent insertTextEvent(true, eContentCommandInsertText,
                                               widget);
     insertTextEvent.mString = Some(string);
-    widget->DispatchEvent(&insertTextEvent, status);
+    widget->DispatchEvent(&insertTextEvent);
     if (!mDispatcher || widget->Destroyed()) {
       return false;
     }
@@ -1046,7 +1041,7 @@ bool GeckoEditableSupport::DoReplaceText(int32_t aStart, int32_t aEnd,
     }
   } else if (performDeletion) {
     WidgetContentCommandEvent event(true, eContentCommandDelete, widget);
-    widget->DispatchEvent(&event, status);
+    status = widget->DispatchEvent(&event);
     if (!mDispatcher || widget->Destroyed()) {
       return false;
     }
@@ -1118,7 +1113,6 @@ bool GeckoEditableSupport::DoUpdateComposition(int32_t aStart, int32_t aEnd,
   }
 
   nsCOMPtr<nsIWidget> widget = GetWidget();
-  nsEventStatus status = nsEventStatus_eIgnore;
   NS_ENSURE_TRUE(mDispatcher && widget, false);
 
   const bool keepCurrent =
@@ -1139,7 +1133,7 @@ bool GeckoEditableSupport::DoUpdateComposition(int32_t aStart, int32_t aEnd,
     selEvent.mLength = std::max(aStart, aEnd) - selEvent.mOffset;
     selEvent.mReversed = aStart > aEnd;
     selEvent.mExpandToClusterBoundary = false;
-    widget->DispatchEvent(&selEvent, status);
+    widget->DispatchEvent(&selEvent);
     return compositionChanged;
   }
 
@@ -1154,6 +1148,7 @@ bool GeckoEditableSupport::DoUpdateComposition(int32_t aStart, int32_t aEnd,
   RefPtr<TextComposition> composition(GetComposition());
   MOZ_ASSERT(!composition || !composition->EditorIsHandlingLatestChange());
 
+  nsEventStatus status = nsEventStatus_eIgnore;
   if (!composition || !mDispatcher->IsComposing() ||
       uint32_t(aStart) != composition->NativeOffsetOfStartComposition() ||
       uint32_t(aEnd) != composition->NativeOffsetOfStartComposition() +
@@ -1174,13 +1169,13 @@ bool GeckoEditableSupport::DoUpdateComposition(int32_t aStart, int32_t aEnd,
       event.mLength = uint32_t(aEnd - aStart);
       event.mExpandToClusterBoundary = false;
       event.mReason = nsISelectionListener::IME_REASON;
-      widget->DispatchEvent(&event, status);
+      status = widget->DispatchEvent(&event);
     }
 
     {
       WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
                                                      widget);
-      widget->DispatchEvent(&querySelectedTextEvent, status);
+      status = widget->DispatchEvent(&querySelectedTextEvent);
       MOZ_ASSERT(querySelectedTextEvent.Succeeded());
       if (querySelectedTextEvent.FoundSelection()) {
         string = querySelectedTextEvent.mReply->DataRef();
@@ -1231,8 +1226,7 @@ class MOZ_STACK_CLASS AutoSelectionRestore final {
     }
     WidgetQueryContentEvent querySelectedTextEvent(true, eQuerySelectedText,
                                                    widget);
-    nsEventStatus status = nsEventStatus_eIgnore;
-    widget->DispatchEvent(&querySelectedTextEvent, status);
+    widget->DispatchEvent(&querySelectedTextEvent);
     if (querySelectedTextEvent.DidNotFindSelection()) {
       mOffset = UINT32_MAX;
       mLength = UINT32_MAX;
@@ -1253,8 +1247,7 @@ class MOZ_STACK_CLASS AutoSelectionRestore final {
     selection.mLength = mLength;
     selection.mExpandToClusterBoundary = false;
     selection.mReason = nsISelectionListener::IME_REASON;
-    nsEventStatus status = nsEventStatus_eIgnore;
-    mWidget->DispatchEvent(&selection, status);
+    mWidget->DispatchEvent(&selection);
   }
 
  private:
@@ -1565,6 +1558,8 @@ InputContext GeckoEditableSupport::GetInputContext() {
 }
 
 void GeckoEditableSupport::TransferParent(jni::Object::Param aEditableParent) {
+  ALOGIME("IME: TransferParent, mIMEFocusCount=%d", mIMEFocusCount);
+
   AutoGeckoEditableBlocker blocker(this);
 
   mEditable->SetParent(aEditableParent);
@@ -1662,9 +1657,13 @@ void GeckoEditableSupport::SetOnBrowserChild(dom::BrowserChild* aBrowserChild) {
     support->mEditableAttached = true;
   }
 
-  // Transfer to a new parent that corresponds to the BrowserChild.
-  java::GeckoServiceChildProcess::GetEditableParent(support->GetJavaEditable(),
-                                                    contentId, tabId);
+  MOZ_ASSERT(support->mEditable);
+
+  if (!support->mEditable->HasEditableParent()) {
+    // Transfer to a new parent that corresponds to the BrowserChild.
+    java::GeckoServiceChildProcess::GetEditableParent(
+        support->GetJavaEditable(), contentId, tabId);
+  }
 }
 
 nsIWidget* GeckoEditableSupport::GetWidget() const {
@@ -1719,8 +1718,7 @@ void GeckoEditableSupport::OnImeInsertImage(jni::ByteArray::Param aData,
   WidgetContentCommandEvent command(true, eContentCommandPasteTransferable,
                                     widget);
   command.mTransferable = trans.forget();
-  nsEventStatus status;
-  widget->DispatchEvent(&command, status);
+  widget->DispatchEvent(&command);
 }
 
 void GeckoEditableSupport::PostHandleKeyEvent(WidgetKeyboardEvent* aEvent) {

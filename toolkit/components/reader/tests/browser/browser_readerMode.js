@@ -50,8 +50,7 @@ add_task(async function test_reader_button() {
   let url = TEST_PATH + "readerModeArticle.html";
   // Set up favicon for testing.
   let favicon =
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAA" +
-    "AAAA6fptVAAAACklEQVQI12NgAAAAAgAB4iG8MwAAAABJRU5ErkJggg==";
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIW2NgYGD4DwABBAEAwS2OUAAAAABJRU5ErkJggg==";
   info("Adding visit so we can add favicon");
   await PlacesTestUtils.addVisits(new URL(url));
   info("Adding favicon");

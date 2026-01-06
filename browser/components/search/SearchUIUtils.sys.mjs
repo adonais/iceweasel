@@ -7,7 +7,8 @@
  */
 
 /**
- * @import {SearchUtils} from "moz-src:///toolkit/components/search/SearchUtils.sys.mjs"
+ * @import { SearchUtils } from "moz-src:///toolkit/components/search/SearchUtils.sys.mjs"
+ * @import { UrlbarInput } from "chrome://browser/content/urlbar/UrlbarInput.mjs";
  */
 
 import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
@@ -310,21 +311,30 @@ export var SearchUIUtils = {
       return;
     }
 
-    let focusUrlBarIfSearchFieldIsNotActive = function (aSearchBar) {
-      if (!aSearchBar || window.document.activeElement != aSearchBar.textbox) {
+    /** @type {(searchBar: MozSearchbar | UrlbarInput) => void} */
+    let focusUrlBarIfSearchFieldIsNotActive = function (searchBar) {
+      if (!searchBar || window.document.activeElement != searchBar.inputField) {
         // Limit the results to search suggestions, like the search bar.
         window.gURLBar.searchModeShortcut();
       }
     };
 
-    let searchBar = /** @type {MozSearchbar} */ (
-      window.document.getElementById("searchbar")
+    let searchBar = /** @type {MozSearchbar | UrlbarInput} */ (
+      window.document.getElementById(
+        Services.prefs.getBoolPref("browser.search.widget.new")
+          ? "searchbar-new"
+          : "searchbar"
+      )
     );
     let placement =
       lazy.CustomizableUI.getPlacementOfWidget("search-container");
     let focusSearchBar = () => {
-      searchBar = /** @type {MozSearchbar} */ (
-        window.document.getElementById("searchbar")
+      searchBar = /** @type {MozSearchbar | UrlbarInput} */ (
+        window.document.getElementById(
+          Services.prefs.getBoolPref("browser.search.widget.new")
+            ? "searchbar-new"
+            : "searchbar"
+        )
       );
       searchBar.select();
       focusUrlBarIfSearchFieldIsNotActive(searchBar);

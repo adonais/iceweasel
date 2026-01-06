@@ -157,7 +157,7 @@ bool SVGCircleElement::IsLengthChangedViaCSS(const ComputedStyle& aNewStyle,
          newSVGReset.mCy != oldSVGReset.mCy || newSVGReset.mR != oldSVGReset.mR;
 }
 
-nsCSSPropertyID SVGCircleElement::GetCSSPropertyIdForAttrEnum(
+NonCustomCSSPropertyId SVGCircleElement::GetCSSPropertyIdForAttrEnum(
     uint8_t aAttrEnum) {
   switch (aAttrEnum) {
     case ATTR_CX:

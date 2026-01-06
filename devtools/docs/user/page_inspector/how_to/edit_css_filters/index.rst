@@ -2,7 +2,7 @@
 Edit CSS filters
 ================
 
-`CSS filter <https://developer.mozilla.org/en-US/docs/Web/CSS/filter>`_ properties in the :ref:`Rules view <page_inspector_ui_tour_rules_view>` have a circular gray and white swatch next to them:
+`CSS filter <https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/filter>`_ properties in the :ref:`Rules view <page_inspector_ui_tour_rules_view>` have a circular gray and white swatch next to them:
 
 .. image:: click_to_edit_filter.png
   :class: border

@@ -8,8 +8,6 @@
 
 #include "mozilla/Assertions.h"
 
-#include <utility>
-
 #include "jspubtd.h"
 #include "NamespaceImports.h"
 

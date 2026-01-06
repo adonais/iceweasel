@@ -43,8 +43,27 @@ void LocationBase::Navigate(nsIURI* aURI, nsIPrincipal& aSubjectPrincipal,
   // Step 2-3, except the check for if document is completely loaded.
   bool needsCompletelyLoadedDocument = !IncumbentGlobalHasTransientActivation();
 
+  // Make the load's referrer reflect changes to the document's URI caused by
+  // push/replaceState, if possible.  First, get the document corresponding to
+  // fp.  If the document's original URI (i.e. its URI before
+  // push/replaceState) matches the principal's URI, use the document's
+  // current URI as the referrer.  If they don't match, use the principal's
+  // URI.
+  //
+  // The triggering principal for this load should be the principal of the
+  // incumbent document (which matches where the referrer information is
+  // coming from) when there is an incumbent document, and the subject
+  // principal otherwise.  Note that the URI in the triggering principal
+  // may not match the referrer URI in various cases, notably including
+  // the cases when the incumbent document's document URI was modified
+  // after the document was loaded.
+
+  nsCOMPtr<nsPIDOMWindowInner> incumbent =
+      do_QueryInterface(mozilla::dom::GetIncumbentGlobal());
+  nsCOMPtr<Document> doc = incumbent ? incumbent->GetDoc() : nullptr;
+
   // Step 4
-  navigable->Navigate(aURI, aSubjectPrincipal, aRv, aHistoryHandling,
+  navigable->Navigate(aURI, doc, aSubjectPrincipal, aRv, aHistoryHandling,
                       needsCompletelyLoadedDocument);
 }
 

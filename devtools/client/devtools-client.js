@@ -401,6 +401,7 @@ DevToolsClient.prototype = {
 
   /**
    * Send a request.
+   *
    * @throws Error if there is already an active request in flight for the same
    *         actor.
    */
@@ -839,7 +840,7 @@ DevToolsClient.prototype = {
   /**
    * Return the Front for the Actor whose ID is the one passed in argument.
    *
-   * @param {String} actorID: The actor ID to look for.
+   * @param {string} actorID: The actor ID to look for.
    */
   getFrontByID(actorID) {
     const pool = this.poolFor(actorID);
@@ -857,7 +858,8 @@ DevToolsClient.prototype = {
 
   /**
    * Creates an object front for this DevToolsClient and the grip in parameter,
-   * @param {Object} grip: The grip to create the ObjectFront for.
+   *
+   * @param {object} grip: The grip to create the ObjectFront for.
    * @param {ThreadFront} threadFront
    * @param {Front} parentFront: Optional front that will manage the object front.
    *                             Defaults to threadFront.

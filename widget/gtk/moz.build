@@ -37,6 +37,7 @@ if CONFIG["MOZ_ENABLE_V4L2"]:
 
 EXPORTS += [
     "MozContainer.h",
+    "nsAppShell.h",
     "nsGTKToolkit.h",
     "nsGtkUtils.h",
     "nsImageToPixbuf.h",

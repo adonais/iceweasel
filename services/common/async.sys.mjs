@@ -249,7 +249,7 @@ class Watchdog {
      * `"timeout"` if the watchdog timer fired, or `"shutdown"` if the app is
      * is quitting.
      *
-     * @type {String?}
+     * @type {string?}
      */
     this.abortReason = null;
   }
@@ -268,7 +268,7 @@ class Watchdog {
   /**
    * Starts the watchdog timer, and listens for the app quitting.
    *
-   * @param {Number} delay
+   * @param {number} delay
    *                 The time to wait before signaling the operation to abort.
    */
   start(delay) {

@@ -50,7 +50,7 @@ function getCacheSession(request) {
  * @param {nsICacheEntry} cacheEntry
  *     The cache entry from the backend.
  *
- * @returns {Object}
+ * @returns {object}
  *     A responseCache object expected by RDP.
  */
 function buildResponseCacheObject(cacheEntry) {

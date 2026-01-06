@@ -1,13 +1,3 @@
-#if 0
-#define NR_LOG_REGISTRY BLAHBLAH()
-#define LOG_REGISTRY BLAHBLAH()
-static int BLAHBLAH() {
-int blahblah;
-r_log_register("registry",&blahblah);
-return blahblah;
-}
-#endif
-
 /*
  *
  *    registry_int.h
@@ -93,5 +83,58 @@ int nr_reg_get_client(CLIENT **client);
 #define CALLBACK_SERVER_ADDR     "127.0.0.1"
 #define CALLBACK_SERVER_PORT     8082
 #define CALLBACK_SERVER_BACKLOG  32
+
+/* if C were an object-oriented language, nr_scalar_registry_node and
+ * nr_array_registry_node would subclass nr_registry_node, but it isn't
+ * object-oriented language, so this is used in cases where the pointer
+ * could be of either type */
+typedef struct nr_registry_node_ {
+    unsigned char  type;
+} nr_registry_node;
+
+typedef struct nr_scalar_registry_node_ {
+    unsigned char  type;
+    union {
+        char          _char;
+        UCHAR         _uchar;
+        INT2       _nr_int2;
+        UINT2      _nr_uint2;
+        INT4       _nr_int4;
+        UINT4      _nr_uint4;
+        INT8       _nr_int8;
+        UINT8      _nr_uint8;
+        double        _double;
+    } scalar;
+} nr_scalar_registry_node;
+
+/* string, bytes */
+typedef struct nr_array_registry_node_ {
+    unsigned char    type;
+    struct {
+        unsigned int     length;
+        unsigned char    data[1];
+    } array;
+} nr_array_registry_node;
+
+typedef struct nr_reg_find_children_arg_ {
+    size_t         size;
+    NR_registry   *children;
+    size_t         length;
+} nr_reg_find_children_arg;
+
+int nr_reg_local_init(void);
+
+int nr_reg_get(char *name, int type, void *out);
+int nr_reg_get_array(char *name, unsigned char type, UCHAR *out, size_t size, size_t *length);
+
+int nr_reg_set(char *name, int type, void *data);
+int nr_reg_set_array(char *name, unsigned char type, UCHAR *data, size_t length);
+
+int nr_reg_fetch_node(char *name, unsigned char type, nr_registry_node **node, int *free_node);
+
+int nr_reg_local_get_length(NR_registry name, size_t *len);
+int nr_reg_local_del(NR_registry name);
+int nr_reg_local_get_child_count(NR_registry parent, size_t *count);
+int nr_reg_local_get_children(NR_registry parent, NR_registry *data, size_t size, size_t *length);
 
 #endif

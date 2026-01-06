@@ -51,18 +51,29 @@ const withTabMenu = async function (tab, callback) {
     "context_moveTabToSplitView"
   );
   const unsplitTabItem = document.getElementById("context_separateSplitView");
+  const addSplitViewToNewGroup = document.getElementById(
+    "context_moveSplitViewToNewGroup"
+  );
+  const removeSplitViewFromGroup = document.getElementById(
+    "context_ungroupSplitView"
+  );
 
   let contextMenuHidden = BrowserTestUtils.waitForPopupEvent(
     tabContextMenu,
     "hidden"
   );
-  await callback(moveTabToNewSplitViewItem, unsplitTabItem);
+  await callback(
+    moveTabToNewSplitViewItem,
+    unsplitTabItem,
+    addSplitViewToNewGroup,
+    removeSplitViewFromGroup
+  );
   tabContextMenu.hidePopup();
   info("Hide popup");
   return await contextMenuHidden;
 };
 
-add_task(async function test_tabGroupContextMenuMoveTabsToNewGroup() {
+add_task(async function test_contextMenuMoveTabsToNewSplitView() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.tabs.splitView.enabled", true]],
   });
@@ -361,6 +372,124 @@ add_task(async function test_tabGroupContextMenuMoveTabsToNewGroup() {
   );
   Assert.ok(!tab2.splitview, "tab2 is not in split view");
   Assert.ok(!tab3.splitview, "tab3 is not in split view");
+
+  splitview.close();
+  while (gBrowser.tabs.length > 1) {
+    BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
+  }
+});
+
+add_task(async function test_contextMenuAddSplitViewToNewTabGroup() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.splitView.enabled", true]],
+  });
+  const tab1 = await addTabAndLoadBrowser();
+  const tab2 = await addTabAndLoadBrowser();
+  let tabContainer = document.getElementById("tabbrowser-arrowscrollbox");
+
+  gBrowser.addTabSplitView([tab1, tab2]);
+
+  await BrowserTestUtils.waitForMutationCondition(
+    tabContainer,
+    { children: true },
+    () => {
+      return (
+        Array.from(tabContainer.children).some(
+          tabChild => tabChild.tagName === "tab-split-view-wrapper"
+        ) &&
+        tab1.splitview &&
+        tab2.splitview
+      );
+    },
+    "Split view has been added"
+  );
+  info("Split view has been added");
+
+  let splitview = tab1.splitview;
+
+  Assert.ok(tab1.splitview, "tab is in split view");
+  [tab1, tab2].forEach((t, idx) => {
+    Assert.equal(t.splitview, splitview, `tabs[${idx}] is in split view`);
+  });
+
+  EventUtils.synthesizeMouseAtCenter(tab1, {});
+
+  let tabToClick = tab2;
+  await withTabMenu(
+    tabToClick,
+    async (
+      moveTabToNewSplitViewItem,
+      unsplitTabItem,
+      addSplitViewToNewGroupItem
+    ) => {
+      await BrowserTestUtils.waitForMutationCondition(
+        addSplitViewToNewGroupItem,
+        { attributes: true },
+        () =>
+          !addSplitViewToNewGroupItem.hidden &&
+          addSplitViewToNewGroupItem.textContent ===
+            "Add Split View to New Group",
+        "addSplitViewToNewGroupItem is visible and has the expected label"
+      );
+
+      info("Click menu option to add split view to new group");
+      addSplitViewToNewGroupItem.click();
+    }
+  );
+
+  await BrowserTestUtils.waitForMutationCondition(
+    tabContainer,
+    { children: true },
+    () => {
+      return Array.from(tabContainer.children).some(
+        tabChild => tabChild.tagName === "tab-group"
+      );
+    },
+    "Split view has been added to a new tab group"
+  );
+  Assert.ok(
+    tab1.splitview.group && tab2.splitview.group,
+    "Split view is within a tab group"
+  );
+  info("Split view has been added to new group");
+
+  await withTabMenu(
+    tabToClick,
+    async (
+      moveTabToNewSplitViewItem,
+      unsplitTabItem,
+      addSplitViewToNewGroupItem,
+      removeSplitViewFromGroupItem
+    ) => {
+      await BrowserTestUtils.waitForMutationCondition(
+        removeSplitViewFromGroupItem,
+        { attributes: true },
+        () =>
+          !removeSplitViewFromGroupItem.hidden &&
+          removeSplitViewFromGroupItem.textContent === "Remove from Group",
+        "removeSplitViewFromGroupItem is visible and has the expected label"
+      );
+
+      info("Click menu option to remove split view from group");
+      removeSplitViewFromGroupItem.click();
+    }
+  );
+
+  await BrowserTestUtils.waitForMutationCondition(
+    tabContainer,
+    { children: true },
+    () => {
+      return !Array.from(tabContainer.children).some(
+        tabChild => tabChild.tagName === "tab-group"
+      );
+    },
+    "Split view has been removed from tab group"
+  );
+  Assert.ok(
+    !tab1.splitview.group && !tab2.splitview.group,
+    "Split view is no longer within a tab group"
+  );
+  info("Split view has been removed from group");
 
   splitview.close();
   while (gBrowser.tabs.length > 1) {

@@ -10,7 +10,6 @@
 #include <cmath>
 #include <limits>
 #include <type_traits>
-#include <unordered_map>
 
 #include "AudioDeviceInfo.h"
 #include "AudioStreamTrack.h"
@@ -60,6 +59,7 @@
 #include "mozilla/EMEUtils.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/MathAlgorithms.h"
+#include "mozilla/MediaFragmentURIParser.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
 #include "mozilla/SVGObserverUtils.h"
@@ -99,6 +99,7 @@
 #include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/nsVideoFrame.h"
 #include "nsAttrValueInlines.h"
+#include "nsAttrValueOrString.h"
 #include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
 #include "nsCycleCollectionParticipant.h"
@@ -123,7 +124,6 @@
 #include "nsITimer.h"
 #include "nsJSUtils.h"
 #include "nsLayoutUtils.h"
-#include "nsMediaFragmentURIParser.h"
 #include "nsMimeTypes.h"
 #include "nsNetUtil.h"
 #include "nsNodeInfoManager.h"
@@ -161,7 +161,6 @@ extern mozilla::LazyLogModule gAutoplayPermissionLog;
 #define LOG_EVENT(type, msg) MOZ_LOG(gMediaElementEventsLog, type, msg)
 
 using namespace mozilla::layers;
-using mozilla::net::nsMediaFragmentURIParser;
 using namespace mozilla::dom::HTMLMediaElement_Binding;
 
 namespace mozilla::dom {
@@ -187,6 +186,7 @@ static const double MAX_PLAYBACKRATE = 16.0;
 
 static double ClampPlaybackRate(double aPlaybackRate) {
   MOZ_ASSERT(aPlaybackRate >= 0.0);
+  MOZ_ASSERT(std::isfinite(aPlaybackRate));
 
   if (aPlaybackRate == 0.0) {
     return aPlaybackRate;
@@ -2646,7 +2646,9 @@ void HTMLMediaElement::QueueLoadFromSourceTask() {
 
 void HTMLMediaElement::QueueSelectResourceTask() {
   // Don't allow multiple async select resource calls to be queued.
-  if (mHaveQueuedSelectResource) return;
+  if (mHaveQueuedSelectResource) {
+    return;
+  }
   mHaveQueuedSelectResource = true;
   ChangeNetworkState(NETWORK_NO_SOURCE);
   RefPtr<Runnable> r = NewRunnableMethod<JSCallingLocation>(
@@ -3286,7 +3288,9 @@ MediaResult HTMLMediaElement::LoadResource(
     // TODO: remove the cast by storing ChannelMediaDecoder in the URI table.
     nsresult rv = InitializeDecoderAsClone(
         static_cast<ChannelMediaDecoder*>(other->mDecoder.get()));
-    if (NS_SUCCEEDED(rv)) return rv;
+    if (NS_SUCCEEDED(rv)) {
+      return rv;
+    }
   }
 
   LOG(LogLevel::Debug, ("%p LoadResource", this));
@@ -3336,7 +3340,9 @@ nsresult HTMLMediaElement::LoadWithChannel(nsIChannel* aChannel,
   *aListener = nullptr;
 
   // Make sure we don't reenter during synchronous abort events.
-  if (mIsRunningLoadMethod) return NS_OK;
+  if (mIsRunningLoadMethod) {
+    return NS_OK;
+  }
   mIsRunningLoadMethod = true;
   AbortExistingLoads();
   mIsRunningLoadMethod = false;
@@ -3649,7 +3655,9 @@ void HTMLMediaElement::SetVolume(double aVolume, ErrorResult& aRv) {
     return;
   }
 
-  if (aVolume == mVolume) return;
+  if (aVolume == mVolume) {
+    return;
+  }
 
   mVolume = aVolume;
 
@@ -4728,7 +4736,9 @@ HTMLMediaElement::~HTMLMediaElement() {
 
 void HTMLMediaElement::StopSuspendingAfterFirstFrame() {
   mAllowSuspendAfterFirstFrame = false;
-  if (!mSuspendedAfterFirstFrame) return;
+  if (!mSuspendedAfterFirstFrame) {
+    return;
+  }
   mSuspendedAfterFirstFrame = false;
   if (mDecoder) {
     mDecoder->Resume();
@@ -5218,13 +5228,12 @@ void HTMLMediaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   if (aNameSpaceID == kNameSpaceID_None) {
     if (aName == nsGkAtoms::src) {
       mSrcMediaSource = nullptr;
+      nsAttrValueOrString srcVal(aValue);
       mSrcAttrTriggeringPrincipal = nsContentUtils::GetAttrTriggeringPrincipal(
-          this, aValue ? aValue->GetStringValue() : EmptyString(),
-          aMaybeScriptedPrincipal);
+          this, srcVal.String(), aMaybeScriptedPrincipal);
       if (aValue) {
-        nsString srcStr = aValue->GetStringValue();
         nsCOMPtr<nsIURI> uri;
-        NewURIFromString(srcStr, getter_AddRefs(uri));
+        NewURIFromString(srcVal.String(), getter_AddRefs(uri));
         if (uri && IsMediaSourceURI(uri)) {
           nsresult rv = NS_GetSourceForMediaSourceURI(
               uri, getter_AddRefs(mSrcMediaSource));
@@ -5419,7 +5428,9 @@ nsresult HTMLMediaElement::InitializeDecoderAsClone(
       HasAttr(nsGkAtoms::loop), aOriginal->ContainerType());
 
   RefPtr<ChannelMediaDecoder> decoder = aOriginal->Clone(decoderInit);
-  if (!decoder) return NS_ERROR_FAILURE;
+  if (!decoder) {
+    return NS_ERROR_FAILURE;
+  }
 
   LOG(LogLevel::Debug,
       ("%p Cloned decoder %p from %p", this, decoder.get(), aOriginal));
@@ -5833,7 +5844,7 @@ void HTMLMediaElement::ProcessMediaFragmentURI() {
     mFragmentStart = mFragmentEnd = -1.0;
     return;
   }
-  nsMediaFragmentURIParser parser(mLoadingSrc);
+  MediaFragmentURIParser parser(mLoadingSrc);
 
   if (mDecoder && parser.HasEndTime()) {
     mFragmentEnd = parser.GetEndTime();
@@ -6109,7 +6120,7 @@ void HTMLMediaElement::CheckProgress(bool aHaveNewProgress) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mNetworkState == NETWORK_LOADING);
 
-  TimeStamp now = TimeStamp::NowLoRes();
+  TimeStamp now = TimeStamp::Now();
 
   if (aHaveNewProgress) {
     mDataTime = now;
@@ -6127,11 +6138,11 @@ void HTMLMediaElement::CheckProgress(bool aHaveNewProgress) {
                  TimeDuration::FromMilliseconds(PROGRESS_MS) &&
              mDataTime > mProgressTime)) {
     QueueEvent(u"progress"_ns);
-    // Resolution() ensures that future data will have now > mProgressTime,
+    // Going back 1ms ensures that future data will have now > mProgressTime,
     // and so will trigger another event.  mDataTime is not reset because it
     // is still required to detect stalled; it is similarly offset by
-    // resolution to indicate the new data has not yet arrived.
-    mProgressTime = now - TimeDuration::Resolution();
+    // 1ms to indicate the new data has not yet arrived.
+    mProgressTime = now - TimeDuration::FromMilliseconds(1);
     if (mDataTime > mProgressTime) {
       mDataTime = mProgressTime;
     }
@@ -6185,7 +6196,7 @@ void HTMLMediaElement::StartProgressTimer() {
 
 void HTMLMediaElement::StartProgress() {
   // Record the time now for detecting stalled.
-  mDataTime = TimeStamp::NowLoRes();
+  mDataTime = TimeStamp::Now();
   // Reset mProgressTime so that mDataTime is not indicating bytes received
   // after the last progress event.
   mProgressTime = TimeStamp();
@@ -6686,7 +6697,9 @@ VideoFrameContainer* HTMLMediaElement::GetVideoFrameContainer() {
     return nullptr;
   }
 
-  if (mVideoFrameContainer) return mVideoFrameContainer;
+  if (mVideoFrameContainer) {
+    return mVideoFrameContainer;
+  }
 
   // Only video frames need an image container.
   if (!IsVideo()) {
@@ -7112,7 +7125,9 @@ HTMLSourceElement* HTMLMediaElement::GetNextSource() {
 }
 
 void HTMLMediaElement::ChangeDelayLoadStatus(bool aDelay) {
-  if (mDelayingLoadEvent == aDelay) return;
+  if (mDelayingLoadEvent == aDelay) {
+    return;
+  }
 
   mDelayingLoadEvent = aDelay;
 
