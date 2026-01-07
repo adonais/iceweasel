@@ -579,7 +579,8 @@ nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
       aLoadInfo->GetStoragePermission(), aLoadInfo->GetIsMetaRefresh(),
       aLoadInfo->GetLoadingEmbedderPolicy(),
       aLoadInfo->GetIsOriginTrialCoepCredentiallessEnabledForTopLevel(),
-      unstrippedURI, interceptionInfoArg));
+      unstrippedURI, interceptionInfoArg,
+      aLoadInfo->GetContainerFeaturePolicyInfo()));
 
   return NS_OK;
 }
@@ -828,7 +829,8 @@ nsresult LoadInfoArgsToLoadInfo(
   RefPtr<mozilla::net::LoadInfo> loadInfo = new mozilla::net::LoadInfo(
       loadingPrincipal, triggeringPrincipal, principalToInherit,
       topLevelPrincipal, resultPrincipalURI, cookieJarSettings, cspToInherit,
-      triggeringRemoteType, loadInfoArgs.sandboxedNullPrincipalID(), clientInfo,
+      loadInfoArgs.containerFeaturePolicyInfo(), triggeringRemoteType,
+      loadInfoArgs.sandboxedNullPrincipalID(), clientInfo,
       reservedClientInfo, initialClientInfo, controller,
       loadInfoArgs.securityFlags(), loadInfoArgs.sandboxFlags(),
       loadInfoArgs.triggeringSandboxFlags(), loadInfoArgs.contentPolicyType(),

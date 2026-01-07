@@ -92,7 +92,8 @@ class WebTransportParent : public PWebTransportParent,
 
   nsCOMPtr<nsIWebTransport> mWebTransport;
   nsCOMPtr<nsIEventTarget> mOwningEventTarget;
-  nsTHashMap<nsUint64HashKey, OnResetOrStopSendingCallback> mStreamCallbackMap;
+  nsTHashMap<NoMemMoveKey<nsUint64HashKey>, OnResetOrStopSendingCallback>
+      mStreamCallbackMap;
 };
 
 }  // namespace mozilla::dom

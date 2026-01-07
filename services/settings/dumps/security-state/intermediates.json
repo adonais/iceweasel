@@ -1,6 +1,175 @@
 {
   "data": [
     {
+      "schema": 1766545151547,
+      "derHash": "apoq8tf6rOXigX6DmIJ6FAa+5xHdtxjntVlXeqTBK18=",
+      "attachment": {
+        "hash": "4d3692ac441d7c3f075664f508fa72eb6b12c6d921e6f20d39970029ba654f46",
+        "size": 1999,
+        "filename": "D2CK5YkrtH6dJajHxLR-P6JOnCIlK4TORS4_07BmMA8=.pem",
+        "location": "security-state-staging/intermediates/bb6e2bb1-edcc-45e5-856e-f125101628b4.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "1f0679b5-b285-43cb-af3b-c9c91f566f52",
+      "last_modified": 1766548622587
+    },
+    {
+      "schema": 1766545150870,
+      "derHash": "QdmJ/zITleggScLpWry9ecbMIHti+fGCdL3ixy+DQdY=",
+      "attachment": {
+        "hash": "3061d1494d2670d64c2b8d2a3b20753446cb3cd16a58e3fc20901e6221952cac",
+        "size": 1999,
+        "filename": "DaH-BZQc0vDvzDnwIYWQow8VlNFoJSPHT4EqvAUJlno=.pem",
+        "location": "security-state-staging/intermediates/6a972243-c1ca-4f56-afd5-dd541badc509.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "fe8783cf-bfbf-4942-9459-d38873cd3849",
+      "last_modified": 1766548622584
+    },
+    {
+      "schema": 1766545150516,
+      "derHash": "N0yqtHIYFqTzgBMA7Wzl1k8VVPkXjZQLTnMGvJPSty4=",
+      "attachment": {
+        "hash": "1b6f61ae529e45efc2b08a2c5e354ea73a4eabadec9784b615de5a52b19a07d9",
+        "size": 1999,
+        "filename": "FZ9pybbuyn9HhpGR1NPthWsnzkVhQmQzQLyshe2YYQI=.pem",
+        "location": "security-state-staging/intermediates/82cdb7b6-b69c-4f50-8707-fd6ef2e45fe0.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "2aaafebe-5bd9-4295-94b0-781f94ed876a",
+      "last_modified": 1766548622581
+    },
+    {
+      "schema": 1766545151205,
+      "derHash": "06hD1NyS613xJ+ZGwvUO6ANFJ0fYycbU/bn3yyBgxbc=",
+      "attachment": {
+        "hash": "fc501019fa6c2cc3194e8494997361d37dfa2930d979f1a004ec5c96912d8699",
+        "size": 1999,
+        "filename": "XztAsecQzzxu1jUv1WbLy4I-Rd8k920eS6JthbhBF7w=.pem",
+        "location": "security-state-staging/intermediates/c6cfe955-4314-42e4-aa56-147d1a1c1a9c.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "db7338eb-337f-4678-90d0-017f070ea48e",
+      "last_modified": 1766548622575
+    },
+    {
+      "schema": 1766545150040,
+      "derHash": "yvAIQqcvlpblPCnyxeehudcaPi8MMdi5QGlNWdzO9kM=",
+      "attachment": {
+        "hash": "c9ddd15d4575624c6480bca5f1621f558809f3d159392240ee373ec1a9c58712",
+        "size": 1199,
+        "filename": "p4UlhI-4INdk1HPs8-QdeU9xFTzIwh8tuwVaVcuoAdg=.pem",
+        "location": "security-state-staging/intermediates/8b0827bc-68a0-4177-adc6-dd30594c243f.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "ef0d45b4-04df-431a-ae55-a2db91a67de2",
+      "last_modified": 1766548622572
+    },
+    {
+      "schema": 1766545149681,
+      "derHash": "x3KGXm+eCneLDoZESiH7ZUf3oF4WnM/Fv+oFMX4PX2k=",
+      "attachment": {
+        "hash": "cea5d7631fdb975eaab8abcdeafa6dc8b875ef4ddd5d629506adc68836863859",
+        "size": 1195,
+        "filename": "W-Umw3HYfIOzV9bxKzoWQcUfT5Ssj5St0SlQgxYWXVI=.pem",
+        "location": "security-state-staging/intermediates/2ed1e716-f4b6-4b37-a11b-871ac84e2585.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "9a5e2215-2d9b-4b78-b8c9-5cdbc6a6e04a",
+      "last_modified": 1766548622569
+    },
+    {
+      "schema": 1766199553968,
+      "derHash": "uNBo3GxmB5p1Zp5VsOo+Zv7xBHOUcer8PRZ6aBlyNPY=",
+      "attachment": {
+        "hash": "2721d976197c0971feb3b2aa3fe7ab4116f5b873f7762c1b903bed71f274889e",
+        "size": 2194,
+        "filename": "fNZ8JI9p2D_C-bsB3LH3rWejY9BGBDeW0JhMOiMfa7A=.pem",
+        "location": "security-state-staging/intermediates/4538ae28-7ee7-4f9f-9b25-494e072ba946.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "1d3479b6-a941-456d-aa49-38d4829fed8f",
+      "last_modified": 1766203022761
+    },
+    {
+      "schema": 1766199553271,
+      "derHash": "RppWJMvxJcKbHHOqTQXUsr9PhAC11WnppMpVSrTE+vU=",
+      "attachment": {
+        "hash": "b0eb06ac30b4d1952a31af513c2b2b13be71d0993ac06a3c9d45b32bfdeffd05",
+        "size": 1540,
+        "filename": "G_ANXI8TwJTdF-AFBM8IiIUPEv0Gf6H5LA_b9guG4yE=.pem",
+        "location": "security-state-staging/intermediates/55a07545-3406-49c7-b4c2-75ab41e736be.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "11abffc6-86d0-4dca-8c39-d6a546d872d0",
+      "last_modified": 1766203022758
+    },
+    {
+      "schema": 1766199552928,
+      "derHash": "Mn7JOVXJFFJhsIfG/F6sinEmK/JWjo0298L+29GxB3o=",
+      "attachment": {
+        "hash": "fce6d2adb30e15ecebfc251a25aa18fd326eb2f5bd8def6cdf2c4051fc40d421",
+        "size": 2308,
+        "filename": "IcENwofaRhqQc2PcjyjgcuebC1DnPogY1Yfis0DLQJM=.pem",
+        "location": "security-state-staging/intermediates/1b91e146-c5f2-40c0-8110-19742cfc72f7.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "40ee61ef-0bc5-4ea9-8718-4888ecf4305e",
+      "last_modified": 1766203022755
+    },
+    {
+      "schema": 1766199553624,
+      "derHash": "Gx3gaZDNCzBeLhJIBhA7Gtz/xJnyElBNx39I3QrWIgk=",
+      "attachment": {
+        "hash": "8790a12a03afdc57bfe66ff20ba236054617d0d5509f56709ce442cdb4e42a18",
+        "size": 2121,
+        "filename": "K89VOmb1cJAN3TK6bf4ezAbJGC1mLcG2Dh97dnwr3VQ=.pem",
+        "location": "security-state-staging/intermediates/8d7d0493-30e8-4926-b826-971a2e8d1ac7.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "b85f75ad-679d-4d04-9406-289abb01f97e",
+      "last_modified": 1766203022751
+    },
+    {
+      "schema": 1766127551521,
+      "derHash": "s+hkZ9F4886+Eec5/CFp5MeFkHjsY/tAMYmB7zpOqyY=",
+      "attachment": {
+        "hash": "c09aff236ce4f0c0fdbedb011c055253734d85ee01f4731d866797babaed2236",
+        "size": 2182,
+        "filename": "0cRTd-vc1hjNFlHcLgLCHXUeWqn80bNDH_bs9qMTSPo=.pem",
+        "location": "security-state-staging/intermediates/1c94507f-bac7-453c-806d-0ac393641919.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "9d7646ec-f495-4a54-9a7d-de78added679",
+      "last_modified": 1766131022600
+    },
+    {
+      "schema": 1766026758172,
+      "derHash": "f+tvjJyEekSeC3AjhsIxmqEZHzjfAtA75ks/GuGXH5Q=",
+      "attachment": {
+        "hash": "fc4fafa94f5576c91b52ab38126ac5805910dcc29ff3f249ef2d66fe90c05f9e",
+        "size": 1297,
+        "filename": "cC948ZGRQqa4jzUFhFrPLMQ23ZJtoLcISSak2FyC1W4=.pem",
+        "location": "security-state-staging/intermediates/83d1c892-5314-4a26-959e-afc240dad367.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "199298d3-8252-408f-9699-40b091ffc5e8",
+      "last_modified": 1766030226231
+    },
+    {
+      "schema": 1765983546338,
+      "derHash": "mZPRgykq/EFlq80nK0RUMhRZGDrHtBkROVAzcrzMKKk=",
+      "attachment": {
+        "hash": "5cf3c0bfdc7b17d1ae7c3fc1d0bdbf35f10b3fb606b2c8ef50bbfd593549bf92",
+        "size": 1297,
+        "filename": "IlYqx6aK68NNdqzDPc346Xl199h2mbiAnsDRwDf7z8s=.pem",
+        "location": "security-state-staging/intermediates/654d91da-ac76-4cc4-8bfa-d4543598ce45.pem",
+        "mimetype": "application/x-pem-file"
+      },
+      "id": "0f01296d-e0bc-4d08-944c-1020c8cbb5d0",
+      "last_modified": 1765987022922
+    },
+    {
       "schema": 1765378748973,
       "derHash": "opLN9ZkF/DABbCITHW8uSXRJ8VWgWiNMzsDgQhcb9w8=",
       "attachment": {
@@ -3056,19 +3225,6 @@
       "last_modified": 1748789822362
     },
     {
-      "schema": 1748613468911,
-      "derHash": "aIaMMybttIZShO4SOqy6mO5jS9wotEPbsjSISnu326U=",
-      "attachment": {
-        "hash": "46aba2c3a09d43f58213046d0d24b8d72909214f6a12ef536b9ac464675df479",
-        "size": 6606,
-        "filename": "OePGxvE8liB3UXJpTSD4HtrVWoYTk0zap8N5Om0muGs=.pem",
-        "location": "security-state-staging/intermediates/c08e74d4-41bc-4c0b-a013-178b2df71ef1.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "id": "c7ce988b-e290-4807-8114-6aa381e488a9",
-      "last_modified": 1748617022274
-    },
-    {
       "schema": 1748613467301,
       "derHash": "6RWMavVojPz5iQIGxDBhyB+n/AfQjiiifAaMWAc6aZo=",
       "attachment": {
@@ -3106,19 +3262,6 @@
       },
       "id": "065468f3-9699-44a0-a94a-9dbe23482932",
       "last_modified": 1748617022260
-    },
-    {
-      "schema": 1748613465743,
-      "derHash": "MjIq4uMadDC+HWwEvYyr+9JAx00snb6CeA2x8/c2YKY=",
-      "attachment": {
-        "hash": "1e96c83a685ed5ee76287c49fd81f3a8b5725ab6459929b3bcfbdfe275bac468",
-        "size": 6480,
-        "filename": "OePGxvE8liB3UXJpTSD4HtrVWoYTk0zap8N5Om0muGs=.pem",
-        "location": "security-state-staging/intermediates/43790604-9e8f-4964-882d-4abfd11191ba.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "id": "02655d38-e49e-4724-95ee-7106b411ae85",
-      "last_modified": 1748617022256
     },
     {
       "schema": 1748570266149,
@@ -7588,78 +7731,6 @@
       "last_modified": 1721872623502
     },
     {
-      "schema": 1721314066965,
-      "derHash": "F3cfaUf6NHJ4bTpEta3iqsupraIDujHr1L2M66/OSUo=",
-      "subject": "CN=NETLOCK TLS Qualified EV ECC CA,O=NETLOCK Kft.,L=Budapest,C=HU",
-      "subjectDN": "MHoxCzAJBgNVBAYTAkhVMREwDwYDVQQHDAhCdWRhcGVzdDEVMBMGA1UECgwMTkVUTE9DSyBLZnQuMSgwJgYDVQQDDB9ORVRMT0NLIFRMUyBRdWFsaWZpZWQgRVYgRUNDIENBMRcwFQYDVQRhDA5WQVRIVS0xMjIwMTUyMQ==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "c9ece95860512e413eb8e22277dcad84c1d4ea14021af9ac7e7716b861cb07fc",
-        "size": 1622,
-        "filename": "8hGei3i00u2h5PvrbQEWCXLIaozLXkbULtTHvZ-3QZg=.pem",
-        "location": "security-state-staging/intermediates/61dcf76f-a95b-4f56-b986-2147acdca2ae.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "8hGei3i00u2h5PvrbQEWCXLIaozLXkbULtTHvZ+3QZg=",
-      "crlite_enrolled": false,
-      "id": "cbb6e3e5-aef1-4dbd-9969-ee713e54f56f",
-      "last_modified": 1721314623022
-    },
-    {
-      "schema": 1721314066604,
-      "derHash": "ABJ5uUndhnDxrm2kB5E7cm9hrveKL/GcLaOVIrMdwMc=",
-      "subject": "CN=NETLOCK TLS DV ECC CA,O=NETLOCK Kft.,L=Budapest,C=HU",
-      "subjectDN": "MHAxCzAJBgNVBAYTAkhVMREwDwYDVQQHDAhCdWRhcGVzdDEVMBMGA1UECgwMTkVUTE9DSyBLZnQuMR4wHAYDVQQDDBVORVRMT0NLIFRMUyBEViBFQ0MgQ0ExFzAVBgNVBGEMDlZBVEhVLTEyMjAxNTIx",
-      "whitelist": false,
-      "attachment": {
-        "hash": "3b6ba905027ab376f8a0d1dc686ac229d8f8c842a00fb4de31f37a87ec39469b",
-        "size": 1609,
-        "filename": "li0YuffRNQ1XEOF7VTuJakr96zJ_ALD7q_pshmkp7mU=.pem",
-        "location": "security-state-staging/intermediates/1cd4921a-91a9-442f-afba-b1891d75cbcf.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "li0YuffRNQ1XEOF7VTuJakr96zJ/ALD7q/pshmkp7mU=",
-      "crlite_enrolled": false,
-      "id": "82b342ce-a491-4a61-966c-d18c2dfb17a9",
-      "last_modified": 1721314623019
-    },
-    {
-      "schema": 1721249267434,
-      "derHash": "83562S7OoS8wdQHBJrPi1t4sdBfT4bctJgacE3DniJQ=",
-      "subject": "CN=NETLOCK TLS EV ECC CA,O=NETLOCK Kft.,L=Budapest,C=HU",
-      "subjectDN": "MHAxCzAJBgNVBAYTAkhVMREwDwYDVQQHDAhCdWRhcGVzdDEVMBMGA1UECgwMTkVUTE9DSyBLZnQuMR4wHAYDVQQDDBVORVRMT0NLIFRMUyBFViBFQ0MgQ0ExFzAVBgNVBGEMDlZBVEhVLTEyMjAxNTIx",
-      "whitelist": false,
-      "attachment": {
-        "hash": "6cec58bc428099e4938b4ed602a712431dbb35289dc6c5637c2fd4085f1a4506",
-        "size": 1609,
-        "filename": "cbddOej5UNOOv4KN9cNSXUsA1PNl6KujuXDCLRgBnFg=.pem",
-        "location": "security-state-staging/intermediates/46b3b865-76a2-4411-94a8-2ab122ecabcf.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "cbddOej5UNOOv4KN9cNSXUsA1PNl6KujuXDCLRgBnFg=",
-      "crlite_enrolled": false,
-      "id": "5069295a-97e9-45cf-8b62-e71284a97699",
-      "last_modified": 1721249822940
-    },
-    {
-      "schema": 1721249267110,
-      "derHash": "0OuQhAHzMkJgJjSv1RmRU2s616qQFYb960lV/lGw5Bk=",
-      "subject": "CN=NETLOCK TLS OV ECC CA,O=NETLOCK Kft.,L=Budapest,C=HU",
-      "subjectDN": "MHAxCzAJBgNVBAYTAkhVMREwDwYDVQQHDAhCdWRhcGVzdDEVMBMGA1UECgwMTkVUTE9DSyBLZnQuMR4wHAYDVQQDDBVORVRMT0NLIFRMUyBPViBFQ0MgQ0ExFzAVBgNVBGEMDlZBVEhVLTEyMjAxNTIx",
-      "whitelist": false,
-      "attachment": {
-        "hash": "c88e2b1e7410dd323a5bc34a7c3f85bd4affb345950c976b16e9db704ef4aac9",
-        "size": 1609,
-        "filename": "i16I9ip2k2JwWRaZXmFeIeiS2KzOYhrChFGnUDooIl0=.pem",
-        "location": "security-state-staging/intermediates/4c2b366d-3949-4dd1-b8aa-a6cacea9a11f.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "i16I9ip2k2JwWRaZXmFeIeiS2KzOYhrChFGnUDooIl0=",
-      "crlite_enrolled": false,
-      "id": "ad955f30-a150-4a7e-8606-f8be1f785134",
-      "last_modified": 1721249822937
-    },
-    {
       "schema": 1721227673766,
       "derHash": "t3bf8AeekKa/aJc4DUDWzwyA/obmWgbg3wLVgah3BeI=",
       "subject": "CN=GlobalSign Atlas R3 DV TLS CA 2024 Q4,O=GlobalSign nv-sa,C=BE",
@@ -10810,78 +10881,6 @@
       "last_modified": 1693407423723
     },
     {
-      "schema": 1693342092773,
-      "derHash": "snT+vm68cYZsM58Bitkz581oBbQ7/ebSGNwhFHFp12s=",
-      "subject": "CN=e-Szigno Online SSL CA 2017,O=Microsec Ltd.,L=Budapest,C=HU",
-      "subjectDN": "MHcxCzAJBgNVBAYTAkhVMREwDwYDVQQHDAhCdWRhcGVzdDEWMBQGA1UECgwNTWljcm9zZWMgTHRkLjEXMBUGA1UEYQwOVkFUSFUtMjM1ODQ0OTcxJDAiBgNVBAMMG2UtU3ppZ25vIE9ubGluZSBTU0wgQ0EgMjAxNw==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "72bc4f35ba6c3e85f36f856880dc364ba08e1ce42b81244f1ebf53e8514a8d5f",
-        "size": 1435,
-        "filename": "G_JwHP_ydSe7pufWcUyNckBrxBbnQ6Kmqw_OFPPiQI0=.pem",
-        "location": "security-state-staging/intermediates/9cda4ca9-3689-48fd-af2c-640bd25284ff.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "G/JwHP/ydSe7pufWcUyNckBrxBbnQ6Kmqw/OFPPiQI0=",
-      "crlite_enrolled": false,
-      "id": "df7a20cf-df80-4bde-8483-7d48af559d55",
-      "last_modified": 1693342624041
-    },
-    {
-      "schema": 1693342093437,
-      "derHash": "F0TXMTT5XOkWrevub3V0LEeTaGi2TSoMFi7xMpAPDuQ=",
-      "subject": "CN=e-Szigno Class3 SSL CA 2017,O=Microsec Ltd.,L=Budapest,C=HU",
-      "subjectDN": "MHcxCzAJBgNVBAYTAkhVMREwDwYDVQQHDAhCdWRhcGVzdDEWMBQGA1UECgwNTWljcm9zZWMgTHRkLjEXMBUGA1UEYQwOVkFUSFUtMjM1ODQ0OTcxJDAiBgNVBAMMG2UtU3ppZ25vIENsYXNzMyBTU0wgQ0EgMjAxNw==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "f875b715f8027d390ccd47c7e62fa9a8cb805078002c5447fead8ec98441abbd",
-        "size": 1435,
-        "filename": "69Duo3nmlQnUEvqzlU27qTDaDY9K1yN0wfdopIs9Y7s=.pem",
-        "location": "security-state-staging/intermediates/1986ba70-a9d5-4c04-9f62-2c8f532bde42.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "69Duo3nmlQnUEvqzlU27qTDaDY9K1yN0wfdopIs9Y7s=",
-      "crlite_enrolled": false,
-      "id": "0b79b1b7-45eb-4167-b5a4-52c77a4ae693",
-      "last_modified": 1693342624038
-    },
-    {
-      "schema": 1693342093097,
-      "derHash": "/Y4MjMzbuuTB8HwkjRH+u7D7PaDNDYlKioDYBKjTmn0=",
-      "subject": "CN=e-Szigno Class2 SSL CA 2017,O=Microsec Ltd.,L=Budapest,C=HU",
-      "subjectDN": "MHcxCzAJBgNVBAYTAkhVMREwDwYDVQQHDAhCdWRhcGVzdDEWMBQGA1UECgwNTWljcm9zZWMgTHRkLjEXMBUGA1UEYQwOVkFUSFUtMjM1ODQ0OTcxJDAiBgNVBAMMG2UtU3ppZ25vIENsYXNzMiBTU0wgQ0EgMjAxNw==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "eb233f6d83b210e52823cdff3145fe53c2632e2cf95904c5ac6d29368eb61943",
-        "size": 1435,
-        "filename": "HGXB7TIfcoLqLINF3LJD2A9t3V4VdHjcBv6LboViQMo=.pem",
-        "location": "security-state-staging/intermediates/36fd2d27-8c24-4aee-9ba5-feccce9483d5.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "HGXB7TIfcoLqLINF3LJD2A9t3V4VdHjcBv6LboViQMo=",
-      "crlite_enrolled": false,
-      "id": "c2701cd6-d220-4744-a18b-3a3b323259ee",
-      "last_modified": 1693342624035
-    },
-    {
-      "schema": 1693342092400,
-      "derHash": "akjnNKxvBnFAySitu8xEkkadQW3i08mnoZfWI3DqwOI=",
-      "subject": "CN=e-Szigno Qualified TLS CA 2018,O=Microsec Ltd.,L=Budapest,C=HU",
-      "subjectDN": "MHoxCzAJBgNVBAYTAkhVMREwDwYDVQQHDAhCdWRhcGVzdDEWMBQGA1UECgwNTWljcm9zZWMgTHRkLjEXMBUGA1UEYQwOVkFUSFUtMjM1ODQ0OTcxJzAlBgNVBAMMHmUtU3ppZ25vIFF1YWxpZmllZCBUTFMgQ0EgMjAxOA==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "acb85909161220196625771f857155f74f662f21acb6efeab36c92266013233a",
-        "size": 1439,
-        "filename": "qd9EIyfp7CEtbkxafeyYAuC_8wQBWqGZflkLznwnuyc=.pem",
-        "location": "security-state-staging/intermediates/86baa78d-dbf7-44c9-b002-1a204379bad6.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "qd9EIyfp7CEtbkxafeyYAuC/8wQBWqGZflkLznwnuyc=",
-      "crlite_enrolled": false,
-      "id": "9cf88ec1-23c0-487b-9991-3fc43bbf71c0",
-      "last_modified": 1693342624031
-    },
-    {
       "schema": 1693104479614,
       "derHash": "8BBP8XJ0YI8aGKHh6r+OaKUfUAqH4u+iLstiJ2P+9M8=",
       "subject": "CN=Gandi RSA Domain Validation Secure Server CA 3,O=Gandi,C=FR",
@@ -12140,60 +12139,6 @@
       "crlite_enrolled": false,
       "id": "ddc97932-2e16-48d1-84b0-3815961ddf1f",
       "last_modified": 1691204223383
-    },
-    {
-      "schema": 1690296478698,
-      "derHash": "oRXsDXPC6KuxiDE0+i3w2YXnQYgWBKQIKQfXBeJAfHI=",
-      "subject": "CN=e-Szigno Qualified TLS CA 2023,O=Microsec Ltd.,L=Budapest,C=HU",
-      "subjectDN": "MHoxCzAJBgNVBAYTAkhVMREwDwYDVQQHDAhCdWRhcGVzdDEWMBQGA1UECgwNTWljcm9zZWMgTHRkLjEXMBUGA1UEYQwOVkFUSFUtMjM1ODQ0OTcxJzAlBgNVBAMMHmUtU3ppZ25vIFF1YWxpZmllZCBUTFMgQ0EgMjAyMw==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "e5582687d546ac85a09c343f23ce9764cbc06e78844654f61940dde5034b145f",
-        "size": 1439,
-        "filename": "FfstIBJRQL_OSddFhkXVXxYXvlwpeV4N5QyzQSOMer4=.pem",
-        "location": "security-state-staging/intermediates/c3eaa351-c45f-4c58-b312-1a214832f8b5.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "FfstIBJRQL/OSddFhkXVXxYXvlwpeV4N5QyzQSOMer4=",
-      "crlite_enrolled": false,
-      "id": "da49e20c-b2f2-4d31-b07b-1064e96e3b70",
-      "last_modified": 1690297023211
-    },
-    {
-      "schema": 1690296478406,
-      "derHash": "wEww5A3X6WmC+GBuvvNVSOXG9PeSpSpReM8koOn9c5Y=",
-      "subject": "CN=e-Szigno DV TLS CA 2023,O=Microsec Ltd.,L=Budapest,C=HU",
-      "subjectDN": "MHMxCzAJBgNVBAYTAkhVMREwDwYDVQQHDAhCdWRhcGVzdDEWMBQGA1UECgwNTWljcm9zZWMgTHRkLjEXMBUGA1UEYQwOVkFUSFUtMjM1ODQ0OTcxIDAeBgNVBAMMF2UtU3ppZ25vIERWIFRMUyBDQSAyMDIz",
-      "whitelist": false,
-      "attachment": {
-        "hash": "e024d6f71f79e22a937ce5712dfbf1c17be250937f7a1a1b7aaa69d96607e27b",
-        "size": 1431,
-        "filename": "XxwXFeAhoV94cB2wpw1cfCsPS8BPvJevCyCobm4QKxg=.pem",
-        "location": "security-state-staging/intermediates/6e6e1fde-6155-4773-b392-6ee7800fcbdc.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "XxwXFeAhoV94cB2wpw1cfCsPS8BPvJevCyCobm4QKxg=",
-      "crlite_enrolled": false,
-      "id": "0d228708-baa8-45e3-a4ea-0bce48f43f86",
-      "last_modified": 1690297023208
-    },
-    {
-      "schema": 1690296478088,
-      "derHash": "EtRTenVH/2PDaSNiKiga/+lIESDbeBd2qvmBofm2aNg=",
-      "subject": "CN=e-Szigno OV TLS CA 2023,O=Microsec Ltd.,L=Budapest,C=HU",
-      "subjectDN": "MHMxCzAJBgNVBAYTAkhVMREwDwYDVQQHDAhCdWRhcGVzdDEWMBQGA1UECgwNTWljcm9zZWMgTHRkLjEXMBUGA1UEYQwOVkFUSFUtMjM1ODQ0OTcxIDAeBgNVBAMMF2UtU3ppZ25vIE9WIFRMUyBDQSAyMDIz",
-      "whitelist": false,
-      "attachment": {
-        "hash": "ab5bf3cb8d3a60923137ac8e379030e9e4208f811155f11e65307099425c5d04",
-        "size": 1431,
-        "filename": "CBpKKUYnWuYNjyn6A4C6-fbIOhB5kbX1rkHpBJ-7g0Y=.pem",
-        "location": "security-state-staging/intermediates/0052bd62-f25b-4c75-b5e2-123cf02b80fe.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "CBpKKUYnWuYNjyn6A4C6+fbIOhB5kbX1rkHpBJ+7g0Y=",
-      "crlite_enrolled": false,
-      "id": "a206224b-c943-44b0-b74e-3c4bfb484c15",
-      "last_modified": 1690297023205
     },
     {
       "schema": 1689929282855,
@@ -14680,24 +14625,6 @@
       "last_modified": 1666727874812
     },
     {
-      "schema": 1666727388343,
-      "derHash": "ppxZlm67zf7H9P8CiMhv9gNW+nhgIIuTtDoJWwYAzB4=",
-      "subject": "CN=nazwaSSL,OU=http://nazwa.pl,O=nazwa.pl sp. z o.o.,C=PL",
-      "subjectDN": "MFgxCzAJBgNVBAYTAlBMMRwwGgYDVQQKDBNuYXp3YS5wbCBzcC4geiBvLm8uMRgwFgYDVQQLDA9odHRwOi8vbmF6d2EucGwxETAPBgNVBAMMCG5hendhU1NM",
-      "whitelist": false,
-      "attachment": {
-        "hash": "882b6da025cdfc61d89e03806a350163dfdfc251470ff6e5f8433ca8370adea9",
-        "size": 1605,
-        "filename": "AW6U8qPqk114rfl2sAhiEim2Pf0mq_Rb_BeWSlVAiP4=.pem",
-        "location": "security-state-staging/intermediates/4a692d29-8a7d-4aa6-b0fa-426ad6f59300.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "AW6U8qPqk114rfl2sAhiEim2Pf0mq/Rb/BeWSlVAiP4=",
-      "crlite_enrolled": false,
-      "id": "bbeb9d9e-3dd2-4546-8c96-d7fc9be4f2e6",
-      "last_modified": 1666727874798
-    },
-    {
       "schema": 1666727382505,
       "derHash": "6sJBwEQKNoMBETgzNrwgysdAnCD26I1PhPSCe+kZ4zg=",
       "subject": "CN=e-Szigno SSL CA 2014,O=Microsec Ltd.,L=Budapest,C=HU",
@@ -16118,24 +16045,6 @@
       "crlite_enrolled": false,
       "id": "42115fab-f048-4a66-92be-15d909da568b",
       "last_modified": 1666727872798
-    },
-    {
-      "schema": 1666727452311,
-      "derHash": "I7zV16lqUTqYHq0nk25ZqAKKgHvXKGBBj2i1VaKRFnA=",
-      "subject": "CN=Certigna Identity CA,OU=0002 48146308100036,O=DHIMYOTIS,C=FR",
-      "subjectDN": "MIGCMQswCQYDVQQGEwJGUjESMBAGA1UECgwJREhJTVlPVElTMRwwGgYDVQQLDBMwMDAyIDQ4MTQ2MzA4MTAwMDM2MSIwIAYDVQRhDBlOVFJGUi0wMDAyIDQ4MTQ2MzA4MTAwMDM2MR0wGwYDVQQDDBRDZXJ0aWduYSBJZGVudGl0eSBDQQ==",
-      "whitelist": false,
-      "attachment": {
-        "hash": "211c9fabe3b82a58caaded8a0e4fe51f77d8506e143103dc3f8db31704cb7e6e",
-        "size": 2178,
-        "filename": "lwJkDQYtogkGJEFJMX5DjskCXh2W7dNBRH_eJZlWjWo=.pem",
-        "location": "security-state-staging/intermediates/00c1f21f-a695-478a-9e33-19d48f9525d8.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "lwJkDQYtogkGJEFJMX5DjskCXh2W7dNBRH/eJZlWjWo=",
-      "crlite_enrolled": false,
-      "id": "f695b618-333e-4759-a681-19c5f52aeb16",
-      "last_modified": 1666727872784
     },
     {
       "schema": 1666727400274,
@@ -20240,24 +20149,6 @@
       "crlite_enrolled": false,
       "id": "4627074c-5b10-4a84-93b4-b84a6d421f42",
       "last_modified": 1666727867498
-    },
-    {
-      "schema": 1666727385276,
-      "derHash": "vbeqKPFk5LwV1pIHM7Ij7ZjlUiCj5W87Hs/QTofTC3E=",
-      "subject": "CN=InCommon ECC Server CA,OU=InCommon,O=Internet2,L=Ann Arbor,ST=MI,C=US",
-      "subjectDN": "MHYxCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJNSTESMBAGA1UEBxMJQW5uIEFyYm9yMRIwEAYDVQQKEwlJbnRlcm5ldDIxETAPBgNVBAsTCEluQ29tbW9uMR8wHQYDVQQDExZJbkNvbW1vbiBFQ0MgU2VydmVyIENB",
-      "whitelist": false,
-      "attachment": {
-        "hash": "6ba40ddb17a0c5e550d03cf27b415658441db787e87cc7efbaeacbe40e7954dd",
-        "size": 1293,
-        "filename": "8Ped1-_2NPqUB2Q-UJri8oBJaaIrldtkbw8LmkGTkrE=.pem",
-        "location": "security-state-staging/intermediates/b23bebad-6d65-4274-8012-f0cc243b967d.pem",
-        "mimetype": "application/x-pem-file"
-      },
-      "pubKeyHash": "8Ped1+/2NPqUB2Q+UJri8oBJaaIrldtkbw8LmkGTkrE=",
-      "crlite_enrolled": false,
-      "id": "d876197d-e674-4e0b-8d72-41091e4b2fb3",
-      "last_modified": 1666727867454
     },
     {
       "schema": 1666727366065,
@@ -30664,5 +30555,5 @@
       "last_modified": 1559865884636
     }
   ],
-  "timestamp": 1765637822749
+  "timestamp": 1767110222688
 }
