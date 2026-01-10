@@ -1489,7 +1489,7 @@ Preferences.addSetting({
   pref: "browser.tabs.groups.smart.userEnabled",
   deps: ["smartTabGroups"],
   visible: ({ smartTabGroups }) =>
-    !!smartTabGroups.value && Services.locale.appLocaleAsBCP47.startsWith("en"),
+    !!smartTabGroups.value,
 });
 if (AppConstants.platform === "win") {
   /**
