@@ -17,15 +17,23 @@ Preferences.addAll([
   // disable javascipt
   { id: "javascript.enabled", type: "bool" },
   // disable ai
+  { id: "browser.aiwindow.enabled", type: "bool" },
   { id: "browser.ml.enable", type: "bool" },
   { id: "browser.ml.chat.enabled", type: "bool" },
+  { id: "browser.ml.chat.menu", type: "bool" },
   { id: "browser.ml.chat.page", type: "bool" },
   { id: "browser.ml.chat.page.footerBadge", type: "bool" },
   { id: "browser.ml.chat.page.menuBadge", type: "bool" },
-  { id: "browser.ml.chat.menu", type: "bool" },
+  { id: "browser.ml.chat.shortcuts", type: "bool" },
+  { id: "browser.ml.chat.sidebar", type: "bool" },
   { id: "browser.ml.pageAssist.enabled", type: "bool" },
-  { id: "browser.tabs.groups.smart.enabled", type: "bool" },
+  { id: "browser.ml.smartAssist.enabled", type: "bool" },
+  { id: "browser.search.visualSearch.featureGate", type: "bool" },
+  { id: "browser.urlbar.quicksuggest.mlEnabled", type: "bool" },
   { id: "extensions.ml.enabled", type: "bool" },
+  { id: "pdfjs.enableAltText", type: "bool" },
+  { id: "places.semanticHistory.featureGate", type: "bool" },
+  { id: "sidebar.notification.badge.aichat", type: "bool" },
   // Pin tabs to taskbar
   { id: "browser.taskbarTabs.enabled", type: "bool" },
   // handoff to urlbar
@@ -70,8 +78,8 @@ var gIceweaselPane = {
     );
     setBoolSyncListeners(
       "iceweasel-ai-checkbox",
-      ["browser.ml.enable", "browser.ml.chat.enabled", "browser.ml.chat.page", "browser.ml.chat.page.footerBadge", "browser.ml.chat.page.menuBadge", "browser.ml.chat.menu", "browser.ml.pageAssist.enabled", "browser.tabs.groups.smart.enabled", "extensions.ml.enabled"],
-      [false,               false,                     false,                  false,                              false,                            false,                  false,                           false,                               false,                 ],
+      ["browser.aiwindow.enabled", "browser.ml.enable", "browser.ml.chat.enabled", "browser.ml.chat.menu", "browser.ml.chat.page", "browser.ml.chat.page.footerBadge", "browser.ml.chat.page.menuBadge", "browser.ml.chat.shortcuts", "browser.ml.chat.sidebar", "browser.ml.linkPreview.enabled", "browser.ml.pageAssist.enabled", "browser.ml.smartAssist.enabled", "browser.search.visualSearch.featureGate", "browser.tabs.groups.smart.enabled", "browser.tabs.groups.smart.userEnabled", "browser.urlbar.quicksuggest.mlEnabled", "extensions.ml.enabled", "pdfjs.enableAltText", "places.semanticHistory.featureGate", "sidebar.notification.badge.aichat"],
+      [false,                      false,               false,                     false,                  false,                   false,                              false,                            false,                       false,                    false,                            false,                           false,                            false,                                      false,                               false,                                   false,                                  false,                   false,                 false,                                false,],
     );
     setBoolSyncListeners(
       "iceweasel-taskbartabs-checkbox",
