@@ -328,7 +328,7 @@ class nsDocumentViewer final : public nsIDocumentViewer,
 
  private:
   void MakeWindow();
-  nsresult CreateDeviceContext(nsSubDocumentFrame* aContainerFrame);
+  void CreateDeviceContext(nsSubDocumentFrame* aContainerFrame);
 
   /**
    * If aDoCreation is true, this creates the device context, creates a
@@ -729,12 +729,9 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
     mSelectionListener = new nsDocViewerSelectionListener(this);
   }
 
-  RefPtr<mozilla::dom::Selection> selection = GetDocumentSelection();
-  if (!selection) {
-    return NS_ERROR_FAILURE;
+  if (RefPtr<mozilla::dom::Selection> selection = GetDocumentSelection()) {
+    selection->AddSelectionListener(mSelectionListener);
   }
-
-  selection->AddSelectionListener(mSelectionListener);
 
   ReinitializeFocusListener();
 
@@ -773,15 +770,13 @@ nsresult nsDocumentViewer::InitInternal(
 
   mBounds = aBounds;
 
-  nsresult rv = NS_OK;
   NS_ENSURE_TRUE(mDocument, NS_ERROR_NULL_POINTER);
 
   nsSubDocumentFrame* containerFrame = FindContainerFrame();
 
   bool makeCX = false;
   if (aDoCreation) {
-    nsresult rv = CreateDeviceContext(containerFrame);
-    NS_ENSURE_SUCCESS(rv, rv);
+    CreateDeviceContext(containerFrame);
 
     // XXXbz this is a nasty hack to do with the fact that we create
     // presentations both in Init() and in Show()...  Ideally we would only do
@@ -792,20 +787,9 @@ nsresult nsDocumentViewer::InitInternal(
          (mDocument->GetDisplayDocument() &&
           mDocument->GetDisplayDocument()->GetPresShell()))) {
       // Create presentation context
-      if (mIsPageMode) {
-        // Presentation context already created in SetPageModeForTesting which
-        // is calling this method
-      } else {
-        mPresContext = CreatePresContext(
-            mDocument, nsPresContext::eContext_Galley, containerFrame);
-      }
-      NS_ENSURE_TRUE(mPresContext, NS_ERROR_OUT_OF_MEMORY);
-
-      nsresult rv = mPresContext->Init(mDeviceContext);
-      if (NS_FAILED(rv)) {
-        mPresContext = nullptr;
-        return rv;
-      }
+      mPresContext = CreatePresContext(
+          mDocument, nsPresContext::eContext_Galley, containerFrame);
+      mPresContext->Init(mDeviceContext);
 
 #if defined(NS_PRINTING) && defined(NS_PRINT_PREVIEW)
       makeCX = !GetIsPrintPreview() &&
@@ -859,7 +843,7 @@ nsresult nsDocumentViewer::InitInternal(
     if (window) {
       nsCOMPtr<Document> curDoc = window->GetExtantDoc();
       if (aForceSetNewDocument || curDoc != mDocument) {
-        rv = window->SetNewDocument(mDocument, aState, false, aActor);
+        nsresult rv = window->SetNewDocument(mDocument, aState, false, aActor);
         if (NS_FAILED(rv)) {
           Destroy();
           return rv;
@@ -869,10 +853,10 @@ nsresult nsDocumentViewer::InitInternal(
   }
 
   if (aDoCreation && mPresContext) {
-    rv = InitPresentationStuff(!makeCX);
+    return InitPresentationStuff(!makeCX);
   }
 
-  return rv;
+  return NS_OK;
 }
 
 void nsDocumentViewer::SetNavigationTiming(nsDOMNavigationTiming* timing) {
@@ -908,7 +892,6 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
     presShell->FlushPendingNotifications(FlushType::Layout);
   }
 
-  nsresult rv = NS_OK;
   NS_ENSURE_TRUE(mDocument, NS_ERROR_NOT_AVAILABLE);
 
   // First, get the window from the document...
@@ -1102,7 +1085,7 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
   }
 #endif
 
-  return rv;
+  return NS_OK;
 }
 
 bool nsDocumentViewer::GetLoadCompleted() { return mLoaded; }
@@ -1394,8 +1377,7 @@ nsDocumentViewer::Open(nsISupports* aState, nsISHEntry* aSHEntry) {
     mDocument->SetContainer(mContainer);
   }
 
-  nsresult rv = InitInternal(mParentWidget, aState, nullptr, mBounds, false);
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(InitInternal(mParentWidget, aState, nullptr, mBounds, false));
 
   mHidden = false;
 
@@ -1600,8 +1582,7 @@ nsDocumentViewer::Destroy() {
     // Shut down accessibility for the document before we start to tear it down.
 #ifdef ACCESSIBILITY
     if (mPresShell) {
-      a11y::DocAccessible* docAcc = mPresShell->GetDocAccessible();
-      if (docAcc) {
+      if (a11y::DocAccessible* docAcc = mPresShell->GetDocAccessible()) {
         docAcc->Shutdown();
       }
     }
@@ -1786,8 +1767,7 @@ nsDocumentViewer::SetDocumentInternal(Document* aDocument,
     }
   }
 
-  nsresult rv = SyncParentSubDocMap();
-  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_TRY(SyncParentSubDocMap());
 
   // Replace the current pres shell with a new shell for the new document
 
@@ -1803,11 +1783,11 @@ nsDocumentViewer::SetDocumentInternal(Document* aDocument,
     DestroyPresContext();
 
     mWindow = nullptr;
-    rv = InitInternal(mParentWidget, nullptr, nullptr, mBounds, true, true,
-                      false);
+    MOZ_TRY(InitInternal(mParentWidget, nullptr, nullptr, mBounds, true, true,
+                         false));
   }
 
-  return rv;
+  return NS_OK;
 }
 
 PresShell* nsDocumentViewer::GetPresShell() { return mPresShell; }
@@ -1992,27 +1972,17 @@ nsDocumentViewer::Show() {
 
     nsSubDocumentFrame* containerFrame = FindContainerFrame();
 
-    nsresult rv = CreateDeviceContext(containerFrame);
-    NS_ENSURE_SUCCESS(rv, rv);
+    CreateDeviceContext(containerFrame);
 
     // Create presentation context
     NS_ASSERTION(!mPresContext,
                  "Shouldn't have a prescontext if we have no shell!");
     mPresContext = CreatePresContext(mDocument, nsPresContext::eContext_Galley,
                                      containerFrame);
-    NS_ENSURE_TRUE(mPresContext, NS_ERROR_OUT_OF_MEMORY);
+    mPresContext->Init(mDeviceContext);
+    Hide();
 
-    rv = mPresContext->Init(mDeviceContext);
-    if (NS_FAILED(rv)) {
-      mPresContext = nullptr;
-      return rv;
-    }
-
-    if (mPresContext) {
-      Hide();
-
-      rv = InitPresentationStuff(mDocument->MayStartLayout());
-    }
+    InitPresentationStuff(mDocument->MayStartLayout());
 
     // If we get here the document load has already started and the
     // window is shown because some JS on the page caused it to be
@@ -2161,7 +2131,7 @@ nsSubDocumentFrame* nsDocumentViewer::FindContainerFrame() {
   return static_cast<nsSubDocumentFrame*>(subdocFrame);
 }
 
-nsresult nsDocumentViewer::CreateDeviceContext(
+void nsDocumentViewer::CreateDeviceContext(
     nsSubDocumentFrame* aContainerFrame) {
   MOZ_ASSERT(!mPresShell && !mWindow,
              "This will screw up our existing presentation");
@@ -2173,7 +2143,7 @@ nsresult nsDocumentViewer::CreateDeviceContext(
     // We want to use our display document's device context if possible
     if (nsPresContext* ctx = doc->GetPresContext()) {
       mDeviceContext = ctx->DeviceContext();
-      return NS_OK;
+      return;
     }
   }
 
@@ -2192,7 +2162,6 @@ nsresult nsDocumentViewer::CreateDeviceContext(
 
   mDeviceContext = new nsDeviceContext();
   mDeviceContext->Init(widget);
-  return NS_OK;
 }
 
 // Return the selection for the document. Note that text fields have their
@@ -3203,18 +3172,13 @@ NS_IMETHODIMP nsDocumentViewer::SetPrintSettingsForSubdocument(
     }
 
     auto devspec = MakeRefPtr<nsDeviceContextSpecProxy>(aRemotePrintJob);
-    nsresult rv = devspec->Init(aPrintSettings, /* aIsPrintPreview = */ true);
-    NS_ENSURE_SUCCESS(rv, rv);
-
+    MOZ_TRY(devspec->Init(aPrintSettings, /* aIsPrintPreview = */ true));
     mDeviceContext = new nsDeviceContext();
-    rv = mDeviceContext->InitForPrinting(devspec);
-
-    NS_ENSURE_SUCCESS(rv, rv);
-
+    MOZ_TRY(mDeviceContext->InitForPrinting(devspec));
     mPresContext = CreatePresContext(
         mDocument, nsPresContext::eContext_PrintPreview, FindContainerFrame());
     mPresContext->SetPrintSettings(aPrintSettings);
-    MOZ_TRY(mPresContext->Init(mDeviceContext));
+    mPresContext->Init(mDeviceContext);
     MOZ_TRY(InitPresentationStuff(true));
   }
 
@@ -3252,12 +3216,10 @@ NS_IMETHODIMP nsDocumentViewer::SetPageModeForTesting(
     NS_ENSURE_TRUE(mPresContext, NS_ERROR_OUT_OF_MEMORY);
     mPresContext->SetPaginatedScrolling(true);
     mPresContext->SetPrintSettings(aPrintSettings);
-    nsresult rv = mPresContext->Init(mDeviceContext);
-    NS_ENSURE_SUCCESS(rv, rv);
+    mPresContext->Init(mDeviceContext);
   }
-  NS_ENSURE_SUCCESS(InitInternal(mParentWidget, nullptr, nullptr, mBounds, true,
-                                 false, false),
-                    NS_ERROR_FAILURE);
+  MOZ_TRY(InitInternal(mParentWidget, nullptr, nullptr, mBounds, true, false,
+                       false));
 
   Show();
   return NS_OK;

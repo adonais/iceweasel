@@ -1252,7 +1252,7 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
   aPO->mPresContext->SetPrintSettings(mPrintSettings);
 
   // init it with the DC
-  MOZ_TRY(aPO->mPresContext->Init(printData->mPrintDC));
+  aPO->mPresContext->Init(printData->mPrintDC);
 
   bool doReturn = false;
   nsSize adjSize;
