@@ -1333,19 +1333,10 @@ interface GleanImpl {
     exposure: GleanCounter;
   }
 
-<<<<<<< HEAD
-=======
   dataLeakBlocker: {
     reportV1: GleanEventWithExtras<{ addon_id?: string, blocked?: string, content_policy_type?: string, is_addon_loading?: string, is_addon_triggering?: string, is_content_script?: string, method?: string }>;
   }
 
-  addonsSearchDetection: {
-    etldChangeOther: GleanEventWithExtras<{ addonId?: string, addonVersion?: string, from?: string, to?: string, value?: string }>;
-    etldChangeWebrequest: GleanEventWithExtras<{ addonId?: string, addonVersion?: string, from?: string, to?: string, value?: string }>;
-    sameSiteRedirect: GleanEventWithExtras<{ addonId?: string, addonVersion?: string, origin?: string, paramChanged?: string }>;
-  }
-
->>>>>>> upstream/release
   browserContentCrash: {
     dumpUnavailable: GleanCounter;
     notSubmitted: GleanCounter;
