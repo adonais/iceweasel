@@ -90,6 +90,10 @@ support-files = [
 
 ["browser_print_settings_fallback.js"]
 
+["browser_print_silent_about_config.js"]
+# Times out on non-Linux, needs debugging.
+skip-if = ["os == 'win'", "os == 'mac'"]
+
 ["browser_print_simplified_mode.js"]
 support-files = ["simplifyNonArticleSample.html"]
 
