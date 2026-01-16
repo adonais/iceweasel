@@ -1034,6 +1034,15 @@ class LNAPermissionPromptBase extends PermissionPromptForRequest {
     this.request = request;
   }
 
+  onBeforeShow() {
+    // Notify LNAPermissionRequest that the prompt is being shown.
+    // This triggers telemetry recording and notifies nsHttpChannel.
+    if (typeof this.request.notifyShown === "function") {
+      this.request.notifyShown();
+    }
+    return true;
+  }
+
   onShown() {
     this.#startTimeoutTimer();
   }

@@ -626,6 +626,10 @@ features:
         description: When the feature is enabled then the prompt can show for users.
         type: Boolean
         default: false
+      content-option:
+        description: Defines which content option should used for the prompt.
+        type: TermsOfUsePromptContentOption
+        default: value-0
       max-display-count:
         description: The maximum number of times to show the prompt.
         type: Int
@@ -1077,3 +1081,24 @@ types:
           description: The collection for the setup checklist that has 3 items.
         collection-2:
           description: The collection for the setup checklist that has 6 items.
+
+    # Enum is aligned with other Firefox platforms for consistent experiment configuration.
+    TermsOfUsePromptContentOption:
+      description: |
+        Determines which predefined title and "learn more" strings are used for the Terms of Use prompt.
+      variants:
+        value-0:
+          description: |
+            Uses the current defaults:
+            - Title: "We've got an update"
+            - Learn more: "Please take a moment to review and accept. Learn more."
+        value-1:
+          description: |
+            Uses the following copy:
+            - Title: "Terms of Use"
+            - Learn more: "You can learn more here."
+        value-2:
+          description: |
+            Uses the following copy:
+            - Title: "A note from Firefox"
+            - Learn more: "You can learn more here."

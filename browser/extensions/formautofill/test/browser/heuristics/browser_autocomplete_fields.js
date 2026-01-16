@@ -145,4 +145,16 @@ add_heuristic_tests([
       },
     ],
   },
+  {
+    description: "Form containing one email field.",
+    fixtureData: `<form>
+                    <input autocomplete="email">
+                 </form>`,
+    expectedResult: [
+      {
+        invalid: true,
+        fields: [{ fieldName: "email" }],
+      },
+    ],
+  },
 ]);

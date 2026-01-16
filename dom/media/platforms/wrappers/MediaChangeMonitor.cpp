@@ -1205,7 +1205,7 @@ MediaResult MediaChangeMonitor::CreateDecoderAndInit(MediaRawData* aSample) {
                         return;
                       }
 
-                      mDecodePromise.Reject(
+                      mDecodePromise.RejectIfExists(
                           MediaResult(
                               aError.Code(),
                               RESULT_DETAIL("Unable to initialize decoder")),
@@ -1220,7 +1220,7 @@ MediaResult MediaChangeMonitor::CreateDecoderAndInit(MediaRawData* aSample) {
               mFlushPromise.Reject(aError, __func__);
               return;
             }
-            mDecodePromise.Reject(
+            mDecodePromise.RejectIfExists(
                 MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                             RESULT_DETAIL("Unable to create decoder")),
                 __func__);
@@ -1264,12 +1264,12 @@ void MediaChangeMonitor::DecodeFirstSample(MediaRawData* aSample) {
           [self, this](MediaDataDecoder::DecodedData&& aResults) {
             mDecodePromiseRequest.Complete();
             mPendingFrames.AppendElements(std::move(aResults));
-            mDecodePromise.Resolve(std::move(mPendingFrames), __func__);
+            mDecodePromise.ResolveIfExists(std::move(mPendingFrames), __func__);
             mPendingFrames = DecodedData();
           },
           [self, this](const MediaResult& aError) {
             mDecodePromiseRequest.Complete();
-            mDecodePromise.Reject(aError, __func__);
+            mDecodePromise.RejectIfExists(aError, __func__);
           })
       ->Track(mDecodePromiseRequest);
 }
@@ -1328,7 +1328,7 @@ void MediaChangeMonitor::DrainThenFlushDecoder(MediaRawData* aPendingSample) {
               mFlushPromise.Reject(aError, __func__);
               return;
             }
-            mDecodePromise.Reject(aError, __func__);
+            mDecodePromise.RejectIfExists(aError, __func__);
           })
       ->Track(mDrainRequest);
 }
@@ -1372,7 +1372,7 @@ void MediaChangeMonitor::FlushThenShutdownDecoder(
                         return;
                       }
                       MOZ_ASSERT(NS_FAILED(rv));
-                      mDecodePromise.Reject(rv, __func__);
+                      mDecodePromise.RejectIfExists(rv, __func__);
                       return;
                     },
                     [] { MOZ_CRASH("Can't reach here'"); })
@@ -1385,7 +1385,7 @@ void MediaChangeMonitor::FlushThenShutdownDecoder(
               mFlushPromise.Reject(aError, __func__);
               return;
             }
-            mDecodePromise.Reject(aError, __func__);
+            mDecodePromise.RejectIfExists(aError, __func__);
           })
       ->Track(mFlushRequest);
 }

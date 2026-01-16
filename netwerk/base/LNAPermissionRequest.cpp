@@ -89,7 +89,7 @@ LNAPermissionRequest::GetElement(mozilla::dom::Element** aElement) {
 NS_IMETHODIMP
 LNAPermissionRequest::Cancel() {
   // callback to the http channel on the prompt failure result
-  mPermissionPromptCallback(false, mType);
+  mPermissionPromptCallback(false, mType, mPromptWasShown);
   return NS_OK;
 }
 
@@ -97,7 +97,39 @@ LNAPermissionRequest::Cancel() {
 NS_IMETHODIMP
 LNAPermissionRequest::Allow(JS::Handle<JS::Value> aChoices) {
   // callback to the http channel on the prompt success result
-  mPermissionPromptCallback(true, mType);
+  mPermissionPromptCallback(true, mType, mPromptWasShown);
+  return NS_OK;
+}
+
+// callback when the permission prompt is shown
+NS_IMETHODIMP
+LNAPermissionRequest::NotifyShown() {
+  // Mark that the prompt was shown to the user
+  mPromptWasShown = true;
+
+  // Record telemetry for permission prompts shown to users
+  if (mType.Equals(LOCAL_HOST_PERMISSION_KEY)) {
+    if (mIsRequestDelegatedToUnsafeThirdParty) {
+      mozilla::glean::networking::local_network_access_prompts_shown
+          .Get("localhost_cross_site"_ns)
+          .Add(1);
+    } else {
+      mozilla::glean::networking::local_network_access_prompts_shown
+          .Get("localhost"_ns)
+          .Add(1);
+    }
+  } else if (mType.Equals(LOCAL_NETWORK_PERMISSION_KEY)) {
+    if (mIsRequestDelegatedToUnsafeThirdParty) {
+      mozilla::glean::networking::local_network_access_prompts_shown
+          .Get("local_network_cross_site"_ns)
+          .Add(1);
+    } else {
+      mozilla::glean::networking::local_network_access_prompts_shown
+          .Get("local_network"_ns)
+          .Add(1);
+    }
+  }
+
   return NS_OK;
 }
 
@@ -128,29 +160,6 @@ nsresult LNAPermissionRequest::RequestPermission() {
 
   if (pr == PromptResult::Denied) {
     return Cancel();
-  }
-
-  // Record telemetry for permission prompts shown to users
-  if (mType.Equals(LOCAL_HOST_PERMISSION_KEY)) {
-    if (mIsRequestDelegatedToUnsafeThirdParty) {
-      mozilla::glean::networking::local_network_access_prompts_shown
-          .Get("localhost_cross_site"_ns)
-          .Add(1);
-    } else {
-      mozilla::glean::networking::local_network_access_prompts_shown
-          .Get("localhost"_ns)
-          .Add(1);
-    }
-  } else if (mType.Equals(LOCAL_NETWORK_PERMISSION_KEY)) {
-    if (mIsRequestDelegatedToUnsafeThirdParty) {
-      mozilla::glean::networking::local_network_access_prompts_shown
-          .Get("local_network_cross_site"_ns)
-          .Add(1);
-    } else {
-      mozilla::glean::networking::local_network_access_prompts_shown
-          .Get("local_network"_ns)
-          .Add(1);
-    }
   }
 
   if (NS_SUCCEEDED(

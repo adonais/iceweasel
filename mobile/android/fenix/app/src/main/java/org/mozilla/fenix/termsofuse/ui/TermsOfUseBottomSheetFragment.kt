@@ -16,6 +16,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.SupportUtils
+import org.mozilla.fenix.termsofuse.experimentation.getTermsOfUsePromptContent
 import org.mozilla.fenix.termsofuse.store.DefaultTermsOfUsePromptRepository
 import org.mozilla.fenix.termsofuse.store.TermsOfUsePromptAction
 import org.mozilla.fenix.termsofuse.store.TermsOfUsePromptPreferencesMiddleware
@@ -63,8 +64,27 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
     ): View = ComposeView(requireContext()).apply {
         setContent {
             FirefoxTheme {
+                val termsOfUsePromptContent = getTermsOfUsePromptContent(
+                    context = requireActivity().applicationContext,
+                    id = settings().termsOfUsePromptContentOptionId,
+                    onLearnMoreClicked = {
+                        termsOfUsePromptStore.dispatch(
+                            TermsOfUsePromptAction.OnLearnMoreClicked(args.surface),
+                        )
+                        SupportUtils.launchSandboxCustomTab(
+                            context,
+                            SupportUtils.getSumoURLForTopic(
+                                context,
+                                SupportUtils.SumoTopic.TERMS_OF_USE,
+                                useMobilePage = false,
+                            ),
+                        )
+                    },
+                )
+
                 TermsOfUseBottomSheet(
                     showDragHandle = settings().shouldShowTermsOfUsePromptDragHandle,
+                    termsOfUsePromptContent = termsOfUsePromptContent,
                     onDismiss = { dismiss() },
                     onDismissRequest = {
                         termsOfUsePromptStore.dispatch(
@@ -97,19 +117,6 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
                         SupportUtils.launchSandboxCustomTab(
                             context,
                             SupportUtils.getMozillaPageUrl(SupportUtils.MozillaPage.PRIVATE_NOTICE),
-                        )
-                    },
-                    onLearnMoreClicked = {
-                        termsOfUsePromptStore.dispatch(
-                            TermsOfUsePromptAction.OnLearnMoreClicked(args.surface),
-                        )
-                        SupportUtils.launchSandboxCustomTab(
-                            context,
-                            SupportUtils.getSumoURLForTopic(
-                                context,
-                                SupportUtils.SumoTopic.TERMS_OF_USE,
-                                useMobilePage = false,
-                            ),
                         )
                     },
                 )

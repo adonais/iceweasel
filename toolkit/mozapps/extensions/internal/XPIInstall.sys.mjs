@@ -1468,9 +1468,18 @@ class AddonInstall {
         );
         this.removeTemporaryFile();
 
+        const stagedInstall = AppUpdate._stagedLangpacks.get(this.addon.id);
+        if (stagedInstall && stagedInstall !== this) {
+          // File path is owned by another AddonInstall (langpack). To avoid
+          // removing the wrong file or database entry, skip unstage.
+          logger.debug(`Skipping unstageInstall for obsolete AddonInstall`);
+          return;
+        }
+
         let stagingDir = this.location.installer.getStagingDir();
         let stagedAddon = stagingDir.clone();
 
+        // Note: unstageInstall is async!
         this.unstageInstall(stagedAddon);
         break;
       }
@@ -2111,6 +2120,73 @@ class AddonInstall {
     await removeAsync(getFile(this.addon.id, stagingDir));
 
     await removeAsync(getFile(`${this.addon.id}.xpi`, stagingDir));
+  }
+
+  /**
+   * Rename the staged XPI associated with this install, to prevent another
+   * installation from overwriting it (see bug 2006489).
+   *
+   * @see restoreStagedInstall
+   */
+  backupStagedInstall() {
+    if (this._backupStagedAddon) {
+      logger.warn(
+        `Unexpected double attempt to back up staged langpack ${this.addon.id}`
+      );
+      return;
+    }
+    const stagedAddon = this.location.installer.getStagingDir();
+    stagedAddon.append(`${this.addon.id}.xpi`);
+    try {
+      // Rename file. This will be restored when the install completes. If for
+      // some reason the application crashes or quits before we get there, this
+      // file will be left behind.
+      //
+      // "~" as separator because it is never a part of an addon ID.
+      stagedAddon.moveTo(null, `${this.addon.id}~bak.xpi`);
+      this._backupStagedAddon = stagedAddon;
+    } catch (e) {
+      logger.warn(`Failed to rename staged langpack ${this.addon.id}`, e);
+    }
+  }
+
+  /**
+   * Undo the rename of backupStagedInstall(). This should be called when there
+   * are no other uses of the original file name.
+   *
+   * @see backupStagedInstall
+   * @see stageInstall
+   */
+  restoreStagedInstall() {
+    if (this._backupStagedAddon) {
+      try {
+        // Restore file and metadata, matching the logic from stageInstall().
+        this._backupStagedAddon.moveTo(null, `${this.addon.id}.xpi`);
+        this._backupStagedAddon = null;
+        this.location.stageAddon(this.addon.id, this.addon.toJSON());
+      } catch (e) {
+        logger.warn(`Failed to restore staged langpack ${this.addon.id}`, e);
+        this._backupStagedAddon = null;
+      }
+    }
+  }
+
+  /**
+   * Remove the staged file without restoring it. This should be called when
+   * the file has become obsolete, e.g. due to a newer version of the XPI.
+   *
+   * @see backupStagedInstall
+   * @see restoreStagedInstall
+   */
+  deleteBackupStagedInstall() {
+    if (this._backupStagedAddon) {
+      try {
+        this._backupStagedAddon.remove(false);
+      } catch (e) {
+        logger.warn(`Failed to delete staged langpack ${this.addon.id}`, e);
+      }
+      this._backupStagedAddon = null;
+    }
   }
 
   /**
@@ -4073,10 +4149,59 @@ var AppUpdate = {
     });
   },
 
-  stageInstall(installer) {
+  // Map from addon ID to AddonInstall of langpacks staged for next startup.
+  _stagedLangpacks: new Map(),
+  _conflictingInstalls: null,
+  _ensurePersistentStagedLangpack() {
+    // stageLangpacksForAppUpdate may stage a langpack for the next application
+    // update, because langpacks are compatible with specific major versions
+    // only. But if an update check finds another langpack compatible with the
+    // current version, the previously staged langpack would be overwritten,
+    // because AddonInstall instances with the same ID share the same file path.
+    // To avoid the loss of langpacks, temporarily rename the file, then restore
+    // it upon completion of the installation (bug 2006489).
+    if (this._conflictingInstalls) {
+      return;
+    }
+    this._conflictingInstalls = new Set();
+    const restoreStagedIfNeeded = install => {
+      if (this._conflictingInstalls.delete(install)) {
+        const stagedInstall = this._stagedLangpacks.get(install.addon.id);
+        stagedInstall.restoreStagedInstall();
+      }
+    };
+    const globalInstallListener = {
+      onInstallStarted: install => {
+        const stagedInstall = this._stagedLangpacks.get(install.addon.id);
+        if (stagedInstall && stagedInstall !== install) {
+          this._conflictingInstalls.add(install);
+          stagedInstall.backupStagedInstall();
+        }
+      },
+      onInstallCancelled: install => {
+        restoreStagedIfNeeded(install);
+      },
+      onInstallFailed: install => {
+        restoreStagedIfNeeded(install);
+      },
+      onInstallEnded: install => {
+        restoreStagedIfNeeded(install);
+      },
+    };
+    AddonManager.addInstallListener(globalInstallListener);
+  },
+
+  stageLangpackInstall(installer) {
     return new Promise((resolve, reject) => {
       let listener = {
         onDownloadEnded: install => {
+          const stagedInstall = this._stagedLangpacks.get(install.addon.id);
+          if (stagedInstall) {
+            // Found a new version of a previously staged langpack. We don't
+            // care about the previous one any more.
+            stagedInstall.deleteBackupStagedInstall();
+            this._stagedLangpacks.delete(install.addon.id);
+          }
           install.postpone();
         },
         onInstallFailed: install => {
@@ -4092,6 +4217,10 @@ var AppUpdate = {
         onInstallPostponed: install => {
           // At this point the addon is staged for restart.
           install.removeListener(listener);
+
+          this._stagedLangpacks.set(install.addon.id, installFor(install));
+          this._ensurePersistentStagedLangpack();
+
           resolve();
         },
       };
@@ -4112,7 +4241,7 @@ var AppUpdate = {
           nextVersion,
           nextPlatformVersion
         )
-          .then(update => update && this.stageInstall(update))
+          .then(update => update && this.stageLangpackInstall(update))
           .catch(e => {
             logger.debug(`addon.findUpdate error: ${e}`);
           })

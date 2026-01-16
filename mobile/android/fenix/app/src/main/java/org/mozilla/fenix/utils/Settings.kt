@@ -636,6 +636,14 @@ class Settings(
     )
 
     /**
+     * The ID of the content option for the Terms of Use prompt.
+     */
+    var termsOfUsePromptContentOptionId by stringPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_terms_prompt_content_option),
+        default = { FxNimbus.features.termsOfUsePrompt.value().contentOption.name },
+    )
+
+    /**
      * The maximum number of times the Terms of Use prompt should be displayed.
      *
      * Use a function to ensure the most up-to-date Nimbus value is retrieved.

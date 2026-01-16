@@ -88,6 +88,7 @@
     <string name="pref_key_terms_prompt_enabled" translatable="false">pref_key_terms_prompt_enabled</string>
     <string name="pref_key_terms_prompt_drag_handle_enabled" translatable="false">pref_key_terms_prompt_drag_handle_enabled</string>
     <string name="pref_key_terms_prompt_displayed_count" translatable="false">pref_key_terms_prompt_displayed_count</string>
+    <string name="pref_key_terms_prompt_content_option" translatable="false">pref_key_terms_prompt_content_option</string>
     <string name="pref_key_terms_last_prompt_time" translatable="false">pref_key_terms_last_prompt_time</string>
     <string name="pref_key_terms_postponed" translatable="false">pref_key_terms_postponed</string>
     <string name="pref_key_debug_terms_trigger_time" translatable="false">pref_key_debug_terms_trigger_time</string>

@@ -840,7 +840,7 @@ class GeckoEngineTest {
     }
 
     @Test
-    fun `setEnhancedTrackingProtectionLevel MUST always be set to STRICT unless the tracking protection policy is none`() {
+    fun `setEnhancedTrackingProtectionLevel MUST reflect the tracking protection policy`() {
         val mockRuntime = mock<GeckoRuntime>()
         val settings = spy(ContentBlocking.Settings.Builder().build())
         whenever(mockRuntime.settings).thenReturn(mock())
@@ -851,7 +851,7 @@ class GeckoEngineTest {
         engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.recommended()
 
         verify(mockRuntime.settings.contentBlocking).setEnhancedTrackingProtectionLevel(
-            ContentBlocking.EtpLevel.STRICT,
+            ContentBlocking.EtpLevel.DEFAULT,
         )
 
         reset(settings)
@@ -859,14 +859,14 @@ class GeckoEngineTest {
         engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.recommended()
 
         verify(mockRuntime.settings.contentBlocking, never()).setEnhancedTrackingProtectionLevel(
-            ContentBlocking.EtpLevel.STRICT,
+            ContentBlocking.EtpLevel.DEFAULT,
         )
 
         reset(settings)
 
         engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.strict()
 
-        verify(mockRuntime.settings.contentBlocking, never()).setEnhancedTrackingProtectionLevel(
+        verify(mockRuntime.settings.contentBlocking).setEnhancedTrackingProtectionLevel(
             ContentBlocking.EtpLevel.STRICT,
         )
 

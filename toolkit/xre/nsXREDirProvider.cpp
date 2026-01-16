@@ -1184,8 +1184,13 @@ nsresult nsXREDirProvider::GetSysUserExtensionsDirectory(nsIFile** aFile) {
   rv = AppendSysUserExtensionPath(localDir);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = EnsureDirectoryExists(localDir);
-  NS_ENSURE_SUCCESS(rv, rv);
+  // We used to unconditionally create the directory here, but that results in
+  // an unwanted ~/.mozilla/extensions/ in violation of the XDG basedir spec,
+  // which expresses a preference for ~/.config/mozilla/.
+  //
+  // Since we no longer support sideloading from this directory, unless
+  // MOZ_ALLOW_ADDON_SIDELOAD is set, the creation of the directory is almost
+  // always redundant, so skip the creation of the directory.
 
   localDir.forget(aFile);
   return NS_OK;

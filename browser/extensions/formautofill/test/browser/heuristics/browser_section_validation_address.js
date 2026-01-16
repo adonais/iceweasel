@@ -76,6 +76,7 @@ add_heuristic_tests([
     expectedResult: [
       {
         description: "A section with two fields",
+        invalid: true,
         fields: [
           { fieldName: "postal-code", reason: "regex-heuristic" },
           { fieldName: "email", reason: "autocomplete" },

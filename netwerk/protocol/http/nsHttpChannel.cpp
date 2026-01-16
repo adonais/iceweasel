@@ -8795,20 +8795,36 @@ nsresult nsHttpChannel::ProcessLNAActions() {
       UpdateLocalNetworkAccessPermissions(permissionKey);
 
   if (LNAPermission::Granted == permissionUpdateResult) {
-    // permission granted
+    // permission granted (auto-allow via permanent permission)
+    mLNAPromptAction.AssignLiteral("auto_allow");
     return OnPermissionPromptResult(true, permissionKey);
   }
 
   if (LNAPermission::Denied == permissionUpdateResult) {
-    // permission denied
+    // permission denied (auto-deny via permanent permission)
+    mLNAPromptAction.AssignLiteral("auto_deny");
     return OnPermissionPromptResult(false, permissionKey);
   }
 
   // If we get here, we don't have any permission to access the local
   // host/network. We need to prompt the user for action
-  auto permissionPromptCallback = [self = RefPtr{this}](
-                                      bool aPermissionGranted,
-                                      const nsACString& aType) -> void {
+  auto permissionPromptCallback =
+      [self = RefPtr{this}](bool aPermissionGranted, const nsACString& aType,
+                            bool aPromptShown) -> void {
+    // Set mLNAPromptAction based on whether prompt was shown and user response
+    if (aPromptShown) {
+      if (aPermissionGranted) {
+        self->mLNAPromptAction.AssignLiteral("prompt_allow");
+      } else {
+        self->mLNAPromptAction.AssignLiteral("prompt_deny");
+      }
+    } else {
+      if (aPermissionGranted) {
+        self->mLNAPromptAction.AssignLiteral("auto_allow");
+      } else {
+        self->mLNAPromptAction.AssignLiteral("auto_deny");
+      }
+    }
     self->OnPermissionPromptResult(aPermissionGranted, aType);
   };
 
@@ -9178,13 +9194,6 @@ void nsHttpChannel::MaybeUpdateDocumentIPAddressSpaceFromCache() {
 nsresult nsHttpChannel::OnPermissionPromptResult(bool aGranted,
                                                  const nsACString& aType) {
   mWaitingForLNAPermission = false;
-
-  // Set prompt action for telemetry
-  if (aGranted) {
-    mLNAPromptAction.AssignLiteral("allow");
-  } else {
-    mLNAPromptAction.AssignLiteral("deny");
-  }
 
   if (aGranted) {
     LOG(

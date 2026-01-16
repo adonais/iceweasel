@@ -1114,9 +1114,18 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
   }
 
   if (StaticPrefs::security_sandbox_content_close_ksecdd_handle()) {
-    result = config->AddKernelObjectToClose(L"File", L"\\Device\\KsecDD");
-    MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
-                       "AddKernelObjectToClose should never fail.");
+    // bug 2006941 and bug 2008739 - Trellix DLP uses these functions, so don't
+    // do this if their DLLs are loaded
+#if defined(_M_X64)
+    const wchar_t* trellixDllName = L"fcagff64.dll";
+#else
+    const wchar_t* trellixDllName = L"fcagff.dll";
+#endif
+    if (!::GetModuleHandleW(trellixDllName)) {
+      result = config->AddKernelObjectToClose(L"File", L"\\Device\\KsecDD");
+      MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
+                         "AddKernelObjectToClose should never fail.");
+    }
   }
 
   sandbox::MitigationFlags mitigations =

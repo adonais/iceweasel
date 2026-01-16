@@ -89,11 +89,20 @@ fn main() {
 
 #[cfg(not(mock))]
 fn report_main() {
+    // Close unused fds before doing anything else, which might open some.
+    #[cfg(unix)]
+    let fd_cleanup_error = fd_cleanup::cleanup_unused_fds();
+
     let log_target = logging::init();
 
     let mut config = Config::new();
     config.log_target = Some(log_target);
     config.read_from_environment();
+
+    #[cfg(unix)]
+    if let Err(e) = fd_cleanup_error {
+        log::warn!("fd cleanup failed: {e}");
+    }
 
     let mut config = Arc::new(config);
 
@@ -258,6 +267,72 @@ fn try_run(config: &mut Arc<Config>) -> anyhow::Result<bool> {
         glean::init(&config);
 
         logic::ReportCrash::new(config.clone(), extra)?.run()
+    }
+}
+
+/// Close inherited fds which we don't need.
+///
+/// This is important since we may re-launch Firefox (which may crash again, accumulating open fds
+/// all the while). See bug 1986095.
+///
+/// The `close_fds` crate does this in a more comprehensive way, so we may consider vendoring that in
+/// the future.
+#[cfg(all(unix, not(mock)))]
+mod fd_cleanup {
+    unsafe extern "C" {
+        fn close(fd: std::ffi::c_int) -> std::ffi::c_int;
+    }
+
+    pub fn cleanup_unused_fds() -> anyhow::Result<()> {
+        use anyhow::Context;
+
+        let fd_dir: &str = match std::env::consts::OS {
+            "linux" => "/proc/self/fd",
+            "macos" => "/dev/fd",
+            os => anyhow::bail!("unimplemented for target os {os}"),
+        };
+
+        let dir =
+            std::fs::read_dir(fd_dir).with_context(|| format!("failed to enumerate {fd_dir}"))?;
+
+        // Aggregate the fds to close so that we don't close the ReadDir fd (we could get this fd by
+        // using libc/nix, but at the time of this writing those crates aren't dependencies, and the
+        // workaround is simple enough).
+        let mut fds_to_close = Vec::new();
+        for entry_result in dir {
+            let entry = match entry_result {
+                Ok(entry) => entry,
+                Err(e) => {
+                    log::warn!("failed to enumerate {fd_dir}: {e}");
+                    continue;
+                }
+            };
+            let filename = entry.file_name();
+            // These should all be valid utf-8
+            let Some(filename) = filename.to_str() else {
+                continue;
+            };
+            let fd: std::os::fd::RawFd = match filename.parse() {
+                Ok(n) => n,
+                Err(e) => {
+                    log::warn!("failed to parse {filename} as an fd: {e}");
+                    continue;
+                }
+            };
+            // Ignore negative, stdin (0), stdout (1), or stderr(2) fds.
+            if fd >= 3 {
+                fds_to_close.push(fd);
+            }
+        }
+
+        for fd in fds_to_close {
+            // We can ignore errors (e.g. inevitably there will be at least one error from closing the
+            // ReadDir fd which is now closed). We use libc `close` directly since OwnedFd has the
+            // invariant that the fd is open (and has a debug assert checking this).
+            unsafe { close(fd) };
+        }
+
+        Ok(())
     }
 }
 
