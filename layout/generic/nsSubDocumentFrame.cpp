@@ -178,6 +178,11 @@ void nsSubDocumentFrame::UpdateEmbeddedBrowsingContextDependentData() {
     return;
   }
   mIsInObjectOrEmbed = bc->IsEmbedderTypeObjectOrEmbed();
+  const bool isOrIsGoingToBePrimaryFrame =
+      MOZ_LIKELY(IsPrimaryFrame() || !mContent->GetPrimaryFrame());
+  if (!isOrIsGoingToBePrimaryFrame) {
+    return;
+  }
   MaybeUpdateRemoteStyle();
   MaybeUpdateEmbedderColorScheme();
   MaybeUpdateEmbedderZoom();
@@ -651,7 +656,8 @@ void nsSubDocumentFrame::Reflow(nsPresContext* aPresContext,
                "Shouldn't have unconstrained block-size here "
                "thanks to ComputeAutoSize");
 
-  NS_ASSERTION(mContent->GetPrimaryFrame() == this, "Shouldn't happen");
+  NS_ASSERTION(IsPrimaryFrame() || PresContext()->IsRootPaginatedDocument(),
+               "Shouldn't happen");
 
   // XUL <iframe> or <browser>, or HTML <iframe>, <object> or <embed>
   const auto wm = aReflowInput.GetWritingMode();
@@ -672,8 +678,10 @@ void nsSubDocumentFrame::Reflow(nsPresContext* aPresContext,
     auto rect = LayoutDeviceIntRect::FromAppUnitsToInside(
         destRect, PresContext()->AppUnitsPerDevPixel());
     mExtraOffset = destRect.TopLeft();
-    nsDocShell::Cast(ds)->SetPositionAndSize(0, 0, rect.width, rect.height,
-                                             nsIBaseWindow::eDelayResize);
+    if (IsPrimaryFrame()) {
+      nsDocShell::Cast(ds)->SetPositionAndSize(0, 0, rect.width, rect.height,
+                                               nsIBaseWindow::eDelayResize);
+    }
   }
 
   aDesiredSize.SetOverflowAreasToDesiredBounds();
