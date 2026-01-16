@@ -140,7 +140,15 @@ void nsSubDocumentFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
   nsAtomicContainerFrame::Init(aContent, aParent, aPrevInFlow);
 
-  aContent->SetPrimaryFrame(this);
+  // The only case we expect an existing primary frame is if we're replicating
+  // fixed-positioned frames on a paginated document. In that case we don't want
+  // to mess around with the frameloader, or lose track of our real primary
+  // frame. That matches what the frame constructor does for all other frames.
+  MOZ_ASSERT_IF(aContent->GetPrimaryFrame(),
+                PresContext()->IsRootPaginatedDocument());
+  if (MOZ_LIKELY(!aContent->GetPrimaryFrame())) {
+    aContent->SetPrimaryFrame(this);
+  }
 
   // If we have a detached subdoc's root view on our frame loader, re-insert it
   // into the view tree. This happens when we've been reframed, and ensures the
