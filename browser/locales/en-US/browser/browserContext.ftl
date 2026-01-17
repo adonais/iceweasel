@@ -167,7 +167,7 @@ main-context-menu-save-link =
 
 main-context-menu-download-link =
     .label = Download Link With Upcheck
-    
+
 main-context-menu-copy-email =
     .label = Copy Email Address
     .accesskey = l

@@ -37,19 +37,6 @@ const { BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN } = Ci.nsICookieService;
 
 const PASSWORD_MANAGER_PREF_ID = "services.passwordSavingEnabled";
 
-ChromeUtils.defineLazyGetter(this, "AlertsServiceDND", function () {
-  try {
-    let alertsService = Cc["@mozilla.org/alerts-service;1"]
-      .getService(Ci.nsIAlertsService)
-      .QueryInterface(Ci.nsIAlertsDoNotDisturb);
-    // This will throw if manualDoNotDisturb isn't implemented.
-    alertsService.manualDoNotDisturb;
-    return alertsService;
-  } catch (ex) {
-    return undefined;
-  }
-});
-
 ChromeUtils.defineLazyGetter(lazy, "AboutLoginsL10n", () => {
   return new Localization(["branding/brand.ftl", "browser/aboutLogins.ftl"]);
 });
@@ -2327,20 +2314,6 @@ Preferences.addSetting({
   },
 });
 Preferences.addSetting({
-  id: "notificationsDoNotDisturb",
-  get: () => {
-    return AlertsServiceDND?.manualDoNotDisturb ?? false;
-  },
-  set: value => {
-    if (AlertsServiceDND) {
-      AlertsServiceDND.manualDoNotDisturb = value;
-    }
-  },
-  visible: () => {
-    return AlertsServiceDND != undefined;
-  },
-});
-Preferences.addSetting({
   id: "locationSettingsButton",
   onUserClick: () => gPrivacyPane.showLocationExceptions(),
 });
@@ -3572,21 +3545,6 @@ var gPrivacyPane = {
     );
 
     setSyncFromPrefListener("savePasswords", () => this.readSavePasswords());
-
-    if (AlertsServiceDND) {
-      let notificationsDoNotDisturbBox = document.getElementById(
-        "notificationsDoNotDisturbBox"
-      );
-      notificationsDoNotDisturbBox.removeAttribute("hidden");
-      let checkbox = document.getElementById("notificationsDoNotDisturb");
-      document.l10n.setAttributes(checkbox, "permissions-notification-pause");
-      if (AlertsServiceDND.manualDoNotDisturb) {
-        let notificationsDoNotDisturb = document.getElementById(
-          "notificationsDoNotDisturb"
-        );
-        notificationsDoNotDisturb.setAttribute("checked", true);
-      }
-    }
 
     this.initSiteDataControls();
 

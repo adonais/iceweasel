@@ -2755,10 +2755,6 @@ SettingGroupManager.registerGroups({
           },
         ],
       },
-      {
-        id: "notificationsDoNotDisturb",
-        l10nId: "permissions-notification-pause",
-      },
     ],
   },
   dnsOverHttps: {
