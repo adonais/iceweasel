@@ -7853,8 +7853,8 @@ nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
   //         historyEntry's navigation API key to entryToReplace's
   //         navigation API key.
   bool isReplace =
-      mActiveEntry && mLoadingEntry && IsValidLoadType(mLoadType) &&
-      NavigationUtils::NavigationTypeFromLoadType(mLoadType)
+      mActiveEntry && mLoadingEntry &&
+      mLoadingEntry->mTriggeringNavigationType
           .map([](auto type) { return type == NavigationType::Replace; })
           .valueOr(false);
   if (isReplace) {
