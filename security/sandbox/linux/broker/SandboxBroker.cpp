@@ -189,6 +189,15 @@ void SandboxBroker::Policy::AddPath(int aPerms, const char* aPath,
   perms |= aPerms;
 }
 
+void SandboxBroker::Policy::RemoveAllDenyRules() {
+  for (auto iter = mMap.Iter(); !iter.Done(); iter.Next()) {
+    iter.Data() &= ~FORCE_DENY;
+    if ((iter.Data() & ~RECURSIVE) == 0) {
+      iter.Remove();
+    }
+  }
+}
+
 void SandboxBroker::Policy::AddTree(int aPerms, const char* aPath) {
   struct stat statBuf;
 
