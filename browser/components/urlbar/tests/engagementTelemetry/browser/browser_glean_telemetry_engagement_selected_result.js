@@ -429,10 +429,19 @@ add_task(async function selected_result_tab_adaptive() {
     await PlacesTestUtils.addVisits("https://example.com/");
     await UrlbarUtils.addToInputHistory("https://example.com/", "exa");
 
+    // TODO - Bug 2011291: When this test is run in verify mode, it will
+    // regularly fail to select a switch to tab result. Adding a warm up
+    // "solves" the issue.
+    await openPopup("warmup");
+    await UrlbarTestUtils.promisePopupClose(window);
+
     await openPopup("exa");
     await selectRowByProvider("UrlbarProviderInputHistory");
     EventUtils.synthesizeKey("KEY_Enter");
-    await BrowserTestUtils.waitForCondition(() => gBrowser.selectedTab === tab);
+    await BrowserTestUtils.waitForCondition(
+      () => gBrowser.selectedTab === tab,
+      "Waiting for selected tab to be the tab we opened."
+    );
 
     assertEngagementTelemetry([
       {
@@ -461,9 +470,9 @@ add_task(async function selected_result_tab_adaptive_serp() {
     await PlacesTestUtils.addVisits(serpUrl);
     await UrlbarUtils.addToInputHistory(serpUrl, "test sea");
 
-    // For some reason, when this test is run first the provider is
-    // UrlbarProviderPlaces instead of InputHistory. So do a simple warm up
-    // operation.
+    // TODO - Bug 2011291: When this test is run in verify mode, it will
+    // regularly fail to select a switch to tab result. Adding a warm up
+    // "solves" the issue.
     await openPopup("warmup");
     await UrlbarTestUtils.promisePopupClose(window);
 
@@ -471,7 +480,10 @@ add_task(async function selected_result_tab_adaptive_serp() {
     await selectRowByProvider("UrlbarProviderInputHistory");
 
     EventUtils.synthesizeKey("KEY_Enter");
-    await BrowserTestUtils.waitForCondition(() => gBrowser.selectedTab === tab);
+    await BrowserTestUtils.waitForCondition(
+      () => gBrowser.selectedTab === tab,
+      "Waiting for selected tab to be the tab we opened."
+    );
 
     assertEngagementTelemetry([
       {
