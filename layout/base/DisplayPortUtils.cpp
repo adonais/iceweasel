@@ -1394,28 +1394,29 @@ bool DisplayPortUtils::ShouldAsyncScrollWithAnchor(
   MOZ_ASSERT(!aAxes.isEmpty());
 
   // ShouldAsyncScrollWithAnchorNotCached can call recursively and modify
-  // AsyncScrollsWithAnchorHashmap, so we use this to only do one hashtable
-  // lookup and only call ShouldAsyncScrollWithAnchorNotCached if not already
-  // present in the hashtable.
-  bool wasPresent = true;
-  auto& entry = aBuilder->AsyncScrollsWithAnchorHashmap().LookupOrInsertWith(
-      aFrame, [&]() {
-        wasPresent = false;
-        return true;
-      });
-  if (!wasPresent) {
-    bool reportToDoc = false;
-    entry = ShouldAsyncScrollWithAnchorNotCached(aFrame, aAnchor, aBuilder,
-                                                 aAxes, &reportToDoc);
-    if (!entry && reportToDoc) {
-      auto* pc = aFrame->PresContext();
-      pc->Document()->ReportHasScrollLinkedEffect(
-          pc->RefreshDriver()->MostRecentRefresh(),
-          dom::Document::ReportToConsole::No);
-    }
+  // AsyncScrollsWithAnchorHashmap, so we have to be careful to not hold an
+  // entry in the hashtable during a call to
+  // ShouldAsyncScrollWithAnchorNotCached. Unfortunately this means that we have
+  // to do two hashtable lookups if the frame is not present in the hashtable.
+  if (auto entry = aBuilder->AsyncScrollsWithAnchorHashmap().Lookup(aFrame)) {
+    return *entry;
+  }
+  bool reportToDoc = false;
+  bool shouldAsyncScrollWithAnchor = ShouldAsyncScrollWithAnchorNotCached(
+      aFrame, aAnchor, aBuilder, aAxes, &reportToDoc);
+  {
+    bool& entry =
+        aBuilder->AsyncScrollsWithAnchorHashmap().LookupOrInsert(aFrame);
+    entry = shouldAsyncScrollWithAnchor;
+  }
+  if (reportToDoc) {
+    auto* pc = aFrame->PresContext();
+    pc->Document()->ReportHasScrollLinkedEffect(
+        pc->RefreshDriver()->MostRecentRefresh(),
+        dom::Document::ReportToConsole::No);
   }
 
-  return entry;
+  return shouldAsyncScrollWithAnchor;
 }
 
 }  // namespace mozilla
