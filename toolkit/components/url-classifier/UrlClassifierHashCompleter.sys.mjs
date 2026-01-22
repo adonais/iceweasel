@@ -547,8 +547,7 @@ class HashCompleterRequestBase {
   // This adds a complete hash to any entry in |this._requests| that matches
   // the hash.
   handleItem(aData) {
-    // Only perform provider check if the table name is provided. The table name
-    // can be missing for V5 because the response doesn't contain a table name.
+    // Only perform provider check if the table name is provided.
     if (aData.tableName) {
       let provider = lazy.gUrlUtil.getProvider(aData.tableName);
       if (provider != this.provider) {
@@ -956,9 +955,9 @@ class HashCompleterRequestV4 extends HashCompleterRequestBase {
             ")"
         );
 
-        // Filter table names which we didn't requested.
+        // Filter table names which we didn't request.
         let filteredTables = aTableNames.split(",").filter(name => {
-          return this.tableNames.get(name);
+          return this.tableNames.has(name);
         });
         if (0 === filteredTables.length) {
           log("ERROR: Got complete hash which is from unknown table.");
@@ -1109,8 +1108,21 @@ class HashCompleterRequestV5 extends HashCompleterRequestBase {
             ")"
         );
 
+        // Filter table names which we didn't request.
+        let filteredTables = aTableNames.split(",").filter(name => {
+          return this.tableNames.has(name);
+        });
+        if (0 === filteredTables.length) {
+          log("ERROR: Got complete hash which is from unknown table.");
+          return;
+        }
+        if (filteredTables.length > 1) {
+          log("WARNING: Got complete hash which has ambiguous threat type.");
+        }
+
         this.handleItem({
           completeHash: aCompleteHash,
+          tableName: filteredTables[0],
           cacheDuration: aPerHashCacheDuration,
         });
       },

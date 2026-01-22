@@ -366,6 +366,21 @@ static const struct {
     {"test-google5-malware-proto", "test-4b"},
 };
 
+static const struct {
+  const char* mListName;
+  uint32_t mThreatType;
+} THREAT_TYPE_CONV_TABLE_V5[] = {
+    {"goog-malware-proto", v5::MALWARE},
+#ifdef MOZILLA_OFFICIAL
+    {"goog-phish-proto", v5::SOCIAL_ENGINEERING},
+#else
+    {"googpub-phish-proto", v5::SOCIAL_ENGINEERING},
+#endif
+    {"goog-unwanted-proto", v5::UNWANTED_SOFTWARE},
+    {"goog-harmful-proto", v5::POTENTIALLY_HARMFUL_APPLICATION},
+    {"test-google5-malware-proto", v5::MALWARE},
+};
+
 NS_IMETHODIMP
 nsUrlClassifierUtils::ConvertThreatTypeToListNames(uint32_t aThreatType,
                                                    nsACString& aListNames) {
@@ -420,6 +435,23 @@ nsUrlClassifierUtils::ConvertLocalListNameToServerListNameV5(
   }
 
   return NS_ERROR_FAILURE;
+}
+
+NS_IMETHODIMP
+nsUrlClassifierUtils::ConvertThreatTypeToListNamesV5(uint32_t aThreatType,
+                                                     nsACString& aListNames) {
+  bool found = false;
+  for (uint32_t i = 0; i < std::size(THREAT_TYPE_CONV_TABLE_V5); i++) {
+    if (aThreatType == THREAT_TYPE_CONV_TABLE_V5[i].mThreatType) {
+      if (!aListNames.IsEmpty()) {
+        aListNames.AppendLiteral(",");
+      }
+      aListNames += THREAT_TYPE_CONV_TABLE_V5[i].mListName;
+      found = true;
+    }
+  }
+
+  return found ? NS_OK : NS_ERROR_FAILURE;
 }
 
 NS_IMETHODIMP
@@ -954,8 +986,20 @@ nsUrlClassifierUtils::ParseFindFullHashResponseV5(
   for (auto& fullHash : response.full_hashes()) {
     auto& hash = fullHash.full_hash();
 
+    nsAutoCString tableNames;
+
+    for (auto& fullHashDetail : fullHash.full_hash_details()) {
+      const auto& threatType = fullHashDetail.threat_type();
+
+      nsresult rv = ConvertThreatTypeToListNamesV5(threatType, tableNames);
+      // Ignore un-convertable threat type.
+      if (NS_FAILED(rv)) {
+        continue;
+      }
+    }
+
     aCallback->OnCompleteHashFound(
-        nsDependentCString(hash.c_str(), hash.length()), ""_ns,
+        nsDependentCString(hash.c_str(), hash.length()), tableNames,
         cacheDurationSec);
   }
 

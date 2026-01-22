@@ -125,6 +125,16 @@ interface nsIUrlClassifierUtils : nsISupports
   ACString convertLocalListNameToServerListNameV5(in ACString localListName);
 
   /**
+   * Convert V5 threat type to list name.
+   *
+   * @param Integer to indicate threat type.
+   *
+   * @returns The list names separated by ','. For example,
+   *          'goog-phish-proto,test-phish-proto'.
+   */
+  ACString convertThreatTypeToListNamesV5(in uint32_t threatType);
+
+  /**
    * Make update request for given lists and their states.
    *
    * @param aListNames An array of list name represented in string.

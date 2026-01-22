@@ -83,8 +83,13 @@ nsUrlClassifierTestUtils::MakeFindFullHashResponseV5(
 
   fullHash->set_full_hash(fullHashData.get(), fullHashData.Length());
 
+  v5::FullHash_FullHashDetail* fullHashDetail =
+      fullHash->add_full_hash_details();
+
+  fullHashDetail->set_threat_type(v5::MALWARE);
+
   v5::Duration* duration = response.mutable_cache_duration();
-  duration->set_seconds(1800);
+  duration->set_seconds(300);
   duration->set_nanos(0);
 
   std::string s;
