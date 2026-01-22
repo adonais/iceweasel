@@ -991,6 +991,7 @@ class MochitestDesktop:
         self.prefs_by_manifest = defaultdict(set)
         self.env_vars_by_manifest = defaultdict(set)
         self.tests_dirs_by_manifest = defaultdict(set)
+        self.profile_path_by_manifest = defaultdict(set)
         self._active_tests = None
         self.currentTests = None
         self._locations = None
@@ -1835,8 +1836,15 @@ toolbar#nav-bar {
             self.prefs_by_manifest[manifest_key].add(test.get("prefs"))
             self.env_vars_by_manifest[manifest_key].add(test.get("environment"))
             self.tests_dirs_by_manifest[manifest_key].add(test.get("test-directories"))
+            self.profile_path_by_manifest[manifest_key].add(test.get("profile-path"))
 
-            for key in ["args", "prefs", "environment", "test-directories"]:
+            for key in [
+                "args",
+                "prefs",
+                "environment",
+                "test-directories",
+                "profile-path",
+            ]:
                 if key in test and not options.runByManifest and "disabled" not in test:
                     self.log.error(
                         "parsing {}: runByManifest mode must be enabled to "
@@ -1899,6 +1907,17 @@ toolbar#nav-bar {
                 "The 'environment' key must be set in the DEFAULT section of a "
                 "manifest. Fix the following manifests: {}".format(
                     "\n".join(env_not_default)
+                )
+            )
+            sys.exit(1)
+        profile_path_not_default = [
+            m for m, p in self.profile_path_by_manifest.items() if len(p) > 1
+        ]
+        if profile_path_not_default:
+            self.log.error(
+                "The 'profile-path' key must be set in the DEFAULT section of a "
+                "manifest. Fix the following manifests: {}".format(
+                    "\n".join(profile_path_not_default)
                 )
             )
             sys.exit(1)
@@ -3097,7 +3116,10 @@ toolbar#nav-bar {
         self.expectedError.clear()
         self.result.clear()
         options.manifestFile = None
-        options.profilePath = None
+        # When runByManifest is true, runTests already sets profilePath
+        # appropriately for each manifest (from profile-path key, or None).
+        if not options.runByManifest:
+            options.profilePath = None
 
     def initializeVirtualAudioDevices(self):
         """
@@ -3632,13 +3654,21 @@ toolbar#nav-bar {
             self.extraEnv = {}
             if envVars:
                 self.extraEnv = envVars.strip().split()
+                env_list = "\n  ".join(self.extraEnv)
                 self.log.info(
-                    "The following extra environment variables will be set:\n  {}".format(
-                        "\n  ".join(self.extraEnv)
-                    )
+                    f"The following extra environment variables will be set:\n  {env_list}"
                 )
 
             self.parseAndCreateTestsDirs(m)
+
+            profilePath = list(self.profile_path_by_manifest[m])[0]
+            if profilePath:
+                options.profilePath = os.path.expanduser(profilePath.strip())
+                self.log.info(
+                    f"The following profile path will be set:\n  {options.profilePath}"
+                )
+            else:
+                options.profilePath = None
 
             # If we are using --run-by-manifest, we should not use the profile path (if) provided
             # by the user, since we need to create a new directory for each run. We would face
