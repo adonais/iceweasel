@@ -788,6 +788,7 @@ static bool MayNeedToFlushLayout(NonCustomCSSPropertyId aPropId) {
     case eCSSProperty_perspective_origin:
     case eCSSProperty_transform_origin:
     case eCSSProperty_transform:
+    case eCSSProperty__webkit_transform:
     case eCSSProperty_top:
     case eCSSProperty_right:
     case eCSSProperty_bottom:
@@ -912,6 +913,7 @@ bool nsComputedDOMStyle::NeedsToFlushLayout(
     case eCSSProperty_transform_origin:
       return style->StyleDisplay()->mTransformOrigin.HasPercent();
     case eCSSProperty_transform:
+    case eCSSProperty__webkit_transform:
       return style->StyleDisplay()->mTransform.HasPercent();
     case eCSSProperty_top:
     case eCSSProperty_right:
@@ -1239,6 +1241,10 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetPerspectiveOrigin() {
 already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetTransform() {
   const nsStyleDisplay* display = StyleDisplay();
   return GetTransformValue(display->mTransform);
+}
+
+already_AddRefed<CSSValue> nsComputedDOMStyle::DoGetWebkitTransform() {
+  return DoGetTransform();
 }
 
 /* static */
