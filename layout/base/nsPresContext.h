@@ -160,7 +160,7 @@ class nsPresContext : public nsISupports,
   /**
    * Initialize the presentation context from a particular device.
    */
-  nsresult Init(nsDeviceContext* aDeviceContext);
+  void Init(nsDeviceContext*);
 
   /**
    * Initialize the font cache if it hasn't been initialized yet.

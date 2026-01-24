@@ -37,6 +37,9 @@ export const FormAutofillHeuristics = {
 
   CREDIT_CARD_FIELDNAMES: [],
   ADDRESS_FIELDNAMES: [],
+
+  useTestYear: null, // set by tests to the current year to use
+
   /**
    * Try to find a contiguous sub-array within an array.
    *
@@ -104,7 +107,7 @@ export const FormAutofillHeuristics = {
     const options = [...element.options];
     // A normal expiration year select should contain at least the last three years
     // in the list.
-    const curYear = new Date().getFullYear();
+    const curYear = this.useTestYear || new Date().getFullYear();
     const desiredValues = Array(3)
       .fill(0)
       .map((v, i) => v + curYear + i);

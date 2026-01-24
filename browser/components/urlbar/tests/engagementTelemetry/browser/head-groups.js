@@ -37,6 +37,64 @@ async function doAdaptiveHistoryTest({ trigger, assert }) {
   await SpecialPowers.popPrefEnv();
 }
 
+async function doAdaptiveHistorySerpHistoryTest({ trigger, assert }) {
+  let defaultEngine = await Services.search.getDefault();
+  let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
+
+  await doTest(async () => {
+    await PlacesTestUtils.addVisits(serpUrl);
+    await UrlbarUtils.addToInputHistory(serpUrl, "test sea");
+
+    await openPopup("test sea");
+    await selectRowByProvider("UrlbarProviderInputHistory");
+
+    await trigger();
+    await assert();
+  });
+}
+
+async function doAdaptiveHistoryBookmarkTest({ trigger, assert }) {
+  await doTest(async () => {
+    await PlacesTestUtils.addVisits("https://example.com/test");
+
+    await PlacesUtils.bookmarks.insert({
+      parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+      url: "https://example.com/test",
+      title: "bookmark",
+    });
+
+    await UrlbarUtils.addToInputHistory("https://example.com/test", "test");
+
+    await openPopup("test");
+    await selectRowByProvider("UrlbarProviderInputHistory");
+
+    await trigger();
+    await assert();
+  });
+}
+
+async function doAdaptiveHistoryBookmarkSerpHistoryTest({ trigger, assert }) {
+  await doTest(async () => {
+    let defaultEngine = await Services.search.getDefault();
+    let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
+
+    await PlacesUtils.bookmarks.insert({
+      parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+      url: serpUrl,
+      title: "bookmark",
+    });
+
+    await PlacesTestUtils.addVisits(serpUrl);
+    await UrlbarUtils.addToInputHistory(serpUrl, "test");
+
+    await openPopup("test");
+    await selectRowByProvider("UrlbarProviderInputHistory");
+
+    await trigger();
+    await assert();
+  });
+}
+
 async function doSearchHistoryTest({ trigger, assert }) {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -348,6 +406,69 @@ async function doSerpHistoryTest({ trigger, assert }) {
     await trigger();
     await assert();
   });
+}
+
+async function doBookmarkSerpHistoryTest({ trigger, assert }) {
+  await doTest(async () => {
+    let defaultEngine = await Services.search.getDefault();
+    let serpUrl = defaultEngine.getSubmission("test search", null).uri.spec;
+
+    await PlacesUtils.bookmarks.insert({
+      parentGuid: PlacesUtils.bookmarks.unfiledGuid,
+      url: serpUrl,
+      title: "bookmark",
+    });
+
+    await openPopup("test");
+    await selectRowByURL(serpUrl);
+
+    await trigger();
+    await assert();
+  });
+}
+
+async function doTabAdaptiveTest({ trigger, assert }) {
+  let visited = PlacesTestUtils.waitForNotification("page-visited", visits =>
+    visits.some(({ url }) => url == "https://example.com/")
+  );
+  let tab = BrowserTestUtils.addTab(gBrowser, "https://example.com/");
+  await visited;
+
+  await doTest(async () => {
+    await PlacesTestUtils.addVisits("https://example.com/");
+    await UrlbarUtils.addToInputHistory("https://example.com/", "exa");
+
+    await openPopup("exa");
+    await selectRowByProvider("UrlbarProviderInputHistory");
+
+    await trigger();
+    await assert();
+  });
+
+  BrowserTestUtils.removeTab(tab);
+}
+
+async function doTabAdaptiveSerpHistoryTest({ trigger, assert }) {
+  let defaultEngine = await Services.search.getDefault();
+  const searchUrl = defaultEngine.getSubmission("serp history", null).uri.spec;
+  let visited = PlacesTestUtils.waitForNotification("page-visited", visits =>
+    visits.some(({ url }) => url == searchUrl)
+  );
+  let tab = BrowserTestUtils.addTab(gBrowser, searchUrl);
+  await visited;
+
+  await doTest(async () => {
+    await PlacesTestUtils.addVisits(searchUrl);
+    await UrlbarUtils.addToInputHistory(searchUrl, "serp");
+
+    await openPopup("serp");
+    await selectRowByURL(searchUrl);
+
+    await trigger();
+    await assert();
+  });
+
+  BrowserTestUtils.removeTab(tab);
 }
 
 async function doTabSerpHistoryTest({ trigger, assert }) {

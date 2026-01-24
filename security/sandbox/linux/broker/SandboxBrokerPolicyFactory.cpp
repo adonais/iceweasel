@@ -842,6 +842,7 @@ UniquePtr<SandboxBroker::Policy> SandboxBrokerPolicyFactory::GetContentPolicy(
   // No read blocking at level 2 and below.
   // file:// processes also get global read permissions
   if (level <= 2 || aFileProcess) {
+    policy->RemoveAllDenyRules();
     policy->AddTree(rdonly, "/");
     // Any other read-only rules will be removed as redundant by
     // Policy::FixRecursivePermissions, so there's no need to

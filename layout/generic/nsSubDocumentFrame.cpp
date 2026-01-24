@@ -140,7 +140,15 @@ void nsSubDocumentFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
   nsAtomicContainerFrame::Init(aContent, aParent, aPrevInFlow);
 
-  aContent->SetPrimaryFrame(this);
+  // The only case we expect an existing primary frame is if we're replicating
+  // fixed-positioned frames on a paginated document. In that case we don't want
+  // to mess around with the frameloader, or lose track of our real primary
+  // frame. That matches what the frame constructor does for all other frames.
+  MOZ_ASSERT_IF(aContent->GetPrimaryFrame(),
+                PresContext()->IsRootPaginatedDocument());
+  if (MOZ_LIKELY(!aContent->GetPrimaryFrame())) {
+    aContent->SetPrimaryFrame(this);
+  }
 
   // If we have a detached subdoc's root view on our frame loader, re-insert it
   // into the view tree. This happens when we've been reframed, and ensures the
@@ -170,6 +178,11 @@ void nsSubDocumentFrame::UpdateEmbeddedBrowsingContextDependentData() {
     return;
   }
   mIsInObjectOrEmbed = bc->IsEmbedderTypeObjectOrEmbed();
+  const bool isOrIsGoingToBePrimaryFrame =
+      MOZ_LIKELY(IsPrimaryFrame() || !mContent->GetPrimaryFrame());
+  if (!isOrIsGoingToBePrimaryFrame) {
+    return;
+  }
   MaybeUpdateRemoteStyle();
   MaybeUpdateEmbedderColorScheme();
   MaybeUpdateEmbedderZoom();
@@ -232,10 +245,18 @@ nsIFrame* nsSubDocumentFrame::GetSubdocumentRootFrame() {
 
 mozilla::PresShell* nsSubDocumentFrame::GetSubdocumentPresShellForPainting(
     uint32_t aFlags) {
-  mozilla::PresShell* presShell = GetSubdocumentPresShell();
-  if (presShell && (!presShell->IsPaintingSuppressed() ||
-                    (aFlags & IGNORE_PAINT_SUPPRESSION))) {
-    return presShell;
+  mozilla::PresShell* ps = GetSubdocumentPresShell();
+  if (ps) {
+    if (auto* pc = ps->GetPresContext()) {
+      if (pc->Type() == nsPresContext::eContext_Print &&
+          pc->Type() != PresContext()->Type()) {
+        // Don't paint from non-print to print frames.
+        return nullptr;
+      }
+    }
+    if (!ps->IsPaintingSuppressed() || (aFlags & IGNORE_PAINT_SUPPRESSION)) {
+      return ps;
+    }
   }
   // If painting is suppressed in the presshell or there's no presShell, we try
   // to look for a better presshell to use.
@@ -245,7 +266,7 @@ mozilla::PresShell* nsSubDocumentFrame::GetSubdocumentPresShellForPainting(
       return old;
     }
   }
-  return presShell;
+  return ps;
 }
 
 nsRect nsSubDocumentFrame::GetDestRect() const {
@@ -643,7 +664,8 @@ void nsSubDocumentFrame::Reflow(nsPresContext* aPresContext,
                "Shouldn't have unconstrained block-size here "
                "thanks to ComputeAutoSize");
 
-  NS_ASSERTION(mContent->GetPrimaryFrame() == this, "Shouldn't happen");
+  NS_ASSERTION(IsPrimaryFrame() || PresContext()->IsRootPaginatedDocument(),
+               "Shouldn't happen");
 
   // XUL <iframe> or <browser>, or HTML <iframe>, <object> or <embed>
   const auto wm = aReflowInput.GetWritingMode();
@@ -664,8 +686,10 @@ void nsSubDocumentFrame::Reflow(nsPresContext* aPresContext,
     auto rect = LayoutDeviceIntRect::FromAppUnitsToInside(
         destRect, PresContext()->AppUnitsPerDevPixel());
     mExtraOffset = destRect.TopLeft();
-    nsDocShell::Cast(ds)->SetPositionAndSize(0, 0, rect.width, rect.height,
-                                             nsIBaseWindow::eDelayResize);
+    if (IsPrimaryFrame()) {
+      nsDocShell::Cast(ds)->SetPositionAndSize(0, 0, rect.width, rect.height,
+                                               nsIBaseWindow::eDelayResize);
+    }
   }
 
   aDesiredSize.SetOverflowAreasToDesiredBounds();

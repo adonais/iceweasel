@@ -1474,6 +1474,9 @@ async function triggerCapture(browser, submitButtonSelector, fillSelectors) {
  * @param {object} patterns.captureExpectedRecord
  *        The expected saved record after capturing the form. Keyed by field name. This
  *        parameter is only used when `options.testCapture` is set.
+ * @param {boolean} patterns.useTestYear
+ *        Set to the current year to assign while running the test, useful for credit
+ *        card expiry tests with a manual set of year options in the dropdown.
  * @param {object} patterns.only
  *        This parameter is used solely for debugging purposes. When set to true,
  *        it restricts the execution to only the specified testcase.
@@ -1598,16 +1601,32 @@ async function add_heuristic_tests(
       const sleepAfterFocus = contexts.length > 1;
 
       for (const context of contexts) {
-        await SpecialPowers.spawn(context, [], async () => {
-          const elements = Array.from(
-            content.document.querySelectorAll("input, select")
-          );
-          // Focus on each field in the test document to trigger autofill field detection
-          // on all the fields.
-          elements.forEach(element => {
-            element.focus();
-          });
-        });
+        await SpecialPowers.spawn(
+          context,
+          [testPattern.useTestYear],
+          async year => {
+            let FormAutofillHeuristics;
+            if (year) {
+              FormAutofillHeuristics = ChromeUtils.importESModule(
+                "resource://gre/modules/shared/FormAutofillHeuristics.sys.mjs"
+              ).FormAutofillHeuristics;
+              FormAutofillHeuristics.useTestYear = year;
+            }
+
+            const elements = Array.from(
+              content.document.querySelectorAll("input, select")
+            );
+            // Focus on each field in the test document to trigger autofill field detection
+            // on all the fields.
+            elements.forEach(element => {
+              element.focus();
+            });
+
+            if (year) {
+              FormAutofillHeuristics.useTestYear = null;
+            }
+          }
+        );
 
         try {
           await BrowserTestUtils.synthesizeKey("VK_ESCAPE", {}, context);

@@ -446,6 +446,9 @@ class PlacesSemanticHistoryManager {
         try {
           lazy.logger.info("Running vector DB update task...");
           let conn = await this.getConnection();
+          if (!conn) {
+            return;
+          }
           let pagesRankChangedCount =
             PlacesObservers.counts.get("pages-rank-changed") +
             PlacesObservers.counts.get("history-cleared") +

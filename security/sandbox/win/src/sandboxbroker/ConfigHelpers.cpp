@@ -31,9 +31,11 @@ SizeTrackingConfig::SizeTrackingConfig(sandbox::TargetConfig* aConfig,
   MOZ_ASSERT(mConfig);
 
   // The calculation uses the kPolMemPageCount constant in sandbox_policy.h.
-  // We reduce the allowable size by 1 to account for the PolicyGlobal.
+  // We reduce the allowable size by 2 to account for the PolicyGlobal and
+  // padding that occurs during LowLevelPolicy::Done. See bug 2009140.
   MOZ_ASSERT(aStoragePages > 0);
-  MOZ_ASSERT(static_cast<size_t>(aStoragePages) < sandbox::kPolMemPageCount);
+  MOZ_ASSERT(static_cast<size_t>(aStoragePages) <=
+             sandbox::kPolMemPageCount - 2);
 
   constexpr int32_t kOneMemPage = 4096;
   mRemainingSize = kOneMemPage * aStoragePages;

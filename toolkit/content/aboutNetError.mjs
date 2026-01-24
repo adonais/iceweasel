@@ -846,16 +846,10 @@ function setNetErrorMessageFromCode() {
     console.warn("This error page has no error code in its security info");
   }
 
-  let hostname = HOST_NAME;
-  const { port } = document.location;
-  if (port && port != 443) {
-    hostname += ":" + port;
-  }
-
   const shortDesc = document.getElementById("errorShortDesc");
   document.l10n.setAttributes(shortDesc, "cert-error-ssl-connection-error", {
     errorMessage: errorMessage ?? errorCode ?? "",
-    hostname,
+    hostname: HOST_NAME,
   });
 }
 
@@ -1226,12 +1220,6 @@ function setTechnicalDetailsOnCertError(
     });
   }
 
-  let hostname = HOST_NAME;
-  const { port } = document.location;
-  if (port && port != 443) {
-    hostname += ":" + port;
-  }
-
   switch (failedCertInfo.overridableErrorCategory) {
     case "trust-error":
       switch (failedCertInfo.errorCodeString) {
@@ -1242,33 +1230,35 @@ function setTechnicalDetailsOnCertError(
           break;
         case "SEC_ERROR_UNKNOWN_ISSUER":
           addLabel("cert-error-trust-unknown-issuer-intro");
-          addLabel("cert-error-trust-unknown-issuer", { hostname });
+          addLabel("cert-error-trust-unknown-issuer", { hostname: HOST_NAME });
           break;
         case "SEC_ERROR_CA_CERT_INVALID":
-          addLabel("cert-error-intro", { hostname });
+          addLabel("cert-error-intro", { hostname: HOST_NAME });
           addLabel("cert-error-trust-cert-invalid");
           break;
         case "SEC_ERROR_UNTRUSTED_ISSUER":
-          addLabel("cert-error-intro", { hostname });
+          addLabel("cert-error-intro", { hostname: HOST_NAME });
           addLabel("cert-error-trust-untrusted-issuer");
           break;
         case "SEC_ERROR_CERT_SIGNATURE_ALGORITHM_DISABLED":
-          addLabel("cert-error-intro", { hostname });
+          addLabel("cert-error-intro", { hostname: HOST_NAME });
           addLabel("cert-error-trust-signature-algorithm-disabled");
           break;
         case "SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE":
-          addLabel("cert-error-intro", { hostname });
+          addLabel("cert-error-intro", { hostname: HOST_NAME });
           addLabel("cert-error-trust-expired-issuer");
           break;
         case "MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT":
-          addLabel("cert-error-intro", { hostname });
+          addLabel("cert-error-intro", { hostname: HOST_NAME });
           addLabel("cert-error-trust-self-signed");
           break;
         case "MOZILLA_PKIX_ERROR_INSUFFICIENT_CERTIFICATE_TRANSPARENCY":
-          addLabel("cert-error-trust-certificate-transparency", { hostname });
+          addLabel("cert-error-trust-certificate-transparency", {
+            hostname: HOST_NAME,
+          });
           break;
         default:
-          addLabel("cert-error-intro", { hostname });
+          addLabel("cert-error-intro", { hostname: HOST_NAME });
           addLabel("cert-error-untrusted-default");
       }
       addErrorCodeLink();
@@ -1279,12 +1269,12 @@ function setTechnicalDetailsOnCertError(
       const notAfter = failedCertInfo.validNotAfter;
       if (notBefore && Date.now() < notAfter) {
         addLabel("cert-error-not-yet-valid-now", {
-          hostname,
+          hostname: HOST_NAME,
           "not-before-local-time": formatter.format(new Date(notBefore)),
         });
       } else {
         addLabel("cert-error-expired-now", {
-          hostname,
+          hostname: HOST_NAME,
           "not-after-local-time": formatter.format(new Date(notAfter)),
         });
       }
@@ -1295,11 +1285,11 @@ function setTechnicalDetailsOnCertError(
     case "domain-mismatch":
       getSubjectAltNames(failedCertInfo).then(subjectAltNames => {
         if (!subjectAltNames.length) {
-          addLabel("cert-error-domain-mismatch", { hostname });
+          addLabel("cert-error-domain-mismatch", { hostname: HOST_NAME });
         } else if (subjectAltNames.length > 1) {
           const names = subjectAltNames.join(", ");
           addLabel("cert-error-domain-mismatch-multiple", {
-            hostname,
+            hostname: HOST_NAME,
             "subject-alt-names": names,
           });
         } else {
@@ -1333,7 +1323,7 @@ function setTechnicalDetailsOnCertError(
              */
             HOST_NAME.endsWith("." + okHost);
 
-          const l10nArgs = { hostname, "alt-name": altName };
+          const l10nArgs = { hostname: HOST_NAME, "alt-name": altName };
           if (showLink) {
             // Set the link if we want it.
             const proto = document.location.protocol + "//";
@@ -1392,7 +1382,7 @@ function setTechnicalDetailsOnCertError(
   if (failedCertInfo.errorCodeString in nonoverridableErrorCodeToLabelMap) {
     addLabel(
       nonoverridableErrorCodeToLabelMap[failedCertInfo.errorCodeString],
-      { hostname }
+      { hostname: HOST_NAME }
     );
     addErrorCodeLink();
   }
