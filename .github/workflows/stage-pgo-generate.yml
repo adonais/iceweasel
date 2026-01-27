@@ -103,6 +103,7 @@ jobs:
           exit 255
         fi
         tar Jxf rust.tar.xz -C "$MOZ_FETCHES_DIR"
+        chmod -R 755 "$MOZ_FETCHES_DIR/rust"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/vs.tar.xz?viasf=1 -O vs.tar.xz
         if [ $? -ne 0 ]; then
           echo Download vs failed
