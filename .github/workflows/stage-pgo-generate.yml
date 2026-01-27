@@ -61,7 +61,7 @@ jobs:
           exit 255
         fi
         tar Jxf cbindgen.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/clang21.tar.xz?viasf=1 -O clang.tar.xz
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/clang20.tar.xz?viasf=1 -O clang.tar.xz
         if [ $? -ne 0 ]; then
           echo Download clang failed
           exit 255
@@ -97,7 +97,7 @@ jobs:
           exit 255
         fi
         tar Jxf onnxruntime.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/rust193.tar.xz?viasf=1 -O rust.tar.xz
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/rust19.tar.xz?viasf=1 -O rust.tar.xz
         if [ $? -ne 0 ]; then
           echo Download rust failed
           exit 255
