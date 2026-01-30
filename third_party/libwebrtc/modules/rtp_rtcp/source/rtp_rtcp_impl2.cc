@@ -574,9 +574,13 @@ void ModuleRtpRtcpImpl2::SetExtmapAllowMixed(bool extmap_allow_mixed) {
 
 void ModuleRtpRtcpImpl2::RegisterRtpHeaderExtension(absl::string_view uri,
                                                     int id) {
+  RTC_LOG(LS_INFO) << "RegisterRtpHeaderExtension uri:'" << uri << "' id: " << id;
   bool registered =
       rtp_sender_->packet_generator.RegisterRtpHeaderExtension(uri, id);
-  RTC_CHECK(registered);
+  if (!registered) {
+    RTC_LOG(LS_WARNING) << "RegisterRtpHeaderExtension failed to register uri:'" << uri << "' id: " << id;
+  }
+  RTC_DCHECK(registered);
 }
 
 void ModuleRtpRtcpImpl2::DeregisterSendRtpHeaderExtension(
