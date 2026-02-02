@@ -1963,7 +1963,7 @@ iceweasel-libportable-download-description =
     and also supports browser download items. You must first enable the userChrome environment.
 iceweasel-libportable-download-warning1 = You can also easily integrate downloaders manually; see the project Issues for details.
 iceweasel-libportable-download-pop = downloadUpcheck installed successfully<br>Requires browser restart to take effect
-iceweasel-libportable-download-needed = You must first enable the userChrome environment
+iceweasel-libportable-download-needed = Download failed or userChrome environment is not enabled
 iceweasel-libportable-bosskey-description = Default shortcut: Ctrl+Shift+~. Modify via portable.ini.
 iceweasel-libportable-bosskey-warning1 = You need to prevent hotkeys from conflicting with other applications.
 iceweasel-libportable-ontabs-description = Corresponds to the OnTabs option in portable.ini.

@@ -190,7 +190,7 @@
       <html:div> <image src="chrome://global/skin/icons/warning.svg" /> <label data-l10n-id="iceweasel-libportable-warning1" class="iceweasel-warning" /> </html:div>
     </vbox>
   </vbox>
-
+#ifndef MOZ_WIDGET_GTK
   <hbox>
     <checkbox id="iceweasel-libportable-upcheck-checkbox" data-l10n-id="iceweasel-libportable-upcheck-checkbox" flex="1" />
     <html:label for="iceweasel-libportable-upcheck-collapse" class="sidebar-footer-link" pack="end"> <image class="sidebar-footer-icon help-icon"/> </html:label>
@@ -233,7 +233,7 @@
       <checkbox id="iceweasel-right-click-recover" data-l10n-id="iceweasel-right-click-recover" />
     </vbox>
   </vbox>
-
+#endif
   <hbox>
     <checkbox id="iceweasel-libportable-chrome-checkbox" data-l10n-id="iceweasel-libportable-chrome-checkbox" flex="1" />
     <html:div id="iceweasel-chrome-box" class="iceweasel-message-box"> <html:p data-l10n-id="iceweasel-libportable-chrome-pop" class="iceweasel-warning"/> </html:div>

@@ -2117,12 +2117,10 @@ export class nsContextMenu {
   }
 
   downloadLink() {
-    if (AppConstants.platform === "win") {
-      try {
-        upcheck.download_caller(0, this.linkURL, this.contentData.linkReferrerInfo.originalReferrer.spec);
-      } catch (e) {
-        console.log("upcheck downloadLink failed");
-      }
+    try {
+      upcheck.download_caller(0, this.linkURL, this.contentData.linkReferrerInfo.originalReferrer.spec);
+    } catch (e) {
+      console.log("upcheck downloadLink failed");
     }
   }
   // Backwards-compatibility wrapper
