@@ -95,6 +95,8 @@ class AnchorPosReferenceData {
     mozilla::PhysicalAxes mCompensatingForScroll;
     nsPoint mDefaultScrollShift;
     nsRect mAdjustedContainingBlock;
+    SideBits mScrollCompensatedSides;
+    nsMargin mInsets;
   };
   using Value = mozilla::Maybe<AnchorPosResolutionData>;
 
@@ -130,13 +132,19 @@ class AnchorPosReferenceData {
     auto compensatingForScroll = std::exchange(mCompensatingForScroll, {});
     auto defaultScrollShift = std::exchange(mDefaultScrollShift, {});
     auto adjustedContainingBlock = std::exchange(mAdjustedContainingBlock, {});
-    return {compensatingForScroll, defaultScrollShift, adjustedContainingBlock};
+    auto containingBlockSidesAttachedToAnchor =
+        std::exchange(mScrollCompensatedSides, SideBits::eNone);
+    auto insets = std::exchange(mInsets, nsMargin{});
+    return {compensatingForScroll, defaultScrollShift, adjustedContainingBlock,
+            containingBlockSidesAttachedToAnchor, insets};
   }
 
   void UndoTryPositionWithSameDefaultAnchor(PositionTryBackup&& aBackup) {
     mCompensatingForScroll = aBackup.mCompensatingForScroll;
     mDefaultScrollShift = aBackup.mDefaultScrollShift;
     mAdjustedContainingBlock = aBackup.mAdjustedContainingBlock;
+    mScrollCompensatedSides = aBackup.mScrollCompensatedSides;
+    mInsets = aBackup.mInsets;
   }
 
   // Distance from the default anchor to the nearest scroll container.
@@ -154,6 +162,25 @@ class AnchorPosReferenceData {
   // Name of the default used anchor. Not necessarily positioned frame's
   // style, because of fallbacks.
   RefPtr<const nsAtom> mDefaultAnchorName;
+  // Flag indicating which sides of the containing block attach to the
+  // scroll-compensated anchor. Whenever a scroll-compensated anchor scrolls, it
+  // effectively moves around w.r.t. its absolute containing block. This
+  // effectively changes the size of the containing block. For example, given:
+  //
+  // * Absolute containing block of 50px height,
+  // * Scroller, under the abs CB, with the scrolled content height of 100px,
+  // * Anchor element, under the scroller, of 30px height, and
+  // * Positioned element of 30px height, attached to anchor at the bottom.
+  //
+  // The positioned element would overflow the abs CB, until the scroller moves
+  // down by 10px. We address this by defining sides of the CB that scrolls
+  // with the anchor, so that whenever we carry out an overflow check, we move
+  // those sides by the scroll offset, while pinning the rest of the sides to
+  // the original containing block.
+  SideBits mScrollCompensatedSides = SideBits::eNone;
+  // Resolved insets for this positioned element. Modifies the adjusted &
+  // scrolled containing block.
+  nsMargin mInsets;
 
  private:
   ResolutionMap mMap;
@@ -163,6 +190,7 @@ class AnchorPosReferenceData {
 };
 
 struct LastSuccessfulPositionData {
+  RefPtr<const ComputedStyle> mStyle;
   uint32_t mIndex = 0;
   bool mTriedAllFallbacks = false;
 };

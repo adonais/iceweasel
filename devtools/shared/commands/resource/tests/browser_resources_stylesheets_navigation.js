@@ -111,7 +111,7 @@ add_task(async function () {
   availableResources = [];
 
   info("Check that styleSheetChangeEventsEnabled persist after reloading");
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   const expectedStylesheetResources = 5;
   info(
@@ -140,8 +140,9 @@ add_task(async function () {
   await assertResource(availableResources[3], {
     styleText: `.frame-com-1{}`,
   });
+  // Ensures that the iframe's stylesheet resets to the original one
   await assertResource(availableResources[4], {
-    styleText: `.frame-com-new-bc{}`,
+    styleText: `.frame-com-2{}`,
   });
 
   is(

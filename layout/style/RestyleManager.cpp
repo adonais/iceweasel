@@ -2030,64 +2030,48 @@ RestyleManager::AnimationsWithDestroyedFrame::AnimationsWithDestroyedFrame(
   mRestyleManager->mAnimationsWithDestroyedFrame = this;
 }
 
-void RestyleManager::AnimationsWithDestroyedFrame ::
-    StopAnimationsForElementsWithoutFrames() {
-  StopAnimationsWithoutFrame(mContents, PseudoStyleRequest::NotPseudo());
-  StopAnimationsWithoutFrame(mBeforeContents, PseudoStyleRequest::Before());
-  StopAnimationsWithoutFrame(mAfterContents, PseudoStyleRequest::After());
-  StopAnimationsWithoutFrame(mMarkerContents, PseudoStyleRequest::Marker());
+void RestyleManager::AnimationsWithDestroyedFrame::Put(
+    nsIContent* aContent, ComputedStyle* aComputedStyle) {
+  MOZ_ASSERT(aContent);
+  PseudoStyleType pseudoType = aComputedStyle->GetPseudoType();
+  nsIContent* target = aContent;
+  if (pseudoType == PseudoStyleType::NotPseudo ||
+      !AnimationUtils::StoresAnimationsInParent(pseudoType)) {
+    pseudoType = PseudoStyleType::NotPseudo;
+  } else {
+    target = aContent->GetParent();
+  }
+  mContents.AppendElement(std::make_pair(target->AsElement(), pseudoType));
 }
 
-void RestyleManager::AnimationsWithDestroyedFrame ::StopAnimationsWithoutFrame(
-    nsTArray<RefPtr<Element>>& aArray,
-    const PseudoStyleRequest& aPseudoRequest) {
+void RestyleManager::AnimationsWithDestroyedFrame::
+    StopAnimationsForElementsWithoutFrames() {
   nsPresContext* context = mRestyleManager->PresContext();
   nsAnimationManager* animationManager = context->AnimationManager();
   nsTransitionManager* transitionManager = context->TransitionManager();
   const Document* doc = context->Document();
-  for (Element* element : aArray) {
-    PseudoStyleRequest request = aPseudoRequest;
-
-    switch (aPseudoRequest.mType) {
-      case PseudoStyleType::NotPseudo: {
-        if (element->GetPrimaryFrame()) {
-          continue;
-        }
-
-        // The contents of view transition pseudos are put together with
-        // NotPseudo.
-        const auto type = element->GetPseudoElementType();
-        if (PseudoStyle::IsViewTransitionPseudoElement(type)) {
-          request = {
-              type,
-              element->HasName()
-                  ? element->GetParsedAttr(nsGkAtoms::name)->GetAtomValue()
-                  : nullptr};
-          // View transition pseudo-elements use the document element to look up
-          // their animations.
-          element = doc->GetRootElement();
-          MOZ_ASSERT(element);
-        }
-        break;
+  for (auto& [element, pseudoType] : mContents) {
+    PseudoStyleRequest request(pseudoType);
+    if (pseudoType == PseudoStyleType::NotPseudo) {
+      if (element->GetPrimaryFrame()) {
+        continue;
       }
-      case PseudoStyleType::before:
-        if (nsLayoutUtils::GetBeforeFrame(element)) {
-          continue;
-        }
-        break;
-      case PseudoStyleType::after:
-        if (nsLayoutUtils::GetAfterFrame(element)) {
-          continue;
-        }
-        break;
-      case PseudoStyleType::marker:
-        if (nsLayoutUtils::GetMarkerFrame(element)) {
-          continue;
-        }
-        break;
-      default:
-        MOZ_ASSERT_UNREACHABLE("Unexpected PseudoStyleType");
-        break;
+      // The contents of view transition pseudos are put together with
+      // NotPseudo.
+      const auto type = element->GetPseudoElementType();
+      if (PseudoStyle::IsViewTransitionPseudoElement(type)) {
+        request = {type,
+                   element->HasName()
+                       ? element->GetParsedAttr(nsGkAtoms::name)->GetAtomValue()
+                       : nullptr};
+        // View transition pseudo-elements use the document element to look up
+        // their animations.
+        element = doc->GetRootElement();
+        MOZ_ASSERT(element);
+      }
+    } else if (auto* pseudo = element->GetPseudoElement(request);
+               pseudo && pseudo->GetPrimaryFrame()) {
+      continue;
     }
 
     animationManager->StopAnimationsForElement(element, request);
@@ -2608,47 +2592,6 @@ struct RestyleManager::TextPostTraversalState {
   nsChangeHint mComputedHint;
 };
 
-static void UpdateBackdropIfNeeded(nsIFrame* aFrame, ServoStyleSet& aStyleSet,
-                                   nsStyleChangeList& aChangeList) {
-  const nsStyleDisplay* display = aFrame->Style()->StyleDisplay();
-  if (display->mTopLayer != StyleTopLayer::Auto) {
-    return;
-  }
-
-  // Elements in the top layer are guaranteed to have absolute or fixed
-  // position per https://fullscreen.spec.whatwg.org/#new-stacking-layer.
-  MOZ_ASSERT(display->IsAbsolutelyPositionedStyle());
-
-  nsIFrame* backdropPlaceholder =
-      aFrame->GetChildList(FrameChildListID::Backdrop).FirstChild();
-  if (!backdropPlaceholder) {
-    return;
-  }
-
-  MOZ_ASSERT(backdropPlaceholder->IsPlaceholderFrame());
-  nsIFrame* backdropFrame =
-      nsPlaceholderFrame::GetRealFrameForPlaceholder(backdropPlaceholder);
-  MOZ_ASSERT(backdropFrame->IsBackdropFrame());
-  MOZ_ASSERT(backdropFrame->Style()->GetPseudoType() ==
-             PseudoStyleType::backdrop);
-
-  RefPtr<ComputedStyle> newStyle = aStyleSet.ResolvePseudoElementStyle(
-      *aFrame->GetContent()->AsElement(), PseudoStyleType::backdrop, nullptr,
-      aFrame->Style());
-
-  // NOTE(emilio): We can't use the changes handled for the owner of the
-  // backdrop frame, since it's out of flow, and parented to the viewport or
-  // canvas frame (depending on the `position` value).
-  MOZ_ASSERT(backdropFrame->GetParent()->IsViewportFrame() ||
-             backdropFrame->GetParent()->IsCanvasFrame());
-  nsTArray<nsIFrame*> wrappersToRestyle;
-  nsTArray<RefPtr<Element>> anchorsToSuppress;
-  ServoRestyleState state(aStyleSet, aChangeList, wrappersToRestyle,
-                          anchorsToSuppress);
-  nsIFrame::UpdateStyleOfOwnedChildFrame(backdropFrame, newStyle, state);
-  MOZ_ASSERT(anchorsToSuppress.IsEmpty());
-}
-
 static void UpdateFirstLetterIfNeeded(nsIFrame* aFrame,
                                       ServoRestyleState& aRestyleState) {
   MOZ_ASSERT(
@@ -2724,9 +2667,6 @@ static void UpdateFramePseudoElementStyles(nsIFrame* aFrame,
   } else {
     UpdateFirstLetterIfNeeded(aFrame, aRestyleState);
   }
-
-  UpdateBackdropIfNeeded(aFrame, aRestyleState.StyleSet(),
-                         aRestyleState.ChangeList());
 }
 
 enum class ServoPostTraversalFlags : uint32_t {
@@ -2831,6 +2771,35 @@ static ServoPostTraversalFlags SendA11yNotifications(
   return Flags::Empty;
 }
 
+static bool NeedsToReframeForConditionallyCreatedPseudoElement(
+    Element* aElement, ComputedStyle* aNewStyle, nsIFrame* aStyleFrame,
+    ServoRestyleState& aRestyleState) {
+  if (MOZ_UNLIKELY(aStyleFrame->IsLeaf())) {
+    return false;
+  }
+  const auto& disp = *aStyleFrame->StyleDisplay();
+  if (disp.IsListItem() && aStyleFrame->IsBlockFrameOrSubclass() &&
+      !nsLayoutUtils::GetMarkerPseudo(aElement)) {
+    RefPtr<ComputedStyle> pseudoStyle =
+        aRestyleState.StyleSet().ProbePseudoElementStyle(
+            *aElement, PseudoStyleType::marker, nullptr, aNewStyle);
+    if (pseudoStyle) {
+      return true;
+    }
+  }
+  if (disp.mTopLayer == StyleTopLayer::Auto &&
+      !aElement->IsInNativeAnonymousSubtree() &&
+      !nsLayoutUtils::GetBackdropPseudo(aElement)) {
+    RefPtr<ComputedStyle> pseudoStyle =
+        aRestyleState.StyleSet().ProbePseudoElementStyle(
+            *aElement, PseudoStyleType::backdrop, nullptr, aNewStyle);
+    if (pseudoStyle) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool RestyleManager::ProcessPostTraversal(Element* aElement,
                                           ServoRestyleState& aRestyleState,
                                           ServoPostTraversalFlags aFlags) {
@@ -2894,19 +2863,13 @@ bool RestyleManager::ProcessPostTraversal(Element* aElement,
           ServoRestyleState::TableAwareParentFor(maybeAnonBoxChild));
     }
 
-    // If we don't have a ::marker pseudo-element, but need it, then
-    // reconstruct the frame.  (The opposite situation implies 'display'
+    // If we don't have a ::marker or ::backdrop pseudo-element, but need it,
+    // then reconstruct the frame.  (The opposite situation implies 'display'
     // changes so doesn't need to be handled explicitly here.)
-    if (wasRestyled && styleFrame->StyleDisplay()->IsListItem() &&
-        styleFrame->IsBlockFrameOrSubclass() &&
-        !nsLayoutUtils::GetMarkerPseudo(aElement)) {
-      RefPtr<ComputedStyle> pseudoStyle =
-          aRestyleState.StyleSet().ProbePseudoElementStyle(
-              *aElement, PseudoStyleType::marker, nullptr,
-              upToDateStyleIfRestyled);
-      if (pseudoStyle) {
-        changeHint |= nsChangeHint_ReconstructFrame;
-      }
+    if (wasRestyled && !(changeHint & nsChangeHint_ReconstructFrame) &&
+        NeedsToReframeForConditionallyCreatedPseudoElement(
+            aElement, upToDateStyleIfRestyled, styleFrame, aRestyleState)) {
+      changeHint |= nsChangeHint_ReconstructFrame;
     }
   }
 
@@ -3810,12 +3773,6 @@ static bool IsFrameAboutToGoAway(nsIFrame* aFrame) {
 
 void RestyleManager::DoReparentComputedStyleForFirstLine(
     nsIFrame* aFrame, ServoStyleSet& aStyleSet) {
-  if (aFrame->IsBackdropFrame()) {
-    // Style context of backdrop frame has no parent style, and thus we do not
-    // need to reparent it.
-    return;
-  }
-
   if (IsFrameAboutToGoAway(aFrame)) {
     // We're entering a display: none subtree, which we know it's going to get
     // rebuilt. Don't bother reparenting.

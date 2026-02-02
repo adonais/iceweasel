@@ -81,6 +81,8 @@ skip-if(useDrawSnapshot) == checkerboard-1.html checkerboard-1-ref.html
 skip-if(useDrawSnapshot) == checkerboard-2.html checkerboard-2-ref.html
 skip-if(useDrawSnapshot) == checkerboard-3.html checkerboard-3-ref.html
 skip-if(useDrawSnapshot) == position-sticky-in-checkerboard-land-1.html position-sticky-in-checkerboard-land-1-ref.html
+skip-if(useDrawSnapshot) == position-sticky-in-checkerboard-land-2.html position-sticky-in-checkerboard-land-2-ref.html
+skip-if(useDrawSnapshot) == position-sticky-retained-dl.html position-sticky-retained-dl-ref.html
 
 skip-if(!Android) pref(apz.allow_zooming,true) == position-fixed-async-zoom-1.html position-fixed-async-zoom-1-ref.html
 skip-if(!Android) pref(apz.allow_zooming,true) == position-fixed-async-zoom-2.html position-fixed-async-zoom-2-ref.html

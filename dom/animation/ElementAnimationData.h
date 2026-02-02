@@ -105,47 +105,15 @@ class ElementAnimationData {
 
   const PerElementOrPseudoData* GetData(
       const PseudoStyleRequest& aRequest) const {
-    switch (aRequest.mType) {
-      case PseudoStyleType::NotPseudo:
-        return &mElementData;
-      case PseudoStyleType::before:
-      case PseudoStyleType::after:
-      case PseudoStyleType::marker:
-      case PseudoStyleType::viewTransition:
-      case PseudoStyleType::viewTransitionGroup:
-      case PseudoStyleType::viewTransitionImagePair:
-      case PseudoStyleType::viewTransitionOld:
-      case PseudoStyleType::viewTransitionNew:
-        return GetPseudoData(aRequest);
-      default:
-        MOZ_ASSERT_UNREACHABLE(
-            "Should not try to get animation effects for "
-            "a pseudo other that :before, :after, ::marker, or view transition "
-            "pseudo-elements");
-        break;
+    if (aRequest.mType != PseudoStyleType::NotPseudo) {
+      return GetPseudoData(aRequest);
     }
-    return nullptr;
+    return &mElementData;
   }
 
   PerElementOrPseudoData& GetOrCreateData(const PseudoStyleRequest& aRequest) {
-    switch (aRequest.mType) {
-      case PseudoStyleType::NotPseudo:
-        break;
-      case PseudoStyleType::before:
-      case PseudoStyleType::after:
-      case PseudoStyleType::marker:
-      case PseudoStyleType::viewTransition:
-      case PseudoStyleType::viewTransitionGroup:
-      case PseudoStyleType::viewTransitionImagePair:
-      case PseudoStyleType::viewTransitionOld:
-      case PseudoStyleType::viewTransitionNew:
-        return GetOrCreatePseudoData(aRequest);
-      default:
-        MOZ_ASSERT_UNREACHABLE(
-            "Should not try to get animation effects for "
-            "a pseudo other that :before, :after, ::marker, or view transition "
-            "pseudo-elements");
-        break;
+    if (aRequest.mType != PseudoStyleType::NotPseudo) {
+      return GetOrCreatePseudoData(aRequest);
     }
     return mElementData;
   }

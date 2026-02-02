@@ -84,6 +84,8 @@ class CSSPositionTryRule final : public css::Rule {
 
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
 
+  const StyleLockedDeclarationBlock* RawStyle() const;
+
  private:
   ~CSSPositionTryRule() = default;
 

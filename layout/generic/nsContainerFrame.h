@@ -495,7 +495,6 @@ class nsContainerFrame : public nsSplittableFrame {
   NS_DECLARE_FRAME_PROPERTY_FRAMELIST(OverflowProperty)
   NS_DECLARE_FRAME_PROPERTY_FRAMELIST(OverflowContainersProperty)
   NS_DECLARE_FRAME_PROPERTY_FRAMELIST(ExcessOverflowContainersProperty)
-  NS_DECLARE_FRAME_PROPERTY_FRAMELIST(BackdropProperty)
 
   // Only really used on nsBlockFrame instances, but the caller thinks it could
   // have arbitrary nsContainerFrames.

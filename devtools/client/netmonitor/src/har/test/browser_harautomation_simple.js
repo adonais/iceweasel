@@ -22,7 +22,7 @@ add_task(async function () {
     toolId: "inspector",
   });
 
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   info("Wait until the HAR file is created in the profile directory");
   const harFile = new FileUtils.File(

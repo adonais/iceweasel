@@ -444,7 +444,9 @@ void Navigation::SetEarlyErrorResult(JSContext* aCx, NavigationResult& aResult,
   // «[ "committed" → a promise rejected with e,
   //    "finished" → a promise rejected with e ]».
 
-  RefPtr global = GetOwnerGlobal();
+  // Get the global of the current realm to create the DOMException.
+  // See https://webidl.spec.whatwg.org/#js-creating-throwing-exceptions
+  nsIGlobalObject* global = GetCurrentGlobal();
   if (!global) {
     // Creating a promise should only fail if there is no global.
     // In this case, the only solution is to ignore the error.

@@ -366,6 +366,9 @@ BROWSER_PROCESS += [
 
     # 123SyncCloud/123CloudStorage shell extension (bug 1996038)
     DllBlocklistEntry("MFCopyHook.dll", ALL_VERSIONS),
+
+    # Print Guard by MWStory (bug 2011909)
+    DllBlocklistEntry("printguard64.dll", (25, 11, 21, 1)),
 ]
 
 CHILD_PROCESSES += [

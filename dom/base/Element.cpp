@@ -4236,6 +4236,8 @@ static void GetAnimationsUnsortedForSubtree(
       GetAnimationsUnsorted(element, PseudoStyleRequest::Before(), aAnimations);
       GetAnimationsUnsorted(element, PseudoStyleRequest::After(), aAnimations);
       GetAnimationsUnsorted(element, PseudoStyleRequest::Marker(), aAnimations);
+      GetAnimationsUnsorted(element, PseudoStyleRequest::Backdrop(),
+                            aAnimations);
     }
   }
 
@@ -4296,6 +4298,9 @@ void Element::GetAnimationsWithoutFlush(
   } else if (IsGeneratedContentContainerForMarker()) {
     elem = GetParentElement();
     pseudoRequest.mType = PseudoStyleType::marker;
+  } else if (IsGeneratedContentContainerForBackdrop()) {
+    elem = GetParentElement();
+    pseudoRequest.mType = PseudoStyleType::backdrop;
   }
 
   if (!elem) {
@@ -4305,6 +4310,7 @@ void Element::GetAnimationsWithoutFlush(
   // FIXME: Bug 1935557. Rewrite this to support pseudoElement option.
   if (!aOptions.mSubtree || (pseudoRequest.mType == PseudoStyleType::before ||
                              pseudoRequest.mType == PseudoStyleType::after ||
+                             pseudoRequest.mType == PseudoStyleType::backdrop ||
                              pseudoRequest.mType == PseudoStyleType::marker)) {
     // Case 1: Non-subtree, or |this| is ::before, ::after, or ::marker.
     //
@@ -4325,12 +4331,13 @@ void Element::CloneAnimationsFrom(const Element& aOther) {
   MOZ_ASSERT(timeline, "Timeline has not been set on the document yet");
   // Iterate through all pseudo types and copy the effects from each of the
   // other element's effect sets into this element's effect set.
-  // FIXME: Bug 1929470. This funciton is for printing, and it may be tricky to
+  // FIXME: Bug 1929470. This function is for printing, and it may be tricky to
   // support view transitions. We have to revisit here after we support view
   // transitions to make sure we clone the animations properly.
   for (PseudoStyleType pseudoType :
        {PseudoStyleType::NotPseudo, PseudoStyleType::before,
-        PseudoStyleType::after, PseudoStyleType::marker}) {
+        PseudoStyleType::after, PseudoStyleType::marker,
+        PseudoStyleType::backdrop}) {
     // If the element has an effect set for this pseudo type (or not pseudo)
     // then copy the effects and animation properties.
     const PseudoStyleRequest request(pseudoType);
@@ -4734,6 +4741,8 @@ Element* Element::GetPseudoElement(const PseudoStyleRequest& aRequest) const {
       return nsLayoutUtils::GetAfterPseudo(this);
     case PseudoStyleType::marker:
       return nsLayoutUtils::GetMarkerPseudo(this);
+    case PseudoStyleType::backdrop:
+      return nsLayoutUtils::GetBackdropPseudo(this);
     case PseudoStyleType::viewTransition:
     case PseudoStyleType::viewTransitionGroup:
     case PseudoStyleType::viewTransitionImagePair:

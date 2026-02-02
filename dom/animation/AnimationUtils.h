@@ -85,6 +85,13 @@ class AnimationUtils {
                                     const PseudoStyleRequest& aPseudoRequest =
                                         PseudoStyleRequest::NotPseudo());
 
+  static bool StoresAnimationsInParent(PseudoStyleType aType) {
+    return aType == PseudoStyleType::before ||
+           aType == PseudoStyleType::after ||
+           aType == PseudoStyleType::marker ||
+           aType == PseudoStyleType::backdrop;
+  }
+
   /**
    * Returns true if this pseudo style type is supported by animations.
    * Note: This doesn't include PseudoStyleType::NotPseudo.
@@ -92,8 +99,7 @@ class AnimationUtils {
   static bool IsSupportedPseudoForAnimations(PseudoStyleType aType) {
     // FIXME: Bug 1615469: Support first-line and first-letter for Animation.
     return PseudoStyle::IsViewTransitionPseudoElement(aType) ||
-           aType == PseudoStyleType::before ||
-           aType == PseudoStyleType::after || aType == PseudoStyleType::marker;
+           StoresAnimationsInParent(aType);
   }
   static bool IsSupportedPseudoForAnimations(
       const PseudoStyleRequest& aRequest) {

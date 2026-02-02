@@ -60,7 +60,7 @@ add_task(async function () {
 
   await waitForAllNetworkUpdateEvents();
   // Page reload should auto-resume
-  await reloadBrowser();
+  await reloadSelectedTab();
   await waitForPauseButtonToChange(document, false);
   await performRequestAndWait(tab, monitor, SIMPLE_URL + "?id=3");
 

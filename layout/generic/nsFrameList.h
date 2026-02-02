@@ -45,7 +45,6 @@ enum class FrameChildListID {
   Float,
   Marker,
   PushedFloats,
-  Backdrop,
   // A special alias for FrameChildListID::Principal that suppress the reflow
   // request that is normally done when manipulating child lists.
   NoReflowPrincipal,

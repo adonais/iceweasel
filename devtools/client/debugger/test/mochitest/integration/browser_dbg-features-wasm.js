@@ -27,7 +27,7 @@ add_task(async function () {
   // Reload once again, while the console is opened.
   // When opening the debugger, it will still miss the source content.
   // To see the sources, we have to reload while the debugger has been opened.
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   await toolbox.selectTool("jsdebugger");
   const dbg = createDebuggerContext(toolbox);

@@ -25,7 +25,7 @@ add_task(async function () {
   while (runs > 0) {
     const wait = waitForNetworkEvents(monitor, 4);
     info(`Reload the browser (run ${5 - runs})`);
-    await reloadBrowser();
+    await reloadSelectedTab();
     info(`Wait for network events (run ${5 - runs})`);
     await wait;
     --runs;

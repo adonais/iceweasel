@@ -46,7 +46,7 @@ enum class StyleNonLocalUriDependency : uint8_t;
 struct StyleRuleChange {
   StyleRuleChange() = delete;
   MOZ_IMPLICIT StyleRuleChange(StyleRuleChangeKind aKind) : mKind(aKind) {}
-  // Only relevant for Kind::StyleRuleDeclarations.
+  // Only relevant for Kind::*Declarations.
   StyleRuleChange(StyleRuleChangeKind aKind, const DeclarationBlock* aOldBlock,
                   const DeclarationBlock* aNewBlock)
       : mKind(aKind), mOldBlock(aOldBlock), mNewBlock(aNewBlock) {}

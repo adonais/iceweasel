@@ -101,12 +101,7 @@ void nsProgressFrame::Reflow(nsPresContext* aPresContext,
   MarkInReflow();
   DO_GLOBAL_REFLOW_COUNT("nsProgressFrame");
   MOZ_ASSERT(aStatus.IsEmpty(), "Caller should pass a fresh reflow status!");
-
-  NS_ASSERTION(mBarDiv, "Progress bar div must exist!");
-  NS_ASSERTION(
-      PrincipalChildList().GetLength() == 1 &&
-          PrincipalChildList().FirstChild() == mBarDiv->GetPrimaryFrame(),
-      "unexpected child frames");
+  MOZ_ASSERT(mBarDiv, "Progress bar div must exist!");
   NS_ASSERTION(!GetPrevContinuation(),
                "nsProgressFrame should not have continuations; if it does we "
                "need to call RegUnregAccessKey only for the first.");
@@ -135,6 +130,8 @@ void nsProgressFrame::ReflowChildFrame(nsIFrame* aChild,
                                        const ReflowInput& aReflowInput,
                                        const LogicalSize& aParentContentBoxSize,
                                        nsReflowStatus& aStatus) {
+  MOZ_ASSERT(aChild == mBarDiv->GetPrimaryFrame() ||
+             aChild->IsPlaceholderFrame());
   bool vertical = ResolvedOrientationIsVertical();
   const WritingMode wm = aChild->GetWritingMode();
   const LogicalSize parentSizeInChildWM =

@@ -87,7 +87,7 @@ add_task(async function task() {
   await pushPref("test.events.async.enabled", true);
 
   const hud = await openNewTabAndConsole(TEST_URL);
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   await expandNetworkRequestAndWaitForHtmlView({
     hud,

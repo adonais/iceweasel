@@ -48,7 +48,6 @@ TEXT = COMMON | LINE_PARTICIPANT | {"Replaced"} | LEAF
 FRAME_CLASSES = [
     Frame("BRFrame", "Br", REPLACED | LINE_PARTICIPANT | LEAF),
     Frame("nsBCTableCellFrame", "TableCell", TABLE_CELL),
-    Frame("nsBackdropFrame", "Backdrop", COMMON | LEAF),
     Frame("nsBlockFrame", "Block", BLOCK),
     Frame("nsCanvasFrame", "Canvas", BLOCK),
     Frame("nsCheckboxRadioFrame", "CheckboxRadio", REPLACED | LEAF),

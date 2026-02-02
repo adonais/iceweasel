@@ -54,7 +54,7 @@ add_task(async function () {
   info(
     "Reload the test page, which will trigger the debugger statement in the iframe"
   );
-  const pausedReload = reloadBrowser();
+  const pausedReload = reloadSelectedTab();
 
   const dbg = await assertDebuggerIsHighlightedAndPaused(toolbox);
   const source = findSource(dbg, IFRAME_TEST_COM_URI);
@@ -79,7 +79,7 @@ add_task(async function () {
   info(
     "Reload the test page, which will trigger the debugger statement in the iframe"
   );
-  const pausedReload = reloadBrowser();
+  const pausedReload = reloadSelectedTab();
 
   const dbg = await assertDebuggerIsHighlightedAndPaused(toolbox);
   const topLevelThread =

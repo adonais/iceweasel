@@ -7,6 +7,7 @@
 #include "ElementAnimationData.h"
 
 #include "mozilla/AnimationCollection.h"
+#include "mozilla/AnimationUtils.h"
 #include "mozilla/EffectSet.h"
 #include "mozilla/TimelineCollection.h"
 #include "mozilla/dom/CSSAnimation.h"
@@ -19,6 +20,7 @@ namespace mozilla {
 const ElementAnimationData::PerElementOrPseudoData*
 ElementAnimationData::GetPseudoData(const PseudoStyleRequest& aRequest) const {
   MOZ_ASSERT(!aRequest.IsNotPseudo(), "Only for pseudo-elements");
+  MOZ_ASSERT(AnimationUtils::IsSupportedPseudoForAnimations(aRequest.mType));
 
   auto entry = mPseudoData.Lookup(aRequest);
   if (!entry) {
@@ -32,6 +34,7 @@ ElementAnimationData::PerElementOrPseudoData&
 ElementAnimationData::GetOrCreatePseudoData(
     const PseudoStyleRequest& aRequest) {
   MOZ_ASSERT(!aRequest.IsNotPseudo(), "Only for pseudo-elements");
+  MOZ_ASSERT(AnimationUtils::IsSupportedPseudoForAnimations(aRequest.mType));
 
   UniquePtr<PerElementOrPseudoData>& data = mPseudoData.LookupOrInsertWith(
       aRequest, [&] { return MakeUnique<PerElementOrPseudoData>(); });

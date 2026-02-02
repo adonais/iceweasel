@@ -1714,6 +1714,12 @@ class nsINode : public mozilla::dom::EventTarget {
            mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentmarker;
   }
 
+  /** Whether this is the container of a ::backdrop pseudo-element. */
+  bool IsGeneratedContentContainerForBackdrop() const {
+    return IsRootOfNativeAnonymousSubtree() &&
+           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentbackdrop;
+  }
+
   /**
    * Returns true if |this| node is the closest common inclusive ancestor
    * (https://dom.spec.whatwg.org/#concept-tree-inclusive-ancestor) of the

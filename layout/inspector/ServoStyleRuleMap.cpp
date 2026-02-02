@@ -13,6 +13,7 @@
 #include "mozilla/css/GroupRule.h"
 #include "mozilla/dom/CSSImportRule.h"
 #include "mozilla/dom/CSSNestedDeclarations.h"
+#include "mozilla/dom/CSSPositionTryRule.h"
 #include "mozilla/dom/CSSRuleBinding.h"
 #include "mozilla/dom/CSSStyleRule.h"
 #include "mozilla/dom/Document.h"
@@ -140,6 +141,11 @@ void ServoStyleRuleMap::FillTableFromRule(css::Rule& aRule) {
       mTable.InsertOrUpdate(rule.RawStyle(), &rule);
       break;
     }
+    case StyleCssRuleType::PositionTry: {
+      auto& rule = static_cast<CSSPositionTryRule&>(aRule);
+      mTable.InsertOrUpdate(rule.RawStyle(), &rule);
+      break;
+    }
     case StyleCssRuleType::Style: {
       auto& rule = static_cast<CSSStyleRule&>(aRule);
       mTable.InsertOrUpdate(rule.RawStyle(), &rule);
@@ -175,7 +181,6 @@ void ServoStyleRuleMap::FillTableFromRule(css::Rule& aRule) {
     case StyleCssRuleType::CounterStyle:
     case StyleCssRuleType::FontFeatureValues:
     case StyleCssRuleType::FontPaletteValues:
-    case StyleCssRuleType::PositionTry:
       break;
   }
 }

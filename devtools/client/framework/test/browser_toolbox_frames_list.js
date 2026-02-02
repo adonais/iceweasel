@@ -62,7 +62,7 @@ add_task(async function () {
   ]);
 
   info("Reload and check that the frames list is cleared");
-  await reloadBrowser();
+  await reloadSelectedTab();
   await waitFor(() => !getFramesButton(toolbox));
   ok(
     true,
@@ -96,7 +96,7 @@ add_task(async function () {
   await checkFramesList(toolbox, []);
 
   info("Check that the list does have expected items after reloading");
-  await reloadBrowser();
+  await reloadSelectedTab();
   await waitFor(() => getFramesButton(toolbox));
   ok(true, "button is displayed after reloading");
   await checkFramesList(toolbox, [

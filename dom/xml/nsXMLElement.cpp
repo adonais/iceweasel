@@ -36,6 +36,9 @@ void nsXMLElement::UnbindFromTree(UnbindContext& aContext) {
     case PseudoStyleType::after:
       property = nsGkAtoms::afterPseudoProperty;
       break;
+    case PseudoStyleType::backdrop:
+      property = nsGkAtoms::backdropPseudoProperty;
+      break;
     default:
       property = nullptr;
   }

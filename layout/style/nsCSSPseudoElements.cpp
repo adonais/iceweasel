@@ -80,6 +80,8 @@ nsString nsCSSPseudoElements::PseudoRequestAsString(
       return u"::before"_ns;
     case PseudoStyleType::after:
       return u"::after"_ns;
+    case PseudoStyleType::backdrop:
+      return u"::backdrop"_ns;
     case PseudoStyleType::marker:
       return u"::marker"_ns;
     case PseudoStyleType::viewTransition:

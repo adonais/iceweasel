@@ -209,7 +209,7 @@ add_task(async function test_unblock_single_request() {
     "Tracker should now be unblocked in debugger state"
   );
 
-  await reloadBrowser(tab.linkedBrowser);
+  await reloadSelectedTab();
 
   // Test that the tracker would now load
   result = await loadTracker(tab.linkedBrowser);
@@ -416,7 +416,7 @@ add_task(async function test_unblock_selected_button() {
   );
 
   // Test that both trackers now load successfully
-  await reloadBrowser(tab.linkedBrowser);
+  await reloadSelectedTab();
 
   result = await loadTracker(tab.linkedBrowser, "https://tracking.example.org");
   is(result, "loaded", "First tracker should load after bulk unblock");

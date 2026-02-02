@@ -168,6 +168,9 @@ struct PseudoStyleRequest {
   static PseudoStyleRequest Marker() {
     return PseudoStyleRequest(PseudoStyleType::marker);
   }
+  static PseudoStyleRequest Backdrop() {
+    return PseudoStyleRequest(PseudoStyleType::backdrop);
+  }
 
   PseudoStyleType mType = PseudoStyleType::NotPseudo;
   RefPtr<nsAtom> mIdentifier;

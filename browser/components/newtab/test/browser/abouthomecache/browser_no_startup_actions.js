@@ -40,7 +40,7 @@ add_task(async function test_no_startup_actions() {
     // The following two statements seem to be enough to simulate Activity
     // Stream starting up.
     AboutNewTab.activityStream.uninit();
-    AboutNewTab.onBrowserReady();
+    await AboutNewTab.onBrowserReady();
 
     // Much of Activity Stream initializes asynchronously. This is the easiest way
     // I could find to ensure that enough of the feeds had initialized to produce

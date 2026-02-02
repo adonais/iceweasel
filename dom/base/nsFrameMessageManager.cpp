@@ -1247,10 +1247,24 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   // batch decoding from ScriptPreloader to work.
   bool isRunOnce = IsProcessScoped();
 
-  // We don't cache data: scripts!
+  // We don't cache data: scripts, and we also don't cache scripts not from
+  // omni.ja to avoid serving stale bytecode when JAR files from built-in
+  // add-ons installed in the profile directory are updated.
   nsAutoCString scheme;
   uri->GetScheme(scheme);
   bool isCacheable = !scheme.EqualsLiteral("data");
+
+  nsAutoCString cachePath;
+  scache::ResourceType resourceType;
+  if (isCacheable) {
+    rv = scache::PathifyURI(CACHE_PREFIX("script"), uri, cachePath,
+                            &resourceType);
+    if (NS_FAILED(rv) || (resourceType != scache::ResourceType::Gre &&
+                          resourceType != scache::ResourceType::App)) {
+      isCacheable = false;
+    }
+  }
+
   bool useScriptPreloader = isCacheable;
 
   // If the script will be reused in this session, compile it in the compilation
@@ -1264,10 +1278,7 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
 
   RefPtr<JS::Stencil> stencil;
   if (useScriptPreloader) {
-    nsAutoCString cachePath;
-    rv = scache::PathifyURI(CACHE_PREFIX("script"), uri, cachePath);
-    NS_ENSURE_SUCCESS(rv, nullptr);
-
+    MOZ_ASSERT(!cachePath.IsEmpty());
     JS::DecodeOptions decodeOptions;
     ScriptPreloader::FillDecodeOptionsForCachedStencil(decodeOptions);
     stencil = ScriptPreloader::GetChildSingleton().GetCachedStencil(
@@ -1343,9 +1354,7 @@ nsMessageManagerScriptExecutor::TryCacheLoadAndCompileScript(
   MOZ_ASSERT(stencil);
 
   if (useScriptPreloader) {
-    nsAutoCString cachePath;
-    rv = scache::PathifyURI(CACHE_PREFIX("script"), uri, cachePath);
-    NS_ENSURE_SUCCESS(rv, nullptr);
+    MOZ_ASSERT(!cachePath.IsEmpty());
     ScriptPreloader::GetChildSingleton().NoteStencil(url, cachePath, stencil,
                                                      isRunOnce);
   }

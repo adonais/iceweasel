@@ -339,7 +339,18 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
             : nullptr;
     if (!extraData || extraData->IsEmpty()) {
       // No inband parameter set in sample bitstream. Try out-of-band extradata.
-      extraData = aSample->mExtraData;
+      auto sampleConfig = HVCCConfig::Parse(aSample->mExtraData);
+      if (sampleConfig.isOk()) {
+        if (!mPreviousExtraData) {
+          // First sample w/ out-of-band extradata, store it so that we can
+          // check for future change.
+          mPreviousExtraData = aSample->mExtraData;
+          return NS_OK;
+        } else if (!H265::CompareExtraData(aSample->mExtraData,
+                                           mPreviousExtraData)) {
+          extraData = aSample->mExtraData;
+        }
+      }
     }
     // Sample doesn't contain any SPS and we already have SPS, do nothing.
     auto curConfig = HVCCConfig::Parse(mCurrentConfig.mExtraData);
@@ -348,6 +359,9 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
       return NS_OK;
     }
 
+    // Store the sample's extradata so we don't trigger a false positive
+    // with the out-of-band test on the next sample.
+    mPreviousExtraData = aSample->mExtraData;
     auto rv = HVCCConfig::Parse(extraData);
     // Ignore a corrupted extradata.
     if (rv.isErr()) {
@@ -513,6 +527,9 @@ class HEVCChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {
   // information for decoding, as some decoders, such as MediaEngine, require
   // SPS/PPS to be appended during the clearlead-to-encrypted transition.
   bool mReceivedFirstEncryptedSample = false;
+  // Hold the most recent out-of-band extradata to check for unneccesary
+  // config change.
+  RefPtr<MediaByteBuffer> mPreviousExtraData;
 };
 
 class VPXChangeMonitor : public MediaChangeMonitor::CodecChangeMonitor {

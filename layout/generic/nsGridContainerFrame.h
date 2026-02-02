@@ -398,6 +398,10 @@ class nsGridContainerFrame final : public nsContainerFrame,
                          const LogicalRect& aContentArea,
                          const nsSize& aContainerSize,
                          ReflowOutput& aDesiredSize, nsReflowStatus& aStatus);
+  void ReflowAbsoluteChildren(GridReflowInput& aGridRI,
+                              const LogicalRect& aContentArea,
+                              nscoord aContentBSize, ReflowOutput& aDesiredSize,
+                              nsReflowStatus& aStatus);
 
   /**
    * Helper to implement IntrinsicISize().

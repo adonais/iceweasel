@@ -167,9 +167,9 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
 
   // Helper functions called by UpdateCurrentStyleSources.
   void ClearComputedStyle();
-  void SetResolvedComputedStyle(RefPtr<const ComputedStyle>&& aContext,
+  void SetResolvedComputedStyle(RefPtr<const ComputedStyle>,
                                 uint64_t aGeneration);
-  void SetFrameComputedStyle(ComputedStyle* aStyle, uint64_t aGeneration);
+  void SetFrameComputedStyle(RefPtr<const ComputedStyle>, uint64_t aGeneration);
 
   static already_AddRefed<const ComputedStyle> DoGetComputedStyleNoFlush(
       const Element*, const PseudoStyleRequest&, mozilla::PresShell*,
@@ -401,9 +401,9 @@ already_AddRefed<nsComputedDOMStyle> NS_NewComputedDOMStyle(
 
 inline AnchorPosResolutionParams AnchorPosResolutionParams::From(
     const nsComputedDOMStyle* aComputedDOMStyle) {
+  AutoResolutionOverrideParams overrides{aComputedDOMStyle->mOuterFrame};
   return {aComputedDOMStyle->mOuterFrame,
-          aComputedDOMStyle->StyleDisplay()->mPosition,
-          aComputedDOMStyle->StylePosition()->mPositionArea};
+          aComputedDOMStyle->StyleDisplay()->mPosition, nullptr, overrides};
 }
 
 #endif /* nsComputedDOMStyle_h__ */

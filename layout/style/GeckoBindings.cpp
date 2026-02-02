@@ -138,6 +138,9 @@ void Gecko_GetAnonymousContentForElement(const Element* aElement,
                                          nsTArray<nsIContent*>* aArray) {
   MOZ_ASSERT(aElement->MayHaveAnonymousChildren());
   if (aElement->HasProperties()) {
+    if (auto* backdrop = nsLayoutUtils::GetBackdropPseudo(aElement)) {
+      aArray->AppendElement(backdrop);
+    }
     if (auto* marker = nsLayoutUtils::GetMarkerPseudo(aElement)) {
       aArray->AppendElement(marker);
     }
@@ -296,6 +299,15 @@ bool Gecko_AnimationNameMayBeReferencedFromStyle(
     const nsPresContext* aPresContext, nsAtom* aName) {
   MOZ_ASSERT(aPresContext);
   return aPresContext->AnimationManager()->AnimationMayBeReferenced(aName);
+}
+
+void Gecko_InvalidatePositionTry(const Element* aElement) {
+  auto* f = aElement->GetPrimaryFrame();
+  if (!f || !f->HasAnyStateBits(NS_FRAME_OUT_OF_FLOW)) {
+    return;
+  }
+  f->RemoveProperty(nsIFrame::LastSuccessfulPositionFallback());
+  f->PresShell()->MarkPositionedFrameForReflow(f);
 }
 
 float Gecko_GetScrollbarInlineSize(const nsPresContext* aPc) {
@@ -1899,23 +1911,30 @@ bool Gecko_GetAnchorPosOffset(const AnchorPosOffsetResolutionParams* aParams,
   if (!info) {
     return false;
   }
-  if (info->mCompensatesForScroll && cache) {
-    // Without cache (Containing information on default anchor) being available,
-    // we woudln't be able to determine scroll compensation status.
-    const auto axis = [aPropSide]() {
-      switch (aPropSide) {
-        case StylePhysicalSide::Left:
-        case StylePhysicalSide::Right:
-          return PhysicalAxis::Horizontal;
-        case StylePhysicalSide::Top:
-        case StylePhysicalSide::Bottom:
-          break;
-        default:
-          MOZ_ASSERT_UNREACHABLE("Unhandled side?");
-      }
-      return PhysicalAxis::Vertical;
-    }();
-    cache->mReferenceData->AdjustCompensatingForScroll(axis);
+  if (cache) {
+    // Cache is set during reflow, which is really the only time we want to
+    // actively modify scroll compensation state & side.
+    if (info->mCompensatesForScroll) {
+      const auto axis = [aPropSide]() {
+        switch (aPropSide) {
+          case StylePhysicalSide::Left:
+          case StylePhysicalSide::Right:
+            return PhysicalAxis::Horizontal;
+          case StylePhysicalSide::Top:
+          case StylePhysicalSide::Bottom:
+            break;
+          default:
+            MOZ_ASSERT_UNREACHABLE("Unhandled side?");
+        }
+        return PhysicalAxis::Vertical;
+      }();
+      cache->mReferenceData->AdjustCompensatingForScroll(axis);
+      // Non scroll-compensated anchor will not have any impact on the
+      // containing block due to scrolling. See documentation for
+      // `mScrollCompensatedSides`.
+      cache->mReferenceData->mScrollCompensatedSides |=
+          SideToSideBit(ToSide(aPropSide));
+    }
   }
   // Compute the offset here in C++, where translating between physical/logical
   // coordinates is easier.

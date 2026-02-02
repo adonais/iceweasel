@@ -220,11 +220,11 @@ class FrameProperties {
   /**
    * Remove and destroy a property value. This requires a linear search through
    * the properties of the frame. If the frame has no such property, nothing
-   * happens.
+   * happens and false is returned.
    */
   template <typename T>
-  void Remove(Descriptor<T> aProperty, const nsIFrame* aFrame) {
-    RemoveInternal(aProperty, aFrame);
+  bool Remove(Descriptor<T> aProperty, const nsIFrame* aFrame) {
+    return RemoveInternal(aProperty, aFrame);
   }
 
   /**
@@ -281,7 +281,8 @@ class FrameProperties {
 
   inline uint64_t TakeInternal(UntypedDescriptor aProperty, bool* aFoundResult);
 
-  inline void RemoveInternal(UntypedDescriptor aProperty,
+  // Returns whether the property was removed.
+  inline bool RemoveInternal(UntypedDescriptor aProperty,
                              const nsIFrame* aFrame);
 
   template <typename T>
@@ -416,16 +417,18 @@ inline uint64_t FrameProperties::TakeInternal(UntypedDescriptor aProperty,
   return result;
 }
 
-inline void FrameProperties::RemoveInternal(UntypedDescriptor aProperty,
+inline bool FrameProperties::RemoveInternal(UntypedDescriptor aProperty,
                                             const nsIFrame* aFrame) {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aProperty, "Null property?");
 
   auto index = mProperties.IndexOf(aProperty, 0, PropertyComparator());
-  if (index != nsTArray<PropertyValue>::NoIndex) {
-    mProperties.Elements()[index].DestroyValueFor(aFrame);
-    mProperties.RemoveElementAtUnsafe(index);
+  if (index == nsTArray<PropertyValue>::NoIndex) {
+    return false;
   }
+  mProperties.Elements()[index].DestroyValueFor(aFrame);
+  mProperties.RemoveElementAtUnsafe(index);
+  return true;
 }
 
 }  // namespace mozilla

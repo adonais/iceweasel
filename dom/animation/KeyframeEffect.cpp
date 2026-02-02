@@ -1568,6 +1568,9 @@ nsIFrame* KeyframeEffect::GetPrimaryFrame() const {
     case PseudoStyleType::marker:
       frame = nsLayoutUtils::GetMarkerFrame(mTarget.mElement);
       break;
+    case PseudoStyleType::backdrop:
+      frame = nsLayoutUtils::GetBackdropFrame(mTarget.mElement);
+      break;
     case PseudoStyleType::viewTransition:
     case PseudoStyleType::viewTransitionGroup:
     case PseudoStyleType::viewTransitionImagePair:

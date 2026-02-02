@@ -77,10 +77,8 @@ add_setup(async function head_initialize() {
   );
   await AddonTestUtils.promiseStartupManager();
 
-  if (AppConstants.BROWSER_NEWTAB_AS_ADDON) {
-    Services.prefs.setBoolPref("extensions.experiments.enabled", true);
-    await loadExtension();
-  }
+  Services.prefs.setBoolPref("extensions.experiments.enabled", true);
+  await loadExtension();
   AboutNewTab.init();
 });
 

@@ -58,7 +58,7 @@ add_task(async () => {
     onUpdated,
   });
 
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   await waitFor(() => receivedResources.length == 4);
 
@@ -112,7 +112,7 @@ add_task(async () => {
     is(iframeJsContent, IFRAME_JS_CONTENT);
   }
 
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   await waitFor(() => receivedResources.length == 8);
 
@@ -173,7 +173,7 @@ add_task(async () => {
     await commands.watcherFront.getNetworkParentActor();
   await networkParentFront.setPersist(true);
 
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   await waitFor(() => receivedResources.length == 12);
 

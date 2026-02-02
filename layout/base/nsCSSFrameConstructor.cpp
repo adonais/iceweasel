@@ -54,7 +54,6 @@
 #include "mozilla/intl/LocaleService.h"
 #include "nsAtom.h"
 #include "nsAutoLayoutPhase.h"
-#include "nsBackdropFrame.h"
 #include "nsBlockFrame.h"
 #include "nsCRT.h"
 #include "nsCSSAnonBoxes.h"
@@ -774,8 +773,6 @@ class MOZ_STACK_CLASS nsFrameConstructorState {
                                            bool aCanBePositioned,
                                            bool aCanBeFloated,
                                            nsFrameState* aPlaceholderType);
-
-  void ConstructBackdropFrameFor(nsIContent* aContent, nsIFrame* aFrame);
 };
 
 nsFrameConstructorState::nsFrameConstructorState(
@@ -1062,49 +1059,6 @@ AbsoluteFrameList* nsFrameConstructorState::GetOutOfFlowFrameList(
   return nullptr;
 }
 
-void nsFrameConstructorState::ConstructBackdropFrameFor(nsIContent* aContent,
-                                                        nsIFrame* aFrame) {
-  MOZ_ASSERT(aFrame->StyleDisplay()->mTopLayer == StyleTopLayer::Auto);
-  nsContainerFrame* frame = do_QueryFrame(aFrame);
-  if (!frame) {
-    NS_WARNING("Cannot create backdrop frame for non-container frame");
-    return;
-  }
-
-  ComputedStyle* parentStyle = nsLayoutUtils::GetStyleFrame(aFrame)->Style();
-  if (parentStyle->GetPseudoType() != PseudoStyleType::NotPseudo) {
-    // ::backdrop only applies to actual elements in the top layer, for now at
-    // least. Prevent creating it for internal pseudos like
-    // ::-moz-snapshot-containing-block.
-    // https://drafts.csswg.org/css-position-4/#backdrop
-    return;
-  }
-
-  RefPtr<ComputedStyle> style =
-      mPresShell->StyleSet()->ResolvePseudoElementStyle(
-          *aContent->AsElement(), PseudoStyleType::backdrop, nullptr,
-          parentStyle);
-  MOZ_ASSERT(style->StyleDisplay()->mTopLayer == StyleTopLayer::Auto);
-  nsContainerFrame* parentFrame =
-      GetGeometricParent(*style->StyleDisplay(), nullptr);
-
-  nsBackdropFrame* backdropFrame =
-      new (mPresShell) nsBackdropFrame(style, mPresShell->GetPresContext());
-  backdropFrame->Init(aContent, parentFrame, nullptr);
-
-  nsFrameState placeholderType;
-  AbsoluteFrameList* frameList =
-      GetOutOfFlowFrameList(backdropFrame, true, true, &placeholderType);
-  MOZ_ASSERT(placeholderType & PLACEHOLDER_FOR_TOPLAYER);
-
-  nsIFrame* placeholder = nsCSSFrameConstructor::CreatePlaceholderFrameFor(
-      mPresShell, aContent, backdropFrame, frame, nullptr, placeholderType);
-  frame->SetInitialChildList(FrameChildListID::Backdrop,
-                             nsFrameList(placeholder, placeholder));
-
-  frameList->AppendFrame(nullptr, backdropFrame);
-}
-
 void nsFrameConstructorState::AddChild(
     nsIFrame* aNewFrame, nsFrameList& aFrameList, nsIContent* aContent,
     nsContainerFrame* aParentFrame, bool aCanBePositioned, bool aCanBeFloated,
@@ -1139,10 +1093,6 @@ void nsFrameConstructorState::AddChild(
     placeholderFrame->AddStateBits(mAdditionalStateBits);
     // Add the placeholder frame to the flow
     aFrameList.AppendFrame(nullptr, placeholderFrame);
-
-    if (placeholderType & PLACEHOLDER_FOR_TOPLAYER) {
-      ConstructBackdropFrameFor(aContent, aNewFrame);
-    }
   }
 #ifdef DEBUG
   else {
@@ -1828,11 +1778,14 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
     ItemFlags aExtraFlags) {
   MOZ_ASSERT(aPseudoElement == PseudoStyleType::before ||
                  aPseudoElement == PseudoStyleType::after ||
-                 aPseudoElement == PseudoStyleType::marker,
+                 aPseudoElement == PseudoStyleType::marker ||
+                 aPseudoElement == PseudoStyleType::backdrop,
              "unexpected aPseudoElement");
 
-  if (HasUAWidget(aOriginatingElement) &&
+  if (aPseudoElement != PseudoStyleType::backdrop &&
+      HasUAWidget(aOriginatingElement) &&
       !aOriginatingElement.IsHTMLElement(nsGkAtoms::details)) {
+    // ::before / ::after / ::marker shouldn't work on <video> / <input>.
     return;
   }
 
@@ -1863,6 +1816,10 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
       // want to check the result of GeneratedContentPseudoExists.
       elemName = nsGkAtoms::mozgeneratedcontentmarker;
       property = nsGkAtoms::markerPseudoProperty;
+      break;
+    case PseudoStyleType::backdrop:
+      elemName = nsGkAtoms::mozgeneratedcontentbackdrop;
+      property = nsGkAtoms::backdropPseudoProperty;
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("unexpected aPseudoElement");
@@ -1913,30 +1870,31 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
     mPresShell->StyleSet()->StyleNewSubtree(container);
     pseudoStyle = ServoStyleSet::ResolveServoStyle(*container);
   }
-
-  auto AppendChild = [&container, this](nsIContent* aChild) {
-    // We don't strictly have to set NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE
-    // here; it would get set under AppendChildTo.  But AppendChildTo might
-    // think that we're going from not being anonymous to being anonymous and
-    // do some extra work; setting the flag here avoids that.
-    aChild->SetFlags(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE);
-    container->AppendChildTo(aChild, false, IgnoreErrors());
-    if (auto* childElement = Element::FromNode(aChild)) {
-      // If we created any children elements, Servo needs to traverse them, but
-      // the root is already set up.
-      mPresShell->StyleSet()->StyleNewSubtree(childElement);
+  if (aPseudoElement != PseudoStyleType::backdrop) {
+    auto AppendChild = [&container, this](nsIContent* aChild) {
+      // We don't strictly have to set NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE
+      // here; it would get set under AppendChildTo.  But AppendChildTo might
+      // think that we're going from not being anonymous to being anonymous and
+      // do some extra work; setting the flag here avoids that.
+      aChild->SetFlags(NODE_IS_IN_NATIVE_ANONYMOUS_SUBTREE);
+      container->AppendChildTo(aChild, false, IgnoreErrors());
+      if (auto* childElement = Element::FromNode(aChild)) {
+        // If we created any children elements, Servo needs to traverse them,
+        // but the root is already set up.
+        mPresShell->StyleSet()->StyleNewSubtree(childElement);
+      }
+    };
+    auto items = pseudoStyle->StyleContent()->NonAltContentItems();
+    size_t index = 0;
+    for (const auto& item : items) {
+      CreateGeneratedContent(aState, aOriginatingElement, *pseudoStyle, item,
+                             index++, AppendChild);
     }
-  };
-  auto items = pseudoStyle->StyleContent()->NonAltContentItems();
-  size_t index = 0;
-  for (const auto& item : items) {
-    CreateGeneratedContent(aState, aOriginatingElement, *pseudoStyle, item,
-                           index++, AppendChild);
-  }
-  // If a ::marker has no 'content' then generate it from its 'list-style-*'.
-  if (index == 0 && aPseudoElement == PseudoStyleType::marker) {
-    CreateGeneratedContentFromListStyle(aState, aOriginatingElement,
-                                        *pseudoStyle, AppendChild);
+    // If a ::marker has no 'content' then generate it from its 'list-style-*'.
+    if (index == 0 && aPseudoElement == PseudoStyleType::marker) {
+      CreateGeneratedContentFromListStyle(aState, aOriginatingElement,
+                                          *pseudoStyle, AppendChild);
+    }
   }
   auto flags = ItemFlags{ItemFlag::IsGeneratedContent} + aExtraFlags;
   AddFrameConstructionItemsInternal(aState, container, aParentFrame, true,
@@ -3322,7 +3280,8 @@ static nsIFrame* FindAncestorWithGeneratedContentPseudo(nsIFrame* aFrame) {
                  "should not have exited generated content");
     auto pseudo = f->Style()->GetPseudoType();
     if (pseudo == PseudoStyleType::before || pseudo == PseudoStyleType::after ||
-        pseudo == PseudoStyleType::marker) {
+        pseudo == PseudoStyleType::marker ||
+        pseudo == PseudoStyleType::backdrop) {
       return f;
     }
   }
@@ -5798,6 +5757,9 @@ nsIFrame* nsCSSFrameConstructor::FindSiblingInternal(
 
   auto getNearPseudo = [&](const nsIContent* aContent) -> nsIFrame* {
     if (aDirection == SiblingDirection::Forward) {
+      if (auto* backdrop = nsLayoutUtils::GetBackdropFrame(aContent)) {
+        return backdrop;
+      }
       if (auto* marker = getInsideMarkerFrame(aContent)) {
         return marker;
       }
@@ -5813,7 +5775,10 @@ nsIFrame* nsCSSFrameConstructor::FindSiblingInternal(
     if (auto* before = nsLayoutUtils::GetBeforeFrame(aContent)) {
       return before;
     }
-    return getInsideMarkerFrame(aContent);
+    if (auto* marker = getInsideMarkerFrame(aContent)) {
+      return marker;
+    }
+    return nsLayoutUtils::GetBackdropFrame(aContent);
   };
 
   while (nsIContent* sibling = nextDomSibling(aIter)) {
@@ -9682,8 +9647,8 @@ void nsCSSFrameConstructor::ProcessChildren(
   AutoTArray<nsIAnonymousContentCreator::ContentInfo, 4> anonymousItems;
   GetAnonymousContent(aContent, aPossiblyLeafFrame, anonymousItems);
 #ifdef DEBUG
-  for (uint32_t i = 0; i < anonymousItems.Length(); ++i) {
-    MOZ_ASSERT(anonymousItems[i].mContent->IsRootOfNativeAnonymousSubtree(),
+  for (auto& item : anonymousItems) {
+    MOZ_ASSERT(item.mContent->IsRootOfNativeAnonymousSubtree(),
                "Content should know it's an anonymous subtree");
   }
 #endif
@@ -9693,32 +9658,37 @@ void nsCSSFrameConstructor::ProcessChildren(
   nsBlockFrame* listItem = nullptr;
   bool isOutsideMarker = false;
   if (!aPossiblyLeafFrame->IsLeaf()) {
-    // :before/:after content should have the same style parent as normal kids.
+    // Generated content should have the same style parent as normal kids.
     //
     // Note that we don't use this style for looking up things like special
     // block styles because in some cases involving table pseudo-frames it has
     // nothing to do with the parent frame's desired behavior.
     auto* styleParentFrame =
         nsIFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
-    ComputedStyle* computedStyle = styleParentFrame->Style();
-
+    ComputedStyle* parentStyle = styleParentFrame->Style();
     if (aCanHaveGeneratedContent) {
-      if (computedStyle->StyleDisplay()->IsListItem() &&
+      if (parentStyle->StyleDisplay()->mTopLayer == StyleTopLayer::Auto &&
+          !aContent->IsInNativeAnonymousSubtree()) {
+        CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
+                                   *parentStyle, PseudoStyleType::backdrop,
+                                   itemsToConstruct);
+      }
+      if (parentStyle->StyleDisplay()->IsListItem() &&
           (listItem = do_QueryFrame(aFrame)) &&
           !styleParentFrame->IsFieldSetFrame()) {
-        isOutsideMarker = computedStyle->StyleList()->mListStylePosition ==
+        isOutsideMarker = parentStyle->StyleList()->mListStylePosition ==
                           StyleListStylePosition::Outside;
         ItemFlags extraFlags;
         if (isOutsideMarker) {
           extraFlags += ItemFlag::IsForOutsideMarker;
         }
         CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
-                                   *computedStyle, PseudoStyleType::marker,
+                                   *parentStyle, PseudoStyleType::marker,
                                    itemsToConstruct, extraFlags);
       }
       // Probe for generated content before
       CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
-                                 *computedStyle, PseudoStyleType::before,
+                                 *parentStyle, PseudoStyleType::before,
                                  itemsToConstruct);
     }
 
@@ -9735,7 +9705,7 @@ void nsCSSFrameConstructor::ProcessChildren(
                  "GetInsertionPoint should agree with us");
       if (addChildItems) {
         AddFrameConstructionItems(aState, child, iter.ShadowDOMInvolved(),
-                                  *computedStyle, insertion, itemsToConstruct);
+                                  *parentStyle, insertion, itemsToConstruct);
       } else {
         ClearLazyBits(child, child->GetNextSibling());
       }
@@ -9745,7 +9715,7 @@ void nsCSSFrameConstructor::ProcessChildren(
     if (aCanHaveGeneratedContent) {
       // Probe for generated content after
       CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
-                                 *computedStyle, PseudoStyleType::after,
+                                 *parentStyle, PseudoStyleType::after,
                                  itemsToConstruct);
     }
   } else {
@@ -11164,18 +11134,18 @@ void nsCSSFrameConstructor::CreateIBSiblings(nsFrameConstructorState& aState,
 void nsCSSFrameConstructor::BuildInlineChildItems(
     nsFrameConstructorState& aState, FrameConstructionItem& aParentItem,
     bool aItemIsWithinSVGText, bool aItemAllowsTextPathChild) {
-  ComputedStyle* const parentComputedStyle = aParentItem.mComputedStyle;
+  ComputedStyle* const parentStyle = aParentItem.mComputedStyle;
   nsIContent* const parentContent = aParentItem.mContent;
 
   if (!aItemIsWithinSVGText) {
-    if (parentComputedStyle->StyleDisplay()->IsListItem()) {
+    if (parentStyle->StyleDisplay()->IsListItem()) {
       CreateGeneratedContentItem(aState, nullptr, *parentContent->AsElement(),
-                                 *parentComputedStyle, PseudoStyleType::marker,
+                                 *parentStyle, PseudoStyleType::marker,
                                  aParentItem.mChildItems);
     }
     // Probe for generated content before
     CreateGeneratedContentItem(aState, nullptr, *parentContent->AsElement(),
-                               *parentComputedStyle, PseudoStyleType::before,
+                               *parentStyle, PseudoStyleType::before,
                                aParentItem.mChildItems);
   }
 
@@ -11192,14 +11162,14 @@ void nsCSSFrameConstructor::BuildInlineChildItems(
   for (nsIContent* content = iter.GetNextChild(); content;
        content = iter.GetNextChild()) {
     AddFrameConstructionItems(aState, content, iter.ShadowDOMInvolved(),
-                              *parentComputedStyle, InsertionPoint(),
+                              *parentStyle, InsertionPoint(),
                               aParentItem.mChildItems, flags);
   }
 
   if (!aItemIsWithinSVGText) {
     // Probe for generated content after
     CreateGeneratedContentItem(aState, nullptr, *parentContent->AsElement(),
-                               *parentComputedStyle, PseudoStyleType::after,
+                               *parentStyle, PseudoStyleType::after,
                                aParentItem.mChildItems);
   }
 

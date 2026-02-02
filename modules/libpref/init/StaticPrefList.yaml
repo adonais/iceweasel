@@ -9452,6 +9452,14 @@
   value: true
   mirror: always
 
+# Testing pref to force the ScriptPreloader to remain active even after
+# browser-delayed-startup-finished. Only takes effect when running in automation.
+# This allows tests to exercise the cache after startup has completed.
+- name: javascript.options.force_preloader_active
+  type: bool
+  value: false
+  mirror: always
+
 # Whether to use fdlibm for Math.sin, Math.cos, and Math.tan. When
 # privacy.resistFingerprinting is true, this pref is ignored and fdlibm is used
 # anyway.
@@ -9893,7 +9901,7 @@
 # Whether to enable position-try-order
 - name: layout.css.anchor-positioning.position-try-order.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
   rust: true
 

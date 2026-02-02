@@ -177,7 +177,6 @@ UNIFIED_SOURCES += [
     "CSSOrderAwareFrameIterator.cpp",
     "MathMLTextRunFactory.cpp",
     "MiddleCroppingBlockFrame.cpp",
-    "nsBackdropFrame.cpp",
     "nsBlockFrame.cpp",
     "nsBlockReflowContext.cpp",
     "nsCanvasFrame.cpp",

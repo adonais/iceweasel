@@ -11,7 +11,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AboutNewTabResourceMapping:
     "resource:///modules/AboutNewTabResourceMapping.sys.mjs",
   ActivityStream: "resource://newtab/lib/ActivityStream.sys.mjs",
+  NimbusFeatures: "resource://nimbus/ExperimentAPI.sys.mjs",
   ObjectUtils: "resource://gre/modules/ObjectUtils.sys.mjs",
+  ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   TelemetryReportingPolicy:
     "resource://gre/modules/TelemetryReportingPolicy.sys.mjs",
 });
@@ -21,6 +23,7 @@ const PREF_ACTIVITY_STREAM_DEBUG = "browser.newtabpage.activity-stream.debug";
 // AboutHomeStartupCache needs us in "quit-application", so stay alive longer.
 // TODO: We could better have a shared async shutdown blocker?
 const TOPIC_APP_QUIT = "profile-before-change";
+const TRAINHOP_NIMBUS_FEATURE = "newtabTrainhop";
 
 export const AboutNewTab = {
   QueryInterface: ChromeUtils.generateQI([
@@ -75,9 +78,7 @@ export const AboutNewTab = {
 
     // Make sure to register newtab resource mapping as early as possible
     // on startup.
-    if (AppConstants.BROWSER_NEWTAB_AS_ADDON) {
-      lazy.AboutNewTabResourceMapping.init();
-    }
+    lazy.AboutNewTabResourceMapping.init();
 
     // More initialization happens here
     this.toggleActivityStream(true);
@@ -165,24 +166,46 @@ export const AboutNewTab = {
       return;
     }
 
-    if (AppConstants.BROWSER_NEWTAB_AS_ADDON) {
-      // Wait until the built-in addon has reported that it has finished
-      // initializing.
-      let redirector = Cc[
-        "@mozilla.org/network/protocol/about;1?what=newtab"
-      ].getService(Ci.nsIAboutModule).wrappedJSObject;
+    // We want to block newtab startup on two things:
+    //  - The built-in addon has reported that it has finished
+    //    initializing
+    //  - The TRAINHOP_NIMBUS_FEATURE feature is up-to-date and ready to
+    //    read.
+    //
+    // That way, when the various feeds initialize, they can be certain that
+    // the addon has finished registering its resources, and that the
+    // trainhopConfig value computed in PrefsFeed is ready to be read.
 
-      await redirector.promiseBuiltInAddonInitialized;
-      lazy.AboutNewTabResourceMapping.scheduleUpdateTrainhopAddonState();
-    } else {
-      // We may have had the built-in addon installed in the past. Since the
-      // flag is false, let's go ahead and remove it. We don't need to await on
-      // this since the extension should be inert if the build flag is false.
-      lazy.AboutNewTabResourceMapping.uninstallAddon();
-    }
+    const nimbusFeature = lazy.NimbusFeatures[TRAINHOP_NIMBUS_FEATURE];
+    const trainhopFeatureReady = nimbusFeature.ready();
+
+    let redirector = Cc[
+      "@mozilla.org/network/protocol/about;1?what=newtab"
+    ].getService(Ci.nsIAboutModule).wrappedJSObject;
+
+    const addonInitted = redirector.promiseBuiltInAddonInitialized;
+
+    // The ProfileAge function itself returns a Promise, which resolves to the
+    // underlying accessor, and the created getter on that accessor also returns
+    // a Promise. This construct gives us a Promise that ultimately resolves
+    // to the created timestamp.
+    const profileCreatedAccessorReady = lazy
+      .ProfileAge()
+      .then(accessor => accessor.created);
+
+    const [createdTimestamp] = await Promise.all([
+      profileCreatedAccessorReady,
+      trainhopFeatureReady,
+      addonInitted,
+    ]);
+    const createdInstant = createdTimestamp
+      ? Temporal.Instant.fromEpochMilliseconds(createdTimestamp)
+      : null;
+
+    lazy.AboutNewTabResourceMapping.scheduleUpdateTrainhopAddonState();
 
     try {
-      this.activityStream = new lazy.ActivityStream();
+      this.activityStream = new lazy.ActivityStream(createdInstant);
       Glean.newtab.activityStreamCtorSuccess.set(true);
     } catch (error) {
       // Send Activity Stream loading failure telemetry

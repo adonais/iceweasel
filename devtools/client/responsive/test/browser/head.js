@@ -869,7 +869,7 @@ function rotateViewport(ui) {
 async function setTouchAndMetaViewportSupport(ui, value) {
   await ui.updateTouchSimulation(value);
   info("Reload so the new configuration applies cleanly to the page");
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   await promiseContentReflow(ui);
 }

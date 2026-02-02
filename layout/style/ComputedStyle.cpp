@@ -433,27 +433,29 @@ void ComputedStyle::DumpMatchedRules() const {
 bool ComputedStyle::HasAnchorPosReference() const {
   const auto* pos = StylePosition();
   if (pos->mPositionAnchor.IsIdent()) {
-    // Short circuit if there's a default anchor defined, even if
-    // it may not end up being referenced.
-    // If this early return is removed, we'll need to handle mPositionArea
-    // explicitly.
+    // Short circuit if there's an explicit default anchor defined,
+    // even if it may not end up being referenced. If this early return is
+    // removed, we'll need to handle mPositionArea explicitly.
     return true;
   }
 
-  if (!pos->mPositionArea.IsNone()) {
-    // Position area is relative to an anchor.
-    return true;
-  }
+  if (pos->mPositionAnchor.IsAuto()) {
+    if (!pos->mPositionArea.IsNone()) {
+      // Position area is relative to an anchor.
+      return true;
+    }
 
-  // Check if anchor-center is used in alignment properties, directly accessing
-  // members rather than using UsedAlign* because legacy values can't resolve to
-  // anchor-center.
-  const auto alignSelfValue = pos->mAlignSelf._0 & ~StyleAlignFlags::FLAG_BITS;
-  const auto justifySelfValue =
-      pos->mJustifySelf._0 & ~StyleAlignFlags::FLAG_BITS;
-  if (alignSelfValue == StyleAlignFlags::ANCHOR_CENTER ||
-      justifySelfValue == StyleAlignFlags::ANCHOR_CENTER) {
-    return true;
+    // Check if anchor-center is used in alignment properties, directly
+    // accessing members rather than using UsedAlign* because legacy values
+    // can't resolve to anchor-center.
+    const auto alignSelfValue =
+        pos->mAlignSelf._0 & ~StyleAlignFlags::FLAG_BITS;
+    const auto justifySelfValue =
+        pos->mJustifySelf._0 & ~StyleAlignFlags::FLAG_BITS;
+    if (alignSelfValue == StyleAlignFlags::ANCHOR_CENTER ||
+        justifySelfValue == StyleAlignFlags::ANCHOR_CENTER) {
+      return true;
+    }
   }
 
   // Now check if any property that can use anchor() or anchor-size()

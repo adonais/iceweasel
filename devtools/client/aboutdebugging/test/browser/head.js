@@ -210,7 +210,12 @@ async function closeWebExtAboutDevtoolsToolbox(devtoolsWindow, win) {
 async function reloadAboutDebugging(tab) {
   info("reload about:debugging");
 
-  await reloadBrowser(tab.linkedBrowser);
+  is(
+    gBrowser.selectedTab,
+    tab,
+    "The about:debugging tab is the currently selected tab"
+  );
+  await reloadSelectedTab();
   const browser = tab.linkedBrowser;
   const document = browser.contentDocument;
   const window = browser.contentWindow;

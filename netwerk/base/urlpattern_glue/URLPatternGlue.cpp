@@ -87,8 +87,6 @@ Maybe<UrlpComponentResult> ComponentMatches(UrlpComponent& aComponent,
     if (aInput != "") {
       return Nothing();
     }
-  } else if (aComponent.regexp_string == "^(.*)$") {  // any string
-    res.mGroups.InsertOrUpdate("0"_ns, CreateMaybeString(aInput, true));
   } else {  // check deeper match
     nsTArray<MaybeString> matches;
     if (!urlp_matcher_matches_component(&aComponent.matcher, &aInput,

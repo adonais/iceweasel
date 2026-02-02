@@ -517,17 +517,12 @@ export class AboutNewTabRedirectorParent extends BaseAboutNewTabRedirector {
   }
 
   /**
-   * Returns a Promise that reoslves when the newtab built-in addon has notified
-   * that it has finished initializing. If this is somehow checked when
-   * BROWSER_NEWTAB_AS_ADDON is not true, then this always resolves.
+   * Returns a Promise that resolves when the newtab built-in addon has notified
+   * that it has finished initializing.
    *
    * @type {Promise<undefined>}
    */
   get promiseBuiltInAddonInitialized() {
-    if (!AppConstants.BROWSER_NEWTAB_AS_ADDON) {
-      return Promise.resolve();
-    }
-
     return this.#addonInitializedPromise;
   }
 
@@ -547,7 +542,7 @@ export class AboutNewTabRedirectorParent extends BaseAboutNewTabRedirector {
     );
     resultChannel.originalURI = uri;
 
-    if (AppConstants.BROWSER_NEWTAB_AS_ADDON && !this.#addonInitialized) {
+    if (!this.#addonInitialized) {
       return this.#getSuspendedChannel(resultChannel);
     }
 

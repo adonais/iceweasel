@@ -1925,6 +1925,17 @@ static Result<Ok, PreXULSkeletonUIError> CreateAndStorePreXULSkeletonUIImpl(
     return Err(PreXULSkeletonUIError::CreateWindowFailed);
   }
 
+  // Set dark mode on the titlebar if dark theme is enabled to avoid
+  // a white flash (bug 2010949)
+  if (themeMode == ThemeMode::Dark) {
+    BOOL dark = TRUE;
+    sDwmSetWindowAttribute(sPreXULSkeletonUIWindow,
+                           DWMWA_USE_IMMERSIVE_DARK_MODE_BEFORE_20H1, &dark,
+                           sizeof(dark));
+    sDwmSetWindowAttribute(sPreXULSkeletonUIWindow,
+                           DWMWA_USE_IMMERSIVE_DARK_MODE, &dark, sizeof(dark));
+  }
+
   // DWM displays garbage immediately on Show(), and that garbage is usually
   // mostly #FFFFFF. To avoid a bright flash when the window is first created,
   // cloak the window while showing it, and fill it with the appropriate

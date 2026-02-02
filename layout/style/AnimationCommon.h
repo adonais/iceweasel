@@ -138,6 +138,7 @@ class OwningElementRef final {
 
     enum SortingIndex : uint8_t {
       NotPseudo,
+      Backdrop,
       Marker,
       Before,
       After,
@@ -153,6 +154,8 @@ class OwningElementRef final {
       switch (aPseudoRequest.mType) {
         case PseudoStyleType::NotPseudo:
           return SortingIndex::NotPseudo;
+        case PseudoStyleType::backdrop:
+          return SortingIndex::Backdrop;
         case PseudoStyleType::marker:
           return SortingIndex::Marker;
         case PseudoStyleType::before:

@@ -254,7 +254,7 @@ add_task(async function testSearchExcludePatterns() {
   );
 
   info("Assert that the exclude pattern is persisted across reloads");
-  await reloadBrowser();
+  await reloadSelectedTab();
   await openProjectSearch(dbg);
 
   const excludePatternsInputElement = await waitForElement(

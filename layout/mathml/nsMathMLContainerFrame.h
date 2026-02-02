@@ -388,8 +388,7 @@ class nsMathMLmathBlockFrame final : public nsBlockFrame {
   // mFrames
   void SetInitialChildList(ChildListID aListID,
                            nsFrameList&& aChildList) override {
-    MOZ_ASSERT(aListID == mozilla::FrameChildListID::Principal ||
-                   aListID == mozilla::FrameChildListID::Backdrop,
+    MOZ_ASSERT(aListID == mozilla::FrameChildListID::Principal,
                "unexpected frame list");
     nsBlockFrame::SetInitialChildList(aListID, std::move(aChildList));
     if (aListID == mozilla::FrameChildListID::Principal) {

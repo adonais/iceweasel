@@ -355,7 +355,7 @@ class ResponsiveUI {
         this.reloadOnChange("touchSimulation") && !reloadNeeded;
       await this.updateTouchSimulation(null, reloadOnTouchSimulationChange);
       if (reloadNeeded) {
-        await this.reloadBrowser();
+        await this.reloadSelectedTab();
       }
 
       // Unwatch targets & resources as the last step. If we are not waching for
@@ -542,7 +542,7 @@ class ResponsiveUI {
     await this.updateTouchSimulation(touch, reloadOnTouchSimulationChange);
 
     if (reloadNeeded) {
-      this.reloadBrowser();
+      this.reloadSelectedTab();
     }
 
     // Used by tests
@@ -583,7 +583,7 @@ class ResponsiveUI {
       (await this.updateUserAgent(userAgent)) &&
       this.reloadOnChange("userAgent");
     if (reloadNeeded) {
-      this.reloadBrowser();
+      this.reloadSelectedTab();
     }
     this.emit("user-agent-changed");
   }
@@ -607,7 +607,7 @@ class ResponsiveUI {
         this.reloadOnChange("touchSimulation") && !reloadNeeded;
       await this.updateTouchSimulation(null, reloadOnTouchSimulationChange);
       if (reloadNeeded) {
-        this.reloadBrowser();
+        this.reloadSelectedTab();
       }
     }
 
@@ -863,7 +863,7 @@ class ResponsiveUI {
         this.reloadOnChange("userAgent");
     }
     if (reloadNeeded) {
-      await this.reloadBrowser();
+      await this.reloadSelectedTab();
     }
   }
 
@@ -1122,7 +1122,7 @@ class ResponsiveUI {
   /**
    * Reload the current tab.
    */
-  async reloadBrowser() {
+  async reloadSelectedTab() {
     await this.commands.targetCommand.reloadTopLevelTarget();
   }
 }

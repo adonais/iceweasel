@@ -19,7 +19,7 @@ add_task(async function () {
   );
 
   const wait = waitForNetworkEvents(monitor, 1);
-  await reloadBrowser();
+  await reloadSelectedTab();
   await wait;
 
   EventUtils.sendMouseEvent(

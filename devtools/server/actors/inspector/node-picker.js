@@ -389,6 +389,7 @@ class NodePicker {
    * @param callback The function to call with suppressed events, or null.
    */
   _setSuppressedEventListener(callback) {
+    // The related document may already have been destroyed, or moved to another origin/process.
     if (!this._targetActor?.window?.document) {
       return;
     }

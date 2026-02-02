@@ -609,13 +609,12 @@ async function removeTab(tab) {
  * Alias for navigateTo which will reuse the current URI of the provided browser
  * to trigger a navigation.
  */
-async function reloadBrowser({
-  browser = gBrowser.selectedBrowser,
+async function reloadSelectedTab({
   isErrorPage = false,
   waitForLoad = true,
 } = {}) {
-  return navigateTo(browser.currentURI.spec, {
-    browser,
+  return navigateTo(gBrowser.selectedBrowser.currentURI.spec, {
+    browser: gBrowser.selectedBrowser,
     isErrorPage,
     waitForLoad,
   });
@@ -669,10 +668,20 @@ async function navigateTo(
     isErrorPage
   );
 
-  // if we're navigating to the same page we're already on, use reloadTab instead as the
-  // behavior slightly differs from loadURI (e.g. scroll position isn't keps with the latter).
   if (uri === browser.currentURI.spec) {
-    gBrowser.reloadTab(gBrowser.getTabForBrowser(browser));
+    // As BrowserCommands.reload only supports reloading the currently selected tab,
+    // only support reloading the selected tab.
+    is(
+      browser,
+      gBrowser.selectedBrowser,
+      "Only supports reloading the selected tab"
+    );
+
+    // If we're navigating to the same page we're already on,
+    // uses `BrowserCommands.reload()`,
+    // which is the method used to reload page from firefox UI.
+    // Compared to `gBrowser.reloadTab()`, it actually reloads iframes.
+    BrowserCommands.reload();
   } else {
     BrowserTestUtils.startLoadingURIString(browser, uri);
   }
@@ -936,7 +945,7 @@ async function watchForCommandsReload(
   // - dom-complete if we can wait for a full page load
   // - dom-loading otherwise
   // This allows to wait for page load for consumers calling directly
-  // waitForDevTools instead of navigateTo/reloadBrowser.
+  // waitForDevTools instead of navigateTo/reloadSelectedTab.
   // This is also useful as an alternative to target switching, when no target
   // switch is supposed to happen.
   const waitForCompleteLoad = waitForLoad && !isErrorPage;

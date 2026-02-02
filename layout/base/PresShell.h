@@ -3261,6 +3261,9 @@ class PresShell final : public nsStubDocumentObserver,
   // cannot be determined.
   nsTArray<AnchorPosAnchorChange> mLazyAnchorPosAnchorChanges;
 
+  // Note: Does not store implicit anchors, since many elements can be
+  // potential implicit anchors (e.g. pseudo-elements' implicit anchor
+  // is its originating element).
   nsTHashMap<RefPtr<const nsAtom>, nsTArray<nsIFrame*>> mAnchorPosAnchors;
   nsTArray<nsIFrame*> mAnchorPosPositioned;
 

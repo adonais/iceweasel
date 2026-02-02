@@ -21,7 +21,7 @@ add_task(async function () {
   isnot(y, 0, "window scrolled vertically.");
 
   info("Reloading page.");
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   info("Waiting for markupview to load after reload.");
   await markupLoaded;

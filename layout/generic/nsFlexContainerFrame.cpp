@@ -430,7 +430,7 @@ class nsFlexContainerFrame::FlexItem final {
 
     // We couldn't determine a baseline, so we synthesize one from border box:
     ascent = Baseline::SynthesizeBOffsetFromBorderBox(
-        mFrame, mWM, BaselineSharingGroup::First);
+        mFrame, mCBWM, BaselineSharingGroup::First);
     return ascent;
   }
 

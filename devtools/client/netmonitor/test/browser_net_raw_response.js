@@ -84,7 +84,7 @@ add_task(async function () {
 
   info("Reload the page to see the HTML request");
   let waitForHTMLRequest = waitForNetworkEvents(monitor, 1);
-  await reloadBrowser();
+  await reloadSelectedTab();
   await waitForHTMLRequest;
 
   info("Click on HTML request and wait for raw HTML response to be displayed");
@@ -114,7 +114,7 @@ add_task(async function () {
 
   info("Reload the page to see the HTML request");
   waitForHTMLRequest = waitForNetworkEvents(monitor, 1);
-  await reloadBrowser();
+  await reloadSelectedTab();
   await waitForHTMLRequest;
 
   info(

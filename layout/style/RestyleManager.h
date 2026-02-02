@@ -270,27 +270,7 @@ class RestyleManager {
     // This method takes the content node for the generated content for
     // animation/transition on ::before and ::after, rather than the
     // content node for the real element.
-    void Put(nsIContent* aContent, ComputedStyle* aComputedStyle) {
-      MOZ_ASSERT(aContent);
-      PseudoStyleType pseudoType = aComputedStyle->GetPseudoType();
-      if (pseudoType == PseudoStyleType::NotPseudo ||
-          PseudoStyle::IsViewTransitionPseudoElement(pseudoType)) {
-        mContents.AppendElement(aContent->AsElement());
-      } else if (pseudoType == PseudoStyleType::before) {
-        MOZ_ASSERT(aContent->NodeInfo()->NameAtom() ==
-                   nsGkAtoms::mozgeneratedcontentbefore);
-        mBeforeContents.AppendElement(aContent->GetParent()->AsElement());
-      } else if (pseudoType == PseudoStyleType::after) {
-        MOZ_ASSERT(aContent->NodeInfo()->NameAtom() ==
-                   nsGkAtoms::mozgeneratedcontentafter);
-        mAfterContents.AppendElement(aContent->GetParent()->AsElement());
-      } else if (pseudoType == PseudoStyleType::marker) {
-        MOZ_ASSERT(aContent->NodeInfo()->NameAtom() ==
-                   nsGkAtoms::mozgeneratedcontentmarker);
-        mMarkerContents.AppendElement(aContent->GetParent()->AsElement());
-      }
-    }
-
+    void Put(nsIContent* aContent, ComputedStyle* aComputedStyle);
     void StopAnimationsForElementsWithoutFrames();
 
    private:
@@ -303,13 +283,10 @@ class RestyleManager {
     // Below four arrays might include elements that have already had their
     // animations or transitions stopped.
     //
-    // mBeforeContents, mAfterContents and mMarkerContents hold the real element
-    // rather than the content node for the generated content (which might
+    // mContents holds either the real element and NotPseudo, or the parent
+    // element rather than the content node for generated content (which might
     // change during a reframe).
-    nsTArray<RefPtr<Element>> mContents;
-    nsTArray<RefPtr<Element>> mBeforeContents;
-    nsTArray<RefPtr<Element>> mAfterContents;
-    nsTArray<RefPtr<Element>> mMarkerContents;
+    nsTArray<std::pair<RefPtr<Element>, PseudoStyleType>> mContents;
   };
 
   /**

@@ -92,7 +92,7 @@ add_task(async function () {
     "watchTargets reports the same target instance"
   );
 
-  await reloadBrowser();
+  await reloadSelectedTab();
 
   await waitFor(
     () => destroyedTargets.length == 1,

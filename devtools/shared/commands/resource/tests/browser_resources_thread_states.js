@@ -292,7 +292,7 @@ async function checkPauseOnException() {
   });
 
   info("Reload the page, in order to trigger exception on load");
-  const reloaded = reloadBrowser();
+  const reloaded = reloadSelectedTab();
 
   await waitFor(
     () => availableResources.length == 1,

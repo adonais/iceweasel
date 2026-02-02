@@ -1920,12 +1920,14 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
    * @param aRange the subgrid's range in the parent grid, or null
    * @param aIsSameDirection true if our axis progresses in the same direction
    *                              in the subgrid and parent
+   * @param aIsOrthogonal true if the subgrid and parent have orthongonal
+   *                           writing modes
    */
   LineNameMap(const nsStylePosition* aStylePosition,
               const ImplicitNamedAreas* aImplicitNamedAreas,
               const TrackSizingFunctions& aTracks,
               const LineNameMap* aParentLineNameMap, const LineRange* aRange,
-              bool aIsSameDirection)
+              bool aIsSameDirection = true, bool aIsOrthogonal = false)
       : mStylePosition(aStylePosition),
         mAreas(aImplicitNamedAreas),
         mRepeatAutoStart(aTracks.mRepeatAutoStart),
@@ -1934,6 +1936,7 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
         mParentLineNameMap(aParentLineNameMap),
         mRange(aRange),
         mIsSameDirection(aIsSameDirection),
+        mIsOrthogonal(aIsOrthogonal),
         mHasRepeatAuto(aTracks.mHasRepeatAuto) {
     if (MOZ_UNLIKELY(aRange)) {  // subgrid case
       mClampMinLine = 1;
@@ -2190,6 +2193,10 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
       if (MOZ_UNLIKELY(!map->mIsSameDirection)) {
         aSide = GetOppositeSide(aSide);
         sameDirectionAsThis = !sameDirectionAsThis;
+      }
+      if (MOZ_UNLIKELY(map->mIsOrthogonal)) {
+        aSide =
+            MakeLogicalSide(GetOrthogonalAxis(GetAxis(aSide)), GetEdge(aSide));
       }
       min = map->TranslateToParentMap(min);
       max = map->TranslateToParentMap(max);
@@ -2516,6 +2523,8 @@ class MOZ_STACK_CLASS nsGridContainerFrame::LineNameMap {
   const LineRange* mRange;
   // True if the subgrid/parent axes progresses in the same direction.
   const bool mIsSameDirection;
+  // True if the subgrid and parent have orthogonal writing modes.
+  const bool mIsOrthogonal;
 
   // True if there is a specified repeat(auto-fill/fit) track.
   bool mHasRepeatAuto;
@@ -5209,6 +5218,7 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
   const LineNameMap* parentLineNameMap = nullptr;
   const LineRange* subgridRange = nullptr;
   bool subgridAxisIsSameDirection = true;
+  bool subgridIsOrthogonal = false;
   if (!aGridRI.mFrame->IsColSubgrid()) {
     aGridRI.mColFunctions.InitRepeatTracks(
         gridStyle->mColumnGap, aSizes.mMin.ISize(aGridRI.mWM),
@@ -5227,11 +5237,12 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
         aGridRI.mFrame->ParentGridContainerForSubgrid()->GetWritingMode();
     subgridAxisIsSameDirection =
         aGridRI.mWM.ParallelAxisStartsOnSameSide(LogicalAxis::Inline, parentWM);
+    subgridIsOrthogonal = subgrid->mIsOrthogonal;
   }
   mGridColEnd = mExplicitGridColEnd;
   LineNameMap colLineNameMap(gridStyle, mAreas, aGridRI.mColFunctions,
                              parentLineNameMap, subgridRange,
-                             subgridAxisIsSameDirection);
+                             subgridAxisIsSameDirection, subgridIsOrthogonal);
 
   if (!aGridRI.mFrame->IsRowSubgrid()) {
     const Maybe<nscoord> containBSize = aGridRI.mFrame->ContainIntrinsicBSize();
@@ -5263,11 +5274,12 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
         aGridRI.mFrame->ParentGridContainerForSubgrid()->GetWritingMode();
     subgridAxisIsSameDirection =
         aGridRI.mWM.ParallelAxisStartsOnSameSide(LogicalAxis::Block, parentWM);
+    subgridIsOrthogonal = subgrid->mIsOrthogonal;
   }
   mGridRowEnd = mExplicitGridRowEnd;
   LineNameMap rowLineNameMap(gridStyle, mAreas, aGridRI.mRowFunctions,
                              parentLineNameMap, subgridRange,
-                             subgridAxisIsSameDirection);
+                             subgridAxisIsSameDirection, subgridIsOrthogonal);
 
   const bool isSubgridOrItemInSubgrid =
       aGridRI.mFrame->IsSubgrid() || !!mParentGrid;
@@ -9299,46 +9311,52 @@ nscoord nsGridContainerFrame::ReflowChildren(GridReflowInput& aGridRI,
   aDesiredSize.mOverflowAreas.UnionWith(ocBounds);
   aStatus.MergeCompletionStatusFrom(ocStatus);
 
+  return bSize;
+}
+
+void nsGridContainerFrame::ReflowAbsoluteChildren(
+    GridReflowInput& aGridRI, const LogicalRect& aContentArea,
+    nscoord aContentBSize, ReflowOutput& aDesiredSize,
+    nsReflowStatus& aStatus) {
+  WritingMode wm = aGridRI.mReflowInput->GetWritingMode();
   auto* absoluteContainer = GetAbsoluteContainingBlock();
   // We have prepared the absolute frames when initializing GridReflowInput.
-  if (absoluteContainer && absoluteContainer->HasAbsoluteFrames()) {
-    // 'gridOrigin' is the origin of the grid (the start of the first track),
-    // with respect to the grid container's padding-box (CB).
-    LogicalMargin pad(aGridRI.mReflowInput->ComputedLogicalPadding(wm));
-    const LogicalPoint gridOrigin(wm, pad.IStart(wm), pad.BStart(wm));
-    const LogicalRect gridCB(wm, 0, 0,
-                             aContentArea.ISize(wm) + pad.IStartEnd(wm),
-                             bSize + pad.BStartEnd(wm));
-    const nsSize gridCBPhysicalSize = gridCB.Size(wm).GetPhysicalSize(wm);
-    size_t i = 0;
-    for (nsIFrame* child : absoluteContainer->GetChildList()) {
-      MOZ_ASSERT(i < aGridRI.mAbsPosItems.Length());
-      MOZ_ASSERT(aGridRI.mAbsPosItems[i].mFrame == child);
-      GridArea& area = aGridRI.mAbsPosItems[i].mArea;
-      LogicalRect itemCB =
-          aGridRI.ContainingBlockForAbsPos(area, gridOrigin, gridCB);
-      // AbsoluteContainingBlock::Reflow uses physical coordinates.
-      nsRect* cb = child->GetProperty(GridItemContainingBlockRect());
-      if (!cb) {
-        cb = new nsRect;
-        child->SetProperty(GridItemContainingBlockRect(), cb);
-      }
-      *cb = itemCB.GetPhysicalRect(wm, gridCBPhysicalSize);
-      ++i;
-    }
-    const auto border = aGridRI.mReflowInput->ComputedPhysicalBorder();
-    const nsPoint borderShift{border.left, border.top};
-    const nsRect paddingRect(borderShift, gridCBPhysicalSize);
-    // XXX: To optimize the performance, set the flags only when the CB width
-    // or height actually changes.
-    AbsPosReflowFlags flags{
-        AbsPosReflowFlag::AllowFragmentation, AbsPosReflowFlag::CBWidthChanged,
-        AbsPosReflowFlag::CBHeightChanged, AbsPosReflowFlag::IsGridContainerCB};
-    absoluteContainer->Reflow(this, PresContext(), *aGridRI.mReflowInput,
-                              aStatus, paddingRect, flags,
-                              &aDesiredSize.mOverflowAreas);
+  if (!absoluteContainer || !absoluteContainer->HasAbsoluteFrames()) {
+    return;
   }
-  return bSize;
+  // 'gridOrigin' is the origin of the grid (the start of the first track),
+  // with respect to the grid container's padding-box (CB).
+  LogicalMargin pad(aGridRI.mReflowInput->ComputedLogicalPadding(wm));
+  const LogicalPoint gridOrigin(wm, pad.IStart(wm), pad.BStart(wm));
+  const LogicalRect gridCB(wm, 0, 0, aContentArea.ISize(wm) + pad.IStartEnd(wm),
+                           aContentBSize + pad.BStartEnd(wm));
+  const nsSize gridCBPhysicalSize = gridCB.Size(wm).GetPhysicalSize(wm);
+  size_t i = 0;
+  for (nsIFrame* child : absoluteContainer->GetChildList()) {
+    MOZ_ASSERT(i < aGridRI.mAbsPosItems.Length());
+    MOZ_ASSERT(aGridRI.mAbsPosItems[i].mFrame == child);
+    GridArea& area = aGridRI.mAbsPosItems[i].mArea;
+    LogicalRect itemCB =
+        aGridRI.ContainingBlockForAbsPos(area, gridOrigin, gridCB);
+    // AbsoluteContainingBlock::Reflow uses physical coordinates.
+    nsRect* cb = child->GetProperty(GridItemContainingBlockRect());
+    if (!cb) {
+      cb = new nsRect;
+      child->SetProperty(GridItemContainingBlockRect(), cb);
+    }
+    *cb = itemCB.GetPhysicalRect(wm, gridCBPhysicalSize);
+    ++i;
+  }
+  const auto border = aGridRI.mReflowInput->ComputedPhysicalBorder();
+  const nsPoint borderShift{border.left, border.top};
+  const nsRect paddingRect(borderShift, gridCBPhysicalSize);
+  // XXX: To optimize the performance, set the flags only when the CB width
+  // or height actually changes.
+  AbsPosReflowFlags flags{
+      AbsPosReflowFlag::AllowFragmentation, AbsPosReflowFlag::CBWidthChanged,
+      AbsPosReflowFlag::CBHeightChanged, AbsPosReflowFlag::IsGridContainerCB};
+  absoluteContainer->Reflow(this, PresContext(), *aGridRI.mReflowInput, aStatus,
+                            paddingRect, flags, &aDesiredSize.mOverflowAreas);
 }
 
 nscoord nsGridContainerFrame::ComputeBSizeForResolvingRowSizes(
@@ -9603,29 +9621,6 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
 
   contentBSize =
       ReflowChildren(gridRI, contentArea, containerSize, aDesiredSize, aStatus);
-  contentBSize = std::max(contentBSize - consumedBSize, 0);
-
-  // Skip our block-end border if we're INCOMPLETE.
-  if (!aStatus.IsComplete() && !gridRI.mSkipSides.BEnd() &&
-      StyleBorder()->mBoxDecorationBreak != StyleBoxDecorationBreak::Clone) {
-    bp.BEnd(wm) = nscoord(0);
-  }
-
-  LogicalSize desiredSize(wm, computedISize + bp.IStartEnd(wm),
-                          contentBSize + bp.BStartEnd(wm));
-  aDesiredSize.SetSize(wm, desiredSize);
-  nsRect frameRect(0, 0, aDesiredSize.Width(), aDesiredSize.Height());
-  aDesiredSize.mOverflowAreas.UnionAllWith(frameRect);
-
-  if (repositionChildren) {
-    nsPoint physicalDelta(aDesiredSize.Width() - bp.LeftRight(wm), 0);
-    for (const auto& item : gridRI.mGridItems) {
-      auto* child = item.mFrame;
-      child->MovePositionBy(physicalDelta);
-      ConsiderChildOverflow(aDesiredSize.mOverflowAreas, child);
-    }
-  }
-
   if (Style()->GetPseudoType() == PseudoStyleType::scrolledContent) {
     // Per spec, the grid area is included in a grid container's scrollable
     // overflow region [1], as well as the padding on the end-edge sides that
@@ -9671,6 +9666,30 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
           gridItemMarginBoxBounds.Union(item.mFrame->GetMarginRect());
     }
     aDesiredSize.mOverflowAreas.UnionAllWith(gridItemMarginBoxBounds);
+  }
+  ReflowAbsoluteChildren(gridRI, contentArea, contentBSize, aDesiredSize,
+                         aStatus);
+  contentBSize = std::max(contentBSize - consumedBSize, 0);
+
+  // Skip our block-end border if we're INCOMPLETE.
+  if (!aStatus.IsComplete() && !gridRI.mSkipSides.BEnd() &&
+      StyleBorder()->mBoxDecorationBreak != StyleBoxDecorationBreak::Clone) {
+    bp.BEnd(wm) = nscoord(0);
+  }
+
+  LogicalSize desiredSize(wm, computedISize + bp.IStartEnd(wm),
+                          contentBSize + bp.BStartEnd(wm));
+  aDesiredSize.SetSize(wm, desiredSize);
+  nsRect frameRect(0, 0, aDesiredSize.Width(), aDesiredSize.Height());
+  aDesiredSize.mOverflowAreas.UnionAllWith(frameRect);
+
+  if (repositionChildren) {
+    nsPoint physicalDelta(aDesiredSize.Width() - bp.LeftRight(wm), 0);
+    for (const auto& item : gridRI.mGridItems) {
+      auto* child = item.mFrame;
+      child->MovePositionBy(physicalDelta);
+      ConsiderChildOverflow(aDesiredSize.mOverflowAreas, child);
+    }
   }
 
   // TODO: fix align-tracks alignment in fragments
@@ -9772,8 +9791,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
         subgrid && IsColSubgrid() ? &subgrid->SubgridCols() : nullptr;
 
     LineNameMap colLineNameMap(gridRI.mGridStyle, GetImplicitNamedAreas(),
-                               gridRI.mColFunctions, nullptr, subgridColRange,
-                               true);
+                               gridRI.mColFunctions, nullptr, subgridColRange);
     uint32_t colTrackCount = gridRI.mCols.mSizes.Length();
     nsTArray<nscoord> colTrackPositions(colTrackCount);
     nsTArray<nscoord> colTrackSizes(colTrackCount);
@@ -9811,8 +9829,7 @@ void nsGridContainerFrame::Reflow(nsPresContext* aPresContext,
     const auto* subgridRowRange =
         subgrid && IsRowSubgrid() ? &subgrid->SubgridRows() : nullptr;
     LineNameMap rowLineNameMap(gridRI.mGridStyle, GetImplicitNamedAreas(),
-                               gridRI.mRowFunctions, nullptr, subgridRowRange,
-                               true);
+                               gridRI.mRowFunctions, nullptr, subgridRowRange);
     uint32_t rowTrackCount = gridRI.mRows.mSizes.Length();
     nsTArray<nscoord> rowTrackPositions(rowTrackCount);
     nsTArray<nscoord> rowTrackSizes(rowTrackCount);
@@ -10559,12 +10576,7 @@ void nsGridContainerFrame::StoreUsedTrackSizes(LogicalAxis aAxis,
 void nsGridContainerFrame::SetInitialChildList(ChildListID aListID,
                                                nsFrameList&& aChildList) {
   ChildListIDs supportedLists = {FrameChildListID::Principal};
-  // We don't handle the FrameChildListID::Backdrop frames in any way, but it
-  // only contains a placeholder for ::backdrop which is OK to not reflow (for
-  // now anyway).
-  supportedLists += FrameChildListID::Backdrop;
   MOZ_ASSERT(supportedLists.contains(aListID), "unexpected child list");
-
   return nsContainerFrame::SetInitialChildList(aListID, std::move(aChildList));
 }
 
