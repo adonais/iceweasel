@@ -2378,20 +2378,16 @@ static void SetupSkeletonUIPrefs() {
 #  if defined(MOZ_LAUNCHER_PROCESS)
 
 static void OnLauncherPrefChanged(const char* aPref, void* aData) {
-  bool prefVal = Preferences::GetBool(PREF_WIN_LAUNCHER_PROCESS_ENABLED, true);
-
   mozilla::LauncherRegistryInfo launcherRegInfo;
-  mozilla::DebugOnly<mozilla::LauncherVoidResult> reflectResult =
-      launcherRegInfo.ReflectPrefToRegistry(prefVal);
+  // For libportable, we always set this value to true
+  mozilla::DebugOnly<mozilla::LauncherVoidResult> reflectResult = launcherRegInfo.ReflectPrefToRegistry(true);
   MOZ_ASSERT(reflectResult.inspect().isOk());
 }
 
 static void OnLauncherTelemetryPrefChanged(const char* aPref, void* aData) {
-  bool prefVal = Preferences::GetBool(kPrefHealthReportUploadEnabled, true);
-
   mozilla::LauncherRegistryInfo launcherRegInfo;
   mozilla::DebugOnly<mozilla::LauncherVoidResult> reflectResult =
-      launcherRegInfo.ReflectTelemetryPrefToRegistry(prefVal);
+      launcherRegInfo.ReflectTelemetryPrefToRegistry(Preferences::GetBool(kPrefHealthReportUploadEnabled, false));
   MOZ_ASSERT(reflectResult.inspect().isOk());
 }
 
@@ -2400,30 +2396,6 @@ static void SetupLauncherProcessPref() {
     // We've already successfully run
     return;
   }
-
-  mozilla::LauncherRegistryInfo launcherRegInfo;
-
-  mozilla::LauncherResult<mozilla::LauncherRegistryInfo::EnabledState>
-      enabledState = launcherRegInfo.IsEnabled();
-
-  if (enabledState.isOk()) {
-    gLauncherProcessState = Some(enabledState.unwrap());
-
-    CrashReporter::RecordAnnotationU32(
-        CrashReporter::Annotation::LauncherProcessState,
-        static_cast<uint32_t>(enabledState.unwrap()));
-
-    // Reflect the launcher process registry state into user prefs
-    Preferences::SetBool(
-        PREF_WIN_LAUNCHER_PROCESS_ENABLED,
-        enabledState.unwrap() !=
-            mozilla::LauncherRegistryInfo::EnabledState::ForceDisabled);
-  }
-
-  mozilla::DebugOnly<mozilla::LauncherVoidResult> reflectResult =
-      launcherRegInfo.ReflectTelemetryPrefToRegistry(
-          Preferences::GetBool(kPrefHealthReportUploadEnabled, true));
-  MOZ_ASSERT(reflectResult.inspect().isOk());
 
   Preferences::RegisterCallback(&OnLauncherPrefChanged,
                                 PREF_WIN_LAUNCHER_PROCESS_ENABLED);
