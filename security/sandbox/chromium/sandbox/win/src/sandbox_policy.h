@@ -16,7 +16,7 @@
 namespace sandbox {
 
 // Number of memory pages to allow for the policy storage.
-constexpr size_t kPolMemPageCount = 14;
+constexpr size_t kPolMemPageCount = 22;
 
 class AppContainer;
 

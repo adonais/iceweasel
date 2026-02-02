@@ -53,11 +53,9 @@ class nsAuthGSSAPI final : public nsIAuthModule {
   gss_ctx_id_t mCtx;
   gss_OID mMechOID;
   nsCString mServiceName;
-  uint32_t mServiceFlags = REQ_DEFAULT;
+  uint32_t mServiceFlags;
   nsString mUsername;
-  bool mComplete = false;
-  bool mDelegationRequested = false;
-  bool mDelegationSupported = false;
+  bool mComplete;
 };
 
 #endif /* nsAuthGSSAPI_h__ */

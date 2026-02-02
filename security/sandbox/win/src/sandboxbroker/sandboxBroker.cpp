@@ -1370,10 +1370,14 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
   config->SetLockdownDefaultDacl();
   config->AddRestrictingRandomSid();
 
-  // Policy wrapper to keep track of available rule space. The full policy has
-  // 14 pages, so 12 allows two pages for generic process rules and to allow for
-  // padding that occurs in LowLevelPolicy::Done. See bug 2009140.
-  sandboxing::SizeTrackingConfig trackingConfig(config, 12);
+  // Policy wrapper to keep track of available rule space. We allow two spare
+  // pages for generic process rules and to allow for padding that occurs in
+  // LowLevelPolicy::Done. See bug 2009140.
+  // Note that we plan to move to a single font access rule in bug 2002995. This
+  // will remove the need for individual rules and mean that we can reduce
+  // sandbox::kPolMemPageCount.
+  sandboxing::SizeTrackingConfig trackingConfig(config,
+                                                sandbox::kPolMemPageCount - 2);
 
   if (StaticPrefs::security_sandbox_chrome_pipe_rule_enabled()) {
     // Add the policy for the client side of a pipe. It is just a file
