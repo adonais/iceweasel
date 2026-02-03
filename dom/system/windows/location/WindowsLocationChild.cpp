@@ -10,6 +10,7 @@
 #include "WindowsLocationProvider.h"
 #include "mozilla/dom/GeolocationPosition.h"
 #include "mozilla/dom/GeolocationPositionErrorBinding.h"
+#include "mozilla/glean/DomGeolocationMetrics.h"
 #include "nsCOMPtr.h"
 #include "nsIGeolocationProvider.h"
 #include "prtime.h"
@@ -17,8 +18,15 @@
 namespace mozilla::dom {
 
 extern LazyLogModule gWindowsLocationProviderLog;
-#define LOG(...) \
+#define LOGD(...) \
   MOZ_LOG(gWindowsLocationProviderLog, LogLevel::Debug, (__VA_ARGS__))
+#define LOGI(...) \
+  MOZ_LOG(gWindowsLocationProviderLog, LogLevel::Info, (__VA_ARGS__))
+
+// Use string lookup since dual_labeled_counter does not yet support enums.
+static void AddFailureTelemetry(const nsACString& aReason) {
+  glean::geolocation::windows_failure.Get("legacy"_ns, aReason).Add();
+}
 
 class LocationEvent final : public ILocationEvents {
  public:
@@ -80,9 +88,9 @@ LocationEvent::QueryInterface(REFIID iid, void** ppv) {
 STDMETHODIMP
 LocationEvent::OnStatusChanged(REFIID aReportType,
                                LOCATION_REPORT_STATUS aStatus) {
-  LOG("LocationEvent::OnStatusChanged(%p, %p, %s, %04x)", this, mActor.get(),
-      aReportType == IID_ILatLongReport ? "true" : "false",
-      static_cast<uint32_t>(aStatus));
+  LOGD("LocationEvent::OnStatusChanged(%p, %p, %s, %04x)", this, mActor.get(),
+       aReportType == IID_ILatLongReport ? "true" : "false",
+       static_cast<uint32_t>(aStatus));
 
   if (!mActor || aReportType != IID_ILatLongReport) {
     return S_OK;
@@ -94,10 +102,14 @@ LocationEvent::OnStatusChanged(REFIID aReportType,
   uint16_t err;
   switch (aStatus) {
     case REPORT_ACCESS_DENIED:
+      AddFailureTelemetry("permission denied"_ns);
       err = GeolocationPositionError_Binding::PERMISSION_DENIED;
       break;
     case REPORT_NOT_SUPPORTED:
     case REPORT_ERROR:
+      AddFailureTelemetry(aStatus == REPORT_NOT_SUPPORTED
+                              ? "not supported"_ns
+                              : "geoservice error"_ns);
       err = GeolocationPositionError_Binding::POSITION_UNAVAILABLE;
       break;
     default:
@@ -110,8 +122,8 @@ LocationEvent::OnStatusChanged(REFIID aReportType,
 
 STDMETHODIMP
 LocationEvent::OnLocationChanged(REFIID aReportType, ILocationReport* aReport) {
-  LOG("LocationEvent::OnLocationChanged(%p, %p, %s)", this, mActor.get(),
-      aReportType == IID_ILatLongReport ? "true" : "false");
+  LOGD("LocationEvent::OnLocationChanged(%p, %p, %s)", this, mActor.get(),
+       aReportType == IID_ILatLongReport ? "true" : "false");
 
   if (!mActor || aReportType != IID_ILatLongReport) {
     return S_OK;
@@ -152,15 +164,15 @@ LocationEvent::OnLocationChanged(REFIID aReportType, ILocationReport* aReport) {
 }
 
 WindowsLocationChild::WindowsLocationChild() {
-  LOG("WindowsLocationChild::WindowsLocationChild(%p)", this);
+  LOGD("WindowsLocationChild::WindowsLocationChild(%p)", this);
 }
 
 WindowsLocationChild::~WindowsLocationChild() {
-  LOG("WindowsLocationChild::~WindowsLocationChild(%p)", this);
+  LOGD("WindowsLocationChild::~WindowsLocationChild(%p)", this);
 }
 
 ::mozilla::ipc::IPCResult WindowsLocationChild::RecvStartup() {
-  LOG("WindowsLocationChild::RecvStartup(%p, %p)", this, mLocation.get());
+  LOGD("WindowsLocationChild::RecvStartup(%p, %p)", this, mLocation.get());
   if (mLocation) {
     return IPC_OK();
   }
@@ -168,16 +180,31 @@ WindowsLocationChild::~WindowsLocationChild() {
   RefPtr<ILocation> location;
   if (FAILED(::CoCreateInstance(CLSID_Location, nullptr, CLSCTX_INPROC_SERVER,
                                 IID_ILocation, getter_AddRefs(location)))) {
-    LOG("WindowsLocationChild(%p) failed to create ILocation", this);
+    LOGD("WindowsLocationChild(%p) failed to create ILocation", this);
     // We will use MLS provider
+    AddFailureTelemetry("creation error"_ns);
     SendFailed(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
     return IPC_OK();
   }
 
   IID reportTypes[] = {IID_ILatLongReport};
-  if (FAILED(location->RequestPermissions(nullptr, reportTypes, 1, FALSE))) {
-    LOG("WindowsLocationChild(%p) failed to set ILocation permissions", this);
-    // We will use MLS provider
+  auto hr = location->RequestPermissions(nullptr, reportTypes, 1, FALSE);
+  if (FAILED(hr)) {
+    LOGD(
+        "WindowsLocationChild(%p) failed to set ILocation permissions. "
+        "Error: %ld",
+        this, hr);
+    // We will use MLS provider.
+    // The docs for RequestPermissions say that the call returns different
+    // error codes for sync vs async calls.  We log the sync call errors
+    // since what async call means here is not explained (or possible).
+    if (hr == HRESULT_FROM_WIN32(ERROR_ACCESS_DENIED)) {
+      AddFailureTelemetry("requestpermissions denied"_ns);
+    } else if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
+      AddFailureTelemetry("requestpermissions canceled"_ns);
+    } else {
+      AddFailureTelemetry("unexpected error"_ns);
+    }
     SendFailed(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
     return IPC_OK();
   }
@@ -188,7 +215,7 @@ WindowsLocationChild::~WindowsLocationChild() {
 
 ::mozilla::ipc::IPCResult WindowsLocationChild::RecvSetHighAccuracy(
     bool aEnable) {
-  LOG("WindowsLocationChild::RecvSetHighAccuracy(%p, %p, %s)", this,
+  LOGD("WindowsLocationChild::RecvSetHighAccuracy(%p, %p, %s)", this,
       mLocation.get(), aEnable ? "true" : "false");
 
   // We sometimes call SetHighAccuracy before Startup, so we save the
@@ -199,10 +226,11 @@ WindowsLocationChild::~WindowsLocationChild() {
 }
 
 ::mozilla::ipc::IPCResult WindowsLocationChild::RecvRegisterForReport() {
-  LOG("WindowsLocationChild::RecvRegisterForReport(%p, %p)", this,
+  LOGD("WindowsLocationChild::RecvRegisterForReport(%p, %p)", this,
       mLocation.get());
 
   if (!mLocation) {
+    AddFailureTelemetry("not registered"_ns);
     SendFailed(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
     return IPC_OK();
   }
@@ -216,6 +244,7 @@ WindowsLocationChild::~WindowsLocationChild() {
 
   if (NS_WARN_IF(FAILED(mLocation->SetDesiredAccuracy(IID_ILatLongReport,
                                                       desiredAccuracy)))) {
+    AddFailureTelemetry("unexpected error"_ns);
     SendFailed(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
     return IPC_OK();
   }
@@ -223,15 +252,19 @@ WindowsLocationChild::~WindowsLocationChild() {
   auto event = MakeRefPtr<LocationEvent>(this);
   if (NS_WARN_IF(
           FAILED(mLocation->RegisterForReport(event, IID_ILatLongReport, 0)))) {
+    AddFailureTelemetry("failed to register"_ns);
     SendFailed(GeolocationPositionError_Binding::POSITION_UNAVAILABLE);
   }
 
-  LOG("WindowsLocationChild::RecvRegisterForReport successfully registered");
+  glean::geolocation::geolocation_service
+      .EnumGet(glean::geolocation::GeolocationServiceLabel::eSystem)
+      .Add();
+  LOGI("WindowsLocationChild::RecvRegisterForReport successfully registered");
   return IPC_OK();
 }
 
 ::mozilla::ipc::IPCResult WindowsLocationChild::RecvUnregisterForReport() {
-  LOG("WindowsLocationChild::RecvUnregisterForReport(%p, %p)", this,
+  LOGI("WindowsLocationChild::RecvUnregisterForReport(%p, %p)", this,
       mLocation.get());
 
   if (!mLocation) {
@@ -250,7 +283,7 @@ WindowsLocationChild::~WindowsLocationChild() {
 }
 
 void WindowsLocationChild::ActorDestroy(ActorDestroyReason aWhy) {
-  LOG("WindowsLocationChild::ActorDestroy(%p, %p)", this, mLocation.get());
+  LOGD("WindowsLocationChild::ActorDestroy(%p, %p)", this, mLocation.get());
   mLocation = nullptr;
 }
 

@@ -8,6 +8,7 @@
 
 #include "Geolocation.h"
 #include "GeolocationPosition.h"
+#include "mozilla/glean/DomGeolocationMetrics.h"
 #include "mozilla/java/GeckoAppShellWrappers.h"
 
 using namespace mozilla;
@@ -25,6 +26,9 @@ AndroidLocationProvider::~AndroidLocationProvider() {
 NS_IMETHODIMP
 AndroidLocationProvider::Startup() {
   if (java::GeckoAppShell::EnableLocationUpdates(true)) {
+    glean::geolocation::geolocation_service
+        .EnumGet(glean::geolocation::GeolocationServiceLabel::eSystem)
+        .Add();
     return NS_OK;
   }
   return NS_ERROR_FAILURE;

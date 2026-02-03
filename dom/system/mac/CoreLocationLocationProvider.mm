@@ -8,6 +8,7 @@
 #include "GeolocationPosition.h"
 #include "MLSFallback.h"
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/Logging.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/GeolocationPositionErrorBinding.h"
 #include "mozilla/glean/DomGeolocationMetrics.h"
@@ -30,6 +31,36 @@ using namespace mozilla;
 
 #define kDefaultAccuracy kCLLocationAccuracyNearestTenMeters
 
+static LazyLogModule gCoreLocationProviderLog("CoreLocation");
+#define LOGD(...) \
+  MOZ_LOG(gCoreLocationProviderLog, LogLevel::Debug, (__VA_ARGS__))
+#define LOGI(...) \
+  MOZ_LOG(gCoreLocationProviderLog, LogLevel::Info, (__VA_ARGS__))
+
+static void LogLocationPermissionState() {
+  CLAuthorizationStatus authStatus = [CLLocationManager authorizationStatus];
+  const char* authStatusStr = "Unknown";
+  switch (authStatus) {
+    case kCLAuthorizationStatusNotDetermined:
+      authStatusStr = "NotDetermined";
+      break;
+    case kCLAuthorizationStatusRestricted:
+      authStatusStr = "Restricted";
+      break;
+    case kCLAuthorizationStatusDenied:
+      authStatusStr = "Denied";
+      break;
+    case kCLAuthorizationStatusAuthorizedAlways:
+      authStatusStr = "AuthorizedAlways";
+      break;
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unknown CLAuthorizationStatus");
+      break;
+  }
+
+  LOGD("Authorization status: %s (code: %d)", authStatusStr, (int)authStatus);
+}
+
 @interface LocationDelegate : NSObject <CLLocationManagerDelegate> {
   CoreLocationLocationProvider* mProvider;
 }
@@ -39,6 +70,9 @@ using namespace mozilla;
        didFailWithError:(NSError*)aError;
 - (void)locationManager:(CLLocationManager*)aManager
      didUpdateLocations:(NSArray*)locations;
+- (void)locationManagerDidChangeAuthorization:(CLLocationManager*)aManager;
+- (void)locationManagerDidPauseLocationUpdates:(CLLocationManager*)aManager;
+- (void)locationManagerDidResumeLocationUpdates:(CLLocationManager*)aManager;
 
 @end
 
@@ -58,10 +92,18 @@ using namespace mozilla;
 
   NS_ENSURE_TRUE_VOID(console);
 
+  LogLocationPermissionState();
+
   NSString* message = [@"Failed to acquire position: "
       stringByAppendingString:[aError localizedDescription]];
 
   console->LogStringMessage(NS_ConvertUTF8toUTF16([message UTF8String]).get());
+  LOGD("%s", [message UTF8String]);
+
+  // Telemetry will store up to 16 different error codes.
+  nsAutoCString errorCodeStr;
+  errorCodeStr.AppendInt(static_cast<int32_t>([aError code]));
+  glean::geolocation::macos_error_code.Get(errorCodeStr).Add();
 
   // The CL provider does not fallback to GeoIP, so use
   // NetworkGeolocationProvider for this. The concept here is: on error, hand
@@ -111,7 +153,21 @@ using namespace mozilla;
         .Add();
   }
 
+  LOGD("Location updated.");
   mProvider->Update(geoPosition);
+}
+
+- (void)locationManagerDidChangeAuthorization:(CLLocationManager*)aManager {
+  LOGD("Authorization changed");
+  LogLocationPermissionState();
+}
+
+- (void)locationManagerDidPauseLocationUpdates:(CLLocationManager*)aManager {
+  LOGD("Paused location updates");
+}
+
+- (void)locationManagerDidResumeLocationUpdates:(CLLocationManager*)aManager {
+  LOGD("Resumed location updates");
 }
 @end
 
@@ -188,6 +244,10 @@ CoreLocationLocationProvider::Startup() {
   // guaranteed
   [mCLObjects->mLocationManager stopUpdatingLocation];
   [mCLObjects->mLocationManager startUpdatingLocation];
+  glean::geolocation::geolocation_service
+      .EnumGet(glean::geolocation::GeolocationServiceLabel::eSystem)
+      .Add();
+  LOGI("CoreLocationLocationProvider requested location updates.");
   return NS_OK;
 }
 
@@ -216,6 +276,7 @@ CoreLocationLocationProvider::Shutdown() {
     mMLSFallbackProvider = nullptr;
   }
 
+  LOGI("CoreLocationLocationProvider stopped location updates.");
   return NS_OK;
 }
 

@@ -43,9 +43,20 @@ NativeLayerRootRemoteMacChild::CreateLayerForColor(gfx::DeviceColor aColor) {
   return layer.forget();
 }
 
-void NativeLayerRootRemoteMacChild::AppendLayer(NativeLayer* aLayer) {}
+void NativeLayerRootRemoteMacChild::AppendLayer(NativeLayer* aLayer) {
+  RefPtr<NativeLayerRemoteMac> layerRemoteMac =
+      aLayer->AsNativeLayerRemoteMac();
+  mNativeLayers.AppendElement(std::move(layerRemoteMac));
+  mNativeLayersChanged = true;
+  mNativeLayersChangedForSnapshot = true;
+}
 
-void NativeLayerRootRemoteMacChild::RemoveLayer(NativeLayer* aLayer) {}
+void NativeLayerRootRemoteMacChild::RemoveLayer(NativeLayer* aLayer) {
+  if (mNativeLayers.RemoveElement(aLayer)) {
+    mNativeLayersChanged = true;
+    mNativeLayersChangedForSnapshot = true;
+  }
+}
 
 void NativeLayerRootRemoteMacChild::SetLayers(
     const nsTArray<RefPtr<NativeLayer>>& aLayers) {

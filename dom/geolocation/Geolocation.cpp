@@ -459,6 +459,11 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
   }
 
   if (canUseCache) {
+    glean::geolocation::geolocation_cache_hit
+        .EnumGet(
+            glean::geolocation::GeolocationCacheHitLabel::eNsgeolocationrequest)
+        .Add();
+
     // okay, we can return a cached position
     // getCurrentPosition requests serviced by the cache
     // will now be owned by the RequestSendLocationEvent
@@ -468,7 +473,6 @@ nsGeolocationRequest::Allow(JS::Handle<JS::Value> aChoices) {
     if (!mIsWatchPositionRequest) {
       return NS_OK;
     }
-
   } else {
     // if it is not a watch request and timeout is 0,
     // invoke the errorCallback (if present) with TIMEOUT code
