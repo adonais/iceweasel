@@ -4,7 +4,6 @@
 
 /* import-globals-from extensionControlled.js */
 /* import-globals-from preferences.js */
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 Preferences.addAll([
   // Automatically Update Extensions
@@ -95,7 +94,7 @@ var gIceweaselPane = {
     setBoolSyncListeners(
       "iceweasel-tabcompactmode-checkbox",
       ["browser.compactmode.show"],
-      [true,                                ],
+      [true,                     ],
     );
     setBoolSyncListeners(
       "iceweasel-lastclose-checkbox",
@@ -105,7 +104,7 @@ var gIceweaselPane = {
     setBoolSyncListeners(
       "iceweasel-tips-checkbox",
       ["officialtips.show"],
-      [true,                                                ],
+      [true,              ],
     );
     setBoolSyncListeners(
       "iceweasel-styling-checkbox",
@@ -189,7 +188,7 @@ function setUboSyncListeners(checkboxid) {
   if (uboCheckbox) {
     let uboEnable = !Services.locale.appLocaleAsBCP47.startsWith("zh-CN");
     if (!uboEnable) {
-      uboCheckbox.hidden = true;
+      uboCheckbox.style.display = 'none';
       document.getElementById("ubo_help").style.display = 'none';
     } else {
       let value = uboCheckbox.checked;
@@ -216,7 +215,7 @@ function setChromeSyncListeners(checkboxid) {
   // Get the app directory.
   let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
   let bin = target.clone();
-  if (AppConstants.platform == "win") {
+  if (AppConstants.platform === "win") {
     target.append("upcheck.exe");
   } else {
     target.append("upcheck");
@@ -230,8 +229,9 @@ function setChromeSyncListeners(checkboxid) {
     process.startHidden = true;
     process.noShell = true;
     try {
-      if (AppConstants.platform == "win") {
+      if (AppConstants.platform === "win") {
         process.runw(true, ["-chrome-check", bin.path, prof.path], 3);
+      }
       else {
         process.run(true, ["-chrome-check", bin.path, prof.path], 3);
       }
@@ -253,7 +253,7 @@ function setDownloadSyncListeners(checkboxid) {
   // Get the app directory.
   let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
   let bin = target.clone();
-  if (AppConstants.platform == "win") {
+  if (AppConstants.platform === "win") {
     target.append("upcheck.exe");
   } else {
     target.append("upcheck");
@@ -267,7 +267,7 @@ function setDownloadSyncListeners(checkboxid) {
     process.startHidden = true;
     process.noShell = true;
     try {
-      if (AppConstants.platform == "win") {
+      if (AppConstants.platform === "win") {
         process.runw(true, ["-integration-check", bin.path, prof.path], 3);
       } else {
         process.run(true, ["-integration-check", bin.path, prof.path], 3);
@@ -433,7 +433,7 @@ function onChromeSyncListeners() {
     let value = element.checked;
     let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
     let bin = target.clone();
-    if (AppConstants.platform == "win") {
+    if (AppConstants.platform === "win") {
       target.append("upcheck.exe");
     } else {
       target.append("upcheck");
@@ -458,13 +458,13 @@ function onChromeSyncListeners() {
       process.noShell = true;
       try {
         if (!value) {
-          if (AppConstants.platform == "win") {
+          if (AppConstants.platform === "win") {
             process.runw(false, ["-chrome-uncheck", bin.path, prof.path], 3);
           } else {
             process.run(false, ["-chrome-uncheck", bin.path, prof.path], 3);
           }
         } else {
-          if (AppConstants.platform == "win") {
+          if (AppConstants.platform === "win") {
             process.runwAsync( ["-chrome-install", bin.path, prof.path], 3, chromeObserver);
           } else {
             process.runAsync( ["-chrome-install", bin.path, prof.path], 3, chromeObserver);
@@ -483,7 +483,7 @@ function onDownloadSyncListeners() {
     let value = element.checked;
     let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
     let bin = target.clone();
-    if (AppConstants.platform == "win") {
+    if (AppConstants.platform === "win") {
       target.append("upcheck.exe");
     } else {
       target.append("upcheck");
@@ -508,13 +508,13 @@ function onDownloadSyncListeners() {
       process.noShell = true;
       try {
         if (!value) {
-          if (AppConstants.platform == "win") {
+          if (AppConstants.platform === "win") {
             process.runw(false, ["-integration-uncheck", bin.path, prof.path], 3);
           } else {
             process.run(false, ["-integration-uncheck", bin.path, prof.path], 3);
           }
         } else {
-          if (AppConstants.platform == "win") {
+          if (AppConstants.platform === "win") {
             process.runwAsync( ["-integration-install", bin.path, prof.path], 3, chromeObserver);
           } else {
             process.runAsync( ["-integration-install", bin.path, prof.path], 3, chromeObserver);
