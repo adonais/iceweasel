@@ -294,6 +294,9 @@ run-if = [
 run-sequentially = ["true"] # hardcoded ports
 
 ["test_qwacs.js"]
+skip-if = [
+  "true", # Bug 2014612
+]
 
 ["test_sdr.js"]
 
