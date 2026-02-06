@@ -528,12 +528,20 @@ class JSONPoliciesProvider {
   _getConfigurationFile() {
     let configFile = null;
 
-    if (AppConstants.platform == "linux" && AppConstants.MOZ_SYSTEM_POLICIES) {
-      let systemConfigFile = Services.dirsvc.get("SysConfD", Ci.nsIFile);
-      systemConfigFile.append("policies");
-      systemConfigFile.append(POLICIES_FILENAME);
-      if (systemConfigFile.exists()) {
-        return systemConfigFile;
+    if (AppConstants.platform == "linux") {
+      let prof = Services.dirsvc.get("ProfD", Ci.nsIFile);
+      prof.append("distribution");
+      prof.append("policies");
+      prof.append(POLICIES_FILENAME);
+      if (prof.exists()) {
+        return prof;
+      } else if (AppConstants.MOZ_SYSTEM_POLICIES) {
+        let systemConfigFile = Services.dirsvc.get("SysConfD", Ci.nsIFile);
+        systemConfigFile.append("policies");
+        systemConfigFile.append(POLICIES_FILENAME);
+        if (systemConfigFile.exists()) {
+          return systemConfigFile;
+        }
       }
     }
 

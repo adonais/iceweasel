@@ -166,19 +166,21 @@ function setUpcheckSyncListeners(checkboxid) {
     // Get the app directory.
     let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
     target.append("portable.ini");
-    let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
-    let ini = factory.createINIParser(target);
-    if (ini != null) {
-      let ontabs = iniSafeGet(ini, "General", "Update");
-      if (ontabs == "1") {
-        if (!value) {
-          makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+    if (target.exists()) {
+      let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
+      let ini = factory.createINIParser(target);
+      if (ini != null) {
+        let ontabs = iniSafeGet(ini, "General", "Update");
+        if (ontabs == "1") {
+          if (!value) {
+            makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+          }
+          
+        } else if (value) {
+          makeMasterCheckboxesReactive(checkboxid, () => {return false;});
         }
-        
-      } else if (value) {
-        makeMasterCheckboxesReactive(checkboxid, () => {return false;});
+        setEventListener(checkboxid, "click", onUpcheckSyncListeners);
       }
-      setEventListener(checkboxid, "click", onUpcheckSyncListeners);
     }
   }
 }
@@ -187,25 +189,27 @@ function setUboSyncListeners(checkboxid) {
   const uboCheckbox = document.getElementById(checkboxid);
   if (uboCheckbox) {
     let uboEnable = !Services.locale.appLocaleAsBCP47.startsWith("zh-CN");
-    if (!uboEnable) {
+    if (!uboEnable && AppConstants.platform === "win") {
       uboCheckbox.style.display = 'none';
       document.getElementById("ubo_help").style.display = 'none';
     } else {
       let value = uboCheckbox.checked;
       let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
       target.append("portable.ini");
-      let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
-      let ini = factory.createINIParser(target);
-      if (ini != null) {
-        let ubos = iniSafeGet(ini, "General", "EnableUBO");
-        if (ubos == "1") {
-          if (!value) {
-            makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+      if (target.exists()) {
+        let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
+        let ini = factory.createINIParser(target);
+        if (ini != null) {
+          let ubos = iniSafeGet(ini, "General", "EnableUBO");
+          if (ubos == "1") {
+            if (!value) {
+              makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+            }
+          } else if (value) {
+            makeMasterCheckboxesReactive(checkboxid, () => {return false;});
           }
-        } else if (value) {
-          makeMasterCheckboxesReactive(checkboxid, () => {return false;});
+          setEventListener(checkboxid, "click", onUboSyncListeners);
         }
-        setEventListener(checkboxid, "click", onUboSyncListeners);
       }
     }
   }
@@ -293,18 +297,20 @@ function setBosskeySyncListeners(checkboxid) {
     // Get the app directory.
     let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
     target.append("portable.ini");
-    let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
-    let ini = factory.createINIParser(target);
-    if (ini != null) {
-      let ontabs = iniSafeGet(ini, "General", "Bosskey");
-      if (ontabs == "1") {
-        if (!value) {
-           makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+    if (target.exists()) {
+      let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
+      let ini = factory.createINIParser(target);
+      if (ini != null) {
+        let ontabs = iniSafeGet(ini, "General", "Bosskey");
+        if (ontabs == "1") {
+          if (!value) {
+             makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+          }
+        } else if (value) {
+          makeMasterCheckboxesReactive(checkboxid, () => {return false;});
         }
-      } else if (value) {
-        makeMasterCheckboxesReactive(checkboxid, () => {return false;});
+        setEventListener(checkboxid, "click", onBosskeySyncListeners);
       }
-      setEventListener(checkboxid, "click", onBosskeySyncListeners);
     }
   }
 }
@@ -325,46 +331,48 @@ function setOntabSyncListeners(checkboxid) {
     // Get the app directory.
     let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
     target.append("portable.ini");
-    let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
-    let ini = factory.createINIParser(target);
-    if (ini != null) {
-      let boxid1 = "iceweasel-hover-activate";
-      let boxid2 = "iceweasel-double-click-close";
-      let boxid3 = "iceweasel-double-click-new";
-      let boxid4 = "iceweasel-mouse-hover-close";
-      let boxid5 = "iceweasel-mouse-hover-new";
-      let boxid6 = "iceweasel-right-click-close";
-      let boxid7 = "iceweasel-right-click-recover";
-      let ontabs = iniSafeGet(ini, "General", "OnTabs");
-      if (ontabs == "1") {
-        if (!value) {
-          makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+    if (target.exists()) {
+      let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
+      let ini = factory.createINIParser(target);
+      if (ini != null) {
+        let boxid1 = "iceweasel-hover-activate";
+        let boxid2 = "iceweasel-double-click-close";
+        let boxid3 = "iceweasel-double-click-new";
+        let boxid4 = "iceweasel-mouse-hover-close";
+        let boxid5 = "iceweasel-mouse-hover-new";
+        let boxid6 = "iceweasel-right-click-close";
+        let boxid7 = "iceweasel-right-click-recover";
+        let ontabs = iniSafeGet(ini, "General", "OnTabs");
+        if (ontabs == "1") {
+          if (!value) {
+            makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+          }
+          tabChildboxChk(ini, boxid1, "mouse_time", true);
+          tabChildboxChk(ini, boxid2, "double_click_close", true);
+          tabChildboxChk(ini, boxid3, "double_click_new", true);
+          tabChildboxChk(ini, boxid4, "mouse_hover_close", true);
+          tabChildboxChk(ini, boxid5, "mouse_hover_new", true);
+          tabChildboxChk(ini, boxid6, "right_click_close", true);
+          tabChildboxChk(ini, boxid7, "right_click_recover", true);
+        } else if (value) {
+          makeMasterCheckboxesReactive(checkboxid, () => {return false;});
+          tabChildboxChk(ini, boxid1, "mouse_time", false);
+          tabChildboxChk(ini, boxid2, "double_click_close", false);
+          tabChildboxChk(ini, boxid3, "double_click_new", false);
+          tabChildboxChk(ini, boxid4, "mouse_hover_close", false);
+          tabChildboxChk(ini, boxid5, "mouse_hover_new", false);
+          tabChildboxChk(ini, boxid6, "right_click_close", false);
+          tabChildboxChk(ini, boxid7, "right_click_recover", false);
         }
-        tabChildboxChk(ini, boxid1, "mouse_time", true);
-        tabChildboxChk(ini, boxid2, "double_click_close", true);
-        tabChildboxChk(ini, boxid3, "double_click_new", true);
-        tabChildboxChk(ini, boxid4, "mouse_hover_close", true);
-        tabChildboxChk(ini, boxid5, "mouse_hover_new", true);
-        tabChildboxChk(ini, boxid6, "right_click_close", true);
-        tabChildboxChk(ini, boxid7, "right_click_recover", true);
-      } else if (value) {
-        makeMasterCheckboxesReactive(checkboxid, () => {return false;});
-        tabChildboxChk(ini, boxid1, "mouse_time", false);
-        tabChildboxChk(ini, boxid2, "double_click_close", false);
-        tabChildboxChk(ini, boxid3, "double_click_new", false);
-        tabChildboxChk(ini, boxid4, "mouse_hover_close", false);
-        tabChildboxChk(ini, boxid5, "mouse_hover_new", false);
-        tabChildboxChk(ini, boxid6, "right_click_close", false);
-        tabChildboxChk(ini, boxid7, "right_click_recover", false);
+        setEventListener(checkboxid, "click", onTabSyncListeners);
+        setEventListener(boxid1, "click", onTabSyncid1);
+        setEventListener(boxid2, "click", onTabSyncid2);
+        setEventListener(boxid3, "click", onTabSyncid3);
+        setEventListener(boxid4, "click", onTabSyncid4);
+        setEventListener(boxid5, "click", onTabSyncid5);
+        setEventListener(boxid6, "click", onTabSyncid6);
+        setEventListener(boxid7, "click", onTabSyncid7);
       }
-      setEventListener(checkboxid, "click", onTabSyncListeners);
-      setEventListener(boxid1, "click", onTabSyncid1);
-      setEventListener(boxid2, "click", onTabSyncid2);
-      setEventListener(boxid3, "click", onTabSyncid3);
-      setEventListener(boxid4, "click", onTabSyncid4);
-      setEventListener(boxid5, "click", onTabSyncid5);
-      setEventListener(boxid6, "click", onTabSyncid6);
-      setEventListener(boxid7, "click", onTabSyncid7);
     }
   }
 }
@@ -559,16 +567,18 @@ function onTabSyncListeners() {
     document.getElementById(boxid7).disabled = false;
     let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
     target.append("portable.ini");
-    let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
-    let ini = factory.createINIParser(target);
-    if (ini != null) {
-      tabChildboxChk(ini, boxid1, "mouse_time", true);
-      tabChildboxChk(ini, boxid2, "double_click_close", true);
-      tabChildboxChk(ini, boxid3, "double_click_new", true);
-      tabChildboxChk(ini, boxid4, "mouse_hover_close", true);
-      tabChildboxChk(ini, boxid5, "mouse_hover_new", true);
-      tabChildboxChk(ini, boxid6, "right_click_close", true);
-      tabChildboxChk(ini, boxid7, "right_click_recover", true);
+    if (target.exists()) {
+      let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
+      let ini = factory.createINIParser(target);
+      if (ini != null) {
+        tabChildboxChk(ini, boxid1, "mouse_time", true);
+        tabChildboxChk(ini, boxid2, "double_click_close", true);
+        tabChildboxChk(ini, boxid3, "double_click_new", true);
+        tabChildboxChk(ini, boxid4, "mouse_hover_close", true);
+        tabChildboxChk(ini, boxid5, "mouse_hover_new", true);
+        tabChildboxChk(ini, boxid6, "right_click_close", true);
+        tabChildboxChk(ini, boxid7, "right_click_recover", true);
+      }
     }
   }
   optionlibportable(0x5222, onid);
@@ -612,6 +622,7 @@ function getPref(pref) {
   const retval = Preferences.get(pref);
   return retval._value;
 }
+
 // Returns true if all the preferences in prefs are equal to onVals, false otherwise TODO may need a third array for their default values because mozilla is dumb, 
 // after testing though pretty sure this was misinformation being spread by comments in default FF code that has long since been fixed
 function readGenericBoolPrefs(prefs, onVals) {
@@ -622,6 +633,7 @@ function readGenericBoolPrefs(prefs, onVals) {
   }
   return true;
 }
+
 function writeGenericBoolPrefs(opts, vals, changeToOn) {
   valsCopy = [...vals];
   if (!changeToOn) {
