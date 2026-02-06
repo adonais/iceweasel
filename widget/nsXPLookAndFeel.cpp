@@ -800,8 +800,8 @@ Maybe<nscolor> nsXPLookAndFeel::GenericDarkColor(ColorID aID) {
       color = NS_RGB(0xb1, 0xb1, 0xb1);
       break;
     case ColorID::MozCellhighlight:
-    case ColorID::Selecteditem:
-      color = NS_RGBA(249, 249, 250, 26);
+    case ColorID::Selecteditem:  // --color-accent-primary-selected
+      color = NS_RGB(0, 221, 255);
       break;
     case ColorID::MozSidebar:
     case ColorID::Field:
