@@ -63,6 +63,7 @@ async function getFormDataSections(
       }
     }
   }
+
   return formDataSections;
 }
 
@@ -350,29 +351,24 @@ function parseQueryString(query) {
 /**
  * Parse a string of formdata sections into its components
  *
- * @param {Array<string>} sections Array of sections of formdata
- *                                 e.g ["", "a=x&b=y", "c=z"]
- * @return {Array<object>}  Array of formdata params
- *                          e.g [{ name: 'a', value: 'x' }, { name: 'b', value: 'y'}, { name: 'c', value: 'z'}]
+ * @param {string} sections - sections of formdata joined by &
+ * @return {array} array of formdata params { name, value }
  */
 function parseFormData(sections) {
-  if (!sections || !sections.length) {
+  if (!sections) {
     return [];
   }
-  const formDataParams = [];
-  const searchStr = sections
-    // Filter out empty sections
-    .filter(str => /\S/.test(str))
-    .join("&");
 
-  const params = new URLSearchParams(searchStr);
-  for (const [key, value] of params) {
-    formDataParams.push({
-      name: getUnicodeUrlPath(key),
-      value: getUnicodeUrlPath(value),
+  return sections
+    .replace(/^&/, "")
+    .split("&")
+    .map(e => {
+      const param = e.split("=");
+      return {
+        name: param[0] ? getUnicodeUrlPath(param[0]) : "",
+        value: param[1] ? getUnicodeUrlPath(param[1]) : "",
+      };
     });
-  }
-  return formDataParams;
 }
 
 /**

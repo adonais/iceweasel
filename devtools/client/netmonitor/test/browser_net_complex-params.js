@@ -20,7 +20,7 @@ add_task(async function () {
   store.dispatch(Actions.batchEnable(false));
 
   // Execute requests.
-  await performRequests(monitor, tab, 13);
+  await performRequests(monitor, tab, 12);
 
   const requestListItems = document.querySelectorAll(
     ".network-monitor .request-list-item"
@@ -49,9 +49,9 @@ add_task(async function () {
   await testRequestWithFormattedView(
     monitor,
     requestListItems[2],
-    "foo",
-    "bar=123=xyz",
-    "?foo=bar=123=xyz",
+    "?foo",
+    "bar",
+    "?foo=bar",
     1
   );
   await testRequestWithFormattedView(
@@ -90,14 +90,6 @@ add_task(async function () {
     '{ "foo": "bar" }',
     "",
     '{ "foo": "bar" }',
-    1
-  );
-  await testRequestWithFormattedView(
-    monitor,
-    requestListItems[12],
-    "__proto__",
-    "evil_value",
-    "__proto__=evil_value",
     1
   );
 
