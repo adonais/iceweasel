@@ -68,7 +68,7 @@
   -moz-context-properties: fill;
 }
 
-.dbg-img.dbg-img-has-network-override::after {
+.dbg-img.has-network-override::after {
   content: "";
   display: block;
   height: 5px;
@@ -79,7 +79,7 @@
   translate: 12px 10px;
 }
 
-.node.focused .dbg-img.dbg-img-has-network-override::after {
+.node.focused .dbg-img.has-network-override::after {
   outline-color: var(--theme-selection-background);
 }
 
