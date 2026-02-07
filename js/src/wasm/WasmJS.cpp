@@ -1146,32 +1146,6 @@ void WasmModuleObject::finalize(JS::GCContext* gcx, JSObject* obj) {
                MemoryUse::WasmModule);
 }
 
-static bool IsModuleObject(JSObject* obj, const Module** module) {
-  WasmModuleObject* mobj = obj->maybeUnwrapIf<WasmModuleObject>();
-  if (!mobj) {
-    return false;
-  }
-
-  *module = &mobj->module();
-  return true;
-}
-
-static bool GetModuleArg(JSContext* cx, const CallArgs& args,
-                         uint32_t numRequired, const char* name,
-                         const Module** module) {
-  if (!args.requireAtLeast(cx, name, numRequired)) {
-    return false;
-  }
-
-  if (!args[0].isObject() || !IsModuleObject(&args[0].toObject(), module)) {
-    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
-                             JSMSG_WASM_BAD_MOD_ARG);
-    return false;
-  }
-
-  return true;
-}
-
 struct KindNames {
   Rooted<PropertyName*> kind;
   Rooted<PropertyName*> table;
@@ -1239,8 +1213,21 @@ static JSString* KindToString(JSContext* cx, const KindNames& names,
 bool WasmModuleObject::imports(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  const Module* module;
-  if (!GetModuleArg(cx, args, 1, "WebAssembly.Module.imports", &module)) {
+  if (!args.requireAtLeast(cx, "WebAssembly.Module.imports", 1)) {
+    return false;
+  }
+
+  if (!args[0].isObject()) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_MOD_ARG);
+    return false;
+  }
+
+  Rooted<WasmModuleObject*> moduleObj(
+      cx, args[0].toObject().maybeUnwrapIf<WasmModuleObject>());
+  if (!moduleObj) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_MOD_ARG);
     return false;
   }
 
@@ -1249,14 +1236,14 @@ bool WasmModuleObject::imports(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  const ModuleMetadata& moduleMeta = module->moduleMeta();
+  const ModuleMetadata& moduleMeta = moduleObj->module().moduleMeta();
 
   RootedValueVector elems(cx);
   if (!elems.reserve(moduleMeta.imports.length())) {
     return false;
   }
 
-  const CodeMetadata& codeMeta = module->codeMeta();
+  const CodeMetadata& codeMeta = moduleObj->module().codeMeta();
 #if defined(ENABLE_WASM_TYPE_REFLECTIONS)
   size_t numFuncImport = 0;
   size_t numMemoryImport = 0;
@@ -1365,8 +1352,21 @@ bool WasmModuleObject::imports(JSContext* cx, unsigned argc, Value* vp) {
 bool WasmModuleObject::exports(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  const Module* module;
-  if (!GetModuleArg(cx, args, 1, "WebAssembly.Module.exports", &module)) {
+  if (!args.requireAtLeast(cx, "WebAssembly.Module.exports", 1)) {
+    return false;
+  }
+
+  if (!args[0].isObject()) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_MOD_ARG);
+    return false;
+  }
+
+  Rooted<WasmModuleObject*> moduleObj(
+      cx, args[0].toObject().maybeUnwrapIf<WasmModuleObject>());
+  if (!moduleObj) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_MOD_ARG);
     return false;
   }
 
@@ -1375,7 +1375,7 @@ bool WasmModuleObject::exports(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  const ModuleMetadata& moduleMeta = module->moduleMeta();
+  const ModuleMetadata& moduleMeta = moduleObj->module().moduleMeta();
 
   RootedValueVector elems(cx);
   if (!elems.reserve(moduleMeta.exports.length())) {
@@ -1383,7 +1383,7 @@ bool WasmModuleObject::exports(JSContext* cx, unsigned argc, Value* vp) {
   }
 
 #ifdef ENABLE_WASM_TYPE_REFLECTIONS
-  const CodeMetadata& codeMeta = module->codeMeta();
+  const CodeMetadata& codeMeta = moduleObj->module().codeMeta();
 #endif  // ENABLE_WASM_TYPE_REFLECTIONS
 
   for (const Export& exp : moduleMeta.exports) {
@@ -1468,9 +1468,21 @@ bool WasmModuleObject::exports(JSContext* cx, unsigned argc, Value* vp) {
 bool WasmModuleObject::customSections(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
 
-  const Module* module;
-  if (!GetModuleArg(cx, args, 2, "WebAssembly.Module.customSections",
-                    &module)) {
+  if (!args.requireAtLeast(cx, "WebAssembly.Module.customSections", 2)) {
+    return false;
+  }
+
+  if (!args[0].isObject()) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_MOD_ARG);
+    return false;
+  }
+
+  Rooted<WasmModuleObject*> moduleObj(
+      cx, args[0].toObject().maybeUnwrapIf<WasmModuleObject>());
+  if (!moduleObj) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_MOD_ARG);
     return false;
   }
 
@@ -1497,7 +1509,8 @@ bool WasmModuleObject::customSections(JSContext* cx, unsigned argc, Value* vp) {
 
   RootedValueVector elems(cx);
   Rooted<ArrayBufferObject*> buf(cx);
-  for (const CustomSection& cs : module->moduleMeta().customSections) {
+  for (const CustomSection& cs :
+       moduleObj->module().moduleMeta().customSections) {
     if (name.length() != cs.name.length()) {
       continue;
     }
@@ -1965,8 +1978,15 @@ bool WasmInstanceObject::construct(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  const Module* module;
-  if (!args[0].isObject() || !IsModuleObject(&args[0].toObject(), &module)) {
+  if (!args[0].isObject()) {
+    JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                             JSMSG_WASM_BAD_MOD_ARG);
+    return false;
+  }
+
+  Rooted<WasmModuleObject*> moduleObj(
+      cx, args[0].toObject().maybeUnwrapIf<WasmModuleObject>());
+  if (!moduleObj) {
     JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                              JSMSG_WASM_BAD_MOD_ARG);
     return false;
@@ -1985,12 +2005,13 @@ bool WasmInstanceObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   Rooted<ImportValues> imports(cx);
-  if (!GetImports(cx, *module, importObj, imports.address())) {
+  if (!GetImports(cx, moduleObj->module(), importObj, imports.address())) {
     return false;
   }
 
   Rooted<WasmInstanceObject*> instanceObj(cx);
-  if (!module->instantiate(cx, imports.get(), proto, &instanceObj)) {
+  if (!moduleObj->module().instantiate(cx, imports.get(), proto,
+                                       &instanceObj)) {
     return false;
   }
 
@@ -4691,9 +4712,11 @@ static bool WebAssembly_instantiate(JSContext* cx, unsigned argc, Value* vp) {
     return RejectWithPendingException(cx, promise, callArgs);
   }
 
-  const Module* module;
-  if (IsModuleObject(firstArg, &module)) {
-    if (!AsyncInstantiate(cx, *module, importObj, Ret::Instance, promise)) {
+  Rooted<WasmModuleObject*> moduleObj(
+      cx, firstArg->maybeUnwrapIf<WasmModuleObject>());
+  if (moduleObj) {
+    if (!AsyncInstantiate(cx, moduleObj->module(), importObj, Ret::Instance,
+                          promise)) {
       return false;
     }
   } else {
