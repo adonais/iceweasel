@@ -232,18 +232,19 @@ static inline bool IsFlexContainerForLegacyWebKitBox(const nsIFrame* aFrame) {
   return aFrame->IsFlexContainerFrame() && aFrame->IsLegacyWebkitBox();
 }
 
-#if DEBUG
-static void AssertAnonymousFlexOrGridItemParent(const nsIFrame* aChild,
-                                                const nsIFrame* aParent) {
+static MOZ_ALWAYS_INLINE void AssertAnonymousFlexOrGridItemParent(
+    const nsIFrame* aChild, const nsIFrame* aParent) {
   MOZ_ASSERT(IsAnonymousItem(aChild), "expected an anonymous item child frame");
   MOZ_ASSERT(aParent, "expected a parent frame");
   MOZ_ASSERT(aParent->IsFlexOrGridContainer(),
              "anonymous items should only exist as children of flex/grid "
              "container frames");
 }
-#else
-#  define AssertAnonymousFlexOrGridItemParent(x, y) PR_BEGIN_MACRO PR_END_MACRO
-#endif
+
+static MOZ_ALWAYS_INLINE void AssertAnonymousFlexOrGridItemParent(
+    const nsIFrame* aChild) {
+  AssertAnonymousFlexOrGridItemParent(aChild, aChild->GetParent());
+}
 
 #define ToCreationFunc(_func)                              \
   [](PresShell* aPs, ComputedStyle* aStyle) -> nsIFrame* { \
@@ -5472,26 +5473,6 @@ nsContainerFrame* nsCSSFrameConstructor::GetFloatContainingBlock(
 }
 
 /**
- * This function will get the previous sibling to use for an append operation.
- *
- * It takes a parent frame (must not be null) and the next insertion sibling, if
- * the parent content is display: contents or has ::after content (may be null).
- */
-static nsIFrame* FindAppendPrevSibling(nsIFrame* aParentFrame,
-                                       nsIFrame* aNextSibling) {
-  aParentFrame->DrainSelfOverflowList();
-
-  if (aNextSibling) {
-    MOZ_ASSERT(
-        aNextSibling->GetParent()->GetContentInsertionFrame() == aParentFrame,
-        "Wrong parent");
-    return aNextSibling->GetPrevSibling();
-  }
-
-  return aParentFrame->PrincipalChildList().LastChild();
-}
-
-/**
  * Finds the right parent frame to append content to aParentFrame.
  *
  * Cannot return or receive null.
@@ -5834,12 +5815,36 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
   // the later usage of the iterator starts from the same place.
   nsIFrame* prevSibling = FindPreviousSibling(iter);
 
-  // Now, find the geometric parent so that we can handle
-  // continuations properly. Use the prev sibling if we have it;
-  // otherwise use the next sibling.
+  // Now, find the geometric parent so that we can handle continuations
+  // properly. Use the prev sibling if we have it; otherwise use the next
+  // sibling.
   if (prevSibling) {
     aInsertion->mParentFrame =
         prevSibling->GetParent()->GetContentInsertionFrame();
+
+    if (IsAnonymousItem(aInsertion->mParentFrame)) {
+      // Special-case anonymous flex / grid items: Elements are blockified
+      // inside those containers, so the anonymous item is unlikely to be the
+      // right parent unless we're inserting a non-whitespace text-node.
+      //
+      // If we guess wrong, we catch this in WipeContainingBlock, but with a
+      // performance penalty (and sometimes correctness too, see bug 2014986).
+      //
+      // TODO(emilio): Are there other situations where this is worth doing
+      // (some table anon boxes or something?). Seems hard to do at this stage
+      // where we still don't _quite_ know the details of what aChild is (in or
+      // out of flow, display inside or outside...). Maybe WipeContainingBlock
+      // should be able to fix-up the insertion point at the last minute? But
+      // that seems more sketchy since some code does rely on looking at the
+      // insertion point to decide what to construct.
+      AssertAnonymousFlexOrGridItemParent(aInsertion->mParentFrame);
+      if (!prevSibling->GetNextSibling() &&
+          (!aChild->IsText() || aChild->TextIsOnlyWhitespace())) {
+        prevSibling = aInsertion->mParentFrame;
+        aInsertion->mParentFrame = prevSibling->GetParent();
+      }
+    }
+
     *aIsAppend =
         !::GetInsertNextSibling(aInsertion->mParentFrame, prevSibling) &&
         !nsLayoutUtils::GetNextContinuationOrIBSplitSibling(
@@ -5849,6 +5854,14 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
     // If there is no previous sibling, then find the frame that follows
     aInsertion->mParentFrame =
         nextSibling->GetParent()->GetContentInsertionFrame();
+    if (IsAnonymousItem(aInsertion->mParentFrame)) {
+      // See the prevSibling special-case above.
+      AssertAnonymousFlexOrGridItemParent(aInsertion->mParentFrame);
+      if (!nextSibling->GetPrevSibling() &&
+          (!aChild->IsText() || aChild->TextIsOnlyWhitespace())) {
+        aInsertion->mParentFrame = aInsertion->mParentFrame->GetParent();
+      }
+    }
   } else {
     // No previous or next sibling, so treat this like an appended frame.
     *aIsAppend = true;
@@ -5856,7 +5869,7 @@ nsIFrame* nsCSSFrameConstructor::GetInsertionPrevSibling(
     aInsertion->mParentFrame =
         ::ContinuationToAppendTo(aInsertion->mParentFrame);
 
-    prevSibling = ::FindAppendPrevSibling(aInsertion->mParentFrame, nullptr);
+    prevSibling = aInsertion->mParentFrame->PrincipalChildList().LastChild();
   }
 
   return prevSibling;
@@ -10823,7 +10836,7 @@ bool nsCSSFrameConstructor::WipeContainingBlock(
   // Situation #3 is an anonymous flex or grid item that's getting new children
   // who don't want to be wrapped.
   if (IsAnonymousItem(aFrame)) {
-    AssertAnonymousFlexOrGridItemParent(aFrame, aFrame->GetParent());
+    AssertAnonymousFlexOrGridItemParent(aFrame);
 
     // We need to push a null float containing block to be sure that
     // "NeedsAnonFlexOrGridItem" will know we're not honoring floats for this
