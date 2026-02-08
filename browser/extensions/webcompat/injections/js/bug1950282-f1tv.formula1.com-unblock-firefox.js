@@ -120,3 +120,65 @@ window.wrappedJSObject.chrome = cloneInto(
   window,
   { cloneFunctions: true }
 );
+
+const ua = navigator.userAgent;
+const mobile = ua.includes("Mobile") || ua.includes("Tablet");
+
+// Very roughly matches Chromium's GetPlatformForUAMetadata()
+let platform = "Linux";
+if (mobile) {
+  platform = "Android";
+} else if (navigator.platform.startsWith("Win")) {
+  platform = "Windows";
+} else if (navigator.platform.startsWith("Mac")) {
+  platform = "macOS";
+}
+
+const version = (ua.match(/Firefox\/([0-9]+)/) || ["", "58.0"])[1];
+
+// These match Chrome's output as of version 126.
+const brands = [
+  {
+    brand: "Not/A)Brand",
+    version: "8",
+  },
+  {
+    brand: "Chromium",
+    version,
+  },
+  {
+    brand: "Google Chrome",
+    version,
+  },
+];
+
+const userAgentData = cloneInto(
+  {
+    brands,
+    mobile,
+    platform,
+    getHighEntropyValues() {
+      return window.wrappedJSObject.Promise.resolve(
+        cloneInto(
+          {
+            brands,
+            mobile,
+            platform,
+            platformVersion: "19.0.0",
+          },
+          window
+        )
+      );
+    },
+  },
+  window,
+  { cloneFunctions: true }
+);
+
+Object.defineProperty(window.navigator.wrappedJSObject, "userAgentData", {
+  get: exportFunction(function () {
+    return userAgentData;
+  }, window),
+
+  set: exportFunction(function () {}, window),
+});
