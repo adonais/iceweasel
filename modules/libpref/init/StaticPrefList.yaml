@@ -18397,7 +18397,7 @@
 # Note: ignored on Windows (context menus always use mouseup).
 - name: ui.context_menus.after_mouseup
   type: bool
-  value: false
+  value: true
   mirror: always
 
 # Whether click-hold context menus are enabled.
