@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Name of the "notification channel" used for displaying download notification. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_downloads_notification_channel">التنزيلات</string>
   <!-- Text shown on the second row of a paused download notification. -->
@@ -15,10 +15,30 @@
   <string name="mozac_feature_downloads_completed_notification_text2">اكتمل التنزيل</string>
   <!-- Text shown on the second row of an failed download notification. The filename is shown on the first row. -->
   <string name="mozac_feature_downloads_failed_notification_text2">فشل التنزيل</string>
+  <!-- This string is used as the title for the download confirmation dialog when the size of the file is not known. -->
+  <string name="mozac_feature_downloads_dialog_title_with_unknown_size">تنزيل الملف؟</string>
+  <!-- Alert dialog confirmation before downloading a previously downloaded file, this is the title when the size of the file is not known. -->
+  <string name="mozac_feature_downloads_again_dialog_title_with_unknown_size">تنزيل الملف مرة أخرى؟</string>
   <!-- Alert dialog confirmation before download a file, this is the positive action. -->
   <string name="mozac_feature_downloads_dialog_download">نزّل</string>
+  <!-- Alert dialog confirmation before downloading a file again, this is the positive action. -->
+  <string name="mozac_feature_downloads_dialog_download_again">تنزيل مرة أخرى</string>
   <!-- Alert dialog confirmation before download a file, this is the negative action. -->
   <string name="mozac_feature_downloads_dialog_cancel">ألغِ</string>
+  <!--
+    Alert dialog confirmation before downloading a previously downloaded file, this is the description.
+    %1$s will be replaced with the name of the file.
+  -->
+  <string name="mozac_feature_downloads_already_exists_dialog_title">%1$s موجود مسبقا.</string>
+  <!-- Alert dialog confirmation before downloading a previously downloaded file, this is the neutral action that proposes to open the file instead. -->
+  <string name="mozac_feature_downloads_open_existing_file">فتح ملف موجود</string>
+  <!--
+    Alert dialog confirmation before downloading a file without network connection, this is the description.
+    %1$s will be replaced with the name of the file.
+  -->
+  <string name="mozac_feature_downloads_file_failure_no_connection" tools:ignore="UnusedResources">لم يتم تنزيل %1$s.</string>
+  <!-- Alert dialog confirmation before downloading a file without network connection, this is the description. -->
+  <string name="mozac_feature_downloads_file_check_connection" tools:ignore="UnusedResources">تحقق من اتصالك وحاول مرة أخرى.</string>
   <!-- Error shown when the user is trying to download a invalid file. %1$s will be replaced with the name of the app. -->
   <string name="mozac_feature_downloads_file_not_supported2">لا يقدر %1$s على تنزيل هذا النوع من الملفات</string>
   <!-- Message that appears when the downloaded file could not be opened. -->

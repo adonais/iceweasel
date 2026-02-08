@@ -55,9 +55,9 @@
   <!-- Menu item: Add the current page as a shortcut to the device's home screen (launcher). -->
   <string name="menu_add_to_home_screen">Adder al pagina initial</string>
   <!-- Menu item: Add the current site as a shortcut on the Home screen -->
-  <string name="menu_add_to_shortcuts">Adder al vias breve</string>
+  <string name="menu_add_to_shortcuts">Adder al accessos directe</string>
   <!-- Menu item: Remove the current site as a shortcut from the Home screen -->
-  <string name="menu_remove_from_shortcuts">Remover del vias breve</string>
+  <string name="menu_remove_from_shortcuts">Remover del accessos directe</string>
   <!-- Menu item: Shows information about features and changes that are new to this version -->
   <string name="menu_settings">Parametros</string>
   <string name="menu_about">A proposito</string>
@@ -295,7 +295,7 @@
     %s is the name of the app (for example "Firefox Focus" or "Firefox Klar")
     Shortcuts is a feature that allows the user to pin his favorite websites to Focus home screen so he can quickly access them.
   -->
-  <string name="preference_security_biometric_summary2">Disbloca per le dactylogramma si tu addeva le vias breve o quando un sito web jam es aperte in %s.</string>
+  <string name="preference_security_biometric_summary2">Disserra con dactylogramma si tu ha addite accessos directe o quando un sito web es ja aperte in %s.</string>
   <!--
     Preference Title: Secure Mode is a setting that prevents the app's content to show up in the "recent apps" screen
     and prevents the user from taking screenshots or casting the app to other displays.
@@ -456,7 +456,7 @@
   <!-- Snackbar action to immediately open the successfully downloaded file. -->
   <string name="download_snackbar_open">Aperir</string>
   <!-- Snackbar that will be displayed after a website has been added to shortcuts. -->
-  <string name="snackbar_added_to_shortcuts">Addite a vias breve!</string>
+  <string name="snackbar_added_to_shortcuts">Addite al accessos directe!</string>
   <string name="error_hostLookup_title">Servitor non trovate</string>
   <!--
     New Onboarding flow first screen title
@@ -541,7 +541,7 @@
     When enhanced tracking protection is disabled for the current session then we will show this warning in the "Add to home screen" dialog to
     let the user know that the shortcut will always be opened with enhanced tracking protection disabled.
   -->
-  <string name="dialog_addtohomescreen_tracking_protection2">Le via breve se aperira con le Protection antitraciamento reinfortiate disactivate</string>
+  <string name="dialog_addtohomescreen_tracking_protection2">Le accesso directe se aperira con le Protection antitraciamento reinfortiate disactivate</string>
   <!--
     The user visible name of the "notification channel" (Android 8+ feature) for the ongoing notification shown while a browsing session is active.
     The recommended maximum length is 40 characters; the value may be truncated if it is too long.
@@ -850,7 +850,7 @@
   <!-- Text for the dialog title for renaming a top site -->
   <string name="rename_top_site">Renominar</string>
   <!-- Placeholder text for the input field of rename top site -->
-  <string name="placeholder_rename_top_site">Nomine via-breve</string>
+  <string name="placeholder_rename_top_site">Nomine del accesso directe</string>
   <!--
     Text for context menu additional note.
     %1$s is a placeholder for the app name.

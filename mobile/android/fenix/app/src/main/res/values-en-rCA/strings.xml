@@ -646,6 +646,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">Manage settings</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Say goodbye to creepy trackers</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Open all your links with built-in privacy</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">We protect your data and automatically block companies from spying on your clicks.</string>
   <!-- "Set to default" onboarding button. -->
@@ -770,6 +772,8 @@
   <string name="preferences_search">Search</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Search engines</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Home screen widget</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Suggestions from search engines</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -1740,6 +1744,12 @@
   <string name="download_delete_multi_select_dialog_confirm">Delete</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Cancel</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Rename file</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Name</string>
+  <string name="download_rename_dialog_confirm_button">Save</string>
+  <string name="download_rename_dialog_cancel_button">Cancel</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">In progress</string>
   <!--

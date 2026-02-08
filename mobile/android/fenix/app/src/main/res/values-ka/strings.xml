@@ -1415,8 +1415,18 @@
   <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">გამოცადეთ შესაძლებლობები ჯერ კიდევ ჩანაფიქრის დონეზე, სანამ ყველასთვის ხილული გახდება.</string>
   <!-- Title of the Studies data preference -->
   <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">კვლევების ჩადგმა და გაშვება</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">შესაძლებლობათა კვლევის ნებართვა</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">ვრცლად</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">დაშორებულად გაუმჯობესების ნებართვა</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox შეძლებს გააუმჯობესოს შესაძლებლობები, წარმადობა და მდგრადობა განახლებებს შორის შუალედშიც. ცვლილებები დაშორებული რეჟიმით.</string>
   <!--
     Sessions
 

@@ -604,6 +604,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">ക്രമീകരണങ്ങൾ കൈകാര്യം ചെയ്യുക</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">പിന്തുടൎച്ചയന്ത്രങ്ങളോടു വിട പറഞ്ഞേറു്</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">ഉൾപ്പണിഞ്ഞ സ്വകാര്യതത്തോടെ എല്ലാ കണ്ണികളും തുറക്കുക</string>
   <!-- "Set to default" onboarding button. -->
   <string name="nova_onboarding_set_to_default_button">തനിമട്ടായ അന്വേഷിയായി വയ്ക്കുക</string>
   <!-- Toolbar selection onboarding title. -->
@@ -1045,6 +1047,8 @@
   <string name="restart_warning_dialog_button_positive_2">അടയാളം മാറ്റുക</string>
   <!-- Dialog button text for cancelling app icon change -->
   <string name="restart_warning_dialog_button_negative">റദ്ദാക്കുക</string>
+  <!-- Error message snackbar shown after the user tried to apply the new icon but the Android OS threw an error while updating existing app shortcuts (e.g. private mode shortcut) -->
+  <string name="shortcuts_update_error">പ്രയോഗയടയാളം പുതുക്കാൻ കഴിഞ്ഞില്ല. നിലവിലുള്ള കുറുക്കുവഴികൾ മാറ്റിയിട്ടു വീണ്ടും ശ്രമിക്കുക.</string>
   <!--
     Add-ons general availability nimbus message
 
@@ -1152,6 +1156,7 @@
   <!-- Preference switch for daily usage ping data collection -->
   <string name="preferences_daily_usage_ping_title">പ്രതിദിന ഉപയോഗ പിംഗ്</string>
   <string name="preferences_daily_usage_ping_description">സജീവ ഉപയോക്താക്കളുടെ കണക്കെടുക്കാൻ ഇതു് മോസ്സില്ലയെ സഹായിക്കുന്നു.</string>
+  <string name="preferences_daily_usage_ping_learn_more">നാൾത്തോറ ഉപയോഗ പിംഗിനെ കുറിച്ച് കൂടുതലറിയുക</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="crash_reporting_snack_bar_message">അറിയിപ്പയച്ചു</string>
   <!-- Text for sumo link to learn more about crash reports in data collection screen -->
@@ -1602,6 +1607,8 @@
   <string name="download_delete_multi_select_dialog_confirm">മായ്ക്കുക</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">റദ്ദാക്കുക</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">ഫയലിന്റെ പേരുമാറ്റുക</string>
   <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
   <string name="download_rename_dialog_label">പേരു്</string>
   <string name="download_rename_dialog_confirm_button">കരുതിവയ്ക്കുക</string>

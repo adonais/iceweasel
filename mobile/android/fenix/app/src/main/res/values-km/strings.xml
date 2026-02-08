@@ -51,6 +51,8 @@
   <string name="home_bookmarks_menu_item_remove">យកចេញ</string>
   <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
 
+  <!-- Text for the action link to go to Settings for inactive tabs. -->
+  <string name="tab_tray_inactive_onboarding_button_text">បិទការកំណត់</string>
   <!-- Content description for close button in the auto-close dialog of the inactive tabs. -->
   <string name="tab_tray_inactive_auto_close_button_content_description">បិទ</string>
   <!-- Text for turn on auto close tabs button in the auto-close dialog of the inactive tabs. -->
@@ -371,6 +373,9 @@
   <string name="onboarding_customize_toolbar_top_option">កំពូល</string>
   <!-- Onboarding toolbar selection card label for 'bottom' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_bottom_option">ប៊ូតុង</string>
+  <!-- Onboarding toolbar selection card content description for the toolbar placement image. -->
+  <string name="onboarding_customize_toolbar_placement_bottom_content_description">រូបភាពនៃប៊ូតុងរបារឧបករណ៍</string>
+  <string name="onboarding_customize_toolbar_placement_top_content_description">រូបភាពនៃរបារឧបករណ៍ខាងលើ</string>
   <!-- Action label for toolbar options that can be selected. Talkback will append this to say "Double tap to select". -->
   <string name="onboarding_customize_toolbar_a11y_action_label_select">ជ្រើសរើស</string>
   <!-- Onboarding label for 'Save and start browsing' button, used by Nimbus experiments. -->
@@ -430,6 +435,8 @@
   <string name="preferences_site_settings">ការកំណត់គេហទំព័រ</string>
   <!-- Preference for private browsing options -->
   <string name="preferences_private_browsing_options">ការ​រកមើល​ឯកជន</string>
+  <!-- Text for indicating cookie banner handling is off this site, this is shown as part of the protections panel with the tracking protection toggle -->
+  <string name="reduce_cookie_banner_off_for_site">បិទសម្រាប់គេហទំព័រនេះ</string>
   <!-- Text for cancel button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner details view. -->
   <string name="cookie_banner_handling_details_site_is_not_supported_cancel_button">បោះបង់</string>
   <!-- Text for request support button indicating that cookie banner reduction is not supported for the current site, this is shown as part of the cookie banner details view. -->
@@ -502,6 +509,8 @@
   <string name="download_content_type_filter_all">ទាំងអស់</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">បោះបង់</string>
+  <!-- Broken site reason text for site asked to turn off ad blocker -->
+  <string name="webcompat_reporter_reason_turn_off_adblocker">គេហទំព័រត្រូវបានស្នើសុំឱ្យបិទកម្មវិធីទប់ស្កាត់ការផ្សាយពាណិជ្ជកម្ម</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">បោះបង់</string>
   <!-- Bookmark overflow menu select all bookmarks -->
@@ -510,10 +519,20 @@
   <string name="clear_permissions_negative">បោះបង់</string>
   <!-- Text for the cancel button on Clear permission dialog -->
   <string name="clear_permission_negative">បោះបង់</string>
+  <!-- Summary of tracking protection preference if tracking protection is set to off -->
+  <string name="tracking_protection_off">បិទ</string>
+  <!-- Summary of delete browsing data on quit preference if it is set to off -->
+  <string name="delete_browsing_data_quit_off">បិទ</string>
+  <!-- Summary of studies data on quit preference if it is set to off -->
+  <string name="studies_off">បិទ</string>
+  <!-- Toggle if desktop site is turned off -->
+  <string name="browser_feature_desktop_site_off">បិទ</string>
   <!-- Button to select all tabs in the "select tabs" step of the collection creator -->
   <string name="create_collection_select_all">ជ្រើសរើស​ទាំងអស់</string>
   <!-- Text for the cancel button from collection dialogs -->
   <string name="create_collection_negative">បោះបង់</string>
+  <!-- Text displayed when sync is offline and cannot be accessed -->
+  <string name="sync_offline">ក្រៅ​បណ្ដាញ</string>
   <!-- QR code scanner prompt dialog positive option to allow navigation to scanned link -->
   <string name="qr_scanner_dialog_positive">អនុញ្ញាត</string>
   <!-- Radio button in the delete browsing data dialog to delete history items for today and yesterday. -->
@@ -526,10 +545,18 @@
   <string name="sign_out_cancel">បោះបង់</string>
   <!-- Header for categories that are being not being blocked by current Enhanced Tracking Protection settings -->
   <string name="enhanced_tracking_protection_allowed">បាន​អនុញ្ញាត</string>
+  <!-- Title displayed for "Off" option under "DNS over HTTPS" -->
+  <string name="preference_doh_off">បិទ</string>
   <!-- Cancel button text for provider textfield under "DNS over HTTPS" -->
   <string name="preference_doh_provider_custom_dialog_cancel">បោះបង់</string>
   <!-- Cancel button text for the Add to Homescreen dialog -->
   <string name="add_to_homescreen_cancel">បោះបង់</string>
+  <!--
+    Autofill
+
+    Preference and title for managing the autofill settings
+  -->
+  <string name="preferences_autofill">បំពេញដោយស្វ័យប្រវត្តិ</string>
   <!-- The text for the "Cancel" button for cancelling adding, updating or deleting a credit card -->
   <string name="credit_cards_cancel_button">បោះបង់</string>
   <!-- The text for the "Cancel" button for cancelling adding, updating or deleting an address -->
@@ -557,15 +584,23 @@
   <string name="delete_language_file_dialog_negative_button_text">បោះបង់</string>
   <!-- Button text on the data saving mode warning dialog used by the translations feature to allow users to cancel the action and not perform a download of the language file. -->
   <string name="download_language_file_dialog_negative_button_text">បោះបង់</string>
+  <!-- Toggle if Enhanced Tracking Protection is turned off -->
+  <string name="protection_panel_etp_toggle_off">បិទ</string>
   <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
   <string name="clear_site_data_dialog_negative_button_text">បោះបង់</string>
+  <!-- The title of the autofill tab in the Debug Drawer. -->
+  <string name="debug_drawer_autofill_title">ឧបករណ៍បំពេញដោយស្វ័យប្រវត្តិ</string>
   <!-- The title of the button for deleting in the debug drawer all addresses. -->
   <string name="debug_drawer_delete_all_addresses">លុបអាសយដ្ឋានទាំងអស់</string>
   <!-- TextField Design System Component -->
 
   <!-- ==== Terms of use pop up prompt ==== -->
 
+  <!-- Terms of use link in the pop up prompt message that links to the terms of use -->
+  <string name="terms_of_use_prompt_link_terms_of_use">លក្ខខណ្ឌនៃការប្រើប្រាស់</string>
   <!-- ==== Experiment strings. ==== -->
 
+  <!-- A title for the popup prompt. -->
+  <string name="terms_of_use_prompt_title_option_a" tools:ignore="UnusedResources">លក្ខខណ្ឌនៃការប្រើប្រាស់</string>
   <!-- ==== End of Terms of use popup prompt. ==== -->
 </resources>

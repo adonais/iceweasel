@@ -646,6 +646,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">Quản lý cài đặt</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Nói lời tạm biệt với những kẻ theo dõi đáng sợ</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Mở tất cả liên kết của bạn với tính năng bảo mật tích hợp sẵn</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">Chúng tôi bảo vệ dữ liệu của bạn và tự động chặn các công ty theo dõi hoạt động của bạn.</string>
   <!-- "Set to default" onboarding button. -->

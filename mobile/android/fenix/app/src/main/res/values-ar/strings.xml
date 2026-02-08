@@ -35,8 +35,16 @@
   <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ستظهر الألسنة المفتوحة هنا.</string>
   <!-- No Private Tabs Message Description -->
   <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ستظهر الألسنة الخاصة هنا.</string>
+  <!-- The header text displayed on the private tabs page when no private tabs are open -->
+  <string name="tab_manager_empty_private_tabs_page_header">التصفح الخاص</string>
+  <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
+  <string name="tab_manager_empty_private_tabs_page_description">لن يحفظ %1$s أيًا من سجلات تصفحك أو ملفات تعريف الارتباط، لكن العلامات المرجعية الجديدة ستبقى محفوظة.</string>
+  <!-- The header text displayed on the normal tabs page when no normal tabs are open -->
+  <string name="tab_manager_empty_normal_tabs_page_header">افتح نافذة جديدة لبدء البحث</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
   <string name="tab_tray_multi_select_title">حدّدتَ %1$d</string>
+  <!-- Tab tray multi select title in app bar when no tabs are selected -->
+  <string name="tab_tray_multi_select_title_empty">تحديد علامات التبويب</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
   <string name="tab_tray_add_new_collection">أضِف تجميعة جديدة</string>
   <!-- Label of editable text in create collection dialog for naming a new collection -->
@@ -47,6 +55,14 @@
   <string name="tab_tray_close_multiselect_content_description">اخرج من وضع التحديد المتعدد</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">احفظ الألسنة المحدّدة في التجميعة</string>
+  <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
+  <string name="tab_manager_empty_synced_tabs_page_header">احصل على علامات التبويب من أي جهاز</string>
+  <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
+  <string name="tab_manager_empty_synced_tabs_page_description">سجِّل الدخول لإدارة النوافذ المتزامنة عبر كل أجهزتك.</string>
+  <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
+  <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">تسجيل الدخول</string>
+  <!-- Text for the button used to show all stories -->
+  <string name="homepage_all_stories">جميع القصص</string>
   <!--
     Home - Bookmarks
 
@@ -61,6 +77,8 @@
   <string name="about_content">‏%1$s من Mozilla.</string>
   <!-- Private Browsing -->
   <string name="private_browsing_common_myths">الخرافات الشائعة بخصوص التصفح الخاص</string>
+  <!-- Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active. -->
+  <string name="private_browsing_a11y_session_announcement">جلسة تصفح خاصة</string>
   <!--
     True Private Browsing Mode
 
@@ -74,6 +92,11 @@
     %2$s is a link using felt_privacy_info_card_subtitle_link_text as text
   -->
   <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">يحذف %1$s الكعكات، والتأريخ، وبيانات الموقع عندما تغلق كل الألسنة الخاصة. %2$s</string>
+  <!--
+    Description of private browsing mode displayed to users on the homepage when they enable private mode.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="felt_privacy_info_card_subtitle_3">يحذف %1$s ملفات تعريف الارتباط والسجل وبيانات المواقع عند إغلاق جميع علامات التبويب الخاصة.</string>
   <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
@@ -92,6 +115,12 @@
   <string name="open_in_app_cfr_negative_button_text">أهمِل</string>
   <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
 
+  <!--
+    Address bar swipe "contextual feature recommendation" (CFR)
+
+    Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar.
+  -->
+  <string name="address_bar_swipe_cfr_message_2">اسحب شريط الأدوات لليمين أو اليسار للانتقال بين علامات التبويب.</string>
   <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
   <string name="camera_permissions_needed_message">الوصول إلى الكمرة مطلوب. افتح إعدادات أندرويد، وانقر ”الأذونات“ ثم انقر ”سماح“.</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
@@ -178,8 +207,12 @@
   <string name="browser_menu_stop">أوقف</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">الامتدادات</string>
+  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">لديك امتدادات مثبتة، ولكنها غير مفعلة</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">أدِر الامتدادات</string>
+  <!-- Browser menu group that contains additional settings in collapsed state -->
+  <string name="browser_menu_more_settings">المزيد</string>
   <!--
     Content description (not visible, for screen readers etc.): Label for plus icon used to add extension.
     %1$s is the name of the extension (for example: ClearURLs).
@@ -191,6 +224,8 @@
   <string name="browser_menu_extensions_disabled_description">معطل مؤقتا</string>
   <!-- The description of the browser menu appears when the user hasn't installed any extensions. -->
   <string name="browser_menu_no_extensions_installed_description">لا توجد امتدادات مفعلة</string>
+  <!-- The description of the browser menu appears when the user hasn't installed any extensions and there are recommended extensions. -->
+  <string name="browser_menu_try_a_recommended_extension_description">جرب إحدى الامتدادات المقترحة</string>
   <!-- Browser menu button that opens account settings -->
   <string name="browser_menu_account_settings">معلومات الحساب</string>
   <!-- Browser menu button that sends a user to help articles -->
@@ -221,6 +256,8 @@
   <string name="browser_menu_save_to_collection_2">احفظ في التجميعة</string>
   <!-- Browser menu button that open a share menu to share the current site -->
   <string name="browser_menu_share">شارِك</string>
+  <!-- Browser menu button that goes to the homepage screen -->
+  <string name="browser_menu_homepage">الصفحة الرئيسية</string>
   <!--
     Browser menu button shown in custom tabs that opens the current tab in Fenix
     %1$s is the name of the app (for example "Firefox").
@@ -254,6 +291,8 @@
   <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">خصّص صفحة البداية</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">لِج</string>
+  <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
+  <string name="browser_menu_sign_in_caption_3">مزامنة كلمات المرور و علامات المرجعية والمزيد</string>
   <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
   <string name="browser_menu_sign_back_in_to_sync">لِج مجددا لتبدأ المزامنة</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->

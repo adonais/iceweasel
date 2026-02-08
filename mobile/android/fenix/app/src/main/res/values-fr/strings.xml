@@ -647,7 +647,7 @@
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Dites adieu aux traqueurs intrusifs</string>
   <!-- "Set to default" onboarding title. -->
-  <string name="nova_onboarding_set_to_default_title_2">Ouvrez tous vos liens avec la confidentialité intégrée</string>
+  <string name="nova_onboarding_set_to_default_title_2">Accédez à tous vos liens tout en protégeant votre vie privée</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">Nous protégeons vos données et empêchons automatiquement les entreprises d’espionner vos clics.</string>
   <!-- "Set to default" onboarding button. -->

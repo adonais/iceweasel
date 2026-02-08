@@ -17,6 +17,11 @@
     The %1$s will be replaced by the number of opened tabs
   -->
   <string name="mozac_open_tab_counter_tab_tray">الألسنة غير الخاصة المفتوحة: %1$s. انقر للتبديل بين الألسنة.</string>
+  <!--
+    Message announced to the user when the tab counter is selected in private browsing mode.
+    Used by a11y services. The %1$s will be replaced by the number of opened tabs
+  -->
+  <string name="mozac_tab_counter_private">علامات التبويب الخاصة المفتوحة: %1$s. انقر للانتقال بين التبويبات.</string>
   <!-- Browser menu button that creates a new tab -->
   <string name="mozac_browser_menu_new_tab">لسان جديد</string>
   <!-- Browser menu button that creates a private tab -->

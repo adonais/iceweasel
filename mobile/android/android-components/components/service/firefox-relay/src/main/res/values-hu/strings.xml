@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- Text for the Relay prompt to allow users to fill the form with with an email alias -->
-  <string name="mozac_feature_relay_chip_text">E-mail-maszk használata</string>
+  <string name="mozac_feature_relay_chip_text" tools:ignore="UnusedResources" moz:removedIn="149">E-mail-maszk használata</string>
 </resources>
