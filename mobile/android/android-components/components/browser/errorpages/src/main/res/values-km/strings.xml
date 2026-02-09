@@ -56,7 +56,7 @@
   <!-- The document title and heading of the error page shown when the browser gets stuck in an infinite loop when loading a website. -->
   <string name="mozac_browser_errorpages_redirect_loop_title">ទំព័រ​មិន​កំពុងតែ​ប្ដូរ​ទិស​យ៉ាង​ត្រឹមត្រូវ​ទេ</string>
   <!-- The document title and heading of the error page shown when a website cannot be loaded because the browser is in offline mode. -->
-  <string name="mozac_browser_errorpages_offline_title">របៀប​នៅ​ក្រៅ​បណ្ដាញ</string>
+  <string name="mozac_browser_errorpages_offline_title">ម៉ូត​ក្រៅ​បណ្ដាញ</string>
   <!-- The document title and heading of the error page shown when the browser prevents loading a website on a restricted port. -->
   <string name="mozac_browser_errorpages_port_blocked_title">ច្រកត្រូវបានដាក់កម្រិតដោយសារហេតុផលសុវត្ថិភាព</string>
   <!-- The document title and heading of the error page shown when the browser refuses to load a type of file that is considered unsafe. -->
@@ -69,6 +69,8 @@
   <string name="mozac_browser_errorpages_malformed_uri_title">អាសយដ្ឋានមិនត្រឹមត្រូវ</string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_file_not_found_title">រក​មិន​ឃើញ​ឯកសារ​</string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_unknown_proxy_host_title">រក​មិន​ឃើញ​សេវូបករណ៍ប្រូកស៊ី</string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
   <string name="mozac_browser_errorpages_httpsonly_button">បន្តទៅគេហទំព័រ HTTP</string>
 </resources>

@@ -646,6 +646,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">Идоракунии танзимот</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Бо васоити пайгирии даҳшатовар видоъ кунед</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Ҳамаи пайвандҳои худро бо махфияти дарунсохт кушоед</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">Мо маълумоти шуморо муҳофизат мекунем ва ширкатҳоро аз ҷосусӣ ва таҳлили амалҳои шумо ба таври худкор маҳдуд мекунем.</string>
   <!-- "Set to default" onboarding button. -->

@@ -111,16 +111,52 @@
   <string name="mozac_feature_prompts_suggest_strong_password_2">ប្រើពាក្យសម្ងាត់ខ្លាំង</string>
   <!-- Title for using the suggest strong password confirmation dialog. %1$s will be replaced with the generated password -->
   <string name="mozac_feature_prompts_suggest_strong_password_message">ប្រើពាក្យសម្ងាត់រឹងមាំ៖ %1$s</string>
+  <!-- Pressing this will use the suggested strong password -->
+  <string name="mozac_feature_prompts_suggest_strong_password_use_password">ប្រើពាក្យសម្ងាត់</string>
+  <!-- Pressing this will dismiss the suggested strong password dialog -->
+  <string name="mozac_feature_prompts_suggest_strong_password_dismiss">មិន​មែន​ឥឡូវ</string>
+  <!-- Title for showing the suggest strong password updated confirmation snackbar -->
+  <string name="mozac_feature_prompts_suggest_strong_password_updated_snackbar_title">ពាក្យសម្ងាត់ត្រូវបានធ្វើបច្ចុប្បន្នភាព</string>
+  <!-- Pressing this will dismiss the dialog and reload the page sending again the previous data -->
+  <string name="mozac_feature_prompt_repost_positive_button_text">ផ្ញើទិន្នន័យឡើងវិញ</string>
   <!-- Pressing this will dismiss the dialog and not refresh the webpage -->
   <string name="mozac_feature_prompt_repost_negative_button_text">បោះបង់</string>
+  <!-- Strings show in a dialog that appear when user confirm folder upload -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_title">ផ្ទុកឡើងឯកសារ?</string>
+  <!-- Pressing this will dismiss the dialog and allow to upload folder -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">ផ្ទុក​ឡើង</string>
   <!-- Pressing this will dismiss the dialog and disallow to upload folder -->
   <string name="mozac_feature_prompt_folder_upload_confirm_negative_button_text">បោះបង់</string>
+  <!--
+    Credit Card Autofill
+
+    Header for the select card prompt to allow users to fill a form with a saved card.
+  -->
+  <string name="mozac_feature_prompts_select_credit_card_2">ប្រើកាតដែលបានរក្សាទុក</string>
+  <!-- Option in the expanded select card prompt that links to cards settings. -->
+  <string name="mozac_feature_prompts_manage_credit_cards_2">គ្រប់គ្រងកាត</string>
+  <!--
+    Address Autofill
+
+    Header for the select address prompt to allow users to fill a form with a saved address.
+  -->
+  <string name="mozac_feature_prompts_select_address_2">ជ្រើសរើសអាសយដ្ឋាន</string>
+  <!-- Text for the manage addresses button. -->
+  <string name="mozac_feature_prompts_manage_address">គ្រប់គ្រងអាសយដ្ឋាន</string>
   <!--
     Federated Credential Management prompts
 
     Content description for the Account picture in the Select Account FedCM prompt
   -->
   <string name="mozac_feature_prompts_account_picture">រូបភាព​គណនី</string>
+  <!-- Text for the positive button of the Identity Credential dialogs. -->
+  <string name="mozac_feature_prompts_identity_credentials_continue">បន្ត</string>
   <!-- Text for the cancel button of the Identity Credential dialogs. -->
   <string name="mozac_feature_prompts_identity_credentials_cancel">បោះបង់</string>
+  <!--
+    Email Mask Autofill
+
+    Text for the email mask prompt to allow users to fill an email input field in a sign up form with an email mask.
+  -->
+  <string name="mozac_feature_relay_chip_text">ប្រើរបាំងអាសយដ្ឋានអ៊ីមែល</string>
 </resources>

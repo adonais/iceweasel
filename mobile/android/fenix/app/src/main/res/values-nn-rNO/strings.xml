@@ -2912,9 +2912,9 @@
   <!-- The header for the card number of a credit card -->
   <string name="credit_cards_card_number">Kortnummer</string>
   <!-- The label for the expiration date month of a credit card to be used by a11y services -->
-  <string name="credit_cards_expiration_date_month">Går ut-dato, månad</string>
+  <string name="credit_cards_expiration_date_month">Utløpsdato, månad</string>
   <!-- The label for the expiration date year of a credit card to be used by a11y services -->
-  <string name="credit_cards_expiration_date_year">Går ut-dato, år</string>
+  <string name="credit_cards_expiration_date_year">Utløpsdato, år</string>
   <!-- The header for the name on the credit card -->
   <string name="credit_cards_name_on_card">Namn på kort</string>
   <!-- The text for the "Delete card" menu item for deleting a credit card -->

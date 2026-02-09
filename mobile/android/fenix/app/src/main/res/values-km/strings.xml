@@ -49,8 +49,18 @@
   <string name="home_bookmarks_show_all_content_description">បង្ហាញ​ចំណាំ​ទាំងអស់</string>
   <!-- Text for the menu button to remove a recently saved bookmark from the user's home screen -->
   <string name="home_bookmarks_menu_item_remove">យកចេញ</string>
+  <!-- Text for the positive action button -->
+  <string name="open_in_app_cfr_positive_button_text">ចូល​ទៅ​កាន់​ការ​កំណត់</string>
+  <!-- Text for the negative action button -->
+  <string name="open_in_app_cfr_negative_button_text">បដិសេធ</string>
   <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
 
+  <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
+  <string name="camera_permissions_needed_positive_button_text">ចូល​ទៅ​កាន់​ការ​កំណត់</string>
+  <!-- Text for the negative action button to dismiss the dialog. -->
+  <string name="camera_permissions_needed_negative_button_text">បដិសេធ</string>
+  <!-- Text for the negative action button to dismiss the Close Tabs Banner. -->
+  <string name="tab_tray_close_tabs_banner_negative_button_text">បដិសេធ</string>
   <!-- Text for the action link to go to Settings for inactive tabs. -->
   <string name="tab_tray_inactive_onboarding_button_text">បិទការកំណត់</string>
   <!-- Content description for close button in the auto-close dialog of the inactive tabs. -->

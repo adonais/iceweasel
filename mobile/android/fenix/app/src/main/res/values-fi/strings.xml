@@ -646,6 +646,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">Muokkaa asetuksia</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Sano hyvästit kammottaville seuraimille</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Avaa kaikki linkit sisäänrakennetulla yksityisyydellä</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">Suojaamme tietosi ja estämme automaattisesti yrityksiä vakoilemasta napsautuksiasi.</string>
   <!-- "Set to default" onboarding button. -->
@@ -770,6 +772,8 @@
   <string name="preferences_search">Haku</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Hakukoneet</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Aloitusnäytön widget</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Ehdotukset hakukoneilta</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -1740,6 +1744,12 @@
   <string name="download_delete_multi_select_dialog_confirm">Poista</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Peruuta</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Nimeä tiedosto uudelleen</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Nimi</string>
+  <string name="download_rename_dialog_confirm_button">Tallenna</string>
+  <string name="download_rename_dialog_cancel_button">Peruuta</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Käynnissä</string>
   <!--
