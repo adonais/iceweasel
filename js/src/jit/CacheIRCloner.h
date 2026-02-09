@@ -70,6 +70,7 @@ class MOZ_RAII CacheIRCloner {
   JitCode* getJitCodeField(uint32_t stubOffset);
   uint32_t getRawInt32Field(uint32_t stubOffset);
   const void* getRawPointerField(uint32_t stubOffset);
+  const ICScript* getICScriptField(uint32_t stubOffset);
   jsid getIdField(uint32_t stubOffset);
   Value getValueField(uint32_t stubOffset);
   Value getWeakValueField(uint32_t stubOffset);

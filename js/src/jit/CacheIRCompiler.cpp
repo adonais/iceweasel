@@ -1128,6 +1128,7 @@ static void InitWordStubField(StubField::Type type, void* dest,
   switch (type) {
     case StubField::Type::RawInt32:
     case StubField::Type::RawPointer:
+    case StubField::Type::ICScript:
     case StubField::Type::AllocSite:
       *static_cast<uintptr_t*>(dest) = value;
       break;
@@ -1189,6 +1190,7 @@ static void InitInt64StubField(StubField::Type type, void* dest,
       break;
     case StubField::Type::RawInt32:
     case StubField::Type::RawPointer:
+    case StubField::Type::ICScript:
     case StubField::Type::AllocSite:
     case StubField::Type::Shape:
     case StubField::Type::WeakShape:
@@ -1218,7 +1220,8 @@ void CacheIRWriter::copyStubData(uint8_t* dest) const {
   }
 }
 
-ICCacheIRStub* ICCacheIRStub::clone(JSRuntime* rt, ICStubSpace& newSpace) {
+ICCacheIRStub* ICCacheIRStub::clone(JSRuntime* rt, ICStubSpace& newSpace,
+                                    ICScriptHandling icScriptHandling) {
   const CacheIRStubInfo* info = stubInfo();
   MOZ_ASSERT(info->makesGCCalls());
 
@@ -1251,6 +1254,15 @@ ICCacheIRStub* ICCacheIRStub::clone(JSRuntime* rt, ICStubSpace& newSpace) {
       InitWordStubField(type, dest, *srcField);
       src += sizeof(uintptr_t);
       dest += sizeof(uintptr_t);
+      if (type == StubField::Type::ICScript) {
+        auto* icScript = reinterpret_cast<ICScript*>(*srcField);
+        if (icScriptHandling == ICScriptHandling::MarkActive) {
+          icScript->setActive();
+        } else {
+          MOZ_ASSERT(icScriptHandling == ICScriptHandling::AssertActive);
+          MOZ_RELEASE_ASSERT(icScript->active());
+        }
+      }
     } else {
       const uint64_t* srcField = reinterpret_cast<const uint64_t*>(src);
       InitInt64StubField(type, dest, *srcField);
@@ -1287,6 +1299,7 @@ void jit::TraceCacheIRStub(JSTracer* trc, T* stub,
     switch (fieldType) {
       case Type::RawInt32:
       case Type::RawPointer:
+      case Type::ICScript:
       case Type::RawInt64:
       case Type::Double:
         break;
@@ -1432,6 +1445,7 @@ bool jit::TraceWeakCacheIRStub(JSTracer* trc, T* stub,
         return !isDead;
       case Type::RawInt32:
       case Type::RawPointer:
+      case Type::ICScript:
       case Type::Shape:
       case Type::JSObject:
       case Type::Symbol:
