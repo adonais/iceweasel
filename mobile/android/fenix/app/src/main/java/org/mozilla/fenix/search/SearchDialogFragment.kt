@@ -729,13 +729,15 @@ class SearchDialogFragment : AppCompatDialogFragment(), UserInteractionHandler {
                                 dialog.cancel()
                             }
                             setPositiveButton(R.string.qr_scanner_dialog_positive) { dialog: DialogInterface, _ ->
-                                findNavController().openToBrowser()
-                                requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
-                                    searchTermOrURL = normalizedUrl,
-                                    newTab = store.state.tabId == null,
-                                    flags = EngineSession.LoadUrlFlags.external(),
-                                )
-                                dialog.dismiss()
+                                if (isAdded) {
+                                    findNavController().openToBrowser()
+                                    requireComponents.useCases.fenixBrowserUseCases.loadUrlOrSearch(
+                                        searchTermOrURL = normalizedUrl,
+                                        newTab = store.state.tabId == null,
+                                        flags = EngineSession.LoadUrlFlags.external(),
+                                    )
+                                    dialog.dismiss()
+                                }
                             }
                             create().withCenterAlignedButtons()
                         }.show()
