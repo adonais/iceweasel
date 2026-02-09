@@ -59,9 +59,9 @@ class HTMLDialogElement final : public nsGenericHTMLElement {
     mReturnValue = aReturnValue;
   }
 
-  void GetRequestCloseReturnValue(Optional<nsAString>& aReturnValue) {
+  void GetRequestCloseReturnValue(Maybe<nsAutoString>& aReturnValue) {
     if (mRequestCloseReturnValue.isSome()) {
-      aReturnValue = &mRequestCloseReturnValue.ref();
+      aReturnValue.emplace(mRequestCloseReturnValue.ref());
     }
   }
   void ClearRequestCloseReturnValue() { mRequestCloseReturnValue.reset(); }
@@ -74,16 +74,24 @@ class HTMLDialogElement final : public nsGenericHTMLElement {
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void Close(
       const mozilla::dom::Optional<nsAString>& aReturnValue) {
-    return Close(nullptr, aReturnValue);
+    Maybe<nsAutoString> retValueCopy;
+    if (aReturnValue.WasPassed()) {
+      retValueCopy.emplace(aReturnValue.Value());
+    }
+    return Close(nullptr, retValueCopy);
   }
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void Close(
-      Element* aSource, const mozilla::dom::Optional<nsAString>& aReturnValue);
+      Element* aSource, const Maybe<nsAutoString>& aReturnValue);
   MOZ_CAN_RUN_SCRIPT void RequestClose(
       const mozilla::dom::Optional<nsAString>& aReturnValue) {
-    RequestClose(nullptr, aReturnValue);
+    Maybe<nsAutoString> retValueCopy;
+    if (aReturnValue.WasPassed()) {
+      retValueCopy.emplace(aReturnValue.Value());
+    }
+    RequestClose(nullptr, retValueCopy);
   }
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void RequestClose(
-      Element* aSource, const mozilla::dom::Optional<nsAString>& aReturnValue);
+      Element* aSource, const Maybe<nsAutoString>& aReturnValue);
 
   RefPtr<Element> GetRequestCloseSourceElement();
 
