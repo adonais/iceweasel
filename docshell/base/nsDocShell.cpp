@@ -10697,7 +10697,8 @@ bool nsDocShell::ShouldDoInitialAboutBlankSyncLoad(
     return false;
   }
 
-  if (mHasStartedLoadingOtherThanInitialBlankURI ||
+  if (mHasStartedLoadingOtherThanInitialBlankURI || !mDocumentViewer ||
+      !mDocumentViewer->GetDocument() ||
       !mDocumentViewer->GetDocument()->IsUncommittedInitialDocument()) {
     return false;
   }
