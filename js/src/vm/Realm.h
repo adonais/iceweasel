@@ -557,6 +557,8 @@ class JS::Realm : public JS::shadow::Realm {
    */
   void traceGlobalData(JSTracer* trc);
 
+  void traceGlobalRoot(JSTracer* trc, const char* name);
+
   void traceWeakGlobalEdge(JSTracer* trc);
 
   /*
