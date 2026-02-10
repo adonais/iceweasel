@@ -88,7 +88,10 @@ function testCaretRect(
   atLineEnd = false,
   isVertical = false
 ) {
-  const acc = findAccessibleChildByID(docAcc, id, [nsIAccessibleText]);
+  const acc = findAccessibleChildByID(docAcc, id, [
+    nsIAccessibleText,
+    nsIAccessibleHyperText,
+  ]);
   is(acc.caretOffset, offset, `Caret at offset ${offset}`);
   const atEnd = offset == acc.characterCount;
   const empty = offset == 0 && atEnd;
@@ -102,8 +105,11 @@ function testCaretRect(
 
   const [caretX, caretY, caretW, caretH] = getCaretRect(docAcc, id);
 
-  if (!empty) {
-    // In case of an empty input `getRangeExtents()` will return the full accessible bounds.
+  // In case of an empty input `getRangeExtents()` will return the full accessible bounds.
+  // When called on an embedded object, `getRangeExtents()` will return the
+  // bounds for the content inside it, so it isn't a collapsed range and thus it
+  // won't match the caret.
+  if (!empty && acc.getLinkIndexAtOffset(offset) == -1) {
     let [currRangeX, currRangeY, currRangeW] = getCollapsedRangeExtents(
       acc,
       acc.caretOffset
@@ -554,4 +560,41 @@ addAccessibleTask(
       isWithin(rangeW, caretW, 2, "Caret width similar to range width");
     }
   }
+);
+
+/**
+ * Test a contentEditable with a paragraph containing a line break.
+ */
+addAccessibleTask(
+  `
+<style>
+  @font-face {
+    font-family: Ahem;
+    src: url(${CURRENT_CONTENT_DIR}e10s/fonts/Ahem.sjs);
+  }
+  #editable {
+    font: 10px/10px Ahem;
+  }
+</style>
+<div id="editable" contenteditable>a<p><br></p></div>
+  `,
+  async function testEditablePBr(browser, docAcc) {
+    const editable = findAccessibleChildByID(docAcc, "editable", [
+      nsIAccessibleText,
+    ]);
+    const fetchedBounds = await fetchCollapsedRangeBounds(docAcc, editable);
+
+    info("Focusing editable");
+    let moved = waitForEvent(EVENT_FOCUS, editable);
+    editable.takeFocus();
+    await moved;
+    testCaretRect(docAcc, "editable", 0, fetchedBounds);
+
+    info("Pressing ArrowRight");
+    moved = waitForEvent(EVENT_TEXT_CARET_MOVED);
+    EventUtils.synthesizeKey("KEY_ArrowRight");
+    await moved;
+    testCaretRect(docAcc, "editable", 1, fetchedBounds, true);
+  },
+  { chrome: true, topLevel: true }
 );

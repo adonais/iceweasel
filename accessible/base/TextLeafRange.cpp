@@ -661,6 +661,18 @@ static bool IsCaretValid(TextLeafPoint aPoint) {
   return focus->State() & states::EDITABLE;
 }
 
+static bool IsStartOfFocusedEditor(TextLeafPoint& aPoint) {
+  if (aPoint.mOffset != 0) {
+    return false;
+  }
+  Accessible* focus = FocusMgr() ? FocusMgr()->FocusedAccessible() : nullptr;
+  if (!focus || !(focus->State() & states::EDITABLE)) {
+    // There isn't a focused editor.
+    return false;
+  }
+  return aPoint == TextLeafPoint(focus, 0);
+}
+
 /*** TextLeafPoint ***/
 
 TextLeafPoint::TextLeafPoint(Accessible* aAcc, int32_t aOffset) {
@@ -1149,17 +1161,19 @@ TextLeafPoint TextLeafPoint::GetCaret(Accessible* aAcc) {
       // node.
       // 3. The caret is somewhere other than the start of a line and the user
       // presses down or up arrow to move by line.
+      // 4. The user focuses a contentEditable and the caret is positioned on
+      // the first character.
       if (point.mOffset <
           static_cast<int32_t>(nsAccUtils::TextLength(point.mAcc))) {
         // The caret is at the end of a line if the point is at the start of a
-        // line but not at the start of a paragraph.
+        // line but not the start of a focused editor.
         point.mIsEndOfLineInsertionPoint =
             point.FindPrevLineStartSameLocalAcc(/* aIncludeOrigin */ true) ==
                 point &&
-            !point.IsParagraphStart();
+            !IsStartOfFocusedEditor(point);
       } else {
-        // This is the end of a node. CaretAssociationHint::Before is only used
-        // at the end of a node if the caret is at the end of a line.
+        // CaretAssociationHint::Before is only used at the end of a node if the
+        // caret is both at the end of a node and at the end of a line.
         point.mIsEndOfLineInsertionPoint = true;
       }
     }
