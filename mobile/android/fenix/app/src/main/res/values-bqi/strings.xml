@@ -1174,9 +1174,9 @@
     The user can decide if they would like to continue trying to start extensions or if they'd rather continue without them.
     %1$s is the name of the app (for example "Firefox").
   -->
-  <string name="extension_process_crash_dialog_message">یک یا چن وردنی ز کار وستنه وو سیستوم ایسا ن نا پایدار کردنه. %1$s قپ ریت نا مووفقی سی ر وندن دووارته وردنی (یل) داشت.\n\nوردنی یل من نشست سکویی ایسا دووارته ر ونی نؽبۊن.\n\nپاک کردن یا قیر فعال کردن وردنی یل گاشڌ ای موشکل ن هل کونه.</string>
+  <string name="extension_process_crash_dialog_message">یک یا چن وردنی ز کار وستنه وو سیستوم ایسا ن نا پایدار کردنه. %1$s قپ ریت نا مووفقی سی ره وندن دووارته وردنی (یل) داشت.\n\nوردنی یل من نشست سکویی ایسا دووارته ره ونی نؽبۊن.\n\nپاک کردن یا قیر فعال کردن وردنی یل گاشڌ ای موشکل ن هل کونه.</string>
   <!-- Button text on the extension crash dialog to prompt the user to try restarting the extensions but the dialog will reappear if it is unsuccessful again -->
-  <string name="extension_process_crash_dialog_retry_button_text" tools:ignore="UnusedResources">قپ ریت سی ر وندن دووارته وردنی یل</string>
+  <string name="extension_process_crash_dialog_retry_button_text" tools:ignore="UnusedResources">قپ ریت سی ره وندن دووارته وردنی یل</string>
   <!-- Button text on the extension crash dialog to prompt the user to continue with all extensions disabled. -->
   <string name="extension_process_crash_dialog_disable_extensions_button_text">رئڌن وا پؽش وا وردنی یل قیر فعال</string>
   <!--
@@ -1509,7 +1509,7 @@
   <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
   <string name="studies_description_4" tools:ignore="BrandUsage">Firefox و هالت تساڌۊفی منتورا ن سی آزمایش ویژیی یل پسند اکونه، ک ای کار کیفیت ن سی پوی وا روء ابره.</string>
   <!-- Title of the Studies data preference -->
-  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">پۊرنیڌن وو ر وندن خۊندنیا</string>
+  <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">پۊرنیڌن وو ره وندن خۊندنیا</string>
   <!-- Title of the Studies data preference -->
   <string name="studies_title_2">هشتن خۊندنیا ویژیی</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->

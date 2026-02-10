@@ -646,6 +646,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">Beállítások kezelése</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Intsen búcsút a hátborzongató követőknek</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Nyissa meg az összes hivatkozását a beépített adatvédelemmel</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">Megvédjük adatait, és automatikusan megakadályozzuk a cégeket, hogy kémkedjenek a kattintásai után.</string>
   <!-- "Set to default" onboarding button. -->
@@ -1742,6 +1744,12 @@
   <string name="download_delete_multi_select_dialog_confirm">Törlés</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Mégse</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Fájl átnevezése</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Név</string>
+  <string name="download_rename_dialog_confirm_button">Mentés</string>
+  <string name="download_rename_dialog_cancel_button">Mégse</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Folyamatban</string>
   <!--
