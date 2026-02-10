@@ -108,7 +108,7 @@ class FetchService final : public nsIObserver {
     SafeRefPtr<InternalRequest> mRequest;
     mozilla::ipc::PrincipalInfo mPrincipalInfo;
     nsCString mWorkerScript;
-    Maybe<ClientInfo> mClientInfo;
+    ClientInfo mClientInfo;
     Maybe<ServiceWorkerDescriptor> mController;
     Maybe<net::CookieJarSettingsArgs> mCookieJarSettings;
     bool mNeedOnDataAvailable;
@@ -131,6 +131,7 @@ class FetchService final : public nsIObserver {
   struct MainThreadFetchArgs {
     SafeRefPtr<InternalRequest> mRequest;
     mozilla::ipc::PrincipalInfo mPrincipalInfo;
+    ClientInfo mClientInfo;
     Maybe<net::CookieJarSettingsArgs> mCookieJarSettings;
     bool mNeedOnDataAvailable;
     nsCOMPtr<nsICSPEventListener> mCSPEventListener;
