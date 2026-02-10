@@ -2407,6 +2407,7 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
   // all values are marked if both their map and key are marked -- though note
   // that we may later leave weak marking mode, do some more marking, and then
   // enter back in.
+
   if (!isGCMarking()) {
     return IncrementalProgress::Finished;
   }
@@ -2414,8 +2415,8 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
   for (auto r = gcEphemeronEdges().all(); !r.empty(); r.popFront()) {
     Cell* src = r.front().key();
     CellColor srcColor = gc::detail::GetEffectiveColor(marker, src);
-    auto& edges = r.front().value();
 
+    auto& edges = r.front().value();
     size_t numEdges = edges.length();
     if (IsMarked(srcColor) && edges.length() > 0) {
       marker->markEphemeronEdges(edges, AsMarkColor(srcColor));
