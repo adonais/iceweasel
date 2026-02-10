@@ -2052,21 +2052,18 @@ void* Instance::stringFromCharCodeArray(Instance* instance, void* arrayArg,
   }
   uint32_t arrayCount = arrayEnd - arrayStart;
 
-  // GC is disabled on this call since it can cause the array to move,
-  // invalidating the data pointer we pass as a parameter
-  JSLinearString* string = NewStringCopyN<NoGC, char16_t>(
-      cx, (char16_t*)array->data_ + arrayStart, arrayCount);
+  JSStringBuilder builder(cx);
+  if (!builder.ensureTwoByteChars() || !builder.reserve(arrayCount)) {
+    return nullptr;
+  }
+  for (uint32_t i = 0; i < arrayCount; i++) {
+    char16_t c = array->get<char16_t>(arrayStart + i);
+    builder.infallibleAppend(c);
+  }
+  JSLinearString* string = builder.finishString();
   if (!string) {
-    // If the first attempt failed, we need to try again with a potential GC.
-    // Acquire a stable version of the array that we can use. This may copy
-    // inline data to the stack, so we avoid doing it unless we must.
-    StableWasmArrayObjectElements<uint16_t> stableElements(cx, array);
-    string = NewStringCopyN<CanGC, char16_t>(
-        cx, (char16_t*)stableElements.elements() + arrayStart, arrayCount);
-    if (!string) {
-      MOZ_ASSERT(cx->isThrowingOutOfMemory());
-      return nullptr;
-    }
+    MOZ_ASSERT(cx->isThrowingOutOfMemory());
+    return nullptr;
   }
   return AnyRef::fromJSString(string).forCompiledCode();
 }

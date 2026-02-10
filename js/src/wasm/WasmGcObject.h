@@ -166,6 +166,14 @@ class WasmArrayObject : public WasmGcObject,
     return offsetToPointer<T>(offsetOfInlineArrayData());
   }
 
+  // Get the element at index `i`.
+  template <typename T>
+  inline T get(uint32_t i) const {
+    MOZ_ASSERT(i < numElements_);
+    MOZ_ASSERT(sizeof(T) == typeDef().arrayType().elementType().size());
+    return ((T*)data_)[i];
+  }
+
   // AllocKind for object creation
   static inline gc::AllocKind allocKindForOOL();
   static inline gc::AllocKind allocKindForIL(uint32_t storageBytes);
@@ -491,40 +499,6 @@ inline void WasmStructObject::setOOLPointer(
 // are in the NULL pointer guard page.
 static_assert(WasmStructObject_MaxInlineBytes <= wasm::NullPtrGuardSize);
 static_assert(sizeof(WasmArrayObject) <= wasm::NullPtrGuardSize);
-
-// Template to acquire a stable pointer to the elements of a WasmArrayObject
-// that will not move even if there is a GC. This will create a copy of the
-// array onto the stack when the array has inline data, and can be expensive.
-template <typename T>
-class MOZ_RAII StableWasmArrayObjectElements {
-  static constexpr size_t MaxInlineElements =
-      WasmArrayObject::maxInlineElementsForElemSize(sizeof(T));
-  Rooted<WasmArrayObject*> array_;
-  T* elements_;
-  mozilla::Maybe<mozilla::Vector<T, MaxInlineElements, SystemAllocPolicy>>
-      ownElements_;
-
- public:
-  StableWasmArrayObjectElements(JSContext* cx, Handle<WasmArrayObject*> array)
-      : array_(cx, array), elements_(nullptr) {
-    if (array->isDataInline()) {
-      ownElements_.emplace();
-      if (!ownElements_->resize(array->numElements_)) {
-        // Should not happen as we have inline storage for the maximum needed
-        // elements.
-        MOZ_CRASH();
-      }
-      const T* src = array->inlineArrayElements<T>();
-      std::copy(src, src + array->numElements_, ownElements_->begin());
-      elements_ = ownElements_->begin();
-    } else {
-      elements_ = reinterpret_cast<T*>(array->data_);
-    }
-  }
-
-  T* elements() { return elements_; }
-  size_t length() const { return array_->numElements_; }
-};
 
 }  // namespace js
 
