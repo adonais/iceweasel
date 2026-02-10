@@ -721,9 +721,6 @@ https_first_disabled = true
 
 ["browser_trust_panel_security_view.js"]
 https_first_disabled = true
-skip-if = [
-  "true", # Bug 2014612
-]
 
 ["browser_typed_value.js"]
 
