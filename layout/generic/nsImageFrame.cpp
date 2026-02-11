@@ -1560,22 +1560,18 @@ nscoord nsImageFrame::IntrinsicISize(const IntrinsicSizeInput& aInput,
 void nsImageFrame::ReflowChildren(nsPresContext* aPresContext,
                                   const ReflowInput& aReflowInput,
                                   const LogicalSize& aImageSize) {
+  const WritingMode wm = GetWritingMode();
   for (nsIFrame* child : mFrames) {
     ReflowOutput childDesiredSize(aReflowInput);
-    WritingMode wm = GetWritingMode();
-    // Shouldn't be hard to support if we want, but why bother.
-    MOZ_ASSERT(
-        wm == child->GetWritingMode(),
-        "We don't expect mismatched writing-modes in content we control");
-    nsReflowStatus childStatus;
-
+    const WritingMode childWm = child->GetWritingMode();
+    ReflowInput childReflowInput(aPresContext, aReflowInput, child,
+                                 aImageSize.ConvertTo(childWm, wm));
     LogicalPoint childOffset(wm);
-    ReflowInput childReflowInput(aPresContext, aReflowInput, child, aImageSize);
     const nsSize containerSize = aImageSize.GetPhysicalSize(wm);
+    nsReflowStatus childStatus;
     ReflowChild(child, aPresContext, childDesiredSize, childReflowInput, wm,
                 childOffset, containerSize, ReflowChildFlags::Default,
                 childStatus);
-
     FinishReflowChild(child, aPresContext, childDesiredSize, &childReflowInput,
                       wm, childOffset, containerSize,
                       ReflowChildFlags::Default);

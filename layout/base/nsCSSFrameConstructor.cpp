@@ -4713,9 +4713,6 @@ nsCSSFrameConstructor::FindSVGData(const Element& aElement,
     // should at that point be considered in error according to F.2, but
     // it's hard to tell.
     //
-    // Style mutation can't change this situation, so don't bother
-    // adding to the undisplayed content map.
-    //
     // We don't currently handle any UI for desc/title/metadata
     return &sSuppressData;
   }
@@ -5030,8 +5027,13 @@ nsCSSFrameConstructor::FindElementData(const Element& aElement,
                                        ItemFlags aFlags) {
   // Don't create frames for non-SVG element children of SVG elements.
   if (!aElement.IsSVGElement()) {
+    // NOTE: ::backdrop is explicitly allowed because it's out of flow, but we
+    // get here with other generated content and drop it here. We have
+    // mechanisms to drop this at the caller instead, which we should probably
+    // use.
     if (aParentFrame && IsFrameForSVG(aParentFrame) &&
-        !aParentFrame->IsSVGForeignObjectFrame()) {
+        !aParentFrame->IsSVGForeignObjectFrame() &&
+        aStyle.GetPseudoType() != PseudoStyleType::backdrop) {
       return nullptr;
     }
     if (aFlags.contains(ItemFlag::IsWithinSVGText)) {
@@ -9171,24 +9173,26 @@ void nsCSSFrameConstructor::ProcessChildren(
   AddFCItemsForAnonymousContent(aState, aFrame, anonymousItems,
                                 itemsToConstruct, pageNameTracker);
 
+  // Generated content should have the same style parent as normal kids.
+  //
+  // Note that we don't use this style for looking up things like special
+  // block styles because in some cases involving table pseudo-frames it has
+  // nothing to do with the parent frame's desired behavior.
+  auto* styleParentFrame =
+      nsIFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
+  ComputedStyle* parentStyle = styleParentFrame->Style();
+  if (parentStyle->StyleDisplay()->mTopLayer == StyleTopLayer::Auto &&
+      !aContent->IsInNativeAnonymousSubtree() &&
+      !aPossiblyLeafFrame->BackdropUnsupported()) {
+    CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
+                               *parentStyle, PseudoStyleType::backdrop,
+                               itemsToConstruct);
+  }
+
   nsBlockFrame* listItem = nullptr;
   bool isOutsideMarker = false;
   if (!aPossiblyLeafFrame->IsLeaf()) {
-    // Generated content should have the same style parent as normal kids.
-    //
-    // Note that we don't use this style for looking up things like special
-    // block styles because in some cases involving table pseudo-frames it has
-    // nothing to do with the parent frame's desired behavior.
-    auto* styleParentFrame =
-        nsIFrame::CorrectStyleParentFrame(aFrame, PseudoStyleType::NotPseudo);
-    ComputedStyle* parentStyle = styleParentFrame->Style();
     if (aCanHaveGeneratedContent) {
-      if (parentStyle->StyleDisplay()->mTopLayer == StyleTopLayer::Auto &&
-          !aContent->IsInNativeAnonymousSubtree()) {
-        CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
-                                   *parentStyle, PseudoStyleType::backdrop,
-                                   itemsToConstruct);
-      }
       if (parentStyle->StyleDisplay()->IsListItem() &&
           (listItem = do_QueryFrame(aFrame)) &&
           !styleParentFrame->IsFieldSetFrame()) {

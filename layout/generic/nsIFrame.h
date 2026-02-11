@@ -664,6 +664,8 @@ enum class LayoutFrameClassFlags : uint32_t {
   BlockFormattingContext = 1 << 14,
   // Whether we're a SVG rendering observer container.
   SVGRenderingObserverContainer = 1 << 15,
+  // Whether ::backdrop is not supported for this frame.
+  BackdropUnsupported = 1 << 16,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(LayoutFrameClassFlags)
@@ -3561,6 +3563,7 @@ class nsIFrame : public nsQueryFrame {
   CLASS_FLAG_METHOD0(SupportsCSSTransforms);
   CLASS_FLAG_METHOD0(SupportsContainLayoutAndPaint)
   CLASS_FLAG_METHOD0(SupportsAspectRatio)
+  CLASS_FLAG_METHOD0(BackdropUnsupported)
   CLASS_FLAG_METHOD(IsSVGRenderingObserverContainer,
                     SVGRenderingObserverContainer);
 
