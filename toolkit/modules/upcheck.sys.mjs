@@ -163,15 +163,16 @@ export class upcheck {
 
   static download_caller(id, url, refer, filename, save) {
     try {
+      let downloader;
       if (AppConstants.platform === "win") {
         const ctypes = ChromeUtils.importESModule("resource://gre/modules/ctypes.sys.mjs").ctypes;
         const bits = ctypes ? ctypes.voidptr_t.size : 0;
         const lib = bits ? ctypes.open(bits == 8 ? "portable64.dll" : "portable32.dll") : null;
-        const downloader = lib ? lib.declare('ctype_download_caller', ctypes.default_abi, ctypes.int
-                           , ctypes.int, ctypes.char.ptr, ctypes.char.ptr, ctypes.char.ptr, ctypes.char.ptr, ctypes.char.ptr, ctypes.char.ptr)
-                           : null;
+        downloader = lib ? lib.declare('ctype_download_caller', ctypes.default_abi, ctypes.int
+                     , ctypes.int, ctypes.char.ptr, ctypes.char.ptr, ctypes.char.ptr, ctypes.char.ptr, ctypes.char.ptr, ctypes.char.ptr)
+                     : null;
       } else {
-        const downloader = true;
+        downloader = true;
       }
       if (downloader) {
         const path = upcheck.getCookies(url, true);
@@ -181,6 +182,7 @@ export class upcheck {
         const prefer = refer ? refer.toString() : null;
         const pcok = path ? path.toString() : null;
         const pbuffer = buffer ? buffer.toString() : null;
+        const uchrome = Services.dirsvc.get("UChrm", Ci.nsIFile);
         if (AppConstants.platform === "win") {
           return downloader(id, url.toString(), pfile, psave, prefer, pcok, pbuffer);
         } else {
@@ -189,15 +191,16 @@ export class upcheck {
           let ptr_refer = prefer ? '"' + prefer + '"' : "";
           let ptr_bk = pcok ? '"' + pcok + '"' : "";
           let ptr_bf = pbuffer ? '"' + pbuffer + '"' : "";
+          let ptr_uchrome = uchrome ? '"' + uchrome.path + '"' : "";
           if (psave && pfile) {
             dirs = '"' + psave + '/' + pfile + '"';
           } else if (pfile) {
             dirs = '"' + pfile + '"';
           }
           if (!dirs) {
-            return upcheck.runSelf(["-m", id, "-i", ptr_url, "-ref", ptr_refer, "-b", ptr_bk, "-cok", ptr_bf, null, null]);
+            return upcheck.runSelf(["-m", id, "-i", ptr_url, "-ref", ptr_refer, "-b", ptr_bk, "-cok", ptr_bf, "-param", ptr_uchrome, null, null]);
           } else {
-            return upcheck.runSelf(["-m", id, "-i", ptr_url, "-ref", ptr_refer, "-b", ptr_bk, "-cok", ptr_bf, "-o", dirs, null, null]);
+            return upcheck.runSelf(["-m", id, "-i", ptr_url, "-ref", ptr_refer, "-b", ptr_bk, "-cok", ptr_bf, "-o", dirs, "-param", ptr_uchrome, null, null]);
           }
         }
       }
