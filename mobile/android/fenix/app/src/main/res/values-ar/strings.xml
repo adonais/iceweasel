@@ -297,25 +297,64 @@
   <string name="browser_menu_sign_back_in_to_sync">لِج مجددا لتبدأ المزامنة</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
   <string name="browser_menu_syncing_paused_caption">أوقفت المزامنة مؤقتا</string>
+  <!-- Browser menu caption label for an authenticated user -->
+  <string name="browser_menu_signed_in_caption">إدارة عمليات النسخ الاحتياطي والمزامنة</string>
   <!-- Browser menu label that creates a private tab -->
   <string name="browser_menu_new_private_tab">لسان خاص جديد</string>
   <!-- Browser menu label that navigates to the Password screen -->
   <string name="browser_menu_passwords">كلمات السر</string>
+  <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
+  <string name="browser_close_main_menu_handlebar_content_description">إغلاق القائمة</string>
+  <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
+  <string name="browser_main_menu_content_description_navigation_header">تصفّح</string>
+  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
+  <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">إغلاق قائمة الامدادات</string>
+  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">إغلاق قائمة الحفظ</string>
+  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">إغلاق قائمة الأدوات</string>
+  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
+  <string name="browser_custom_tab_menu_handlebar_content_description">إغلاق قائمة خيارات التبويب المخصصة</string>
+  <!-- Browser menu label that bookmarks the currently visited page -->
+  <string name="browser_menu_bookmark_this_page_2">علِّم الصفحة</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
   <string name="browser_menu_edit_bookmark">حرّر العلامة</string>
+  <!-- Browser menu label that the saves the currently visited page as a PDF -->
+  <string name="browser_menu_save_as_pdf_2">حفظ كملف PDF</string>
+  <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
+  <string name="browser_menu_translate_page_2">ترجمة الصفحة</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">الإبلاغ عن موقع لا يعمل…</string>
+  <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
+  <string name="browser_menu_webcompat_reporter_2">الإبلاغ عن موقع مُعطَّل</string>
+  <!-- Browser menu label that is displayed when the current page has been translated by the translation feature. -->
+  <string name="browser_menu_translated">مترجمة</string>
+  <!-- Browser menu label for the print feature -->
+  <string name="browser_menu_print_2">طباعة</string>
   <!--
     Browser menu label for the Delete browsing data on quit feature.
     %1$s is the name of the app (for example "Firefox").
   -->
   <string name="browser_menu_delete_browsing_data_on_quit">اخرج من %s</string>
   <!--
+    Content description for a banner within the menu which prompt the user to make this app their default browser.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="browser_menu_default_banner_title">تعيين %1$s كمتصفحك الافتراضي</string>
+  <!-- Label text within the set as default banner -->
+  <string name="browser_menu_default_banner_subtitle_2">سريع وخاص وصٌنع خصيصًا لك.</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button that dismisses the set as default banner in the menu -->
+  <string name="browser_menu_default_banner_dismiss_promotion">تجاهل العرض الترويجي</string>
+  <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
+  <string name="browser_menu_recommended_extensions_content_description">المزيد من المعلومات</string>
+  <!--
     Menu "contextual feature recommendation" (CFR)
 
     Text for the title in the contextual feature recommendation popup promoting the menu feature.
   -->
   <string name="menu_cfr_title">جديد: قائمة انسيابية</string>
+  <!-- Text for the message in the contextual feature recommendation popup promoting the menu feature. -->
+  <string name="menu_cfr_body">وصول أسرع لكل ما تحتاجه، من التصفح الخاص إلى خيارات الحفظ.</string>
   <!--
     Extensions management fragment
 
@@ -337,6 +376,18 @@
   -->
   <string name="browser_toolbar_translated_successfully">ترجمت الصفحة من %1$s إلى %2$s.</string>
   <!--
+    Translation Toolbar
+
+    Translation toolbar label that is displayed when the current page has been translated by the translation feature.
+    %1$s is the name of the language that is displayed in the original page. (For example: English)
+    %2$s is the name of the language which the page was translated to. (For example: French)
+  -->
+  <string name="translation_toolbar_translated_from_and_to" tools:ignore="UnusedResources">ترجمت الصفحة من %1$s إلى %2$s</string>
+  <!-- Content description for the translate toolbar action that opens the translations dialog. -->
+  <string name="translation_toolbar_expand_action">فتح ورقة الترجمة</string>
+  <!-- Content description for the translate toolbar action that closes the translations toolbar. -->
+  <string name="translation_toolbar_close_action">تجاهل الرسالة</string>
+  <!--
     Locale Settings Fragment
 
     Content description for tick mark on selected language
@@ -346,6 +397,12 @@
   <string name="default_locale_text">اتبع لغة الجهاز</string>
   <!-- Placeholder text shown in the search bar before a user enters text -->
   <string name="locale_search_hint">لغة البحث</string>
+  <!--
+    Search Fragment
+
+    Button in the search view that lets a user search by scanning a QR code
+  -->
+  <string name="search_scan_button_2">امسح رمز QR</string>
   <!-- Button in the search view when shortcuts are displayed that takes a user to the search engine settings -->
   <string name="search_shortcuts_engine_settings">إعدادات محرّك البحث</string>
   <!-- Button in the search view that lets a user navigate to the site in their clipboard -->
@@ -372,6 +429,16 @@
   -->
   <string name="search_engine_icon_content_description_1">محرك البحث: %s</string>
   <!--
+    Content description (not visible, for screen readers etc.) of the search engine selector from the search toolbar.
+    %s is the search engine name (for example: DuckDuckGo).
+    The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
+  -->
+  <string name="search_engine_selector_content_description">%s: أداة اختيار محرك البحث</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">حذف %1$s من سجل التصفح</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">حذف سجل هذ البحث</string>
+  <!--
     Home onboarding
 
     Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog
@@ -391,6 +458,13 @@
   <string name="juno_onboarding_default_browser_positive_button" tools:ignore="UnusedResources">اضبطه ليكون المتصفّح المبدئي</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_default_browser_negative_button" tools:ignore="UnusedResources">ليس الآن</string>
+  <!-- Title for sign in to sync screen. -->
+  <string name="juno_onboarding_sign_in_title_2">حافظ على تشفير بياناتك عند التنقل بين الأجهزة</string>
+  <!--
+    Description for sign in to sync screen. Nimbus experiments do not support string placeholders.
+    Note: The word "Firefox" should NOT be translated
+  -->
+  <string name="juno_onboarding_sign_in_description_3" tools:ignore="BrandUsage">يُشفّر Firefox كلمات مرورك وعلاماتك المرجعية وغيرها من البيانات أثناء المزامنة.</string>
   <!-- Text for the button to sign in to sync on the device -->
   <string name="juno_onboarding_sign_in_positive_button" tools:ignore="UnusedResources">لِج</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -400,6 +474,11 @@
     Note: The word "Firefox" should NOT be translated
   -->
   <string name="juno_onboarding_enable_notifications_title_nimbus_2" tools:ignore="BrandUsage">تساعدك الإشعارات على أن تكون أأمن مع Firefox</string>
+  <!--
+    Description for enable notification permission screen used by Nimbus experiments. Nimbus experiments do not support string placeholders.
+    Note: The word "Firefox" should NOT be translated
+  -->
+  <string name="juno_onboarding_enable_notifications_description_nimbus_2" tools:ignore="BrandUsage">شارك علامات التبويب بأمان بين أجهزتك واكتشف المزيد من مزايا الخصوصية في Firefox.</string>
   <!-- Text for the button to request notification permission on the device -->
   <string name="juno_onboarding_enable_notifications_positive_button" tools:ignore="UnusedResources">فعّل التنبيهات</string>
   <!-- Text for the button dismiss the screen and move on with the flow -->
@@ -409,14 +488,39 @@
     Note: The word "Firefox" should NOT be translated
   -->
   <string name="juno_onboarding_add_search_widget_title" tools:ignore="BrandUsage,UnusedResources">جرب أداة البحث في فايرفوكس</string>
+  <!--
+    Description for add search widget screen used by Nimbus experiments. Nimbus experiments do not support string placeholders.
+    Note: The word "Firefox" should NOT be translated
+  -->
+  <string name="juno_onboarding_add_search_widget_description" tools:ignore="BrandUsage,UnusedResources">أضف Firefox إلى شاشتك الرئيسية لوصول أسرع إلى متصفحك الخاص الذي يحظر أدوات التعقب بين المواقع.</string>
+  <!--
+    Text for the button to add search widget on the device used by Nimbus experiments. Nimbus experiments do not support string placeholders.
+    Note: The word "Firefox" should NOT be translated
+  -->
+  <string name="juno_onboarding_add_search_widget_positive_button" tools:ignore="BrandUsage,UnusedResources">إضافة أداة Firefox</string>
   <!-- Text for the button to dismiss the screen and move on with the flow -->
   <string name="juno_onboarding_add_search_widget_negative_button" tools:ignore="UnusedResources">ليس الآن</string>
   <!-- Title for the privacy preferences dialog shown during onboarding. Note: The word "Firefox" should NOT be translated. -->
   <string name="onboarding_preferences_dialog_title" tools:ignore="BrandUsage">ساعدنا في جعل Firefox أفضل</string>
   <!-- Title for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_title">إرسال تقارير الأعطال تلقائيا</string>
+  <!-- Description for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
+  <string name="onboarding_preferences_dialog_crash_reporting_description">تتيح لنا تقارير الإنهيار تشخيص مشكلات المتصفح وإصلاحها. وقد تتضمن التقارير بيانات شخصية أو حساسة.</string>
   <!-- Learn more link for the crash reporting option in the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_crash_reporting_learn_more_2">اطلع على المزيد</string>
+  <!-- Title for the startup crash page. %s is the name of the app (for example "Firefox") -->
+  <string name="startup_crash_title">يحتاج %s إلى إعادة التشغيل</string>
+  <!-- Body text for the startup crash page. %s is the name of the app (for example "Firefox") -->
+  <string name="startup_crash_body">حدثت مشكلة أثناء فتح %s.\n\nتُساعدنا تقارير الإنهيار على تشخيص مشكلات المتصفح وإصلاحها. وقد تتضمن التقارير بيانات شخصية أو حساسة.</string>
+  <!-- Button text to submit a startup crash report -->
+  <string name="startup_crash_positive">أرسِل بلاغًا بالانهيار</string>
+  <!-- Button text to continue and not send a startup crash report -->
+  <string name="startup_crash_negative">لا، شكرًا</string>
+  <!-- Button text to reopen firefox after the crash is processed %s is the name of the app (for example "Firefox") -->
+  <string name="startup_crash_restart">إعادة فتح %s</string>
+  <!-- Title for the usage data option in the privacy preferences dialog shown during onboarding. Note: The word "Mozilla" should NOT be translated. -->
+  <string name="onboarding_preferences_dialog_usage_data_title">إرسال البيانات التقنية والتفاعلية إلى Mozilla</string>
+  <string name="onboarding_preferences_dialog_usage_data_description_2" tools:ignore="BrandUsage">تساعد البيانات المتعلقة بجهازك وتكوينات الأجهزة وكيفية استخدامك لـ Firefox في تطوير الميزات ورفع كفاءة الأداء والاستقرار لكل المستخدمين.</string>
   <string name="onboarding_preferences_dialog_usage_data_learn_more_2">اطلع على المزيد</string>
   <!-- Positive button label for the privacy preferences dialog shown during onboarding. -->
   <string name="onboarding_preferences_dialog_positive_button">تم</string>
@@ -424,30 +528,180 @@
   <string name="onboarding_welcome_to_firefox" tools:ignore="BrandUsage">مرحبا بكم في Firefox</string>
   <!-- Terms of service sub header label. -->
   <string name="onboarding_terms_of_service_sub_header_2">تصفح الويب بسرعة وأمان</string>
+  <!-- Terms of service onboarding page continue button label. -->
+  <string name="onboarding_term_of_service_agree_and_continue_button_label_2">متابعة</string>
+  <!-- Line one of the terms of service onboarding page. %1$s is replaced by an active link, using onboarding_term_of_service_line_one_link_text_2 as text (“Firefox Terms of Use”). -->
+  <string name="onboarding_term_of_service_line_one_2">بالاستمرار فإنك توافق على %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_one_2. -->
   <string name="onboarding_term_of_service_line_one_link_text_2" tools:ignore="BrandUsage">شروط استخدام Firefox</string>
+  <!-- Line two of the terms of service onboarding page. 'Firefox' is intentionally hardcoded. %1$s is replaced by an active link, using onboarding_term_of_service_line_two_link_text as text (“Privacy Notice”). -->
+  <string name="onboarding_term_of_service_line_two_2" tools:ignore="BrandUsage">يهتم Firefox بخصوصيتك. اكتشف المزيد في %1$s.</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_two. -->
   <string name="onboarding_term_of_service_line_two_link_text">تنويه الخصوصية</string>
   <!-- Line three of the terms of service onboarding page. 'Firefox' and 'Mozilla' are intentionally hardcoded. %1$s is replaced by an active link using onboarding_term_of_service_line_three_link_text as text (“Manage”). -->
   <string name="onboarding_term_of_service_line_three" tools:ignore="BrandUsage">للمساعدة في تحسين المتصفح، يرسل Firefox بيانات التشخيص والتفاعل إلى Mozilla. %1$s</string>
   <!-- Used as text for the link in onboarding_term_of_service_line_three. -->
   <string name="onboarding_term_of_service_line_three_link_text">إدارة</string>
+  <!-- Terms of use (ToU) onboarding redesign title. -->
+  <string name="onboarding_redesign_tou_title" tools:ignore="UnusedResources">ابدأ رحلتك مع المتصفح الأمثل لأندرويد</string>
+  <!-- Terms of use (ToU) first subheader. -->
+  <string name="onboarding_redesign_tou_subheader_one" tools:ignore="UnusedResources">تحميل المواقع بسرعة فائقة</string>
+  <!-- Terms of use (ToU) second subheader. -->
+  <string name="onboarding_redesign_tou_subheader_two" tools:ignore="UnusedResources">حماية تلقائية ضد التتبع</string>
+  <!-- Terms of use (ToU) third subheader. -->
+  <string name="onboarding_redesign_tou_subheader_three" tools:ignore="UnusedResources">خيارات تخصيص لا حصر لها</string>
+  <!--
+    Terms of use (ToU) first body text. %1$s is replaced by an active link,
+    using onboarding_redesign_tou_body_one_link_text as text (“Firefox Terms of Use”).
+  -->
+  <string name="onboarding_redesign_tou_body_one" tools:ignore="UnusedResources">بالاستمرار فإنك توافق على %1$s.</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_one. -->
+  <string name="onboarding_redesign_tou_body_one_link_text" tools:ignore="BrandUsage,UnusedResources">شروط استخدام Firefox</string>
+  <!--
+    Terms of use (ToU) second body text. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link, using onboarding_redesign_tou_body_two_link_text as text (“Privacy Notice”).
+  -->
+  <string name="onboarding_redesign_tou_body_two" tools:ignore="BrandUsage,UnusedResources">يهتم Firefox بخصوصيتك. اكتشف المزيد في %1$s.</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_two. -->
+  <string name="onboarding_redesign_tou_body_two_link_text" tools:ignore="UnusedResources">تنويه الخصوصية</string>
+  <!--
+    Terms of use (ToU) third body text. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link using onboarding_redesign_tou_body_three_link_text as text (“Manage Settings”).
+  -->
+  <string name="onboarding_redesign_tou_body_three" tools:ignore="BrandUsage,UnusedResources">للمساعدة في تحسين المتصفح، يرسل Firefox بيانات التشخيص والتفاعل إلى Mozilla. %1$s</string>
+  <!-- Used as text for the link in onboarding_redesign_tou_body_three. -->
+  <string name="onboarding_redesign_tou_body_three_link_text" tools:ignore="UnusedResources">إدارة الإعدادات</string>
+  <!-- Terms of use (ToU) onboarding page continue button label. -->
+  <string name="onboarding_redesign_tou_agree_and_continue_button_label" tools:ignore="UnusedResources">مواصلة</string>
+  <!-- Onboarding header for the toolbar selection card. -->
+  <string name="onboarding_redesign_customize_toolbar_title" tools:ignore="UnusedResources">أين تريد وضع شريط العنوان؟</string>
+  <!-- Onboarding label for 'Continue' button. -->
+  <string name="onboarding_redesign_continue_button" tools:ignore="UnusedResources">متابعة</string>
+  <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_title" tools:ignore="BrandUsage,UnusedResources">ساعدنا في تطوير Firefox</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_redesign_opt_out_checkbox" tools:ignore="BrandUsage,UnusedResources">شارك معلومات حول كيفية اكتشافك واستخدامك لـ Firefox مع شركاء Mozilla التسويقيين. نحن لا نبيع هذه البيانات أبداً.</string>
+  <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
+  <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">كيفية استخدامنا للبيانات</string>
+  <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">تأكيد</string>
+  <!-- Set to default browser onboarding redesign title. -->
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">حماية تلقائية ضد التتبع، مفعلة مسبقاً</string>
+  <!-- Set to default browser onboarding redesign body. -->
+  <string name="onboarding_redesign_set_default_browser_body" tools:ignore="UnusedResources">نقرة واحدة كفيلة بمنع الشركات من التجسس على تحركاتك.</string>
+  <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">زامن بياناتك أينما استخدمت Firefox</string>
+  <!-- Sync onboarding redesign body. -->
+  <string name="onboarding_redesign_sync_body" tools:ignore="UnusedResources">احصل على علاماتك المرجعية وتبويباتك وكلمات مرورك على أي جهاز. بياناتك مشفرة ومحمية بالكامل.</string>
+  <!-- Sync onboarding redesign positive button text. -->
+  <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">ابدأ المزامنة</string>
+  <!-- Sync onboarding redesign negative button text. -->
+  <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">ليس الآن</string>
   <!-- Marketing onboarding page title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_marketing_title" tools:ignore="BrandUsage,UnusedResources">ساعدنا في تنمية Firefox</string>
+  <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">مشاركتك لقصة اكتشافك لـ Firefox واستخدامك له تساعدنا في تعريف المزيد من الأشخاص بمتصفحنا.</string>
+  <!-- Marketing onboarding page opt-out checkbox. Unchecking the box does not increase data collection. Our data practices remain the same. 'Mozilla' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_opt_out_checkbox">شارك البيانات مع شركاء تكنولوجيا التسويق لـ Mozilla. نحن لا نبيع هذه البيانات أبداً، ولا نستخدمها لاستهدافك بالإعلانات.</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">كيف نستخدم البيانات</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">تأكيد وبدء التصفح</string>
+  <!-- Marketing onboarding page title variant. “One last thing” refers to the final step or action in the onboarding process that we’re asking users to take before they can start using the browser. -->
+  <string name="onboarding_marketing_title_1" tools:ignore="UnusedResources">بقي أمر واحد فقط</string>
+  <!-- Marketing onboarding page body variant. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">شارك معلومات حول كيفية اكتشافك واستخدامك لـ Firefox مع شركاء Mozilla التسويقيين. نحن لا نبيع هذه البيانات أبداً.</string>
+  <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
+  <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">الموافقة وبدء التصفح</string>
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
+  <!-- "Continue" onboarding button. -->
+  <string name="nova_onboarding_continue_button">متابعة</string>
+  <!-- "Not now" onboarding button. -->
+  <string name="nova_onboarding_negative_button">ليس الآن</string>
+  <!-- Terms of use (ToU) onboarding title. -->
+  <string name="nova_onboarding_tou_title">استعد للانطلاق بحرية</string>
+  <!-- Terms of use (ToU) onboarding subtitle. -->
+  <string name="nova_onboarding_tou_subtitle">سريع وآمن ولن يخذلك أبداً.\nتجربة تصفح أفضل.</string>
+  <!--
+    Terms of use (ToU) onboarding body line one.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
+  -->
+  <string name="nova_onboarding_tou_body_line_1">بالاستمرار فإنك توافق على %1$s.</string>
+  <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">شروط استخدام Firefox</string>
+  <!--
+    Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
+  -->
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">يهتم Firefox بخصوصيتك. اعرف المزيد في %1$s.</string>
+  <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
+  <string name="nova_onboarding_tou_body_line_2_link_text">تنويه الخصوصية</string>
+  <!--
+    Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
+  -->
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">للمساعدة في تحسين المتصفح، يرسل Firefox بيانات التشخيص والتفاعل إلى Mozilla. %1$s</string>
+  <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
+  <string name="nova_onboarding_tou_body_line_3_link_text">إدارة الإعدادات</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">تخلص نهائياً من أدوات التتبع المريبة</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">تصفح جميع الروابط بفضل حماية الخصوصية المدمجة</string>
+  <!-- "Set to default" onboarding subtitle. -->
+  <string name="nova_onboarding_set_to_default_subtitle">نحمي بياناتك ونمنع الشركات تلقائياً من التجسس على تحركاتك.</string>
+  <!-- "Set to default" onboarding button. -->
+  <string name="nova_onboarding_set_to_default_button">تعيين كمتصفح افتراضي</string>
+  <!-- Toolbar selection onboarding title. -->
+  <string name="nova_onboarding_toolbar_selection_title">اختر شريط العنوان الخاص بك</string>
+  <!-- Toolbar selection onboarding "top" option label. -->
+  <string name="nova_onboarding_toolbar_selection_top_label">أعلى</string>
+  <!-- Toolbar selection onboarding "bottom" option label. -->
+  <string name="nova_onboarding_toolbar_selection_bottom_label">أسفل</string>
+  <!-- Theme selection onboarding title. -->
+  <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">اختر مظهرك المفضل</string>
+  <!-- Theme selection onboarding "automatic" option label. -->
+  <string name="nova_onboarding_theme_selection_automatic_label" tools:ignore="UnusedResources">تلقائي</string>
+  <!-- Theme selection onboarding "light" option label. -->
+  <string name="nova_onboarding_theme_selection_light_label" tools:ignore="UnusedResources">إضاءة</string>
+  <!-- Theme selection onboarding "dark" option label. -->
+  <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">داكنة</string>
+  <!-- Sync onboarding title. -->
+  <string name="nova_onboarding_sync_title">استأنف فوراً من حيث توقفت</string>
+  <!-- Sync onboarding subtitle. -->
+  <string name="nova_onboarding_sync_subtitle">يمكنك الوصول إلى علاماتك المرجعية وكلمات مرورك والمزيد على أي جهاز في لمح البصر. تبقى بياناتك الشخصية آمنة ومحمية بفضل التشفير.</string>
+  <!-- Sync onboarding button. -->
+  <string name="nova_onboarding_sync_button">ابدأ المزامنة</string>
+  <!-- Marketing onboarding title. -->
+  <string name="nova_onboarding_marketing_title">ساعدنا في بناء شبكة إنترنت أفضل</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">شارك معلومات حول كيفية اكتشافك واستخدامك لـ Firefox مع شركاء Mozilla التسويقيين. نحن لا نبيع هذه البيانات أبداً. %1$s</string>
+  <!-- Marketing onboarding body link text. -->
+  <string name="nova_onboarding_marketing_body_link_text">كيفية استخدامنا للبيانات</string>
+  <!-- Notifications onboarding title. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_notifications_title" tools:ignore="BrandUsage,UnusedResources">تساعدك الإشعارات على البقاء أكثر أماناً مع Firefox</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
+  <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->
+  <string name="onboarding_customize_toolbar_title" tools:ignore="UnusedResources">تحديد مكان شريط الأدوات</string>
   <!-- Onboarding label for 'Save and continue' button, used by Nimbus experiments. -->
   <string name="onboarding_save_and_continue_button">حفظ ومتابعة</string>
   <!-- Onboarding toolbar selection card label for 'top' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_top_option">الأعلى</string>
   <!-- Onboarding toolbar selection card label for 'bottom' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_bottom_option">الأسفل</string>
+  <!-- Onboarding toolbar selection card content description for the main image. -->
+  <string name="onboarding_customize_toolbar_main_image_content_description">صورة رأسية كبيرة لواجهة اختيار موضع شريط الأدوات، تظهر رسماً توضيحياً لشريط الأدوات.</string>
+  <!-- Onboarding toolbar selection card content description for the toolbar placement image. -->
+  <string name="onboarding_customize_toolbar_placement_bottom_content_description">صورة لشريط الأدوات السفلي</string>
+  <string name="onboarding_customize_toolbar_placement_top_content_description">صورة لشريط الأدوات العلوي</string>
+  <!-- Onboarding header for the theme selection card, used by Nimbus experiments. -->
+  <string name="onboarding_customize_theme_title" tools:ignore="UnusedResources">اختر مظهرًا</string>
+  <!-- Onboarding sub header for theme selection card, used by Nimbus experiments. -->
+  <string name="onboarding_customize_theme_description" tools:ignore="UnusedResources">استمتع بوضوح تام أثناء التصفح.</string>
   <!-- Onboarding label for 'Save and start browsing' button, used by Nimbus experiments. -->
   <string name="onboarding_save_and_start_button">حفظ وبدأ التصفح</string>
   <!-- Onboarding theme selection card label for 'System auto' option, used by Nimbus experiments. -->
@@ -720,6 +974,8 @@
   <string name="wallpapers_onboarding_dialog_body_text">اختر خلفية تتحدث إليك.</string>
   <!-- Wallpaper onboarding dialog learn more button text. The button navigates to the wallpaper settings screen. -->
   <string name="wallpapers_onboarding_dialog_explore_more_button_text">استكشف المزيد من الخلفيات</string>
+  <!-- Title for the "Sunset" gradient alternative app icon variant in the icon picker screen. The app icon has a rich red-to-purple gradient background, resembling the tones of a sunset sky. -->
+  <string name="alternative_app_icon_option_gradient_sunset">الغروب</string>
   <!--
     Add-ons general availability nimbus message
 

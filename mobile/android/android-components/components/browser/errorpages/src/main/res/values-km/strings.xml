@@ -20,7 +20,7 @@
   <!-- The document title and heading of the error page shown when a website sends has an invalid or expired SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_title">ការ​តភ្ជាប់​សុវត្ថិភាព​បរាជ័យ</string>
   <!-- The error message shown when a website sends has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[<ul> <li>នេះ​អាច​ជា​បញ្ហា​ជាមួយ​ការ​កំណត់​រចនា​សម្ព័ន្ធ​របស់​ម៉ាស៊ីន​បម្រើ ឬ​អាច​មាន​នរណា​ម្នាក់​កំពុង​ព្យាយាម​ក្លែង​បន្លំ​ម៉ាស៊ីន​បម្រើ\u00a0។</li> <li>បើ​អ្នក​បាន​តភ្ជាប់​ទៅ​ម៉ាស៊ីន​បម្រើ​នេះ​ដោយ​ជោគជ័យ​ក្នុង​អតីតកាល កំហុស​អាច​ជា​បណ្ដោះ​អាសន្ន ហើយ​អ្នក​អាច​ព្យាយាម​ម្ដង​ទៀត\u00a0។</li> </ul>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[<ul>\n<li>នេះ​អាច​ជា​បញ្ហា​ជាមួយ​ការ​កំណត់​រចនា​សម្ព័ន្ធ​របស់​ម៉ាស៊ីន​បម្រើ ឬ​អាច​មាន​នរណា​ម្នាក់​កំពុង​ព្យាយាម​ក្លែង​បន្លំ​ម៉ាស៊ីន​បម្រើ\u00a0។</li>\n<li>បើ​អ្នក​បាន​តភ្ជាប់​ទៅ​ម៉ាស៊ីន​បម្រើ​នេះ​ដោយ​ជោគជ័យ​ក្នុង​អតីតកាល កំហុស​អាច​ជា​បណ្ដោះ​អាសន្ន ហើយ​អ្នក​អាច​ព្យាយាម​ម្ដង​ទៀត\u00a0។</li>\n</ul>]]></string>
   <!-- The text shown inside the advanced button used to expand the advanced options. It's only shown when a website has an invalid SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_advanced">កម្រិតខ្ពស់…</string>
   <!-- The advanced certificate information shown when a website sends has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->

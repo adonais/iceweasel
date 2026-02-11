@@ -9,12 +9,29 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Name of the "notification channel" used for displaying download notification. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_downloads_notification_channel">التنزيلات</string>
+  <!--
+    Summary text shown on an in progress download notification.
+    %1$s will be replaced with the estimated time remaining to complete the download.
+  -->
+  <string name="mozac_feature_downloads_time_remaining">في%1$s</string>
+  <!-- Summary text shown on an in progress download notification when the estimated time remaining is unknown. -->
+  <string name="mozac_feature_downloads_time_remaining_unknown">الوقت المتبقي غير معروف</string>
   <!-- Text shown on the second row of a paused download notification. -->
   <string name="mozac_feature_downloads_paused_notification_text">أُلبث التنزيل</string>
   <!-- Text shown on the second row of an completed download notification. The filename is shown on the first row. -->
   <string name="mozac_feature_downloads_completed_notification_text2">اكتمل التنزيل</string>
   <!-- Text shown on the second row of an failed download notification. The filename is shown on the first row. -->
   <string name="mozac_feature_downloads_failed_notification_text2">فشل التنزيل</string>
+  <!--
+    Alert dialog confirmation before downloading a previously downloaded file, this is the title.
+    %1$s will be replaced with the size of the file.
+  -->
+  <string name="mozac_feature_downloads_again_dialog_title">تنزيل الملف مرة أخرى؟ (%1$s)</string>
+  <!--
+    Alert dialog confirmation before downloading a file, this is the title.
+    %1$s will be replaced with the size of the file.
+  -->
+  <string name="mozac_feature_downloads_dialog_title_3">تنزيل الملف؟ (%1$s)</string>
   <!-- This string is used as the title for the download confirmation dialog when the size of the file is not known. -->
   <string name="mozac_feature_downloads_dialog_title_with_unknown_size">تنزيل الملف؟</string>
   <!-- Alert dialog confirmation before downloading a previously downloaded file, this is the title when the size of the file is not known. -->

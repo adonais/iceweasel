@@ -392,7 +392,7 @@
 
     Content description for tick mark on selected language
   -->
-  <string name="a11y_selected_locale_content_description">پسند زووݩ</string>
+  <string name="a11y_selected_locale_content_description">زووݩ پسند وابیڌه</string>
   <!-- Text for default locale item -->
   <string name="default_locale_text">زووݩ دسگا ن و دین کۊنین</string>
   <!-- Placeholder text shown in the search bar before a user enters text -->
@@ -4045,7 +4045,7 @@
   <!-- Message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_title">چیه نجۊرست</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
-  <string name="settings_search_no_results_message">گاشڌ پیتینیڌن دیری ن امتهووݩ کۊنین؟</string>
+  <string name="settings_search_no_results_message">پیتینیڌن دیری ن امتهووݩ کۊنین</string>
   <!-- Content Description for the button to open Settings Search (to search through settings). -->
   <string name="settings_search_button_content_description">دویمه پیتینیڌن سامووا</string>
   <!-- ==== Terms of use pop up prompt ==== -->

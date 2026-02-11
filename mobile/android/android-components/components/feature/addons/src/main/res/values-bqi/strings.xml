@@ -173,7 +173,7 @@
   -->
   <string name="mozac_feature_addons_permissions_extra_sites_description_for_update">دسرسی و دووسمندیا ایسا من وبگه یل دیر.</string>
   <!-- The text shown when an extension requests the userScripts permission, near the usual description of the userScripts permission -->
-  <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">اسکریپتا تاییڌ نوابیڌه ترن خترات ٱمنیتی وو زفت کردن هریم سیخومی وورکل کونن. تینا اسکریپتایی ن ز وردنی یل وو بونچکایی ک وسووݩ ائتماڌ دارین، ر بونین.</string>
+  <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">اسکریپتا تاییڌ نوابیڌه ترن خترات ٱمنیتی وو زفت کردن هریم سیخومی وورکل کونن. تینا اسکریپتایی ز وردنی یل وو بونچکایی ک وسووݩ ائتماڌ دارین ن، ره بونین.</string>
   <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
   <string name="mozac_feature_addons_permissions_required_data_collection_description_2">برنومه نویس اگو ای وردنی مووردا لمی ن جم اکونه: %1$s</string>
   <!-- The sentence used when the developer of an extension has explicitly stated that they do not collect any data collection. -->
@@ -321,7 +321,7 @@
   <!-- The content of the "crash" notification in the extensions manager -->
   <string name="mozac_feature_extensions_manager_notification_content_text">یک یا چن وردنی ز کار وستنه وو سیستوم ایسا ن نا پایدار کردنه.</string>
   <!-- Button to re-enable the extensions in the "crash" notification -->
-  <string name="mozac_feature_extensions_manager_notification_restart_button">وردنی یل ن ز نۊ ر بونین</string>
+  <string name="mozac_feature_extensions_manager_notification_restart_button">وردنی یل ن ز نۊ ره بونین</string>
   <!-- Button in the extensions manager that opens AMO in a tab -->
   <string name="mozac_feature_addons_find_more_extensions_button_text">وردنی یل قلوه ای ن بجۊرین</string>
   <!-- The label of the update button on the system notification shown to the user when an add-on has an update that requires the user to accept new permissions. -->

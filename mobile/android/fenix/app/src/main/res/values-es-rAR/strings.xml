@@ -647,7 +647,7 @@
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Decile adiós a los rastreadores siniestros</string>
   <!-- "Set to default" onboarding title. -->
-  <string name="nova_onboarding_set_to_default_title_2">Abrir todos los enlaces con la privacidad incorporada</string>
+  <string name="nova_onboarding_set_to_default_title_2">Abrir todos los enlaces con privacidad integrada</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">Protegemos tus datos y bloqueamos automáticamente a las empresas para que no espíen tus clics.</string>
   <!-- "Set to default" onboarding button. -->

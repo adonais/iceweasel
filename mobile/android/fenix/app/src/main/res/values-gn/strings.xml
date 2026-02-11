@@ -1506,6 +1506,8 @@
   <string name="studies_active">Myandy</string>
   <!-- Description for studies -->
   <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Eiporu tembiapoite ha temimo’ã opavavete oiporukuaa mboyve.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefox oiporavo péichante oha’ã hag̃ua tembiapoite, opavavete oiporu porãve hag̃ua.</string>
   <!-- Title of the Studies data preference -->
   <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Emohenda ha emongu’e mba’ekuaarã</string>
   <!-- Title of the Studies data preference -->
@@ -1518,6 +1520,8 @@
     Title of the Remote Improvements (rollouts) data preference
   -->
   <string name="remote_improvements_title">Emoneĩ ñemyatyrõ okáguivo</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox omoporãvéta tembiapoite, ijeporu ha hekopyta oñembohekopyahúvo. Ñemoambueita ojepo oka guive.</string>
   <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
   <string name="remote_improvements_learn_more">Eikuaave</string>
   <!-- Title for remote improvements preference in Advanced settings -->
@@ -2857,6 +2861,8 @@
   <string name="preferences_email_masks">Ñanduti veve rovamo’ãha</string>
   <!-- Title for the Suggest Email Masks toggle -->
   <string name="preferences_email_masks_suggest_title">Ere ñanduti veve rovamo’ãha</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">Eñomi ne ñanduti veve emo’ã hag̃ua ne ñe’ẽmondo g̃uahẽha eipota’ỹvagui. Oĩ tenda omoneĩ’ỹva ñanduti veve rovamo’ãha.</string>
   <!-- Text that links to additional information about the Email Masks -->
   <string name="preferences_email_masks_suggest_learn_more">Eikuaave</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
