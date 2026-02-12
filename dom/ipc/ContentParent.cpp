@@ -3460,7 +3460,9 @@ mozilla::ipc::IPCResult ContentParent::RecvGetIconForExtension(
     return IPC_OK();
   }
 
-  bits->AppendElements(aIconSize * aIconSize * 4);
+  // Explicitly zero-initialize the output to ensure we do not send
+  // uninitialized heap memory over IPC to the child process to avoid heap data leakage.
+  bits->InsertElementsAt(0, aIconSize * aIconSize * 4, 0);
 
   AndroidBridge::Bridge()->GetIconForExtension(aFileExt, aIconSize,
                                                bits->Elements());
