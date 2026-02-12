@@ -675,11 +675,7 @@ class Rule {
     }
 
     // Update current properties for each property present on the style.
-    // This will mark any touched properties with _visited so we
-    // can detect properties that weren't touched (because they were
-    // removed from the style).
-    // Also keep track of properties that didn't exist in the current set
-    // of properties.
+    // Also keep track of properties that didn't exist in the current set of properties.
     const brandNewProps = [];
     for (const newProp of newTextProps) {
       if (!this._updateTextProperty(newProp)) {
@@ -690,15 +686,6 @@ class Rule {
     // Refresh editors and disabled state for all the properties that
     // were updated.
     for (const prop of this.textProps) {
-      // Properties that weren't touched during the update
-      // process must no longer exist on the node.  Mark them disabled.
-      if (!prop._visited) {
-        prop.enabled = false;
-        prop.updateEditor();
-      } else {
-        delete prop._visited;
-      }
-
       // Valid properties that aren't disabled might need to get updated in some condition
       if (
         prop.enabled &&
@@ -750,9 +737,6 @@ class Rule {
         continue;
       }
 
-      // Mark this property visited.
-      prop._visited = true;
-
       // Start at rank 1 for matching name.
       let rank = 1;
 
@@ -771,17 +755,8 @@ class Rule {
       }
 
       if (rank > match.rank) {
-        if (match.prop) {
-          // We outrank a previous match, disable it.
-          match.prop.enabled = false;
-          match.prop.updateEditor();
-        }
         match.rank = rank;
         match.prop = prop;
-      } else if (rank) {
-        // A previous match outranks us, disable ourself.
-        prop.enabled = false;
-        prop.updateEditor();
       }
     }
 
