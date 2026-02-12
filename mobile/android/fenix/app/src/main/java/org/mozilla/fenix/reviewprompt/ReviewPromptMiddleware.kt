@@ -25,8 +25,8 @@ private const val REVIEW_PROMPT_SHOWN_NIMBUS_EVENT_ID = "review_prompt_shown"
 /**
  * [Middleware] evaluating the triggers to show a review prompt.
  *
- * @param isReviewPromptFeatureEnabled If returns false disables the entire feature and prompt will never be shown.
- * @param isTelemetryEnabled Returns true if the user allows sending technical and interaction telemetry.
+ * @param shouldUseNewTriggerCriteria If true uses new main and sub-criteria, if false falls back to legacy criteria.
+ * @param shouldShowCustomPrompt If true enables showing custom prompt UI, if false falls back to Play Store prompt.
  * @param createJexlHelper Returns a helper for evaluating JEXL expressions.
  * @param buildTriggerMainCriteria Builds a sequence of trigger's main criteria that all need to be true.
  * @param buildTriggerSubCriteria Builds a sequence of trigger's sub-criteria.
@@ -35,8 +35,8 @@ private const val REVIEW_PROMPT_SHOWN_NIMBUS_EVENT_ID = "review_prompt_shown"
  * @param nimbusEventStore [NimbusEventStore] used to record events evaluated in JEXL expressions.
  */
 class ReviewPromptMiddleware(
-    private val isReviewPromptFeatureEnabled: () -> Boolean,
-    private val isTelemetryEnabled: () -> Boolean,
+    private val shouldUseNewTriggerCriteria: () -> Boolean,
+    private val shouldShowCustomPrompt: () -> Boolean,
     private val createJexlHelper: () -> NimbusMessagingHelperInterface,
     private val buildTriggerMainCriteria: (NimbusMessagingHelperInterface) -> Sequence<Boolean> =
         TriggerBuilder::mainCriteria,
@@ -116,7 +116,7 @@ class ReviewPromptMiddleware(
         val shouldShowPrompt: Boolean = createJexlHelper().use { jexlHelper ->
             // Keep the legacy criteria around, but use the nimbus data and jexl to trigger.
             // Leaving the original if-else logic and early return for readability.
-            if (!isReviewPromptFeatureEnabled()) {
+            if (!shouldUseNewTriggerCriteria()) {
                 val legacyCriteriaSatisfied = buildTriggerLegacyCriteria(jexlHelper).all { it }
                 return@use legacyCriteriaSatisfied
             }
@@ -132,7 +132,7 @@ class ReviewPromptMiddleware(
         }
 
         if (shouldShowPrompt) {
-            if (isTelemetryEnabled()) {
+            if (shouldShowCustomPrompt()) {
                 store.dispatch(ShowCustomReviewPrompt)
             } else {
                 store.dispatch(ShowPlayStorePrompt)

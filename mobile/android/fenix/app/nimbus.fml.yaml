@@ -972,6 +972,16 @@ features:
         type: Boolean
         default: false
 
+  # Created this in addition to the `custom-review-prompt` flag to keep changes minimal and make it easier to uplift.
+  # See: https://bugzilla.mozilla.org/show_bug.cgi?id=2014083
+  custom-review-prompt-ui:
+    description: Feature that controls the custom UI for review prompt.
+    variables:
+      enabled:
+        description: When enabled we show the custom review prompt UI. Otherwise we try to directly show the Play Store in-app review prompt.
+        type: Boolean
+        default: true
+
   default-browser-prompt:
     description: Feature that controls when the default browser prompt is shown.
     variables:
