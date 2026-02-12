@@ -2319,6 +2319,30 @@ class Settings(
         default = false,
     )
 
+    var firstWeekPostInstallLastThreeDaysActivitySent by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_first_week_post_install_last_three_days_activity_sent),
+        default = false,
+    )
+
+    var firstWeekPostInstallRecurrentActivitySent by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_first_week_post_install_recurrent_activity_sent),
+        default = false,
+    )
+
+    var firstWeekPostInstallEverydayActivityAndSetToDefaultSent by booleanPreference(
+        key = appContext.getPreferenceKey(
+            R.string.pref_key_first_week_post_install_everyday_activity_and_set_to_default_sent,
+        ),
+        default = false,
+    )
+
+    var firstWeekPostInstallIsBrowserSetToDefaultDuringFirstFourDays by booleanPreference(
+        key = appContext.getPreferenceKey(
+            R.string.pref_key_first_week_post_install_is_browser_set_to_default_during_first_four_days,
+        ),
+        default = false,
+    )
+
     var firstWeekDaysOfUseGrowthData by stringSetPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_growth_first_week_days_of_use),
         default = setOf(),

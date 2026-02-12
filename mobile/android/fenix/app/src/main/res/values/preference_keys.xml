@@ -474,6 +474,12 @@
     <string name="pref_key_growth_resume_last_sent" translatable="false">pref_key_growth_last_resumed</string>
     <string name="pref_key_growth_uri_load_last_sent" translatable="false">pref_key_growth_uri_load_last_sent</string>
 
+    <!-- Post Install Data -->
+    <string name="pref_key_first_week_post_install_last_three_days_activity_sent" translatable="false">pref_key_first_week_post_install_last_three_days_activity_sent</string>
+    <string name="pref_key_first_week_post_install_recurrent_activity_sent" translatable="false">pref_key_first_week_post_install_recurrent_activity_sent</string>
+    <string name="pref_key_first_week_post_install_everyday_activity_and_set_to_default_sent" translatable="false">pref_key_first_week_post_install_everyday_activity_and_set_to_default_sent</string>
+    <string name="pref_key_first_week_post_install_is_browser_set_to_default_during_first_four_days" translatable="false">pref_key_first_week_post_install_is_browser_set_to_default_during_first_four_days</string>
+
     <!--Translations -->
     <string name="pref_key_ignore_translations_data_saver_warning" translatable="false">pref_key_ignore_translations_data_saver_warning</string>
 

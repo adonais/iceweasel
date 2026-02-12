@@ -33,6 +33,9 @@ class MetricsMiddleware(
             metrics.track(Event.GrowthData.FirstWeekSeriesActivity)
             metrics.track(Event.GrowthData.UsageThreshold)
             metrics.track(Event.GrowthData.UserActivated(fromSearch = false))
+            metrics.track(Event.FirstWeekPostInstall.LastThreeDaysActivity)
+            metrics.track(Event.FirstWeekPostInstall.RecurrentActivity)
+            metrics.track(Event.FirstWeekPostInstall.EverydayActivityAndSetToDefault)
         }
 
         is AppAction.BookmarkAction.BookmarkAdded -> {
