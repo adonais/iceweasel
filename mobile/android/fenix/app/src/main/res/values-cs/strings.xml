@@ -620,7 +620,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Teď ne</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">Připravte se na volnost</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Připravte se na volnost</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">Rychlý, bezpečný a nikdy vás neprozradí.\nProhlížení se právě stalo lepším.</string>
   <!--
@@ -952,7 +952,7 @@
   <!-- Title for the link sharing toggle. %1$s is replaced by the brand name (e.g. Firefox). -->
   <string name="link_sharing_toggle_title">Zahrnout odkaz na stažení aplikace %1$s při sdílení na WhatsAppu</string>
   <!-- Body for the link sharing toggle.  %1$s is replaced by the brand name (e.g. Firefox). -->
-  <string name="link_sharing_toggle_body">Pozvěte své přátele, aby vyzkoušeli rychlejší a bezpečnější procházení s aplikací %1$s pokaždé, když budete sdílet odkaz skrze WhatsApp.</string>
+  <string name="link_sharing_toggle_body">Pozvěte své přátele, aby vyzkoušeli rychlejší a bezpečnější procházení stránek s aplikací %1$s pokaždé, když budete sdílet odkaz skrze WhatsApp.</string>
   <!-- Snackbar message shown when user shares a link -->
   <string name="link_shared_snackbar_message">Odkaz sdílen</string>
   <!-- Snackbar action label shown when user shares a link -->
@@ -2041,7 +2041,7 @@
   <!-- Description for the bookmark list empty state when you're signed into sync. -->
   <string name="bookmark_empty_list_authenticated_description">Ukládejte si stránky během prohlížení. Získáme také záložky z ostatních synchronizovaných zařízení.</string>
   <!-- Description for the bookmark list empty state when you're in an empty folder. -->
-  <string name="bookmark_empty_list_folder_description">Během procházení si můžete přidávat záložky, abyste později našli své oblíbené stránky.</string>
+  <string name="bookmark_empty_list_folder_description">Během procházení internetu si můžete přidávat záložky, abyste později našli své oblíbené stránky.</string>
   <!-- Description for the add new folder button when selecting a folder. -->
   <string name="bookmark_select_folder_new_folder_button_title">Nová složka</string>
   <!-- Bookmark snackbar message for moving a single item. %1$s is the title of the item being moved and %2$s is the new parent folder of the bookmark -->

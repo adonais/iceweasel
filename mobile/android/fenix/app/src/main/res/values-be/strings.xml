@@ -89,6 +89,11 @@
   -->
   <string name="felt_privacy_info_card_subtitle_2" tools:ignore="UnusedResources" moz:removedIn="147">%1$s выдаляе кукі, гісторыю і дадзеныя сайтаў, калі вы закрываеце ўсе прыватныя карткі. %2$s</string>
   <!--
+    Description of private browsing mode displayed to users on the homepage when they enable private mode.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="felt_privacy_info_card_subtitle_3">%1$s выдаляе кукі, гісторыю і дадзеныя сайтаў, калі вы закрываеце ўсе прыватныя карткі.</string>
+  <!--
     Clickable portion of the explanation for private browsing that links the user to our
     about privacy page.
     This string is used in felt_privacy_info_card_subtitle as the text for the link.
@@ -300,6 +305,8 @@
   <string name="browser_menu_save_as_pdf_2">Захаваць як PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Перакласці старонку</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Падсумаваць змест старонкі</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Паведаміць пра пашкоджаны сайт…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -518,6 +525,8 @@
   <string name="onboarding_marketing_redesign_learn_more" tools:ignore="UnusedResources">Як мы выкарыстоўваем дадзеныя</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_redesign_positive_button" tools:ignore="UnusedResources">Сцвердзіць</string>
+  <!-- Set to default browser onboarding redesign title. -->
+  <string name="onboarding_redesign_set_default_browser_title" tools:ignore="UnusedResources">Атрымайце стандартную аўтаматычную абарону ад адсочвання</string>
   <!-- Sync onboarding redesign title. 'Firefox' is intentionally hardcoded. -->
   <string name="onboarding_redesign_sync_title" tools:ignore="BrandUsage,UnusedResources">Сінхранізацыя ўсюды, дзе вы карыстаецеся Firefox</string>
   <!-- Sync onboarding redesign body. -->
@@ -567,6 +576,8 @@
   <string name="nova_onboarding_sync_button">Пачаць сінхранізацыю</string>
   <!-- Marketing onboarding title. -->
   <string name="nova_onboarding_marketing_title">Дапамажыце нам будаваць лепшы інтэрнэт</string>
+  <!-- Notifications onboarding button. -->
+  <string name="nova_onboarding_notifications_button">Уключыць апавяшчэнні</string>
   <!-- "Add search widget" onboarding button. 'Firefox' is intentionally hardcoded. -->
   <string name="nova_onboarding_add_search_widget_button" tools:ignore="BrandUsage">Дадаць віджэт Firefox</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
@@ -800,6 +811,10 @@
   <string name="preferences_open_links_in_apps_ask">Спытаць перад адкрыццём</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Ніколі</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">Захоўванне файлаў</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">Прадвызначанае месца для спамповак</string>
   <!-- Preference for downloads -->
   <string name="preferences_downloads">Сцягванні</string>
   <!-- Preference for enabling gecko engine logs -->
@@ -2179,6 +2194,10 @@
   <string name="preference_doh_add_site_description">Дадаць сайт</string>
   <!-- Title displayed for "Default Protection" option under "DNS over HTTPS" -->
   <string name="preference_doh_default_protection">Прадвызначаная ахова</string>
+  <!-- Bullet point 2 for "Default Protection" information page under "DNS over HTTPS" -->
+  <string name="preference_doh_default_protection_info_2">Калі ёсць праблема з бяспечным пастаўшчыком DNS, выкарыстоўваць стандартны правайдар DNS</string>
+  <!-- Bullet point 2 for "Increased Protection" information page under "DNS over HTTPS" -->
+  <string name="preference_doh_increased_protection_info_2">Выкарыстоўваць стандартны правайдар DNS толькі калі ёсць праблемы з\u00a0бяспечным DNS</string>
   <!-- Title displayed for "Off" option under "DNS over HTTPS" -->
   <string name="preference_doh_off">Выкл.</string>
   <!-- Summary displayed for "Off" option under "DNS over HTTPS" -->
@@ -3129,12 +3148,22 @@
 
   <!-- Title for the setup checklist feature when the state is 'completed' -->
   <string name="setup_checklist_title_state_completed">Віншуем!</string>
+  <!--
+    ===== Setup checklist feature: Task titles =====
+
+    The title of the default browser task for the setup checklist
+  -->
+  <string name="setup_checklist_task_default_browser">Зрабіць прадвызначаным браўзерам</string>
   <!-- The title of the theme selection task for the setup checklist -->
   <string name="setup_checklist_task_theme_selection">Выберыце тэму</string>
   <!-- The title of the toolbar selection task for the setup checklist -->
   <string name="setup_checklist_task_toolbar_selection">Выберыце размяшчэнне панэлі інструментаў</string>
+  <!-- The title of the explore extensions task for the setup checklist -->
+  <string name="setup_checklist_task_explore_extensions">Знайсці пашырэнні</string>
   <!-- Label for the primary action button to unlock private tabs -->
   <string name="pbm_authentication_unlock">Разблакаваць</string>
+  <!-- Title text instructing the user to unlock private tabs -->
+  <string name="pbm_authentication_unlock_private_tabs">Разблакіраваць прыватныя карткі</string>
   <!-- Negative button text for the contextual feature recommendation (CFR) dismissing the screen lock suggestion -->
   <string name="private_tab_cfr_negative">Не, дзякуй</string>
   <!-- Label for a button opening a feedback forum -->

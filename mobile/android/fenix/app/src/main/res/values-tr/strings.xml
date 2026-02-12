@@ -620,7 +620,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Şimdi değil</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">Özgürleşmeye hazır olun</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Özgürleşmeye hazır olun</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">Hızlı, güvenli ve sizi satmayan tarayıcı.\nİnternette gezinmek artık daha keyifli.</string>
   <!--

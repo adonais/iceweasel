@@ -620,7 +620,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Most nem</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">Készüljön fel a szabadságra</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Készüljön fel a szabadságra</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">Gyors, biztonságos, és nem adja el.\nA böngészés még jobb lett.</string>
   <!--

@@ -616,7 +616,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Betg ussa</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">Ta prepara per navigar en tutta libertad</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Ta prepara per navigar en tutta libertad</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->

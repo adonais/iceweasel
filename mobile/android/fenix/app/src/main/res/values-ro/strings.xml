@@ -620,7 +620,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Nu acum</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">Pregătește-te să navighezi liber</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Pregătește-te să navighezi liber</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">Rapid, sigur și nu te va trăda. \nNavigarea tocmai a devenit mai bună.</string>
   <!--

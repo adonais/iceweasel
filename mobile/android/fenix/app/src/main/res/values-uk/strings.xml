@@ -620,7 +620,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Не зараз</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">Приготуйтеся до свободи</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Приготуйтеся до свободи</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">Швидкий, безпечний і не продає ваші дані.\nПокращений досвід користування інтернетом.</string>
   <!--

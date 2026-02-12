@@ -132,9 +132,9 @@
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_harmful_uri_message"><![CDATA[<p>Stránka %1$s byla nahlášena jako útočná a byla zablokována na základě vašeho bezpečnostního nastavení.</p>]]></string>
   <!-- The document title and heading of an error page. -->
-  <string name="mozac_browser_errorpages_safe_phishing_uri_title">Problém s klamavou stránkou</string>
+  <string name="mozac_browser_errorpages_safe_phishing_uri_title">Problém s podvodnou stránkou</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
-  <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Tato webová stránka na serveru %1$s byla nahlášena jako klamavá a byla zablokována na základě vašeho bezpečnostního nastavení.</p>]]></string>
+  <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Tato webová stránka na serveru %1$s byla nahlášena jako podvodná a byla zablokována na základě vašeho bezpečnostního nastavení.</p>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_harmful_addon_uri_title">Stránka byla z důvodu vaší bezpečnosti zablokována</string>
   <!-- The %1$s will be replaced by the malicious website URL -->

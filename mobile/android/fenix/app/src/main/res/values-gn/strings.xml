@@ -620,7 +620,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Ani ko’ág̃a</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">Eime eñani hag̃uáicha</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Eime eñani hag̃uáicha</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">Ipya’e, hekorosã ha hekovai’ỹre.\nÑeikundaha ko’ág̃a ndahasyive.</string>
   <!--

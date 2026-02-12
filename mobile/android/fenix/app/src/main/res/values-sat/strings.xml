@@ -616,7 +616,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">ᱱᱤᱛᱚᱜ ᱫᱚ ᱵᱟᱝᱟ</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">ᱯᱷᱨᱤ ᱫᱟᱹᱲ ᱞᱟᱹᱜᱤᱫ ᱥᱟᱯᱲᱟᱣ ᱛᱟᱦᱮᱱ ᱢᱮ</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">ᱯᱷᱨᱤ ᱫᱟᱹᱲ ᱞᱟᱹᱜᱤᱫ ᱥᱟᱯᱲᱟᱣ ᱛᱟᱦᱮᱱ ᱢᱮ</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">ᱞᱚᱜᱚᱱ, ᱨᱚᱯᱟ ᱨᱮ, ᱟᱨ ᱟᱢ ᱵᱟᱦᱨᱮ ᱵᱟᱝ ᱟᱠᱨᱤᱧ ᱢᱮᱭᱟᱭ ᱾\nᱵᱽᱨᱟᱣᱩᱡᱤᱝ ᱫᱚ ᱱᱤᱛ ᱜᱮ ᱵᱮᱥ ᱮᱱᱟ ᱾</string>
   <!--

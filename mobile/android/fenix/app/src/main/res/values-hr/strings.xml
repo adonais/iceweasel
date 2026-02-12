@@ -620,7 +620,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Ne sada</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">Spremi se za slobodu</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Spremi se za slobodu</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">Brzo, sigurno i neće te izdati.\nPregledavanje je upravo postalo bolje.</string>
   <!--

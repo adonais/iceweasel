@@ -620,7 +620,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Ei nyt</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">Valmistaudu kulkemaan vapaasti</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Valmistaudu kulkemaan vapaasti</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">Nopea, turvallinen eikä tee sinusta kauppatavaraa.\nSelaaminen on juuri parantunut.</string>
   <!--

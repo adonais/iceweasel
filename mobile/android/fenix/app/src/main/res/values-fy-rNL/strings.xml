@@ -620,7 +620,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">No net</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">Meitsje jo klear om frij te strunen</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Meitsje jo klear om frij te strunen</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">Fluch, feilich en ferriedt jo net.\nStrunen is no better wurden.</string>
   <!--

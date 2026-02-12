@@ -323,6 +323,8 @@
   <string name="browser_menu_save_as_pdf_2">Запазване като PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Превеждане на страницатa</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Обобщаване на страницата</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Доклад за повредена страница…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -620,7 +622,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Не сега</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">Пригответе се за свобода</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Пригответе се за свобода</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">Бърз, сигурен и честен. Сърфирането стана по-добро.</string>
   <!--
@@ -1738,6 +1740,8 @@
   <string name="download_share_url">Споделяне на URL</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Споделяне на файл</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Преименуване на файл</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">Сигурни ли сте, че искате да изтриете избраните елементи?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
@@ -1750,6 +1754,11 @@
   <string name="download_rename_dialog_label">Име</string>
   <string name="download_rename_dialog_confirm_button">Запазване</string>
   <string name="download_rename_dialog_cancel_button">Отказ</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">Файлът не може да бъде преименуван</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Файлът не може да бъде преименуван поради системни ограничения или ограничения на хранилището.</string>
+  <string name="download_rename_error_dismiss_button">Добре</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Изпълнява се</string>
   <!--

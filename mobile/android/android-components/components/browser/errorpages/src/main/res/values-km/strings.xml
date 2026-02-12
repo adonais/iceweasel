@@ -62,6 +62,8 @@
   <!-- The document title and heading of the error page shown when the browser refuses to load a type of file that is considered unsafe. -->
   <string name="mozac_browser_errorpages_unsafe_content_type_title">ប្រភេទ​ឯកសារ​គ្មាន​សុវត្ថិភាព</string>
   <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_content_crashed_title">ខ្លឹមសារ​បាន​គាំង</string>
+  <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_unknown_host_title">រកមិនឃើញអាសយដ្ឋាន</string>
   <!-- Text that will show up on the button at the bottom of the error page -->
   <string name="mozac_browser_errorpages_no_internet_refresh_button">ផ្ទុក​ឡើងវិញ</string>

@@ -618,7 +618,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">暂时不要</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">准备好畅游网络</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">准备好畅游网络</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">快速、安全，绝不出卖您。\n纯粹带来更好的浏览体验。</string>
   <!--

@@ -323,6 +323,8 @@
   <string name="browser_menu_save_as_pdf_2">Ako PDF składowaś</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Bok pśełožyś</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Bok zespominaś</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Wobškóźone sedło k wěsći daś…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -620,7 +622,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">Nic něnto</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">Pśigótujśo na liche pśeglědowanje</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">Pśigótujśo na liche pśeglědowanje</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">Spěšny, wěsty a njebuźo was wupśedawaś.\nPśeglědowanje jo jadnorje lěpše.</string>
   <!--
@@ -1738,6 +1740,8 @@
   <string name="download_share_url">URL źěliś</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Dataju źěliś</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Dataju pśemjeniś</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">Cośo napšawdu wubrane zapiski lašowaś?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
@@ -1750,6 +1754,11 @@
   <string name="download_rename_dialog_label">Mě</string>
   <string name="download_rename_dialog_confirm_button">Składowaś</string>
   <string name="download_rename_dialog_cancel_button">Pśetergnuś</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">Dataja njedajo se pśemjeniś</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Toś ta dataja njedajo se dla systemowych abo składowańskich wobgranicowanjow pśemjeniś.</string>
+  <string name="download_rename_error_dismiss_button">W pórěźe</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Běžy</string>
   <!--

@@ -620,7 +620,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">後で</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">ブラウジングの自由を手に入れよう</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">ブラウジングの自由を手に入れよう</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">高速、安全、そして決してあなたを裏切ることはありません。\nブラウジングがさらに快適になりました。</string>
   <!--

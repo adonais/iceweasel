@@ -96,7 +96,7 @@
     Text shown in the notification description that pops up to remind the user that a browsing session is active
     for Android 14+.
   -->
-  <string name="notification_erase_text_android_14_1">Klepnutím nebo přejetím po tomto oznámení bezpečně vymažete historii procházení.</string>
+  <string name="notification_erase_text_android_14_1">Klepnutím nebo přejetím prstem po tomto oznámení bezpečně vymažete historii prohlížení.</string>
   <string name="notification_erase_text">Vymazat historii prohlížení</string>
   <!-- Notification action to open Focus and resume the current browsing session. -->
   <string name="notification_action_open">Otevřít</string>
@@ -784,9 +784,9 @@
   <!-- Preference for switching to a new tab immediately after opening -->
   <string name="preference_open_new_tab">Přepnout ihned na odkaz v novém panelu</string>
   <!-- Preference title for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
-  <string name="preference_safe_browsing_title">Blokovat potenciálně nebezpečné a klamavé stránky</string>
+  <string name="preference_safe_browsing_title">Blokovat potenciálně nebezpečné a podvodné stránky</string>
   <!-- Preference summary for safe browsing which when enabled, blocks dangerous or deceptive webpages that may include phishing or malware -->
-  <string name="preference_safe_browsing_summary">Blokuje hlášené klamavé a útočné stránky, stránky s malwarem a stránky s nevyžádaným obsahem.</string>
+  <string name="preference_safe_browsing_summary">Blokuje nahlášené podvodné a útočné stránky, stránky s malwarem a stránky s nevyžádaným obsahem.</string>
   <!-- Title of the preference to enable "HTTPS-Only" mode -->
   <string name="preference_https_only_title">Režim „pouze HTTPS“</string>
   <!-- Description of the preference to enable "HTTPS-Only" mode. -->

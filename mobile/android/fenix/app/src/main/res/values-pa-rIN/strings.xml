@@ -620,7 +620,7 @@
   <!-- "Not now" onboarding button. -->
   <string name="nova_onboarding_negative_button">ਹੁਣੇ ਨਹੀਂ</string>
   <!-- Terms of use (ToU) onboarding title. -->
-  <string name="nova_onboarding_tou_title">ਆਜ਼ਾਦ ਹੋਣ ਲੀ ਤਿਆਰ ਹੋ ਜਾਓ</string>
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">ਆਜ਼ਾਦ ਹੋਣ ਲੀ ਤਿਆਰ ਹੋ ਜਾਓ</string>
   <!-- Terms of use (ToU) onboarding subtitle. -->
   <string name="nova_onboarding_tou_subtitle">ਤੇਜ਼, ਸੁਰੱਖਿਅਤ ਅਤੇ ਤੁਹਾਨੂੰ ਵੇਚਦਾ ਨਹੀਂ ਹੈ।\nਬੱਸ ਬਰਾਊਜ਼ ਕਰਨਾ ਬੇਹਤਰ ਹੋ ਗਿਆ ਹੈ।</string>
   <!--
