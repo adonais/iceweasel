@@ -2242,7 +2242,8 @@ class Settings(
      */
     var hasSeenBrowserToolbarCFR by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_toolbar_cfr),
-        default = isBenchmarkBuild,
+        default = Config.channel.isReleaseOrBeta || isBenchmarkBuild,
+        persistDefaultIfNotExists = true,
     )
 
     /**
