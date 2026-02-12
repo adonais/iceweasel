@@ -35,6 +35,8 @@ class AdjustMetricsService(
 
     @Suppress("CognitiveComplexMethod")
     override fun start() {
+        logger.info("Started")
+
         val settings = application.components.settings
 
         if ((BuildConfig.ADJUST_TOKEN.isNullOrBlank())) {
@@ -92,6 +94,7 @@ class AdjustMetricsService(
             }
 
             triggerPing()
+            logger.info("Trigger ping")
         }
 
         config.setLogLevel(LogLevel.SUPPRESS)
@@ -102,12 +105,16 @@ class AdjustMetricsService(
     }
 
     override fun stop() {
+        logger.info("Stopped")
+
         Adjust.disable()
         Adjust.gdprForgetMe(application.applicationContext)
     }
 
     @Suppress("TooGenericExceptionCaught")
     override fun track(event: Event) {
+        logger.info("Track")
+
         CoroutineScope(dispatcher).launch {
             try {
                 val tokenName = when (event) {
@@ -119,12 +126,15 @@ class AdjustMetricsService(
                     if (storage.shouldTrack(event)) {
                         Adjust.trackEvent(AdjustEvent(tokenName))
                         storage.updateSentState(event)
+                        logger.info("Update sent state $event")
                     } else {
                         storage.updatePersistentState(event)
+                        logger.info("Update persistent state $event")
                     }
                 }
             } catch (e: Exception) {
                 crashReporter.submitCaughtException(e)
+                logger.info("Track threw an exception for $event")
             }
         }
     }
