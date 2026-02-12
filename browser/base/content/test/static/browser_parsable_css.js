@@ -203,6 +203,7 @@ let propNameAllowlist = [
   // custom property definition. In this case it is just an identifier, not a
   // custom property. Bug 2012304
   { propName: "--ai-controls-description", isFromDevTools: false },
+  { propName: "--browser-with-dialog", isFromDevTools: false },
 
   /* Allow design tokens in devtools without all variables being used there */
   { sourceName: /\/design-system\/tokens-.*\.css$/, isFromDevTools: true },
