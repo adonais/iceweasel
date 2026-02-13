@@ -3626,7 +3626,7 @@ SettingGroupManager.registerGroups({
           {
             id: "showTrendingSuggestionsCheckbox",
             l10nId: "addressbar-locbar-showtrendingsuggestions-option-2",
-            supportPage: "use-google-trending-search-firefox-address-bar",
+            supportPage: "google-trending-searches-on-awesomebar",
           },
           {
             id: "urlBarSuggestionPermanentPBMessage",
