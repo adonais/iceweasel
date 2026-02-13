@@ -12,5 +12,5 @@
     Used to distinguish between History search suggestions from your
     browsing history and your open tabs
   -->
-  <string name="switch_to_tab_description">انتقل إلى اللسان</string>
+  <string name="switch_to_tab_description">الانتقال إلى التبويب</string>
 </resources>

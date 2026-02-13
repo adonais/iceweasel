@@ -8,5 +8,5 @@
 
 <resources>
   <!-- Default Web Notification Channel Name. -->
-  <string name="mozac_feature_notification_channel_name">تنبيهات الموقع</string>
+  <string name="mozac_feature_notification_channel_name">إشعارات الموقع</string>
 </resources>

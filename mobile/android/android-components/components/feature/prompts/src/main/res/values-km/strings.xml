@@ -6,7 +6,7 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 -->
 
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
   <!-- Text for confirmation for a positive action in dialog -->
   <string name="mozac_feature_prompts_ok">យល់ព្រម</string>
   <!-- Text for confirmation for a negative action in dialog. -->
@@ -111,6 +111,10 @@
   <string name="mozac_feature_prompts_suggest_strong_password_2">ប្រើពាក្យសម្ងាត់ខ្លាំង</string>
   <!-- Title for using the suggest strong password confirmation dialog. %1$s will be replaced with the generated password -->
   <string name="mozac_feature_prompts_suggest_strong_password_message">ប្រើពាក្យសម្ងាត់រឹងមាំ៖ %1$s</string>
+  <!-- Title for using the suggest strong password confirmation dialog -->
+  <string name="mozac_feature_prompts_suggest_strong_password_title">ប្រើពាក្យសម្ងាត់ខ្លាំង?</string>
+  <!-- Content description for the suggest strong password confirmation dialog -->
+  <string name="mozac_feature_prompts_suggest_strong_password_description_3">ការពារគណនីរបស់អ្នកដោយប្រើពាក្យសម្ងាត់ដ៏រឹងមាំ និងបង្កើតដោយចៃដន្យ។ វានឹងត្រូវបានរក្សាទុកទៅក្នុងគណនីរបស់អ្នកសម្រាប់ប្រើប្រាស់នាពេលអនាគត។</string>
   <!-- Pressing this will use the suggested strong password -->
   <string name="mozac_feature_prompts_suggest_strong_password_use_password">ប្រើពាក្យសម្ងាត់</string>
   <!-- Pressing this will dismiss the suggested strong password dialog -->
@@ -149,6 +153,10 @@
     Content description for the Account picture in the Select Account FedCM prompt
   -->
   <string name="mozac_feature_prompts_account_picture">រូបភាព​គណនី</string>
+  <!-- Title of an account picker dialog for identity credentials. The %1$s will be replaced with the name of the provider -->
+  <string name="mozac_feature_prompts_identity_credentials_choose_account_for_provider">ចូលដោយប្រើគណនី %1$s</string>
+  <!-- Title of the Identity Credential privacy policy dialog description. The %1$s will be replaced with the name of the provider, %2$s will be replaced with the account, %3$s will be replaced with the privacy policy url and  %4$s will be replaced with the terms of service. -->
+  <string name="mozac_feature_prompts_identity_credentials_privacy_policy_description" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[ការចូលទៅក្នុង %1$s ជាមួយគណនី %2$s គឺស្ថិតនៅក្រោម <a href=\"%3$s\">គោលការណ៍ឯកជនភាព</a> និង <a href=\"%4$s\">លក្ខខណ្ឌនៃសេវាកម្ម</a> របស់ពួកគេ។]]></string>
   <!-- Text for the positive button of the Identity Credential dialogs. -->
   <string name="mozac_feature_prompts_identity_credentials_continue">បន្ត</string>
   <!-- Text for the cancel button of the Identity Credential dialogs. -->

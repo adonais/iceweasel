@@ -323,6 +323,8 @@
   <string name="browser_menu_save_as_pdf_2">Salvează ca PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Tradu pagina</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Fă rezumatul paginii</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Raportează site defect…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -1738,6 +1740,8 @@
   <string name="download_share_url">Distribuie adresa URL</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Distribuie fișierul</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Redenumește fișierul</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">Sigur vrei să ștergi elementele selectate?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
@@ -1750,6 +1754,11 @@
   <string name="download_rename_dialog_label">Nume</string>
   <string name="download_rename_dialog_confirm_button">Salvează</string>
   <string name="download_rename_dialog_cancel_button">Anulează</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">Fișierul nu poate fi redenumit</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Fișierul nu poate fi redenumit din cauză de restricții de sistem sau de stocare.</string>
+  <string name="download_rename_error_dismiss_button">OK</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">În desfășurare</string>
   <!--
