@@ -248,6 +248,7 @@ nsresult nsHtml5TreeOperation::Append(nsIContent* aNode, nsIContent* aParent,
                                       nsHtml5DocumentBuilder* aBuilder) {
   MOZ_ASSERT(aBuilder);
   MOZ_ASSERT(aBuilder->IsInDocUpdate());
+  MOZ_ASSERT(!aNode->GetParentNode());
   ErrorResult rv;
   nsHtml5OtherDocUpdate update(aParent->OwnerDoc(), aBuilder->GetDocument());
   aParent->AppendChildTo(aNode, false, rv);
@@ -261,6 +262,13 @@ nsresult nsHtml5TreeOperation::Append(nsIContent* aNode, nsIContent* aParent,
 nsresult nsHtml5TreeOperation::Append(nsIContent* aNode, nsIContent* aParent,
                                       mozilla::dom::FromParser aFromParser,
                                       nsHtml5DocumentBuilder* aBuilder) {
+  if (MOZ_UNLIKELY(aNode->GetParentNode())) {
+    Detach(aNode, aBuilder);
+    if (MOZ_UNLIKELY(aNode->GetParentNode())) {
+      // Can this happen? If it can, give up.
+      return NS_OK;
+    }
+  }
   Maybe<nsHtml5AutoPauseUpdate> autoPause;
   Maybe<dom::AutoCEReaction> autoCEReaction;
   dom::DocGroup* docGroup = aParent->OwnerDoc()->GetDocGroup();
@@ -283,6 +291,13 @@ nsresult nsHtml5TreeOperation::AppendToDocument(
   MOZ_ASSERT(aBuilder);
   MOZ_ASSERT(aBuilder->GetDocument() == aNode->OwnerDoc());
   MOZ_ASSERT(aBuilder->IsInDocUpdate());
+  if (MOZ_UNLIKELY(aNode->GetParentNode())) {
+    Detach(aNode, aBuilder);
+    if (MOZ_UNLIKELY(aNode->GetParentNode())) {
+      // Can this happen? If it can, give up.
+      return NS_OK;
+    }
+  }
 
   ErrorResult rv;
   Document* doc = aBuilder->GetDocument();
@@ -364,6 +379,14 @@ nsresult nsHtml5TreeOperation::FosterParent(nsIContent* aNode,
                                             nsHtml5DocumentBuilder* aBuilder) {
   MOZ_ASSERT(aBuilder);
   MOZ_ASSERT(aBuilder->IsInDocUpdate());
+  if (MOZ_UNLIKELY(aNode->GetParentNode())) {
+    Detach(aNode, aBuilder);
+    if (MOZ_UNLIKELY(aNode->GetParentNode())) {
+      // Can this happen? If it can, give up.
+      return NS_OK;
+    }
+  }
+
   nsIContent* foster = aTable->GetParent();
 
   if (IsElementOrTemplateContent(foster)) {
