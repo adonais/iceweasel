@@ -5,11 +5,14 @@
 package org.mozilla.fenix.onboarding.redesign.view
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -20,6 +23,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -38,6 +42,7 @@ import mozilla.components.compose.base.button.FilledButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.LinkText
 import org.mozilla.fenix.compose.LinkTextState
+import org.mozilla.fenix.compose.ScrollIndicator
 import org.mozilla.fenix.onboarding.view.Action
 import org.mozilla.fenix.onboarding.view.OnboardingPageState
 import org.mozilla.fenix.onboarding.view.OnboardingTermsOfService
@@ -56,38 +61,66 @@ private val kitImageResources = listOf(
  *
  * @param pageState The page content that's displayed.
  * @param eventHandler The event handler for all user interactions of this page.
+ * @param isSmallDevice Whether to apply layout optimizations for constrained screen heights.
  */
 @Composable
 fun TermsOfServiceOnboardingPageRedesign(
     pageState: OnboardingPageState,
     eventHandler: OnboardingTermsOfServiceEventHandler,
+    isSmallDevice: Boolean,
 ) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(if (pageState.shouldShowElevation) 6.dp else 0.dp),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
+            modifier = Modifier.padding(
+                start = 16.dp,
+                end = 16.dp,
+                top = 24.dp,
+                bottom = if (isSmallDevice) 0.dp else 24.dp,
+            ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(modifier = Modifier.weight(TITLE_TOP_SPACER_WEIGHT))
+            val scrollState = rememberScrollState()
 
-            Column(
-                modifier = Modifier
-                    .weight(CONTENT_WEIGHT)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Header(pageState)
-
-                Spacer(Modifier.weight(1f))
-
-                pageState.termsOfService?.let { BodyText(it, eventHandler) }
-
-                Spacer(Modifier.height(26.dp))
+            if (isSmallDevice) {
+                Spacer(modifier = Modifier.weight(TITLE_TOP_SPACER_WEIGHT))
             }
 
+            // Use a Box to overlay the scrollbar on top of the content column, aligned to the right.
+            Box(
+                modifier = Modifier
+                    .weight(CONTENT_WEIGHT)
+                    .fillMaxWidth(),
+            ) {
+                // Disable the overscroll glow/stretch effect to keep the onboarding UI clean.
+                CompositionLocalProvider(
+                    LocalOverscrollFactory provides null,
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(end = 12.dp)
+                            .verticalScroll(scrollState),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Header(pageState)
+
+                        Spacer(Modifier.weight(1f))
+
+                        pageState.termsOfService?.let { BodyText(it, eventHandler) }
+
+                        Spacer(Modifier.height(26.dp))
+                    }
+
+                    ScrollIndicator(
+                        scrollState = scrollState,
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        enabled = isSmallDevice,
+                    )
+                }
+            }
             FilledButton(
                 text = pageState.primaryButton.text,
                 modifier = Modifier
@@ -249,6 +282,7 @@ private fun OnboardingPagePreview() {
                 ),
             ),
             eventHandler = object : OnboardingTermsOfServiceEventHandler {},
+            isSmallDevice = false,
         )
     }
 }
