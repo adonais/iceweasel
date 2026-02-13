@@ -56,6 +56,9 @@ import org.mozilla.fenix.components.components
 import org.mozilla.fenix.compose.PagerIndicator
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.onboarding.WidgetPinnedReceiver.WidgetPinnedState
+import org.mozilla.fenix.onboarding.notification.NotificationMainImage
+import org.mozilla.fenix.onboarding.redesign.view.defaultbrowser.SetToDefaultMainImage
+import org.mozilla.fenix.onboarding.redesign.view.sync.SyncMainImage
 import org.mozilla.fenix.onboarding.store.OnboardingAction.OnboardingToolbarAction
 import org.mozilla.fenix.onboarding.store.OnboardingStore
 import org.mozilla.fenix.onboarding.view.OnboardingPageState
@@ -65,13 +68,14 @@ import org.mozilla.fenix.onboarding.view.OnboardingTermsOfServiceEventHandler
 import org.mozilla.fenix.onboarding.view.ToolbarOption
 import org.mozilla.fenix.onboarding.view.ToolbarOptionType
 import org.mozilla.fenix.onboarding.view.mapToOnboardingPageState
+import org.mozilla.fenix.onboarding.widget.SetSearchWidgetMainImage
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.isLargeScreenSize
 
 /**
  * The small device max height. The value comes from [org.mozilla.fenix.ext.isTallWindow].
  */
-private val SMALL_SCREEN_MAX_HEIGHT = 570.dp
+private val SMALL_SCREEN_MAX_HEIGHT = 480.dp
 private val logger: Logger = Logger("OnboardingScreenRedesign")
 
 /**
@@ -284,6 +288,7 @@ private fun OnboardingContent(
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val layout = getOnboardingLayout(this)
+
         OnboardingBackground(
             isVisible = !isNonLargeScreenLandscape(
                 isLargeScreen = layout.isLarge,
@@ -292,60 +297,60 @@ private fun OnboardingContent(
             isSolidBackground = layout.isSmall,
         )
 
-        Column(
-            modifier = Modifier.systemBarsPadding(),
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Spacer(Modifier.weight(1f)).takeIf { !layout.isSmall }
+            Column(
+                modifier = Modifier.systemBarsPadding(),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                if (!layout.isSmall) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
 
-            HorizontalPager(
-                state = pagerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .run {
-                        if (layout.isSmall) fillMaxSize() else height(layout.pagerHeight)
-                    },
-                userScrollEnabled = pagerState.currentPage != 0, // Disable scroll for the Terms of Use card.
-                contentPadding = layout.contentPadding,
-                pageSize = PageSize.Fill,
-                beyondViewportPageCount = 2,
-                pageSpacing = pageSpacing(layout.isLarge, layout.isSmall, layout.pagePeekWidth),
-                key = { pagesToDisplay[it].type },
-                overscrollEffect = null,
-            ) { pageIndex ->
-                // protect against a rare case where the user goes to the marketing screen at the same
-                // moment it gets removed by [MarketingPageRemovalSupport]
-                val pageUiState = pagesToDisplay.getOrElse(pageIndex) { pagesToDisplay[it.dec()] }
-                val onboardingPageState = mapToOnboardingPageState(
-                    onboardingPageUiData = pageUiState,
-                    onMakeFirefoxDefaultClick = onMakeFirefoxDefaultClick,
-                    onMakeFirefoxDefaultSkipClick = onMakeFirefoxDefaultSkipClick,
-                    onSignInButtonClick = onSignInButtonClick,
-                    onSignInSkipClick = onSignInSkipClick,
-                    onNotificationPermissionButtonClick = onNotificationPermissionButtonClick,
-                    onNotificationPermissionSkipClick = onNotificationPermissionSkipClick,
-                    onAddFirefoxWidgetClick = onAddFirefoxWidgetClick,
-                    onAddFirefoxWidgetSkipClick = onSkipFirefoxWidgetClick,
-                    onCustomizeToolbarButtonClick = onCustomizeToolbarButtonClick,
-                    onTermsOfServiceButtonClick = onAgreeAndConfirmTermsOfService,
-                    shouldShowElevation = !layout.isSmall,
-                )
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(layout.pagerHeight),
+                    userScrollEnabled = pagerState.currentPage != 0, // Disable scroll for the Terms of Use card.
+                    contentPadding = layout.contentPadding,
+                    pageSize = PageSize.Fill,
+                    beyondViewportPageCount = 2,
+                    pageSpacing = pageSpacing(layout.isLarge, layout.isSmall, layout.pagePeekWidth),
+                    key = { pagesToDisplay[it].type },
+                    overscrollEffect = null,
+                ) { pageIndex ->
+                    // protect against a rare case where the user goes to the marketing screen at the same
+                    // moment it gets removed by [MarketingPageRemovalSupport]
+                    val pageUiState = pagesToDisplay.getOrElse(pageIndex) { pagesToDisplay[it.dec()] }
+                    val onboardingPageState = mapToOnboardingPageState(
+                        onboardingPageUiData = pageUiState,
+                        onMakeFirefoxDefaultClick = onMakeFirefoxDefaultClick,
+                        onMakeFirefoxDefaultSkipClick = onMakeFirefoxDefaultSkipClick,
+                        onSignInButtonClick = onSignInButtonClick,
+                        onSignInSkipClick = onSignInSkipClick,
+                        onNotificationPermissionButtonClick = onNotificationPermissionButtonClick,
+                        onNotificationPermissionSkipClick = onNotificationPermissionSkipClick,
+                        onAddFirefoxWidgetClick = onAddFirefoxWidgetClick,
+                        onAddFirefoxWidgetSkipClick = onSkipFirefoxWidgetClick,
+                        onCustomizeToolbarButtonClick = onCustomizeToolbarButtonClick,
+                        onTermsOfServiceButtonClick = onAgreeAndConfirmTermsOfService,
+                        shouldShowElevation = !layout.isSmall,
+                    )
 
-                OnboardingPageForType(
-                    type = pageUiState.type,
-                    state = onboardingPageState,
-                    onboardingStore = onboardingStore,
-                    termsOfServiceEventHandler = termsOfServiceEventHandler,
-                    onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
-                    onMarketingOptInToggle = onMarketingOptInToggle,
-                    onMarketingDataContinueClick = onMarketingDataContinueClick,
-                    isSmallDevice = layout.isSmall,
-                )
-            }
+                    OnboardingPageForType(
+                        type = pageUiState.type,
+                        state = onboardingPageState,
+                        onboardingStore = onboardingStore,
+                        termsOfServiceEventHandler = termsOfServiceEventHandler,
+                        onMarketingDataLearnMoreClick = onMarketingDataLearnMoreClick,
+                        onMarketingOptInToggle = onMarketingOptInToggle,
+                        onMarketingDataContinueClick = onMarketingDataContinueClick,
+                    )
+                }
 
-            Spacer(Modifier.weight(1f)).takeIf { !layout.isSmall }
+                if (!layout.isSmall) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
 
-            if (!layout.isSmall) {
                 PagerIndicator(
                     pagerState = pagerState,
                     modifier = Modifier
@@ -358,7 +363,6 @@ private fun OnboardingContent(
             }
         }
     }
-}
 
 @Composable
 private fun OnboardingBackground(isVisible: Boolean, isSolidBackground: Boolean) {
@@ -389,14 +393,27 @@ private fun OnboardingPageForType(
     onMarketingDataLearnMoreClick: () -> Unit,
     onMarketingOptInToggle: (optIn: Boolean) -> Unit,
     onMarketingDataContinueClick: (allowMarketingDataCollection: Boolean) -> Unit,
-    isSmallDevice: Boolean,
 ) {
     when (type) {
-        OnboardingPageUiData.Type.DEFAULT_BROWSER,
-        OnboardingPageUiData.Type.SYNC_SIGN_IN,
-        OnboardingPageUiData.Type.ADD_SEARCH_WIDGET,
-        OnboardingPageUiData.Type.NOTIFICATION_PERMISSION,
-            -> OnboardingPageRedesign(state, isSmallDevice)
+        OnboardingPageUiData.Type.DEFAULT_BROWSER -> OnboardingPageRedesign(
+            pageState = state,
+            mainImage = { SetToDefaultMainImage() },
+        )
+
+        OnboardingPageUiData.Type.SYNC_SIGN_IN -> OnboardingPageRedesign(
+            pageState = state,
+            mainImage = { SyncMainImage() },
+        )
+
+        OnboardingPageUiData.Type.ADD_SEARCH_WIDGET -> OnboardingPageRedesign(
+            pageState = state,
+            mainImage = { SetSearchWidgetMainImage() },
+        )
+
+        OnboardingPageUiData.Type.NOTIFICATION_PERMISSION -> OnboardingPageRedesign(
+            pageState = state,
+            mainImage = { NotificationMainImage() },
+        )
 
         OnboardingPageUiData.Type.TOOLBAR_PLACEMENT -> {
             val context = LocalContext.current
@@ -427,7 +444,6 @@ private fun OnboardingPageForType(
         OnboardingPageUiData.Type.TERMS_OF_SERVICE -> TermsOfServiceOnboardingPageRedesign(
             state,
             termsOfServiceEventHandler,
-            isSmallDevice = isSmallDevice,
         )
 
         // no-ops
@@ -608,8 +624,8 @@ private fun OnboardingScreenPreview() {
 
 @Composable
 private fun defaultPreviewPages() = listOf(
-    defaultBrowserPageUiData(),
     touPageUIData(),
+    defaultBrowserPageUiData(),
     syncPageUiData(),
     toolbarPlacementPageUiData(),
 )
