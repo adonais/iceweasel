@@ -71,7 +71,7 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
   bool updateArgc(CallFlags flags, Register argcReg, uint32_t argcFixed,
                   Register scratch);
   void loadStackObject(ArgumentKind kind, CallFlags flags, Register argcReg,
-                       Register dest);
+                       Register dest, uint32_t extraArgs = 0);
   void pushArguments(Register argcReg, Register calleeReg, Register scratch,
                      Register scratch2, CallFlags flags, uint32_t argcFixed,
                      bool isJitCall);
@@ -95,9 +95,8 @@ class MOZ_RAII BaselineCacheIRCompiler : public CacheIRCompiler {
                                   CallFlags flags, uint32_t numBoundArgs,
                                   bool isJitCall);
   void createThis(Register argcReg, Register calleeReg, Register scratch,
-                  CallFlags flags, bool isBoundFunction);
-  template <typename T>
-  void storeThis(const T& newThis, Register argcReg, CallFlags flags);
+                  Register scratch2, CallFlags flags,
+                  mozilla::Maybe<uint32_t> numBoundArgs = mozilla::Nothing());
   void updateReturnValue();
 
   enum class NativeCallType { Native, ClassHook };
