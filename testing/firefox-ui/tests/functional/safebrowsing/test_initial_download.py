@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
-from functools import reduce
 
 from marionette_driver import Wait
 from marionette_harness import MarionetteTestCase
@@ -34,6 +33,8 @@ class TestSafeBrowsingInitialDownload(MarionetteTestCase):
         # Force an immediate download of the safebrowsing files
         "browser.safebrowsing.provider.mozilla.nextupdatetime": 1,
     }
+
+    prefs_provider_google_update_time = {}
 
     prefs_safebrowsing = {
         "services.settings.server": "https://firefox.settings.services.mozilla.com/v1",
@@ -75,33 +76,24 @@ class TestSafeBrowsingInitialDownload(MarionetteTestCase):
             f.startswith("goog-") or f.startswith("googpub-")
             for f in self.safebrowsing_shavar_files
         ):
-            self.prefs_provider_update_time.update({
+            self.prefs_provider_google_update_time.update({
                 "browser.safebrowsing.provider.google.nextupdatetime": 1,
             })
-
-        # if V5 is enabled, we use the V5 update time to determine if the files
-        # have been downloaded. Otherwise, we use the V4 update time.
-        is_safebrowsing_v5_enabled = bool(
-            self.marionette.get_pref("browser.safebrowsing.provider.google5.enabled")
-        )
 
         self.safebrowsing_protobuf_files = self.get_safebrowsing_files(True)
         if any(
             f.startswith("goog-") or f.startswith("googpub-")
             for f in self.safebrowsing_protobuf_files
         ):
-            if is_safebrowsing_v5_enabled:
-                self.prefs_provider_update_time.update({
-                    "browser.safebrowsing.provider.google5.nextupdatetime": 1,
-                })
-            else:
-                self.prefs_provider_update_time.update({
-                    "browser.safebrowsing.provider.google4.nextupdatetime": 1,
-                })
+            self.prefs_provider_google_update_time.update({
+                "browser.safebrowsing.provider.google4.nextupdatetime": 1,
+                "browser.safebrowsing.provider.google5.nextupdatetime": 1,
+            })
 
         # Force the preferences for the new profile
         enforce_prefs = self.prefs_safebrowsing
         enforce_prefs.update(self.prefs_provider_update_time)
+        enforce_prefs.update(self.prefs_provider_google_update_time)
         self.marionette.enforce_gecko_prefs(enforce_prefs)
 
         self.safebrowsing_path = os.path.join(
@@ -117,11 +109,19 @@ class TestSafeBrowsingInitialDownload(MarionetteTestCase):
 
     def test_safe_browsing_initial_download(self):
         def check_downloaded(_):
-            return reduce(
-                lambda state, pref: state and int(self.marionette.get_pref(pref)) != 1,
-                list(self.prefs_provider_update_time),
-                True,
-            )
+            # All prefs in prefs_provider_update_time must be updated.
+            # For prefs_provider_google_update_time (google4/google5),
+            # either one being updated is sufficient since only one
+            # provider will be active depending on whether V5 is enabled.
+            for pref in self.prefs_provider_update_time:
+                if int(self.marionette.get_pref(pref)) == 1:
+                    return False
+            if self.prefs_provider_google_update_time and not any(
+                int(self.marionette.get_pref(pref)) != 1
+                for pref in self.prefs_provider_google_update_time
+            ):
+                return False
+            return True
 
         try:
             Wait(self.marionette, timeout=170).until(
