@@ -290,9 +290,18 @@ function compare_remote_settings_files {
 
   # 1. List remote settings collections from server.
   echo "INFO: fetch remote settings list from server"
-  ${WGET} -qO- "${REMOTE_SETTINGS_SERVER}/buckets/monitor/collections/changes/records" |\
-    ${JQ} -r '.data[] | .bucket+"/"+.collection+"/"+(.last_modified|tostring)' |\
-    # 2. For each entry ${bucket, collection, last_modified}
+  changes_lines="$(
+    ${WGET} -O- \
+      "${REMOTE_SETTINGS_SERVER}/buckets/monitor/collections/changes/changeset?_expected=0" |
+        ${JQ} -r '.changes[] | .bucket+"/"+.collection+"/"+(.last_modified|tostring)'
+  )"
+  line_count="$(printf '%s\n' "${changes_lines}" | wc -l | xargs)"
+  if [ "${line_count}" -le 1 ]; then
+    echo "ERROR: no changes pulled from server" >&2
+    exit 15
+  fi
+
+  # 2. For each entry ${bucket, collection, last_modified}
   while IFS="/" read -r bucket collection last_modified; do
 
     # 3. Download the dump from HG into REMOTE_SETTINGS_INPUT folder
@@ -328,7 +337,7 @@ function compare_remote_settings_files {
     # Here is an example to download an attachment with record identifier "ID":
     # update_remote_settings_attachment "${bucket}" "${collection}" ID '.[] | select(.id == "ID")'
     # NOTE: The downloaded data is not validated. xpcshell should be used for that.
-  done
+  done <<< "${changes_lines}"
 
   echo "INFO: diffing old/new remote settings dumps..."
   ${DIFF} -r "${REMOTE_SETTINGS_INPUT}" "${REMOTE_SETTINGS_OUTPUT}" > "${REMOTE_SETTINGS_DIFF_ARTIFACT}"
