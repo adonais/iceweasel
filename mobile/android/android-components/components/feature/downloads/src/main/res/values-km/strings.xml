@@ -74,6 +74,16 @@
   <string name="mozac_feature_downloads_button_try_again">ព្យាយាម​ម្ដងទៀត</string>
   <!-- Content description for close button -->
   <string name="mozac_feature_downloads_button_close">បិទ</string>
+  <!-- Title for the third party download app chooser dialog -->
+  <string name="mozac_feature_downloads_third_party_app_chooser_dialog_title">បញ្ចប់​សកម្មភាព​ដោយ​ប្រើ</string>
+  <!-- Message that appears when trying to download with an external app fails. %1$s will be replaced with the name the external app. -->
+  <string name="mozac_feature_downloads_unable_to_open_third_party_app">មិនអាចបើក %1$s បានទេ</string>
+  <!-- Text for the info dialog when write to storage permissions have been denied but user tries to download a file. -->
+  <string name="mozac_feature_downloads_write_external_storage_permissions_needed_message">ត្រូវការសិទ្ធិចូលប្រើឯកសារ និងមេឌៀ ដើម្បីទាញយកឯកសារបាន។ ចូលទៅកាន់ការកំណត់ Android ចុចលើការអនុញ្ញាត ហើយចុចលើអនុញ្ញាត។</string>
+  <!-- Alert dialog confirmation before cancelling downloads, this is the title -->
+  <string name="mozac_feature_downloads_cancel_active_downloads_warning_content_title">បោះបង់ការទាញយកឯកជន?</string>
+  <!-- Alert dialog confirmation before cancelling private downloads, this is the body. %1$s will be replaced with the name of the file. -->
+  <string name="mozac_feature_downloads_cancel_active_private_downloads_warning_content_body">ប្រសិនបើអ្នកបិទផ្ទាំងឯកជនទាំងអស់ឥឡូវនេះ ការទាញយក %1$s នឹងត្រូវបានលុបចោល។ តើអ្នកប្រាកដថាអ្នកចង់ចាកចេញពីការរុករកឯកជនដែរឬទេ?</string>
   <!-- Alert dialog confirmation before cancelling downloads, this is the positive action. -->
   <string name="mozac_feature_downloads_cancel_active_downloads_accept">បោះបង់ការទាញយក</string>
   <!-- Alert dialog confirmation before cancelling downloads, this is the negative action. Leaves user in Private browsing -->

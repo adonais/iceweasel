@@ -733,7 +733,7 @@
   -->
   <string name="biometric_auth_moved_too_quickly">Pohyb prstem byl příliš rychlý. Zkuste to znovu.</string>
   <!-- Title for the prompt to enable search suggestions -->
-  <string name="enable_search_suggestion_title2">Našeptávat dotazy pro vyhledávač?</string>
+  <string name="enable_search_suggestion_title2">Zobrazovat návrhy vyhledávání?</string>
   <!--
     Description for the prompt to enable search suggestions
     %1$s will be replaced by the app name (e.g. Firefox Focus)

@@ -8,7 +8,7 @@
 
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
-  <string name="mozac_browser_errorpages_page_refresh">សាកល្បងម្តងទៀត</string>
+  <string name="mozac_browser_errorpages_page_refresh">ព្យាយាមម្តងទៀត</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">មិនអាចបំពេញសំណើបានទេ</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->
@@ -123,8 +123,26 @@
   <string name="mozac_browser_errorpages_safe_browsing_malware_uri_title">បញ្ហាគេហទំព័រមេរោគ</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_browsing_malware_uri_message"><![CDATA[<p>គេហទំព័រនៅ %1$s ត្រូវបានរាយការណ៍ថាជាគេហទំព័រវាយប្រហារ ហើយត្រូវបានរារាំងដោយផ្អែកលើចំណូលចិត្តសុវត្ថិភាពរបស់អ្នក។</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_safe_browsing_unwanted_uri_title">បញ្ហាគេហទំព័រដែលមិនចង់បាន</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_safe_browsing_unwanted_uri_message"><![CDATA[<p>គេហទំព័រនៅ %1$s ត្រូវបានរាយការណ៍ថាកំពុងបម្រើកម្មវិធីដែលមិនចង់បាន ហើយត្រូវបានរារាំងដោយផ្អែកលើចំណូលចិត្តសុវត្ថិភាពរបស់អ្នក។</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_safe_harmful_uri_title">បញ្ហាគេហទំព័រដែលបង្កគ្រោះថ្នាក់</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_safe_harmful_uri_message"><![CDATA[<p>គេហទំព័រនៅ %1$s ត្រូវបានរាយការណ៍ថាជាគេហទំព័រដែលអាចបង្កគ្រោះថ្នាក់ ហើយត្រូវបានរារាំងដោយផ្អែកលើចំណូលចិត្តសុវត្ថិភាពរបស់អ្នក។</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_safe_phishing_uri_title">បញ្ហាគេហទំព័របោកប្រាស់</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>ទំព័របណ្ដាញនេះនៅ %1$s ត្រូវបានរាយការណ៍ថាជាគេហទំព័របោកប្រាស់ ហើយត្រូវបានរារាំងដោយផ្អែកលើចំណូលចិត្តសុវត្ថិភាពរបស់អ្នក។</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">គេហទំព័រត្រូវបានបិទដើម្បីសុវត្ថិភាពរបស់អ្នក</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>ទំព័របណ្ដាញនេះនៅ %1$s ត្រូវបានរារាំង ពីព្រោះកម្មវិធីបន្ថែមមួយរបស់អ្នកបានព្យាយាមបើកវា។ គេហទំព័រនេះ អាចត្រូវបានប្រើដើម្បីលួចព័ត៌មានរបស់អ្នក — ដូចជាពាក្យសម្ងាត់ ឬលេខកាតឥណទាន។</p>]]></string>
+  <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
+  <string name="mozac_browser_errorpages_httpsonly_title">គេហទំព័រសុវត្ថិភាពមិនអាចប្រើប្រាស់បានទេ</string>
+  <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->
+  <string name="mozac_browser_errorpages_httpsonly_message"><![CDATA[លោកអ្នកបានបើករបៀប HTTPS-Only ដើម្បីបង្កើនសុវត្ថិភាព ហើយកំណែ HTTPS នៃ <em>%1$s</em> មិនមានសម្រាប់ប្រើប្រាស់ទេ។]]></string>
   <!-- Button on error page for websites that do not support HTTPS when HTTPS-Only is turned on. Clicking the button allows the user to nevertheless load the website using HTTP. -->
   <string name="mozac_browser_errorpages_httpsonly_button">បន្តទៅគេហទំព័រ HTTP</string>
 </resources>

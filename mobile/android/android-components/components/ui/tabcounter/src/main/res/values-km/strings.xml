@@ -7,6 +7,11 @@
 -->
 
 <resources>
+  <!--
+    Message announced to the user when tab tray is selected
+    The %1$s will be replaced by the number of opened tabs
+  -->
+  <string name="mozac_tab_counter_open_tab_tray">ផ្ទាំងបើក៖ %1$s។ ប៉ះដើម្បីប្តូរផ្ទាំង។</string>
   <!-- Browser menu button that creates a new tab -->
   <string name="mozac_browser_menu_new_tab">ផ្ទាំង​ថ្មី</string>
   <!-- Browser menu button that creates a private tab -->

@@ -9,6 +9,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools" xmlns:moz="http://mozac.org/tools">
   <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
   <string name="app_name_private_5">ឯកជន %s</string>
+  <!-- App name for private browsing mode. %s is the name of the app (for example "Firefox"). -->
+  <string name="app_name_private_4">%s (ឯកជន)</string>
   <!--
     Home Fragment
 
@@ -27,10 +29,18 @@
   <string name="bookmark_search_hint">ស្វែងរកចំណាំ</string>
   <!-- Placeholder text shown in search bar when using tabs search -->
   <string name="tab_search_hint">របារស្វែងរក</string>
+  <!-- Placeholder text shown in the search bar when using application search engines -->
+  <string name="application_search_hint">បញ្ចូលពាក្យស្វែងរក</string>
+  <!-- No Open Tabs Message Description -->
+  <string name="no_open_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ផ្ទាំងដែលបានបើករបស់លោកអ្នក នឹងបង្ហាញនៅទីនេះ។</string>
+  <!-- No Private Tabs Message Description -->
+  <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ផ្ទាំងឯកជនរបស់អ្នកនឹងត្រូវបានបង្ហាញនៅទីនេះ។</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">ការ​រក​មើល​ជា​ឯកជន</string>
   <!-- The header text displayed on the normal tabs page when no normal tabs are open -->
   <string name="tab_manager_empty_normal_tabs_page_header">បង្កើតផ្ទាំងថ្មី ដើម្បីចាប់ផ្តើមស្វែងរក</string>
+  <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
+  <string name="tab_tray_multi_select_title">បានជ្រើសរើស %1$d</string>
   <!-- Tab tray multi select title in app bar when no tabs are selected -->
   <string name="tab_tray_multi_select_title_empty">ជ្រើសរើសផ្ទាំង</string>
   <!-- Label of button in create collection dialog for creating a new collection -->
@@ -524,14 +534,26 @@
   <string name="preferences_manage_account">គ្រប់គ្រងគណនី</string>
   <!-- Summary of the preference for managing your account via accounts.firefox.com. -->
   <string name="preferences_manage_account_summary">ផ្លាស់ប្តូរពាក្យសម្ងាត់របស់អ្នក គ្រប់គ្រងការប្រមូលទិន្នន័យ ឬលុបគណនីរបស់អ្នក</string>
+  <!-- Preference for syncing history -->
+  <string name="preferences_sync_history">ប្រវត្តិ</string>
   <!-- Preference for syncing bookmarks -->
   <string name="preferences_sync_bookmarks">ចំណាំ</string>
   <!-- Preference for syncing passwords -->
   <string name="preferences_sync_logins_2">ពាក្យ​សម្ងាត់</string>
+  <!-- Preference for syncing tabs -->
+  <string name="preferences_sync_tabs_2">បើក​ផ្ទាំង</string>
   <!-- Preference for removing FxA account -->
   <string name="preferences_sync_remove_account">លុបគណនី</string>
+  <!-- New tab shortcut in toolbar customization -->
+  <string name="toolbar_customize_shortcut_new_tab">បើកផ្ទាំងថ្មីមួយ</string>
   <!-- Add bookmark shortcut in toolbar customization -->
   <string name="toolbar_customize_shortcut_add_bookmark">បន្ថែម​ចំណាំ</string>
+  <!--
+    Tab Strip Preferences
+
+    Preferences for showing tab strip
+  -->
+  <string name="preference_tab_strip_show">បង្ហាញរបារផ្ទាំង</string>
   <!-- Option in library to open Bookmarks page -->
   <string name="library_bookmarks">ចំណាំ</string>
   <!-- Option in library to open Desktop Bookmarks "menu" page -->
@@ -540,24 +562,94 @@
   <string name="library_desktop_bookmarks_toolbar">របារ​ឧបករណ៍​ចំណាំ</string>
   <!-- Option in library to open Desktop Bookmarks "unfiled" page -->
   <string name="library_desktop_bookmarks_unfiled">ចំណាំ​ផ្សេង​ៗ​ទៀត</string>
+  <!-- Option in Library to open History page -->
+  <string name="library_history">ប្រវត្តិ</string>
+  <!-- Option in Library to open a new tab -->
+  <string name="library_new_tab">ផ្ទាំង​ថ្មី</string>
   <!-- Dialog button text for canceling open all tabs -->
   <string name="open_all_warning_cancel">បោះបង់</string>
+  <!-- Option in library to open Recently Closed Tabs page -->
+  <string name="recently_closed_show_full_history">បង្ហាញប្រវត្តិពេញលេញ</string>
+  <!--
+    Tab Management
+
+    Title of preference for tabs management
+  -->
+  <string name="preferences_tabs">ផ្ទាំង</string>
+  <!-- Title of preference that allows a user to specify the tab view -->
+  <string name="preferences_tab_view">ទិដ្ឋភាពផ្ទាំង</string>
+  <!-- Title of preference that allows a user to auto close tabs after a specified amount of time -->
+  <string name="preferences_close_tabs">បិទ​ផ្ទាំង</string>
+  <!-- Option for always opening the user's last-open tab when re-opening the app -->
+  <string name="opening_screen_last_tab">ផ្ទាំងចុងក្រោយ</string>
+  <!-- Summary for homepage preference indicating always opening the last-open tab when re-opening the app -->
+  <string name="opening_screen_last_tab_summary">បើក​ផ្ទាំង​ចុងក្រោយ</string>
+  <!--
+    Inactive tabs
+
+    Category header of a preference that allows a user to enable or disable the inactive tabs feature
+  -->
+  <string name="preferences_inactive_tabs">ផ្លាស់ទីផ្ទាំងចាស់ៗ ទៅអសកម្ម</string>
+  <!-- Text for the tabs header normal tabs -->
+  <string name="tabs_header_normal_tabs_title">ផ្ទាំង</string>
+  <!-- Text for the new tab button in the Tab Manager to indicate opening a new normal tab -->
+  <string name="tab_manager_floating_action_button_new_normal_tab">ផ្ទាំង​ថ្មី</string>
+  <!-- Text for the new tab button in the Tab Manager to indicate opening a new private tab -->
+  <string name="tab_manager_floating_action_button_new_private_tab">ផ្ទាំងឯកជនថ្មី</string>
+  <!-- Text for floating action button in the Tab Manager used to initiate a re-sync of synced tabs -->
+  <string name="tab_manager_floating_action_button_sync_tabs">ធ្វើសមកាលកម្មផ្ទាំង</string>
+  <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
+  <string name="add_tab">បន្ថែមផ្ទាំង</string>
+  <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
+  <string name="add_private_tab">បន្ថែមផ្ទាំងឯកជន</string>
+  <!-- Text for the tab search bar placeholder -->
+  <string name="tab_manager_search_bar_placeholder">ស្វែងរកផ្ទាំងរបស់អ្នក</string>
   <!-- Text shown in the menu for sharing all tabs -->
   <string name="tab_tray_menu_item_share" tools:ignore="UnusedResources" moz:removedIn="149">ចែករំលែកផ្ទាំងទាំងអស់</string>
+  <!-- Text shown in the menu to view recently closed tabs -->
+  <string name="tab_tray_menu_recently_closed">ផ្ទាំងដែលទើបបិទថ្មីៗនេះ</string>
   <!-- Text shown in the menu to view account settings -->
   <string name="tab_tray_menu_account_settings">ការកំណត់គណនី</string>
+  <!-- Text shown in the menu to view tab settings -->
+  <string name="tab_tray_menu_tab_settings">ការកំណត់ផ្ទាំង</string>
   <!-- Text shown in the menu for closing all tabs -->
   <string name="tab_tray_menu_item_close">បិទ​ផ្ទាំង​ទាំងអស់</string>
+  <!-- Text shown as the title of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_title">បិទផ្ទាំងទាំងអស់?</string>
+  <!-- Text shown in the body of the Close all tabs confirmation dialog in Tab Manager -->
+  <string name="tab_manager_close_all_tabs_dialog_body">វានឹងបិទផ្ទាំងដែលបើកទាំងអស់។</string>
+  <!-- Text shown on the confirm button in the Close all tabs confirmation dialog -->
+  <string name="tab_manager_close_all_tabs_dialog_confirm">បិទ​ផ្ទាំង</string>
   <!-- Text shown on the cancel button in the Close all tabs confirmation dialog -->
   <string name="tab_manager_close_all_tabs_dialog_cancel">បោះបង់</string>
   <!-- Text shown in the multiselect menu for bookmarking selected tabs. -->
   <string name="tab_tray_multiselect_menu_item_bookmark" tools:ignore="UnusedResources" moz:removedIn="149">ចំណាំ</string>
   <!-- Content description (not visible, for screen readers etc.): Bookmarks selected tabs. -->
   <string name="tab_manager_multiselect_menu_item_bookmark_content_description">ចំណាំផ្ទាំងដែលបានជ្រើសរើស</string>
+  <!-- Content description (not visible, for screen readers etc.): Closes selected tabs. -->
+  <string name="tab_manager_multiselect_menu_item_close_content_description">បិទផ្ទាំងដែលបានជ្រើសរើស</string>
+  <!-- Content description for tabs tray multiselect share button -->
+  <string name="tab_tray_multiselect_share_content_description" tools:ignore="UnusedResources" moz:removedIn="149">ចែករំលែកផ្ទាំងដែលបានជ្រើសរើស</string>
+  <!-- Text for button to enter multiselect mode in tabs tray -->
+  <string name="tabs_tray_select_tabs">ជ្រើសរើសផ្ទាំង</string>
+  <!-- Content description (not visible, for screen readers etc.): Close tab button. Closes the current session when pressed -->
+  <string name="close_tab">បិទ​ផ្ទាំង</string>
+  <!-- Content description (not visible, for screen readers etc.): Close tab <title> button. %s is the tab title -->
+  <string name="close_tab_title">បិទផ្ទាំង %s</string>
+  <!-- Content description (not visible, for screen readers etc.): Opens the open tabs menu when pressed -->
+  <string name="open_tabs_menu">បើកផ្ទាំងម៉ឺនុយ</string>
+  <!-- Content description (not visible, for screen readers etc.): Return to tab manager -->
+  <string name="tab_manager_search_bar_back_content_description">ត្រឡប់ទៅកម្មវិធីគ្រប់គ្រងផ្ទាំងវិញ</string>
+  <!-- Open tabs menu item to save tabs to collection -->
+  <string name="tabs_menu_save_to_collection1">រក្សាទុកផ្ទាំងទៅក្នុងបណ្តុំ</string>
   <!-- Text for the menu button to delete a collection -->
   <string name="collection_delete">លុបបណ្តុំ</string>
+  <!-- Text for the button to open tabs of the selected collection -->
+  <string name="collection_open_tabs">បើក​ផ្ទាំង</string>
   <!-- Text for the menu button to delete a top site from history -->
   <string name="delete_from_history">លុបចេញពីប្រវត្តិ</string>
+  <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
+  <string name="tab_manager_open_tab_search">បើកការស្វែងរកផ្ទាំង</string>
   <!-- Text for the button to clear all history -->
   <string name="history_delete_all">លុបប្រវត្តិ</string>
   <!-- Text for the snackbar to confirm that multiple browsing history items has been deleted -->
@@ -568,6 +660,8 @@
   <string name="history_delete_item">លុប</string>
   <!-- Text for the header that groups the history for yesterday -->
   <string name="history_yesterday">ម្សិលមិញ</string>
+  <!-- Text shown when no history exists -->
+  <string name="history_empty_message">គ្មានប្រវត្តិនៅទីនេះទេ</string>
   <!--
     Downloads
 
@@ -577,6 +671,8 @@
   <string name="download_delete_multiple_items_snackbar_2">ធាតុត្រូវបានលុប៖ %1$d</string>
   <!-- Text for the snackbar to confirm that a single download item has been removed. %1$s is the name of the download item. -->
   <string name="download_delete_single_item_snackbar_2">បានលុប “%1$s”</string>
+  <!-- Text for the snackbar to confirm that a download has completed. -->
+  <string name="download_completed_snackbar">ការទាញយកបានបញ្ចប់</string>
   <!--
     Text for the cancel button in the dialog that is shown when there is not enough storage space to download a file.
     This button will dismiss the dialog.
@@ -607,6 +703,10 @@
   <string name="webcompat_reporter_cancel">បោះបង់</string>
   <!-- Broken site reason text for site asked to turn off ad blocker -->
   <string name="webcompat_reporter_reason_turn_off_adblocker">គេហទំព័រត្រូវបានស្នើសុំឱ្យបិទកម្មវិធីទប់ស្កាត់ការផ្សាយពាណិជ្ជកម្ម</string>
+  <!-- Close tab button text on the tab crash page -->
+  <string name="tab_crash_close">បិទផ្ទាំង</string>
+  <!-- Restore tab button text on the tab crash page -->
+  <string name="tab_crash_restore">ស្ដារផ្ទាំងឡើងវិញ</string>
   <!--
     Bookmarks
 
@@ -617,6 +717,14 @@
   <string name="bookmark_delete_negative">បោះបង់</string>
   <!-- Bookmark overflow menu select all bookmarks -->
   <string name="bookmark_menu_select_all_bookmarks">ជ្រើសរើស​ទាំងអស់</string>
+  <!-- Bookmark overflow menu open in new tab button -->
+  <string name="bookmark_menu_open_in_new_tab_button">បើកក្នុងផ្ទាំងថ្មី</string>
+  <!-- Bookmark overflow menu open in private tab button -->
+  <string name="bookmark_menu_open_in_private_tab_button">បើកក្នុងផ្ទាំងឯកជន</string>
+  <!-- Bookmark overflow menu open all in tabs button -->
+  <string name="bookmark_menu_open_all_in_tabs_button">បើកទាំងអស់នៅក្នុងផ្ទាំងថ្មី</string>
+  <!-- Bookmark overflow menu open all in private tabs button -->
+  <string name="bookmark_menu_open_all_in_private_tabs_button">បើកទាំងអស់នៅក្នុងផ្ទាំងឯកជន</string>
   <!-- Bookmark overflow menu delete button -->
   <string name="bookmark_menu_delete_button">លុប</string>
   <!-- Bookmark editing screen title -->
@@ -636,6 +744,8 @@
   <string name="bookmark_delete_folder_content_description">លុបថតឯកសារ</string>
   <!-- Content description for bookmark search floating action button -->
   <string name="bookmark_search_button_content_description">ស្វែងរកចំណាំ</string>
+  <!-- Description for the add new folder button when selecting a folder. -->
+  <string name="bookmark_select_folder_new_folder_button_title">ថតឯកសារថ្មី</string>
   <!-- Text for the cancel button on Clear permissions dialog -->
   <string name="clear_permissions_negative">បោះបង់</string>
   <!-- Text for the cancel button on Clear permission dialog -->
@@ -648,12 +758,53 @@
   <string name="studies_off">បិទ</string>
   <!-- Toggle if desktop site is turned off -->
   <string name="browser_feature_desktop_site_off">បិទ</string>
+  <!-- Title for the "select tabs" step of the collection creator -->
+  <string name="create_collection_select_tabs">ជ្រើសរើសផ្ទាំង</string>
   <!-- Button to select all tabs in the "select tabs" step of the collection creator -->
   <string name="create_collection_select_all">ជ្រើសរើស​ទាំងអស់</string>
+  <!-- Text to prompt users to select the tabs to save in the "select tabs" step of the collection creator -->
+  <string name="create_collection_save_to_collection_empty">ជ្រើសរើសផ្ទាំងដើម្បីរក្សាទុក</string>
+  <!--
+    Text to show users how many tabs they have selected in the "select tabs" step of the collection creator.
+    %d is a placeholder for the number of tabs selected.
+  -->
+  <string name="create_collection_save_to_collection_tabs_selected">បានជ្រើសរើសផ្ទាំង %d</string>
+  <!--
+    Text to show users they have one tab selected in the "select tabs" step of the collection creator.
+    %d is a placeholder for the number of tabs selected.
+  -->
+  <string name="create_collection_save_to_collection_tab_selected">បានជ្រើសរើសផ្ទាំង %d</string>
+  <!-- Text shown in snackbar when one tab has been saved in a collection -->
+  <string name="create_collection_tab_saved_2">បានរក្សាទុកផ្ទាំង</string>
   <!-- Text for the cancel button from collection dialogs -->
   <string name="create_collection_negative">បោះបង់</string>
   <!-- Text displayed when sync is offline and cannot be accessed -->
   <string name="sync_offline">ក្រៅ​បណ្ដាញ</string>
+  <!-- The dialog text shown when additional devices are not available -->
+  <string name="sync_connect_device_dialog" tools:ignore="BrandUsage">ដើម្បីផ្ញើផ្ទាំង សូមចូលទៅក្នុង Firefox នៅលើឧបករណ៍ផ្សេងទៀតយ៉ាងហោចណាស់មួយ។</string>
+  <!-- Text for the button to learn about sending tabs -->
+  <string name="sync_add_new_device_learn_button">ស្វែងយល់អំពីការផ្ញើផ្ទាំង…</string>
+  <!--
+    Notifications
+
+    Text shown in the notification that pops up to remind the user that a private browsing session is active.
+  -->
+  <string name="notification_pbm_delete_text_2">បិទផ្ទាំងឯកជន</string>
+  <!-- Text shown in the notification that pops up to remind the user that a private browsing session is active for Android 14+ -->
+  <string name="notification_erase_title_android_14">បិទផ្ទាំងឯកជន?</string>
+  <string name="notification_erase_text_android_14">ប៉ះ ឬអូសការជូនដំណឹងនេះ ដើម្បីបិទផ្ទាំងឯកជន។</string>
+  <!--
+    Snackbar
+
+    Text shown in snackbar when user closes a tab
+  -->
+  <string name="snackbar_tab_closed">ផ្ទាំងដែលបានបិទ</string>
+  <!-- Text shown in snackbar when user closes all tabs -->
+  <string name="snackbar_tabs_closed">ផ្ទាំងដែលបានបិទ</string>
+  <!-- Text shown in snackbar when user closes multiple inactive tabs. %1$s will be replaced with the number of tabs closed. -->
+  <string name="snackbar_num_tabs_closed">ផ្ទាំង​ដែល​បាន​បិទ៖ %1$s</string>
+  <!-- Text shown in snackbar when user closes a private tab -->
+  <string name="snackbar_private_tab_closed">ផ្ទាំងឯកជនត្រូវបានបិទ</string>
   <!-- Text shown in snackbar when user erases their private browsing data -->
   <string name="snackbar_private_data_deleted">បានលុបទិន្នន័យរុករកឯកជន</string>
   <!-- QR code scanner prompt dialog positive option to allow navigation to scanned link -->
@@ -662,6 +813,16 @@
   <string name="tab_collection_dialog_message">តើអ្នកប្រាកដថាចង់លុប %1$s មែនទេ?</string>
   <!-- Title for the Delete browsing data preference -->
   <string name="preferences_delete_browsing_data">លុបទិន្នន័យរុករក</string>
+  <!-- Title for the tabs item in Delete browsing data -->
+  <string name="preferences_delete_browsing_data_tabs_title_2">បើក​ផ្ទាំង</string>
+  <!-- Subtitle for the tabs item in Delete browsing data, %d is the number of open tabs -->
+  <string name="preferences_delete_browsing_data_tabs_subtitle">ផ្ទាំង %d</string>
+  <!--
+    Title for the data and history items in Delete browsing data
+
+    Title for the history item in Delete browsing data
+  -->
+  <string name="preferences_delete_browsing_data_browsing_history_title">ប្រវត្តិរុករក</string>
   <!-- Text for the button to delete browsing data -->
   <string name="preferences_delete_browsing_data_button">លុបទិន្នន័យរុករក</string>
   <!-- Title for the Delete browsing data on quit preference -->
@@ -688,12 +849,24 @@
   <string name="delete_history_group_prompt_allow">លុប</string>
   <!-- Text for the snackbar confirmation that the history group was deleted -->
   <string name="delete_history_group_snackbar">បានលុបក្រុម</string>
+  <!--
+    Onboarding theme
+
+    Text shown in snackbar when multiple tabs have been sent to device
+  -->
+  <string name="sync_sent_tabs_snackbar_2">បានផ្ញើផ្ទាំង</string>
+  <!-- Text shown in snackbar when one tab has been sent to device -->
+  <string name="sync_sent_tab_snackbar_2">បានផ្ញើផ្ទាំង</string>
   <!-- Text shown for settings option for create new account text.'Firefox' intentionally hardcoded here. -->
   <string name="sign_in_create_account_text" tools:ignore="BrandUsage"><![CDATA[គ្មានគណនីទេ? <u>បង្កើតមួយ</u> ដើម្បីធ្វើសមកាលកម្ម Firefox រវាងឧបករណ៍នានា។]]></string>
   <!-- Text shown in confirmation dialog to sign out of account. %s is the name of the app (for example "Firefox"). -->
   <string name="sign_out_confirmation_message_2">%s នឹងឈប់ធ្វើសមកាលកម្មជាមួយគណនីរបស់អ្នក ប៉ុន្តែនឹងមិនលុបទិន្នន័យរុករកណាមួយរបស់អ្នកនៅលើឧបករណ៍នេះទេ។</string>
   <!-- Option to cancel signing out shown in confirmation dialog to sign out of account -->
   <string name="sign_out_cancel">បោះបង់</string>
+  <!-- Option for enhanced tracking protection for the custom protection settings for tracking content -->
+  <string name="preference_enhanced_tracking_protection_custom_tracking_content_1">នៅក្នុងផ្ទាំងទាំងអស់</string>
+  <!-- Option for enhanced tracking protection for the custom protection settings for tracking content -->
+  <string name="preference_enhanced_tracking_protection_custom_tracking_content_2">មានតែនៅក្នុងផ្ទាំងឯកជនប៉ុណ្ណោះ</string>
   <!-- Header for categories that are being not being blocked by current Enhanced Tracking Protection settings -->
   <string name="enhanced_tracking_protection_allowed">បាន​អនុញ្ញាត</string>
   <!-- Title displayed for "Off" option under "DNS over HTTPS" -->
@@ -804,6 +977,8 @@
   <string name="add_login_2">បន្ថែមពាក្យសម្ងាត់</string>
   <!-- Error text displayed underneath the password field when it is in an error case. -->
   <string name="saved_login_password_required_2">បញ្ចូលពាក្យសម្ងាត់</string>
+  <!-- The text displayed when a synced device has no tabs to show in the list of Synced Tabs. -->
+  <string name="synced_tabs_no_open_tabs">គ្មានផ្ទាំងបើកទេ</string>
   <!--
     Context description text for the "Show all" button in the shortcuts home screen section
     which navigates the user to a screen displaying all the shortcuts.
@@ -811,8 +986,20 @@
   <string name="homepage_shortcuts_show_all_content_description">បង្ហាញផ្លូវកាត់ទាំងអស់</string>
   <!-- Dialog button text for canceling the rename top site prompt. -->
   <string name="top_sites_rename_dialog_cancel">បោះបង់</string>
+  <!--
+    Inactive tabs in the tabs tray
+
+    Title text displayed in the tabs tray when a tab has been unused for 14 days.
+  -->
+  <string name="inactive_tabs_title">ផ្ទាំងអសកម្ម</string>
+  <!-- Content description for closing all inactive tabs -->
+  <string name="inactive_tabs_delete_all">បិទផ្ទាំងអសកម្មទាំងអស់</string>
   <!-- Translations feature -->
 
+  <!-- Button text on the translations dialog to dismiss the dialog and return to the browser. -->
+  <string name="translations_bottom_sheet_negative_button">មិន​មែន​ឥឡូវ</string>
+  <!-- Button text on the translations dialog when a translation error appears, used to dismiss the dialog and return to the browser. -->
+  <string name="translations_bottom_sheet_negative_button_error">ធ្វើ​រួច</string>
   <!--
     The Delete site dialogue title will appear when the user clicks on a list item.
     %1$s is web site url (for example:"wikipedia.com")
@@ -859,6 +1046,14 @@
   <string name="protection_panel_etp_toggle_off">បិទ</string>
   <!-- Button text on the clear site data dialog to allow users to cancel the action and not clear the site data. -->
   <string name="clear_site_data_dialog_negative_button_text">បោះបង់</string>
+  <!-- The title of the tab count section in Tab Tools. -->
+  <string name="debug_drawer_tab_tools_tab_count_title">ចំនួនផ្ទាំង</string>
+  <!-- The button text to add tabs to the active tab group in the tab creation tool. -->
+  <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_active">បន្ថែមទៅផ្ទាំងសកម្ម</string>
+  <!-- The button text to add tabs to the inactive tab group in the tab creation tool. -->
+  <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_inactive">បន្ថែមទៅផ្ទាំងអសកម្ម</string>
+  <!-- The button text to add tabs to the private tab group in the tab creation tool. -->
+  <string name="debug_drawer_tab_tools_tab_creation_tool_button_text_private">បន្ថែមទៅក្នុងផ្ទាំងឯកជន</string>
   <!-- The title of the autofill tab in the Debug Drawer. -->
   <string name="debug_drawer_autofill_title">ឧបករណ៍បំពេញដោយស្វ័យប្រវត្តិ</string>
   <!--
@@ -875,10 +1070,38 @@
   <string name="debug_drawer_delete_all_addresses">លុបអាសយដ្ឋានទាំងអស់</string>
   <!-- The title of the button for deleting in the debug drawer all addresses. -->
   <string name="debug_drawer_delete_all_credit_cards">លុបកាតឥណទានទាំងអស់</string>
+  <!--
+    Root certificate expiration warnings
+
+    These strings for homepage cards and push notifications to be pushed to users running outdated versions of Firefox. We want to encourage these users to update to the latest version so their extensions and other features don't stop working when Firefox's old root certificate expires on 2025-03-14. For more information, see this SUMO article: https://support.mozilla.org/kb/root-certificate-expiration !
+
+    Homepage card button to open Google Play Store. "Update" is a verb.
+  -->
+  <string name="certificate_warning_homepage_card_update_now_button" tools:ignore="UnusedResources">ធ្វើ​បច្ចុប្បន្ន​ភាព​ឥឡូវ​នេះ</string>
   <!-- TextField Design System Component -->
 
   <!-- The title of the sign-in task for the setup checklist -->
   <string name="setup_checklist_task_account_sync">ចូលទៅក្នុងគណនីរបស់អ្នក</string>
+  <!--
+    ===== Setup checklist feature: Accessibility =====
+
+    Accessibility description for a check mark on a completed task
+  -->
+  <string name="a11y_completed_task_description">កិច្ចការដែលបានបញ្ចប់</string>
+  <!--
+    Private browsing mode authentication screen
+
+    Label for the secondary action to exit private browsing mode
+  -->
+  <string name="pbm_authentication_leave_private_tabs">ចាកចេញពីផ្ទាំងឯកជន</string>
+  <!-- Title text instructing the user to unlock private tabs -->
+  <string name="pbm_authentication_unlock_private_tabs">ដោះសោផ្ទាំងឯកជន</string>
+  <!-- Authentication prompt title to enable the private tabs mode -->
+  <string name="pbm_authentication_enable_lock">បើកការចាក់សោអេក្រង់ផ្ទាំងឯកជន</string>
+  <!-- Title text for the contextual feature recommendation (CFR) suggesting the user enable a screen lock to protect private tabs -->
+  <string name="private_tab_cfr_title">ប្រើការចាក់សោអេក្រង់ដើម្បីលាក់ផ្ទាំងឯកជន?</string>
+  <!-- Positive button text for the contextual feature recommendation (CFR) enabling screen lock for private tabs -->
+  <string name="private_tab_cfr_positive">ចាក់សោផ្ទាំង</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
   <!-- Terms of use link in the pop up prompt message that links to the terms of use -->

@@ -1755,9 +1755,9 @@
   <string name="download_rename_dialog_confirm_button">Cadw</string>
   <string name="download_rename_dialog_cancel_button">Diddymu</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
-  <string name="download_rename_error_cannot_rename_title">Methu ailenwi ffeil</string>
+  <string name="download_rename_error_cannot_rename_title">Methu ail-enwi ffeil</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
-  <string name="download_rename_error_cannot_rename_description">Nid oes modd ailenwi\'r ffeil hon oherwydd cyfyngiadau system neu storio.</string>
+  <string name="download_rename_error_cannot_rename_description">Does dim modd ail-enwi\'r ffeil hon oherwydd cyfyngiadau system neu storio.</string>
   <string name="download_rename_error_dismiss_button">Iawn</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">Ar waith</string>
