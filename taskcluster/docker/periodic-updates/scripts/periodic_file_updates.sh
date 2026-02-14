@@ -13,7 +13,7 @@ Usage: $(basename "$0") [-p product]
            # Use archive.m.o instead of the taskcluster index to get xpcshell
            [--use-ftp-builds]
            # Use git rather than hg. Using git does not currently support cloning (use
-           # --skip-repo as well).
+           # --skip-clone as well).
            [--use-git]
            # One (or more) of the following actions must be specified.
            --hsts | --hpkp | --remote-settings | --suffix-list | --mobile-experiments | --ct-logs
@@ -406,9 +406,18 @@ function compare_remote_settings_files {
 
   # 1. List remote settings collections from server.
   echo "INFO: fetch remote settings list from server"
-  ${WGET} -qO- "${REMOTE_SETTINGS_SERVER}/buckets/monitor/collections/changes/records" |\
-    ${JQ} -r '.data[] | .bucket+"/"+.collection+"/"+(.last_modified|tostring)' |\
-    # 2. For each entry ${bucket, collection, last_modified}
+  changes_lines="$(
+    ${WGET} -O- \
+      "${REMOTE_SETTINGS_SERVER}/buckets/monitor/collections/changes/changeset?_expected=0" |
+        ${JQ} -r '.changes[] | .bucket+"/"+.collection+"/"+(.last_modified|tostring)'
+  )"
+  line_count="$(printf '%s\n' "${changes_lines}" | wc -l | xargs)"
+  if [ "${line_count}" -le 1 ]; then
+    echo "ERROR: no changes pulled from server" >&2
+    exit 15
+  fi
+
+  # 2. For each entry ${bucket, collection, last_modified}
   while IFS="/" read -r bucket collection last_modified; do
 
     # 3. Check to see if the collection exists in the dump directory of the repository,
@@ -466,7 +475,7 @@ function compare_remote_settings_files {
     else
       ${HG} --cwd "${TOPSRCDIR}" purge services/settings/dumps/main/search-config-icons
     fi
-  done
+  done <<< "${changes_lines}"
 
   echo "INFO: diffing old/new remote settings dumps..."
   create_repo_diff "${REMOTE_SETTINGS_DIR}" "${REMOTE_SETTINGS_DIFF_ARTIFACT}"
