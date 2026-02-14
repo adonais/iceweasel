@@ -404,8 +404,8 @@ bool OperatorIn(JSContext* cx, HandleValue key, HandleObject obj, bool* out);
                                      MutableHandleValue rval);
 
 [[nodiscard]] bool CreateThisFromIC(JSContext* cx, HandleObject callee,
-                                    HandleObject newTarget, Value* argv,
-                                    uint32_t argc, MutableHandleValue rval);
+                                    HandleObject newTarget,
+                                    MutableHandleValue rval);
 [[nodiscard]] bool CreateThisFromIon(JSContext* cx, HandleObject callee,
                                      HandleObject newTarget,
                                      MutableHandleValue rval);
