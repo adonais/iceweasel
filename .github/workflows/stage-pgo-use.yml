@@ -6,8 +6,6 @@ env:
   APP_NAME: Iceweasel
   MOZ_FETCHES_DIR: /builds/worker/fetches
   MOZBUILD_DOWNLOAD: /builds/worker/fetches/download
-  MOZBUILD_STATE_PATH: /builds/worker/fetches/.mozbuild
-
 
 jobs:
   fx_build:
@@ -41,6 +39,7 @@ jobs:
         cd "$GITHUB_WORKSPACE"
         m_ver=`cat browser/config/version_display.txt`
         echo MY_VER=$m_ver>>$GITHUB_ENV
+        mkdir "/home/runner/.mozbuild"
       shell: bash
 
     - name: download Tools
@@ -55,7 +54,37 @@ jobs:
           echo Download cbindgen failed
           exit 255
         fi
-        tar Jxf cbindgen.tar.xz -C "$MOZ_FETCHES_DIR"
+        tar Jxf cbindgen.tar.xz -C "/home/runner/.mozbuild"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/nasm.tar.xz?viasf=1 -O nasm.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download nasm failed
+          exit 255
+        fi
+        tar Jxf nasm.tar.xz -C "/home/runner/.mozbuild"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/rust-size.tar.xz?viasf=1 -O rust-size.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download rust-size failed
+          exit 255
+        fi
+        tar Jxf rust-size.tar.xz -C "/home/runner/.mozbuild"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/winchecksec.tar.xz?viasf=1 -O winchecksec.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download winchecksec failed
+          exit 255
+        fi
+        tar Jxf winchecksec.tar.xz -C "/home/runner/.mozbuild"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/dump_syms.tar.xz?viasf=1 -O dump_syms.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download dump_syms failed
+          exit 255
+        fi
+        tar Jxf dump_syms.tar.xz -C "/home/runner/.mozbuild"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/sccache.tar.xz?viasf=1 -O sccache.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download sccache failed
+          exit 255
+        fi
+        tar Jxf sccache.tar.xz -C "$MOZ_FETCHES_DIR"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/clang20.tar.xz?viasf=1 -O clang.tar.xz
         if [ $? -ne 0 ]; then
           echo Download clang failed
@@ -80,11 +109,6 @@ jobs:
           exit 255
         fi
         tar Jxf libportable.tar.xz -C "$MOZ_FETCHES_DIR/clang"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/mozbuild.tar.xz?viasf=1 -O mozbuild.tar.xz
-        if [ $? -ne 0 ]; then
-          echo Download mozbuild failed
-          exit 255
-        fi
         tar Jxf mozbuild.tar.xz -C "$MOZ_FETCHES_DIR"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/onnxruntime.tar.xz?viasf=1 -O onnxruntime.tar.xz
         if [ $? -ne 0 ]; then

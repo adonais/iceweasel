@@ -196,7 +196,6 @@ export class upcheck {
           } else if (pfile) {
             dirs = '"' + pfile + '"';
           }
-          console.log("id = [%d], ptr_refer = [%s], ptr_bk = [%s], ptr_bf = [%s], param = [%s], dirs = %s\n", id, ptr_refer, ptr_bk, ptr_bf, ptr_uchrome, dirs);
           if (!dirs) {
             return upcheck.runSelf(["-m", id, "-i", ptr_url, "-ref", ptr_refer, "-b", ptr_bk, "-cok", ptr_bf, "-param", ptr_uchrome, null, null]);
           } else {

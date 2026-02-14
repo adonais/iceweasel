@@ -338,7 +338,7 @@ class OmniJarSubFormatter(PiecemealFormatter):
             )
         if path[0] == "defaults":
             return len(path) != 3 or not (
-                path[2] == "channel-prefs.js" and path[1] in ["pref", "preferences"]
+                path[2] == "channel-prefs.js" or path[2] == "autoconfig.js" and path[1] in ["pref", "preferences"]
             )
         if len(path) <= 2 and path[-1] == "greprefs.js":
             # Accommodate `greprefs.js` and `$ANDROID_CPU_ARCH/greprefs.js`.

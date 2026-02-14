@@ -31,6 +31,7 @@ fi
 export LLVM_PROFDATA=llvm-profdata
 export CARGO_TARGET_DIR=/tmp/cargo_target
 export MOZ_FETCHES_DIR=/builds/worker/fetches
+export CCACHE=$MOZ_FETCHES_DIR/sccache/sccache
 export PATH=$MOZ_FETCHES_DIR/clang/bin:$MOZ_FETCHES_DIR/rust/bin:$PATH
 
 if [ "$TARGETED_OS" == "Windows_NT" ]; then
