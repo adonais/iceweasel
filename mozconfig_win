@@ -66,7 +66,11 @@ export LINKER=lld-link
 # Iceweasel official
 export MOZILLA_OFFICIAL=1
 export MOZ_WINDOWS_RS_DIR="/builds/worker/fetches/windows-rs/"
-export MOZ_WINDOWS_APP_SDK_DIR="/builds/worker/fetches/winappsdk-x86_64-pc-windows-msvc"
+if test "$ICEWEASEL_BITS" = "64"; then
+  export MOZ_WINDOWS_APP_SDK_DIR="/builds/worker/fetches/winappsdk-x86_64-pc-windows-msvc"
+elif test "$ICEWEASEL_BITS" = "32"; then
+  export MOZ_WINDOWS_APP_SDK_DIR="/builds/worker/fetches/winappsdk-i686-pc-windows-msvc"
+fi
 
 # enable clang plugins
 #ac_add_options --enable-clang-plugin
@@ -77,7 +81,11 @@ ac_add_options --enable-rust-simd
 ac_add_options --enable-jemalloc
 
 # disable wasm libraries sandboxing
-ac_add_options --with-onnx-runtime="/builds/worker/fetches/onnxruntime/x64"
+if test "$ICEWEASEL_BITS" = "64"; then
+  ac_add_options --with-onnx-runtime="/builds/worker/fetches/onnxruntime/x64"
+elif test "$ICEWEASEL_BITS" = "32"; then
+  ac_add_options --with-onnx-runtime="/builds/worker/fetches/onnxruntime/x86"
+fi
 ac_add_options --without-wasm-sandboxed-libraries
 
 # enable l10n

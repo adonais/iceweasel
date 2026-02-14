@@ -1,0 +1,8 @@
+FINAL_TARGET_FILES += [
+  "Iceweasel.cfg",
+]
+
+# Loading Iceweasel.cfg.
+FINAL_TARGET_FILES.defaults.pref += [
+  "autoconfig.js",
+]

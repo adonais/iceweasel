@@ -65,6 +65,7 @@ export class upcheck {
 
   static runSelf(arr) {
     try {
+      let value = 1;
       let binary = Services.dirsvc.get("GreBinD", Ci.nsIFile);
       let length = arr.length;
       if (AppConstants.platform === "win") {
@@ -90,12 +91,10 @@ export class upcheck {
         process.init(binary);
         process.startHidden = true;
         process.noShell = true;
-        if (AppConstants.platform === "win") {
-          process.runwAsync(arg, arg.length, selfObserver);
-        } else {
-          process.runAsync(arg, arg.length, selfObserver);
-        }
+        process.runwAsync(arg, arg.length, selfObserver);
+        value = 0;
       }
+      return value;
     } catch (e) {
       console.log("upcheck.runSelf failed");
     }
@@ -197,6 +196,7 @@ export class upcheck {
           } else if (pfile) {
             dirs = '"' + pfile + '"';
           }
+          console.log("id = [%d], ptr_refer = [%s], ptr_bk = [%s], ptr_bf = [%s], param = [%s], dirs = %s\n", id, ptr_refer, ptr_bk, ptr_bf, ptr_uchrome, dirs);
           if (!dirs) {
             return upcheck.runSelf(["-m", id, "-i", ptr_url, "-ref", ptr_refer, "-b", ptr_bk, "-cok", ptr_bf, "-param", ptr_uchrome, null, null]);
           } else {
