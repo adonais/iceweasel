@@ -86,6 +86,12 @@ jobs:
           exit 255
         fi
         tar Jxf dump_syms.tar.xz -C "/home/runner/.mozbuild"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/dxc.tar.xz?viasf=1 -O dxc.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download dxc failed
+          exit 255
+        fi
+        tar Jxf dxc.tar.xz -C "/home/runner/.mozbuild"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/sccache.tar.xz?viasf=1 -O sccache.tar.xz
         if [ $? -ne 0 ]; then
           echo Download sccache failed
@@ -104,12 +110,6 @@ jobs:
           exit 255
         fi
         tar Jxf diasdk.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/dxc.tar.xz?viasf=1 -O dxc.tar.xz
-        if [ $? -ne 0 ]; then
-          echo Download dxc failed
-          exit 255
-        fi
-        tar Jxf dxc.tar.xz -C "$MOZ_FETCHES_DIR"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/libportable.tar.xz?viasf=1 -O libportable.tar.xz
         if [ $? -ne 0 ]; then
           echo Download libportable failed
