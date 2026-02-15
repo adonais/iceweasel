@@ -116,7 +116,6 @@ jobs:
           exit 255
         fi
         tar Jxf libportable.tar.xz -C "$MOZ_FETCHES_DIR/clang"
-        tar Jxf mozbuild.tar.xz -C "$MOZ_FETCHES_DIR"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/onnxruntime.tar.xz?viasf=1 -O onnxruntime.tar.xz
         if [ $? -ne 0 ]; then
           echo Download onnxruntime failed
@@ -182,7 +181,6 @@ jobs:
         ls -la
         rm -rf "$MOZBUILD_DOWNLOAD"
       shell: bash
-
 
     - name: set swap-space
       uses: yxl0756/set-swap-space@master
