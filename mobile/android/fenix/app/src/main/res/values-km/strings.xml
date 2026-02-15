@@ -37,6 +37,8 @@
   <string name="no_private_tabs_description" tools:ignore="UnusedResources" moz:removedIn="149">ផ្ទាំងឯកជនរបស់អ្នកនឹងត្រូវបានបង្ហាញនៅទីនេះ។</string>
   <!-- The header text displayed on the private tabs page when no private tabs are open -->
   <string name="tab_manager_empty_private_tabs_page_header">ការ​រក​មើល​ជា​ឯកជន</string>
+  <!-- The supplementary text displayed on the private tabs page when no private tabs are open. %1$s is the name of the app (for example "Firefox") -->
+  <string name="tab_manager_empty_private_tabs_page_description">%1$s នឹងមិនចងចាំប្រវត្តិ ឬខូគីរបស់អ្នកទេ ប៉ុន្តែចំណាំថ្មីនឹងត្រូវបានរក្សាទុក។</string>
   <!-- The header text displayed on the normal tabs page when no normal tabs are open -->
   <string name="tab_manager_empty_normal_tabs_page_header">បង្កើតផ្ទាំងថ្មី ដើម្បីចាប់ផ្តើមស្វែងរក</string>
   <!-- Tab tray multi select title in app bar. %1$d is the number of tabs selected -->
@@ -49,8 +51,18 @@
   <string name="tab_tray_add_new_collection_name">ឈ្មោះ</string>
   <!-- Label of button in save to collection dialog for selecting a current collection -->
   <string name="tab_tray_select_collection">ជ្រើសរើស​បណ្តុំ</string>
+  <!-- Content description for close button while in multiselect mode in tab tray -->
+  <string name="tab_tray_close_multiselect_content_description">ចេញពីរបៀបជ្រើសរើសច្រើន</string>
   <!-- Content description for save to collection button while in multiselect mode in tab tray -->
   <string name="tab_tray_collection_button_multiselect_content_description" tools:ignore="UnusedResources" moz:removedIn="149">រក្សាទុកផ្ទាំងដែលបានជ្រើសរើសទៅក្នុងបណ្តុំ</string>
+  <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
+  <string name="tab_manager_empty_synced_tabs_page_header">ចាប់យកផ្ទាំងពីឧបករណ៍ណាមួយ</string>
+  <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
+  <string name="tab_manager_empty_synced_tabs_page_description">ចូលដើម្បីគ្រប់គ្រងផ្ទាំងដែលបានធ្វើសមកាលកម្មពីឧបករណ៍របស់អ្នកទាំងអស់។</string>
+  <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
+  <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">ចូល</string>
+  <!-- Text for the button used to show all stories -->
+  <string name="homepage_all_stories">រឿងទាំងអស់</string>
   <!--
     Home - Bookmarks
 
@@ -61,6 +73,18 @@
   <string name="home_bookmarks_show_all_content_description">បង្ហាញ​ចំណាំ​ទាំងអស់</string>
   <!-- Text for the menu button to remove a recently saved bookmark from the user's home screen -->
   <string name="home_bookmarks_menu_item_remove">យកចេញ</string>
+  <!-- About content. %1$s is the name of the app (for example "Firefox"). -->
+  <string name="about_content">%1$s ត្រូវ​បាន​ផលិត​ដោយ Mozilla។</string>
+  <!-- Private Browsing -->
+  <string name="private_browsing_common_myths">ទេវកថាទូទៅអំពីការរុករកឯកជន</string>
+  <!-- Text to be announced by the accessibility service to inform the user that the private browsing mode is currently active. -->
+  <string name="private_browsing_a11y_session_announcement">វគ្គរុករកឯកជន</string>
+  <!--
+    True Private Browsing Mode
+
+    Title for info card on private homescreen in True Private Browsing Mode.
+  -->
+  <string name="felt_privacy_desc_card_title">កុំទុកដាននៅលើឧបករណ៍នេះ</string>
   <!--
     Explanation for private browsing displayed to users on home view when they first enable
     private mode in our new Total Private Browsing mode.
@@ -73,20 +97,53 @@
     %1$s is the name of the app (for example "Firefox").
   -->
   <string name="felt_privacy_info_card_subtitle_3">%1$s លុបខូគី ប្រវត្តិ និងទិន្នន័យគេហទំព័ររបស់អ្នក នៅពេលអ្នកបិទផ្ទាំងឯកជនរបស់អ្នកទាំងអស់។</string>
+  <!--
+    Clickable portion of the explanation for private browsing that links the user to our
+    about privacy page.
+    This string is used in felt_privacy_info_card_subtitle as the text for the link.
+  -->
+  <string name="felt_privacy_info_card_subtitle_link_text">តើអ្នកណាអាចមើលឃើញសកម្មភាពរបស់ខ្ញុំ?</string>
+  <!--
+    Open in App "contextual feature recommendation" (CFR)
+
+    Text for the info message. %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="open_in_app_cfr_info_message_2">អ្នកអាចកំណត់ %1$s ឱ្យបើកតំណភ្ជាប់ដោយស្វ័យប្រវត្តិនៅក្នុងកម្មវិធី។</string>
   <!-- Text for the positive action button -->
   <string name="open_in_app_cfr_positive_button_text">ចូល​ទៅ​កាន់​ការ​កំណត់</string>
   <!-- Text for the negative action button -->
   <string name="open_in_app_cfr_negative_button_text">បដិសេធ</string>
   <!-- Private browsing erase action "contextual feature recommendation" (CFR) -->
 
+  <!--
+    Address bar swipe "contextual feature recommendation" (CFR)
+
+    Text for the message displayed in the contextual feature recommendation popup promoting swipe of address bar.
+  -->
+  <string name="address_bar_swipe_cfr_message_2">អូសរបារឧបករណ៍ទៅឆ្វេង ឬស្តាំ ដើម្បីប្តូរផ្ទាំង។</string>
+  <!-- Text for the info dialog when camera permissions have been denied but user tries to access a camera feature. -->
+  <string name="camera_permissions_needed_message">ត្រូវការសិទ្ធិចូលប្រើកាមេរ៉ា។ ចូលទៅកាន់ការកំណត់ Android ចុចការអនុញ្ញាត ហើយចុចអនុញ្ញាត។</string>
   <!-- Text for the positive action button to go to Android Settings to grant permissions. -->
   <string name="camera_permissions_needed_positive_button_text">ចូល​ទៅ​កាន់​ការ​កំណត់</string>
   <!-- Text for the negative action button to dismiss the dialog. -->
   <string name="camera_permissions_needed_negative_button_text">បដិសេធ</string>
+  <!-- Text for the banner message to tell users about our auto close feature. -->
+  <string name="tab_tray_close_tabs_banner_message">កំណត់​ផ្ទាំង​ដែល​បើក​ឲ្យ​បិទ​ដោយ​ស្វ័យប្រវត្តិ​ដែល​មិន​ត្រូវ​បាន​មើល​ក្នុង​ថ្ងៃ សប្តាហ៍ ឬ​ខែ​កន្លង​មក។</string>
+  <!-- Text for the positive action button to go to Settings for auto close tabs. -->
+  <string name="tab_tray_close_tabs_banner_positive_button_text">មើលជម្រើស</string>
   <!-- Text for the negative action button to dismiss the Close Tabs Banner. -->
   <string name="tab_tray_close_tabs_banner_negative_button_text">បដិសេធ</string>
+  <!-- Text for the banner message to tell users about our inactive tabs feature. -->
+  <string name="tab_tray_inactive_onboarding_message">ផ្ទាំង​ដែល​អ្នក​មិន​បាន​មើល​រយៈពេល​ពីរសប្ដាហ៍​បានផ្លាស់ទី​នៅទីនេះ។</string>
   <!-- Text for the action link to go to Settings for inactive tabs. -->
   <string name="tab_tray_inactive_onboarding_button_text">បិទការកំណត់</string>
+  <!-- Text for title for the auto-close dialog of the inactive tabs. -->
+  <string name="tab_tray_inactive_auto_close_title">បិទដោយស្វ័យប្រវត្តិបន្ទាប់ពីមួយខែ?</string>
+  <!--
+    Text for the body for the auto-close dialog of the inactive tabs.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="tab_tray_inactive_auto_close_body_2">%1$s អាចបិទផ្ទាំងដែលអ្នកមិនបានមើលក្នុងរយៈពេលមួយខែកន្លងមក។</string>
   <!-- Content description for close button in the auto-close dialog of the inactive tabs. -->
   <string name="tab_tray_inactive_auto_close_button_content_description">បិទ</string>
   <!-- Text for turn on auto close tabs button in the auto-close dialog of the inactive tabs. -->
@@ -101,6 +158,12 @@
   <string name="home_screen_shortcut_open_new_private_tab_2">ផ្ទាំង​ឯកជន​ថ្មី</string>
   <!-- Shortcut action to open Passwords screen -->
   <string name="home_screen_shortcut_passwords">ពាក្យ​សម្ងាត់</string>
+  <!--
+    Recent Tabs
+
+    Header text for jumping back into the recent tab in the home screen
+  -->
+  <string name="recent_tabs_header">លោតចូលវិញ</string>
   <!-- Button text for showing all the tabs in the tabs tray -->
   <string name="recent_tabs_show_all">បង្ហាញ​ទាំងអស់</string>
   <!-- Content description for the button which navigates the user to show all recent tabs in the tabs tray. -->
@@ -144,6 +207,8 @@
   <string name="browser_menu_stop">បញ្ឈប់</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_extensions">ផ្នែក​បន្ថែម</string>
+  <!-- Browser menu banner header text for extensions onboarding when all installed extensions have been disabled. -->
+  <string name="browser_menu_disabled_extensions_banner_onboarding_header" tools:ignore="UnusedResources" moz:removedIn="149">អ្នកបានដំឡើងផ្នែកបន្ថែមរួចហើយ ប៉ុន្តែមិនទាន់បើកដំណើរការនៅឡើយទេ</string>
   <!-- Browser menu button that opens the extensions manager -->
   <string name="browser_menu_manage_extensions">គ្រប់គ្រងផ្នែកបន្ថែម</string>
   <!-- Browser menu group that contains additional settings in collapsed state -->
@@ -179,6 +244,8 @@
   <string name="browser_menu_add_to_homescreen">បន្ថែមទៅអេក្រង់ដើម</string>
   <!-- Browser menu toggle that adds a PWA of the site on the device home screen. -->
   <string name="browser_menu_add_app_to_homescreen">បន្ថែមកម្មវិធីទៅអេក្រង់ដើម</string>
+  <!-- Text for notifying users that Xiaomi devices require additional permissions to add to home screen -->
+  <string name="browser_menu_add_to_homescreen_xiaomi">ឧបករណ៍ Xiaomi អាចត្រូវការការអនុញ្ញាតបន្ថែម ដើម្បីបន្ថែមផ្លូវកាត់ទៅកាន់អេក្រង់ដើម។ សូមពិនិត្យមើលការកំណត់របស់អ្នក។</string>
   <!-- Content description (not visible, for screen readers etc.) for the Resync tabs button -->
   <string name="resync_button_content_description">ធ្វើសមកាលកម្មឡើងវិញ</string>
   <!-- Browser menu button that opens the find in page menu -->
@@ -196,16 +263,38 @@
     %1$s is the name of the app (for example "Firefox").
   -->
   <string name="browser_menu_open_in_fenix">បើកនៅក្នុង %1$s</string>
+  <!--
+    Browser menu text shown in custom tabs to indicate this is a Fenix tab
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="browser_menu_powered_by" tools:ignore="UnusedResources" moz:removedIn="149">ដំណើរការដោយ %1$s</string>
+  <!--
+    Browser menu text shown in custom tabs to indicate this is a Fenix tab
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="browser_menu_powered_by2">ដំណើរការដោយ %1$s</string>
+  <!-- Browser menu button to put the current page in reader mode -->
+  <string name="browser_menu_read">ទិដ្ឋភាពអ្នកអាន</string>
+  <!-- Browser menu button content description to close reader mode and return the user to the regular browser -->
+  <string name="browser_menu_read_close">បិទទិដ្ឋភាពអ្នកអាន</string>
   <!-- Browser menu button to open the current page in an external app -->
   <string name="browser_menu_open_app_link">បើកនៅក្នុងកម្មវិធី</string>
+  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
+  <string name="browser_menu_customize_reader_view" tools:ignore="UnusedResources" moz:removedIn="149">ប្ដូរតាមបំណងទិដ្ឋភាពអ្នកអាន</string>
+  <!-- Browser menu button to show reader view appearance controls e.g. the used font type and size -->
+  <string name="browser_menu_customize_reader_view_2">ប្ដូរតាមបំណងទិដ្ឋភាពអ្នកអាន</string>
   <!-- Browser menu label for adding a bookmark -->
   <string name="browser_menu_add" tools:ignore="UnusedResources" moz:removedIn="149">បន្ថែម</string>
   <!-- Browser menu label for editing a bookmark -->
   <string name="browser_menu_edit" tools:ignore="UnusedResources" moz:removedIn="149">កែសម្រួល</string>
+  <!-- Button shown on the home page that opens the Customize home settings -->
+  <string name="browser_menu_customize_home_1" tools:ignore="UnusedResources" moz:removedIn="149">ប្ដូរតាមបំណងទំព័រដើម</string>
   <!-- Browser menu label to sign in to sync on the device using Mozilla accounts -->
   <string name="browser_menu_sign_in">ចូល</string>
   <!-- Browser menu caption label for the "Sign in" browser menu item described in `browser_menu_sign_in` -->
   <string name="browser_menu_sign_in_caption_3">ធ្វើសមកាលកម្មពាក្យសម្ងាត់ ចំណាំ និងច្រើនទៀត</string>
+  <!-- Browser menu label to sign back in to sync on the device when the user's account needs to be reauthenticated -->
+  <string name="browser_menu_sign_back_in_to_sync">ចូលគណនីម្តងទៀតដើម្បីធ្វើសមកាលកម្ម</string>
   <!-- Browser menu caption label for the "Sign back in to sync" browser menu item described in `browser_menu_sign_back_in_to_sync` when there is an error in syncing -->
   <string name="browser_menu_syncing_paused_caption">ការធ្វើសមកាលកម្មត្រូវបានផ្អាក</string>
   <!-- Browser menu caption label for an authenticated user -->
@@ -216,8 +305,16 @@
   <string name="browser_menu_passwords">ពាក្យ​សម្ងាត់</string>
   <!-- Content description (not visible, for screen readers etc.) for the handle used to drag the main menu at the bottom of the screen. -->
   <string name="browser_close_main_menu_handlebar_content_description">បិទម៉ឺនុយ</string>
+  <!-- Content description (not visible, for screen readers etc.) for main menu navigation header. -->
+  <string name="browser_main_menu_content_description_navigation_header">ការ​រុករក</string>
   <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar extensions menu. -->
   <string name="browser_extensions_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">បិទសន្លឹកម៉ឺនុយផ្នែកបន្ថែម</string>
+  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar save menu. -->
+  <string name="browser_save_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">បិទសន្លឹកម៉ឺនុយរក្សាទុក</string>
+  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar tools menu. -->
+  <string name="browser_tools_menu_handlebar_content_description" tools:ignore="UnusedResources" moz:removedIn="149">បិទសន្លឹកម៉ឺនុយឧបករណ៍</string>
+  <!-- Content description (not visible, for screen readers etc.) for bottom sheet handlebar custom tab menu. -->
+  <string name="browser_custom_tab_menu_handlebar_content_description">បិទសន្លឹកម៉ឺនុយផ្ទាំងផ្ទាល់ខ្លួន</string>
   <!-- Browser menu label that bookmarks the currently visited page -->
   <string name="browser_menu_bookmark_this_page_2">ទំព័រចំណាំ</string>
   <!-- Browser menu label that navigates to the edit bookmark screen for the current bookmarked page -->
@@ -226,6 +323,8 @@
   <string name="browser_menu_save_as_pdf_2">រក្សាទុក​ជា PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">បកប្រែទំព័រ</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">សង្ខេបទំព័រ</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">រាយការណ៍​ពី​គេហទំព័រ​ដែល​ខូច…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -235,12 +334,23 @@
   <!-- Browser menu label for the print feature -->
   <string name="browser_menu_print_2">បោះពុម្ព</string>
   <!--
+    Browser menu label for the Delete browsing data on quit feature.
+    %1$s is the name of the app (for example "Firefox").
+  -->
+  <string name="browser_menu_delete_browsing_data_on_quit">ចេញពី %1$s</string>
+  <!--
     Content description for a banner within the menu which prompt the user to make this app their default browser.
     %1$s is the name of the app (for example "Firefox").
   -->
   <string name="browser_menu_default_banner_title">ធ្វើឱ្យ %1$s តាមលំនាំដើមរបស់អ្នក</string>
   <!-- Content description (not visible, for screen readers etc.) for recommended extensions in main menu -->
   <string name="browser_menu_recommended_extensions_content_description">ព័ត៌មានបន្ថែម</string>
+  <!--
+    Menu "contextual feature recommendation" (CFR)
+
+    Text for the title in the contextual feature recommendation popup promoting the menu feature.
+  -->
+  <string name="menu_cfr_title">ថ្មី៖ ម៉ឺនុយដែលសម្រួល</string>
   <!--
     Extensions management fragment
 
@@ -372,10 +482,16 @@
   <string name="onboarding_redesign_sync_positive_button" tools:ignore="UnusedResources">ចាប់ផ្តើមធ្វើសមកាលកម្ម</string>
   <!-- Sync onboarding redesign negative button text. -->
   <string name="onboarding_redesign_sync_negative_button" tools:ignore="UnusedResources">មិន​មែន​ឥឡូវ</string>
+  <!-- Marketing onboarding page body. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_body" tools:ignore="BrandUsage,UnusedResources">នៅពេលអ្នកចែករំលែកពីរបៀបដែលអ្នកបានរកឃើញ Firefox និងរបៀបដែលអ្នកប្រើប្រាស់វា អ្នកជួយយើងណែនាំកម្មវិធីរុករករបស់យើងដល់មនុស្សកាន់តែច្រើន។</string>
   <!-- Marketing onboarding page clickable link text to "learn more" on how data is used. -->
   <string name="onboarding_marketing_learn_more" tools:ignore="UnusedResources">របៀបដែលយើងប្រើប្រាស់ទិន្នន័យ</string>
   <!-- Marketing onboarding page button label. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button" tools:ignore="UnusedResources">បញ្ជាក់ ហើយចាប់ផ្តើមរុករក</string>
+  <!-- Marketing onboarding page title variant. “One last thing” refers to the final step or action in the onboarding process that we’re asking users to take before they can start using the browser. -->
+  <string name="onboarding_marketing_title_1" tools:ignore="UnusedResources">រឿងចុងក្រោយមួយទៀត</string>
+  <!-- Marketing onboarding page body variant. 'Firefox' is intentionally hardcoded. -->
+  <string name="onboarding_marketing_body_1" tools:ignore="BrandUsage,UnusedResources">ចែករំលែកពីរបៀបដែលអ្នកបានរកឃើញ Firefox និងរបៀបដែលអ្នកប្រើប្រាស់វា ជាមួយដៃគូទីផ្សាររបស់ Mozilla។ ទិន្នន័យនេះមិនដែលត្រូវបានលក់ឡើយ។</string>
   <!-- Marketing onboarding page button label variant. Button to confirm choice and start browsing. -->
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">យល់ព្រម ហើយចាប់ផ្តើមរុករក</string>
   <!-- ==== Project "Nova" onboarding strings ==== -->
@@ -418,6 +534,8 @@
   <string name="onboarding_customize_toolbar_top_option">កំពូល</string>
   <!-- Onboarding toolbar selection card label for 'bottom' option, used by Nimbus experiments. -->
   <string name="onboarding_customize_toolbar_bottom_option">ប៊ូតុង</string>
+  <!-- Onboarding toolbar selection card content description for the main image. -->
+  <string name="onboarding_customize_toolbar_main_image_content_description">រូបភាពបឋមកថាធំនៃទិដ្ឋភាពជ្រើសរើសរបារឧបករណ៍ដែលបង្ហាញរបារឧបករណ៍ដែលមានរូបភាព។</string>
   <!-- Onboarding toolbar selection card content description for the toolbar placement image. -->
   <string name="onboarding_customize_toolbar_placement_bottom_content_description">រូបភាពនៃប៊ូតុងរបារឧបករណ៍</string>
   <string name="onboarding_customize_toolbar_placement_top_content_description">រូបភាពនៃរបារឧបករណ៍ខាងលើ</string>

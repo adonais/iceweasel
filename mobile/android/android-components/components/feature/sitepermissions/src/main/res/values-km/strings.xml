@@ -51,6 +51,8 @@
     this button will not give access to this permission
   -->
   <string name="mozac_feature_sitepermissions_block">ទប់ស្កាត់</string>
+  <!-- Message of a dialog offering more context about the app level notification permission request. %1$s will be replaced with the name of the app. -->
+  <string name="mozac_feature_sitepermissions_notification_permission_rationale_dialog_message">អ្នកនឹងត្រូវអនុញ្ញាតឱ្យមានការជូនដំណឹងនៅក្នុង %1$s ដើម្បីទទួលបានការជូនដំណឹងពីគេហទំព័រនេះ។</string>
   <!-- Button label in a notification permission request dialog to dismiss the dialog. -->
   <string name="mozac_feature_sitepermissions_notification_permission_rationale_dialog_dismiss_label">បោះបង់</string>
   <!-- Button label in a notification permission request dialog. It will let the user go to Android Settings to grant the permission. -->
@@ -63,6 +65,20 @@
   <string name="mozac_feature_sitepermissions_always_allow">ជានិច្ច</string>
   <!-- Text for a negative button in a permission request dialog. This will never allow and remember the decision of the user, this is the special case of the notification permission, that is only ask one time -->
   <string name="mozac_feature_sitepermissions_never_allow">កុំ</string>
+  <!-- Title of a dialog to require to save data in persistent storage. %1$s will be replaced with the URL of the current page -->
+  <string name="mozac_feature_sitepermissions_persistent_storage_title">អនុញ្ញាតឱ្យ %1$s រក្សាទុកទិន្នន័យនៅក្នុងកន្លែងផ្ទុកអចិន្ត្រៃយ៍?</string>
+  <!-- Title of a dialog to use EME. %1$s will be replaced with the URL of the current page -->
+  <string name="mozac_feature_sitepermissions_media_key_system_access_title">អនុញ្ញាតឱ្យ %1$s ចាក់មាតិកាដែលគ្រប់គ្រងដោយ DRM?</string>
+  <!--
+    Title of a dialog to use cross origin storage permission. %1$s is the name of the site URL (www.site1.example) trying to track the user's activity.
+    %2$s is the name of the site URL (www.site2.example) that the user is visiting.  This is the same domain name displayed in the address bar
+  -->
+  <string name="mozac_feature_sitepermissions_storage_access_title">អនុញ្ញាតឱ្យ %1$s ប្រើប្រាស់ខូគីរបស់វានៅលើ %2$s?</string>
+  <!--
+    Message of a dialog offering more context about the cross origin storage permission.
+    %s is the name of the site URL (www.site1.example) trying to track the user's activity.
+  -->
+  <string name="mozac_feature_sitepermissions_storage_access_message">អ្នកប្រហែលជាចង់រារាំងការចូលប្រើ ប្រសិនបើវាមិនច្បាស់ថាហេតុអ្វីបានជា %s ត្រូវការទិន្នន័យនេះ។</string>
   <!-- Text for a negative button in the storage access permission request dialog. This button will not give access to this permission. -->
   <string name="mozac_feature_sitepermissions_storage_access_not_allow">ទប់ស្កាត់</string>
   <!-- Clickable text that will open a new tab navigating the user to online documentation about specific features. -->
