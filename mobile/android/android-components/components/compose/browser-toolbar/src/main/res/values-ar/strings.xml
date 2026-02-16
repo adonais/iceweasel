@@ -20,7 +20,7 @@
   <!-- Text for the title displayed in the contextual feature recommendation popup promoting the new toolbar redesign. -->
   <string name="mozac_toolbar_cfr_title">مُصمم لنظام أندرويد. مُطوّر ليناسبك</string>
   <!-- Text for the description displayed in the contextual feature recommendation popup promoting the new toolbar redesign. -->
-  <string name="mozac_toolbar_cfr_description">لقد قمنا بتحديث التصميم لجعله أنيقًا وعصريًا</string>
+  <string name="mozac_toolbar_cfr_description">قمنا بتجديد التصميم ليصبح أنيقًا وعصريًا</string>
   <!-- Content description (not visible, for screen readers etc.) for the "minimal toolbar" containing just the URL instead of the big toolbar containing also other buttons. %1$s will be replaced with the domain name of the current website. -->
   <string name="mozac_minimal_display_toolbar_content_description">جارٍ إدخال النص في %1$s. انقر مرتين للإيقاف</string>
 </resources>

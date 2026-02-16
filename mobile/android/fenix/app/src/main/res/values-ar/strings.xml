@@ -58,7 +58,7 @@
   <!-- The header text displayed on the synced tabs page when the user is not logged into an account. -->
   <string name="tab_manager_empty_synced_tabs_page_header">احصل على التبويبات من أي جهاز</string>
   <!-- The supplementary text displayed on the synced tabs page when the user is not logged into an account. -->
-  <string name="tab_manager_empty_synced_tabs_page_description">تسجيل الدخول لإدارة التبويبات المتزامنة عبر كل أجهزتك.</string>
+  <string name="tab_manager_empty_synced_tabs_page_description">سجّل الدخول لإدارة التبويبات المتزامنة من جميع أجهزتك.</string>
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
   <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">تسجيل الدخول</string>
   <!-- Text for the button used to show all stories -->
@@ -1080,7 +1080,7 @@
   <!-- Description text for the artist series wallpapers. "Independent voices" is the name of the wallpaper collection -->
   <string name="wallpaper_artist_series_description">مجموعة الأصوات المستقلة.</string>
   <!-- Wallpaper onboarding dialog header text. -->
-  <string name="wallpapers_onboarding_dialog_title_text">جرب إضافة لمسة من اللون</string>
+  <string name="wallpapers_onboarding_dialog_title_text">جرّب إضافة لمسة من اللون</string>
   <!-- Wallpaper onboarding dialog body text. -->
   <string name="wallpapers_onboarding_dialog_body_text">اختر خلفية تتحدث إليك.</string>
   <!-- Wallpaper onboarding dialog learn more button text. The button navigates to the wallpaper settings screen. -->
@@ -2046,7 +2046,7 @@
   <!-- Description for the bookmark list empty state when you're not signed into sync. -->
   <string name="bookmark_empty_list_guest_description">احفظ المواقع أثناء التصفح. سجّل الدخول لمزامنة العلامات المرجعية من جميع أجهزتك.</string>
   <!-- Text for the button to navigate to sync authentication -->
-  <string name="bookmark_empty_list_guest_cta">لِج للمزامنة</string>
+  <string name="bookmark_empty_list_guest_cta">سجّل الدخول للمزامنة</string>
   <!-- Description for the bookmark list empty state when you're signed into sync. -->
   <string name="bookmark_empty_list_authenticated_description">احفظ المواقع أثناء التصفح. وسنقوم بمزامنة العلامات المرجعية من أجهزتك الأخرى.</string>
   <!-- Description for the bookmark list empty state when you're in an empty folder. -->

@@ -323,6 +323,8 @@
   <string name="browser_menu_save_as_pdf_2">Gem som PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">Oversæt side</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">Sammenfat side</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">Rapporter probl. m. websted…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -434,6 +436,10 @@
     The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
   -->
   <string name="search_engine_selector_content_description">%s: søgetjenestevælger</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">Slettede %1$s fra historikken</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Slet dette historikpunkt</string>
   <!--
     Home onboarding
 
@@ -642,6 +648,8 @@
   <string name="nova_onboarding_tou_body_line_3_link_text">Håndter indstillinger</string>
   <!-- "Set to default" onboarding title. -->
   <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">Sig farvel til skumle sporings-mekanismer</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">Åbn alle links med indbygget beskyttelse af dit privatliv</string>
   <!-- "Set to default" onboarding subtitle. -->
   <string name="nova_onboarding_set_to_default_subtitle">Vi beskytter dine data og forhindrer automatisk virksomheder i at overvåge dine klik.</string>
   <!-- "Set to default" onboarding button. -->
@@ -766,6 +774,8 @@
   <string name="preferences_search">Søgning</string>
   <!-- Preference for settings related to Search engines -->
   <string name="preferences_search_engines">Søgetjenester</string>
+  <!-- Settings item to add a search widget on the device's homescreen. -->
+  <string name="preferences_add_search_widget_from_settings">Startskærm-widget</string>
   <!-- Preference for settings related to Search engines suggestions -->
   <string name="preferences_search_engines_suggestions">Forslag fra søgetjenester</string>
   <!-- Preference Category for settings related to Search address bar -->
@@ -957,6 +967,15 @@
   <string name="preferences_open_links_in_apps_ask">Spørg inden åbning</string>
   <!-- Preference for open links in third party apps never open in apps option -->
   <string name="preferences_open_links_in_apps_never">Aldrig</string>
+  <!-- Preference category for file storage. -->
+  <string name="preferences_category_file_storage">Fillagring</string>
+  <!-- Preference title for downloads default location. -->
+  <string name="preferences_downloads_default_location_title">Standardplacering for filhentninger</string>
+  <!--
+    Message shown as the summary of the download location preference when the
+    app has lost the permission to access a previously selected custom folder.
+  -->
+  <string name="preference_downloads_folder_permission_lost">Du har ikke tilladelse til at bruge denne mappe. Prøv at vælge en anden.</string>
   <!-- Preference title for choosing an app to handle downloads -->
   <string name="preferences_choose_app_for_downloads">Håndter filhentninger med en anden app</string>
   <!-- Title for the setting to automatically clean up downloaded files. %s is the name of the app (for example "Firefox"). -->
@@ -1489,10 +1508,26 @@
   <string name="studies_active">Aktive</string>
   <!-- Description for studies -->
   <string name="studies_description_3" moz:removedIn="148" tools:ignore="UnusedResources">Prøv nye funktioner og idéer før de bliver tilgængelige for alle.</string>
+  <!-- Description for studies. Note: The word "Firefox" should NOT be translated -->
+  <string name="studies_description_4" tools:ignore="BrandUsage">Firefox vælger tilfældige brugere for at teste funktioner, hvilket forbedrer kvaliteten for alle.</string>
   <!-- Title of the Studies data preference -->
   <string name="studies_title" moz:removedIn="148" tools:ignore="UnusedResources">Installer og kør undersøgelser</string>
+  <!-- Title of the Studies data preference -->
+  <string name="studies_title_2">Tillad funktions-undersøgelser</string>
   <!-- Learn more link for studies, links to an article for more information about studies. -->
   <string name="studies_learn_more">Læs mere</string>
+  <!--
+    Remote Improvements (Rollouts)
+
+    Title of the Remote Improvements (rollouts) data preference
+  -->
+  <string name="remote_improvements_title">Tillad eksterne forbedringer</string>
+  <!-- Description for remote improvements. Note: The word "Firefox" should NOT be translated -->
+  <string name="remote_improvements_description" tools:ignore="BrandUsage">Firefox vil forbedre funktioner, ydeevne og stabilitet mellem udgivelser. Ændringer appliceres eksternt.</string>
+  <!-- Learn more link for remote improvements, links to an article for more information about rollouts. -->
+  <string name="remote_improvements_learn_more">Læs mere</string>
+  <!-- Title for remote improvements preference in Advanced settings -->
+  <string name="preferences_remote_improvements">Eksterne forbedringer</string>
   <!--
     Sessions
 
@@ -1686,6 +1721,8 @@
   <string name="download_delete_item">Slet</string>
   <!-- Content description for the toolbar "Navigate back" button -->
   <string name="download_navigate_back_description">Gå tilbage</string>
+  <!-- Content description for the toolbar "Navigate to Downloads Settings" button -->
+  <string name="download_navigate_settings_description">Gå til indstillinger for filhentninger</string>
   <!-- Content description for the toolbar back button while searching the downloads -->
   <string name="download_close_search_description">Tilbage og luk søgning</string>
   <!--
@@ -1703,12 +1740,25 @@
   <string name="download_share_url">Del URL</string>
   <!-- Text for the button to share the download file -->
   <string name="download_share_file">Del fil</string>
+  <!-- Text for the button to rename the download file -->
+  <string name="download_rename_file">Omdøb fil</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
   <string name="download_delete_multi_select_dialog_confirmation">Er du sikker på, at du vil slette disse elementer?</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
   <string name="download_delete_multi_select_dialog_confirm">Slet</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
   <string name="download_delete_multi_select_dialog_cancel">Annuller</string>
+  <!-- Title for the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_title">Omdøb fil</string>
+  <!-- Label for the name field in the alert dialog confirmation before renaming a download item. -->
+  <string name="download_rename_dialog_label">Navn</string>
+  <string name="download_rename_dialog_confirm_button">Gem</string>
+  <string name="download_rename_dialog_cancel_button">Annuller</string>
+  <!-- Title for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_title">Kan ikke omdøbe fil</string>
+  <!-- Description message for the alert dialog when the file cannot be renamed. -->
+  <string name="download_rename_error_cannot_rename_description">Denne fil kan ikke omdøbes pga. system- eller lagerbegrænsninger.</string>
+  <string name="download_rename_error_dismiss_button">OK</string>
   <!-- Text for the header of in progress downloads -->
   <string name="download_header_in_progress">I gang</string>
   <!--
@@ -1901,6 +1951,8 @@
   <string name="bookmark_error_edit_bookmark">Kunne ikke redigere bogmærke</string>
   <!-- Snackbar edit button shown after a bookmark has been created. -->
   <string name="edit_bookmark_snackbar_action">REDIGER</string>
+  <!-- Bookmark menu select button -->
+  <string name="bookmark_menu_select_button">Vælg</string>
   <!-- Bookmark menu move button -->
   <string name="bookmark_menu_move_button">Flyt</string>
   <!-- Bookmark overflow menu edit button -->
@@ -1981,6 +2033,10 @@
   <string name="select_bookmark_search_button_content_description">Søg i mapper</string>
   <!-- Content description for the overflow menu for a bookmark item. %s is a folder name or bookmark title. -->
   <string name="bookmark_item_menu_button_content_description">Elementmenu for %s</string>
+  <!-- Content description for the chevron that will open a folder on the select folder screen and display its children. %s is the title of the folder that will be opened -->
+  <string name="bookmark_select_folder_expand_folder_content_description">Udvid mappe: %s</string>
+  <!-- Content description for the chevron that will close a folder on the select folder screen so that its children are no longer visible. %s is the title of the folder that will be closed -->
+  <string name="bookmark_select_folder_close_folder_content_description">Luk mappe: %s</string>
   <!-- Content description for the "close" button in bookmarks screen. -->
   <string name="bookmark_close_button_content_description">Luk bogmærker</string>
   <!-- Title for the bookmark list empty state -->
@@ -2806,6 +2862,20 @@
   <string name="saved_logins_sort_strategy_last_used">Senest brugt</string>
   <!-- Content description (not visible, for screen readers etc.) -->
   <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Menuen sorter adgangskoder</string>
+  <!--
+    Email Masks
+
+    Title for the Email Masks in the settings menu
+  -->
+  <string name="preferences_email_masks">Mail-masker</string>
+  <!-- Title for the Suggest Email Masks toggle -->
+  <string name="preferences_email_masks_suggest_title">Foreslå mail-masker</string>
+  <!-- Summary for the Suggest Email Masks toggle. -->
+  <string name="preferences_email_masks_suggest_summary">Skjul din rigtige mailadresse for at beskytte din indbakke mod spam. Nogle websteder understøtter ikke mail-masker.</string>
+  <!-- Text that links to additional information about the Email Masks -->
+  <string name="preferences_email_masks_suggest_learn_more">Læs mere</string>
+  <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
+  <string name="preferences_email_masks_manage_title">Håndter mail-masker</string>
   <!--
     Autofill
 
@@ -3985,6 +4055,8 @@
   <string name="settings_search_no_results_title">Intet dukkede op</string>
   <!-- Sub-message displayed when the search field is not empty but search results is empty. -->
   <string name="settings_search_no_results_message">Prøv med en anden søgning?</string>
+  <!-- Content Description for the button to open Settings Search (to search through settings). -->
+  <string name="settings_search_button_content_description">Knap for søgning i indstillinger</string>
   <!-- ==== Terms of use pop up prompt ==== -->
 
   <!-- Title for the pop up prompt -->

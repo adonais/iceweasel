@@ -45,7 +45,7 @@
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s، %2$d، من %3$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
-  <string name="mozac_feature_addons_permissions_privacy_description">الاطلاع على إعدادات الخصوصية وتعديلها</string>
+  <string name="mozac_feature_addons_permissions_privacy_description">إطّلع على الإعدادات الخصوصية و عدّلها</string>
   <!-- Description for the "<all_urls>" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_all_urls_description">الوصول إلى بياناتك بالنسبة لجميع المواقع</string>
   <!-- Description for the "tabs" WebExtensions API permission. -->
