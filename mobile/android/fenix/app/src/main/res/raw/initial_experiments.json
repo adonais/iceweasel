@@ -2,6 +2,173 @@
   "data": [
     {
       "schemaVersion": "1.12.0",
+      "slug": "android-brand-refresh-onboarding",
+      "id": "android-brand-refresh-onboarding",
+      "arguments": {},
+      "application": "org.mozilla.firefox",
+      "appName": "fenix",
+      "appId": "org.mozilla.firefox",
+      "channel": "release",
+      "userFacingName": "Android - Brand Refresh Onboarding",
+      "userFacingDescription": "On Boarding",
+      "isEnrollmentPaused": false,
+      "isRollout": false,
+      "bucketConfig": {
+        "randomizationUnit": "nimbus_id",
+        "namespace": "fenix-juno-onboarding-release-16",
+        "start": 0,
+        "count": 10000,
+        "total": 10000
+      },
+      "featureIds": [
+        "juno-onboarding"
+      ],
+      "probeSets": [],
+      "outcomes": [
+        {
+          "slug": "onboarding",
+          "priority": "primary"
+        }
+      ],
+      "branches": [
+        {
+          "slug": "control",
+          "ratio": 1,
+          "feature": {
+            "featureId": "this-is-included-for-mobile-pre-96-support",
+            "enabled": false,
+            "value": {}
+          },
+          "features": [
+            {
+              "featureId": "juno-onboarding",
+              "enabled": true,
+              "value": {
+                "use-onboarding-redesign": false,
+                "cards": {
+                  "theme-selection": {
+                    "enabled": false
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "slug": "treatment-a",
+          "ratio": 9,
+          "feature": {
+            "featureId": "this-is-included-for-mobile-pre-96-support",
+            "enabled": false,
+            "value": {}
+          },
+          "features": [
+            {
+              "featureId": "juno-onboarding",
+              "enabled": true,
+              "value": {
+                "use-onboarding-redesign": true,
+                "cards": {
+                  "terms-of-service": {
+                    "title": "nova_onboarding_tou_title",
+                    "image-res": "nova_onboarding_tou",
+                    "primary-button-label": "nova_onboarding_continue_button",
+                    "extra-data": {
+                      "term-of-service-data": {
+                        "subheader-one-text": "nova_onboarding_tou_subtitle",
+                        "line-one-text": "nova_onboarding_tou_body_line_1",
+                        "line-one-link-text": "nova_onboarding_tou_body_line_1_link_text",
+                        "line-two-text": "nova_onboarding_tou_body_line_2",
+                        "line-two-link-text": "nova_onboarding_tou_body_line_2_link_text",
+                        "line-three-text": "nova_onboarding_tou_body_line_3",
+                        "line-three-link-text": "nova_onboarding_tou_body_line_3_link_text"
+                      }
+                    }
+                  },
+                  "default-browser": {
+                    "title": "nova_onboarding_set_to_default_title_2",
+                    "body": "nova_onboarding_set_to_default_subtitle",
+                    "image-res": "nova_onboarding_set_to_default",
+                    "primary-button-label": "nova_onboarding_set_to_default_button",
+                    "secondary-button-label": "nova_onboarding_negative_button"
+                  },
+                  "add-search-widget": {
+                    "title": "nova_onboarding_add_search_widget_title",
+                    "body": "nova_onboarding_add_search_widget_subtitle",
+                    "image-res": "nova_onboarding_widget",
+                    "primary-button-label": "nova_onboarding_add_search_widget_button",
+                    "secondary-button-label": "nova_onboarding_negative_button"
+                  },
+                  "sync-sign-in": {
+                    "title": "nova_onboarding_sync_title",
+                    "body": "nova_onboarding_sync_subtitle",
+                    "image-res": "nova_onboarding_sync",
+                    "primary-button-label": "nova_onboarding_sync_button",
+                    "secondary-button-label": "nova_onboarding_negative_button"
+                  },
+                  "notification-permission": {
+                    "title": "nova_onboarding_notifications_title",
+                    "body": "nova_onboarding_notifications_subtitle",
+                    "image-res": "nova_onboarding_notifications",
+                    "primary-button-label": "nova_onboarding_notifications_button",
+                    "secondary-button-label": "nova_onboarding_negative_button"
+                  },
+                  "toolbar-placement": {
+                    "title": "nova_onboarding_toolbar_selection_title",
+                    "primary-button-label": "nova_onboarding_continue_button",
+                    "extra-data": {
+                      "customization-toolbar-data": [
+                        {
+                          "toolbar-type": "toolbar-top",
+                          "label": "nova_onboarding_toolbar_selection_top_label"
+                        },
+                        {
+                          "toolbar-type": "toolbar-bottom",
+                          "label": "nova_onboarding_toolbar_selection_bottom_label"
+                        }
+                      ]
+                    }
+                  },
+                  "marketing": {
+                    "title": "nova_onboarding_marketing_title",
+                    "image-res": "nova_onboarding_marketing",
+                    "primary-button-label": "nova_onboarding_continue_button",
+                    "extra-data": {
+                      "marketing-data": {
+                        "body-line-one-text": "nova_onboarding_marketing_body",
+                        "body-line-one-link-text": "nova_onboarding_marketing_body_link_text"
+                      }
+                    }
+                  },
+                  "theme-selection": {
+                    "enabled": false
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "targeting": "((is_already_enrolled) || ((isFirstRun == 'true') && (app_version|versionCompare('148.!') >= 0)))",
+      "startDate": "2026-02-13",
+      "enrollmentEndDate": null,
+      "endDate": null,
+      "proposedDuration": 28,
+      "proposedEnrollment": 21,
+      "referenceBranch": "control",
+      "featureValidationOptOut": false,
+      "localizations": null,
+      "locales": null,
+      "publishedDate": null,
+      "isFirefoxLabsOptIn": false,
+      "firefoxLabsTitle": "",
+      "firefoxLabsDescription": "",
+      "firefoxLabsDescriptionLinks": null,
+      "firefoxLabsGroup": "",
+      "requiresRestart": false
+    },
+    {
+      "schemaVersion": "1.12.0",
       "slug": "long-term-holdback-2025-h1-growth-android",
       "id": "long-term-holdback-2025-h1-growth-android",
       "arguments": {},
