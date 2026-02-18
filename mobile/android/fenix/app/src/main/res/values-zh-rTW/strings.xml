@@ -1754,6 +1754,13 @@
   <string name="download_rename_dialog_label">名稱</string>
   <string name="download_rename_dialog_confirm_button">儲存</string>
   <string name="download_rename_dialog_cancel_button">取消</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">檔案「%s」已經存在此位置</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">檔案名稱中不得使用「/」符號</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">無法重新命名檔案</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2876,6 +2883,10 @@
   <string name="preferences_email_masks_suggest_learn_more">更多資訊</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">管理轉寄信箱</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">您已用完 5 組免費轉寄信箱，我們從中挑選一組讓您重複使用。</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">目前無法使用轉寄信箱服務，請稍候幾分鐘再試一次。</string>
   <!--
     Autofill
 

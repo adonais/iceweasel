@@ -1727,6 +1727,8 @@
   <string name="download_rename_dialog_label">Όνομα</string>
   <string name="download_rename_dialog_confirm_button">Αποθήκευση</string>
   <string name="download_rename_dialog_cancel_button">Ακύρωση</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Τα ονόματα αρχείων δεν μπορούν να χρησιμοποιούν «/»</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Δεν είναι δυνατή η μετονομασία του αρχείου</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2799,6 +2801,8 @@
   <string name="edit_login_button_content_description">Επεξεργασία σύνδεσης</string>
   <!-- Content description, used by tools like screenreaders, to press on the add new login button. -->
   <string name="saved_logins_add_new_login_button_content_description">Προσθήκη νέας σύνδεσης</string>
+  <!-- Content description, used by tools like screenreaders, to press on the clear search text button. -->
+  <string name="saved_logins_clear_search_text_button_content_description">Απαλοιφή κειμένου αναζήτησης</string>
   <!-- Content Description (for screenreaders etc) read for the button to open a site in logins -->
   <string name="saved_login_open_site">Άνοιγμα σελίδας στο πρόγραμμα περιήγησης</string>
   <!-- Content Description (for screenreaders etc) read for the button to reveal a password in logins -->
@@ -2845,6 +2849,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Μάθετε περισσότερα</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Διαχείριση μασκών email</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Έχετε χρησιμοποιήσει τις 5 δωρεάν μάσκες email σας, επομένως επιλέξαμε μία για επαναχρησιμοποίηση.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Οι μάσκες email δεν είναι διαθέσιμες αυτήν τη στιγμή. Δοκιμάστε ξανά σε λίγα λεπτά.</string>
   <!--
     Autofill
 

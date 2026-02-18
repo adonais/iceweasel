@@ -14,7 +14,7 @@
   <!-- Title of a dialog for a microphone permission request. %1$s is the domain name of the website. -->
   <string name="mozac_feature_sitepermissions_microfone_title">السماح لـ %1$s باستخدام الميكروفون؟</string>
   <!-- Title of a dialog for a location permission request. %1$s is the domain name of the website. -->
-  <string name="mozac_feature_sitepermissions_location_title">السماح لـ %1$s باستخدام مكانك؟</string>
+  <string name="mozac_feature_sitepermissions_location_title">السماح لـ %1$s باستخدام موقعك؟</string>
   <!-- Title of a dialog for a camera and microphone permission request. %1$s is the domain name of the website. -->
   <string name="mozac_feature_sitepermissions_camera_and_microphone">السماح لـ %1$s باستخدام الكاميرا والميكروفون؟</string>
   <!-- Title of a dialog for a local network access request. %1$s is the domain name of the website -->

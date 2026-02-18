@@ -102,7 +102,7 @@
   <!-- Content description for expanding the saved passwords options in the select password prompt -->
   <string name="mozac_feature_prompts_expand_logins_content_description_2">توسيع كلمات المرور المحفوظة</string>
   <!-- Content description for collapsing the saved passwords options in the select password prompt -->
-  <string name="mozac_feature_prompts_collapse_logins_content_description_2">طي كلمات المرور المحفوظة</string>
+  <string name="mozac_feature_prompts_collapse_logins_content_description_2">طيّ كلمات المرور المحفوظة</string>
   <!-- Header for the select password prompt to allow users to fill a form with a saved password -->
   <string name="mozac_feature_prompts_saved_logins_2">كلمات المرور المحفوظة</string>
   <!-- Content description for the suggest strong password prompt to allow users to fill a form with a suggested strong password -->
@@ -145,7 +145,7 @@
   <!-- Content description for expanding the saved card options in the select card prompt. -->
   <string name="mozac_feature_prompts_expand_credit_cards_content_description_2">توسيع البطاقات المحفوظة</string>
   <!-- Content description for collapsing the saved card options in the select prompt. -->
-  <string name="mozac_feature_prompts_collapse_credit_cards_content_description_2">طي البطاقات المحفوظة</string>
+  <string name="mozac_feature_prompts_collapse_credit_cards_content_description_2">طيّ البطاقات المحفوظة</string>
   <!-- Option in the expanded select card prompt that links to cards settings. -->
   <string name="mozac_feature_prompts_manage_credit_cards_2">إدارة البطاقات</string>
   <!-- Text for the title of a save credit card dialog. -->
@@ -163,7 +163,7 @@
   <!-- Content description for expanding the saved addresses options in the select address prompt. -->
   <string name="mozac_feature_prompts_expand_address_content_description_2">توسيع العناوين المحفوظة</string>
   <!-- Content description for collapsing the saved address options in the select address prompt. -->
-  <string name="mozac_feature_prompts_collapse_address_content_description_2">طي العناوين المحفوظة</string>
+  <string name="mozac_feature_prompts_collapse_address_content_description_2">طيّ العناوين المحفوظة</string>
   <!-- Text for the manage addresses button. -->
   <string name="mozac_feature_prompts_manage_address">إدارة العناوين</string>
   <!--

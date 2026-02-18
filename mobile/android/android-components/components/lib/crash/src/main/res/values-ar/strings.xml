@@ -8,7 +8,7 @@
 
 <resources>
   <!-- Title of the crash reporter dialog. %1$s will be replaced with the name of the app (e.g. Firefox Focus). -->
-  <string name="mozac_lib_crash_dialog_title">نأسف. واجه %1$s مشكلة وتعطل.</string>
+  <string name="mozac_lib_crash_dialog_title">عذراً. واجه %1$s مشكلة وتعطّل.</string>
   <!-- Label of the checkbox for sending crash reports in the crash reporter dialog. %1$s is the name of the organization (for example "Mozilla"). -->
   <string name="mozac_lib_crash_dialog_checkbox">إرسال تقرير العطل إلى %1$s</string>
   <!-- Label of the button closing the crash reporter dialog. -->

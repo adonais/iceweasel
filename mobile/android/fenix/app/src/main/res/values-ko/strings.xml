@@ -1754,6 +1754,13 @@
   <string name="download_rename_dialog_label">이름</string>
   <string name="download_rename_dialog_confirm_button">저장</string>
   <string name="download_rename_dialog_cancel_button">취소</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">\"%s\" 파일이 이미 이 위치에 존재합니다</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">파일 이름에 \"/\"를 사용할 수 없음</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">파일 이름을 변경할 수 없음</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->

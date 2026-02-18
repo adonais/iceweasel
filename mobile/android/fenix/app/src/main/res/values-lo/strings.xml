@@ -61,6 +61,8 @@
   <string name="tab_manager_empty_synced_tabs_page_description">ເຂົ້າສູ່ລະບົບເພື່ອຈັດການແຖບທີ່ຊິ້ງແລ້ວຈາກທຸກອຸປະກອນຂອງທ່ານ.</string>
   <!-- The action text displayed on the synced tabs page when the user is not logged into an account, prompting the user to sign into their account. When clicked, it takes the user to the account sign-in flow. -->
   <string name="tab_manager_empty_synced_tabs_page_sign_in_cta">ເຂົ້າສູ່ລະບົບ</string>
+  <!-- Text for the button used to show all stories -->
+  <string name="homepage_all_stories">ເລື່ອງລາວທັງໝົດ</string>
   <!--
     Home - Bookmarks
 
@@ -254,6 +256,8 @@
   <string name="browser_menu_save_to_collection_2">ບັນທຶກໄປໄວ້ບ່ອນເກັບສະສົມ</string>
   <!-- Browser menu button that open a share menu to share the current site -->
   <string name="browser_menu_share">ແບ່ງປັນ</string>
+  <!-- Browser menu button that goes to the homepage screen -->
+  <string name="browser_menu_homepage">ໜ້າຫຼັກ</string>
   <!--
     Browser menu button shown in custom tabs that opens the current tab in Fenix
     %1$s is the name of the app (for example "Firefox").
@@ -319,6 +323,8 @@
   <string name="browser_menu_save_as_pdf_2">ບັກທຶກເປັນ PDF</string>
   <!-- Browser menu label for navigating to the translation feature, which provides language translation options the current visited page -->
   <string name="browser_menu_translate_page_2">ແປໜ້ານີ້</string>
+  <!-- Browser menu label for navigating to the summarization feature, which provides site summarization for the current visited page -->
+  <string name="browser_menu_summarize_page">ສະຫຼຸບໜ້າ</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
   <string name="browser_menu_webcompat_reporter" tools:ignore="UnusedResources" moz:removedIn="149">ລາຍງານເວັບໄຊທີ່ມີບັນຫາ…</string>
   <!-- Browser menu label for navigating to the Web Compat Reporter feature, which provides users the ability to send bug reports for broken sites. -->
@@ -430,6 +436,10 @@
     The colon character (in "%s:") is intended to have the screen reader make a small pause between the search engine name and the description of the button.
   -->
   <string name="search_engine_selector_content_description">%s: ຕົວເລືອກເຄື່ອງມືຄົ້ນຫາ</string>
+  <!-- Text for the snackbar shown to confirm the deletion of a single browsing history item. %1$s is the shortened URL of the deleted history entry or the the actual deleted search term. Only one such item is deleted at a time. -->
+  <string name="search_suggestions_delete_history_item_snackbar">ລຶບ %1$s ອອກຈາກປະຫວັດແລ້ວ</string>
+  <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
+  <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">ລຶບລາຍການປະຫວັດນີ້</string>
   <!--
     Home onboarding
 
@@ -607,6 +617,70 @@
   <string name="onboarding_marketing_positive_button_1" tools:ignore="UnusedResources">ຕົກລົງເຫັນດີ ແລະ ເລີ່ມຊອກຫາ</string>
   <!-- ==== Project "Nova" onboarding strings ==== -->
 
+  <!-- "Continue" onboarding button. -->
+  <string name="nova_onboarding_continue_button">ສືບຕໍ່</string>
+  <!-- "Not now" onboarding button. -->
+  <string name="nova_onboarding_negative_button">ບໍ່ແມ່ນຕອນນີ້</string>
+  <!-- Terms of use (ToU) onboarding title. -->
+  <string name="nova_onboarding_tou_title" tools:ignore="UnusedResources">ກຽມພ້ອມທີ່ຈະແລ່ນຢ່າງເສລີ</string>
+  <!-- Terms of use (ToU) onboarding subtitle. -->
+  <string name="nova_onboarding_tou_subtitle">ວ່ອງໄວ, ປອດໄພ, ແລະ ຈະບໍ່ເຮັດໃຫ້ທ່ານຜິດຫວັງ.\nການຊອກຫາເວັບໄຊທ໌ດີຂຶ້ນເລື້ອຍໆ.</string>
+  <!--
+    Terms of use (ToU) onboarding body line one.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_1_link_text as text (“Firefox Terms of Use”).
+  -->
+  <string name="nova_onboarding_tou_body_line_1">ໂດຍການດຳເນີນການຕໍ່, ທ່ານຕົກລົງເຫັນດີກັບ %1$s.</string>
+  <!-- Terms of use (ToU) onboarding body line one link text for nova_onboarding_tou_body_line_1. 'Firefox' is intentionally hardcoded. -->
+  <string name="nova_onboarding_tou_body_line_1_link_text" tools:ignore="BrandUsage">ເງື່ອນໄຂການນຳໃຊ້ Firefox</string>
+  <!--
+    Terms of use (ToU) onboarding body line two. 'Firefox' is intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_2_link_text as text (“Privacy Notice”).
+  -->
+  <string name="nova_onboarding_tou_body_line_2" tools:ignore="BrandUsage">Firefox ເອົາໃຈໃສ່ຄວາມເປັນສ່ວນຕົວຂອງທ່ານ. ຮຽນຮູ້ເພີ່ມເຕີມໃນ %1$s ຂອງພວກເຮົາ.</string>
+  <!-- Terms of use (ToU) onboarding body line two link text for nova_onboarding_tou_body_line_2. -->
+  <string name="nova_onboarding_tou_body_line_2_link_text">ແຈ້ງການຄວາມເປັນສ່ວນຕົວ</string>
+  <!--
+    Terms of use (ToU) onboarding body line three. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_tou_body_line_3_link_text as text (“Manage Settings”).
+  -->
+  <string name="nova_onboarding_tou_body_line_3" tools:ignore="BrandUsage">ເພື່ອຊ່ວຍປັບປຸງໂປຣແກຣມທ່ອງເວັບ, Firefox ສົ່ງຂໍ້ມູນການວິນິດໄສ ແລະ ຂໍ້ມູນການໂຕ້ຕອບໄປຫາ Mozilla. %1$s</string>
+  <!-- Terms of use (ToU) onboarding body line three link text for nova_onboarding_tou_body_line_3. -->
+  <string name="nova_onboarding_tou_body_line_3_link_text">ຈັດການການຕັ້ງຄ່າ</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title" tools:ignore="UnusedResources">ບອກລາກັບຕົວຕິດຕາມທີ່ໜ້າຢ້ານ</string>
+  <!-- "Set to default" onboarding title. -->
+  <string name="nova_onboarding_set_to_default_title_2">ເປີດລິ້ງທັງໝົດຂອງທ່ານດ້ວຍຄວາມເປັນສ່ວນຕົວໃນຕົວ</string>
+  <!-- "Set to default" onboarding subtitle. -->
+  <string name="nova_onboarding_set_to_default_subtitle">ພວກເຮົາປົກປ້ອງຂໍ້ມູນຂອງທ່ານ ແລະ ບລັອກບໍລິສັດຕ່າງໆໂດຍອັດຕະໂນມັດຈາກການສອດແນມການຄລິກຂອງທ່ານ.</string>
+  <!-- "Set to default" onboarding button. -->
+  <string name="nova_onboarding_set_to_default_button">ຕັ້ງເປັນໂປຣແກຣມທ່ອງເວັບເລີ່ມຕົ້ນ</string>
+  <!-- Toolbar selection onboarding title. -->
+  <string name="nova_onboarding_toolbar_selection_title">ເລືອກແຖບທີ່ຢູ່ຂອງທ່ານ</string>
+  <!-- Toolbar selection onboarding "top" option label. -->
+  <string name="nova_onboarding_toolbar_selection_top_label">ເທິງ</string>
+  <!-- Toolbar selection onboarding "bottom" option label. -->
+  <string name="nova_onboarding_toolbar_selection_bottom_label">ລຸ່ມສຸດ</string>
+  <!-- Theme selection onboarding title. -->
+  <string name="nova_onboarding_theme_selection_title" tools:ignore="UnusedResources">ເລືອກຮູບແບບຂອງທ່ານ</string>
+  <!-- Theme selection onboarding "automatic" option label. -->
+  <string name="nova_onboarding_theme_selection_automatic_label" tools:ignore="UnusedResources">ອັດຕະໂນມັດ</string>
+  <!-- Theme selection onboarding "light" option label. -->
+  <string name="nova_onboarding_theme_selection_light_label" tools:ignore="UnusedResources">ແສງສະຫວ່າງ</string>
+  <!-- Theme selection onboarding "dark" option label. -->
+  <string name="nova_onboarding_theme_selection_dark_label" tools:ignore="UnusedResources">ມືດ</string>
+  <!-- Sync onboarding title. -->
+  <string name="nova_onboarding_sync_title">ສືບຕໍ່ທັນທີຈາກບ່ອນທີ່ທ່ານຄ້າງໄວ້</string>
+  <!-- Sync onboarding subtitle. -->
+  <string name="nova_onboarding_sync_subtitle">ຮັບເອົາບຸກມາກ, ລະຫັດຜ່ານ ແລະ ອື່ນໆອີກໃນອຸປະກອນໃດກໍໄດ້ຢ່າງວ່ອງໄວ. ຂໍ້ມູນສ່ວນຕົວຂອງທ່ານຍັງຄົງປອດໄພດ້ວຍການເຂົ້າລະຫັດ.</string>
+  <!-- Sync onboarding button. -->
+  <string name="nova_onboarding_sync_button">ເລີ່ມການຊິ້ງຂໍ້ມູນ</string>
+  <!-- Marketing onboarding title. -->
+  <string name="nova_onboarding_marketing_title">ຊ່ວຍພວກເຮົາສ້າງອິນເຕີເນັດທີ່ດີຂຶ້ນ</string>
+  <!--
+    Marketing onboarding body. 'Firefox' and 'Mozilla' are intentionally hardcoded.
+    %1$s is replaced by an active link, using nova_onboarding_marketing_body_link_text as text (“How we use the data”).
+  -->
+  <string name="nova_onboarding_marketing_body" tools:ignore="BrandUsage">ແບ່ງປັນວິທີທີ່ເຈົ້າຄົ້ນພົບ Firefox ແລະ ວິທີທີ່ເຈົ້າໃຊ້ມັນກັບຄູ່ຮ່ວມງານດ້ານການຕະຫຼາດຂອງ Mozilla. ຂໍ້ມູນນີ້ບໍ່ເຄີຍຖືກຂາຍ. %1$s</string>
   <!-- ==== End of Project "Nova" onboarding strings ==== -->
 
   <!-- Onboarding header for the toolbar selection card, used by Nimbus experiments. -->

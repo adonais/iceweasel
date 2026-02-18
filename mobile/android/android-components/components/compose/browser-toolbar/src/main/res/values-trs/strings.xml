@@ -21,4 +21,6 @@
   <string name="mozac_toolbar_cfr_title">Sa gurugui’ guendâ Android. Nahuin sà’ guendât</string>
   <!-- Text for the description displayed in the contextual feature recommendation popup promoting the new toolbar redesign. -->
   <string name="mozac_toolbar_cfr_description">Hue’ê nī nīhià’ nagi’hiaj nākà ñûnj dàj hua hiūj nan</string>
+  <!-- Content description (not visible, for screen readers etc.) for the "minimal toolbar" containing just the URL instead of the big toolbar containing also other buttons. %1$s will be replaced with the domain name of the current website. -->
+  <string name="mozac_minimal_display_toolbar_content_description">Gā’nïnj nuguan’an riña %1$s. Huà’ gūru’man ra’ât da’ gīyìchinj</string>
 </resources>

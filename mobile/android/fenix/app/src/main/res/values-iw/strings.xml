@@ -1754,6 +1754,13 @@
   <string name="download_rename_dialog_label">שם</string>
   <string name="download_rename_dialog_confirm_button">שמירה</string>
   <string name="download_rename_dialog_cancel_button">ביטול</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">קובץ בשם ״%s״ כבר קיים במיקום זה</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">שמות קבצים אינם יכולים להשתמש ב-״/״</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">לא ניתן לשנות את שם הקובץ</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2876,6 +2883,10 @@
   <string name="preferences_email_masks_suggest_learn_more">מידע נוסף</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">ניהול מסכות דוא״ל</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">השתמשת ב־5 מסכות הדוא״ל החינמיות שלך, אז בחרנו אחת בשבילך לשימוש חוזר.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">מסכות דוא״ל אינן זמינות כרגע. נא לנסות שוב בעוד מספר דקות.</string>
   <!--
     Autofill
 

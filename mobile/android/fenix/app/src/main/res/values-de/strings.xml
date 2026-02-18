@@ -1754,6 +1754,13 @@
   <string name="download_rename_dialog_label">Name</string>
   <string name="download_rename_dialog_confirm_button">Speichern</string>
   <string name="download_rename_dialog_cancel_button">Abbrechen</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">Eine Datei mit dem Namen „%s“ existiert an diesem Ort bereits</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Dateinamen dürfen „/“ nicht verwenden</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Datei kann nicht umbenannt werden</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2876,6 +2883,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Weitere Informationen</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">E-Mail-Masken verwalten</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Sie haben Ihre 5 kostenlosen E-Mail-Masken aufgebraucht, daher haben wir eine zur Wiederverwendung ausgewählt.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">E-Mail-Masken sind derzeit nicht verfügbar. Versuchen Sie es in ein paar Minuten erneut.</string>
   <!--
     Autofill
 

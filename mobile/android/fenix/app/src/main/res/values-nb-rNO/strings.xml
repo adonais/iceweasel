@@ -1754,6 +1754,13 @@
   <string name="download_rename_dialog_label">Navn</string>
   <string name="download_rename_dialog_confirm_button">Lagre</string>
   <string name="download_rename_dialog_cancel_button">Avbryt</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">En fil med navnet «%s» finnes allerede på denne plasseringen</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Filnavn kan ikke bruke «/»</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Kan ikke gi filen nytt navn</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2876,6 +2883,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Les mer</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Behandle e-postalias</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Du har brukt dine 5 gratis e-postaliaser, så vi valgte én du kan bruke om igjen.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">E-postalias er ikke tilgjengelige akkurat nå. Prøv igjen om noen minutter.</string>
   <!--
     Autofill
 

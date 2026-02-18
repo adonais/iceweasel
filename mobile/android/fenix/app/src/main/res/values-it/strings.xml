@@ -1754,6 +1754,13 @@
   <string name="download_rename_dialog_label">Nome</string>
   <string name="download_rename_dialog_confirm_button">Salva</string>
   <string name="download_rename_dialog_cancel_button">Annulla</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">In questo percorso esiste già un file chiamato “%s”.</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">Non è possibile utilizzare “/” per il nome di un file.</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">Impossibile rinominare il file</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
@@ -2876,6 +2883,10 @@
   <string name="preferences_email_masks_suggest_learn_more">Ulteriori informazioni</string>
   <!-- Title for the Manage Email Masks links to Firefox Relay dashboard -->
   <string name="preferences_email_masks_manage_title">Gestisci alias di posta elettronica</string>
+  <!-- The message displayed when a user has used all of their free-tier email masks, so now the application will choose an existing one at random. -->
+  <string name="email_masks_max_free_tier_reached">Hai già utilizzato i tuoi 5 alias di posta elettronica gratuiti, quindi ne abbiamo scelto uno da riutilizzare.</string>
+  <!-- The message displayed when there was an error with the email mask or Firefox Account services. -->
+  <string name="email_masks_error_retrieving_masks">Gli alias email non sono al momento disponibili. Riprova tra qualche minuto.</string>
   <!--
     Autofill
 

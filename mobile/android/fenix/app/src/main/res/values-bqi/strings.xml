@@ -1754,6 +1754,13 @@
   <string name="download_rename_dialog_label">نوم</string>
   <string name="download_rename_dialog_confirm_button">زفت</string>
   <string name="download_rename_dialog_cancel_button">لقو</string>
+  <!--
+    Error message when renaming with a name that already exists.
+    %s is the proposed file name.
+  -->
+  <string name="download_rename_error_exists_error">فایلی وا نوم «%s» ز زیتر منه ای جاگه بیڌسه.</string>
+  <!-- Error message when renaming with an invalid file name. -->
+  <string name="download_rename_error_invalid_name_error">نوم فایلا نتره «/» ن و کار گره</string>
   <!-- Title for the alert dialog when the file cannot be renamed. -->
   <string name="download_rename_error_cannot_rename_title">نتره نوم فایل ن آلشت کونه</string>
   <!-- Description message for the alert dialog when the file cannot be renamed. -->
