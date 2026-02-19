@@ -16,28 +16,8 @@ Preferences.addAll([
   { id: "network.dns.disableIPv6", type: "bool" },
   // disable javascipt
   { id: "javascript.enabled", type: "bool" },
-  // disable ai
-  { id: "browser.aiwindow.enabled", type: "bool" },
-  { id: "browser.ml.enable", type: "bool" },
-  { id: "browser.ml.chat.enabled", type: "bool" },
-  { id: "browser.ml.chat.menu", type: "bool" },
-  { id: "browser.ml.chat.page", type: "bool" },
-  { id: "browser.ml.chat.page.footerBadge", type: "bool" },
-  { id: "browser.ml.chat.page.menuBadge", type: "bool" },
-  { id: "browser.ml.chat.shortcuts", type: "bool" },
-  { id: "browser.ml.chat.sidebar", type: "bool" },
-  { id: "browser.ml.pageAssist.enabled", type: "bool" },
-  { id: "browser.ml.smartAssist.enabled", type: "bool" },
-  { id: "browser.search.visualSearch.featureGate", type: "bool" },
-  { id: "browser.urlbar.quicksuggest.mlEnabled", type: "bool" },
-  { id: "extensions.ml.enabled", type: "bool" },
-  { id: "pdfjs.enableAltText", type: "bool" },
-  { id: "places.semanticHistory.featureGate", type: "bool" },
-  { id: "sidebar.notification.badge.aichat", type: "bool" },
   // Pin tabs to taskbar
   { id: "browser.taskbarTabs.enabled", type: "bool" },
-  // handoff to urlbar
-  { id: "browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar", type: "bool" },
   // compactmode
   { id: "browser.compactmode.show", type: "bool" },
   // lastclose
@@ -77,19 +57,9 @@ var gIceweaselPane = {
       [false,                   ],
     );
     setBoolSyncListeners(
-      "iceweasel-ai-checkbox",
-      ["browser.aiwindow.enabled", "browser.ml.enable", "browser.ml.chat.enabled", "browser.ml.chat.menu", "browser.ml.chat.page", "browser.ml.chat.page.footerBadge", "browser.ml.chat.page.menuBadge", "browser.ml.chat.shortcuts", "browser.ml.chat.sidebar", "browser.ml.linkPreview.enabled", "browser.ml.pageAssist.enabled", "browser.ml.smartAssist.enabled", "browser.search.visualSearch.featureGate", "browser.tabs.groups.smart.enabled", "browser.tabs.groups.smart.userEnabled", "browser.urlbar.quicksuggest.mlEnabled", "extensions.ml.enabled", "pdfjs.enableAltText", "places.semanticHistory.featureGate", "sidebar.notification.badge.aichat"],
-      [false,                      false,               false,                     false,                  false,                   false,                              false,                            false,                       false,                    false,                            false,                           false,                            false,                                      false,                               false,                                   false,                                  false,                   false,                 false,                                false,],
-    );
-    setBoolSyncListeners(
       "iceweasel-taskbartabs-checkbox",
       ["browser.taskbarTabs.enabled"],
       [false,                       ],
-    );
-    setBoolSyncListeners(
-      "iceweasel-searchhand-checkbox",
-      ["browser.newtabpage.activity-stream.improvesearch.handoffToAwesomebar"],
-      [true,                                                                 ],
     );
     setBoolSyncListeners(
       "iceweasel-tabcompactmode-checkbox",
@@ -233,12 +203,7 @@ function setChromeSyncListeners(checkboxid) {
     process.startHidden = true;
     process.noShell = true;
     try {
-      if (AppConstants.platform === "win") {
-        process.runw(true, ["-chrome-check", bin.path, prof.path], 3);
-      }
-      else {
-        process.run(true, ["-chrome-check", bin.path, prof.path], 3);
-      }
+      process.runw(true, ["-chrome-check", bin.path, prof.path], 3);
       exitValue = process.exitValue;
     } catch (e) {
       console.log("On Windows negative return value throws an exception");
@@ -271,11 +236,7 @@ function setDownloadSyncListeners(checkboxid) {
     process.startHidden = true;
     process.noShell = true;
     try {
-      if (AppConstants.platform === "win") {
-        process.runw(true, ["-integration-check", bin.path, prof.path], 3);
-      } else {
-        process.run(true, ["-integration-check", bin.path, prof.path], 3);
-      }
+      process.runw(true, ["-integration-check", bin.path, prof.path], 3);
       exitValue = process.exitValue;
     } catch (e) {
       console.log("On Windows negative return value throws an exception");
@@ -466,17 +427,9 @@ function onChromeSyncListeners() {
       process.noShell = true;
       try {
         if (!value) {
-          if (AppConstants.platform === "win") {
-            process.runw(false, ["-chrome-uncheck", bin.path, prof.path], 3);
-          } else {
-            process.run(false, ["-chrome-uncheck", bin.path, prof.path], 3);
-          }
+          process.runw(false, ["-chrome-uncheck", bin.path, prof.path], 3);
         } else {
-          if (AppConstants.platform === "win") {
-            process.runwAsync( ["-chrome-install", bin.path, prof.path], 3, chromeObserver);
-          } else {
-            process.runAsync( ["-chrome-install", bin.path, prof.path], 3, chromeObserver);
-          }
+          process.runwAsync( ["-chrome-install", bin.path, prof.path], 3, chromeObserver);
         }
       } catch (e) {
         console.log("On Windows negative return value throws an exception");
@@ -516,17 +469,9 @@ function onDownloadSyncListeners() {
       process.noShell = true;
       try {
         if (!value) {
-          if (AppConstants.platform === "win") {
-            process.runw(false, ["-integration-uncheck", bin.path, prof.path], 3);
-          } else {
-            process.run(false, ["-integration-uncheck", bin.path, prof.path], 3);
-          }
+          process.runw(false, ["-integration-uncheck", bin.path, prof.path], 3);
         } else {
-          if (AppConstants.platform === "win") {
-            process.runwAsync( ["-integration-install", bin.path, prof.path], 3, chromeObserver);
-          } else {
-            process.runAsync( ["-integration-install", bin.path, prof.path], 3, chromeObserver);
-          }
+          process.runwAsync( ["-integration-install", bin.path, prof.path], 3, chromeObserver);
         }
       } catch (e) {
         console.log("On Windows negative return value throws an exception");
